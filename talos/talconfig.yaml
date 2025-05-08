@@ -22,8 +22,7 @@ cniConfig:
 nodes:
   - hostname: "lenovo1"
     ipAddress: "10.0.30.100"
-    installDiskSelector:
-      serial: "sda"
+    installDisk: "/dev/sda"
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
@@ -42,8 +41,7 @@ nodes:
           ip: "10.0.30.50"
   - hostname: "lenovo2"
     ipAddress: "10.0.30.101"
-    installDiskSelector:
-      serial: "sda"
+    installDisk: "/dev/sda"
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
@@ -62,8 +60,7 @@ nodes:
           ip: "10.0.30.50"
   - hostname: "dell1"
     ipAddress: "10.0.30.102"
-    installDiskSelector:
-      serial: "sda"
+    installDisk: "/dev/sda"
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
