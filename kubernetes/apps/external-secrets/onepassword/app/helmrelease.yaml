@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas-cjso.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: onepassword
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: onepassword-connect
+    namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    connect:
+      create: true
+      name: connect-api
+      imageRepository: 1password/connect-api
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 0.2
+      httpPort: 8080
+      serviceMonitor:
+        enabled: true
+      sync:
+        name: connect-sync
+        imageRepository: 1password/connect-sync
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 0.2
+        httpPort: 8081
+      serviceType: ClusterIP
+      credentialsName: op-credentials
+      credentialsKey: 1password-credentials.json
+      probes:
+        liveness: true
+        readiness: true
+    operator:
+      create: false
