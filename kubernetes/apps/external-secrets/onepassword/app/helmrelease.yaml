@@ -13,10 +13,12 @@ spec:
   install:
     remediation:
       retries: 4
+    timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
       retries: 4
+    timeout: 10m
   uninstall:
     keepHistory: false
   values:
