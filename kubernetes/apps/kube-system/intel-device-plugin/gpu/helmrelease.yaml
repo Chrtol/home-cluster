@@ -19,8 +19,10 @@ spec:
     createNamespace: true
     remediation:
       retries: 5
+    timeout: 10m
   upgrade:
     remediation:
       retries: 5
+    timeout: 10m
   values:
     name: intel-gpu-plugin
