@@ -6,7 +6,7 @@ metadata:
   name: intel-device-plugins-operator
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/kube-system/intel-device-plugins/operator
+  path: ./kubernetes/apps/kube-system/intel-device-plugin/operator
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -26,7 +26,7 @@ metadata:
   name: intel-device-plugins-gpu
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/kube-system/intel-device-plugins/gpu
+  path: ./kubernetes/apps/kube-system/intel-device-plugin/gpu
   sourceRef:
     kind: GitRepository
     name: flux-system
