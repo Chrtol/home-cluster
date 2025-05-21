@@ -20,10 +20,12 @@ spec:
     crds: CreateReplace
     remediation:
       retries: 5
+    timeout: 10m
   upgrade:
     crds: CreateReplace
     remediation:
       retries: 5
+    timeout: 10m
   values:
     master:
       extraLabelNs:
