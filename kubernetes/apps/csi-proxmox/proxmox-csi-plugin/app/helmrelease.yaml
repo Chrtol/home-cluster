@@ -25,12 +25,12 @@ spec:
     name: proxmox-csi-plugin
   install:
     remediation:
-      retries: 3
+      retries: 4
     timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
-      retries: 3
+      retries: 4
     timeout: 10m
   values:
     config:
