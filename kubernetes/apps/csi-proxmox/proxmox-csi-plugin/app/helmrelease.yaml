@@ -35,7 +35,7 @@ spec:
       clusters:
         - url: https://10.0.30.12:8006/api2/json
           insecure: true
-          token_id: "kubernetes-csi@pve!csi"
+          token_id: "kubernetes-csi@pve!kubernetes-csi"
           region: homelab # match proxmox cluster
     createNamespace: true
     node:
