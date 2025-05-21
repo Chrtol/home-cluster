@@ -31,4 +31,4 @@ spec:
   prune: false
   wait: true
   dependsOn:
-    - name: kube-system-node-feature-discovery
+    - name: node-feature-discovery
