@@ -4,6 +4,7 @@ apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: OCIRepository
 metadata:
   name: proxmox-csi-plugin
+  namespace: flux-system
 spec:
   interval: 5m
   layerSelector:
@@ -18,11 +19,13 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: proxmox-csi
+  namespace: csi-proxmox
 spec:
   interval: 30m
   chartRef:
     kind: OCIRepository
     name: proxmox-csi-plugin
+    namespace: flux-system
   install:
     remediation:
       retries: 4
