@@ -4,7 +4,7 @@ metadata:
   name: nas-media-pv
   namespace: media
 spec:
-  storageClassName: nas-media-pv
+  storageClassName: nfs-k8s
   capacity:
     storage: 1Mi
   accessModes:
