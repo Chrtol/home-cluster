@@ -24,11 +24,9 @@ spec:
       retries: 3
   dependsOn:
     - name: intel-device-plugin-gpu
-      namespace: gpu-system
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: volsync
-      namespace: volsync-system
+      namespace: kube-system
+    - name: proxmox-csi-proxmox-csi-plugin-controller
+      namespace: csi-proxmox
   values:
     controllers:
       jellyfin:
