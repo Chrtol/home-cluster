@@ -23,7 +23,7 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: intel-device-plugin-gpu
+    - name: intel-device-plugins-gpu
       namespace: kube-system
     - name: proxmox-csi-proxmox-csi-plugin-controller
       namespace: csi-proxmox
