@@ -74,17 +74,16 @@ spec:
         ports:
           http:
             port: *port
-    route:
+    ingress:
       app:
-        hostnames: ["{{ .Release.Name }}.cftollefsen.com"]
-        parentRefs:
-          - name: internal
-            namespace: kube-system
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
+        className: external
+        hosts:
+          - host: jellyfin.cftollefsen.com
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
     # persistence:
     #   config:
     #     existingClaim: jellyfin
