@@ -78,9 +78,9 @@ spec:
       app:
         className: internal
         annotations:
-          internal-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+          internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
         hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - host: "{{ .Release.Name }}.cftollefsen.com"
             paths:
               - path: /
                 service:
