@@ -116,7 +116,7 @@ spec:
           cert-manager.io/cluster-issuer: letsencrypt-production
           external-dns.alpha.kubernetes.io/target: "jellyfin.cftollefsen.com"
         hosts:
-          - host: &host "{{ .Release.Name }}.cftollefsen.com"
+          - host: &host "{{ .Release.Name }}-tv.cftollefsen.com"
             paths:
               - path: /
                 service:
