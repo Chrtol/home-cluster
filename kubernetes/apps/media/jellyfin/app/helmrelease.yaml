@@ -24,11 +24,13 @@ spec:
   install:
     remediation:
       retries: 3
+    timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
       strategy: rollback
       retries: 3
+    timeout: 10m
   dependsOn:
     - name: intel-device-plugins-gpu
       namespace: kube-system
