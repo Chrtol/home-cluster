@@ -1,14 +1,25 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: jellyfin
   namespace: media
-chartRef: 
-  kind: OCIRepository
-  name: app-template
-  namespace: flux-system
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+# spec:
+#   interval: 30m
+#   chart:
+#     spec:
+#       chart: app-template
+#       version: 3.7.3
+#       sourceRef:
+#         kind: HelmRepository
+#         name: bjw-s
+#         namespace: flux-system
   install:
     remediation:
       retries: 3
@@ -20,7 +31,7 @@ chartRef:
   dependsOn:
     - name: intel-device-plugins-gpu
       namespace: kube-system
-    - name: proxmox-csi
+    - name: proxmox-csi-proxmox-csi-plugin-controller
       namespace: csi-proxmox
   values:
     controllers:
