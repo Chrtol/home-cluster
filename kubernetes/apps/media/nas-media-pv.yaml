@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-media-pv
+  namespace: media
+spec:
+  storageClassName: nas-media-pv
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: 10.0.30.243
+    path: /mnt/truenas/cf-nas/data
+  mountOptions:
+    - nfsvers=3
+    - hard
+    - nolock
+    - nocto
+    - noatime
+    - nodiratime
+    - retrans=5
+    - rsize=131072
+    - wsize=131072
