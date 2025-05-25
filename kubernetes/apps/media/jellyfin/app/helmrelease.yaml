@@ -32,7 +32,7 @@ spec:
   dependsOn:
     - name: intel-device-plugins-gpu
       namespace: kube-system
-    - name: csi-proxmox
+    - name: proxmox-csi
       namespace: csi-proxmox
   values:
     controllers:
