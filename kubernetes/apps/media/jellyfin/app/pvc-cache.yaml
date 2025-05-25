@@ -8,7 +8,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   capacity:
-    storage: 10Gi
+    storage: 50Gi
   csi:
     driver: csi.proxmox.sinextra.dev
     fsType: xfs
