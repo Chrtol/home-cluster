@@ -7,3 +7,5 @@ components:
   - ../../components/common
 resources:
   - ./jellyfin/ks.yaml
+  - ./nas-media-pv.yaml
+  - ./nas-media-pvc.yaml
