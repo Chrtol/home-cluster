@@ -8,7 +8,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
+      storage: 55Gi
   storageClassName: proxmox-zfs
   volumeName: pvc-jellyfin
 ---
