@@ -87,30 +87,30 @@ spec:
                   identifier: app
                   port: http
 
-    # persistence:
-    #   config:
-    #     existingClaim: jellyfin
-    #     globalMounts:
-    #       - path: /config
-    #   config-cache:
-    #     existingClaim: jellyfin-cache
-    #     globalMounts:
-    #       - path: /config/metadata
-    #   media:
-    #     type: nfs
-    #     server: expanse.internal
-    #     path: /mnt/eros/Media
-    #     globalMounts:
-    #       - path: /media
-    #         readOnly: true
-    #   tmpfs:
-    #     type: emptyDir
-    #     advancedMounts:
-    #       jellyfin:
-    #         app:
-    #           - path: /cache
-    #             subPath: cache
-    #           - path: /config/log
-    #             subPath: log
-    #           - path: /tmp
-    #             subPath: tmp
+    persistence:
+      config:
+        existingClaim: jellyfin
+        globalMounts:
+          - path: /config
+      config-cache:
+        existingClaim: jellyfin-cache
+        globalMounts:
+          - path: /config/metadata
+      # media:
+      #   type: nfs
+      #   server: expanse.internal
+      #   path: /mnt/eros/Media
+      #   globalMounts:
+      #     - path: /media
+      #       readOnly: true
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          jellyfin:
+            app:
+              - path: /cache
+                subPath: cache
+              - path: /config/log
+                subPath: log
+              - path: /tmp
+                subPath: tmp
