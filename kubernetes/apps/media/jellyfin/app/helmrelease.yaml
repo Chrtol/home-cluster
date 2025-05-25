@@ -20,7 +20,7 @@ chartRef:
   dependsOn:
     - name: intel-device-plugins-gpu
       namespace: kube-system
-    - name: proxmox-csi-proxmox-csi-plugin-controller
+    - name: proxmox-csi
       namespace: csi-proxmox
   values:
     controllers:
