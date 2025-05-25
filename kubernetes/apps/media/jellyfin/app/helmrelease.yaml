@@ -125,17 +125,17 @@ spec:
         tls:
           - hosts: [*host]
             secretName: "{{ .Release.Name }}-tls"
-    persistence:
-      config:
-        existingClaim: jellyfin
-      tmp:
-        type: emptyDir
-      transcode:
-        type: emptyDir
-      media:
-        type: nfs
-        server: osiris.286k.co
-        path: /pluto/media
-        globalMounts:
-          - path: /media
-            readOnly: false
+    # persistence:
+    #   config:
+    #     existingClaim: jellyfin
+    #   tmp:
+    #     type: emptyDir
+    #   transcode:
+    #     type: emptyDir
+    #   media:
+    #     type: nfs
+    #     server: osiris.286k.co
+    #     path: /pluto/media
+    #     globalMounts:
+    #       - path: /media
+    #         readOnly: false
