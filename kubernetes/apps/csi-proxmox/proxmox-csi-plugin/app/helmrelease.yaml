@@ -44,7 +44,7 @@ spec:
     # # https://github.com/sergelogvinov/proxmox-csi-plugin/blob/2cae7bc8402b168a69a1d375309f837fdc7b70fb/docs/options.md
     storageClass:
       - name: proxmox
-        storage: csi-proxmox
+        storage: vm-disks
         cache: writethrough
         fstype: xfs
         reclaimPolicy: Delete
