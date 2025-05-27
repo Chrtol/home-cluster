@@ -49,6 +49,8 @@ spec:
         fstype: xfs
         reclaimPolicy: Delete
         ssd: "true"
+        provisioner: csi.proxmox.sinextra.dev
+        allowVolumeExpansion: true
   valuesFrom:
     - targetPath: config.clusters[0].token_secret
       kind: Secret
