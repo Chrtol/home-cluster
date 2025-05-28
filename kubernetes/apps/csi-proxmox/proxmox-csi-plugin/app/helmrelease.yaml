@@ -27,7 +27,6 @@ spec:
           insecure: false
           token_id: "kubernetes-csi@pve!kubernetes-csi"
           region: homelab # match proxmox cluster
-          zone: dell1
           
     createNamespace: true
     # node:
