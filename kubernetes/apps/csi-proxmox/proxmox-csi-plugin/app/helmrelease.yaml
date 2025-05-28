@@ -29,9 +29,9 @@ spec:
           region: homelab # match proxmox cluster
           
     createNamespace: true
-    # node:
-    #   tolerations:
-    #     - operator: Exists
+    node:
+      tolerations:
+        - operator: Exists
 
     # # # Deploy Node CSI driver only on proxmox nodes
     # # nodeSelector:
