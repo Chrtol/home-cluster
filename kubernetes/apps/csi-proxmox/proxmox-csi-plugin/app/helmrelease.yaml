@@ -44,13 +44,15 @@ spec:
     # # https://github.com/sergelogvinov/proxmox-csi-plugin/blob/2cae7bc8402b168a69a1d375309f837fdc7b70fb/docs/options.md
     storageClass:
       - name: proxmox
-        storage: vm-disks
+        storage: kube-fs
         cache: writethrough
-        fstype: xfs
+        fstype: cephfs
         reclaimPolicy: Delete
         ssd: "true"
         provisioner: csi.proxmox.sinextra.dev
         allowVolumeExpansion: true
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "true"
   valuesFrom:
     - targetPath: config.clusters[0].token_secret
       kind: Secret
