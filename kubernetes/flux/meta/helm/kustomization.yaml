@@ -8,3 +8,4 @@ resources:
   - ./node-feature-discovery.yaml
   - ./intel-charts.yaml
   - ./csi-driver-nfs.yaml
+  - ./ceph-csi.yaml

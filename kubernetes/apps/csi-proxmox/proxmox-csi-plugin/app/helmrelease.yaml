@@ -51,8 +51,6 @@ spec:
         ssd: "true"
         provisioner: csi.proxmox.sinextra.dev
         allowVolumeExpansion: true
-        annotations:
-          storageclass.kubernetes.io/is-default-class: "true"
   valuesFrom:
     - targetPath: config.clusters[0].token_secret
       kind: Secret
