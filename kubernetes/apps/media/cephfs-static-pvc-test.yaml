@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: cephfs-static-pvc-test
-  namespace: default
+  namespace: media
 spec:
   containers:
     - name: busybox
