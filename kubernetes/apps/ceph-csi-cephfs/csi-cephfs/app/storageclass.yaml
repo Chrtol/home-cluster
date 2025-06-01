@@ -20,13 +20,16 @@ parameters:
   fsName: kube-fs
 
   # The secrets have to contain user and/or Ceph admin credentials.
-  csi.storage.k8s.io/provisioner-secret-name: csi-cephfs-secret
+#   csi.storage.k8s.io/provisioner-secret-name: csi-cephfs-secret
+  csi.storage.k8s.io/provisioner-secret-name: ceph-secret
   csi.storage.k8s.io/provisioner-secret-namespace: ceph-csi-cephfs
 
-  csi.storage.k8s.io/controller-expand-secret-name: csi-cephfs-secret
+#   csi.storage.k8s.io/controller-expand-secret-name: csi-cephfs-secret
+  csi.storage.k8s.io/controller-expand-secret-name: ceph-secret
   csi.storage.k8s.io/controller-expand-secret-namespace: ceph-csi-cephfs
 
-  csi.storage.k8s.io/node-stage-secret-name: csi-cephfs-secret
+#   csi.storage.k8s.io/node-stage-secret-name: csi-cephfs-secret
+  csi.storage.k8s.io/node-stage-secret-name: ceph-secret
   csi.storage.k8s.io/node-stage-secret-namespace: ceph-csi-cephfs
 
 reclaimPolicy: Delete
