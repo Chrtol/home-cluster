@@ -16,4 +16,4 @@ spec:
   volumes:
     - name: data
       persistentVolumeClaim:
-        claimName: rcsi-rbd-pvc
+        claimName: csi-rbd-pvc
