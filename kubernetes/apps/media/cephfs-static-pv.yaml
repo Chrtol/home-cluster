@@ -25,5 +25,6 @@ spec:
     # volumeHandle can be anything, need not to be same
     # as PV name or volume name. keeping same for brevity
     volumeHandle: cephfs-static-pv
+    storageclassName: csi-cephfs-sc
   persistentVolumeReclaimPolicy: Retain
   volumeMode: Filesystem
