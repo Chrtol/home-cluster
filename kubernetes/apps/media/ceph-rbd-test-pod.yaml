@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ceph-rbd-test-pod-2
+  name: ceph-rbd-test-pod
   namespace: media
 spec:
   containers:
