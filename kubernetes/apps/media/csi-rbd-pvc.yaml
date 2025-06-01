@@ -2,14 +2,13 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: csi-cephfs-pvc
+  name: csi-rbd-pvc
   namespace: media
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
+  volumeMode: Block
   resources:
     requests:
       storage: 1Gi
-  storageclassName: csi-cephfs-sc
-  volumeMode: Filesystem
-  volumeName: cephfs-static-pv
+  storageClassName: csi-rbd-sc
