@@ -10,5 +10,5 @@ resources:
   - ./pv-nfs.yaml
   - ./nas-media-pvc.yaml
   - ./cephfs-static-pv.yaml
-  - ./cephfs-static-pvc-test.yaml
+  - ./ceph-rbd-test-pod.yaml
   - ./csi-rbd-pvc.yaml
