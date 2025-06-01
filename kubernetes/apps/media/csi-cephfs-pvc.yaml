@@ -11,3 +11,5 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: csi-cephfs-sc
+  volumeMode: Filesystem
+  volumeName: cephfs-static-pv
