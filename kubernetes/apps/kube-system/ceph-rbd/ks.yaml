@@ -14,7 +14,7 @@ spec:
     - name: onepassword-store
       namespace: external-secrets
   interval: 30m
-  path: ./kubernetes/apps/kube-system/ceph-rdb/app
+  path: ./kubernetes/apps/kube-system/ceph-rbd/app
   prune: true
   sourceRef:
     kind: GitRepository
