@@ -102,17 +102,17 @@ spec:
         existingClaim: jellyfin-cache
         globalMounts:
           - path: /config/metadata
-      media:
-      #   type: persistentVolumeClaim
-      #   existingClaim: nas-media-pvc
+      # media:
+      # #   type: persistentVolumeClaim
+      # #   existingClaim: nas-media-pvc
+      # #   globalMounts:
+      # #     - path: /media
+      #   type: nfs
+      #   server: 10.0.30.243
+      #   path: /mnt/truenas/cf-nas/data
       #   globalMounts:
-      #     - path: /media
-        type: nfs
-        server: 10.0.30.243
-        path: /mnt/truenas/cf-nas/data
-        globalMounts:
-          - path: /data
-            readOnly: true
+      #     - path: /data
+      #       readOnly: true
       tmpfs:
         type: emptyDir
         advancedMounts:
