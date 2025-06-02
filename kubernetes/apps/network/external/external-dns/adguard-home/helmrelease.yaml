@@ -41,6 +41,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: &secret external-dns-adguard-home-secret
+                namespace: external-dns
                 key: *name
           - name: &name ADGUARD_PASSWORD
             valueFrom:
