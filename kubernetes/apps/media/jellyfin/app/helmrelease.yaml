@@ -102,7 +102,8 @@ spec:
         existingClaim: jellyfin-cache
         globalMounts:
           - path: /config/metadata
-      # media:
+      media:
+        type: emptyDir
       # #   type: persistentVolumeClaim
       # #   existingClaim: nas-media-pvc
       # #   globalMounts:
