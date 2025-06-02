@@ -19,12 +19,14 @@ spec:
     crds: CreateReplace
     remediation:
       retries: 3
+    timeout: 5m
   upgrade:
     cleanupOnFail: true
     crds: CreateReplace
     remediation:
       strategy: rollback
       retries: 3
+    timeout: 5m
   values:
     # domainFilters: ["internal.${SECRET_DOMAIN}"]
     provider:
@@ -40,7 +42,7 @@ spec:
           - name: &name ADGUARD_USER
             valueFrom:
               secretKeyRef:
-                name: &secret external-dns-adguard-home-secret
+                name: &secret external-dns-adguard-home
                 namespace: network
                 key: *name
           - name: &name ADGUARD_PASSWORD
