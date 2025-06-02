@@ -28,8 +28,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/vaskozl/jellyfin
-              tag: 10.10.7@sha256:ac380988ca58fe7431778004d9e62892b8a60ac00c0b2e54bedcc8309952c074
+              repository: jellyfin/jellyfin
+              tag: 10.10.7
             env:
               TZ: Europe/Oslo
               JELLYFIN_CACHE_DIR: /cache
