@@ -9,5 +9,3 @@ resources:
   - ./jellyfin/ks.yaml
   - ./pv-nfs.yaml
   - ./nas-media-pvc.yaml
-  - ./cephfs-static-pv.yaml
-  - ./csi-rbd-pvc.yaml
