@@ -32,13 +32,13 @@ spec:
               tag: 10.10.7
             env:
               TZ: Europe/Oslo
-              JELLYFIN_CACHE_DIR: /cache
-              JELLYFIN_CONFIG_DIR: /config/config
-              JELLYFIN_DATA_DIR: /config
-              JELLYFIN_FFMPEG: /usr/lib/jellyfin-ffmpeg/ffmpeg
-              JELLYFIN_LOG_DIR: /config/log
-              JELLYFIN_WEB_DIR: /usr/share/webapps/jellyfin-web
-              DOTNET_SYSTEM_IO_DISABLEFILELOCKING: 'true'
+              # JELLYFIN_CACHE_DIR: /cache
+              # JELLYFIN_CONFIG_DIR: /config/config
+              # JELLYFIN_DATA_DIR: /config
+              # JELLYFIN_FFMPEG: /usr/lib/jellyfin-ffmpeg/ffmpeg
+              # JELLYFIN_LOG_DIR: /config/log
+              # JELLYFIN_WEB_DIR: /usr/share/webapps/jellyfin-web
+              # DOTNET_SYSTEM_IO_DISABLEFILELOCKING: 'true'
             probes:
               liveness: &probes
                 enabled: true
