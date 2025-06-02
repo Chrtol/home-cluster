@@ -38,7 +38,7 @@ spec:
           pullPolicy: IfNotPresent
         env:
           - name: ADGUARD_URL
-            value: http://10.0.30.1:3000
+            value: http://10.0.30.1
           - name: &name ADGUARD_USER
             valueFrom:
               secretKeyRef:
