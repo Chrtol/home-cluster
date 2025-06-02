@@ -112,7 +112,7 @@ spec:
 
         type: nfs
         server: 10.0.30.243
-        path: /mnt/truenas/cf-nas/data
+        path: /mnt/truenas/cf-nas/data/media
         globalMounts:
           - path: /media
             readOnly: true
