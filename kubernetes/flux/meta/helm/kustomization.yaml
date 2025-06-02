@@ -9,3 +9,4 @@ resources:
   - ./intel-charts.yaml
   - ./csi-driver-nfs.yaml
   - ./ceph-csi.yaml
+  - ./prometheus-community.yaml
