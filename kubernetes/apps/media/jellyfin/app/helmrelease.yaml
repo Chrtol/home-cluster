@@ -37,8 +37,8 @@ spec:
               # JELLYFIN_DATA_DIR: /config
               # JELLYFIN_FFMPEG: /usr/lib/jellyfin-ffmpeg/ffmpeg
               # JELLYFIN_LOG_DIR: /config/log
-              # JELLYFIN_WEB_DIR: /usr/lib/jellyfin/bin/jellyfin-web
-              # DOTNET_SYSTEM_IO_DISABLEFILELOCKING: 'true'
+              JELLYFIN_WEB_DIR: /usr/share/jellyfin/web
+              DOTNET_SYSTEM_IO_DISABLEFILELOCKING: 'true'
             probes:
               liveness: &probes
                 enabled: true
