@@ -103,19 +103,12 @@ spec:
         globalMounts:
           - path: /config/metadata
       media:
-        # type: emptyDir
-
-      # #   type: persistentVolumeClaim
-      # #   existingClaim: nas-media-pvc
-      # #   globalMounts:
-      # #     - path: /media
-
         type: nfs
         server: 10.0.30.243
         path: /mnt/truenas/cf-nas/data/media
         globalMounts:
           - path: /media
-            readOnly: true
+            readOnly: false
       tmpfs:
         type: emptyDir
         advancedMounts:
