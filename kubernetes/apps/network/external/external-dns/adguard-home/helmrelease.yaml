@@ -18,14 +18,14 @@ spec:
   install:
     crds: CreateReplace
     remediation:
-      retries: 3
+      retries: -1
     timeout: 5m
   upgrade:
     cleanupOnFail: true
     crds: CreateReplace
     remediation:
       strategy: rollback
-      retries: 3
+      retries: -1
     timeout: 5m
   values:
     # domainFilters: ["internal.${SECRET_DOMAIN}"]
