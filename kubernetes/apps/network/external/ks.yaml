@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 1h
-  path: ./kubernetes/apps/network/external/external-dns
+  path: ./kubernetes/apps/network/external/external-dns/app
   postBuild:
     substituteFrom:
       - name: cluster-secrets
