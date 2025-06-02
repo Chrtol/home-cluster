@@ -4,7 +4,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app external-dns-adguard-home
-  namespace: external-dns
+  namespace: network
 spec:
   interval: 30m
   chart:
@@ -41,7 +41,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: &secret external-dns-adguard-home-secret
-                namespace: external-dns
+                namespace: network
                 key: *name
           - name: &name ADGUARD_PASSWORD
             valueFrom:
