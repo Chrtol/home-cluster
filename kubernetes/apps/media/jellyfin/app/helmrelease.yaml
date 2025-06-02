@@ -32,6 +32,13 @@ spec:
               tag: sha256:e4d1dc5374344446a3a78e43dd211247f22afba84ea2e5a13cbe1a94e1ff2141
             env:
               TZ: Europe/Oslo
+              JELLYFIN_CACHE_DIR: /cache
+              JELLYFIN_CONFIG_DIR: /config/config
+              JELLYFIN_DATA_DIR: /config
+              JELLYFIN_FFMPEG: /usr/lib/jellyfin-ffmpeg/ffmpeg
+              JELLYFIN_LOG_DIR: /config/log
+              JELLYFIN_WEB_DIR: /usr/share/webapps/jellyfin-web
+              DOTNET_SYSTEM_IO_DISABLEFILELOCKING: 'true'
             probes:
               liveness: &probes
                 enabled: true
@@ -96,16 +103,16 @@ spec:
         globalMounts:
           - path: /config/metadata
       media:
-        type: persistentVolumeClaim
-        existingClaim: nas-media-pvc
+      #   type: persistentVolumeClaim
+      #   existingClaim: nas-media-pvc
+      #   globalMounts:
+      #     - path: /media
+        type: nfs
+        server: 10.0.30.243
+        path: /mnt/truenas/cf-nas/data
         globalMounts:
-          - path: /media
-        # type: nfs
-        # server: 10.0.30.243
-        # path: /mnt/truenas/cf-nas/data
-        # globalMounts:
-        #   - path: /data
-        #     readOnly: true
+          - path: /data
+            readOnly: true
       tmpfs:
         type: emptyDir
         advancedMounts:
