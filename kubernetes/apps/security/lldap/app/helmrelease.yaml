@@ -1,77 +1,87 @@
----
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: lldap
+  name: &app lldap
+  namespace: security
 spec:
   interval: 1h
-  timeout: 5m
   chartRef:
     kind: OCIRepository
     name: app-template
     namespace: flux-system
+  maxHistory: 2
   install:
     createNamespace: true
     remediation:
-      retries: 5
+      retries: 3
   upgrade:
+    cleanupOnFail: true
     remediation:
-      retries: 5
+      retries: 3
+      strategy: rollback
+  uninstall:
+    keepHistory: false
   values:
     controllers:
       lldap:
-        containers:
-          main:
+        replicas: 2
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: 'true'
+        initContainers:
+          01-init-db:
             image:
-              repository: ghcr.io/lldap/lldap
-              tag: v0.6.1
-            probes:
-              startup:
-                enabled: true
-                spec:
-                  failureThreshold: 30
-                  periodSeconds: 5
-              liveness:
-                enabled: true
-              readiness:
-                enabled: true
-            envFrom:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 17.5.0@sha256:894a38169bf4135fb1e85a1112c64fc24a267d1191887cbf6fb8c0a17893770d
+              pullPolicy: IfNotPresent
+            envFrom: &envFrom
               - secretRef:
                   name: lldap-secret
+        containers:
+          app:
+            image:
+              repository: ghcr.io/lldap/lldap
+              tag: v0.6.1@sha256:4931eeeb841b1bbf5774161b5fd9dab88f41ffeb4b08ca656f0b7595cd7cb52a
+            envFrom: *envFrom
             env:
-              UID: "568"
-              GID: "568"
+              TZ: ${SECRET_TIMEZONE}
+              LLDAP_HTTP_PORT: &port 80
+              LLDAP_HTTP_URL: https://lldap.${SECRET_DOMAIN}
+              LLDAP_LDAP_PORT: &ldapPort 389
+              LLDAP_LDAP_BASE_DN: dc=home,dc=arpa
+            resources:
+              requests:
+                cpu: 100m
+                memory: 100Mi
+              limits:
+                memory: 500Mi
     service:
-      main:
+      app:
         controller: lldap
         ports:
           http:
-            port: 3890
-          web:
+            port: *port
+          ldap:
             enabled: true
-            protocol: TCP
-            port: 17170
+            port: *ldapPort
     ingress:
-      main:
+      app:
         enabled: true
         className: internal
-        annotations:
-          internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
         hosts:
-          - host: &host ldap.cftollefsen.com
+          - host: &host lldap.${SECRET_DOMAIN}
             paths:
               - path: /
                 pathType: Prefix
                 service:
-                  identifier: main
-                  port: web
+                  identifier: app
+                  port: http
         tls:
           - hosts:
               - *host
     persistence:
-      config:
+      data:
         enabled: true
-        existingClaim: lldap
-        globalMounts:
-          - path: /data
+        type: emptyDir
