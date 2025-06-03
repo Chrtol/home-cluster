@@ -35,8 +35,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/vaskozl/authelia-bin
-              tag: 4.39.4@sha256:e8d2e249c017f39107b7f2c58c4c9f141a4654a7b98d64afd4430bc05079d8a5
+              repository: ghcr.io/authelia/authelia
+              tag: master@sha256:dd5d6bffc0e56165f29fcb6ebc896b3fd422579f43966d2229e6ec1d9c02cafc
             env:
               AUTHELIA_SERVER_ADDRESS: tcp://:80
               AUTHELIA_SERVER_DISABLE_HEALTHCHECK: "true"
