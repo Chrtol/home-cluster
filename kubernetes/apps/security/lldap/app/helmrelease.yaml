@@ -57,9 +57,9 @@ spec:
         enabled: true
         className: internal
         annotations:
-          internal-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+          internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
         hosts:
-          - host: &host ldap.${SECRET_DOMAIN}
+          - host: &host ldap.cftollefsen.com
             paths:
               - path: /
                 pathType: Prefix
