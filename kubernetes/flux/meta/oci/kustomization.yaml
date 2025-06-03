@@ -10,3 +10,4 @@ resources:
   - ./rook-ceph-cluster.yaml
   - ./rook-ceph.yaml
   - ./proxmox-csi-plugin.yaml
+  - ./grafana.yaml
