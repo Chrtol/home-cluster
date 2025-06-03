@@ -13,6 +13,7 @@ spec:
   dependsOn:
     - name: external-secrets
       namespace: external-secrets
+    - name: lldap
   path: ./kubernetes/apps/security/authelia/app
   prune: true
   sourceRef:
