@@ -222,17 +222,10 @@ spec:
       enabled: true
     ingress:
       enabled: true
-      ingressClassName: internal
+      className: internal
       annotations:
         internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
-      hosts:
-        - host: "{{ .Release.Name }}.cftollefsen.com"
-          paths:
-            - path: /
-              service:
-                identifier: app
-                port: http
-                
+      hosts: ["{{ .Release.Name }}.cftollefsen.com"]
     # route:
     #   main:
     #     enabled: true
