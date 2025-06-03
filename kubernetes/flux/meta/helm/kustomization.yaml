@@ -10,3 +10,4 @@ resources:
   - ./csi-driver-nfs.yaml
   - ./ceph-csi.yaml
   - ./prometheus-community.yaml
+  - ./grafana.yaml
