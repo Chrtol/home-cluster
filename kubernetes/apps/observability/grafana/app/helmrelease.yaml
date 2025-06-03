@@ -220,6 +220,18 @@ spec:
       - vonage-status-panel
     serviceMonitor:
       enabled: true
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
+      hosts:
+        - host: "{{ .Release.Name }}.cftollefsen.com"
+          paths:
+            - path: /
+              service:
+                identifier: app
+                port: http
     # route:
     #   main:
     #     enabled: true
@@ -228,18 +240,6 @@ spec:
     #       - name: internal
     #         namespace: kube-system
     #         sectionName: https
-    ingress:
-      app:
-        className: internal
-        annotations:
-          internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
-        hosts:
-          - host: "{{ .Release.Name }}.cftollefsen.com"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
     persistence:
       enabled: false
     testFramework:
