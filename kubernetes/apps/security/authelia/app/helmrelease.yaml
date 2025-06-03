@@ -96,14 +96,14 @@ spec:
       app:
         className: external
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: "external.cftollefsen.com"
           # nginx.ingress.kubernetes.io/configuration-snippet: |
           #   add_header Cache-Control "no-store";
           #   add_header Pragma "no-cache";
           #   add_header X-Frame-Options "SAMEORIGIN";
           #   add_header X-XSS-Protection "1; mode=block";
         hosts:
-          - host: auth.${SECRET_DOMAIN}
+          - host: auth.cftollefsen.com
             paths:
               - path: /
                 service:
