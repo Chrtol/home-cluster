@@ -11,3 +11,4 @@ resources:
   - ./ceph-csi.yaml
   - ./prometheus-community.yaml
   - ./grafana.yaml
+  - ./cloudnative-pg.yaml
