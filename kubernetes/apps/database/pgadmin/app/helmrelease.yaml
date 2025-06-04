@@ -60,6 +60,8 @@ spec:
       app:
         enabled: true
         className: internal
+        annotations:
+          internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
         hosts:
           - host: &host pgadmin.${SECRET_DOMAIN}
             paths:
