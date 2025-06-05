@@ -50,7 +50,7 @@ spec:
               LLDAP_HTTP_PORT: &port 80
               LLDAP_HTTP_URL: https://lldap.${SECRET_DOMAIN}
               LLDAP_LDAP_PORT: &ldapPort 389
-              LLDAP_LDAP_BASE_DN: dc=home,dc=arpa
+              LLDAP_LDAP_BASE_DN: dc=${SECRET_DOMAIN_NAME},dc=com
             resources:
               requests:
                 cpu: 100m
@@ -63,6 +63,7 @@ spec:
         ports:
           http:
             port: *port
+            primary: true
           ldap:
             enabled: true
             port: *ldapPort
