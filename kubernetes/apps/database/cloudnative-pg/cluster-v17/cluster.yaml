@@ -26,7 +26,8 @@ spec:
     reusePVC: true
   resources:
     requests:
-      cpu: 250m
+      cpu: 50m
+      memory: 256Mi
     limits:
       memory: 640Mi
   monitoring:
