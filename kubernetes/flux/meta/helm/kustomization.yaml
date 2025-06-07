@@ -12,3 +12,4 @@ resources:
   - ./prometheus-community.yaml
   - ./grafana.yaml
   - ./cloudnative-pg.yaml
+  - ./bitnami-charts.yaml
