@@ -71,6 +71,10 @@ spec:
           tls:
             - hosts:
                 - *internalHost
+    celery:
+      result_backend:
+        fromSecret: authentik-secret
+        secretKey: CELERY_RESULT_BACKEND_URL
     worker:
       autoscaling:
         enabled: true
