@@ -71,6 +71,15 @@ spec:
           tls:
             - hosts:
                 - *internalHost
+    worker:
+      autoscaling:
+        enabled: true
+        minReplicas: 1
+      resources:
+        requests:
+          cpu: 200m
+        limits:
+          memory: 1Gi
     prometheus:
       rules:
         enabled: false
