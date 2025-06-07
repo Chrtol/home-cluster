@@ -23,24 +23,47 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    controllers:
-      redis:
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: public.ecr.aws/docker/library/redis
-              tag: 8.0.2
-            env:
-              TZ: ${SECRET_TIMEZONE}
-              REDIS_REPLICATION_MODE: master
-            resources:
-              requests:
-                cpu: 10m
-                memory: 10Mi
-              limits:
-                memory: 100Mi
+    # controllers:
+    #   redis:
+    #     annotations:
+    #       reloader.stakater.com/auto: "true"
+    #     containers:
+    #       app:
+    #         image:
+    #           repository: public.ecr.aws/docker/library/redis
+    #           tag: 8.0.2
+    #         env:
+    #           TZ: ${SECRET_TIMEZONE}
+    #           REDIS_REPLICATION_MODE: master
+    #         resources:
+    #           requests:
+    #             cpu: 10m
+    #             memory: 10Mi
+    #           limits:
+    #             memory: 100Mi
+    auth:
+      enabled: false
+      sentinel: false
+    master:
+      persistence:
+        enabled: false
+    replica:
+      persistence:
+        enabled: false
+    sentinel:
+      enabled: true
+      masterSet: redis-master
+      getMasterTimeout: 20
+      startupProbe:
+        enabled: false
+        #initialDelaySeconds: 60
+        #failureThreshold: 5
+      persistence:
+        enabled: false
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
     service:
       app:
         controller: redis
