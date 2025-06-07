@@ -51,8 +51,9 @@ spec:
               LLDAP_HTTP_URL: https://lldap.${SECRET_DOMAIN}
               LLDAP_LDAP_PORT: &ldapPort 389
               LLDAP_LDAP_BASE_DN: dc=${SECRET_DOMAIN_NAME},dc=com
-              LLDAP_FORCE_UPDATE_PRIVATE_KEY: "true"
-              LLDAP_FORCE_LDAP_USER_PASS_RESET: "true"
+              #Set the 2 vars below temporarily to true if  LLDAP_SERVER_KEY_SEED is changed
+              LLDAP_FORCE_UPDATE_PRIVATE_KEY: "false"
+              LLDAP_FORCE_LDAP_USER_PASS_RESET: "false"
             resources:
               requests:
                 cpu: 100m
