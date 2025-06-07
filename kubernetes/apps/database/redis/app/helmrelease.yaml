@@ -6,11 +6,20 @@ metadata:
   name: &app redis
   namespace: database
 spec:
-  interval: 1h
-  chartRef:
-    kind: OCIRepository
-    name: app-template
-    namespace: flux-system
+  # interval: 1h
+  # chartRef:
+  #   kind: OCIRepository
+  #   name: app-template
+  #   namespace: flux-system
+  interval: 15m
+  chart:
+    spec:
+      chart: redis
+      version: 21.1.7
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami-charts
+        namespace: flux-system
   maxHistory: 2
   install:
     remediation:
