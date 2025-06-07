@@ -27,13 +27,13 @@ spec:
   values:
     global:
       podAnnotations:
-        secret.reloader.stakater.com/reload: &secret authentik-secret
+        # secret.reloader.stakater.com/reload: &secret authentik-secret
         reloader.stakater.com/auto: 'true'
       deploymentStrategy:
         type: RollingUpdate
       envFrom:
         - secretRef:
-            name: *secret
+            name: &secret authentik-secret
     authentik:
       redis:
         host: redis-headless.database.svc.cluster.local
