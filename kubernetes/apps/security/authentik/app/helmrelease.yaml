@@ -36,7 +36,7 @@ spec:
             name: &secret authentik-secret
     authentik:
       redis:
-        # host: redis-headless.database.svc.cluster.local
+        host: redis.database.svc.cluster.local
         db: 1
     server:
       initContainers:
