@@ -72,6 +72,9 @@ spec:
             - hosts:
                 - *internalHost
     celery:
+      broker_url:
+        fromSecret: authentik-secret
+        secretKey: CELERY_BROKER_URL
       result_backend:
         fromSecret: authentik-secret
         secretKey: CELERY_RESULT_BACKEND_URL
