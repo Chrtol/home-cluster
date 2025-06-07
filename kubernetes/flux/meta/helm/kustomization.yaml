@@ -13,3 +13,4 @@ resources:
   - ./grafana.yaml
   - ./cloudnative-pg.yaml
   - ./bitnami-charts.yaml
+  - ./authentik.yaml
