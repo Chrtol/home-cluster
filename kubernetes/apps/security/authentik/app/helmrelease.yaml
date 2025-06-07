@@ -87,6 +87,17 @@ spec:
           cpu: 200m
         limits:
           memory: 1Gi
+      extraEnv:
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: CELERY_BROKER_URL
+        - name: CELERY_RESULT_BACKEND_URL
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: CELERY_RESULT_BACKEND_URL
     redis:
       global:
         imageRegistry: proxy.registry.beryju.io
