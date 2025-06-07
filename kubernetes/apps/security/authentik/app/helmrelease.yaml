@@ -38,7 +38,15 @@ spec:
       redis:
         host: redis.database.svc.cluster.local
         db: 1
+      postgresql:
+        host: postgres17-rw.database.svc.cluster.local
+        name: authentik
+        user: authentik
+        password:
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRES_PASS
     server:
+      replicas: 1
       initContainers:
       - name: init-db
         image: ghcr.io/home-operations/postgres-init:17.5
@@ -79,6 +87,7 @@ spec:
         fromSecret: authentik-secret
         secretKey: CELERY_RESULT_BACKEND_URL
     worker:
+      replicas: 1
       autoscaling:
         enabled: true
         minReplicas: 1
