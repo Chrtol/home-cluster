@@ -36,80 +36,23 @@ spec:
               repository: ghcr.io/home-operations/postgres-init
               tag: 17.5.0@sha256:894a38169bf4135fb1e85a1112c64fc24a267d1191887cbf6fb8c0a17893770d
               pullPolicy: IfNotPresent
-            # envFrom: &envFrom
-            #   - secretRef:
-            #       name: lldap-secret
-            env:
-              INIT_POSTGRES_SUPER_USER:
-                valueFrom:
-                  secretKeyRef:
-                    name: cloudnative-pg-secret
-                    key: username
-              INIT_POSTGRES_SUPER_PASS:
-                valueFrom:
-                  secretKeyRef:
-                    name: cloudnative-pg-secret
-                    key: password
-              INIT_POSTGRES_DBNAME:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: INIT_POSTGRES_DBNAME
-              INIT_POSTGRES_HOST:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: INIT_POSTGRES_HOST
-              INIT_POSTGRES_USER:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: INIT_POSTGRES_USER
-              INIT_POSTGRES_PASS:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: INIT_POSTGRES_PASS
+            envFrom: &envFrom
+              - secretRef:
+                  name: lldap-secret
         containers:
           app:
             image:
               repository: ghcr.io/lldap/lldap
               tag: v0.6.1
-            #envFrom: *envFrom
+            envFrom: *envFrom
             env:
               TZ: ${SECRET_TIMEZONE}
               LLDAP_HTTP_PORT: &port 80
               LLDAP_HTTP_URL: https://lldap.${SECRET_DOMAIN}
               LLDAP_LDAP_PORT: &ldapPort 389
               LLDAP_LDAP_BASE_DN: dc=${SECRET_DOMAIN_NAME},dc=com
-              #temp vars to reset lldap-deployment
               LLDAP_FORCE_UPDATE_PRIVATE_KEY: "true"
               LLDAP_FORCE_LDAP_USER_PASS_RESET: "true"
-              LLDAP_JWT_SECRET:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: LLDAP_JWT_SECRET
-              LLDAP_LDAP_USER_PASS:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: LLDAP_LDAP_USER_PASS
-              LLDAP_LDAP_USER_EMAIL:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: LLDAP_LDAP_USER_EMAIL
-              LLDAP_SERVER_KEY_SEED:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: LLDAP_SERVER_KEY_SEED
-              LLDAP_DATABASE_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: lldap-secret
-                    key: LLDAP_DATABASE_URL
             resources:
               requests:
                 cpu: 100m
