@@ -37,20 +37,42 @@ spec:
         host: redis-headless.database.svc.cluster.local
         db: 1
     server:
-      01-init-db:
-        image:
-          repository: ghcr.io/home-operations/postgres-init
-          tag: 17.5.0@sha256:894a38169bf4135fb1e85a1112c64fc24a267d1191887cbf6fb8c0a17893770d
-          pullPolicy: IfNotPresent
-        envFrom: &envFrom
-          - secretRef:
-              name: *secret
+      replicas: 3
+      initContainers:
+        01-init-db:
+          image:
+            repository: ghcr.io/home-operations/postgres-init
+            tag: 17.5.0@sha256:894a38169bf4135fb1e85a1112c64fc24a267d1191887cbf6fb8c0a17893770d
+            pullPolicy: IfNotPresent
+          envFrom: &envFrom
+            - secretRef:
+                name: *secret
       metrics:
         enabled: false
         serviceMonitor:
           enabled: false
       ingress:
-        enabled: false
+        enabled: true
+        internal:
+          ingressClassName: internal
+          annotations:
+            internal-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+            nginx.ingress.kubernetes.io/configuration-snippet: |
+              add_header Cache-Control "no-store";
+              add_header Pragma "no-cache";
+              add_header X-Frame-Options "SAMEORIGIN";
+              add_header X-XSS-Protection "1; mode=block";
+          hosts:
+            - host: &internalHost authentik.${SECRET_DOMAIN}
+              paths:
+                - path: /
+                  pathType: Prefix
+                  service:
+                    identifier: app
+                    port: http
+          tls:
+            - hosts:
+                - *internalHost
     prometheus:
       rules:
         enabled: false
