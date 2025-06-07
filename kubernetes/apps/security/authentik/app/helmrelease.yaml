@@ -27,6 +27,7 @@ spec:
     global:
       podAnnotations:
         secret.reloader.stakater.com/reload: &secret authentik-secret
+        reloader.stakater.com/auto: 'true'
       deploymentStrategy:
         type: RollingUpdate
       envFrom:
