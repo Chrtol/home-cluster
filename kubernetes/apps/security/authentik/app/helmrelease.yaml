@@ -38,27 +38,38 @@ spec:
       redis:
         host: redis.database.svc.cluster.local
         db: 1
-      # postgresql:
-      #   host: 
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRESQL__HOST
-      #   name: 
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRESQL__NAME
-      #   user: 
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRES_USER
-      #   password:
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRES_PASS
+        # master:
+        #   resources:
+        #     limits:
+        #       cpu: 2
+        #       ephemeral-storage: 2Gi
+        #       memory: 2048Mi
+        #     requests:
+        #       cpu: 100m
+        #       ephemeral-storage: 50Mi
+        #       memory: 128Mi
+
+      postgresql:
+        host: 
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRESQL__HOST
+        name: 
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRESQL__NAME
+        user: 
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRES_USER
+        password:
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRES_PASS
     server:
       replicas: 1
-      initContainers:
-      - name: init-db
-        image: ghcr.io/home-operations/postgres-init:17.5
-        envFrom:
-          - secretRef:
-              name: *secret
+      # initContainers:
+      # - name: init-db
+      #   image: ghcr.io/home-operations/postgres-init:17.5
+      #   envFrom:
+      #     - secretRef:
+      #         name: *secret
       metrics:
         enabled: false
         serviceMonitor:
@@ -85,13 +96,6 @@ spec:
           tls:
             - hosts:
                 - *internalHost
-    # celery:
-    #   broker_url:
-    #     fromSecret: authentik-secret
-    #     secretKey: CELERY_BROKER_URL
-    #   result_backend:
-    #     fromSecret: authentik-secret
-    #     secretKey: CELERY_RESULT_BACKEND_URL
     worker:
       replicas: 1
       autoscaling:
@@ -102,17 +106,6 @@ spec:
           cpu: 200m
         limits:
           memory: 1Gi
-      extraEnv:
-        - name: CELERY_BROKER_URL
-          valueFrom:
-            secretKeyRef:
-              name: authentik-secret
-              key: CELERY_BROKER_URL
-        - name: CELERY_RESULT_BACKEND_URL
-          valueFrom:
-            secretKeyRef:
-              name: authentik-secret
-              key: CELERY_RESULT_BACKEND_URL
     redis:
       global:
         imageRegistry: proxy.registry.beryju.io
