@@ -77,28 +77,28 @@ spec:
         ports:
           http:
             port: 32400
-    route:
+    ingress:
       app:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: external
-            namespace: kube-system
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
-            filters:
-              - type: RequestHeaderModifier
-                requestHeaderModifier:
-                  remove: ["Range"]
-            matches:
-              - path:
-                  type: PathPrefix
-                  value: /library/streams
-          - backendRefs:
-              - identifier: app
-                port: *port
+        enabled: true
+        # ensure that external DNS (cloudflare) has an entry for this directed to the router
+        # ensure that internal DNS for this zone (coredns) has an entry for this directed to nginx LB IP
+        className: external
+        annotations:
+          # Extended timeouts for Plex streaming
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+        hosts:
+          - host: &host plex.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+            - *host
     persistence:
       config:
         existingClaim: plex
