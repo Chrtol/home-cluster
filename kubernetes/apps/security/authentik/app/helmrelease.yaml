@@ -63,12 +63,6 @@ spec:
             add_header X-XSS-Protection "1; mode=block";
         hosts:
           - host: &internalHost authentik.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: app
-                  port: http
         tls:
           - hosts:
               - *internalHost
