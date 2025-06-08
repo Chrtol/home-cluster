@@ -39,6 +39,8 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+  dependsOn:
+    - name: dragonfly
   interval: 1h
   path: ./kubernetes/apps/database/dragonfly/cluster
   prune: true
