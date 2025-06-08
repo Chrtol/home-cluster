@@ -37,6 +37,7 @@ spec:
     authentik:
       redis:
         sentinel:
+          enabled: true
           hosts:
             - host: redis.database.svc.cluster.local
               port: 26379
