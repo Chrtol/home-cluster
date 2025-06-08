@@ -39,12 +39,18 @@ spec:
         host: redis.database.svc.cluster.local
         db: 1
       postgresql:
-        host: postgres17-rw.database.svc.cluster.local
-        # name: authentik
-        # user: authentik
-        # password:
-        #   fromSecret: authentik-secret
-        #   secretKey: AUTHENTIK_POSTGRES_PASS
+        host: 
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRESQL__HOST
+        name: 
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRESQL__NAME
+        user: 
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRES_USER
+        password:
+          fromSecret: authentik-secret
+          secretKey: AUTHENTIK_POSTGRES_PASS
     server:
       replicas: 1
       initContainers:
