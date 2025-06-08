@@ -6,7 +6,7 @@ metadata:
       nginx.ingress.kubernetes.io/enable-global-auth: "false"
 spec:
     rules:
-        - host: authentik.${CLUSTER_DOMAIN}
+        - host: authentik.${SECRET_DOMAIN}
           http:
               paths: 
               - path: /outpost.goauthentik.io
@@ -20,4 +20,4 @@ spec:
                             number: 9000
     tls:
     - hosts:
-      - authentik.${CLUSTER_DOMAIN}
+      - authentik.${SECRET_DOMAIN}
