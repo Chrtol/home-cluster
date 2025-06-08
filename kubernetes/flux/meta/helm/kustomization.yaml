@@ -14,4 +14,4 @@ resources:
   - ./cloudnative-pg.yaml
   - ./bitnami-charts.yaml
   - ./authentik.yaml
-  - ./dragonfly.yaml
+
