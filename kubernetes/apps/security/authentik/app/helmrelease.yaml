@@ -56,9 +56,9 @@ spec:
         name: 
           fromSecret: authentik-secret
           secretKey: AUTHENTIK_POSTGRESQL__NAME
-        user: 
-          fromSecret: authentik-secret
-          secretKey: AUTHENTIK_POSTGRES_USER
+        # user: 
+        #   fromSecret: authentik-secret
+        #   secretKey: AUTHENTIK_POSTGRES_USER
         password:
           fromSecret: authentik-secret
           secretKey: AUTHENTIK_POSTGRES_PASS
