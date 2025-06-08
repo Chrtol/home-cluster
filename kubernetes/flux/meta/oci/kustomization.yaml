@@ -11,3 +11,4 @@ resources:
   - ./rook-ceph.yaml
   - ./proxmox-csi-plugin.yaml
   - ./grafana.yaml
+  - ./dragonfly-operator.yaml
