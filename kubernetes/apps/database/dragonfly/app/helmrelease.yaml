@@ -1,9 +1,8 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: dragonfly-operator
+  name: &app dragonfly-operator
   namespace: database
 spec:
   interval: 1h
@@ -13,7 +12,7 @@ spec:
     namespace: flux-system
   install:
     remediation:
-      retries: -1
+      retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
@@ -21,29 +20,22 @@ spec:
   values:
     controllers:
       dragonfly-operator:
-        strategy: RollingUpdate
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 65534
-            runAsGroup: 65534
-            seccompProfile: { type: RuntimeDefault }
-          topologySpreadConstraints:
-            - maxSkew: 1
-              topologyKey: kubernetes.io/hostname
-              whenUnsatisfiable: DoNotSchedule
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: dragonfly-operator
+        serviceAccount:
+          identifier: *app
         containers:
           app:
             image:
-              repository: ghcr.io/dragonflydb/operator
+              repository: docker.dragonflydb.io/dragonflydb/operator
               tag: v1.1.11@sha256:11cef45ec1079b9d97930fc99ecd08ba29d4eca55cdb45887cb0ac40ee4e4d24
-            command: ["/manager"]
             args:
-              - --health-probe-bind-address=:8081
-              - --metrics-bind-address=:8080
+              - "--health-probe-bind-address=:8081"
+              - "--metrics-bind-address=127.0.0.1:8080"
+            command:
+              - "/manager"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             probes:
               liveness:
                 enabled: true
@@ -67,66 +59,39 @@ spec:
                   periodSeconds: 10
                   timeoutSeconds: 1
                   failureThreshold: 3
+              startup:
+                enabled: false
             resources:
               requests:
                 cpu: 10m
+                memory: 64Mi
               limits:
+                cpu: 500m
                 memory: 128Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
-        serviceAccount:
-          identifier: dragonfly-operator
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: *app
     service:
       app:
-        controller: dragonfly-operator
+        controller: *app
         ports:
           http:
             port: *port
-          metrics:
-            port: 8080
-    serviceMonitor:
-      app:
-        serviceName: dragonfly-operator
-        endpoints:
-          - port: metrics
-            scheme: http
-            path: /metrics
-            interval: 1m
-            scrapeTimeout: 10s
-    rbac:
-      roles:
-        dragonfly-operator:
-          type: ClusterRole
-          rules:
-            - apiGroups: ["coordination.k8s.io"]
-              resources: ["leases"]
-              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-            - apiGroups: [""]
-              resources: ["events"]
-              verbs: ["create", "patch"]
-            - apiGroups: [""]
-              resources: ["pods", "services"]
-              verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
-            - apiGroups: ["apps"]
-              resources: ["statefulsets"]
-              verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
-            - apiGroups: ["dragonflydb.io"]
-              resources: ["dragonflies"]
-              verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
-            - apiGroups: ["dragonflydb.io"]
-              resources: ["dragonflies/finalizers"]
-              verbs: ["update"]
-            - apiGroups: ["dragonflydb.io"]
-              resources: ["dragonflies/status"]
-              verbs: ["get", "patch", "update"]
-      bindings:
-        dragonfly-operator:
-          type: ClusterRoleBinding
-          roleRef:
-            identifier: dragonfly-operator
-          subjects:
-            - identifier: dragonfly-operator
+
     serviceAccount:
       dragonfly-operator: {}
+
+    # serviceMonitor:
+    #   app:
+    #     serviceName: *app
+    #     endpoints:
+    #       - port: metrics
+    #         scheme: http
+    #         path: /metrics
+    #         interval: 1m
+    #         scrapeTimeout: 10s
