@@ -49,27 +49,27 @@ spec:
         #       ephemeral-storage: 50Mi
         #       memory: 128Mi
 
-      postgresql:
-        host: 
-          fromSecret: authentik-secret
-          secretKey: AUTHENTIK_POSTGRESQL__HOST
-        name: 
-          fromSecret: authentik-secret
-          secretKey: AUTHENTIK_POSTGRESQL__NAME
-        # user: 
-        #   fromSecret: authentik-secret
-        #   secretKey: AUTHENTIK_POSTGRES_USER
-        password:
-          fromSecret: authentik-secret
-          secretKey: AUTHENTIK_POSTGRES_PASS
+      # postgresql:
+      #   host: 
+      #     fromSecret: authentik-secret
+      #     secretKey: AUTHENTIK_POSTGRESQL__HOST
+      #   name: 
+      #     fromSecret: authentik-secret
+      #     secretKey: AUTHENTIK_POSTGRESQL__NAME
+      #   # user: 
+      #   #   fromSecret: authentik-secret
+      #   #   secretKey: AUTHENTIK_POSTGRES_USER
+      #   password:
+      #     fromSecret: authentik-secret
+      #     secretKey: AUTHENTIK_POSTGRES_PASS
     server:
       replicas: 1
-      # initContainers:
-      # - name: init-db
-      #   image: ghcr.io/home-operations/postgres-init:17.5
-      #   envFrom:
-      #     - secretRef:
-      #         name: *secret
+      initContainers:
+      - name: init-db
+        image: ghcr.io/home-operations/postgres-init:17.5
+        envFrom:
+          - secretRef:
+              name: *secret
       metrics:
         enabled: false
         serviceMonitor:
