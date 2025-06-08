@@ -36,7 +36,7 @@ spec:
             name: &secret authentik-secret
     authentik:
       redis:
-        host: redis.database.svc.cluster.local
+        host: authentik-redis-master.database.svc.cluster.local
         db: 1
       postgresql:
         host: 
