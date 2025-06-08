@@ -105,7 +105,7 @@ spec:
           - host: &host plex.${SECRET_DOMAIN}
             paths:
               - path: /
-                pathType: Prefix
+                # pathType: Prefix
                 service:
                   identifier: app
                   port: http
