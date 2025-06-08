@@ -62,7 +62,7 @@ spec:
             add_header X-Frame-Options "SAMEORIGIN";
             add_header X-XSS-Protection "1; mode=block";
         hosts:
-          - host: &internalHost authentik.${SECRET_DOMAIN}
+          - &internalHost authentik.${SECRET_DOMAIN}
         tls:
           - hosts:
               - *internalHost
