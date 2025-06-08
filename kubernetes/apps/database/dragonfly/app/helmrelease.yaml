@@ -21,15 +21,11 @@ metadata:
 #         name: bjw-s
 #         namespace: flux-system
 spec:
-  interval: 15m
-  chart:
-    spec:
-      chart: dragonfly-operator
-      version: 1.1.11 # The version from your OCI source
-      sourceRef:
-        kind: OCIRepository
-        name: dragonfly-operator # The OCI source you already have
-        namespace: flux-system
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: dragonfly-operator
+    namespace: flux-system
   install:
     crds: CreateReplace
     remediation:
