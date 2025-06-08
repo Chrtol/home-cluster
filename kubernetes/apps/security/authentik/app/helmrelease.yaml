@@ -109,17 +109,17 @@ spec:
           cpu: 200m
         limits:
           memory: 1Gi
-    redis:
-      global:
-        imageRegistry: proxy.registry.beryju.io
-        security:
-          allowInsecureImages: true
-      enabled: true
-      networkPolicy:
-        extraIngress:
-          - ports:
-              - port: 15020
-                protocol: TCP
+    # redis:
+    #   global:
+    #     imageRegistry: proxy.registry.beryju.io
+    #     security:
+    #       allowInsecureImages: true
+    #   enabled: true
+    #   networkPolicy:
+    #     extraIngress:
+    #       - ports:
+    #           - port: 15020
+    #             protocol: TCP
     prometheus:
       rules:
         enabled: false
