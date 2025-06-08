@@ -41,30 +41,6 @@ spec:
             - host: redis.database.svc.cluster.local
               port: 26379
           master_set: redis-master
-        # master:
-        #   resources:
-        #     limits:
-        #       cpu: 2
-        #       ephemeral-storage: 2Gi
-        #       memory: 2048Mi
-        #     requests:
-        #       cpu: 100m
-        #       ephemeral-storage: 50Mi
-        #       memory: 128Mi
-
-      # postgresql:
-      #   host: 
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRESQL__HOST
-      #   name: 
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRESQL__NAME
-      #   # user: 
-      #   #   fromSecret: authentik-secret
-      #   #   secretKey: AUTHENTIK_POSTGRES_USER
-      #   password:
-      #     fromSecret: authentik-secret
-      #     secretKey: AUTHENTIK_POSTGRES_PASS
     server:
       replicas: 1
       initContainers:
@@ -109,17 +85,6 @@ spec:
           cpu: 200m
         limits:
           memory: 1Gi
-    # redis:
-    #   global:
-    #     imageRegistry: proxy.registry.beryju.io
-    #     security:
-    #       allowInsecureImages: true
-    #   enabled: true
-    #   networkPolicy:
-    #     extraIngress:
-    #       - ports:
-    #           - port: 15020
-    #             protocol: TCP
     prometheus:
       rules:
         enabled: false
