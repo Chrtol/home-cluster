@@ -55,13 +55,8 @@ spec:
 
     authentik:
       redis:
-          host: redis-headless.database.svc.cluster.local
-          port: 26379
-          env:
-            - name: AUTHENTIK_REDIS__USE_SENTINEL
-              value: "true"
-            - name: AUTHENTIK_REDIS__SENTINEL__MASTER_SET
-              value: "redis-master" # The name of your redis master set, default in bitnami chart
+          host: dragonfly.database.svc.cluster.local
+          db: 1
 
     server:
       replicas: 1
