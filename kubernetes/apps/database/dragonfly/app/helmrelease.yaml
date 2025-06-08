@@ -83,8 +83,8 @@ spec:
           http:
             port: *port
 
-    serviceAccount:
-      dragonfly-operator: {}
+    # serviceAccount:
+    #   dragonfly-operator: {}
 
     # serviceMonitor:
     #   app:
