@@ -33,6 +33,15 @@ spec:
       plex:
         annotations:
           reloader.stakater.com/auto: "true"
+        #temp fix to solve permission issues
+        initContainers:
+          fix-permissions:
+            image: 
+              repository: public.ecr.aws/docker/library/busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 1000:1000 /config"]
+            securityContext:
+              runAsUser: 0 # Kjør som root for å kunne endre eierskap
         containers:
           app:
             image:
