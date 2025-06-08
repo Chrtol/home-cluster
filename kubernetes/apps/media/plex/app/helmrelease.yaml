@@ -93,8 +93,6 @@ spec:
     ingress:
       app:
         enabled: true
-        # ensure that external DNS (cloudflare) has an entry for this directed to the router
-        # ensure that internal DNS for this zone (coredns) has an entry for this directed to nginx LB IP
         className: external
         annotations:
           # Extended timeouts for Plex streaming
@@ -107,7 +105,7 @@ spec:
               - path: /
                 # pathType: Prefix
                 service:
-                  identifier: app
+                  # identifier: app
                   port: http
         tls:
           - hosts:
