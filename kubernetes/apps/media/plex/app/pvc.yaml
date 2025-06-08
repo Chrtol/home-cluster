@@ -11,3 +11,16 @@ spec:
     requests:
       storage: 50Gi
   storageClassName: csi-rbd-sc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: csi-rbd-sc
