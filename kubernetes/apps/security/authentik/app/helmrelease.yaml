@@ -36,27 +36,32 @@ spec:
             name: &secret authentik-secret
 
     redis:
-      enabled: true
-      persistence:
-        enabled: false
-      # auth:
-      #   enabled: true
-      #   # password: #in cret
-      master:
-        resources:
-          limits:
-            cpu: 2
-            ephemeral-storage: 2Gi
-            memory: 2048Mi
-          requests:
-            cpu: 100m
-            ephemeral-storage: 50Mi
-            memory: 128Mi
+      enabled: false
+      # persistence:
+      #   enabled: false
+      # # auth:
+      # #   enabled: true
+      # #   # password: #in cret
+      # master:
+      #   resources:
+      #     limits:
+      #       cpu: 2
+      #       ephemeral-storage: 2Gi
+      #       memory: 2048Mi
+      #     requests:
+      #       cpu: 100m
+      #       ephemeral-storage: 50Mi
+      #       memory: 128Mi
 
     authentik:
       redis:
-          host: redis.database.svc.cluster.local
+          host: redis-headless.database.svc.cluster.local
           port: 26379
+          env:
+            - name: AUTHENTIK_REDIS__USE_SENTINEL
+              value: "true"
+            - name: AUTHENTIK_REDIS__SENTINEL__MASTER_SET
+              value: "redis-master" # The name of your redis master set, default in bitnami chart
 
     server:
       replicas: 1
