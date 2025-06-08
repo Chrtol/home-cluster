@@ -52,12 +52,9 @@ spec:
       #       cpu: 100m
       #       ephemeral-storage: 50Mi
       #       memory: 128Mi
-
     authentik:
       redis:
           host: dragonfly.database.svc.cluster.local
-          db: 1
-
     server:
       replicas: 1
       initContainers:
