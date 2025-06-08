@@ -1,12 +1,15 @@
 ---
-# yaml-language-server: $schema=https://kochhaus-schemas.pages.dev/dragonflydb.io/dragonfly_v1alpha1.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/dragonflydb.io/dragonfly_v1alpha1.json
 apiVersion: dragonflydb.io/v1alpha1
 kind: Dragonfly
 metadata:
   name: dragonfly
+  namespace: database
 spec:
   image: ghcr.io/dragonflydb/dragonfly:v1.30.3
   replicas: 3
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
   env:
     - name: MAX_MEMORY
       valueFrom:
@@ -19,7 +22,13 @@ spec:
     - --cluster_mode=emulated
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 100m
     limits:
       memory: 512Mi
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: "DoNotSchedule"
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: dragonfly
