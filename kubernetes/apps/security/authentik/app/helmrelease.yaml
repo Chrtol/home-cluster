@@ -36,8 +36,11 @@ spec:
             name: &secret authentik-secret
     authentik:
       redis:
-        host: redis.database.svc.cluster.local
-        db: 1
+        sentinel:
+          hosts:
+            - host: redis.database.svc.cluster.local
+              port: 26379
+          master_set: redis-master
         # master:
         #   resources:
         #     limits:
