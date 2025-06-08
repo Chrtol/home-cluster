@@ -94,7 +94,8 @@ spec:
             port: *port
 
     serviceAccount:
-      dragonfly-operator: {}
+      create: true
+      name: *app
 
     # serviceMonitor:
     #   app:
