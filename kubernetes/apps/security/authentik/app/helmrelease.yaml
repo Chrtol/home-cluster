@@ -53,31 +53,30 @@ spec:
           enabled: false
       ingress:
         enabled: true
-        internal:
-          ingressClassName: internal
-          annotations:
-            internal-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-            nginx.ingress.kubernetes.io/configuration-snippet: |
-              add_header Cache-Control "no-store";
-              add_header Pragma "no-cache";
-              add_header X-Frame-Options "SAMEORIGIN";
-              add_header X-XSS-Protection "1; mode=block";
-          hosts:
-            - host: &internalHost authentik.${SECRET_DOMAIN}
-              paths:
-                - path: /
-                  pathType: Prefix
-                  service:
-                    identifier: app
-                    port: http
-          tls:
-            - hosts:
-                - *internalHost
+        ingressClassName: internal
+        annotations:
+          internal-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            add_header Cache-Control "no-store";
+            add_header Pragma "no-cache";
+            add_header X-Frame-Options "SAMEORIGIN";
+            add_header X-XSS-Protection "1; mode=block";
+        hosts:
+          - host: &internalHost authentik.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *internalHost
       probes:
         readiness:
           enabled: true
           spec:
-            initialDelaySeconds: 30 # Default is often 0 or 5, we increase it to 30
+            initialDelaySeconds: 30 
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
