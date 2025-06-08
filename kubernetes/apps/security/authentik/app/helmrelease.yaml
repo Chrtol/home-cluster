@@ -75,6 +75,8 @@ spec:
           tls:
             - hosts:
                 - *internalHost
+    redis:
+      enabled: false
     worker:
       replicas: 1
       autoscaling:
