@@ -6,7 +6,7 @@ metadata:
   namespace: media
 spec:
   accessModes: ["ReadWriteMany"]
-  volumeMode: Block
+  volumeMode: Filesystem
   resources:
     requests:
       storage: 5Gi
