@@ -32,13 +32,26 @@ spec:
             envFrom:
               - secretRef:
                   name: &secret prowlarr-secret
-        # pod:
-        #   securityContext:
-        #     runAsNonRoot: true
-        #     runAsUser: 568
-        #     runAsGroup: 5000
-        #     fsGroup: 5000
-        #     fsGroupChangePolicy: OnRootMismatch
+          init-config:
+            image:
+              repository: public.ecr.aws/docker/library/busybox
+              tag: 1.36
+            # Chartet monterer automatisk volumer fra 'persistence' i init-containere.
+            command:
+              - "/bin/sh"
+              - "-c"
+              - |
+                echo "Copying config.xml from ConfigMap to writable config volume..."
+                cp /config-xml/config.xml /config/config.xml
+                echo "Setting correct permissions on config.xml..."
+                chown 568:5000 /config/config.xml
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 568
+            runAsGroup: 5000
+            fsGroup: 5000
+            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
