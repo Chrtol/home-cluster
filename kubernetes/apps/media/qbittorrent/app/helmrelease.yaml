@@ -30,16 +30,6 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: &torrentPort 50413
-              QBT_WEBUI_USERNAME:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-secret
-                    key: QBT_WEBUI_USERNAME
-              QBT_WEBUI_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-secret
-                    key: QBT_WEBUI_PASSWORD
             probes:
               liveness: &probes
                 enabled: true
