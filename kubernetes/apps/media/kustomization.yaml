@@ -8,4 +8,4 @@ components:
 resources:
   - ./jellyfin/ks.yaml
   - ./plex/ks.yaml
-  - ./prowlarr.yaml
+  - ./prowlarr/ks.yaml
