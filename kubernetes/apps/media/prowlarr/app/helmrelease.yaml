@@ -110,8 +110,9 @@ spec:
             - *host
     persistence:
       config:
-        enabled: true
-        existingClaim: prowlarr
+        # enabled: true
+        # existingClaim: prowlarr
+        type: emptyDir
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
