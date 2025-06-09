@@ -23,6 +23,22 @@ spec:
       prowlarr:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          01-init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 17.5
+              pullPolicy: IfNotPresent
+            envFrom:
+              - secretRef:
+                  name: &secret prowlarr-secret
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 568
+            runAsGroup: 5000
+            fsGroup: 5000
+            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
