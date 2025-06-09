@@ -32,13 +32,13 @@ spec:
             envFrom:
               - secretRef:
                   name: &secret prowlarr-secret
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 568
-            runAsGroup: 5000
-            fsGroup: 5000
-            fsGroupChangePolicy: OnRootMismatch
+        # pod:
+        #   securityContext:
+        #     runAsNonRoot: true
+        #     runAsUser: 568
+        #     runAsGroup: 5000
+        #     fsGroup: 5000
+        #     fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
