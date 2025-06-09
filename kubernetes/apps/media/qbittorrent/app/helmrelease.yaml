@@ -96,9 +96,9 @@ spec:
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
+        path: /mnt/truenas/cf-nas/data
         globalMounts:
-          - path: /media/Downloads/qbittorrent
-            subPath: Downloads/qbittorrent
+          - path: /data/torrents
+            subPath: torrents
       tmp:
         type: emptyDir
