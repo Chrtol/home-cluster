@@ -93,12 +93,12 @@ spec:
     persistence:
       config:
         existingClaim: qbittorrent
-      media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
-        globalMounts:
-          - path: /data/torrents
-            subPath: torrents
+      # media:
+      #   type: nfs
+      #   server: nas.${SECRET_DOMAIN}
+      #   path: /mnt/truenas/cf-nas/data
+      #   globalMounts:
+      #     - path: /data/torrents
+      #       subPath: torrents
       tmp:
         type: emptyDir
