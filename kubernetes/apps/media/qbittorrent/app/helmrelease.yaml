@@ -89,7 +89,7 @@ spec:
         controller: *app
         type: LoadBalancer
         annotations:
-          metallb.io/loadBalancerIPs: 10.0.30.95 
+          lbipam.cilium.io/ips: 10.0.30.95
         ports:
           bittorrent:
             enabled: true
