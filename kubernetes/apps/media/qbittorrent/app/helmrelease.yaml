@@ -105,8 +105,8 @@ spec:
             paths:
               - path: /
                 service:
-                  name: app
-                  port: *port
+                  identifier: app
+                  port: http
     persistence:
       config:
         existingClaim: qbittorrent
