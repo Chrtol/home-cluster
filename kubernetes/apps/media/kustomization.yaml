@@ -10,3 +10,4 @@ resources:
   - ./plex/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./prowlarr/ks.yaml
+  - ./qbittorrent/ks.yaml
