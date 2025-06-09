@@ -5,7 +5,7 @@ metadata:
   name: radarr
   namespace: media
 spec:
-  accessModes: ["ReadWriteMany"]
+  accessModes: ["ReadWriteOnce"]
   volumeMode: Filesystem
   resources:
     requests:
