@@ -94,6 +94,14 @@ spec:
             - *host
     persistence:
       config:
+        enabled: true
         existingClaim: prowlarr
+      media:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data/media
+        globalMounts:
+          - path: /media
+            readOnly: false
       tmp:
         type: emptyDir
