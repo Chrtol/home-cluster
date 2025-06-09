@@ -116,6 +116,7 @@ spec:
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/data
         globalMounts:
-          - path: /data
+          - path: /data/torrents
+            subPath: torrents
       tmp:
         type: emptyDir
