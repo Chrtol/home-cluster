@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prowlarr-config-xml
+  namespace: media
+data:
+  config.xml: |
+    <Config>
+      <BindAddress>*</BindAddress>
+      <Port>80</Port>
+      <SslPort>6969</SslPort>
+      <EnableSsl>False</EnableSsl>
+      <LaunchBrowser>True</LaunchBrowser>
+      <ApiKey>d8caae943683435497cf9f81c77021d7</ApiKey>
+      <AuthenticationMethod>Forms</AuthenticationMethod>
+      <AuthenticationRequired>Enabled</AuthenticationRequired>
+      <SslCertPath></SslCertPath>
+      <SslCertPassword></SslCertPassword>
+      <UrlBase></UrlBase>
+      <UpdateMechanism>Docker</UpdateMechanism>
+    </Config>
