@@ -88,8 +88,8 @@ spec:
             paths:
               - path: /
                 service:
-                  identifier: app
-                  port: http
+                  name: app
+                  port: *port
     persistence:
       config:
         existingClaim: qbittorrent
