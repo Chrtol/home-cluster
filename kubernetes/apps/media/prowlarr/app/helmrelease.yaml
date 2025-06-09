@@ -109,10 +109,18 @@ spec:
           - hosts:
             - *host
     persistence:
-      config:
+      # config:
         # enabled: true
         # existingClaim: prowlarr
-        type: emptyDir
+        # type: emptyDir
+      config-xml:
+        enabled: true
+        type: configMap
+        name: prowlarr-config-xml
+        globalMounts:
+          - path: /config/config.xml
+            subPath: config.xml
+            readOnly: true
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}

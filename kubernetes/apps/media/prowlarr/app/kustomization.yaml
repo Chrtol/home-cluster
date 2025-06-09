@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./pvc.yaml
+  - ./configmap.yaml
   - ./helmrelease.yaml
 # configMapGenerator:
 #   - name: prowlarr-loki-rules
