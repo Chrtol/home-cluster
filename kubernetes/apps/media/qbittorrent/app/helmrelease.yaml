@@ -31,24 +31,6 @@ spec:
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: &torrentPort 50413
               QBT_Preferences__WebUI__Auth__BypassLocalAuth: "true"
-            probes:
-              liveness: &probes
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /api/v2/app/version
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-              readiness: *probes
-              startup:
-                enabled: true
-                spec:
-                  failureThreshold: 30
-                  periodSeconds: 10
             # probes:
             #   liveness: &probes
             #     enabled: true
@@ -57,20 +39,38 @@ spec:
             #       httpGet:
             #         path: /api/v2/app/version
             #         port: *port
-            #       initialDelaySeconds: 30 
-            #       periodSeconds: 15
-            #       timeoutSeconds: 5
+            #       initialDelaySeconds: 0
+            #       periodSeconds: 10
+            #       timeoutSeconds: 1
             #       failureThreshold: 3
             #   readiness: *probes
             #   startup:
             #     enabled: true
-            #     custom: true
             #     spec:
-            #       httpGet:
-            #         path: /api/v2/app/version
-            #         port: *port
             #       failureThreshold: 30
             #       periodSeconds: 10
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  initialDelaySeconds: 30 
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 10
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
