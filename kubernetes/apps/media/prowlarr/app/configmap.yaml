@@ -12,8 +12,7 @@ data:
       <SslPort>6969</SslPort>
       <EnableSsl>False</EnableSsl>
       <LaunchBrowser>True</LaunchBrowser>
-      <ApiKey>d8caae943683435497cf9f81c77021d7</ApiKey>
-      <AuthenticationMethod>Forms</AuthenticationMethod>
+      <AuthenticationMethod>External</AuthenticationMethod>
       <AuthenticationRequired>Enabled</AuthenticationRequired>
       <SslCertPath></SslCertPath>
       <SslCertPassword></SslCertPassword>
