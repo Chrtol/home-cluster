@@ -78,19 +78,18 @@ spec:
             enabled: true
             port: *torrentPort
             protocol: TCP
-    route:
+    ingress:
       app:
-        hostnames:
-          - "{{ .Release.Name }}.${SECRET_DOMAIN}"
-          - qb.${SECRET_DOMAIN}
-        parentRefs:
-          - name: internal
-            namespace: kube-system
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
+        className: internal
+        annotations:
+          internal-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+        hosts:
+          - host: qbittorrent.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
     persistence:
       config:
         existingClaim: qbittorrent
