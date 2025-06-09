@@ -64,16 +64,33 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+    # service:
+    #   app:
+    #     controller: qbittorrent
+    #     type: LoadBalancer
+    #     annotations:
+    #       lbipam.cilium.io/ips: 10.0.30.95
+    #     ports:
+    #       http:
+    #         primary: true
+    #         port: *port
+    #       bittorrent:
+    #         enabled: true
+    #         port: *torrentPort
+    #         protocol: TCP
     service:
       app:
-        controller: qbittorrent
-        type: LoadBalancer
-        annotations:
-          lbipam.cilium.io/ips: 10.0.30.95
+        controller: *app
+        # nameOverride: *app
         ports:
           http:
-            primary: true
             port: *port
+      bittorrent:
+        controller: *app
+        type: LoadBalancer
+        annotations:
+          metallb.io/loadBalancerIPs: 10.0.30.95 
+        ports:
           bittorrent:
             enabled: true
             port: *torrentPort
