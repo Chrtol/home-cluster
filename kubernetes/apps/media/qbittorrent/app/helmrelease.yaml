@@ -31,6 +31,8 @@ spec:
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: &torrentPort 50413
               QBT_Preferences__WebUI__Auth__BypassLocalAuth: "true"
+              QBT_Preferences__WebUI__ClickjackingProtection: "false" 
+              QBT_Preferences__WebUI__SecureCookie: "false"   
             probes:
               liveness: &probes
                 enabled: true
@@ -91,6 +93,7 @@ spec:
         className: internal
         annotations:
           internal-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+          nginx.ingress.kubernetes.io/proxy-set-headers: "default/proxy-headers"
         hosts:
           - host: qbittorrent.${SECRET_DOMAIN}
             paths:
