@@ -30,6 +30,7 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: &torrentPort 50413
+              QBT_Preferences__WebUI__Auth__BypassLocalAuth: "true"
             # probes:
             #   liveness: &probes
             #     enabled: true
