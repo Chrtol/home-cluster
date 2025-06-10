@@ -15,4 +15,4 @@ resources:
   - ./sonarr/ks.yaml
   - ./recyclarr/ks.yaml
   - ./bazarr/ks.yaml
-  - ./jellyseer/ks.yaml
+  - ./jellyseerr/ks.yaml
