@@ -80,6 +80,12 @@ spec:
                 service:
                   identifier: app
                   port: http
+          - host: &host "requests.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
         tls:
           - hosts:
               - *host
