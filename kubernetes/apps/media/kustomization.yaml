@@ -16,3 +16,4 @@ resources:
   - ./recyclarr/ks.yaml
   - ./bazarr/ks.yaml
   - ./jellyseerr/ks.yaml
+  - ./huntarr/ks.yaml
