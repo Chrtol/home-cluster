@@ -61,7 +61,7 @@ spec:
                 memory: 1Gi
 
     service:
-      *app :
+      app :
         controller: *app
         ports:
           http:
