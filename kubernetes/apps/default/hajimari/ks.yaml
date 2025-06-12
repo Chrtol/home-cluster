@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 30m
-  path: ./kubernetes/main/apps/default/hajimari/app
+  path: ./kubernetes/apps/default/hajimari/app
   prune: true
   sourceRef:
     kind: GitRepository
