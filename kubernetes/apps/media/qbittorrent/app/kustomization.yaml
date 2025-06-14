@@ -7,9 +7,9 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
 configMapGenerator:
-  - name: qbittorrent-dnsdist
+  - name: qbittorrent-coredns
     files:
-      - ./config/dnsdist.conf
+      - ./config/Corefile
 # configMapGenerator:
 #   - name: qbittorrent-loki-rules
 #     files:
