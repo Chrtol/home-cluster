@@ -21,6 +21,8 @@ spec:
   values:
     controllers:
       qbittorrent:
+        annotations:
+          reloader.stakater.com/auto: "true"
         initContainers:
           dnsdist:
             image:
