@@ -32,6 +32,14 @@ spec:
               tag: 1.6.8@sha256:550881bda5dc23755183767e6067434d267c4b87e59aa2698549617c2e4b3f70
             env:
               TZ: ${SECRET_TIMEZONE}
+              QUEUECLEANER__ENABLED: true
+              SONARR__ENABLED: true
+              SONARR__INSTANCES__0__URL: http://sonarr.media.svc.cluster.local:8989
+              RADARR__ENABLED: true
+              RADARR__INSTANCES__0__URL: http://radarr.media.svc.cluster.local:7878
+            envFrom:
+              - secretRef:
+                  name: cleanuperr-config
             resources:
               requests:
                 cpu: 10m
