@@ -15,7 +15,7 @@ spec:
     remediation:
       retries: -1
   upgrade:
-    cleanupOnFail: true
+    # cleanupOnFail: true
     remediation:
       retries: -1
   values:
