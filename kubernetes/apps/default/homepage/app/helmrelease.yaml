@@ -1,75 +1,82 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-4.0.1/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: homepage
+  name: &app homepage
+  namespace: default
 spec:
-  interval: 30m
+  interval: 1h
   chartRef:
     kind: OCIRepository
     name: app-template
     namespace: flux-system
-  maxHistory: 3
-  uninstall:
-    keepHistory: false
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
   values:
+    ingress:
+      app:
+        annotations:
+          # affinity fixes the constant page refresh issue
+          nginx.ingress.kubernetes.io/affinity: cookie
+        enabled: true
+        className: internal
+        hosts:
+          - host: &host "start.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
     controllers:
       homepage:
-        annotations:
-          secret.reloader.stakater.com/reload: &secret homepage-secret
-          configmap.reloader.stakater.com/reload: &configmap homepage-config
+        replicas: 2
         strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        serviceAccount:
+          identifier: homepage
         containers:
           app:
             image:
               repository: ghcr.io/gethomepage/homepage
-              tag: v1.3.2
+              tag: v1.3.2@sha256:4f923bf0e9391b3a8bc5527e539b022e92dcc8a3a13e6ab66122ea9ed030e196
             env:
               TZ: ${SECRET_TIMEZONE}
-              HOMEPAGE_ALLOWED_HOSTS: "*"
-              # LOG_LEVEL: debug
+              HOMEPAGE_ALLOWED_HOSTS: *host
+              LOG_TARGETS: stdout
             envFrom:
               - secretRef:
-                  name: *secret
+                  name: homepage-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    port: 3000
-                    path: /api/healthcheck
-                    httpHeaders:
-                      - name: Host
-                        value: ${HOSTNAME}
-                  initialDelaySeconds: 0
-              readiness: *probes
-              startup: *probes
-        serviceAccount:
-          identifier: homepage
+              readiness:
+                enabled: true
+            resources:
+              requests:
+                cpu: 150m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
     service:
       app:
         controller: homepage
         ports:
           http:
             port: 3000
-    ingress:
-      app:
-        enabled: true
-        className: internal
-        hosts:
-          - host: &host homepage.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
+    serviceAccount:
+      homepage: {}
     persistence:
       config:
-        enabled: true
         type: configMap
-        name: *configmap
+        name: homepage-config
         globalMounts:
           - subPath: bookmarks.yaml
             path: /app/config/bookmarks.yaml
@@ -83,49 +90,3 @@ spec:
             path: /app/config/settings.yaml
           - subPath: widgets.yaml
             path: /app/config/widgets.yaml
-    serviceAccount:
-      homepage: {}
-    rbac:
-      bindings:
-        homepage:
-          type: ClusterRoleBinding
-          roleRef:
-            kind: ClusterRole
-            name: homepage
-          subjects:
-            - identifier: homepage
-      roles:
-        homepage:
-          type: ClusterRole
-          rules:
-            - apiGroups:
-                - ""
-              resources:
-                - namespaces
-                - pods
-                - nodes
-              verbs:
-                - get
-                - list
-            - apiGroups:
-                - extensions
-                - networking.k8s.io
-              resources:
-                - ingresses
-              verbs:
-                - get
-                - list
-            - apiGroups:
-                - metrics.k8s.io
-              resources:
-                - nodes
-                - pods
-              verbs:
-                - get
-                - list
-            - apiGroups:
-                - apiextensions.k8s.io
-              resources:
-                - customresourcedefinitions/status
-              verbs:
-                - get
