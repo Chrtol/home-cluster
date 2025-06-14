@@ -9,3 +9,4 @@ components:
 resources:
   - ./echo/ks.yaml
   - ./hajimari/ks.yaml
+  - ./homepage/ks.yaml
