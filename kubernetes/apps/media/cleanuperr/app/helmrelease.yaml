@@ -40,7 +40,6 @@ spec:
               DOWNLOAD_CLIENT: qBittorrent
               QBITTORRENT__URL: http://qbittorrent-app.media.svc.cluster.local:80
               DOWNLOADCLEANER__ENABLED: true
-              TRIGGERS__DOWNLOADCLEANER: 0 0 * * *
             envFrom:
               - secretRef:
                   name: cleanuperr-config
