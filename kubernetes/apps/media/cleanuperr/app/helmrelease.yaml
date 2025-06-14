@@ -34,9 +34,11 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               QUEUECLEANER__ENABLED: true
               SONARR__ENABLED: true
-              SONARR__INSTANCES__0__URL: http://sonarr.media.svc.cluster.local:8989
+              SONARR__INSTANCES__0__URL: http://sonarr.media.svc.cluster.local:80
               RADARR__ENABLED: true
               RADARR__INSTANCES__0__URL: http://radarr.media.svc.cluster.local:7878
+              DOWNLOAD_CLIENT: qBittorrent
+              QBITTORRENT__URL: http://qbittorrent-app.media.svc.cluster.local:80
             envFrom:
               - secretRef:
                   name: cleanuperr-config
