@@ -13,11 +13,11 @@ spec:
     namespace: flux-system
   install:
     remediation:
-      retries: -1
+      retries: 0
   upgrade:
     # cleanupOnFail: true
     remediation:
-      retries: -1
+      retries: 0
   values:
     controllers:
       qbittorrent:
