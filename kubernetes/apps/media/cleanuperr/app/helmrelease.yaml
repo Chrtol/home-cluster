@@ -39,6 +39,8 @@ spec:
               RADARR__INSTANCES__0__URL: http://radarr.media.svc.cluster.local:7878
               DOWNLOAD_CLIENT: qBittorrent
               QBITTORRENT__URL: http://qbittorrent-app.media.svc.cluster.local:80
+              DOWNLOADCLEANER__ENABLED: true
+              TRIGGERS__DOWNLOADCLEANER: 0 0 * * *
             envFrom:
               - secretRef:
                   name: cleanuperr-config
@@ -54,19 +56,19 @@ spec:
         ports:
           http:
             port: 9705
-    ingress:
-      app:
-        className: internal
-        hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
+    # ingress:
+    #   app:
+    #     className: internal
+    #     hosts:
+    #       - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+    #         paths:
+    #           - path: /
+    #             service:
+    #               identifier: app
+    #               port: http
+    #     tls:
+    #       - hosts:
+    #           - *host
     persistence:
       config:
         enabled: true
