@@ -24,14 +24,15 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
-          dnsdist:
+          coredns: 
             image:
-              repository: docker.io/powerdns/dnsdist-19
-              tag: 1.9.10@sha256:7495affd85c450050eb2fce1cb99964cb439482ffada22e9d312a761b6bf138d
+              repository: coredns/coredns
+              tag: 1.11.3
+            args: ["-conf", "/etc/coredns/Corefile"]
             restartPolicy: Always
           gluetun:
             dependsOn:
-              - dnsdist
+              - coredns
             image:
               repository: ghcr.io/qdm12/gluetun
               tag: v3.40.0@sha256:2b42bfa046757145a5155acece417b65b4443c8033fb88661a8e9dcf7fda5a00
@@ -59,8 +60,11 @@ spec:
                     - "-c"
                     - "(ip rule del table 51820; ip -6 rule del table 51820) || true"
             securityContext:
+              runAsUser: 0  # Gluetun must run as root
+              runAsGroup: 0 
+              runAsNonRoot: false  #  Override pod-level setting
               capabilities: { add: ["NET_ADMIN"] }
-              allowPrivilegeEscalation: false
+              allowPrivilegeEscalation: true
             resources:
               limits:
                 squat.ai/tun: "1"
@@ -114,7 +118,7 @@ spec:
               GLUETUN_CONTROL_SERVER_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: qbittorrent
+                    name: qbittorrent-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
               QBITTORRENT_HOST: localhost
               QBITTORRENT_WEBUI_PORT: *port
