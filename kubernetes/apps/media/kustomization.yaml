@@ -6,7 +6,6 @@ namespace: media
 components:
   - ../../components/common
 resources:
-  - ./jellyfin/ks.yaml
   - ./plex/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./prowlarr/ks.yaml
