@@ -48,7 +48,7 @@ spec:
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
             envFrom:
               - secretRef:
-                  name: qbittorrent
+                  name: qbittorrent-secret
             lifecycle:
               postStart:
                 exec:
