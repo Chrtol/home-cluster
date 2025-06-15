@@ -34,14 +34,6 @@ data:
                 - type: radarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
                   service_group: Downloads # group name where widget exists
                   service_name: Radarr # service name for that widget
-    # - Automation:
-    #     - Home Assistant:
-    #         href: https://homeassistant.${SECRET_DOMAIN}
-    #         icon: home-assistant.svg
-    #         widget:
-    #           type: homeassistant
-    #           url: http://haos.${SECRET_DOMAIN}:8123
-    #           key: {{HOMEPAGE_VAR_HASS_TOKEN}}
     - Infrastructure:
         - TrueNAS:
             href: https://nas.${SECRET_DOMAIN}
@@ -52,6 +44,62 @@ data:
               url: https://nas.${SECRET_DOMAIN}
               key: {{HOMEPAGE_VAR_TRUENAS_TOKEN}}
               enablePools: true
+    - Media:
+      - Plex:
+          icon: plex.png
+          href: https://plex.${SECRET_DOMAIN}
+          description: Media Server
+          widget:
+            type: plex
+            url: http://plex.media.svc.cluster.local
+            key: {{HOMEPAGE_VAR_PLEX_KEY}}
+            enableNowPlaying: true
+      - Jellyseer:
+          icon: jellyseer.png
+          href: https://request.${SECRET_DOMAIN}
+          description: Media Requests
+          widget:
+            type: jellyseer
+            url: http://jellyseer.media.svc.cluster.local
+            key: {{HOMEPAGE_VAR_JELLYSEER_KEY}}
+      - qBittorrent:
+          icon: qbittorrent.png
+          href: https://qbittorrent.${SECRET_DOMAIN}
+          description: Torrent Management
+          widget:
+            type: qbittorrent
+            url: http://qbittorrent.media.svc.cluster.local
+            username: {{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}
+            password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
+      - Radarr:
+          icon: radarr.png
+          href: https://radarr.${SECRET_DOMAIN}
+          description: Movies Management
+          widget:
+            type: radarr
+            url: http://radarr.media.svc.cluster.local:7878
+            key: {{HOMEPAGE_VAR_RADARR_KEY}}
+      - Sonarr:
+          icon: sonarr.png
+          href: https://sonarr.${SECRET_DOMAIN}
+          description: TV Shows Management
+          widget:
+            type: sonarr
+            url: http://sonarr.media.svc.cluster.local
+            key: {{HOMEPAGE_VAR_SONARR_KEY}}
+      - Bazarr:
+          icon: bazarr.png
+          href: https://bazarr.${SECRET_DOMAIN}
+          description: Subtitles Management
+          widget:
+            type: bazarr
+            url: http://bazarr.media.svc.cluster.local:6767
+            key: {{HOMEPAGE_VAR_BAZARR_KEY}}
+    - Favorites:
+        - My GitHub Repo:
+            icon: si-github
+            href: https://github.com/budimanjojo
+            description: My Code Repository
   settings.yaml: |
     title: Dashboard
     background: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
