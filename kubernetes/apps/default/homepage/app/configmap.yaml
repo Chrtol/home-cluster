@@ -54,14 +54,14 @@ data:
               username: {{HOMEPAGE_VAR_OPNSENSE_API_KEY}}
               password: {{HOMEPAGE_VAR_OPNSENSE_API_SECRET}}
               wan: igc3
-        - Adguard Home:
-            href: http://10.0.10.1
-            icon: adguard.png
+        - Proxmox:
+            href: http://10.0.30.10:8006
+            icon: proxmox.png
             widget:
-              type: adguard
-              url: http://10.0.10.1
-              username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
-              password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
+              type: proxmox
+              url: https://10.0.30.10:8006
+              username: {{HOMEPAGE_VAR_PROXMOX_API_TOKEN_ID}}
+              password: {{HOMEPAGE_VAR_PROXMOX_API_SECRET}}
     - System Applications:
         - Authentik:
             href: https://authentik.${SECRET_DOMAIN}
@@ -70,6 +70,14 @@ data:
               type: authentik
               url: https://authentik-server.security.svc.cluster.local
               key: {{HOMEPAGE_VAR_AUTHENTIK_KEY}}
+        - Adguard Home:
+            href: http://10.0.10.1
+            icon: adguard.png
+            widget:
+              type: adguard
+              url: http://10.0.10.1
+              username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
+              password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
     - Media:
       - Plex:
           icon: plex.png
