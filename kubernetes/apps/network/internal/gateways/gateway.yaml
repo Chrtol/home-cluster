@@ -1,0 +1,19 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: internal
+  namespace: network
+spec:
+  gatewayClassName: cilium
+  listeners:
+  - name: https
+    port: 443
+    protocol: HTTPS
+    hostname: "*.${SECRET_DOMAIN}"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: "${SECRET_DOMAIN/./-}-production-tls"
+        namespace: cert-manager
+        kind: Secret
