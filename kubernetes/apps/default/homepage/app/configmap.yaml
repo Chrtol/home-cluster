@@ -68,7 +68,7 @@ data:
           description: Torrent Management
           widget:
             type: qbittorrent
-            url: http://qbittorrent.media.svc.cluster.local
+            url: http://qbittorrent-app.media.svc.cluster.local
             username: {{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}
             password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
       - Radarr:
@@ -98,7 +98,7 @@ data:
     - Favorites:
         - My GitHub Repo:
             icon: si-github
-            href: https://github.com/budimanjojo
+            href: https://github.com/chrtol/home-cluster
             description: My Code Repository
   settings.yaml: |
     title: Dashboard
