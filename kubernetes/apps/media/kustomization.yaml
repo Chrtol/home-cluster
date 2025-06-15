@@ -19,3 +19,4 @@ resources:
   - ./cleanuperr/ks.yaml
   - ./wizarr/ks.yaml
   - ./gluetun/ks.yaml
+  - ./tautulli/ks.yaml
