@@ -135,30 +135,37 @@ data:
             href: https://github.com/chrtol/home-cluster
             description: My Code Repository
   settings.yaml: |
-    title: Dashboard
-    background: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
+    # General Settings
+    title: Homepage Highland Escape
     theme: dark
-    color: slate
-    headerStyle: boxed
+    color: zinc
+    headerStyle: clean
+    useEqualHeights: true #<- This is a must!
+    hideVersion: true
+    target: _self
+
+    providers:
+      openweathermap: openweathermapapikey
+      weatherapi: weatherapiapikey
+
+    # layout: the order to show each of the sections defined in services.yaml
+    # headers / labels are hidden - number of columns per section is set here
+
     layout:
-      Calendar:
-        style: columns
-      Automation:
-        style: columns
-      Selfhosted:
+      
+      "Infrastructure":
+        header: false
         style: row
-        columns: 2
-      Downloads:
+        columns: 4
+      "System Applications":
+        header: false
         style: row
-        columns: 3
-      Games:
+        columns: 4  
+      "Media":
+        header: false
         style: row
-      Infrastructure:
-        style: row
-        columns: 2
-      Monitoring:
-        style: row
-        columns: 3
+        columns: 5
+
   widgets.yaml: |
     - resources:
         backend: kubernetes
@@ -166,7 +173,7 @@ data:
         expanded: true
         memory: true
     - search:
-        provider: [brave, bing]
+        provider: [duckduckgo, google]
         focus: false
         target: _blank
     - kubernetes:
@@ -190,9 +197,10 @@ data:
           dateStyle: long
           timeStyle: short
           hourCycle: h23
-    - jellyseerr:
-      type: jellyseerr
-      url: http://jellyseerr.host.or.ip
-      key: apikeyapikeyapikeyapikeyapikey
-
-
+    - openmeteo:
+        latitude: 59.9138918053718
+        longitude: 10.788225884522408
+        units: metric
+        cache: 15
+        format:
+          maximumFractionDigits: 0
