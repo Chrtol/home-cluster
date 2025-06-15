@@ -54,6 +54,22 @@ data:
               username: {{HOMEPAGE_VAR_OPNSENSE_API_KEY}}
               password: {{HOMEPAGE_VAR_OPNSENSE_API_SECRET}}
               wan: igc3
+        - Adguard Home:
+            href: http://10.0.10.1
+            icon: adguard.png
+            widget:
+              type: adguard
+              url: http://10.0.10.1
+              username: {{HOMEPAGE_VAR_ADGUARD_USERNAME}}
+              password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
+    - System Applications:
+        - Authentik:
+            href: https://authentik.${SECRET_DOMAIN}
+            icon: authentik.png
+            widget:
+              type: authentik
+              url: https://authentik-server.security.svc.cluster.local
+              key: {{HOMEPAGE_VAR_AUTHENTIK_KEY}}
     - Media:
       - Plex:
           icon: plex.png
