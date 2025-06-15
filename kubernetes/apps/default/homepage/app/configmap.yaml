@@ -68,8 +68,8 @@ data:
           href: https://request.${SECRET_DOMAIN}
           description: Media Requests
           widget:
-            type: jellyseer
-            url: http://jellyseer.media.svc.cluster.local
+            type: jellyseerr
+            url: http://jellyseerr.media.svc.cluster.local
             key: {{HOMEPAGE_VAR_JELLYSEER_KEY}}
       - qBittorrent:
           icon: qbittorrent.png
