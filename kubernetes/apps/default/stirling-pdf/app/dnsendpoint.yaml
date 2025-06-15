@@ -1,0 +1,11 @@
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: stirling-pdf-gateway
+  namespace: network
+spec:
+  endpoints:
+    - dnsName: "pdf.${SECRET_DOMAIN}"
+      recordType: A
+      targets: ["10.0.30.41"]
