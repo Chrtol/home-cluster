@@ -59,11 +59,11 @@ spec:
     policy: sync
     registry: noop
 
-    sources: ["ingress", "gateway-httproute"]  # Add gateway support
+    sources: ["ingress", "gateway-httproute"]
     extraArgs:
       - --webhook-provider-url=http://localhost:8888
       - --ingress-class=internal
-      # - --gateway-api-version=v1  # Enable Gateway API support
+      - --gateway-name=internal
     podAnnotations:
       secret.reloader.stakater.com/reload: *secret
     logLevel: debug
