@@ -12,6 +12,7 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: plex
   interval: 1h
   path: ./kubernetes/apps/media/tautulli/app
   postBuild:
