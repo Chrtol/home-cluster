@@ -6,6 +6,8 @@ bpf:
   hostLegacyRouting: true
 bgpControlPlane:
   enabled: true
+gatewayAPI:
+  enabled: true
 cni:
   # Required for pairing with Multus CNI
   exclusive: false
