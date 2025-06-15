@@ -59,6 +59,7 @@ spec:
     policy: sync
     registry: noop
 
+    sources: ["ingress", "gateway-httproute"]  # Add gateway support
     extraArgs:
       - --webhook-provider-url=http://localhost:8888
       - --ingress-class=internal
