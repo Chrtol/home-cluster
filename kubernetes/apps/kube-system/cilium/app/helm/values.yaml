@@ -20,7 +20,7 @@ cgroup:
 endpointRoutes:
   enabled: true
 envoy:
-  enabled: false
+  enabled: true
 dashboards:
   enabled: true
 hubble:
