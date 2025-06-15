@@ -11,14 +11,14 @@ spec:
     name: app-template-upgrade
     namespace: flux-system
   interval: 30m
-  # install:
-  #   remediation:
-  #     retries: -1
-  # upgrade:
-  #   cleanupOnFail: true
-  #   remediation:
-  #     strategy: rollback
-  #     retries: 3
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
   driftDetection:
     mode: enabled
     ignore:
