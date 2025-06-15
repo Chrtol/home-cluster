@@ -15,8 +15,9 @@ spec:
   interval: 30m
   path: ./kubernetes/apps/default/homepage/app
   postBuild:
-    substitute:
-      HOSTNAME: home.${SECRET_DOMAIN}
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

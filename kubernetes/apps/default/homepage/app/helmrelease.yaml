@@ -8,7 +8,7 @@ metadata:
 spec:
   chartRef:
     kind: OCIRepository
-    name: app-template
+    name: app-template-upgrade
     namespace: flux-system
   interval: 15m
   install:
@@ -107,9 +107,9 @@ spec:
           subjects:
             - identifier: *app
 
-    # serviceAccount:
-    #   # allow scraping of k8s resources for widget
-    #   homepage: {}
+    serviceAccount:
+      # allow scraping of k8s resources for widget
+      homepage: {}
     service:
       app:
         controller: *app
