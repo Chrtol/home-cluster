@@ -70,7 +70,8 @@ data:
           description: Media Requests
           widget:
             type: jellyseerr
-            url: http://jellyseerr.media.svc.cluster.local
+            url: https://jellyserr.cftollefsen.com
+            # url: http://jellyseerr.media.svc.cluster.local
             key: {{HOMEPAGE_VAR_JELLYSEER_KEY}}
       - qBittorrent:
           icon: qbittorrent.png
@@ -87,7 +88,8 @@ data:
           description: Movies Management
           widget:
             type: radarr
-            url: http://radarr.media.svc.cluster.local:7878
+            # url: http://radarr.media.svc.cluster.local:7878
+            url: https://radarr.cftollefsen.com
             key: {{HOMEPAGE_VAR_RADARR_KEY}}
       - Sonarr:
           icon: sonarr.png
