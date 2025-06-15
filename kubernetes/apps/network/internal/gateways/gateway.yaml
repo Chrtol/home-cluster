@@ -11,9 +11,12 @@ spec:
     port: 443
     protocol: HTTPS
     hostname: "*.${SECRET_DOMAIN}"
+    allowedRoutes:
+      namespaces:
+        from: All  # Allow routes from any namespace
     tls:
       mode: Terminate
       certificateRefs:
-      - name: "${SECRET_DOMAIN/./-}-production-tls"
+      - name: cftollefsen-com-production-tls
         namespace: cert-manager
         kind: Secret
