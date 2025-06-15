@@ -3,6 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: homepage-config
+  namespace: default
 data:
   bookmarks.yaml: |
     - Media:
@@ -21,19 +22,19 @@ data:
     mode: cluster
     ingress: true
   services.yaml: |
-    - Calendar:
-        - Agenda:
-            widget:
-              type: calendar
-              view: agenda # optional - possible values monthly, agenda
-              maxEvents: 20 # optional - defaults to 10
-              integrations: # optional
-                - type: sonarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
-                  service_group: Downloads # group name where widget exists
-                  service_name: Sonarr # service name for that widget
-                - type: radarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
-                  service_group: Downloads # group name where widget exists
-                  service_name: Radarr # service name for that widget
+    # - Calendar:
+    #     - Agenda:
+    #         widget:
+    #           type: calendar
+    #           view: agenda # optional - possible values monthly, agenda
+    #           maxEvents: 20 # optional - defaults to 10
+    #           integrations: # optional
+    #             - type: sonarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
+    #               service_group: Downloads # group name where widget exists
+    #               service_name: Sonarr # service name for that widget
+    #             - type: radarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
+    #               service_group: Downloads # group name where widget exists
+    #               service_name: Radarr # service name for that widget
     - Infrastructure:
         - TrueNAS:
             href: https://nas.${SECRET_DOMAIN}
