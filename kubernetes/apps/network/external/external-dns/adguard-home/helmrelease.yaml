@@ -58,13 +58,11 @@ spec:
     triggerLoopOnEvent: true
     policy: sync
     registry: noop
-
     sources: ["ingress", "gateway-httproute", "service"]
     extraArgs:
       - --webhook-provider-url=http://localhost:8888
       - --ingress-class=internal
       - --gateway-name=internal
-      - --gateway-namespace=network 
     podAnnotations:
       secret.reloader.stakater.com/reload: *secret
     logLevel: debug
