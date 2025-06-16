@@ -24,3 +24,35 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: csi-rbd-sc
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-external-library-pv
+spec:
+  storageClassName: ""
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: nfs.csi.k8s.io
+    readOnly: false
+    volumeHandle: immich-external-library-pv
+    volumeAttributes:
+      server: nas.cftollefsen.com
+      share: /mnt/truenas/cf-nas/applications/immich
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-external-library-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: ""
+  volumeName: immich-external-library-pv
