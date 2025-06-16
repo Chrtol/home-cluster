@@ -11,3 +11,4 @@ resources:
   - ./hajimari/ks.yaml
   - ./homepage/ks.yaml
   - ./stirling-pdf/ks.yaml
+  - ./mealie/ks.yaml
