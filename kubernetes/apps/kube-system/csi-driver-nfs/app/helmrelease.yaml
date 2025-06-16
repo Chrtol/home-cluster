@@ -24,14 +24,15 @@ spec:
     remediation:
       retries: 3
   values:
+    kubelet: /var/lib/kubelet
     controller:
       replicas: 1
     storageClass:
       create: true
       name: nfs-k8s
       parameters:
-        server: 10.0.30.243
-        share: /mnt/truenas/cf-nas/data
+        server: nas.cftollefsen.com
+        share: /mnt/truenas/cf-nas
       mountOptions:
         - nfsvers=4.2
         - nconnect=16
