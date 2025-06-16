@@ -80,7 +80,7 @@ spec:
                 memory: 274M
               limits:
                 memory: 3949M
-                
+
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -123,9 +123,8 @@ spec:
           - host: &host photos.${SECRET_DOMAIN}
             paths:
               - path: /
-                # pathType: Prefix
                 service:
-                  identifier: app
+                  identifier: server
                   port: http
         tls:
           - hosts:
