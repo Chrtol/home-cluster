@@ -27,6 +27,11 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000 # Keep fsGroup for Ceph/RBD volumes if needed, but it might still be the issue. Let's try without it first.
+            fsGroupChangePolicy: "OnRootMismatch"
           enableServiceLinks: false
           
         initContainers:
@@ -61,6 +66,11 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000 # Keep fsGroup for Ceph/RBD volumes if needed, but it might still be the issue. Let's try without it first.
+            fsGroupChangePolicy: "OnRootMismatch"
           enableServiceLinks: false
 
         containers:
@@ -80,14 +90,6 @@ spec:
                 memory: 274M
               limits:
                 memory: 3949M
-
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: Always
 
     service:
       server:
