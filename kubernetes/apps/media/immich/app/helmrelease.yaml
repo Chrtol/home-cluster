@@ -21,17 +21,17 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
     controllers:
       server:
         strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000 # Keep fsGroup for Ceph/RBD volumes if needed, but it might still be the issue. Let's try without it first.
-            fsGroupChangePolicy: "OnRootMismatch"
           enableServiceLinks: false
           
         initContainers:
@@ -66,11 +66,6 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000 # Keep fsGroup for Ceph/RBD volumes if needed, but it might still be the issue. Let's try without it first.
-            fsGroupChangePolicy: "OnRootMismatch"
           enableServiceLinks: false
 
         containers:
