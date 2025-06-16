@@ -138,12 +138,10 @@ spec:
               - path: /config/matplotlib
 
       external:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/immich
+        type: persistentVolumeClaim
+        existingClaim: immich-external-library-pvc
         globalMounts:
           - path: /external-library
-            readOnly: false
 
       library:
         type: persistentVolumeClaim
