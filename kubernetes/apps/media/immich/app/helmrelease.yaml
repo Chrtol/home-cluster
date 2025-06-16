@@ -115,7 +115,6 @@ spec:
 
     ingress:
       app:
-        enabled: true
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
@@ -143,7 +142,7 @@ spec:
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/applications/immich
         globalMounts:
-          - path: /immich/photos
+          - path: /external-library
             readOnly: false
 
       library:
