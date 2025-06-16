@@ -21,11 +21,11 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+    # defaultPodOptions:
+    #   securityContext:
+    #     runAsNonRoot: true
+    #     runAsUser: 1000
+    #     runAsGroup: 1000
     controllers:
       server:
         strategy: RollingUpdate
@@ -134,11 +134,11 @@ spec:
             main:
               - path: /config/matplotlib
 
-      external:
-        type: persistentVolumeClaim
-        existingClaim: immich-external-library-pvc
-        globalMounts:
-          - path: /external-library
+      # external:
+      #   type: persistentVolumeClaim
+      #   existingClaim: immich-external-library-pvc
+      #   globalMounts:
+      #     - path: /external-library
 
       library:
         type: persistentVolumeClaim
