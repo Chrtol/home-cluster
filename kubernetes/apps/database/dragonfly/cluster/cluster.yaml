@@ -15,7 +15,7 @@ spec:
           resource: limits.memory
           divisor: 1Mi
   args:
-    - --maxmemory_mb=$(MAX_MEMORY)
+    - --maxmemory=$(MAX_MEMORY)
     - --proactor_threads=2
     - --cluster_mode=emulated
   resources:
