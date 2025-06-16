@@ -39,7 +39,7 @@ spec:
 
             envFrom:
               - secretRef:
-                name: immich-secret
+                  name: immich-secret
             #   - configMapRef:
             #       name: immich-configmap
 
