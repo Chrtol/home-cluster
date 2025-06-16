@@ -1,10 +1,9 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/dragonflydb.io/dragonfly_v1alpha1.json
+# yaml-language-server: $schema=https://datreeio.github.io/CRDs-catalog/dragonflydb.io/dragonfly_v1alpha1.json
 apiVersion: dragonflydb.io/v1alpha1
 kind: Dragonfly
 metadata:
   name: dragonfly
-  namespace: database
 spec:
   image: ghcr.io/dragonflydb/dragonfly:v1.30.3
   replicas: 3
@@ -15,12 +14,14 @@ spec:
           resource: limits.memory
           divisor: 1Mi
   args:
-    - --maxmemory=$(MAX_MEMORY)M
+    - --maxmemory=$(MAX_MEMORY)Mi
     - --proactor_threads=2
-    # - --cluster_mode=emulated
+    - --cluster_mode=emulated
+    - --lock_on_hashtags
   resources:
     requests:
-      cpu: 100m
+      cpu: 50m
+      memory: 128Mi
     limits:
       memory: 512Mi
   topologySpreadConstraints:
