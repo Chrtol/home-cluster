@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs-test-pod
+  namespace: media
+spec:
+  containers:
+  - name: test-container
+    image: busybox
+    command: ["/bin/sh", "-c", "sleep 3600"]
+    volumeMounts:
+    - name: my-nfs-volume
+      mountPath: /mnt/nfs
+  volumes:
+  - name: my-nfs-volume
+    persistentVolumeClaim:
+      claimName: immich-external-library-pvc
