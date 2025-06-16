@@ -80,6 +80,14 @@ spec:
                 memory: 274M
               limits:
                 memory: 3949M
+                
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: Always
 
     service:
       server:
@@ -130,6 +138,14 @@ spec:
           server:
             main:
               - path: /config/matplotlib
+
+      external:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/applications/immich
+        globalMounts:
+          - path: /immich/photos
+            readOnly: false
 
       library:
         type: persistentVolumeClaim
