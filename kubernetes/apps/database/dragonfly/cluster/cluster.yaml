@@ -14,10 +14,10 @@ spec:
         resourceFieldRef:
           resource: limits.memory
           divisor: 1Mi
-  # args:
-  #   - --maxmemory=$(MAX_MEMORY)M
-  #   - --proactor_threads=2
-  #   - --cluster_mode=emulated
+  args:
+    - --maxmemory=$(MAX_MEMORY)M
+    - --proactor_threads=2
+    # - --cluster_mode=emulated
   resources:
     requests:
       cpu: 100m
