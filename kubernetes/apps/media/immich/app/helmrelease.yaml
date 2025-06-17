@@ -3,6 +3,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: immich
+  namespace: media
 spec:
   interval: 1h
   chartRef:
@@ -138,12 +139,6 @@ spec:
           server:
             main:
               - path: /config/matplotlib
-
-      # external:
-      #   type: persistentVolumeClaim
-      #   existingClaim: immich-external-library-pvc
-      #   globalMounts:
-      #     - path: /external-library
 
       library:
         type: nfs
