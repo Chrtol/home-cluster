@@ -12,6 +12,8 @@ spec:
       app.kubernetes.io/name: *app
   interval: 10m
   path: "./kubernetes/apps/default/mealie/app"
+  components:
+    - ../../../../components/gatus/external
   prune: true
   sourceRef:
     kind: GitRepository
@@ -21,6 +23,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      GATUS_SUBDOMAIN: recipes
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

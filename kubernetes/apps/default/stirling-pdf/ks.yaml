@@ -16,9 +16,12 @@ spec:
       namespace: external-secrets
   interval: 1h
   path: ./kubernetes/apps/default/stirling-pdf/app
+  components:
+    - ../../../../components/gatus/external
   postBuild:
     substitute:
       APP: *app
+      GATUS_SUBDOMAIN: pdf
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

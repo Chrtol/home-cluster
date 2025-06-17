@@ -14,7 +14,11 @@ spec:
       namespace: external-secrets
   interval: 30m
   path: ./kubernetes/apps/default/homepage/app
+  components:
+    - ../../../../components/gatus/guarded
   postBuild:
+    substitute:
+      APP: *app
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
