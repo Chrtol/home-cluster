@@ -147,15 +147,15 @@ spec:
         globalMounts:
           - path: *mediaLocation
 
-      thumbnails:
-        type: persistentVolumeClaim
-        existingClaim: immich-thumbnails  
-        advancedMounts:
-          server:
-            main:
-              - path: *thumbLocation
-              # - path: /usr/src/app/upload/thumbs
-              # - path: /usr/src/app/upload/encoded-video
+      # thumbnails:
+      #   type: persistentVolumeClaim
+      #   existingClaim: immich-thumbnails  
+      #   advancedMounts:
+      #     server:
+      #       main:
+      #         - path: *thumbLocation
+      #         # - path: /usr/src/app/upload/thumbs
+      #         # - path: /usr/src/app/upload/encoded-video
 
       # encoded-video:
       #   type: nfs
