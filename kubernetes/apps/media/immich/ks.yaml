@@ -11,6 +11,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/media/immich/app
+  components:
+    - ../../../../components/gatus/external
   sourceRef:
     kind: GitRepository
     name: flux-system

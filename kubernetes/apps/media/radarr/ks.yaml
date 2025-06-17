@@ -13,6 +13,8 @@ spec:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   path: ./kubernetes/apps/media/radarr/app
+  components:
+    - ../../../../components/gatus/guarded
   prune: true
   sourceRef:
     kind: GitRepository
