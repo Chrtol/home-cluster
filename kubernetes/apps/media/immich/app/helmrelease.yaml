@@ -51,6 +51,7 @@ spec:
               tag: v1.134.0@sha256:073fc04c7e3d18ace466c20763809cf17aa55765ed610f12971b392a6a80b50c
             env:
               IMMICH_MEDIA_LOCATION: &mediaLocation /usr/src/app/upload
+              THUMB_LOCATION: &thumbLocation /thumbnails
             envFrom:
               - secretRef:
                   name: immich-secret
@@ -154,7 +155,8 @@ spec:
         advancedMounts:
           server:
             main:
-              - path: /usr/src/app/upload/thumbs
+              - path: *thumbLocation
+              # - path: /usr/src/app/upload/thumbs
               # - path: /usr/src/app/upload/encoded-video
 
       cache:
