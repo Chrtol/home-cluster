@@ -155,7 +155,7 @@ spec:
           server:
             main:
               - path: /usr/src/app/upload/thumbs
-              - path: /usr/src/app/upload/encoded-video
+              # - path: /usr/src/app/upload/encoded-video
 
       cache:
         type: persistentVolumeClaim
