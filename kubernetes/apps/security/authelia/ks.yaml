@@ -13,7 +13,12 @@ spec:
   dependsOn:
     - name: external-secrets
       namespace: external-secrets
+  components:
+    - ../../../../components/gatus/guarded
   postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: auth
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

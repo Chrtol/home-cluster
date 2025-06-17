@@ -11,6 +11,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/database/pgadmin/app
+  components:
+    - ../../../../components/gatus/guarded
   prune: true
   sourceRef:
     kind: GitRepository
