@@ -57,13 +57,20 @@ spec:
                      [ -f /usr/src/app/upload/encoded-video/.immich ] && \
                      [ -f /usr/src/app/upload/thumbs/.immich ]; then
                     echo "All mounts verified!"
+                    ls -la /usr/src/app/upload/encoded-video/
+                    ls -la /usr/src/app/upload/thumbs/
                     exit 0
                   fi
                   echo "Attempt $i: Waiting for mounts..."
+                  echo "Main: $(ls -la /usr/src/app/upload/.immich 2>&1)"
+                  echo "Encoded: $(ls -la /usr/src/app/upload/encoded-video/.immich 2>&1)"
+                  echo "Thumbs: $(ls -la /usr/src/app/upload/thumbs/.immich 2>&1)"
                   sleep 2
                 done
                 echo "ERROR: Mounts not ready after 10 seconds"
                 ls -la /usr/src/app/upload/
+                ls -la /usr/src/app/upload/encoded-video/
+                ls -la /usr/src/app/upload/thumbs/
                 exit 1
 
         containers:
