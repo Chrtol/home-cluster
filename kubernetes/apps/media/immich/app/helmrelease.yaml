@@ -44,6 +44,28 @@ spec:
               - secretRef:
                   name: immich-secret
 
+          02-verify-mounts:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                echo "Waiting for all mounts to be ready..."
+                for i in 1 2 3 4 5; do
+                  if [ -f /usr/src/app/upload/.immich ] && \
+                     [ -f /usr/src/app/upload/encoded-video/.immich ] && \
+                     [ -f /usr/src/app/upload/thumbs/.immich ]; then
+                    echo "All mounts verified!"
+                    exit 0
+                  fi
+                  echo "Attempt $i: Waiting for mounts..."
+                  sleep 2
+                done
+                echo "ERROR: Mounts not ready after 10 seconds"
+                ls -la /usr/src/app/upload/
+                exit 1
+
         containers:
           main:
             image:
