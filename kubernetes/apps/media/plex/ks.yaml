@@ -16,9 +16,12 @@ spec:
       namespace: ceph-csi-rbd
   interval: 1h
   path: ./kubernetes/apps/media/plex/app
+  components:
+    - ../../../../components/gatus/external
   postBuild:
     substitute:
       APP: *app
+      GATUS_PATH: /web/index.html
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
