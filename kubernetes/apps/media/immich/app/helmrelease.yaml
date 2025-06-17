@@ -21,11 +21,12 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    # defaultPodOptions:
-    #   securityContext:
-    #     runAsNonRoot: true
-    #     runAsUser: 1000
-    #     runAsGroup: 1000
+    defaultPodOptions:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
     controllers:
       server:
         strategy: RollingUpdate
@@ -110,21 +111,21 @@ spec:
               - identifier: server
                 port: *port
 
-    # ingress:
-    #   app:
-    #     className: external
-    #     annotations:
-    #       external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-    #     hosts:
-    #       - host: &host photos.${SECRET_DOMAIN}
-    #         paths:
-    #           - path: /
-    #             service:
-    #               identifier: server
-    #               port: http
-    #     tls:
-    #       - hosts:
-    #         - *host
+    ingress:
+      app:
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+        hosts:
+          - host: &host photos.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: server
+                  port: http
+        tls:
+          - hosts:
+            - *host
 
     persistence:
       matplotlib:
@@ -139,6 +140,15 @@ spec:
       #   existingClaim: immich-external-library-pvc
       #   globalMounts:
       #     - path: /external-library
+
+      # Direct NFS mount
+      external-library:
+        type: nfs
+        server: nas.cftollefsen.com
+        path: /mnt/truenas/cf-nas/applications/immich
+        globalMounts:
+          - path: /external-library
+            readOnly: false
 
       library:
         type: persistentVolumeClaim
