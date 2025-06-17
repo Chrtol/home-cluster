@@ -23,3 +23,22 @@ endpoints:
       dns-resolver: tcp://1.1.1.1:53
     conditions:
       - "[STATUS] == 404"
+alerting:
+  # discord:
+  #   webhook-url: ${SECRET_DISCORD_GATUS_WH_URL}
+  #   default-alert:
+  #     enabled: true
+  #     description: "healthcheck failed"
+  #     send-on-resolved: true
+  #     failure-threshold: 5
+  #     success-threshold: 1
+  pushover:
+    title: Gatus (Kubernetes)
+    application-token: ${PUSHOVER_TOKEN}
+    user-key: ${PUSHOVER_USER_KEY}
+    priority: 1
+    default-alert:
+      description: health-check failed
+      send-on-resolved: true
+      failure-threshold: 3
+      success-threshold: 3
