@@ -144,10 +144,9 @@ spec:
       library:
         type: nfs
         server: nas.cftollefsen.com
-        path: /mnt/truenas/cf-nas/applications/immich
+        path: /mnt/truenas/cf-nas/applications/immich/photos
         globalMounts:
           - path: *mediaLocation
-            subPath: photos
 
       thumbnails:
         type: persistentVolumeClaim
