@@ -64,6 +64,7 @@ spec:
                 memory: 256Mi
               limits:
                 memory: 4096Mi
+                gpu.intel.com/i915: 1
 
       machine-learning:
         strategy: RollingUpdate
@@ -91,7 +92,6 @@ spec:
                 memory: 274M
               limits:
                 memory: 3949M
-                gpu.intel.com/i915: 1
 
     service:
       server:
