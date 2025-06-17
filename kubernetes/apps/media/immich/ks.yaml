@@ -20,6 +20,8 @@ spec:
       namespace: database
     - name: external-secrets
       namespace: external-secrets
+    - name: intel-device-plugins-gpu
+      namespace: kube-system
   postBuild:
     substitute:
       APP: *app
