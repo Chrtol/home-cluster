@@ -14,8 +14,8 @@ spec:
   dependsOn:
     # - name: mosquitto
     #   namespace: default
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
   interval: 1h
   path: ./kubernetes/apps/default/home-assistant/app
   postBuild:
