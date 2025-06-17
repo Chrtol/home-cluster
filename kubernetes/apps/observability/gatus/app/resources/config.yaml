@@ -23,6 +23,19 @@ endpoints:
       dns-resolver: tcp://1.1.1.1:53
     conditions:
       - "[STATUS] == 404"
+    alerts:
+      - type: pushover
+  - name: status
+    group: guarded
+    url: 1.1.1.1
+    interval: 1m
+    dns:
+      query-name: "status.${CLUSTER_DOMAIN}"
+      query-type: A
+    conditions:
+      - "len([BODY]) == 0"
+    alerts:
+      - type: pushover
 alerting:
   # discord:
   #   webhook-url: ${SECRET_DISCORD_GATUS_WH_URL}
