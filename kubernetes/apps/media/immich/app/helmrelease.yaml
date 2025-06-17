@@ -141,20 +141,22 @@ spec:
       #   globalMounts:
       #     - path: /external-library
 
-      # Direct NFS mount
-      external-library:
+      library:
         type: nfs
         server: nas.cftollefsen.com
         path: /mnt/truenas/cf-nas/applications/immich
         globalMounts:
-          - path: /external-library
-            readOnly: false
-
-      library:
-        type: persistentVolumeClaim
-        existingClaim: immich-media
-        globalMounts:
           - path: *mediaLocation
+            subPath: photos
+
+      thumbnails:
+        type: persistentVolumeClaim
+        existingClaim: immich-thumbnails  
+        advancedMounts:
+          server:
+            main:
+              - path: /usr/src/app/upload/thumbs
+              - path: /usr/src/app/upload/encoded-video
 
       cache:
         type: persistentVolumeClaim

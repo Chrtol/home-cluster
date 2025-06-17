@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ${APP}-media
+  name: ${APP}-thumbnails
   namespace: media
 spec:
   accessModes: ["ReadWriteOnce"]
   volumeMode: Filesystem
   resources:
     requests:
-      storage: 20Gi
+      storage: 5Gi
   storageClassName: csi-rbd-sc
 ---
 apiVersion: v1
