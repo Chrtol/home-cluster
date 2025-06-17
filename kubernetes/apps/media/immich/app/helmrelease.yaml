@@ -91,6 +91,7 @@ spec:
                 memory: 274M
               limits:
                 memory: 3949M
+                gpu.intel.com/i915: 1
 
     service:
       server:
