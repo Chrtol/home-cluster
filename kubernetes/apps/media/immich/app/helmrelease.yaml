@@ -145,7 +145,7 @@ spec:
       library:
         type: nfs
         server: nas.cftollefsen.com
-        path: /mnt/truenas/cf-nas/applications/immich/photos
+        path: /mnt/truenas/cf-nas/applications/immich
         globalMounts:
           - path: *mediaLocation
 
