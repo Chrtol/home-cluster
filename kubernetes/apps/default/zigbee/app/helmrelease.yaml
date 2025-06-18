@@ -63,6 +63,9 @@ spec:
                   httpGet:
                     path: /
                     port: 8080
+                  timeoutSeconds: 5
+                  periodSeconds: 10
+                  failureThreshold: 3
               readiness:
                 enabled: true
                 custom: true
@@ -70,6 +73,9 @@ spec:
                   httpGet:
                     path: /
                     port: 8080
+                  timeoutSeconds: 5
+                  periodSeconds: 10
+                  failureThreshold: 3
               startup:
                 enabled: true
                 custom: true
@@ -77,8 +83,10 @@ spec:
                   httpGet:
                     path: /
                     port: 8080
-                  failureThreshold: 30
+                  initialDelaySeconds: 10
+                  timeoutSeconds: 5
                   periodSeconds: 10
+                  failureThreshold: 30
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
