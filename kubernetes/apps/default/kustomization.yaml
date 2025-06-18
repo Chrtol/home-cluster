@@ -14,4 +14,5 @@ resources:
   - ./mealie/ks.yaml
   - ./it-tools/ks.yaml
   - ./mosquitto/ks.yaml
+  - ./zigbee/ks.yaml
   - ./home-assistant/ks.yaml
