@@ -13,4 +13,5 @@ resources:
   - ./stirling-pdf/ks.yaml
   - ./mealie/ks.yaml
   - ./it-tools/ks.yaml
+  - ./mosquitto/ks.yaml
   - ./home-assistant/ks.yaml
