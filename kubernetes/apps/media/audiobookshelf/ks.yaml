@@ -27,4 +27,4 @@ spec:
       - name: cluster-secrets
         kind: Secret
   components:
-    - ../../../../shared/components/gatus/guarded
+    - ../../../../components/gatus/guarded
