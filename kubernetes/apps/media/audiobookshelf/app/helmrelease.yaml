@@ -38,7 +38,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /ping
+                    path: /healthcheck
                     port: &port 80
                   initialDelaySeconds: 5
                   periodSeconds: 10
