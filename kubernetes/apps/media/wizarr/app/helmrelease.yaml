@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository:  ghcr.io/wizarrrr/wizarr
-              tag: 2025.6.3
+              tag: 4.2.0
             env:
               TZ: ${SECRET_TIMEZONE}
             resources:
@@ -40,14 +40,13 @@ spec:
                 memory: 180M
               limits:
                 memory: 300M
-    # defaultPodOptions:
-    #   securityContext:
-    #     runAsNonRoot: true
-    #     runAsUser: &uid 1000
-    #     runAsGroup: *uid
-    #     fsGroup: *uid
-    #     fsGroupChangePolicy: OnRootMismatch
-    #     seccompProfile: { type: RuntimeDefault }
+          # defaultPodOptions:
+          #   securityContext:
+          #     runAsNonRoot: true
+          #     runAsUser: 568
+          #     runAsGroup: 568
+          #     fsGroup: 568
+          #     fsGroupChangePolicy: OnRootMismatch
     service:
       app:
         controller: *app
