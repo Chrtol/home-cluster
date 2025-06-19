@@ -16,3 +16,4 @@ resources:
   - ./mosquitto/ks.yaml
   - ./zigbee/ks.yaml
   - ./home-assistant/ks.yaml
+  - ./audiobookshelf/ks.yaml
