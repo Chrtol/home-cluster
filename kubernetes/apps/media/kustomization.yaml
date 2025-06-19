@@ -21,3 +21,4 @@ resources:
   - ./gluetun/ks.yaml
   - ./tautulli/ks.yaml
   - ./immich/ks.yaml
+  - ./audiobookshelf/ks.yaml
