@@ -21,6 +21,9 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 5Gi
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   retryInterval: 2m
   sourceRef:
