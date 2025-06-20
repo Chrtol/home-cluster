@@ -103,7 +103,7 @@ spec:
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
+        path: /mnt/truenas/cf-nas/data
         globalMounts:
-          - path: /media
+          - path: /data
             readOnly: false
