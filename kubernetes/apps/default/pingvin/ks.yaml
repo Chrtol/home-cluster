@@ -16,6 +16,7 @@ spec:
   path: ./kubernetes/apps/default/pingvin/app
   components:
     - ../../../../components/gatus/guarded
+    - ../../../../components/ceph-rbd
   prune: true
   sourceRef:
     kind: GitRepository
