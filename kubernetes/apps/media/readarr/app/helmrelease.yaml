@@ -68,12 +68,14 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        
     service:
       app:
         controller: *app
         ports:
           http:
             port: *port
+
     route:
       app:
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
@@ -83,8 +85,9 @@ spec:
             sectionName: https
         rules:
           - backendRefs:
-              - identifier: app
+              - identifier: *app
                 port: *port
+
     persistence:
       config:
         existingClaim: *app
