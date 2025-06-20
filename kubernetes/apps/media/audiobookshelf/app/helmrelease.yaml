@@ -100,7 +100,6 @@ spec:
           - host: &host audiobooks.${SECRET_DOMAIN}
             paths:
               - path: /
-                # pathType: Prefix
                 service:
                   identifier: app
                   port: http
