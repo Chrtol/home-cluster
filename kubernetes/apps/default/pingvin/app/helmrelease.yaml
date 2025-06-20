@@ -40,15 +40,13 @@ spec:
     persistence:
       data:
         existingClaim: *app
-        advancedMounts:
-          pingvin:
-            app:
-              - path: /opt/app/backend/data
+        globalMounts:
+          - path: /opt/app/backend/data
+
       uploads:
         type: nfs
         server: nas.cftollefsen.com
         path: /mnt/truenas/cf-nas/applications/pingvin
-        advancedMounts:
-          pingvin:
-            app:
-              - path: /opt/app/backend/data/uploads/
+        globalMounts:
+          - path: /opt/app/backend/data/uploads/
+            readOnly: false
