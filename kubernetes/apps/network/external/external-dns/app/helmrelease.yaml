@@ -39,8 +39,13 @@ spec:
       - --events
       - --ignore-ingress-tls-spec
       - --ingress-class=external
+      - --source=gateway-httproute
+      - --source=gateway-grpcroute
+      - --source=gateway-tcproute
+      - --source=gateway-tlsroute
+      - --source=gateway-udproute
     policy: sync
-    sources: ["crd", "ingress"]
+    sources: ["crd", "ingress", "gateway-httproute", "gateway-grpcroute", "gateway-tcproute", "gateway-tlsroute", "gateway-udproute"]
     txtPrefix: k8s.
     txtOwnerId: default
     domainFilters: ["${SECRET_DOMAIN}"]
