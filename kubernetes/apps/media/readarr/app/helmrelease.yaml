@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: readarr
+  name: &app readarr
 spec:
   interval: 1h
   chartRef:
@@ -70,7 +70,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        controller: readarr
+        controller: *app
         ports:
           http:
             port: *port
@@ -87,7 +87,7 @@ spec:
                 port: *port
     persistence:
       config:
-        existingClaim: readarr
+        existingClaim: *app
       cache:
         existingClaim: readarr-cache
         globalMounts:
