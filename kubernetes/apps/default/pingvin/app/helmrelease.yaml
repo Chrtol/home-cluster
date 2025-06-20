@@ -21,6 +21,11 @@ spec:
             env:
               TRUST_PROXY: "true"
               TZ: ${SECRET_TIMEZONE}
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 512Mi
 
     service:
       app:
@@ -30,7 +35,7 @@ spec:
             port: 3000
 
     ingress:
-      app:
+      app-internal:
         className: internal
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -38,6 +43,21 @@ spec:
               - path: /
                 service:
                   identifier: app 
+                  port: http
+        tls:
+          - hosts:
+            - *host
+
+      app-external:
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+        hosts:
+          - host: &host files.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
                   port: http
         tls:
           - hosts:
