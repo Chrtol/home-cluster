@@ -12,9 +12,9 @@ spec:
   interval: 30m
   values:
     controllers:
-      main:
+      pingvin:
         containers:
-          main:
+          app:
             image:
               repository: stonith404/pingvin-share
               tag: v1.13.0
@@ -38,13 +38,13 @@ spec:
                   identifier: app 
                   port: http
     persistence:
-      # data:
-      #   existingClaim: *app
-      #   advancedMounts:
-      #     main:
-      #       main:
-      #         - path: /opt/app/backend/data
       data:
+        existingClaim: *app
+        advancedMounts:
+          main:
+            main:
+              - path: /opt/app/backend/data
+      uploads:
         type: nfs
         server: nas.cftollefsen.com
         path: /mnt/truenas/cf-nas/applications/pingvin
