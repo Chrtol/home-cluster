@@ -21,12 +21,14 @@ spec:
             env:
               TRUST_PROXY: "true"
               TZ: ${SECRET_TIMEZONE}
+
     service:
       app:
         controller: *app
         ports:
           http:
             port: 3000
+
     ingress:
       app:
         className: internal
@@ -37,6 +39,10 @@ spec:
                 service:
                   identifier: app 
                   port: http
+        tls:
+          - hosts:
+            - *host
+
     persistence:
       data:
         existingClaim: *app
