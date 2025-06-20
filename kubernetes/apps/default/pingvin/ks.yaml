@@ -28,6 +28,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      CEPH_RBD_CAPACITY: 5Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
