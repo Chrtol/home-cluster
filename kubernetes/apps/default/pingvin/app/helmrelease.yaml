@@ -22,20 +22,20 @@ spec:
               TRUST_PROXY: "true"
               TZ: ${SECRET_TIMEZONE}
     service:
-      main:
-        controller: main
+      app:
+        controller: *app
         ports:
           http:
             port: 3000
     ingress:
-      internal-app:
+      app:
         className: internal
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
               - path: /
                 service:
-                  identifier: main 
+                  identifier: app 
                   port: http
     persistence:
       # data:
