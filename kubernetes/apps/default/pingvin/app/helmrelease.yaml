@@ -41,14 +41,14 @@ spec:
       data:
         existingClaim: *app
         advancedMounts:
-          main:
-            main:
+          pingvin:
+            app:
               - path: /opt/app/backend/data
       uploads:
         type: nfs
         server: nas.cftollefsen.com
         path: /mnt/truenas/cf-nas/applications/pingvin
         advancedMounts:
-          main:
-            main:
-              - path: /opt/app/backend/data
+          pingvin:
+            app:
+              - path: /opt/app/backend/data/uploads/
