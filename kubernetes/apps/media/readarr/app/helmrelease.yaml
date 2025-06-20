@@ -68,7 +68,7 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-        
+
     service:
       app:
         controller: *app
@@ -83,10 +83,10 @@ spec:
           - name: internal
             namespace: network
             sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: *app
-                port: *port
+        # rules:
+        #   - backendRefs:
+        #       - identifier: app
+        #         port: *port
 
     persistence:
       config:
