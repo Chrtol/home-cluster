@@ -80,8 +80,7 @@ spec:
       #   tls:
       #     - hosts:
       #       - *host
-      app-external:
-        enabled: true
+      app:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
@@ -95,6 +94,7 @@ spec:
           nginx.ingress.kubernetes.io/auth-snippet: |
             proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+            proxy_set_header Host $http_host;
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
