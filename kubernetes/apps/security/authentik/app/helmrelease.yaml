@@ -60,16 +60,6 @@ spec:
           nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
         hosts:
           - &host sso.${SECRET_DOMAIN}
-        paths:
-          - path: /
-            pathType: Prefix
-          - path: /outpost.goauthentik.io
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: ak-outpost-authentik-embedded-outpost
-                port:
-                  number: 9000
         tls:
           - hosts:
             - *host
