@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: authentik-outpost-external
+  namespace: security
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+spec:
+  ingressClassName: external
+  rules:
+    - host: sso.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /outpost.goauthentik.io
+            pathType: Prefix
+            backend:
+              service:
+                name: ak-outpost-authentik-embedded-outpost
+                port:
+                  number: 9000
+  tls:
+    - hosts:
+        - sso.${SECRET_DOMAIN}
