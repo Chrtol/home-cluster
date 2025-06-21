@@ -17,3 +17,4 @@ resources:
   - ./zigbee/ks.yaml
   - ./home-assistant/ks.yaml
   - ./pingvin/ks.yaml
+  - ./affine/ks.yaml
