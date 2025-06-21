@@ -37,7 +37,6 @@ spec:
     - host: sso.${SECRET_DOMAIN}
       http:
         paths:
-          # Main authentik UI - MUST come first
           - path: /
             pathType: Prefix
             backend:
@@ -45,7 +44,6 @@ spec:
                 name: authentik-server
                 port:
                   number: 80
-          # Outpost endpoints for forward auth
           - path: /outpost.goauthentik.io
             pathType: Prefix
             backend:
