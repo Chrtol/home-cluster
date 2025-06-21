@@ -18,3 +18,4 @@ resources:
   - ./home-assistant/ks.yaml
   - ./pingvin/ks.yaml
   - ./affine/ks.yaml
+  - ./glance/ks.yaml
