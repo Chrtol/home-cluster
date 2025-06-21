@@ -86,7 +86,8 @@ spec:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
           # Authentik forward auth annotations
           nginx.ingress.kubernetes.io/auth-url: |-
-            https://sso.${SECRET_DOMAIN}/outpost.goauthentik.io/auth/nginx
+            http://ak-outpost-authentik-embedded-outpost.security.svc.cluster.local:9000/outpost.goauthentik.io/auth/nginx
+          # Signin goes to external SSO domain
           nginx.ingress.kubernetes.io/auth-signin: |-
             https://sso.${SECRET_DOMAIN}/outpost.goauthentik.io/start?rd=$escaped_request_uri
           nginx.ingress.kubernetes.io/auth-response-headers: |-
@@ -94,13 +95,12 @@ spec:
           nginx.ingress.kubernetes.io/auth-snippet: |
             proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-            proxy_set_header Host $http_host;
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
               - path: /
                 service:
-                  identifier: app 
+                  identifier: app
                   port: http
         tls:
           - hosts:
