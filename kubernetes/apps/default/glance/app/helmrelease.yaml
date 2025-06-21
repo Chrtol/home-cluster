@@ -40,7 +40,7 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 96Mi
-                
+
         pod:
           securityContext:
             runAsUser: 568
@@ -56,17 +56,19 @@ spec:
           http:
             port: &port 8080
 
-    route:
-      app:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - name: *app
-                port: *port
+    ingress:
+      app-internal:
+        className: internal
+        hosts:
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app 
+                  port: http
+        tls:
+          - hosts:
+            - *host
 
     persistence:
       config-file:
