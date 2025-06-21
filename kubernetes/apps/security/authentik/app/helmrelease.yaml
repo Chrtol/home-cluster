@@ -80,7 +80,7 @@ spec:
             add_header X-XSS-Protection "1; mode=block";
           nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
         hosts:
-          - host: &host sso.${SECRET_DOMAIN}
+          - &host sso.${SECRET_DOMAIN}
 
         tls:
           - hosts:
