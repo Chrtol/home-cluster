@@ -40,7 +40,6 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 96Mi
-
         pod:
           securityContext:
             runAsUser: 568
@@ -48,25 +47,21 @@ spec:
             runAsNonRoot: true
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
-
     service:
       app:
         controller: glance
         ports:
           http:
             port: &port 8080
-
     ingress:
       app:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-          # Authentik forward auth annotations
           nginx.ingress.kubernetes.io/auth-url: |-
-            http://ak-outpost-authentik-embedded-outpost.security.svc.cluster.local:9000/outpost.goauthentik.io/auth/nginx
-          # Signin goes to external SSO domain
+            https://glance.${SECRET_DOMAIN}/outpost.goauthentik.io/auth/nginx
           nginx.ingress.kubernetes.io/auth-signin: |-
-            https://sso.${SECRET_DOMAIN}/outpost.goauthentik.io/start?rd=$escaped_request_uri
+            https://glance.${SECRET_DOMAIN}/outpost.goauthentik.io/start?rd=$escaped_request_uri
           nginx.ingress.kubernetes.io/auth-response-headers: |-
             Set-Cookie,X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid
           nginx.ingress.kubernetes.io/auth-snippet: |
@@ -79,10 +74,13 @@ spec:
                 service:
                   identifier: app
                   port: http
+              - path: /outpost.goauthentik.io
+                service:
+                  name: ak-outpost-authentik-embedded-outpost
+                  port: 9000
         tls:
           - hosts:
             - *host
-
     persistence:
       config-file:
         type: configMap
