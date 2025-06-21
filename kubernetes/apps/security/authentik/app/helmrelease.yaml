@@ -81,12 +81,7 @@ spec:
           nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
         hosts:
           - host: &host sso.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                # pathType: Prefix
-                service:
-                  identifier: app
-                  port: http
+
         tls:
           - hosts:
             - *host
