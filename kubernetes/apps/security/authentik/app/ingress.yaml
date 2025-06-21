@@ -26,19 +26,28 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: authentik-external-outpost
+  name: authentik-external
   namespace: security
   annotations:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-    nginx.ingress.kubernetes.io/enable-global-auth: "false"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
 spec:
   ingressClassName: external
   rules:
     - host: sso.${SECRET_DOMAIN}
       http:
         paths:
+          # Main authentik UI - MUST come first
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-server
+                port:
+                  number: 80
+          # Outpost endpoints for forward auth
           - path: /outpost.goauthentik.io
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: ak-outpost-authentik-embedded-outpost
@@ -47,4 +56,3 @@ spec:
   tls:
     - hosts:
         - sso.${SECRET_DOMAIN}
-      # secretName: authentik-external-tls
