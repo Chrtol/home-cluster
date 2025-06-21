@@ -70,7 +70,7 @@ spec:
         #         - *internalHost
         # external:
         enabled: true
-        className: external
+        ingressClassName: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
           nginx.ingress.kubernetes.io/configuration-snippet: |
