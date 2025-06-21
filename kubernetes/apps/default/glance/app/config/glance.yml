@@ -48,7 +48,7 @@ pages:
       - size: small
         widgets:
           - type: weather
-            location: Oslo, Norway
+            location: Oslo, Oslo County, Norway
 
           - type: monitor
             cache: 1m
