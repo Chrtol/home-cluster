@@ -103,13 +103,13 @@ pages:
             cache: 1m
             sites:
               - title: Proxmox
-                url: https://10.0.30.10:8006
+                url: https://proxmox.${SECRET_DOMAIN}
                 icon: di:proxmox.svg
               - title: Truenas
-                url: http://nas.${SECRET_DOMAIN}
+                url: https://nas.${SECRET_DOMAIN}
                 icon: di:truenas.svg
               - title: Adguard Home
-                url: http://10.0.10.1
+                url: https://adguard.${SECRET_DOMAIN}
                 # icon: di:pi-hole.svg
 
           - type: monitor
@@ -157,9 +157,9 @@ pages:
 
           - type: custom-api
             title: PROXMOX-VE NODES
-            title-url: http://10.0.30.10:8006
+            title-url: https://proxmox.${SECRET_DOMAIN}
             cache: 1m
-            url: http://10.0.30.10:8006/api2/json/cluster/resources?type=node
+            url: https://${SECRET_DOMAIN}/api2/json/cluster/resources?type=node
             allow-insecure: true
             headers:
               Accept: application/json
