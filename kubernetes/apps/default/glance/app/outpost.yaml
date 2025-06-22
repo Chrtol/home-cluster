@@ -4,6 +4,8 @@ kind: Ingress
 metadata:
   name: glance-outpost
   namespace: default
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "" #disabled external-dns record creation
 spec:
   ingressClassName: external
   rules:
