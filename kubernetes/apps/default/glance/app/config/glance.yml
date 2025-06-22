@@ -106,7 +106,7 @@ pages:
                 url: https://10.0.30.10:8006
                 icon: di:proxmox.svg
               - title: Truenas
-                url: https://nas.${SECRET_DOMAIN}
+                url: http://nas.${SECRET_DOMAIN}
                 icon: di:truenas.svg
               - title: Adguard Home
                 url: http://10.0.10.1
