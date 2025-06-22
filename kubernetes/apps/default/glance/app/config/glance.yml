@@ -1,3 +1,6 @@
+server:
+  proxied: true
+
 theme:
   background-color: 240 21 15
   contrast-multiplier: 1.2
@@ -59,5 +62,95 @@ pages:
               - title: Grafana
                 url: https://grafana.${SECRET_DOMAIN}
 
-server:
-  proxied: true
+  - name: Homelab
+    columns:
+      - size: full
+        widgets:
+          - type: monitor
+            title: Media
+            cache: 1m
+            sites:
+              # - title: Fusion
+              #   url: https://feeds.${SECRET_DOMAIN}
+              #   icon: si:rss
+              - title: Plex
+                url: https://plex.${SECRET_DOMAIN}
+                icon: di:plex.svg
+              - title: Jellyseerr
+                url: https://jellyseerr.${SECRET_DOMAIN}
+                icon: di:jellyseerr.svg
+              - title: Radarr
+                url: https://radarr.${SECRET_DOMAIN}
+                icon: di:radarr.svg
+              - title: Sonarr
+                url: https://sonarr.${SECRET_DOMAIN}
+                icon: di:sonarr.svg
+              - title: Bazarr
+                url: https://bazarr.${SECRET_DOMAIN}
+                icon: di:bazarr.svg
+              - title: Prowlarr
+                url: https://prowlarr.${SECRET_DOMAIN}
+                icon: di:prowlarr.svg
+              - title: Qbittorrent
+                url: https://qbittorrent.${SECRET_DOMAIN}
+                icon: di:qbittorrent.svg
+              # - title: Autobrr
+              #   url: https://autobrr.${SECRET_DOMAIN}
+              #   icon: di:autobrr.svg
+
+          - type: monitor
+            title: Infrastructure
+            cache: 1m
+            sites:
+              - title: Proxmox
+                url: https://10.0.30.10:8006
+                icon: di:proxmox.svg
+              - title: Truenas
+                url: https://nas.${SECRET_DOMAIN}
+                icon: di:truenas.svg
+              - title: Adguard Home
+                url: http://10.0.10.1
+                # icon: di:pi-hole.svg
+
+          - type: monitor
+            title: Monitoring
+            cache: 1m
+            sites:
+              - title: Grafana
+                url: https://grafana.${SECRET_DOMAIN}
+                icon: di:grafana.svg
+              - title: Prometheus
+                url: https://prometheus.${SECRET_DOMAIN}
+                icon: di:prometheus.svg
+              # - title: Alertmanager
+              #   url: https://alertmanager.${SECRET_DOMAIN}
+              #   icon: di:alertmanager.svg
+              # - title: Hubble
+              #   url: https://hubble.${SECRET_DOMAIN}
+              #   icon: di:cilium.svg
+              # - title: Alloy
+              #   url: https://alloy.${SECRET_DOMAIN}
+              #   icon: di:alloy.svg
+              - title: Gatus
+                url: https://status.${SECRET_DOMAIN}
+                icon: di:gatus.svg
+
+          - type: monitor
+            title: Automation
+            cache: 1m
+            sites:
+              - title: Home-assistant
+                url: https://home-assistant.${SECRET_DOMAIN}
+                icon: di:home-assistant.svg
+              - title: Zigbee2mqtt
+                url: https://zigbee.${SECRET_DOMAIN}
+                icon: di:zigbee2mqtt.svg
+              # - title: n8n
+              #   url: https://n8n.${SECRET_DOMAIN}
+              #   icon: di:n8n.svg
+              - title: IT-tools
+                url: https://it-tools.${SECRET_DOMAIN}
+                icon: di:it-tools.svg
+              - title: Stirling PDF
+                url: https://pdf.${SECRET_DOMAIN}
+                icon: di:stirling-pdf.svg
