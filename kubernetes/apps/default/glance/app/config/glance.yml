@@ -58,3 +58,6 @@ pages:
                 url: https://hass.${SECRET_DOMAIN}
               - title: Grafana
                 url: https://grafana.${SECRET_DOMAIN}
+
+server:
+  proxied: true
