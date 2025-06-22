@@ -1,0 +1,14 @@
+# File: kubernetes/apps/default/glance/app/externalsvc.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-outpost
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: ak-outpost-authentik-embedded-outpost.security.svc.cluster.local
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
