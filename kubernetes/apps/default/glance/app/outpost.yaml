@@ -5,9 +5,9 @@ metadata:
   name: glance-outpost
   namespace: default
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "" #disabled external-dns record creation
+    # Force nginx controller to accept this even with different class
+    kubernetes.io/ingress.class: external
 spec:
-  ingressClassName: external
   rules:
     - host: glance.${SECRET_DOMAIN}
       http:
