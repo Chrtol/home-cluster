@@ -159,7 +159,7 @@ pages:
             title: PROXMOX-VE NODES
             title-url: https://proxmox.${SECRET_DOMAIN}
             cache: 1m
-            url: https://${SECRET_DOMAIN}/api2/json/cluster/resources?type=node
+            url: https://proxmox.${SECRET_DOMAIN}/api2/json/cluster/resources?type=node
             allow-insecure: true
             headers:
               Accept: application/json
