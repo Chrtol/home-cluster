@@ -16,7 +16,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ak-outpost-authentik-embedded-outpost
-                namespace: security
+                name: authentik-outpost
                 port:
                   number: 9000
+  tls:
+    - hosts:
+        - glance.${SECRET_DOMAIN}
