@@ -140,7 +140,7 @@ pages:
             cache: 1m
             sites:
               - title: Home-assistant
-                url: https://home-assistant.${SECRET_DOMAIN}
+                url: https://hass.${SECRET_DOMAIN}
                 icon: di:home-assistant.svg
               - title: Zigbee2mqtt
                 url: https://zigbee.${SECRET_DOMAIN}
@@ -149,7 +149,7 @@ pages:
               #   url: https://n8n.${SECRET_DOMAIN}
               #   icon: di:n8n.svg
               - title: IT-tools
-                url: https://it-tools.${SECRET_DOMAIN}
+                url: https://tools.${SECRET_DOMAIN}
                 icon: di:it-tools.svg
               - title: Stirling PDF
                 url: https://pdf.${SECRET_DOMAIN}
