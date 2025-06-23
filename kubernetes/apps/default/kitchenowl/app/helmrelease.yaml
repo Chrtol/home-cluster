@@ -1,0 +1,120 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app kitchenowl
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template-upgrade
+    namespace: flux-system
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    controllers:
+      kitchenowl:
+        annotations:
+          reloader.stakater.com/auto: "true"
+
+        pod:
+          securityContext:
+            runAsUser: &uid 1000
+            runAsGroup: *uid
+            fsGroup: *uid
+            fsGroupChangePolicy: "OnRootMismatch"
+            supplementalGroups:
+              - 65539
+
+          enableServiceLinks: false
+
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: *app
+        initContainers:
+          01-init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 17.5.0
+            envFrom: &envFrom
+              - secretRef:
+                  name: *app
+        containers:
+          app:
+            image:
+              repository: tombursch/kitchenowl
+              tag: v0.6.15
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              COLLECT_METRICS: false
+              DB_DRIVER: postgresql
+              EMAIL_MANDATORY: false
+              FRONT_URL: https://kitchenowl.${SECRET_DOMAIN}
+              OPEN_REGISTRATION: false
+              # SMTP_PORT: 25
+              # SMTP_HOST: smtp-relay.services.svc.cluster.local
+              # SMTP_FROM: alerts@${SECRET_DOMAIN}
+              STORAGE_PATH: "/data"
+            envFrom: *envFrom
+            resources:
+              requests:
+                cpu: 10m
+                memory: 100Mi
+              limits:
+                memory: 500Mi
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: &port 8080
+
+    ingress:
+      app:
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          # Authentik forward auth
+          # nginx.ingress.kubernetes.io/auth-url: |-
+          #   http://ak-outpost-authentik-embedded-outpost.security.svc.cluster.local:9000/outpost.goauthentik.io/auth/nginx
+          # nginx.ingress.kubernetes.io/auth-signin: |-
+          #   https://glance.${SECRET_DOMAIN}/outpost.goauthentik.io/start?rd=$escaped_request_uri
+          # nginx.ingress.kubernetes.io/auth-response-headers: |-
+          #   Set-Cookie,X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid
+          # nginx.ingress.kubernetes.io/auth-snippet: |
+          #   proxy_set_header X-Forwarded-Host $http_host;
+          #   proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+          #   proxy_set_header X-Original-Method $request_method;
+          #   proxy_set_header X-Forwarded-Method $request_method;
+          #   proxy_set_header X-Forwarded-For $remote_addr;
+        hosts:
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+            - *host
+
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /data
