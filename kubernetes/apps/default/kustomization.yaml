@@ -19,3 +19,4 @@ resources:
   - ./pingvin/ks.yaml
   - ./affine/ks.yaml
   - ./glance/ks.yaml
+  - ./plane/ks.yaml

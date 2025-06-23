@@ -5,6 +5,7 @@ metadata:
   name: "${APP}"
 spec:
   accessModes: ["${CEPH_RBD_ACCESSMODES:=ReadWriteOnce}"]
+  volumeMode: "${CEPH_RBD_VOLUMEMODE:=Filesystem}"
   resources:
     requests:
       storage: "${CEPH_RBD_CAPACITY:=1Gi}"
