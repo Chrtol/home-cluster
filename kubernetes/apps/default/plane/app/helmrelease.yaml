@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: plane-ce
-      version: v1.11.0
+      version: stable
       sourceRef:
         kind: HelmRepository
         name: makeplane
@@ -84,6 +84,16 @@ spec:
       cpuLimit: 500m
       memoryLimit: 1000Mi
       pullPolicy: Always
+
+    rabbitmq:
+      local_setup: true
+      image: rabbitmq:4.1.0-management-alpine
+      pullPolicy: IfNotPresent
+      servicePort: 5672
+      managementPort: 15672
+      storageClass: ceph-csi-rbd
+      volumeSize: 100Mi
+
 
     env:
       CORS_ALLOWED_ORIGINS: "https://plane.${SECRET_DOMAIN}"
