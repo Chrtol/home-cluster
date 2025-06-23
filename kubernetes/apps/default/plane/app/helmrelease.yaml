@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: plane-ce
-      version: 1.2.2
+      version: v1.11.0
       sourceRef:
         kind: HelmRepository
         name: makeplane
@@ -24,7 +24,7 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    planeVersion: v0.26.0
+    planeVersion: v0.26.1
 
     ingress:
       enabled: true
