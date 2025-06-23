@@ -15,4 +15,3 @@ resources:
   - ./bitnami-charts.yaml
   - ./authentik.yaml
   - ./hajimari.yaml
-  - ./makeplane.yaml
