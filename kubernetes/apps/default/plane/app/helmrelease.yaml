@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: plane-ce
-      tag: stable
+      version: v1.10.0
       sourceRef:
         kind: HelmRepository
         name: makeplane
