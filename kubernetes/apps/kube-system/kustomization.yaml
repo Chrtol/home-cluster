@@ -16,3 +16,4 @@ resources:
   - ./intel-device-plugin/ks.yaml
   - ./csi-driver-nfs/ks.yaml
   - ./generic-device-plugin/ks.yaml
+  - ./descheduler/ks.yaml
