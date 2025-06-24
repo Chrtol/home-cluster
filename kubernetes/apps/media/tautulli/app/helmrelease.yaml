@@ -31,6 +31,16 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               TAUTULLI__PORT: &port 80
+              TAUTULLI__OAUTH_ENABLE: "true"
+              TAUTULLI__OAUTH_PROVIDER: "generic"
+              TAUTULLI__OAUTH_AUTHORIZATION_URL: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
+              TAUTULLI__OAUTH_TOKEN_URL: "https://sso.${SECRET_DOMAIN}/application/o/token/"
+              TAUTULLI__OAUTH_USERINFO_URL: "https://sso.${SECRET_DOMAIN}/application/o/userinfo/"
+              TAUTULLI__OAUTH_SCOPE: "openid profile email"
+              TAUTULLI__OAUTH_AUTO_LOGIN: "false"
+            envFrom:
+              - secretRef:
+                  name: tautulli-secret
             probes:
               liveness: &probes
                 enabled: true
