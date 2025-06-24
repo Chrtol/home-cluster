@@ -32,9 +32,6 @@ spec:
               CONFIG_PATH: /config
               METADATA_PATH: /config/metadata
               TZ: ${SECRET_TIMEZONE}
-            envFrom:
-              - secretRef:
-                  name: audiobookshelf-secret
             probes:
               liveness: &probes
                 enabled: true
