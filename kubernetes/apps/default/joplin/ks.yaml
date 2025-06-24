@@ -1,28 +1,27 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app affine
+  name: &app joplin
   namespace: &namespace default
 spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../components/gatus/external
-    - ../../../../components/ceph-rbd
   dependsOn:
-    - name: ceph-csi-rbd
-      namespace: ceph-csi-rbd
-  interval: 1h
-  path: ./kubernetes/apps/default/affine/app
+    - name: cloudnative-pg
+      namespace: database
+  components:
+    - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
-      CEPH_RBD_CAPACITY: 2Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+  interval: 1h
+  path: ./kubernetes/apps/default/joplin/app
   prune: true
   retryInterval: 2m
   sourceRef:
@@ -31,4 +30,4 @@ spec:
     namespace: flux-system
   targetNamespace: *namespace
   timeout: 5m
-  wait: true
+  wait: false
