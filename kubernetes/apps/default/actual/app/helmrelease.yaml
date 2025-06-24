@@ -58,16 +58,8 @@ spec:
           http:
             port: *httpPort
 
-    persistence:
-      data:
-        existingClaim: *app
-        advancedMounts:
-          actual:
-            app:
-              - path: /data
-
     ingress:
-      app-internal:
+      app:
         className: internal
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -79,3 +71,11 @@ spec:
         tls:
           - hosts:
             - *host
+
+    persistence:
+      data:
+        existingClaim: *app
+        advancedMounts:
+          actual:
+            app:
+              - path: /data
