@@ -21,3 +21,4 @@ resources:
   - ./glance/ks.yaml
   - ./kitchenowl/ks.yaml
   - ./actual/ks.yaml
+  - ./joplin/ks.yaml
