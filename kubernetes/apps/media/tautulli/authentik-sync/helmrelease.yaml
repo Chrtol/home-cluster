@@ -33,7 +33,7 @@ spec:
               - -c
               - |
                 cd /app
-                pip install --no-cache-dir -r requirements.txt
+                pip install --no-cache-dir --user -r requirements.txt
                 python app.py
             env:
               AUTHENTIK_URL: "http://authentik-server.security.svc.cluster.local"
