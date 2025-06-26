@@ -1,0 +1,349 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tautulli-authentik-sync-script
+  namespace: default
+data:
+  app.py: |
+    #!/usr/bin/env python3
+    import os
+    import json
+    import requests
+    import sqlite3
+    from flask import Flask, request, jsonify
+    from datetime import datetime
+    import logging
+    import threading
+    import time
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    app = Flask(__name__)
+
+    # Configuration
+    AUTHENTIK_URL = os.getenv('AUTHENTIK_URL', 'http://authentik-server.security.svc.cluster.local')
+    AUTHENTIK_TOKEN = os.getenv('AUTHENTIK_TOKEN')
+    TAUTULLI_URL = os.getenv('TAUTULLI_URL', 'http://tautulli.media.svc.cluster.local')
+    TAUTULLI_API_KEY = os.getenv('TAUTULLI_API_KEY')
+    WEBHOOK_NOTIFIER_ID = os.getenv('WEBHOOK_NOTIFIER_ID', '')
+    DEFAULT_GROUPS = os.getenv('DEFAULT_GROUPS', 'audiobookshelf-users,media-users').split(',')
+    WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', '')
+    DB_PATH = '/data/users.db'
+
+    def init_db():
+        """Initialize SQLite database for tracking processed users"""
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS processed_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plex_username TEXT UNIQUE,
+                email TEXT,
+                authentik_user_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def is_user_processed(username):
+        """Check if user has already been processed"""
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1 FROM processed_users WHERE plex_username = ?', (username,))
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+
+    def mark_user_processed(username, email, authentik_user_id):
+        """Mark user as processed"""
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO processed_users (plex_username, email, authentik_user_id) VALUES (?, ?, ?)',
+            (username, email, authentik_user_id)
+        )
+        conn.commit()
+        conn.close()
+
+    def create_authentik_user(username, email, name):
+        """Create user in Authentik"""
+        try:
+            headers = {
+                'Authorization': f'Bearer {AUTHENTIK_TOKEN}',
+                'Content-Type': 'application/json'
+            }
+            
+            user_data = {
+                'username': username,
+                'email': email or f"{username}@plex.local",
+                'name': name or username,
+                'is_active': True,
+                'type': 'external'
+            }
+            
+            logger.info(f"Creating Authentik user: {username}")
+            response = requests.post(
+                f'{AUTHENTIK_URL}/api/v3/core/users/',
+                headers=headers,
+                json=user_data
+            )
+            
+            if response.status_code == 201:
+                return response.json()
+            elif response.status_code == 400:
+                # User might already exist
+                error_data = response.json()
+                if 'username' in error_data and 'already exists' in str(error_data['username']):
+                    logger.info(f"User {username} already exists in Authentik")
+                    # Try to get existing user
+                    get_response = requests.get(
+                        f'{AUTHENTIK_URL}/api/v3/core/users/?username={username}',
+                        headers=headers
+                    )
+                    if get_response.status_code == 200:
+                        users = get_response.json()['results']
+                        if users:
+                            return users[0]
+                raise Exception(f"Failed to create user: {error_data}")
+            else:
+                response.raise_for_status()
+                
+        except Exception as e:
+            logger.error(f"Error creating Authentik user {username}: {e}")
+            return None
+
+    def get_authentik_groups():
+        """Get all groups from Authentik"""
+        try:
+            headers = {
+                'Authorization': f'Bearer {AUTHENTIK_TOKEN}',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(
+                f'{AUTHENTIK_URL}/api/v3/core/groups/',
+                headers=headers
+            )
+            response.raise_for_status()
+            return {group['name']: group['pk'] for group in response.json()['results']}
+        except Exception as e:
+            logger.error(f"Error fetching Authentik groups: {e}")
+            return {}
+
+    def add_user_to_groups(user_id, group_names):
+        """Add user to Authentik groups"""
+        try:
+            headers = {
+                'Authorization': f'Bearer {AUTHENTIK_TOKEN}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Get all groups to find IDs
+            all_groups = get_authentik_groups()
+            
+            for group_name in group_names:
+                if group_name in all_groups:
+                    group_id = all_groups[group_name]
+                    
+                    # Add user to group
+                    response = requests.post(
+                        f'{AUTHENTIK_URL}/api/v3/core/groups/{group_id}/add_user/',
+                        headers=headers,
+                        json={'pk': user_id}
+                    )
+                    
+                    if response.status_code in [200, 204]:
+                        logger.info(f"Added user {user_id} to group {group_name}")
+                    else:
+                        logger.warning(f"Failed to add user {user_id} to group {group_name}: {response.text}")
+                else:
+                    logger.warning(f"Group {group_name} not found in Authentik")
+                    
+        except Exception as e:
+            logger.error(f"Error adding user to groups: {e}")
+
+    def update_tautulli_webhook_condition():
+        """Update Tautulli webhook condition with today's date"""
+        if not TAUTULLI_API_KEY or not WEBHOOK_NOTIFIER_ID:
+            logger.warning("Tautulli API key or notifier ID not configured, skipping webhook update")
+            return False
+
+        try:
+            today = datetime.now().strftime('%Y-%m-%d')
+            logger.info(f"Updating Tautulli webhook condition to date: {today}")
+            
+            # Get current notifier config
+            get_params = {
+                'apikey': TAUTULLI_API_KEY,
+                'cmd': 'get_notifier_config',
+                'notifier_id': WEBHOOK_NOTIFIER_ID
+            }
+            
+            response = requests.get(f'{TAUTULLI_URL}/api/v2', params=get_params)
+            response.raise_for_status()
+            config_data = response.json()
+            
+            if config_data['response']['result'] != 'success':
+                logger.error(f"Failed to get notifier config: {config_data}")
+                return False
+            
+            # Update the condition with today's date
+            # This assumes the condition format matches what Tautulli expects
+            update_params = {
+                'apikey': TAUTULLI_API_KEY,
+                'cmd': 'set_notifier_config',
+                'notifier_id': WEBHOOK_NOTIFIER_ID,
+                'agent_id': config_data['response']['data']['agent_id'],
+                'config_id': config_data['response']['data']['config_id']
+            }
+            
+            # Add condition for today's date
+            # Format: parameter|operator|value
+            condition = f"added_date|begins with|{today}"
+            update_params['condition_1'] = condition
+            
+            response = requests.post(f'{TAUTULLI_URL}/api/v2', data=update_params)
+            response.raise_for_status()
+            result = response.json()
+            
+            if result['response']['result'] == 'success':
+                logger.info(f"Successfully updated webhook condition to: {condition}")
+                return True
+            else:
+                logger.error(f"Failed to update webhook condition: {result}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error updating Tautulli webhook condition: {e}")
+            return False
+
+    def schedule_daily_update():
+        """Schedule daily webhook condition updates"""
+        scheduler = BackgroundScheduler()
+        # Run at 00:01 every day
+        scheduler.add_job(
+            func=update_tautulli_webhook_condition,
+            trigger="cron", 
+            hour=0, 
+            minute=1,
+            id='daily_webhook_update'
+        )
+        scheduler.start()
+        logger.info("Scheduled daily webhook condition updates at 00:01")
+
+    @app.route('/webhook', methods=['POST'])
+    def webhook_handler():
+        """Handle Tautulli webhook"""
+        try:
+            # Verify webhook secret if configured
+            if WEBHOOK_SECRET:
+                provided_secret = request.headers.get('X-Webhook-Secret', '')
+                if provided_secret != WEBHOOK_SECRET:
+                    logger.warning("Invalid webhook secret")
+                    return jsonify({'error': 'Unauthorized'}), 401
+
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'No JSON data provided'}), 400
+
+            logger.info(f"Received webhook: {json.dumps(data, indent=2)}")
+
+            # Extract user information from Tautulli webhook
+            username = data.get('username') or data.get('user')
+            email = data.get('email')
+            user_id = data.get('user_id')
+            
+            if not username:
+                logger.warning("No username found in webhook data")
+                return jsonify({'error': 'No username provided'}), 400
+
+            # Check if user has already been processed
+            if is_user_processed(username):
+                logger.info(f"User {username} already processed, skipping")
+                return jsonify({'message': 'User already processed'}), 200
+
+            # Create user in Authentik
+            authentik_user = create_authentik_user(username, email, username)
+            if authentik_user:
+                authentik_user_id = authentik_user['pk']
+                
+                # Add to default groups
+                if DEFAULT_GROUPS:
+                    add_user_to_groups(authentik_user_id, [g.strip() for g in DEFAULT_GROUPS if g.strip()])
+                
+                # Mark as processed
+                mark_user_processed(username, email, authentik_user_id)
+                
+                logger.info(f"Successfully created and configured user: {username}")
+                return jsonify({
+                    'message': 'User created successfully',
+                    'username': username,
+                    'authentik_user_id': authentik_user_id
+                }), 200
+            else:
+                logger.error(f"Failed to create user: {username}")
+                return jsonify({'error': 'Failed to create user'}), 500
+
+        except Exception as e:
+            logger.error(f"Error processing webhook: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/health', methods=['GET'])
+    def health_check():
+        """Health check endpoint"""
+        return jsonify({'status': 'healthy'}), 200
+
+    @app.route('/status', methods=['GET'])
+    def status():
+        """Status endpoint with processed users count"""
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM processed_users')
+            count = cursor.fetchone()[0]
+            conn.close()
+            
+            return jsonify({
+                'status': 'running',
+                'processed_users': count,
+                'default_groups': DEFAULT_GROUPS,
+                'tautulli_configured': bool(TAUTULLI_API_KEY and WEBHOOK_NOTIFIER_ID)
+            }), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/update-webhook', methods=['POST'])
+    def manual_webhook_update():
+        """Manually trigger webhook condition update"""
+        success = update_tautulli_webhook_condition()
+        if success:
+            return jsonify({'message': 'Webhook condition updated successfully'}), 200
+        else:
+            return jsonify({'error': 'Failed to update webhook condition'}), 500
+
+    if __name__ == '__main__':
+        init_db()
+        logger.info("Starting Tautulli-Authentik sync webhook service")
+        logger.info(f"Default groups: {DEFAULT_GROUPS}")
+        
+        # Start the daily scheduler
+        schedule_daily_update()
+        
+        # Run initial webhook update
+        if TAUTULLI_API_KEY and WEBHOOK_NOTIFIER_ID:
+            logger.info("Running initial webhook condition update")
+            update_tautulli_webhook_condition()
+        else:
+            logger.warning("Tautulli API key or notifier ID not configured - manual webhook setup required")
+        
+        app.run(host='0.0.0.0', port=5000)
+
+  requirements.txt: |
+    Flask==3.0.0
+    requests==2.31.0
+    APScheduler==3.10.4

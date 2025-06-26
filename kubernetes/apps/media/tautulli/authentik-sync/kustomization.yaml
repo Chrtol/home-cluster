@@ -1,0 +1,12 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./configmap.yaml
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: tautulli-authentik-sync
+      app.kubernetes.io/instance: tautulli-authentik-sync
