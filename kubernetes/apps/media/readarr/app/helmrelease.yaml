@@ -35,6 +35,8 @@ spec:
               READARR__SERVER__PORT: &port 80
               READARR__LOG_LEVEL: info
               READARR__UPDATE__BRANCH: develop
+              READARR__METADATASOURCE__TIMEOUT: 30
+              READARR__METADATASOURCE__RETRYCOUNT: 5
               TZ: ${SECRET_TIMEZONE}
             envFrom:
               - secretRef:
