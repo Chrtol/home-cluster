@@ -240,15 +240,26 @@ data:
     def webhook_handler():
         """Handle Tautulli webhook"""
         try:
+            logger.info(f"Webhook request received from {request.remote_addr}")
+            logger.info(f"Request headers: {dict(request.headers)}")
+            logger.info(f"Request method: {request.method}")
+            logger.info(f"Request content type: {request.content_type}")
+            
             # Verify webhook secret if configured
             if WEBHOOK_SECRET:
                 provided_secret = request.headers.get('X-Webhook-Secret', '')
+                logger.info(f"Expected secret: {WEBHOOK_SECRET[:8]}...")
+                logger.info(f"Provided secret: {provided_secret[:8] if provided_secret else 'None'}...")
                 if provided_secret != WEBHOOK_SECRET:
                     logger.warning("Invalid webhook secret")
                     return jsonify({'error': 'Unauthorized'}), 401
+            else:
+                logger.info("No webhook secret configured, skipping validation")
 
             data = request.get_json()
+            logger.info(f"Raw request data: {request.get_data()}")
             if not data:
+                logger.warning("No JSON data provided in request")
                 return jsonify({'error': 'No JSON data provided'}), 400
 
             logger.info(f"Received webhook: {json.dumps(data, indent=2)}")
