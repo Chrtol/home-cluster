@@ -44,6 +44,7 @@ spec:
             env:
               DOT: "off"
               DNS_ADDRESS: 127.0.0.2
+              DNS_KEEP_NAMESERVER: "on"
               HTTP_CONTROL_SERVER_ADDRESS: ":8000"
               HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH: &gluetunAuthPath /gluetun/auth.toml
               HTTP_CONTROL_SERVER_API_KEY:
