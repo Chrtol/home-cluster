@@ -188,8 +188,6 @@ data:
             response.raise_for_status()
             config_data = response.json()
             
-            logger.info(f"Tautulli API response: {json.dumps(config_data, indent=2)}")
-            
             if config_data['response']['result'] != 'success':
                 logger.error(f"Failed to get notifier config: {config_data}")
                 return False
@@ -200,21 +198,21 @@ data:
                 'apikey': TAUTULLI_API_KEY,
                 'cmd': 'set_notifier_config',
                 'notifier_id': WEBHOOK_NOTIFIER_ID,
-                'agent_id': config_data['response']['data']['agent_id'],
-                'config_id': config_data['response']['data']['config_id']
+                'agent_id': config_data['response']['data']['agent_id']
             }
             
-            # Add condition for today's date
-            # Format: parameter|operator|value
-            condition = f"added_date|begins with|{today}"
-            update_params['condition_1'] = condition
+            # Add condition for today's date  
+            # Use the format Tautulli expects for conditions
+            update_params['condition_1_parameter'] = 'added_date'
+            update_params['condition_1_operator'] = 'begins with'
+            update_params['condition_1_value'] = today
             
             response = requests.post(f'{TAUTULLI_URL}/api/v2', data=update_params)
             response.raise_for_status()
             result = response.json()
             
             if result['response']['result'] == 'success':
-                logger.info(f"Successfully updated webhook condition to: {condition}")
+                logger.info(f"Successfully updated webhook condition: added_date begins with {today}")
                 return True
             else:
                 logger.error(f"Failed to update webhook condition: {result}")
