@@ -33,7 +33,8 @@ spec:
               - -c
               - |
                 cd /app
-                pip install --no-cache-dir --user -r requirements.txt
+                pip install --no-cache-dir --target /tmp/packages -r requirements.txt
+                export PYTHONPATH="/tmp/packages:$PYTHONPATH"
                 python app.py
             env:
               AUTHENTIK_URL: "http://authentik-server.security.svc.cluster.local"
