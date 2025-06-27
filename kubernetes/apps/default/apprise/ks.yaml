@@ -10,12 +10,10 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: onepassword
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: external-secrets
       namespace: external-secrets
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: volsync
-      namespace: storage
   components:
     - ../../../../components/gatus/guarded
     - ../../../../components/ceph-cbd
