@@ -106,6 +106,7 @@ spec:
         name: sabnzbd-scripts
         defaultMode: 0775
         globalMounts:
-          - readOnly: true
+          - path: /scripts
+            readOnly: true
       tmp:
         type: emptyDir
