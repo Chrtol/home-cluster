@@ -34,7 +34,7 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               PORT: &port 9705
-              BASE_PATH: '/'
+              # BASE_PATH: '/'
               # QUEUECLEANER__ENABLED: true
               # SONARR__ENABLED: true
               # SONARR__INSTANCES__0__URL: http://sonarr.media.svc.cluster.local:80
