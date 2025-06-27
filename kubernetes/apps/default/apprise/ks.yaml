@@ -19,7 +19,7 @@ spec:
   components:
     - ../../../../components/gatus/guarded
     - ../../../../components/ceph-cbd
-  path: ./kubernetes/main/apps/default/apprise/app
+  path: ./kubernetes/apps/default/apprise/app
   prune: true
   sourceRef:
     kind: GitRepository
