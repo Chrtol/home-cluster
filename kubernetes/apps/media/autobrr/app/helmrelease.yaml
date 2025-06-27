@@ -27,6 +27,7 @@ spec:
             image:
               repository: ghcr.io/autobrr/autobrr
               tag: v1.63.1@sha256:b48822759bd28c4e1ea939070f68320748d3f788433c40d932d45a3268e6f040
+
             env:
               AUTOBRR__HOST: 0.0.0.0
               AUTOBRR__PORT: &port 80
@@ -36,9 +37,11 @@ spec:
               AUTOBRR__CHECK_FOR_UPDATES: false
               AUTOBRR__LOG_LEVEL: INFO
               TZ: ${SECRET_TIMEZONE}
+              
             envFrom:
               - secretRef:
                   name: autobrr-secret
+
             probes:
               liveness: &probes
                 enabled: true
@@ -52,15 +55,18 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
+
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+
             resources:
               requests:
                 cpu: 10m
               limits:
                 memory: 256Mi
+
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -68,6 +74,7 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+
     service:
       app:
         ports:
@@ -75,17 +82,27 @@ spec:
             port: *port
           metrics:
             port: *metricsPort
+
     serviceMonitor:
       app:
         endpoints:
           - port: metrics
-    route:
+
+    ingress:
       app:
-        hostnames: ["{{ .Release.Name }}.$SECRET_DOMAIN"]
-        parentRefs:
-          - name: internal
-            namespace: kube-system
-            sectionName: https
+        className: internal
+        annotations:
+        hosts:
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+
     persistence:
       config:
         existingClaim: autobrr
