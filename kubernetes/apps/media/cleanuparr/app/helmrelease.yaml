@@ -30,13 +30,12 @@ spec:
             image:
               repository: ghcr.io/cleanuparr/cleanuparr
               tag: 2.0.2@sha256:d23d76edd37acfb1e72ef02743c29c89cca49a14ebd9da0d24463f1367a06ddf
+            args: ["/app/Cleanuparr"]
             env:
               TZ: ${SECRET_TIMEZONE}
               PORT: &port 9705
               UMASK: 022
               BASE_PATH: '/'
-              PUID: ""
-              PGID: ""
               # QUEUECLEANER__ENABLED: true
               # SONARR__ENABLED: true
               # SONARR__INSTANCES__0__URL: http://sonarr.media.svc.cluster.local:80
