@@ -47,8 +47,6 @@ spec:
             envFrom:
               - secretRef:
                   name: cleanuparr-config
-            securityContext:
-              allowPrivilegeEscalation: false
             resources:
               requests:
                 cpu: 10m
