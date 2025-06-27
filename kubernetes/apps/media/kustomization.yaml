@@ -26,3 +26,4 @@ resources:
   - ./sabnzbd/ks.yaml
   - ./autobrr/ks.yaml
   - ./cross-seed/ks.yaml
+  - ./rreading-glasses/ks.yaml
