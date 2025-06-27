@@ -55,11 +55,8 @@ spec:
                 memory: 256Mi
     defaultPodOptions:
       securityContext:
-        runAsUser: &puid 1000
-        runAsGroup: &pgid 1000
-        fsGroup: *pgid
+        fsGroup: &pgid 1000
         fsGroupChangePolicy: OnRootMismatch
-        runAsNonRoot: true
     service:
       app:
         controller: *app
