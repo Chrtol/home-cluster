@@ -13,13 +13,13 @@ spec:
     namespace: flux-system
   driftDetection:
     mode: enabled
-  # install:
-  #   remediation:
-  #     retries: -1
-  # upgrade:
-  #   cleanupOnFail: true
-  #   remediation:
-  #     retries: 3
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     controllers:
       cleanuparr:
@@ -56,7 +56,7 @@ spec:
       securityContext:
         fsGroup: &pgid 1000
         fsGroupChangePolicy: OnRootMismatch
-        runAsNonRoot: true
+        
     service:
       app:
         controller: *app
