@@ -19,7 +19,6 @@ spec:
       retries: 3
   dependsOn:
     - name: qbittorrent
-      namespace: default
   values:
     controllers:
       tagging:
