@@ -33,8 +33,6 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               PORT: &port 9705
-              PUID: &puid 1000
-              PGID: &pgid 1000
               UMASK: 022
               BASE_PATH: '/'
               # QUEUECLEANER__ENABLED: true
@@ -60,8 +58,8 @@ spec:
                 memory: 256Mi
     defaultPodOptions:
       securityContext:
-        runAsUser: *puid
-        runAsGroup: *pgid
+        runAsUser: &puid 1000
+        runAsGroup: &pgid 1000
         fsGroup: *pgid
         fsGroupChangePolicy: OnRootMismatch
         runAsNonRoot: true
