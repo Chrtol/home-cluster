@@ -16,7 +16,7 @@ spec:
       namespace: external-secrets
   components:
     - ../../../../components/gatus/guarded
-    - ../../../../components/ceph-cbd
+    - ../../../../components/ceph-rbd
   path: ./kubernetes/apps/default/apprise/app
   prune: true
   sourceRef:
