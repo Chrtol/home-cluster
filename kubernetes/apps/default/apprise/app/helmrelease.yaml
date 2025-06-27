@@ -47,7 +47,7 @@ spec:
       app:
         ports:
           http:
-            port: 8000
+            port: 8080
 
     ingress:
       app:
@@ -73,13 +73,6 @@ spec:
                 subPath: config
               - path: /plugin
                 subPath: plugin
-      config-apprise:
-        type: secret
-        name: apprise-secret
-        globalMounts:
-          - path: /config/apprise.yml
-            subPath: apprise.yml
-            readOnly: true
       tmpfs:
         type: emptyDir
         advancedMounts:
