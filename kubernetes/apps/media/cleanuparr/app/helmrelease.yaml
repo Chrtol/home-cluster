@@ -48,6 +48,10 @@ spec:
             envFrom:
               - secretRef:
                   name: cleanuparr-config
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
@@ -60,6 +64,7 @@ spec:
         runAsGroup: *pgid
         fsGroup: *pgid
         fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
     service:
       app:
         controller: *app
@@ -87,3 +92,10 @@ spec:
           cleanuparr:
             app:
               - path: /config
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          cleanuparr:
+            app:
+              - path: /tmp
+                subPath: tmp
