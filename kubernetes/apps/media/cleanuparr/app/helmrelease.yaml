@@ -56,6 +56,7 @@ spec:
       securityContext:
         fsGroup: &pgid 1000
         fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
     service:
       app:
         controller: *app
