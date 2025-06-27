@@ -60,7 +60,11 @@ spec:
               "--last-activity",
               "--sites",
               "--unregistered",
-              "--not-linked"
+              "--not-linked",
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
             ]
             securityContext:
               allowPrivilegeEscalation: false
@@ -80,8 +84,12 @@ spec:
               "--exclude-category", "music",
               "--exclude-tag", "added:1d",
               "--include-tag", "unregistered",
-              "--with-data"
+              "--with-data",
               # "--dry-run"
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
             ]
           expired:
             <<: *container
@@ -91,8 +99,12 @@ spec:
               "--exclude-category", "music",
               "--exclude-tag", "added:1d",
               "--include-tag", "expired",
-              "--with-data"
+              "--with-data",
               # "--dry-run"
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
             ]
         pod:
           restartPolicy: Never
@@ -109,6 +121,10 @@ spec:
               "orphaned",
               "--exclude-pattern", "*_unpackerred*",
               # "--dry-run"
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
             ]
         pod:
           restartPolicy: Never
@@ -118,7 +134,11 @@ spec:
             <<: *container
             args: [
               "reannounce",
-              "--process-seeding"
+              "--process-seeding",
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
             ]
       limiter:
         containers:
@@ -129,7 +149,11 @@ spec:
               "--max-line-speed-mbps", "1000",
               "--max-percent", "0.2",
               "--limit-percent", "0.45",
-              "--interval", "5"
+              "--interval", "5",
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
             ]
     defaultPodOptions:
       securityContext:
