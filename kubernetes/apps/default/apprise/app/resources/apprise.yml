@@ -1,0 +1,4 @@
+version: 1
+
+urls:
+  - pover://${PUSHOVER_USER_KEY}@${APPRISE_PUSHOVER_API_TOKEN}
