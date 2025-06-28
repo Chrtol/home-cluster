@@ -166,7 +166,7 @@ spec:
             enabled: true
             port: *torrentPort
             protocol: TCP
-            nodePort: 50413
+            nodePort: 30413
     ingress:
       app:
         className: internal
