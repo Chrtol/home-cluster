@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: python
-              tag: 3.11-slim
+              tag: 3.13-slim
             command: ["/bin/sh"]
             args: 
               - -c
