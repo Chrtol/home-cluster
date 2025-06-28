@@ -25,6 +25,7 @@ spec:
               APPRISE_STATEFUL_MODE: simple
               APPRISE_WORKER_COUNT: 4
               IPV4_ONLY: true
+              BASE_URL: https://apprise.${SECRET_DOMAIN}
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
