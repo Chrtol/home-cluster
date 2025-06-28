@@ -143,3 +143,7 @@ cilium status
 2. Run `task configure` to render templates and validate
 3. Commit and push changes to trigger Flux reconciliation
 4. Use `task reconcile` to force immediate sync if needed
+
+## Memory
+
+- Always remember I am using FluxCD and kustomizations
