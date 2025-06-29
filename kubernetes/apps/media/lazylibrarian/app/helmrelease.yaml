@@ -34,10 +34,12 @@ spec:
               TZ: ${SECRET_TIMEZONE}
 
             securityContext:
-              allowPrivilegeEscalation: false
+              allowPrivilegeEscalation: true
               # Gag...TODO KILL THIS WITH FIRE ASAP
               readOnlyRootFilesystem: false
-              capabilities: { drop: ["ALL"] }
+              capabilities: 
+                add: ["CHOWN", "SETUID", "SETGID"]
+                drop: ["ALL"]
             resources:
               requests:
                 cpu: 200m
