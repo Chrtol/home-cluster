@@ -29,8 +29,8 @@ spec:
               repository: linuxserver/lazylibrarian
               tag: version-2f9ad8bd
             env:
-              PUID: 568
-              GUID: 568
+              # PUID: 568
+              # GUID: 568
               TZ: ${SECRET_TIMEZONE}
 
             securityContext:
