@@ -147,3 +147,4 @@ cilium status
 ## Memory
 
 - Always remember I am using FluxCD and kustomizations
+- I have a webhook to reconcile on Git push so you never need to manually reconcile unless it's to fix a specific issue with hr/ks
