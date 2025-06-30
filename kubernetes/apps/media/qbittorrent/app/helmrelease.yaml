@@ -52,10 +52,9 @@ spec:
                   secretKeyRef:
                     name: qbittorrent-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
-              VPN_SERVICE_PROVIDER: custom
-              VPN_TYPE: wireguard
-              VPN_INTERFACE: wg0
-              WIREGUARD_ENDPOINT_PORT: 51820
+              VPN_SERVICE_PROVIDER: protonvpn
+              VPN_TYPE: openvpn
+              SERVER_COUNTRIES: Norway
               VPN_PORT_FORWARDING: on
               VPN_PORT_FORWARDING_PROVIDER: protonvpn
               FIREWALL_INPUT_PORTS: "80,8000"
@@ -88,7 +87,6 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: 50413
-              QBT_NETWORK_INTERFACE: wg0
             probes:
               liveness: &probes
                 enabled: true
@@ -190,6 +188,13 @@ spec:
             gluetun:
               - path: *gluetunAuthPath
                 subPath: auth.toml
+      gluetun-data:
+        existingClaim: gluetun-update
+        advancedMounts:
+          qbittorrent:
+            gluetun:
+              - path: /gluetun
+                readOnly: true
       coredns:
         type: configMap
         name: qbittorrent-coredns
