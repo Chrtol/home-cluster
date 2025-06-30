@@ -28,3 +28,4 @@ resources:
   - ./cross-seed/ks.yaml
   - ./rreading-glasses/ks.yaml
   - ./lazylibrarian/ks.yaml
+  - ./audiobookrequest/ks.yaml
