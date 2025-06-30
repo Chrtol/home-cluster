@@ -166,7 +166,7 @@ spec:
             paths:
               - path: /
                 service:
-                  identifier: app
+                  identifier: qbittorrent-app
                   port: http
     persistence:
       config:
