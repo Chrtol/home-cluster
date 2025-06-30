@@ -54,7 +54,7 @@ spec:
     persistence:
       gluetun-update:
         type: persistentVolumeClaim
-        size: 1Mi
+        size: 100Mi
         accessMode: ReadWriteOnce
         storageClass: csi-rbd-sc
         globalMounts:
