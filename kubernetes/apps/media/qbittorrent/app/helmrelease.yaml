@@ -68,7 +68,7 @@ spec:
                   command:
                     - "/bin/sh"
                     - "-c"
-                    - "cp /gluetun-shared/servers.json /gluetun/ 2>/dev/null || true; (ip rule del table 51820; ip -6 rule del table 51820) || true"
+                    - "(ip rule del table 51820; ip -6 rule del table 51820) || true"
             securityContext:
               runAsUser: 0  # Gluetun must run as root
               runAsGroup: 0 
@@ -193,14 +193,8 @@ spec:
         advancedMounts:
           qbittorrent:
             gluetun:
-              - path: /gluetun-shared
-                readOnly: true
-      gluetun-work:
-        type: emptyDir
-        advancedMounts:
-          qbittorrent:
-            gluetun:
               - path: /gluetun
+                readOnly: false
       coredns:
         type: configMap
         name: qbittorrent-coredns
