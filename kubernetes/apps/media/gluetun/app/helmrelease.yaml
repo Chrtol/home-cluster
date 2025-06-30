@@ -40,6 +40,7 @@ spec:
               - protonvpn
             env:
               TZ: ${SECRET_TIMEZONE}
+              SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
