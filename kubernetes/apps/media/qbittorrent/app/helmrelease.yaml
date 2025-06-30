@@ -160,13 +160,14 @@ spec:
             port: *port
       bittorrent:
         controller: *app
-        type: NodePort
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: "10.0.30.80"
         ports:
           bittorrent:
             enabled: true
             port: *torrentPort
             protocol: TCP
-            nodePort: 30413
     ingress:
       app:
         className: internal
