@@ -9,7 +9,7 @@ spec:
   interval: 1h
   chartRef:
     kind: OCIRepository
-    name: app-template
+    name: app-template-upgrade
     namespace: flux-system
   install:
     remediation:
@@ -41,11 +41,11 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /api/v1/status
+                    path: /
                     port: *port
-                  initialDelaySeconds: 0
+                  initialDelaySeconds: 30
                   periodSeconds: 10
-                  timeoutSeconds: 1
+                  timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
             securityContext:
