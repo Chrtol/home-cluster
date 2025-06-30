@@ -36,11 +36,10 @@ spec:
             args:
               - update
               - -enduser
+              - -providers
+              - protonvpn
             env:
               TZ: ${SECRET_TIMEZONE}
-              UPDATER_VPN_SERVICE_PROVIDERS: protonvpn
-              VPN_TYPE: wireguard
-              SERVER_COUNTRIES: Norway
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
