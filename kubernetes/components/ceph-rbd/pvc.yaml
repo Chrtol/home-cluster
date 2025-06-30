@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: "${CEPH_RBD_CLAIM_NAME}:=${APP}"
+  name: "${CEPH_RBD_CLAIM_NAME:=${APP}}"
 spec:
   accessModes: ["${CEPH_RBD_ACCESSMODES:=ReadWriteOnce}"]
   volumeMode: "${CEPH_RBD_VOLUMEMODE:=Filesystem}"
