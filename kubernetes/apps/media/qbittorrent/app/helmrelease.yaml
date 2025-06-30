@@ -151,9 +151,8 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     service:
-      app:
+      qbittorrent-app:
         controller: *app
-        # nameOverride: *app
         ports:
           http:
             port: *port
