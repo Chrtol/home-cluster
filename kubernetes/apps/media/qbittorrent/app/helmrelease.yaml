@@ -151,7 +151,7 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     service:
-      qbittorrent-app:
+      app:
         controller: *app
         ports:
           http:
@@ -166,7 +166,7 @@ spec:
             paths:
               - path: /
                 service:
-                  identifier: qbittorrent-app
+                  identifier: app
                   port: http
     persistence:
       config:
