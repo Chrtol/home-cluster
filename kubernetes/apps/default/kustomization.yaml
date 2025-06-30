@@ -23,3 +23,4 @@ resources:
   - ./actual/ks.yaml
   - ./joplin/ks.yaml
   - ./apprise/ks.yaml
+  - ./karakeep/ks.yaml
