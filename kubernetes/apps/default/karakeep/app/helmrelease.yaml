@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: karakeep
+  name: &app karakeep
 spec:
   interval: 30m
   chartRef:
@@ -21,7 +21,7 @@ spec:
 
     controllers:
       karakeep:
-        forceRename: karakeep
+        forceRename: *app
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -131,9 +131,9 @@ spec:
 
     service:
       app:
-        forceRename: karakeep
+        forceRename: *app
         primary: true
-        controller: karakeep
+        controller: *app
         ports:
           http:
             port: &httpPort 3000
@@ -150,7 +150,7 @@ spec:
 
     persistence:
       data:
-        existingClaim: karakeep-data
+        existingClaim: *app
         advancedMounts:
           karakeep:
             app:
