@@ -55,6 +55,7 @@ spec:
               VPN_SERVICE_PROVIDER: protonvpn
               VPN_TYPE: openvpn
               SERVER_COUNTRIES: Norway
+              UPDATER_PERIOD: ""
               VPN_PORT_FORWARDING: on
               VPN_PORT_FORWARDING_PROVIDER: protonvpn
               FIREWALL_INPUT_PORTS: "80,8000"
