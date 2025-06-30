@@ -55,7 +55,6 @@ spec:
               VPN_SERVICE_PROVIDER: protonvpn
               VPN_TYPE: openvpn
               SERVER_COUNTRIES: Norway
-              UPDATER_PERIOD: ""
               VPN_PORT_FORWARDING: on
               VPN_PORT_FORWARDING_PROVIDER: protonvpn
               FIREWALL_INPUT_PORTS: "80,8000"
@@ -69,7 +68,7 @@ spec:
                   command:
                     - "/bin/sh"
                     - "-c"
-                    - "(ip rule del table 51820; ip -6 rule del table 51820) || true"
+                    - "cp /gluetun-shared/servers.json /gluetun/ 2>/dev/null || true; (ip rule del table 51820; ip -6 rule del table 51820) || true"
             securityContext:
               runAsUser: 0  # Gluetun must run as root
               runAsGroup: 0 
@@ -194,8 +193,14 @@ spec:
         advancedMounts:
           qbittorrent:
             gluetun:
-              - path: /gluetun
+              - path: /gluetun-shared
                 readOnly: true
+      gluetun-work:
+        type: emptyDir
+        advancedMounts:
+          qbittorrent:
+            gluetun:
+              - path: /gluetun
       coredns:
         type: configMap
         name: qbittorrent-coredns
