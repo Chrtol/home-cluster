@@ -108,7 +108,10 @@ spec:
 
     persistence:
       config:
-        existingClaim: audiobookshelf
+        type: persistentVolumeClaim
+        storageClass: csi-cephfs-sc
+        accessMode: ReadWriteOnce
+        size: 2Gi
       cache:
         type: emptyDir
         globalMounts:
