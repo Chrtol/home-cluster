@@ -24,11 +24,9 @@ spec:
       namespace: ceph-csi-rbd
   components:
     - ../../../../components/gatus/guarded
-    - ../../../../components/ceph-rbd
   postBuild:
     substitute:
       APP: *app
-      CEPH_RBD_CAPACITY: 1Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
