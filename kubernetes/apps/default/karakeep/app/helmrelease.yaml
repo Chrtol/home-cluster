@@ -35,7 +35,7 @@ spec:
               CRAWLER_ENABLE_ADBLOCKER: true
               CRAWLER_STORE_SCREENSHOT: true
               DATA_DIR: /data
-              DISABLE_SIGNUPS: true
+              DISABLE_SIGNUPS: false #temp
               MEILI_ADDR: http://karakeep-meilisearch.selfhosted.svc.cluster.local:7700
               MEILI_MASTER_KEY:
                 valueFrom:
@@ -93,21 +93,6 @@ spec:
       meilisearch:
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchExpressions:
-                      - key: app.kubernetes.io/name
-                        operator: In
-                        values:
-                          - karakeep
-                      - key: app.kubernetes.io/controller
-                        operator: In
-                        values:
-                          - karakeep
-                  topologyKey: kubernetes.io/hostname
         containers:
           app:
             image:
