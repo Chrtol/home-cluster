@@ -155,11 +155,12 @@ spec:
     ingress:
       app:
         enabled: true
-        className: internal
+        className: external
         annotations:
           gethomepage.dev/enabled: "true"
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - host: &host "bookmarks.${SECRET_DOMAIN}"
             paths:
               - path: /
                 service:
