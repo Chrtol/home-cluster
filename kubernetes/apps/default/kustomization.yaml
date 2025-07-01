@@ -24,3 +24,4 @@ resources:
   - ./joplin/ks.yaml
   - ./apprise/ks.yaml
   - ./karakeep/ks.yaml
+  - ./openflow/ks.yaml
