@@ -26,11 +26,11 @@ spec:
       namespace: external-secrets
   components:
     - ../../../../components/gatus/guarded
-    - ../../../../components/ceph-rbd
+    # - ../../../../components/ceph-rbd
   postBuild:
     substitute:
       APP: *app
-      CEPH_RBD_CAPACITY: 2Gi
+      # CEPH_RBD_CAPACITY: 2Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

@@ -145,6 +145,18 @@ spec:
             app:
               - path: /meili_data
                 subPath: meilisearch
+      cache:
+        type: emptyDir
+        advancedMounts:
+          karakeep:
+            app:
+              - path: /.cache
+      appcache:
+        type: emptyDir
+        advancedMounts:
+          karakeep:
+            app:
+              - path: /app/apps/web/.next/cache
 
     ingress:
       app:

@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "${CEPHFS_CLAIM_NAME:=${APP}}"
+spec:
+  accessModes: ["${CEPHFS_ACCESSMODES:=ReadWriteOnce}"]
+  volumeMode: Filesystem #"${CEPHFS_VOLUMEMODE:=Filesystem}"
+  resources:
+    requests:
+      storage: "${CEPHFS_CAPACITY:=1Gi}"
+  storageClassName: "${CEPHFS_STORAGECLASS:=csi-cephfs-sc}"
