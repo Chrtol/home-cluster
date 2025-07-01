@@ -20,8 +20,8 @@ spec:
     namespace: flux-system
   wait: false
   dependsOn:
-    - name: ceph-csi-rbd
-      namespace: ceph-csi-rbd
+    - name: ceph-csi-cephfs
+      namespace: ceph-csi-cephfs
     - name: external-secrets
       namespace: external-secrets
   components:
