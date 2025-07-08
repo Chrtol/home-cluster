@@ -507,7 +507,7 @@ pages:
                 subreddit: crestedgecko
               - type: reddit
                 show-thumbnails: true
-                subreddit: leopardgecko
+                subreddit: leopardgeckos
 
       - size: small
         widgets:
