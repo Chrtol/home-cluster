@@ -24,7 +24,42 @@ envoy:
 dashboards:
   enabled: true
 hubble:
-  enabled: false
+  enabled: true
+  metrics:
+    enabled:
+      - dns:query
+      - drop
+      - tcp
+      - flow
+      - port-distribution
+      - icmp
+      - http
+    serviceMonitor:
+      enabled: true
+    dashboards:
+      enabled: true
+      annotations:
+        grafana_folder: Cilium
+  relay:
+    enabled: true
+    rollOutPods: true
+    prometheus:
+      serviceMonitor:
+        enabled: true
+  ui:
+    enabled: true
+    rollOutPods: true
+    ingress:
+      enabled: true
+      annotations:
+        hajimari.io/icon: satellite-variant
+        hajimari.io/appName: Hubble
+        hajimari.io/group: Observability
+      className: internal
+      hosts: &host ["hubble.${SECRET_DOMAIN}"]
+      tls:
+        - hosts:
+            - *host
 ipam:
   mode: kubernetes
 ipv4NativeRoutingCIDR: "10.42.0.0/16"
