@@ -460,25 +460,25 @@ pages:
         widgets:
           - type: calendar
 
-          - title: ASMR Feed
+          - title: Law&Crime Network
             type: videos
             limit: 10
-            style: vertical-list
             collapse-after: 5
+            style: vertical-list
+            channels:
+              - UCz8K1occVvDTYDfFo7N5EZw # Law&Crime Network
+
+          - title: ASMR Feed
+            type: videos
+            limit: 8
+            style: vertical-list
+            collapse-after: 3
             channels:
               - UCXTAGLo2UWlOwNMpbEkyBOw # Whispering Willow
               - UCLyO3bkatTtibSBSjEq0V1g # Yes Plz ASMR
               - UCBmEi75U56KU6ZphFbXiF3g # Edafoxx ASMR
               - UCoNfsDH8sZe13u7rSxaEBkw # Frivolous Fox ASMR
               - UCFmL725KKPx2URVPvH3Gp8w # ASMR Glow
-
-          - title: Law&Crime Network
-            type: videos
-            limit: 5
-            collapse-after: 3
-            style: vertical-list
-            channels:
-              - UCz8K1occVvDTYDfFo7N5EZw # Law&Crime Network
 
       - title: True Crime Feed
         size: full
