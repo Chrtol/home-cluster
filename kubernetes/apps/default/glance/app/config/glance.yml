@@ -33,11 +33,13 @@ pages:
                 icon: si:audiobookshelf
               - title: Jellyseerr
                 url: https://request.${SECRET_DOMAIN}
-                icon: si:jellyserr
+                icon: si:jellyseerr
               - title: Proxmox
                 url: https://proxmox.${SECRET_DOMAIN}
                 icon: si:proxmox
-                
+              - title: Immich
+                url: https://photos.${SECRET_DOMAIN}
+                icon: si:immich               
 
         - type: bookmarks
           groups:
@@ -45,8 +47,6 @@ pages:
               links:
                 - title: Gmail
                   url: https://mail.google.com/mail/u/0/
-                - title: Amazon
-                  url: https://www.amazon.com/
                 - title: Github
                   url: https://github.com/
             - title: Entertainment
@@ -163,7 +163,7 @@ pages:
                 icon: si:immich
               - title: Sabnzbd
                 url: https://sab.${SECRET_DOMAIN}
-                icon: si:sabnzbd
+                icon: di:sabnzbd
 
           - type: monitor
             title: Infrastructure
@@ -178,7 +178,9 @@ pages:
               - title: Adguard Home
                 url: https://adguard.${SECRET_DOMAIN}
                 icon: si:adguard
-
+              - title: OpnSense
+                url: https://opnsense.${SECRET_DOMAIN}
+                icon: si:opnsense
           - type: monitor
             title: Monitoring
             cache: 1m
@@ -223,7 +225,7 @@ pages:
                 icon: di:stirling-pdf.svg
 
           - type: custom-api
-            title: PROXMOX-VE NODES
+            title: Proxmox-VE Nodes
             title-url: https://proxmox.${SECRET_DOMAIN}
             cache: 1m
             url: https://proxmox.${SECRET_DOMAIN}/api2/json/cluster/resources?type=node
