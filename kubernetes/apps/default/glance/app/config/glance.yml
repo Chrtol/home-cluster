@@ -510,6 +510,10 @@ pages:
           - type: weather
             location: Oslo, Oslo County, Norway
 
+          - type: twitch-channels
+            channels:
+              - KingWoolz
+
           - type: bookmarks
             title: Bookmarks
             groups:
