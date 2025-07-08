@@ -58,8 +58,7 @@ hubble:
       className: internal
       hosts: &host ["hubble.${SECRET_DOMAIN}"]
       tls:
-        - hosts:
-            - *host
+        - hosts: *host
 ipam:
   mode: kubernetes
 ipv4NativeRoutingCIDR: "10.42.0.0/16"
