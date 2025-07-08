@@ -460,8 +460,10 @@ pages:
         widgets:
           - type: calendar
 
-          - type: videos
+          - title: ASMR Feed
+            type: videos
             limit: 10
+            style: vertical-list
             collapse-after: 5
             channels:
               - UCXTAGLo2UWlOwNMpbEkyBOw # Whispering Willow
@@ -470,13 +472,16 @@ pages:
               - UCoNfsDH8sZe13u7rSxaEBkw # Frivolous Fox ASMR
               - UCFmL725KKPx2URVPvH3Gp8w # ASMR Glow
 
-          - type: videos
-            limit: 3
-            collapse-after: 5
+          - title: Law&Crime Network
+            type: videos
+            limit: 5
+            collapse-after: 3
+            style: vertical-list
             channels:
               - UCz8K1occVvDTYDfFo7N5EZw # Law&Crime Network
 
-      - size: full
+      - title: True Crime Feed
+        size: full
         widgets:
           - type: rss
             cache: 3h
@@ -497,6 +502,8 @@ pages:
 
           - type: reddit
             subreddit: crestedgecko
+            show-thumbnails: true
+            collapse-after: 3
 
       - size: small
         widgets:
