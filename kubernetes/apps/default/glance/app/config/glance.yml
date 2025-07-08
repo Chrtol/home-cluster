@@ -480,10 +480,10 @@ pages:
               - UCoNfsDH8sZe13u7rSxaEBkw # Frivolous Fox ASMR
               - UCFmL725KKPx2URVPvH3Gp8w # ASMR Glow
 
-      - title: True Crime Feed
-        size: full
+      - size: full
         widgets:
-          - type: rss
+          - title: True Crime Feed
+            type: rss
             cache: 3h
             feeds:
               - url: https://oxygen.com/feeds/crime-news
