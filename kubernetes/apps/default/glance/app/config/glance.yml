@@ -453,3 +453,69 @@ pages:
                 title: Financial Times
               - url: https://feeds.a.dj.com/rss/RSSMarketsMain.xml
                 title: Wall Street Journal
+
+  - name: Suzy
+    columns:
+      - size: small
+        widgets:
+          - type: calendar
+
+          - type: videos
+            limit: 10
+            collapse-after: 5
+            channels:
+              - UCXTAGLo2UWlOwNMpbEkyBOw # Whispering Willow
+              - UCLyO3bkatTtibSBSjEq0V1g # Yes Plz ASMR
+              - UCBmEi75U56KU6ZphFbXiF3g # Edafoxx ASMR
+              - UCoNfsDH8sZe13u7rSxaEBkw # Frivolous Fox ASMR
+              - UCFmL725KKPx2URVPvH3Gp8w # ASMR Glow
+
+          - type: videos
+            limit: 3
+            collapse-after: 5
+            channels:
+              - UCz8K1occVvDTYDfFo7N5EZw # Law&Crime Network
+
+      - size: full
+        widgets:
+          - type: rss
+            cache: 3h
+            feeds:
+              - url: https://oxygen.com/feeds/crime-news
+                title: Oxygen | True Crime Buzz
+              - url: https://truecrimereport.news.blog/feed
+                title: True Crime Report
+              - url: https://oddmurdersandmysteries.com/feed
+                title: Odd Murders And Mysteries
+
+          - type: videos
+            channels:
+              - UC-lHJZR3Gqxm24_Vd_AJ5Yw # PewDiePie
+              - UC3RYNOKIpKE_2P-5ZapWIYg # KingWoolz
+              - UCCvcd0FYi58LwyTQP9LITpA # Soft White Underbelly
+              - UCfdNM3NAhaBOXCafH7krzrA # The Infographic Show
+
+          - type: reddit
+            subreddit: crestedgecko
+
+      - size: small
+        widgets:
+          - type: weather
+            location: Oslo, Oslo County, Norway
+
+          - type: monitor
+            cache: 1m
+            title: Services
+            sites:
+              - title: Home Assistant
+                url: https://hass.${SECRET_DOMAIN}
+                icon: si:homeassistant
+              - title: Plex
+                url: https://plex.${SECRET_DOMAIN}/web/index.html
+                icon: si:plex
+              - title: Audiobookshelf
+                url: https://audiobooks.${SECRET_DOMAIN}
+                icon: si:audiobookshelf
+              - title: Jellyseerr
+                url: https://request.${SECRET_DOMAIN}
+                icon: si:jellyseerr
