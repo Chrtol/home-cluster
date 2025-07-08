@@ -511,18 +511,26 @@ pages:
             location: Oslo, Oslo County, Norway
 
           - type: bookmarks
-            cache: 1m
             title: Bookmarks
-            sites:
-              - title: Home Assistant
-                url: https://hass.${SECRET_DOMAIN}
-                icon: si:homeassistant
-              - title: Plex
-                url: https://plex.${SECRET_DOMAIN}/web/index.html
-                icon: si:plex
-              - title: Audiobookshelf
-                url: https://audiobooks.${SECRET_DOMAIN}
-                icon: si:audiobookshelf
-              - title: Jellyseerr
-                url: https://request.${SECRET_DOMAIN}
-                icon: di:jellyseerr
+            groups:
+              - title: Home Services
+                links:
+                - title: Home Assistant
+                  url: https://hass.${SECRET_DOMAIN}
+                - title: Plex
+                  url: https://plex.${SECRET_DOMAIN}/web/index.html
+                - title: Audiobookshelf
+                  url: https://audiobooks.${SECRET_DOMAIN}
+                - title: Jellyseerr
+                  url: https://request.${SECRET_DOMAIN}
+
+              - title: Entertainment
+                links:
+                - title: YouTube
+                  url: https://youtube.com/
+                - title: Netflix
+                  url: https://netflix.com/
+                - title: Twitch
+                  url: https://twitch.tv/
+                - title: Reddit
+                  url: https://reddit.com/
