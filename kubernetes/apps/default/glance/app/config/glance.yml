@@ -8,6 +8,65 @@ theme:
   positive-color: 115 54 76
   negative-color: 347 70 65
 pages:
+- name: Startpage
+  width: slim
+  hide-desktop-navigation: true
+  center-vertically: true
+  columns:
+  - size: full
+    widgets:
+      - type: search
+        autofocus: true
+
+      - type: monitor
+        cache: 1m
+        title: Services
+        sites:
+          - title: Jellyfin
+            url: https://yourdomain.com/
+            icon: si:jellyfin
+          - title: Gitea
+            url: https://yourdomain.com/
+            icon: si:gitea
+          - title: qBittorrent # only for Linux ISOs, of course
+            url: https://yourdomain.com/
+            icon: si:qbittorrent
+          - title: Immich
+            url: https://yourdomain.com/
+            icon: si:immich
+          - title: AdGuard Home
+            url: https://yourdomain.com/
+            icon: si:adguard
+          - title: Vaultwarden
+            url: https://yourdomain.com/
+            icon: si:vaultwarden
+
+      - type: bookmarks
+        groups:
+          - title: General
+            links:
+              - title: Gmail
+                url: https://mail.google.com/mail/u/0/
+              - title: Amazon
+                url: https://www.amazon.com/
+              - title: Github
+                url: https://github.com/
+          - title: Entertainment
+            links:
+              - title: YouTube
+                url: https://www.youtube.com/
+              - title: Prime Video
+                url: https://www.primevideo.com/
+              - title: Disney+
+                url: https://www.disneyplus.com/
+          - title: Social
+            links:
+              - title: Reddit
+                url: https://www.reddit.com/
+              - title: Twitter
+                url: https://twitter.com/
+              - title: Instagram
+                url: https://www.instagram.com/
   - name: Home
     columns:
       - size: small
@@ -59,8 +118,8 @@ pages:
             sites:
               - title: Home Assistant
                 url: https://hass.${SECRET_DOMAIN}
-              - title: Grafana
-                url: https://grafana.${SECRET_DOMAIN}
+              - title: Plex
+                url: https://plex.${SECRET_DOMAIN}/web/index.html
 
   - name: Homelab
     columns:
@@ -94,9 +153,12 @@ pages:
               - title: Qbittorrent
                 url: https://qbittorrent.${SECRET_DOMAIN}
                 icon: di:qbittorrent.svg
-              # - title: Autobrr
-              #   url: https://autobrr.${SECRET_DOMAIN}
-              #   icon: di:autobrr.svg
+              - title: Autobrr
+                url: https://autobrr.${SECRET_DOMAIN}
+                icon: di:autobrr.svg
+              - title: Immich
+                url: https://photos.${SECRET_DOMAIN}
+                icon: si:immich
 
           - type: monitor
             title: Infrastructure
@@ -106,11 +168,11 @@ pages:
                 url: https://proxmox.${SECRET_DOMAIN}
                 icon: di:proxmox.svg
               - title: Truenas
-                url: https://nas.${SECRET_DOMAIN}
+                url: https://nas.${SECRET_DOMAIN}/ui/sessions/signin
                 icon: di:truenas.svg
               - title: Adguard Home
                 url: https://adguard.${SECRET_DOMAIN}
-                # icon: di:pi-hole.svg
+                icon: si:adguard
 
           - type: monitor
             title: Monitoring
@@ -297,3 +359,90 @@ pages:
                 </li>
                 {{ end }}
               </ul>
+
+  - name: Markets
+    columns:
+      - size: small
+        widgets:
+          - type: markets
+            title: Indices
+            markets:
+              - symbol: SPY
+                name: S&P 500
+              - symbol: DX-Y.NYB
+                name: Dollar Index
+
+          - type: markets
+            title: Crypto
+            markets:
+              - symbol: BTC-USD
+                name: Bitcoin
+              - symbol: ETH-USD
+                name: Ethereum
+
+          - type: markets
+            title: Stocks
+            sort-by: absolute-change
+            markets:
+              - symbol: NVDA
+                name: NVIDIA
+              - symbol: AAPL
+                name: Apple
+              - symbol: MSFT
+                name: Microsoft
+              - symbol: GOOGL
+                name: Google
+              - symbol: AMD
+                name: AMD
+              - symbol: RDDT
+                name: Reddit
+              - symbol: AMZN
+                name: Amazon
+              - symbol: TSLA
+                name: Tesla
+              - symbol: INTC
+                name: Intel
+              - symbol: META
+                name: Meta
+
+      - size: full
+        widgets:
+          - type: rss
+            title: News
+            style: horizontal-cards
+            feeds:
+              - url: https://feeds.bloomberg.com/markets/news.rss
+                title: Bloomberg
+              - url: https://moxie.foxbusiness.com/google-publisher/markets.xml
+                title: Fox Business
+              - url: https://moxie.foxbusiness.com/google-publisher/technology.xml
+                title: Fox Business
+
+          - type: group
+            widgets:
+              - type: reddit
+                show-thumbnails: true
+                subreddit: technology
+              - type: reddit
+                show-thumbnails: true
+                subreddit: wallstreetbets
+
+          - type: videos
+            style: grid-cards
+            collapse-after-rows: 3
+            channels:
+              - UCvSXMi2LebwJEM1s4bz5IBA # New Money
+              - UCV6KDgJskWaEckne5aPA0aQ # Graham Stephan
+              - UCAzhpt9DmG6PnHXjmJTvRGQ # Federal Reserve
+
+      - size: small
+        widgets:
+          - type: rss
+            title: News
+            limit: 30
+            collapse-after: 13
+            feeds:
+              - url: https://www.ft.com/technology?format=rss
+                title: Financial Times
+              - url: https://feeds.a.dj.com/rss/RSSMarketsMain.xml
+                title: Wall Street Journal
