@@ -24,14 +24,19 @@ pages:
           sites:
               - title: Home Assistant
                 url: https://hass.${SECRET_DOMAIN}
+                icon: si:homeassistant
               - title: Plex
                 url: https://plex.${SECRET_DOMAIN}/web/index.html
+                icon: si:plex
               - title: Audiobookshelf
                 url: https://audiobooks.${SECRET_DOMAIN}
+                icon: si:audiobookshelf
               - title: Jellyseerr
                 url: https://request.${SECRET_DOMAIN}
+                icon: si:jellyserr
               - title: Proxmox
                 url: https://proxmox.${SECRET_DOMAIN}
+                icon: si:proxmox
                 
 
         - type: bookmarks
