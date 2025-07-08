@@ -500,10 +500,14 @@ pages:
               - UCCvcd0FYi58LwyTQP9LITpA # Soft White Underbelly
               - UCfdNM3NAhaBOXCafH7krzrA # The Infographic Show
 
-          - type: reddit
-            subreddit: crestedgecko
-            show-thumbnails: true
-            collapse-after: 3
+          - type: group
+            widgets:
+              - type: reddit
+                show-thumbnails: true
+                subreddit: crestedgecko
+              - type: reddit
+                show-thumbnails: true
+                subreddit: leopardgecko
 
       - size: small
         widgets:
