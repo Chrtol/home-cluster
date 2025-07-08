@@ -510,9 +510,9 @@ pages:
           - type: weather
             location: Oslo, Oslo County, Norway
 
-          - type: monitor
+          - type: bookmarks
             cache: 1m
-            title: Services
+            title: Bookmarks
             sites:
               - title: Home Assistant
                 url: https://hass.${SECRET_DOMAIN}
