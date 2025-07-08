@@ -10,7 +10,7 @@ theme:
 pages:
   - name: Startpage
     width: slim
-    hide-desktop-navigation: true
+    # hide-desktop-navigation: true
     center-vertically: true
     columns:
     - size: full
@@ -22,24 +22,17 @@ pages:
           cache: 1m
           title: Services
           sites:
-            - title: Jellyfin
-              url: https://yourdomain.com/
-              icon: si:jellyfin
-            - title: Gitea
-              url: https://yourdomain.com/
-              icon: si:gitea
-            - title: qBittorrent # only for Linux ISOs, of course
-              url: https://yourdomain.com/
-              icon: si:qbittorrent
-            - title: Immich
-              url: https://yourdomain.com/
-              icon: si:immich
-            - title: AdGuard Home
-              url: https://yourdomain.com/
-              icon: si:adguard
-            - title: Vaultwarden
-              url: https://yourdomain.com/
-              icon: si:vaultwarden
+              - title: Home Assistant
+                url: https://hass.${SECRET_DOMAIN}
+              - title: Plex
+                url: https://plex.${SECRET_DOMAIN}/web/index.html
+              - title: Audiobookshelf
+                url: https://audiobooks.${SECRET_DOMAIN}
+              - title: Jellyseerr
+                url: https://request.${SECRET_DOMAIN}
+              - title: Proxmox
+                url: https://proxmox.${SECRET_DOMAIN}
+                
 
         - type: bookmarks
           groups:
@@ -55,16 +48,16 @@ pages:
               links:
                 - title: YouTube
                   url: https://www.youtube.com/
-                - title: Prime Video
-                  url: https://www.primevideo.com/
-                - title: Disney+
-                  url: https://www.disneyplus.com/
+                - title: Twitch
+                  url: https://www.twitch.tv/
+                - title: Plex
+                  url: https://www.plex.cftollefsen.com/
             - title: Social
               links:
                 - title: Reddit
                   url: https://www.reddit.com/
-                - title: Twitter
-                  url: https://twitter.com/
+                - title: Messenger
+                  url: https://messenger.com/
                 - title: Instagram
                   url: https://www.instagram.com/
   - name: Home
@@ -120,6 +113,10 @@ pages:
                 url: https://hass.${SECRET_DOMAIN}
               - title: Plex
                 url: https://plex.${SECRET_DOMAIN}/web/index.html
+              - title: Audiobookshelf
+                url: https://audiobooks.${SECRET_DOMAIN}
+              - title: Jellyseerr
+                url: https://request.${SECRET_DOMAIN}
 
   - name: Homelab
     columns:
@@ -159,6 +156,9 @@ pages:
               - title: Immich
                 url: https://photos.${SECRET_DOMAIN}
                 icon: si:immich
+              - title: Sabnzbd
+                url: https://sab.${SECRET_DOMAIN}
+                icon: si:sabnzbd
 
           - type: monitor
             title: Infrastructure
