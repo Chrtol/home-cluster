@@ -232,7 +232,7 @@ pages:
             allow-insecure: true
             headers:
               Accept: application/json
-              Authorization: PVEAPIToken={{GLANCE_VAR_PROXMOX_API_SECRET}}
+              Authorization: PVEAPIToken=${GLANCE_VAR_PROXMOX_API_SECRET}
             options:
               uptime-mode: duration  # relative | duration
               collapse-after: 5
