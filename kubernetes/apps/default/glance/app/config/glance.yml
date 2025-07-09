@@ -33,7 +33,7 @@ pages:
                 icon: si:audiobookshelf
               - title: Jellyseerr
                 url: https://request.${SECRET_DOMAIN}
-                icon: si:jellyseerr
+                icon: di:jellyseerr
               - title: Proxmox
                 url: https://proxmox.${SECRET_DOMAIN}
                 icon: si:proxmox
