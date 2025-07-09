@@ -18,6 +18,8 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+      - name: glance-secret
+        kind: Secret
   path: ./kubernetes/apps/default/glance/app
   prune: true
   sourceRef:
