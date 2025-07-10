@@ -12,5 +12,5 @@ spec:
     operation: copy
   ref:
     #tag: v1.17.0
-    tag: v1.17.1
+    tag: v1.17.6
   url: oci://ghcr.io/rook/rook-ceph-cluster
