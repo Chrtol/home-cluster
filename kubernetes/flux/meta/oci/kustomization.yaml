@@ -13,3 +13,4 @@ resources:
   - ./grafana.yaml
   - ./dragonfly-operator.yaml
   - ./app-template-upgrade.yaml
+  - ./volsync.yaml
