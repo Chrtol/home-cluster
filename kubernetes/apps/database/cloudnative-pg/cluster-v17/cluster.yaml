@@ -46,7 +46,7 @@ spec:
         compression: bzip2
         maxParallel: 2
       destinationPath: s3://postgres17/
-      endpointURL: http://seaweedfs.database.svc.cluster.local:8333
+      endpointURL: http://seaweedfs.database.svc.cluster.local:8888
       serverName: &currentCluster postgres17-v1
       s3Credentials:
         accessKeyId:
