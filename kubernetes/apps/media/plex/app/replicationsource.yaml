@@ -13,7 +13,3 @@ spec:
     storageClassName: csi-rbd-sc
     address: nas.${SECRET_DOMAIN}
     path: /mnt/truenas/cf-nas/backup/plex
-    moverSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
