@@ -5,10 +5,9 @@ metadata:
   name: csi-rbd-sc
   annotations:
     snapshot.storage.kubernetes.io/is-default-class: "true"
-spec:
-  driver: rbd.csi.ceph.com
-  deletionPolicy: Delete
-  parameters:
-    clusterID: ceph-csi-rbd
-    csi.storage.k8s.io/snapshotter-secret-name: ceph-secret
-    csi.storage.k8s.io/snapshotter-secret-namespace: ceph-csi-rbd
+driver: rbd.csi.ceph.com
+deletionPolicy: Delete
+parameters:
+  clusterID: ceph-csi-rbd
+  csi.storage.k8s.io/snapshotter-secret-name: ceph-secret
+  csi.storage.k8s.io/snapshotter-secret-namespace: ceph-csi-rbd
