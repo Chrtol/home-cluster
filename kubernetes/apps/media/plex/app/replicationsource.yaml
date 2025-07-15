@@ -8,8 +8,16 @@ spec:
   sourcePVC: plex
   trigger:
     schedule: "0 3 * * *"  # Daily at 3 AM
-  rsync:
+  restic:
     copyMethod: Clone
     storageClassName: csi-rbd-sc
-    address: nas.${SECRET_DOMAIN}
-    path: /mnt/truenas/cf-nas/backup/plex
+    volumeSnapshotClassName: csi-rbd-sc
+    repository: plex-secret
+    retain:
+      daily: 7
+      weekly: 4
+      monthly: 3
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
