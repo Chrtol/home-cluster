@@ -96,7 +96,7 @@ spec:
       data:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/backup
+        path: /mnt/truenas/cf-nas/backup/postgres17
         globalMounts:
           - path: /data
             readOnly: false
