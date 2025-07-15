@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: plex-backup-nfs
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: nas.${SECRET_DOMAIN}
+    path: /mnt/truenas/cf-nas/backup
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-backup-nfs
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: ""
+  volumeName: plex-backup-nfs
