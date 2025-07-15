@@ -148,6 +148,7 @@ spec:
               "limiter",
               "--max-line-speed-mbps", "1000",
               "--max-percent", "0.2",
+              "--limit-percent", "0.2",
               "--interval", "5",
               "-s", "$(QBITTORRENT_HOST)",
               "-p", "$(QBITTORRENT_PORT)",
