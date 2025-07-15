@@ -8,16 +8,15 @@ spec:
   sourcePVC: plex
   trigger:
     schedule: "0 3 * * *"  # Daily at 3 AM
-  rsync:
+  restic:
     copyMethod: Snapshot
     storageClassName: csi-rbd-sc
     volumeSnapshotClassName: csi-rbd-sc
-    destination:
-      type: nfs
-      server: nas.${SECRET_DOMAIN}
-      path: /mnt/truenas/cf-nas/backup
-      mountPath: /repository
-    destinationPath: /repository/plex
+    repository: plex-secret
+    retain:
+      daily: 7
+      weekly: 4
+      monthly: 3
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
