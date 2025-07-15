@@ -8,6 +8,6 @@ metadata:
 driver: rbd.csi.ceph.com
 deletionPolicy: Delete
 parameters:
-  clusterID: ceph-csi-rbd
+  clusterID: e4a4c987-4801-40ad-a6ae-bfdecbec3df4
   csi.storage.k8s.io/snapshotter-secret-name: ceph-secret
   csi.storage.k8s.io/snapshotter-secret-namespace: ceph-csi-rbd
