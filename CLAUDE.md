@@ -150,3 +150,5 @@ cilium status
 - I have a webhook to reconcile on Git push so you never need to manually reconcile unless it's to fix a specific issue with hr/ks
 - Write a short commit message when making changes that can be used together with the changes
 - I am using Proxmox Ceph and a NAS with HDDs as storage
+- Never use kubectl apply since I am using FluxCD
+- Always write a summary of what has been changed that I can add to a commit message
