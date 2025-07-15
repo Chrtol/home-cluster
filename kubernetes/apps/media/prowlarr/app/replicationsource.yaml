@@ -1,0 +1,22 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: prowlarr-config-backup
+spec:
+  sourcePVC: prowlarr
+  trigger:
+    schedule: "0 3 * * *"  # Daily at 3 AM
+  restic:
+    copyMethod: Snapshot
+    storageClassName: csi-rbd-sc
+    volumeSnapshotClassName: csi-rbd-sc
+    repository: prowlarr-secret
+    retain:
+      daily: 7
+      weekly: 4
+      monthly: 3
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
