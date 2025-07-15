@@ -1,0 +1,24 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: plex-config-backup
+  namespace: media
+spec:
+  sourcePVC: plex
+  trigger:
+    schedule: "0 3 * * *"  # Daily at 3 AM
+  rsync:
+    copyMethod: Snapshot
+    storageClassName: csi-rbd-sc
+    volumeSnapshotClassName: csi-rbd-sc
+    destination:
+      type: nfs
+      server: nas.${SECRET_DOMAIN}
+      path: /mnt/truenas/cf-nas/backup
+      mountPath: /repository
+    destinationPath: /repository/plex
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
