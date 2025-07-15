@@ -10,4 +10,4 @@ resources:
   - ./redis/ks.yaml
   - ./pgadmin/ks.yaml
   - ./dragonfly/ks.yaml
-
+  - ./seaweedfs/ks.yaml
