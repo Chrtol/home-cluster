@@ -11,14 +11,14 @@ spec:
     name: app-template-upgrade
     namespace: flux-system
   maxHistory: 3
-  # install:
-  #   createNamespace: true
-  #   remediation:
-  #     retries: 3
-  # upgrade:
-  #   cleanupOnFail: true
-  #   remediation:
-  #     retries: 3
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   uninstall:
     keepHistory: false
   values:
@@ -44,6 +44,34 @@ spec:
             envFrom:
               - secretRef:
                   name: immich-secret
+          
+          02-setup-folders:
+            image:
+              repository: busybox
+              tag: 1.36.1
+            command:
+              - /bin/sh
+              - -c
+              - |
+                echo "Creating required Immich folder structure..."
+                mkdir -p /usr/src/app/upload/{upload,thumbs,profile,encoded-video,library,backups}
+                
+                # Create the .immich marker files for system integrity checks
+                touch /usr/src/app/upload/.immich
+                touch /usr/src/app/upload/upload/.immich
+                touch /usr/src/app/upload/thumbs/.immich
+                touch /usr/src/app/upload/profile/.immich
+                touch /usr/src/app/upload/encoded-video/.immich
+                touch /usr/src/app/upload/library/.immich
+                touch /usr/src/app/upload/backups/.immich
+                
+                echo "Setting proper permissions..."
+                chown -R 1000:1000 /usr/src/app/upload
+                
+                echo "Folder structure created successfully"
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
 
         containers:
           main:
@@ -148,15 +176,13 @@ spec:
         globalMounts:
           - path: *mediaLocation
 
-      # thumbnails:
-      #   type: persistentVolumeClaim
-      #   existingClaim: immich-thumbnails  
-      #   advancedMounts:
-      #     server:
-      #       main:
-      #         - path: *thumbLocation
-      #         # - path: /usr/src/app/upload/thumbs
-      #         # - path: /usr/src/app/upload/encoded-video
+      thumbnails:
+        type: persistentVolumeClaim
+        existingClaim: immich-thumbnails  
+        advancedMounts:
+          server:
+            main:
+              - path: *thumbLocation
 
       # encoded-video:
       #   type: nfs
