@@ -34,9 +34,9 @@ spec:
           tag: &container
             image:
               repository: ghcr.io/buroa/qbtools
-              tag: v0.21.0@sha256:3a60f001c3f5fd068ff38960fbf9db726fa59edf135b18cd50294230366c284e
+              tag: v0.21.1@sha256:fd13085f7534719b7b30828684661b7f5611bbc4156831123775cfcd9b8f2eb5
             env:
-              QBITTORRENT_HOST: qbittorrent-app.media.svc.cluster.local
+              QBITTORRENT_HOST: qbittorrent.media.svc.cluster.local
               QBITTORRENT_PORT: 80
               QBITTORRENT_USERNAME:
                 valueFrom:
@@ -148,7 +148,7 @@ spec:
               "limiter",
               "--max-line-speed-mbps", "1000",
               "--max-percent", "0.2",
-              "--limit-percent", "0.45",
+              "--limit-percent", "0.3",
               "--interval", "5",
               "-s", "$(QBITTORRENT_HOST)",
               "-p", "$(QBITTORRENT_PORT)",
