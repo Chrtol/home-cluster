@@ -54,6 +54,9 @@ spec:
               - -c
               - |
                 echo "Creating required Immich folder structure..."
+                echo "Current directory contents:"
+                ls -la /usr/src/app/upload/
+                echo "Creating directories..."
                 mkdir -p /usr/src/app/upload/upload
                 mkdir -p /usr/src/app/upload/thumbs
                 mkdir -p /usr/src/app/upload/profile
@@ -61,7 +64,11 @@ spec:
                 mkdir -p /usr/src/app/upload/library
                 mkdir -p /usr/src/app/upload/backups
                 
+                echo "Directory structure after creation:"
+                ls -la /usr/src/app/upload/
+                
                 # Create the .immich marker files for system integrity checks
+                echo "Creating .immich marker files..."
                 touch /usr/src/app/upload/.immich
                 touch /usr/src/app/upload/upload/.immich
                 touch /usr/src/app/upload/thumbs/.immich
@@ -70,13 +77,14 @@ spec:
                 touch /usr/src/app/upload/library/.immich
                 touch /usr/src/app/upload/backups/.immich
                 
-                echo "Setting proper permissions..."
-                chown -R 1000:1000 /usr/src/app/upload
+                echo "Final directory structure:"
+                ls -la /usr/src/app/upload/
+                find /usr/src/app/upload/ -name ".immich" -ls
                 
                 echo "Folder structure created successfully"
             securityContext:
-              runAsUser: 0
-              runAsGroup: 0
+              runAsUser: 1000
+              runAsGroup: 1000
 
         containers:
           main:
