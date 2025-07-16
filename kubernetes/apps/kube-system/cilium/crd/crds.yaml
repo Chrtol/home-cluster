@@ -44,7 +44,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: gateway-api-crd
-  path: ./config/crd/experimental
+  path: ./config/crd/standard
   wait: true
   interval: 15m
   retryInterval: 1m
