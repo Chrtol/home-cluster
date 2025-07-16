@@ -11,9 +11,10 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/gatus/external
+    - ../../../../components/volsync
   dependsOn:
-    # - name: mosquitto
-    #   namespace: default
+    - name: mosquitto
+      namespace: default
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   interval: 1h

@@ -1,0 +1,13 @@
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-rbd-sc
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: rbd.csi.ceph.com
+deletionPolicy: Delete
+parameters:
+  clusterID: e4a4c987-4801-40ad-a6ae-bfdecbec3df4
+  csi.storage.k8s.io/snapshotter-secret-name: ceph-secret
+  csi.storage.k8s.io/snapshotter-secret-namespace: ceph-csi-rbd
