@@ -54,7 +54,12 @@ spec:
               - -c
               - |
                 echo "Creating required Immich folder structure..."
-                mkdir -p /usr/src/app/upload/{upload,thumbs,profile,encoded-video,library,backups}
+                mkdir -p /usr/src/app/upload/upload
+                mkdir -p /usr/src/app/upload/thumbs
+                mkdir -p /usr/src/app/upload/profile
+                mkdir -p /usr/src/app/upload/encoded-video
+                mkdir -p /usr/src/app/upload/library
+                mkdir -p /usr/src/app/upload/backups
                 
                 # Create the .immich marker files for system integrity checks
                 touch /usr/src/app/upload/.immich
