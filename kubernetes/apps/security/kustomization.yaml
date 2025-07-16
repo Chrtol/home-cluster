@@ -7,6 +7,5 @@ components:
   - ../../components/common
 resources:
   - ./lldap/ks.yaml
-  - ./authelia/ks.yaml
   - ./authentik/ks.yaml
 

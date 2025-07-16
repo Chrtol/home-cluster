@@ -7,7 +7,6 @@ resources:
   - ./oci-external-dns.yaml
   - ./external-secrets.yaml
   - ./onepassword-connect.yaml
-  - ./proxmox-csi-plugin.yaml
   - ./grafana.yaml
   - ./dragonfly-operator.yaml
   - ./app-template-upgrade.yaml
