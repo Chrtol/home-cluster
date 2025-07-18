@@ -17,6 +17,7 @@ spec:
     substitute:
       CEPH_RBD_CAPACITY: 2Gi
       APP: *app
+      GATUS_PATH: /login
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
