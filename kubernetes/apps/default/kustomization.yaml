@@ -25,3 +25,4 @@ resources:
   - ./apprise/ks.yaml
   - ./karakeep/ks.yaml
   - ./openflow/ks.yaml
+  - ./n8n/ks.yaml
