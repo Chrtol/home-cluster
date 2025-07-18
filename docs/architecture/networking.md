@@ -27,8 +27,8 @@ The cluster networking is built on a modern, highly available foundation using C
 #### Kubernetes Nodes
 | Node | IP Address | Role | Hardware |
 |------|------------|------|----------|
-| lenovo1 | 10.0.30.100 | Controller + Worker | Lenovo ThinkCentre M75q |
-| lenovo2 | 10.0.30.101 | Controller + Worker | Lenovo ThinkCentre M75q |
+| lenovo1 | 10.0.30.100 | Controller + Worker | Lenovo ThinkCentre M910q |
+| lenovo2 | 10.0.30.101 | Controller + Worker | Lenovo ThinkCentre M910q |
 | dell1 | 10.0.30.102 | Controller + Worker | Dell OptiPlex 3080 |
 
 #### External Infrastructure
