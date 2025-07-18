@@ -24,13 +24,17 @@ spec:
       namespace: ceph-csi-cephfs
     - name: external-secrets
       namespace: external-secrets
-  # components:
+    - name: volsync
+      namespace: volsync-system
+  components:
+    - ../../../../components/volsync
     # - ../../../../components/gatus/guarded
     # - ../../../../components/ceph-rbd
   postBuild:
     substitute:
       APP: *app
       # CEPH_RBD_CAPACITY: 2Gi
+      VOLSYNC_STORAGECLASS: csi-cephfs-sc
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
