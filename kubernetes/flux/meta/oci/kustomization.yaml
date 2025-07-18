@@ -11,3 +11,4 @@ resources:
   - ./dragonfly-operator.yaml
   - ./app-template-upgrade.yaml
   - ./volsync.yaml
+  - ./loki.yaml
