@@ -44,6 +44,14 @@ data:
           - "len([BODY]) == 0"
         alerts:
           - type: pushover
+      - name: pushover-test
+        group: test
+        url: https://this-domain-does-not-exist-12345.com
+        interval: 30s
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: pushover
     alerting:
       pushover:
         title: Gatus (Kubernetes)
