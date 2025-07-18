@@ -11,7 +11,7 @@ spec:
     copyMethod: Snapshot
     storageClassName: csi-rbd-sc
     volumeSnapshotClassName: csi-rbd-sc
-    repository: cleanuparr-secret
+    repository: cleanuparr-config
     retain:
       daily: 7
       weekly: 4
