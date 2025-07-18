@@ -30,6 +30,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      GATUS_PATH: /signin
       # CEPH_RBD_CAPACITY: 2Gi
     substituteFrom:
       - name: cluster-secrets
