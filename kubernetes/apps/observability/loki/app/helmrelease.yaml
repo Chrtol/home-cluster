@@ -67,7 +67,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ceph-csi-rbd
+        storageClass: csi-rbd-sc
         size: 20Gi
     test:
       enabled: false
