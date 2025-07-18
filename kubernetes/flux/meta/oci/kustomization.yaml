@@ -12,3 +12,4 @@ resources:
   - ./app-template-upgrade.yaml
   - ./volsync.yaml
   - ./loki.yaml
+  - ./promtail.yaml
