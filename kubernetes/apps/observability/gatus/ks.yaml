@@ -21,6 +21,8 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+      - name: gatus-secret
+        kind: Secret
   prune: true
   retryInterval: 2m
   sourceRef:
