@@ -10,4 +10,4 @@ endpoints:
       query-name: "${GATUS_SUBDOMAIN:=${APP}}.${SECRET_DOMAIN}"
       query-type: A
     conditions:
-      - "len([BODY]) == 0"
+      - "[DNS_RCODE] == NOERROR"
