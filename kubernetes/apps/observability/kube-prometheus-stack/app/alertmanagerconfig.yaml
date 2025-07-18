@@ -25,12 +25,12 @@ spec:
           - name: alertname
             value: Watchdog
             matchType: =
-      - receiver: "null"
+      - receiver: n8n-smart-routing
         matchers:
           - name: severity
             value: warning
             matchType: =
-      - receiver: pushover
+      - receiver: n8n-smart-routing
         matchers:
           - name: severity
             value: critical
@@ -52,6 +52,12 @@ spec:
         - urlSecret:
             name: &secret alertmanager-secret
             key: ALERTMANAGER_HEARTBEAT_URL
+    - name: n8n-smart-routing
+      webhookConfigs:
+        - url: "https://n8n-webhook.cftollefsen.com/webhook/alerts"
+          sendResolved: true
+          httpConfig:
+            followRedirects: true
     - name: pushover
       pushoverConfigs:
         - html: true
