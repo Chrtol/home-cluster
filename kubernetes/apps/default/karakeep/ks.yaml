@@ -24,8 +24,8 @@ spec:
       namespace: ceph-csi-cephfs
     - name: external-secrets
       namespace: external-secrets
-  components:
-    - ../../../../components/gatus/guarded
+  # components:
+    # - ../../../../components/gatus/guarded
     # - ../../../../components/ceph-rbd
   postBuild:
     substitute:
