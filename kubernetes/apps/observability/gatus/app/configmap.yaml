@@ -32,7 +32,6 @@ data:
         conditions:
           - "[STATUS] == 404"
         alerts:
-          - type: pushover
           - type: webhook
       - name: status
         group: guarded
@@ -44,19 +43,8 @@ data:
         conditions:
           - "len([BODY]) == 0"
         alerts:
-          - type: pushover
           - type: webhook
     alerting:
-      pushover:
-        title: Gatus (Kubernetes)
-        application-token: ${PUSHOVER_TOKEN}
-        user-key: ${PUSHOVER_USER_KEY}
-        priority: 1
-        default-alert:
-          description: health-check failed
-          send-on-resolved: true
-          failure-threshold: 3
-          success-threshold: 3
       webhook:
         url: https://n8n-webhook.cftollefsen.com/webhook/gatus
         default-alert:
