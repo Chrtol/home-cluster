@@ -28,8 +28,8 @@ spec:
       namespace: volsync-system
   components:
     - ../../../../components/gatus/external
-    - ../../../../components/gatus/ceph-rbd
-    - ../../../../components/gatus/volsync
+    - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
   postBuild:
     substitute:
       APP: *app
