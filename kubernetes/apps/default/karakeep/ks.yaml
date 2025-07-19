@@ -31,7 +31,7 @@ spec:
   components:
     - ../../../../components/gatus/guarded
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    # - ../../../../components/volsync
   postBuild:
     substitute:
       APP: *app
