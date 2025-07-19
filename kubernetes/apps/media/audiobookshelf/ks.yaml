@@ -23,8 +23,11 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      CEPH_RBD_CAPACITY: 2Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
   components:
-    - ../../../../components/gatus/guarded
+    - ../../../../components/gatus/external
+    - ../../../../components/gatus/ceph-rbd
+    - ../../../../components/gatus/volsync
