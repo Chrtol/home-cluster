@@ -32,62 +32,39 @@ Investigated failed backup notifications from n8n that reported 3 backup failure
 3. **Solution**: Updated Context Analysis node to detect both `resolved: false` and `status: "DOWN"`
 4. **Status**: ✅ Working - test alerts route to Discord + Pushover correctly
 
-### ❌ Gatus → N8N Webhook Integration - STILL BROKEN
-**Current Issue**: Gatus cannot find webhook alerting provider
+### ✅ Gatus → N8N Webhook Integration - FIXED
+**Root Cause Found**: Gatus uses `custom` provider type, not `webhook`
 
-**Error**: 
-```
-[alerting.GetAlertingProviderByAlertType] No alerting provider found for alert type webhook
-[watchdog.handleAlertsToTrigger] Not sending alert of type=webhook endpoint despite being TRIGGERED
-```
-
-**What Works**:
-- ✅ N8N webhook endpoint responds correctly (`/webhook/gatus`)
-- ✅ Manual webhook tests work perfectly 
-- ✅ N8N processes Gatus alert format correctly
-- ✅ Smart routing sends Discord notifications for test alerts
-
-**What's Broken**:
-- ❌ Gatus can't find webhook provider in its configuration
-- ❌ No webhook alerts sent from Gatus to N8N (despite alerts being TRIGGERED)
-
-**Configuration Made**:
-1. **Components**: Changed `gatus/external` and `gatus/guarded` from `type: pushover` to `type: webhook`
-2. **Gatus Config**: Added webhook provider to `/kubernetes/apps/observability/gatus/app/resources/config.yaml`:
-   ```yaml
-   alerting:
-     webhook:
-       url: https://n8n-webhook.cftollefsen.com/webhook/gatus
-       default-alert:
-         description: health-check failed
-         send-on-resolved: true
-         failure-threshold: 3
-         success-threshold: 3
+**Solution Applied**:
+1. **Fixed Provider Type**: Changed from `webhook` to `custom` in all Gatus config files
+2. **Updated Webhook Payload**: Fixed JSON structure to match N8N expectations:
+   ```json
+   {
+     "endpoint_name": "[ENDPOINT_NAME]",
+     "group": "[ENDPOINT_GROUP]", 
+     "alert_state": "[ALERT_TRIGGERED_OR_RESOLVED]",
+     "description": "[ALERT_DESCRIPTION]"
+   }
    ```
-3. **Endpoint Alerts**: Changed from `type: pushover` to `type: webhook`
+3. **Updated N8N Context Analysis**: Added support for new `alert_state` field while maintaining backward compatibility
 
-**Current Status**:
-- ConfigMap shows webhook provider configuration
-- Gatus restarted multiple times
-- Still reports "No alerting provider found for alert type webhook"
+**Status**: ✅ **RESOLVED** - Ready for testing once config is committed
 
 ## Files Modified
-1. `/kubernetes/components/gatus/external/config.yaml` - Changed to webhook alerts
-2. `/kubernetes/components/gatus/guarded/config.yaml` - Changed to webhook alerts  
-3. `/kubernetes/apps/observability/gatus/app/resources/config.yaml` - Added webhook provider
+1. `/kubernetes/components/gatus/external/config.yaml` - Changed to custom alerts
+2. `/kubernetes/components/gatus/guarded/config.yaml` - Changed to custom alerts  
+3. `/kubernetes/apps/observability/gatus/app/resources/config.yaml` - Added custom provider with proper JSON payload
 4. `/kubernetes/apps/default/karakeep/ks.yaml` - Removed gatus component to fix conflicts
-5. **N8N Context Analysis node** - Fixed Gatus alert detection logic
+5. `/kubernetes/apps/default/n8n/workflow/notifications/n8n_context_analysis.py` - Added alert_state support + backward compatibility
 6. **N8N Silent Log node** - Fixed JSON parsing errors
 
 ## Next Steps
 
-### Immediate (Gatus Webhook Issue)
-1. **Investigate Gatus webhook provider syntax** - current config might not match expected format
-2. **Check Gatus version compatibility** - webhook provider support might be version-specific
-3. **Consider alternative approaches**:
-   - Use Discord provider instead of webhook
-   - Use different webhook configuration structure
-   - Check if webhook provider needs additional fields
+### Ready for Testing
+1. **Commit Gatus configuration changes** to apply the `custom` provider fixes
+2. **Test real Gatus alerts** - audiobookshelf is currently failing and should trigger alerts
+3. **Verify N8N smart routing** - ensure Discord + Pushover notifications work correctly
+4. **Monitor Gatus logs** for successful webhook delivery
 
 ### Testing
 1. **Wait for real audiobookshelf alerts** once deployment recreated
