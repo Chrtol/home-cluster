@@ -26,7 +26,7 @@ webhook_data = _input.first()['json']
 
 # Detect source based on data structure (more reliable)
 alert = webhook_data.get('body', {})
-if 'endpoint_name' in alert or 'resolved' in alert or 'status' in alert:
+if 'endpoint_name' in alert or 'alert_state' in alert or 'resolved' in alert or 'status' in alert:
     source = 'gatus'
 elif 'labels' in alert and 'annotations' in alert:
     source = 'alertmanager'
@@ -57,8 +57,11 @@ if source == 'gatus':
     service_name = alertname
     namespace = 'gatus-monitoring'
     
-    # Check both 'resolved' field and 'status' field for service down
-    if 'resolved' in alert:
+    # Check alert_state field (new format) or fallback to legacy fields
+    if 'alert_state' in alert:
+        alert_state = alert.get('alert_state', '')
+        is_service_down = alert_state == 'TRIGGERED'
+    elif 'resolved' in alert:
         is_service_down = not alert.get('resolved', True)
     elif 'status' in alert:
         is_service_down = alert.get('status', '').upper() == 'DOWN'
