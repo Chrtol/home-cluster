@@ -9,4 +9,4 @@ endpoints:
     conditions:
       - "[STATUS] == ${GATUS_STATUS:=200}"
     alerts:
-      - type: pushover
+      - type: webhook
