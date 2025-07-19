@@ -134,11 +134,12 @@ spec:
           karakeep:
             app:
               - path: /data
-                subPath: karakeep
+      meilisearch-data:
+        existingClaim: karakeep-meilisearch
+        advancedMounts:
           meilisearch:
             app:
               - path: /meili_data
-                subPath: meilisearch
       cache:
         type: emptyDir
         advancedMounts:

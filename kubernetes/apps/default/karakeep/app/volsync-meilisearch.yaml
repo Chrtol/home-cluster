@@ -1,0 +1,40 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: karakeep-meilisearch
+spec:
+  sourcePVC: karakeep-meilisearch
+  trigger:
+    schedule: "0 3 * * *"  # Daily at 3 AM
+  restic:
+    copyMethod: Snapshot
+    pruneIntervalDays: 7
+    repository: karakeep-meilisearch-restic-secret
+    retain:
+      daily: 7
+      weekly: 4
+      monthly: 3
+    volumeSnapshotClassName: csi-rbd-sc
+    storageClassName: csi-rbd-sc
+    cacheStorageClassName: csi-rbd-sc
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: karakeep-meilisearch-restic-secret
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: karakeep-meilisearch-restic-secret
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        RESTIC_REPOSITORY: "/repository/karakeep-meilisearch"
+        RESTIC_PASSWORD: "{{ .RESTIC_PASSWORD }}"
+  dataFrom:
+    - extract:
+        key: restic
