@@ -24,7 +24,7 @@ endpoints:
     conditions:
       - "[STATUS] == 404"
     alerts:
-      - type: pushover
+      - type: webhook
   - name: status
     group: guarded
     url: 1.1.1.1
@@ -35,7 +35,7 @@ endpoints:
     conditions:
       - "len([BODY]) == 0"
     alerts:
-      - type: pushover
+      - type: webhook
 alerting:
   # discord:
   #   webhook-url: ${SECRET_DISCORD_GATUS_WH_URL}
@@ -45,6 +45,13 @@ alerting:
   #     send-on-resolved: true
   #     failure-threshold: 5
   #     success-threshold: 1
+  webhook:
+    url: https://n8n-webhook.cftollefsen.com/webhook/gatus
+    default-alert:
+      description: health-check failed
+      send-on-resolved: true
+      failure-threshold: 3
+      success-threshold: 3
   pushover:
     title: Gatus (Kubernetes)
     application-token: ${PUSHOVER_TOKEN}
