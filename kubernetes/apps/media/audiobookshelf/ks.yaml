@@ -31,3 +31,10 @@ spec:
     - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
     - ../../../../components/volsync
+  dependsOn:
+    - name: gatus
+      namespace: observability
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: volsync
+      namespace: volsync-system
