@@ -20,10 +20,12 @@ spec:
     namespace: flux-system
   wait: false
   dependsOn:
-    - name: ceph-csi-cephfs
-      namespace: ceph-csi-cephfs
-    - name: external-secrets
-      namespace: external-secrets
+    - name: volsync
+      namespace: volsync-system
+    - name: gatus
+      namespace: observability
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
     - name: volsync
       namespace: volsync-system
   components:
