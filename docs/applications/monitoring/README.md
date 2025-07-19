@@ -132,52 +132,167 @@ Complete observability stack for cluster monitoring, alerting, and performance a
 - **Network Policies**: Traffic allowed/denied
 - **Audit Events**: Security-relevant system events
 
-## Alerting Configuration
+## Smart Alert Routing System
 
-### Alert Categories
-**Critical Alerts**:
-- **Service Down**: Core service unavailability
-- **Node Failure**: Kubernetes node outages
-- **Storage Critical**: Disk space <10% or Ceph issues
-- **Network Failure**: BGP or ingress controller down
+### Architecture Overview
+**Intelligent multi-source alert routing** powered by N8N with context-aware decision making:
 
-**Warning Alerts**:
-- **High Resource Usage**: CPU/memory >80% for 10 minutes
-- **Storage Warning**: Disk space <20%
-- **Backup Failures**: Failed backup jobs
-- **Certificate Expiry**: Certificates expiring in 7 days
+**Input Sources**:
+- **Alertmanager**: Infrastructure and application alerts from Prometheus
+- **Gatus**: Service availability monitoring and health checks
 
-**Info Alerts**:
-- **Deployment Events**: Successful application deployments
-- **Scale Events**: Pod autoscaling activities
-- **Maintenance**: Planned maintenance windows
-- **Performance**: Unusual but non-critical metrics
+**Smart Routing Engine (N8N)**:
+- **Context Analysis**: Python-based intelligent routing decisions
+- **Time-aware**: Day/night/weekend scheduling logic
+- **Service categorization**: Infrastructure/media/network/backup classification
+- **Source detection**: Different logic for Alertmanager vs Gatus alerts
+
+**Output Channels**:
+- **Discord Admin**: Immediate technical alerts with rich context
+- **Discord Summary**: Daily analytics and trend reports  
+- **Pushover**: Mobile notifications for critical alerts and escalation
+- **Silent Logging**: Complete audit trail and analytics
+
+### Alert Categories and Routing
+
+**Critical Infrastructure Alerts**:
+- **Triggers**: Node failure, Kubernetes core component down, storage critical
+- **Routing**: Discord + Pushover + Silent log
+- **Example**: "Critical infrastructure alert - immediate attention required"
+
+**Network and Service Alerts**:
+- **Triggers**: BGP down, ingress controller failure, DNS issues
+- **Routing**: Discord + Pushover (if critical) + Silent log
+- **Time-sensitive**: Standard routing during day, escalated at night
+
+**Media and Application Alerts**:
+- **Triggers**: Plex down, media service failures, application crashes
+- **Routing**: Discord + Silent log (+ Pushover if during off-hours)
+- **Context**: Different handling for entertainment vs business hours
+
+**Backup and Storage Warnings**:
+- **Triggers**: VolSync failures, storage capacity warnings, backup job issues
+- **Routing**: Critical → Discord + Pushover, Warning → Silent log only
+- **Time-based**: Non-critical backup alerts silent during night hours
+
+**Gatus Service Monitoring**:
+- **Triggers**: HTTP endpoint down, DNS resolution failure, connectivity issues
+- **Routing**: Service down → Discord + Pushover, Recovery → Discord + Silent log
+- **Escalation**: Critical mobile alerts for service outages during sleep hours
+
+### Smart Routing Logic
+
+**Time-Based Routing**:
+- **Night Hours** (22:00-07:00): Only critical alerts to Pushover (wake up alerts)
+- **Business Hours** (09:00-17:00): Standard Discord + context-aware Pushover
+- **Weekends**: Standard routing with no special business hour considerations
+
+**Severity-Based Escalation**:
+- **Critical + Infrastructure**: Discord + Pushover + Silent log
+- **Critical + Night**: Pushover critical (high priority) + Discord + Silent log  
+- **Warning + Day**: Discord + Silent log
+- **Warning + Night**: Silent log only (unless service down)
+
+**Service Category Logic**:
+```python
+# Infrastructure: observability, kube-system, flux-system, ceph-csi-rbd
+# Media: media namespace, plex/jellyfin services  
+# Network: network, cilium-system namespaces
+# Backup: volsync, backup-related alerts
+# Gatus: all service monitoring alerts
+```
+
+**Source-Specific Handling**:
+- **Alertmanager alerts**: Full infrastructure routing logic
+- **Gatus alerts**: Service-focused routing with immediate escalation for outages
 
 ### Notification Channels
-**Primary Channels**:
-- **Discord**: Real-time notifications for critical alerts
-- **Email**: Digest and critical alert summaries
-- **Mobile**: Push notifications for urgent issues
-- **Grafana UI**: In-dashboard alert visualization
 
-**Alert Routing**:
-- **Severity-based**: Different channels for different severities
-- **Time-based**: Quiet hours for non-critical alerts
-- **Escalation**: Escalation paths for unacknowledged alerts
-- **Grouping**: Related alerts grouped to reduce noise
+**Discord Admin Channel**:
+- **Purpose**: Immediate technical alerts with rich context
+- **Format**: Structured embeds with severity, namespace, routing reason
+- **Content**: Alert name, description, affected service, troubleshooting context
+- **Response**: Real-time notifications for active monitoring
 
-### AlertManager Configuration
-**Grouping Rules**:
-- **Service Groups**: Related service alerts grouped
-- **Node Groups**: Node-specific alerts consolidated
-- **Time Windows**: Alerts grouped in 5-minute windows
-- **Label-based**: Custom grouping by alert labels
+**Discord Summary Channel**:  
+- **Schedule**: Daily at 8:00 AM
+- **Content**: 24-hour alert analysis, trending, system health assessment
+- **Analytics**: Alert volume, top namespaces, pattern insights, performance metrics
+- **Format**: Rich embeds with charts and actionable insights
 
-**Silencing**:
-- **Maintenance Windows**: Scheduled maintenance silencing
-- **Known Issues**: Temporary issue acknowledgment
-- **Development**: Non-production environment silencing
-- **Custom**: User-defined silencing rules
+**Pushover Mobile Notifications**:
+- **Critical Infrastructure**: High priority with immediate delivery
+- **Service Outages**: Standard priority with retry logic  
+- **Night Escalation**: Critical priority to ensure delivery during sleep
+- **Integration**: Dedicated Alertmanager Pushover app for infrastructure alerts
+
+**Silent Logging and Analytics**:
+- **Storage**: JSON Lines format in `/home/node/.n8n/alert_logs.jsonl`
+- **Data**: Complete alert lifecycle, routing decisions, resolution tracking
+- **Analytics**: Historical trending, pattern recognition, performance analysis
+- **Retention**: Automatic cleanup after daily summary processing
+
+### AlertManager Integration
+
+**Configuration**:
+```yaml
+# All alerts route to N8N smart routing system
+receivers:
+  - name: n8n-smart-routing
+    webhookConfigs:
+      - url: "https://n8n-webhook.cftollefsen.com/webhook/alerts"
+        sendResolved: true
+```
+
+**Routing Rules**:
+- **All Severities**: Warning and critical alerts route to N8N
+- **No Direct Pushover**: All Pushover notifications handled by N8N logic
+- **Resolved Alerts**: Alert resolution tracked for lifecycle management
+- **Grouping**: Maintained for related alert consolidation
+
+### Gatus Integration
+
+**Configuration**:
+```yaml
+# Service monitoring with webhook integration
+alerting:
+  webhook:
+    url: https://n8n-webhook.cftollefsen.com/webhook/gatus
+    default-alert:
+      send-on-resolved: true
+```
+
+**Service Health Monitoring**:
+- **HTTP Endpoints**: Application availability and response time
+- **DNS Checks**: Domain resolution and propagation  
+- **TCP Connectivity**: Port availability and network health
+- **Custom Conditions**: Service-specific health validation
+
+**Alert Lifecycle**:
+- **Service Down**: Immediate notification with escalation logic
+- **Service Recovery**: Confirmation notification with resolution tracking
+- **Flapping Detection**: Smart handling of intermittent service issues
+- **Maintenance Mode**: Automatic silencing during planned maintenance
+
+### Alert Analytics and Reporting
+
+**Daily Summary Analytics**:
+- **Volume Analysis**: Total alerts by severity and time distribution
+- **Service Health**: Top affected namespaces and service categories  
+- **Pattern Recognition**: Recurring issues and trending problems
+- **Performance Metrics**: Average resolution time and escalation frequency
+
+**Historical Tracking**:
+- **Alert Patterns**: Weekly and monthly trending analysis
+- **Service Reliability**: Uptime tracking and SLA monitoring
+- **Infrastructure Health**: Long-term capacity and performance trends
+- **Improvement Metrics**: False positive reduction and tuning effectiveness
+
+**Operational Intelligence**:
+- **Peak Times**: Alert volume correlation with system load
+- **Failure Correlation**: Cross-service impact analysis  
+- **Escalation Patterns**: Night vs day alert handling effectiveness
+- **Response Optimization**: Channel effectiveness and delivery success rates
 
 ## Performance Monitoring
 
@@ -349,8 +464,9 @@ Complete observability stack for cluster monitoring, alerting, and performance a
 
 ---
 
-**Last Updated**: 2025-07-16  
-**Monitoring Applications**: 3 core services  
+**Last Updated**: 2025-07-19  
+**Monitoring Applications**: 4 core services (Prometheus, Grafana, Gatus, N8N)  
+**Smart Alert Routing**: Multi-source intelligent notification system  
 **Dashboards**: 20+ comprehensive dashboards  
 **Metrics Retention**: 14 days  
-**Alert Rules**: 50+ configured alerts
+**Alert Channels**: Discord, Pushover, Silent logging with daily analytics
