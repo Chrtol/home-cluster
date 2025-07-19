@@ -51,9 +51,10 @@ This is a production-ready Kubernetes home cluster running on **Talos Linux** wi
 
 - **GitOps**: All configuration managed via Git with Flux CD
 - **High Availability**: Multi-node control plane with automatic failover
+- **Smart Alerting**: N8N-powered intelligent notification routing with context-aware decisions
 - **Automated Backups**: VolSync + CloudNative-PG for comprehensive backup strategy
 - **External Access**: Cloudflare tunnels for secure external access
-- **Monitoring**: Complete observability stack with Prometheus and Grafana
+- **Monitoring**: Complete observability stack with Prometheus, Grafana, and Gatus
 - **Security**: SSO via Authentik, LLDAP directory, and comprehensive RBAC
 
 ## Getting Help
@@ -64,11 +65,12 @@ This is a production-ready Kubernetes home cluster running on **Talos Linux** wi
 
 ## Recent Changes
 
+- **Smart Alert Routing**: Deployed N8N-powered intelligent notification system integrating Alertmanager, Gatus, Discord, and Pushover with context-aware routing
 - **Storage Migration**: Migrated to TrueNAS RAIDZ1 with 36TB capacity and NVMe L2ARC cache
 - **Backup Implementation**: Deployed VolSync for application backups and CloudNative-PG for database backups
-- **Monitoring**: Enhanced observability with Prometheus stack and Grafana dashboards
+- **Monitoring Enhancement**: Complete observability with multi-source alert routing and daily analytics
 
 ---
 
-**Last Updated**: 2025-07-16  
+**Last Updated**: 2025-07-19  
 **Cluster Version**: Kubernetes 1.31.4 on Talos Linux 1.9.0
