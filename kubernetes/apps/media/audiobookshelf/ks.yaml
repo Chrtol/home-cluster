@@ -24,6 +24,7 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 2Gi
+      GATUS_SUBDOMAIN: audiobooks
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
