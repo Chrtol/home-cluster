@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: chrislusf/seaweedfs
-              tag: 3.94
+              tag: 3.95
             args:
               - server
               - -dir=/data
