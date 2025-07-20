@@ -34,6 +34,8 @@ spec:
               tag: 2025.7.5
             env:
               TZ: ${SECRET_TIMEZONE}
+              RATELIMIT_DEFAULT: "500 per day"
+              RATELIMIT_STORAGE_URI: "memory://"
             resources:
               requests:
                 cpu: 15m
