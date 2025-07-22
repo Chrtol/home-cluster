@@ -152,3 +152,4 @@ cilium status
 - I am using Proxmox Ceph and a NAS with HDDs as storage
 - Never use kubectl apply since I am using FluxCD
 - Always write a summary of what has been changed that I can add to a commit message
+- Never suggest to use the task commands
