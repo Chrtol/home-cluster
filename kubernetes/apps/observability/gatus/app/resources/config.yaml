@@ -36,14 +36,6 @@ endpoints:
       - "len([BODY]) == 0"
     alerts:
       - type: custom
-  - name: alertmanager
-    group: internal
-    url: http://kube-prometheus-stack-alertmanager.observability.svc.cluster.local:9093/-/healthy
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-    alerts:
-      - type: custom
 alerting:
   # discord:
   #   webhook-url: ${SECRET_DISCORD_GATUS_WH_URL}
