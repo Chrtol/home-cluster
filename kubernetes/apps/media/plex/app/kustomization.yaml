@@ -6,7 +6,7 @@ resources:
   - ./pvc.yaml
   - ./externalsecret.yaml
   - ./helmrelease.yaml
-  # - ./replicationsource.yaml  # Temporarily disabled to recreate
+  - ./replicationsource.yaml
 # configMapGenerator:
 #   - name: plex-loki-rules
 #     files:
