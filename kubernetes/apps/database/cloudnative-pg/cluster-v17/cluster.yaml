@@ -19,6 +19,7 @@ spec:
     parameters:
       max_connections: "600"
       shared_buffers: 512MB
+      archive_mode: "off"
     #shared_preload_libraries:
     #  - "vectors.so"
 
