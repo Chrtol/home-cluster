@@ -1,0 +1,33 @@
+{
+  "embeds": [{
+    "title": "🚨 Alert: {{ $json.alert.name }}",
+    "description": "{{ $json.alert.summary }}",
+    "color": 16776960,
+    "timestamp": "{{ $now }}",
+    "fields": [
+      {
+        "name": "Severity",
+        "value": "{{ $json.alert.severity }}",
+        "inline": true
+      },
+      {
+        "name": "Namespace", 
+        "value": "{{ $json.alert.namespace }}",
+        "inline": true
+      },
+      {
+        "name": "Status",
+        "value": "{{ $json.alert.status }}",
+        "inline": true
+      },
+      {
+        "name": "Routing Decision",
+        "value": "{{ $json.routing_context.routing_reason }}",
+        "inline": false
+      }
+    ],
+    "footer": {
+      "text": "Home Lab Alert"
+    }
+  }]
+}
