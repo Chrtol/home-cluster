@@ -38,22 +38,22 @@ spec:
     podMonitorMetricRelabelings:
       - { sourceLabels: ["cluster"], targetLabel: cnpg_cluster, action: replace }
       - { regex: cluster, action: labeldrop }
-  # backup:
-  #   retentionPolicy: 7d
-  #   barmanObjectStore: &barmanObjectStore
-  #     data:
-  #       compression: bzip2
-  #     # WAL archiving disabled - SeaweedFS doesn't support WAL streaming
-  #     # wal:
-  #     #   compression: bzip2
-  #     #   maxParallel: 2
-  #     destinationPath: s3://postgres17/
-  #     endpointURL: http://seaweedfs.database.svc.cluster.local:8888
-  #     serverName: &currentCluster postgres17-v1
-  #     s3Credentials:
-  #       accessKeyId:
-  #         name: cloudnative-pg-secret
-  #         key: aws-access-key-id
-  #       secretAccessKey:
-  #         name: cloudnative-pg-secret
-  #         key: aws-secret-access-key
+  backup:
+    retentionPolicy: 7d
+    barmanObjectStore: &barmanObjectStore
+      data:
+        compression: bzip2
+      # WAL archiving disabled - SeaweedFS doesn't support WAL streaming
+      # wal:
+      #   compression: bzip2
+      #   maxParallel: 2
+      destinationPath: s3://postgres17/
+      endpointURL: http://seaweedfs.database.svc.cluster.local:8888
+      serverName: &currentCluster postgres17-v1
+      s3Credentials:
+        accessKeyId:
+          name: cloudnative-pg-secret
+          key: aws-access-key-id
+        secretAccessKey:
+          name: cloudnative-pg-secret
+          key: aws-secret-access-key
