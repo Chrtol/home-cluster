@@ -21,6 +21,21 @@
         "inline": true
       },
       {
+        "name": "Resource",
+        "value": "{{ $json.labels.job || $json.labels.deployment || $json.labels.statefulset || $json.labels.horizontalpodautoscaler || 'Unknown' }}",
+        "inline": true
+      },
+      {
+        "name": "Pod",
+        "value": "{{ $json.labels.pod || 'N/A' }}",
+        "inline": true
+      },
+      {
+        "name": "Container",
+        "value": "{{ $json.labels.container || 'N/A' }}",
+        "inline": true
+      },
+      {
         "name": "Routing Decision",
         "value": "{{ $json.routing_context.routing_reason }}",
         "inline": false
