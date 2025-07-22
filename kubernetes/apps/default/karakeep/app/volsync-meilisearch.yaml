@@ -18,6 +18,10 @@ spec:
     volumeSnapshotClassName: csi-rbd-sc
     storageClassName: csi-rbd-sc
     cacheStorageClassName: csi-rbd-sc
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
 ---
 # yaml-language-server: $schema=https://crd.movishell.pl/external-secrets.io/externalsecret_v1.json
 apiVersion: external-secrets.io/v1
