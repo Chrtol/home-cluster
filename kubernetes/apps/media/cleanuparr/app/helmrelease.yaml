@@ -49,9 +49,9 @@ spec:
             resources:
               requests:
                 cpu: 10m
-                memory: 128Mi
-              limits:
                 memory: 256Mi
+              limits:
+                memory: 512Mi
     defaultPodOptions:
       securityContext:
         fsGroup: &pgid 1000
