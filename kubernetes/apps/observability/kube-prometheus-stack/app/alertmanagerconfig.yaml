@@ -10,7 +10,7 @@ spec:
     groupInterval: 10m
     groupWait: 1m
     receiver: "null"
-    repeatInterval: 12h
+    repeatInterval: 1m
     routes:
       - receiver: "null"
         matchers:
