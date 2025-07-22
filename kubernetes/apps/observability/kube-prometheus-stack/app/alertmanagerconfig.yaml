@@ -26,7 +26,10 @@ spec:
             value: Watchdog
             matchType: =
       - receiver: n8n-smart-routing
-        continue: true
+        matchers:
+          - name: alertname
+            value: "(InfoInhibitor|Watchdog)"
+            matchType: "!~"
   inhibitRules:
     - equal: ["alertname", "namespace"]
       sourceMatch:
