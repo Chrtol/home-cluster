@@ -26,15 +26,7 @@ spec:
             value: Watchdog
             matchType: =
       - receiver: n8n-smart-routing
-        matchers:
-          - name: severity
-            value: warning
-            matchType: =
-      - receiver: n8n-smart-routing
-        matchers:
-          - name: severity
-            value: critical
-            matchType: =
+        continue: true
   inhibitRules:
     - equal: ["alertname", "namespace"]
       sourceMatch:
