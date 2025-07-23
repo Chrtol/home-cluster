@@ -21,6 +21,9 @@ spec:
               repository: docker.io/tannermiddleton/recommendarr
               tag: v1.4.4@sha256:c946dd24542ab3cf6b0d56ab1d69e1ea1ff1d84f8a293ceeeaf3f53f09e50db6
 
+            envFrom:
+              - secretRef:
+                  name: recommendarr-secret
             env:
               TZ: ${SECRET_TIMEZONE}
               PUBLIC_URL: https://recommendarr.${SECRET_DOMAIN}
