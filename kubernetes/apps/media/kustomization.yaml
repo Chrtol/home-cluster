@@ -29,3 +29,4 @@ resources:
   - ./rreading-glasses/ks.yaml
   - ./lazylibrarian/ks.yaml
   - ./audiobookrequest/ks.yaml
+  - ./recommendarr/ks.yaml
