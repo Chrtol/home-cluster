@@ -22,7 +22,7 @@
       },
       {
         "name": "Resource",
-        "value": "{{ $json.labels.job || $json.labels.deployment || $json.labels.statefulset || $json.labels.horizontalpodautoscaler || 'Unknown' }}",
+        "value": "{{ $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job || 'Unknown' }}",
         "inline": true
       },
       {
