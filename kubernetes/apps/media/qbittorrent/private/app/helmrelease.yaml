@@ -20,7 +20,7 @@ spec:
       retries: 0
   values:
     controllers:
-      qbittorrent:
+      qbittorrent-private:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
