@@ -183,14 +183,14 @@ spec:
         type: secret
         name: qbittorrent-private-gluetun-secret
         advancedMounts:
-          qbittorrent:
+          qbittorrent-private:
             gluetun:
               - path: *gluetunAuthPath
                 subPath: auth.toml
       gluetun-data:
         existingClaim: gluetun-update
         advancedMounts:
-          qbittorrent:
+          qbittorrent-private:
             gluetun:
               - path: /gluetun
                 readOnly: false
@@ -198,7 +198,7 @@ spec:
         type: configMap
         name: qbittorrent-private-coredns
         advancedMounts:
-          qbittorrent:
+          qbittorrent-private:
             coredns:
               - path: /etc/coredns/Corefile
                 subPath: Corefile
