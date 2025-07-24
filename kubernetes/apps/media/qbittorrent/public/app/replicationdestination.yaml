@@ -9,7 +9,7 @@ spec:
     manual: restore-20250724-180010
   restic:
     repository: qbittorrent-secret
-    destinationPVC: qbittorrent-restore-pvc
+    destinationPVC: qbittorrent
     storageClassName: csi-rbd-sc
     accessModes: [ReadWriteOnce]
     capacity: 2Gi
