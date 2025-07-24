@@ -1,0 +1,19 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: qbittorrent-restore
+  namespace: media
+spec:
+  trigger:
+    manual: restore-$(date +%Y%m%d-%H%M%S)
+  restic:
+    repository: qbittorrent-secret
+    destinationPVC: qbittorrent-restore-pvc
+    storageClassName: csi-rbd-sc
+    accessModes: [ReadWriteOnce]
+    capacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
