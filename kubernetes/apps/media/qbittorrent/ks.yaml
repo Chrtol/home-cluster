@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app qbittorrent-public
+  name: &app qbittorrent
   namespace: &namespace media
 spec:
   commonMetadata:
@@ -15,7 +15,7 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/public/app
   components:
-    - ../../../../components/gatus/guarded
+    - ../../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
@@ -48,7 +48,7 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/private/app
   components:
-    - ../../../../components/gatus/guarded
+    - ../../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
