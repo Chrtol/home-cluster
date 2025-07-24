@@ -26,9 +26,14 @@ sonarr:
           - c9eafd50846d299b862ca9bb6ea91950 # x265
         assign_scores_to:
           - name: WEB-1080p
-            score: 10
+            score: 50
           - name: WEB-1080p + LQ
             score: 15
+      - trash_ids:
+          - 9b64dff695c2115facf1b6ea59c9bd07 # x265 (no HDR/DV)
+        assign_scores_to:
+          - name: WEB-1080p
+            score: -10000
       - trash_ids:
           - 9c11cd3f07101cdba90a2d81cf0e56b4 # LQ
         assign_scores_to:
