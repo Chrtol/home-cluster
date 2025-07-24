@@ -26,6 +26,11 @@ sonarr:
         assign_scores_to:
           - name: WEB-1080p
             score: 10
+      - trash_ids:
+          - b8cd450cbfa689c0259a01d9e29ba3d6 # LQ
+        assign_scores_to:
+          - name: WEB-1080p
+            score: 5
 
 radarr:
   radarr:
