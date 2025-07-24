@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app qbittorrent
+  name: &app qbittorrent-private
   namespace: media
 spec:
   interval: 1h
@@ -50,7 +50,7 @@ spec:
               HTTP_CONTROL_SERVER_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: qbittorrent-secret
+                    name: qbittorrent-private-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
               VPN_SERVICE_PROVIDER: protonvpn
               VPN_TYPE: openvpn
@@ -61,7 +61,7 @@ spec:
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
             envFrom:
               - secretRef:
-                  name: qbittorrent-secret
+                  name: qbittorrent-private-secret
             lifecycle:
               postStart:
                 exec:
@@ -86,7 +86,7 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               QBT_WEBUI_PORT: &port 80
-              QBT_TORRENTING_PORT: 50413
+              QBT_TORRENTING_PORT: 50414
             probes:
               liveness: &probes
                 enabled: true
@@ -128,7 +128,7 @@ spec:
               GLUETUN_CONTROL_SERVER_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: qbittorrent-secret
+                    name: qbittorrent-private-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
               QBITTORRENT_HOST: localhost
               QBITTORRENT_WEBUI_PORT: *port
@@ -156,21 +156,21 @@ spec:
         ports:
           http:
             port: *port
+
     ingress:
       app:
         className: internal
-        annotations:
-          internal-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
         hosts:
-          - host: qbittorrent.${SECRET_DOMAIN}
+          - host: qb-priv.${SECRET_DOMAIN}
             paths:
               - path: /
                 service:
                   identifier: app
                   port: http
+
     persistence:
       config:
-        existingClaim: qbittorrent
+        existingClaim: qbittorrent-private
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
@@ -181,7 +181,7 @@ spec:
         type: emptyDir
       gluetun-auth:
         type: secret
-        name: qbittorrent-gluetun-secret
+        name: qbittorrent-private-gluetun-secret
         advancedMounts:
           qbittorrent:
             gluetun:
@@ -196,7 +196,7 @@ spec:
                 readOnly: false
       coredns:
         type: configMap
-        name: qbittorrent-coredns
+        name: qbittorrent-private-coredns
         advancedMounts:
           qbittorrent:
             coredns:

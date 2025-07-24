@@ -1,0 +1,177 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbtools-private
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: qbittorrent-private
+  values:
+    controllers:
+      tagging:
+        type: cronjob
+        cronjob: &cronJobSpec
+          schedule: 0 * * * *
+          backoffLimit: 0
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+          ttlSecondsAfterFinished: 3600
+        initContainers:
+          tag: &container
+            image:
+              repository: ghcr.io/buroa/qbtools
+              tag: v0.21.1@sha256:fd13085f7534719b7b30828684661b7f5611bbc4156831123775cfcd9b8f2eb5
+            env:
+              QBITTORRENT_HOST: qbittorrent-private.media.svc.cluster.local
+              QBITTORRENT_PORT: 80
+              QBITTORRENT_USERNAME:
+                valueFrom:
+                  secretKeyRef:
+                    name: qbtools-private-secret
+                    key: QBITTORRENT_USERNAME
+              QBITTORRENT_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: qbtools-private-secret
+                    key: QBITTORRENT_PASSWORD
+              SABNZBD_HOST: sabnzbd.media.svc.cluster.local
+              SABNZBD_PORT: 80
+            envFrom:
+              - secretRef:
+                  name: qbtools-private-secret
+            args: [
+              "tagging",
+              "--added-on",
+              "--expired",
+              "--last-activity",
+              "--sites",
+              "--unregistered",
+              "--not-linked",
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
+            ]
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 25m
+              limits:
+                memory: 256M
+        containers:
+          unregistered:
+            <<: *container
+            args: [
+              "prune",
+              "--exclude-category", "manual",
+              "--exclude-category", "music",
+              "--exclude-tag", "added:1d",
+              "--include-tag", "unregistered",
+              "--with-data",
+              # "--dry-run"
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
+            ]
+          expired:
+            <<: *container
+            args: [
+              "prune",
+              "--exclude-category", "manual",
+              "--exclude-category", "music",
+              "--exclude-tag", "added:1d",
+              "--include-tag", "expired",
+              "--with-data",
+              # "--dry-run"
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
+            ]
+        pod:
+          restartPolicy: Never
+      orphaned:
+        type: cronjob
+        cronjob:
+          <<: *cronJobSpec
+          schedule: 0 0 * * 0
+          suspend: true
+        containers:
+          app:
+            <<: *container
+            args: [
+              "orphaned",
+              "--exclude-pattern", "*_unpackerred*",
+              # "--dry-run"
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
+            ]
+        pod:
+          restartPolicy: Never
+      reannounce:
+        containers:
+          app:
+            <<: *container
+            args: [
+              "reannounce",
+              "--process-seeding",
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
+            ]
+      limiter:
+        containers:
+          app:
+            <<: *container
+            args: [
+              "limiter",
+              "--max-line-speed-mbps", "1000",
+              "--max-percent", "0.2",
+              "--limit-percent", "0.3",
+              "--interval", "5",
+              "-s", "$(QBITTORRENT_HOST)",
+              "-p", "$(QBITTORRENT_PORT)",
+              "-U", "$(QBITTORRENT_USERNAME)",
+              "-P", "$(QBITTORRENT_PASSWORD)"
+            ]
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    persistence:
+      secret-file:
+        type: secret
+        name: qbtools-private-config-secret
+        globalMounts:
+          - path: /config/config.yaml
+            subPath: config.yaml
+            readOnly: true
+      media:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path:  /mnt/truenas/cf-nas/data
+        globalMounts:
+          - path: /data
+            readOnly: false
