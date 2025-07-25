@@ -27,7 +27,7 @@ data:
     # Install dependencies
     log "Installing dependencies..."
     apt-get update >/dev/null 2>&1
-    apt-get install -y openvpn jq curl iproute2 iptables git >/dev/null 2>&1
+    apt-get install -y openvpn jq curl iproute2 iptables git expect >/dev/null 2>&1
 
     # Check required environment variables
     if [[ -z "$PIA_USER" || -z "$PIA_PASS" || -z "$DIP_TOKEN" || -z "$OVPN_SERVER_IP" || -z "$OVPN_HOSTNAME" ]]; then
@@ -89,9 +89,22 @@ data:
     # Create necessary directories
     mkdir -p /opt/piavpn-manual
 
-    # Start the connection (don't background it since we need to monitor)
+    # Start the connection with expect to handle password prompts
     log "Starting OpenVPN connection..."
-    ./connect_to_openvpn_with_token.sh &
+    expect << EXPECT_EOF &
+    spawn ./connect_to_openvpn_with_token.sh
+    expect {
+        "Enter Auth Password:" {
+            send "$PIA_PASS\r"
+            exp_continue
+        }
+        "password:" {
+            send "$PIA_PASS\r"
+            exp_continue
+        }
+        eof
+    }
+    EXPECT_EOF
     CONNECT_PID=$!
 
     # Wait for connection to establish
@@ -102,10 +115,34 @@ data:
             CONNECTION_ESTABLISHED=true
             break
         fi
+        
+        # Check for authentication errors and provide more specific feedback
+        if [[ -f /opt/piavpn-manual/debug_info ]]; then
+            if grep -q "auth-failure\|AUTH_FAILED\|authentication failed" /opt/piavpn-manual/debug_info; then
+                log "Authentication error detected. Checking credentials..."
+                if [[ -f /opt/piavpn-manual/credentials ]]; then
+                    log "Credentials file exists with $(wc -l < /opt/piavpn-manual/credentials) lines"
+                else
+                    log "WARNING: Credentials file not found!"
+                fi
+                tail -20 /opt/piavpn-manual/debug_info
+                error "OpenVPN authentication failed"
+            fi
+            
+            if grep -q "fatal error\|Exiting due to fatal error" /opt/piavpn-manual/debug_info; then
+                log "Fatal error detected in OpenVPN logs:"
+                tail -20 /opt/piavpn-manual/debug_info
+                error "OpenVPN failed with fatal error"
+            fi
+        fi
+        
         if [[ $i -eq 60 ]]; then
             log "Connection attempt timed out. Checking debug info..."
             if [[ -f /opt/piavpn-manual/debug_info ]]; then
-                tail -10 /opt/piavpn-manual/debug_info
+                tail -20 /opt/piavpn-manual/debug_info
+            fi
+            if [[ -f /opt/piavpn-manual/credentials ]]; then
+                log "Credentials file exists with $(wc -l < /opt/piavpn-manual/credentials) lines"
             fi
             error "OpenVPN connection failed to establish within 60 seconds"
         fi
