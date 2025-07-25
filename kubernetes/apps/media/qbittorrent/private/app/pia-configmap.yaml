@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pia-entrypoint
+  namespace: media
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+    set -e
+
+    # Colors for output
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m'
+
+    log() {
+        echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
+    }
+
+    error() {
+        echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1${NC}"
+        exit 1
+    }
+
+    # Install dependencies
+    log "Installing dependencies..."
+    apt-get update >/dev/null 2>&1
+    apt-get install -y openvpn jq curl iproute2 iptables git >/dev/null 2>&1
+
+    # Check required environment variables
+    if [[ -z "$PIA_USER" || -z "$PIA_PASS" || -z "$DIP_TOKEN" || -z "$OVPN_SERVER_IP" || -z "$OVPN_HOSTNAME" ]]; then
+        error "Missing required environment variables: PIA_USER, PIA_PASS, DIP_TOKEN, OVPN_SERVER_IP, OVPN_HOSTNAME"
+    fi
+
+    # Set defaults
+    CONNECTION_SETTINGS=${CONNECTION_SETTINGS:-"openvpn_udp_standard"}
+    PIA_PF=${PIA_PF:-"true"}
+    PIA_DNS=${PIA_DNS:-"true"}
+
+    log "Starting PIA-FOSS OpenVPN connection process..."
+    log "Server: $OVPN_HOSTNAME"
+    log "Connection: $CONNECTION_SETTINGS"
+    log "Port Forwarding: $PIA_PF"
+
+    # Download PIA-FOSS scripts if not already present
+    if [[ ! -d /opt/pia-foss ]]; then
+        log "Downloading PIA-FOSS scripts..."
+        git clone https://github.com/pia-foss/manual-connections.git /opt/pia-foss >/dev/null 2>&1
+    fi
+    
+    cd /opt/pia-foss/manual-connections
+    chmod +x *.sh
+
+    # Step 1: Get PIA token
+    log "Step 1: Getting PIA token..."
+    export PIA_USER PIA_PASS
+    TOKEN_OUTPUT=$(./get_token.sh 2>&1)
+    if ! PIA_TOKEN=$(echo "$TOKEN_OUTPUT" | grep "PIA_TOKEN=" | cut -d'=' -f2); then
+        error "Failed to extract PIA token from output: $TOKEN_OUTPUT"
+    fi
+    if [[ -z "$PIA_TOKEN" ]]; then
+        error "PIA_TOKEN is empty. Output was: $TOKEN_OUTPUT"
+    fi
+    log "✓ PIA token obtained: ${PIA_TOKEN:0:20}..."
+
+    # Step 2: Using dedicated IP info from environment variables
+    log "Step 2: Using dedicated IP information from environment..."
+    export PIA_TOKEN DIP_TOKEN
+    log "✓ Using dedicated IP server: $OVPN_HOSTNAME"
+
+    # Step 3: Connect to OpenVPN
+    log "Step 3: Connecting to OpenVPN..."
+    export OVPN_SERVER_IP OVPN_HOSTNAME PIA_TOKEN DIP_TOKEN CONNECTION_SETTINGS PIA_PF PIA_DNS
+
+    # Create necessary directories
+    mkdir -p /opt/piavpn-manual
+
+    # Start the connection (don't background it since we need to monitor)
+    log "Starting OpenVPN connection..."
+    ./connect_to_openvpn_with_token.sh &
+    CONNECT_PID=$!
+
+    # Wait for connection to establish
+    log "Waiting for OpenVPN connection to establish..."
+    for i in {1..60}; do
+        if [[ -f /opt/piavpn-manual/debug_info ]] && grep -q "Initialization Sequence Completed" /opt/piavpn-manual/debug_info; then
+            log "✓ OpenVPN connection established successfully!"
+            CONNECTION_ESTABLISHED=true
+            break
+        fi
+        if [[ $i -eq 60 ]]; then
+            log "Connection attempt timed out. Checking debug info..."
+            if [[ -f /opt/piavpn-manual/debug_info ]]; then
+                tail -10 /opt/piavpn-manual/debug_info
+            fi
+            error "OpenVPN connection failed to establish within 60 seconds"
+        fi
+        sleep 1
+    done
+
+    # Get the OpenVPN PID
+    if [[ -f /opt/piavpn-manual/pia_pid ]]; then
+        OVPN_PID=$(cat /opt/piavpn-manual/pia_pid)
+        log "OpenVPN PID: $OVPN_PID"
+    fi
+
+    # Show connection info
+    if [[ -f /opt/piavpn-manual/route_info ]]; then
+        GATEWAY_IP=$(cat /opt/piavpn-manual/route_info)
+        log "VPN Gateway IP: $GATEWAY_IP"
+    fi
+
+    # Function to cleanup on exit
+    cleanup() {
+        log "Shutting down OpenVPN connection..."
+        if [[ -n "$OVPN_PID" ]]; then
+            kill "$OVPN_PID" 2>/dev/null || true
+        fi
+        exit 0
+    }
+
+    # Set up signal handlers
+    trap cleanup SIGTERM SIGINT
+
+    log "OpenVPN connection established. Monitoring connection..."
+
+    # Keep the container running and monitor the connection
+    while true; do
+        if [[ -n "$OVPN_PID" ]] && ! kill -0 "$OVPN_PID" 2>/dev/null; then
+            error "OpenVPN process died unexpectedly"
+        fi
+        
+        # Check if tunnel interface exists
+        if ! ip link show tun06 >/dev/null 2>&1; then
+            warn "VPN tunnel interface tun06 is missing, attempting to restart..."
+            cleanup
+        fi
+        
+        sleep 30
+    done
