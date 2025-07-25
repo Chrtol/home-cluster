@@ -156,6 +156,13 @@ data:
         log "OpenVPN PID: $OVPN_PID"
     fi
 
+    # Fix routing to ensure Kubernetes cluster traffic bypasses VPN
+    log "Fixing cluster network routing..."
+    # Add routes for Kubernetes cluster networks to bypass VPN
+    ip route add 10.42.0.0/16 via $(ip route | grep '^default' | awk '{print $3}') dev eth0 2>/dev/null || true
+    ip route add 10.43.0.0/16 via $(ip route | grep '^default' | awk '{print $3}') dev eth0 2>/dev/null || true
+    log "✓ Cluster network routing configured"
+
     # Show connection info
     if [[ -f /opt/piavpn-manual/route_info ]]; then
         GATEWAY_IP=$(cat /opt/piavpn-manual/route_info)
