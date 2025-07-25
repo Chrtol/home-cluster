@@ -54,7 +54,7 @@ spec:
                     key: GLUETUN_CONTROL_SERVER_API_KEY
               VPN_SERVICE_PROVIDER: custom
               VPN_TYPE: wireguard
-              VPN_PORT_FORWARDING: on
+              VPN_PORT_FORWARDING: off
               FIREWALL_INPUT_PORTS: "80,8000"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
             envFrom:
