@@ -7,7 +7,7 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./replicationsource.yaml
-  - ./pia-openvpn-secret.sops.yaml
+  - ./pia-configmap.yaml
 configMapGenerator:
   - name: qbittorrent-private-coredns
     files:
