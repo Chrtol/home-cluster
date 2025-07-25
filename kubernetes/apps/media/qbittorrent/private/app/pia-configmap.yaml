@@ -47,11 +47,23 @@ data:
     # Download PIA-FOSS scripts if not already present
     if [[ ! -d /opt/pia-foss ]]; then
         log "Downloading PIA-FOSS scripts..."
-        git clone https://github.com/pia-foss/manual-connections.git /opt/pia-foss >/dev/null 2>&1
+        git clone https://github.com/pia-foss/manual-connections.git /opt/pia-foss
+        if [[ $? -ne 0 ]]; then
+            error "Failed to clone PIA-FOSS repository"
+        fi
     fi
     
-    cd /opt/pia-foss/manual-connections
+    # The git clone creates the full repo, so we need to go to manual-connections directory
+    if [[ -d /opt/pia-foss/manual-connections ]]; then
+        cd /opt/pia-foss/manual-connections
+    else
+        # Check if the clone created the files directly in /opt/pia-foss
+        cd /opt/pia-foss
+    fi
+    
     chmod +x *.sh
+    log "Current directory: $(pwd)"
+    log "Available scripts: $(ls -la *.sh 2>/dev/null || echo 'No shell scripts found')"
 
     # Step 1: Get PIA token
     log "Step 1: Getting PIA token..."
