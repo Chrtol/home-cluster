@@ -52,9 +52,9 @@ spec:
                   secretKeyRef:
                     name: qbittorrent-private-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
-              VPN_SERVICE_PROVIDER: custom
-              VPN_TYPE: wireguard
-              VPN_PORT_FORWARDING: off
+              VPN_SERVICE_PROVIDER: private internet access
+              VPN_TYPE: openvpn
+              VPN_PORT_FORWARDING: on
               FIREWALL_INPUT_PORTS: "80,8000"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
             envFrom:
