@@ -41,6 +41,7 @@ spec:
               repository: ubuntu
               tag: "24.04"
             command:
+              - /bin/bash
               - /scripts/entrypoint.sh
             restartPolicy: Always
             envFrom:
