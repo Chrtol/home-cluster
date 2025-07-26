@@ -56,6 +56,12 @@ data:
     if wg show | grep -q "interface"; then
         echo "✅ WireGuard connection established successfully"
         
+        # Set default route through VPN immediately
+        echo "🌐 Configuring default route through VPN..."
+        ip route del default || true
+        ip route add default dev pia
+        echo "✅ Default route set through VPN interface"
+        
         # Configure firewall for Kubernetes networking
         echo "🔀 Configuring firewall rules..."
         
@@ -84,19 +90,6 @@ data:
             iptables -A INPUT -p udp --dport $FORWARDED_PORT -j ACCEPT
         fi
         
-        # Set default route through VPN
-        echo "🌐 Configuring default route through VPN..."
-        VPN_GATEWAY=$(ip route show dev pia | grep -oP '(?<=via )\S+' | head -1)
-        if [[ -n "$VPN_GATEWAY" ]]; then
-            ip route del default || true
-            ip route add default via $VPN_GATEWAY dev pia
-            echo "✅ Default route set through VPN gateway: $VPN_GATEWAY"
-        else
-            echo "⚠️ No VPN gateway found, using interface-based routing..."
-            ip route del default || true  
-            ip route add default dev pia
-            echo "✅ Default route set through VPN interface"
-        fi
         
         # Configure incoming traffic routing
         echo "📥 Configuring incoming traffic routing..."
