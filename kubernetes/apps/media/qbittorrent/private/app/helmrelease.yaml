@@ -73,6 +73,7 @@ spec:
                   httpGet:
                     path: /
                     port: *port
+                    host: localhost
                   initialDelaySeconds: 30
                   periodSeconds: 15
                   timeoutSeconds: 5
@@ -85,6 +86,7 @@ spec:
                   httpGet:
                     path: /
                     port: *port
+                    host: localhost
                   failureThreshold: 30
                   periodSeconds: 10
             securityContext:
