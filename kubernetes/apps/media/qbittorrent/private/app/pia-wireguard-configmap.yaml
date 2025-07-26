@@ -40,10 +40,9 @@ data:
     PIA_PASS="$PIA_PASS" \
     ./run_setup.sh
     
-    # Start WireGuard connection
-    if [[ -f "/etc/wireguard/pia.conf" ]]; then
-        echo "🚀 Starting WireGuard connection..."
-        wg-quick up pia
+    # Check if WireGuard connection was established
+    if wg show | grep -q "interface"; then
+        echo "✅ WireGuard connection established successfully"
         
         # Configure firewall for Kubernetes networking
         echo "🔀 Configuring firewall rules..."
