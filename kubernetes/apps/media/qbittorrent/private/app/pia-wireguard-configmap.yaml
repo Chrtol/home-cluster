@@ -28,17 +28,28 @@ data:
     git clone https://github.com/pia-foss/manual-connections.git
     cd manual-connections
     
-    # Connect using run_setup.sh with dedicated IP and port forwarding
-    echo "🚀 Connecting to PIA with dedicated IP and port forwarding..."
-    VPN_PROTOCOL=wireguard \
-    DISABLE_IPV6=yes \
-    DIP_TOKEN="$PIA_DIP_TOKEN" \
-    AUTOCONNECT=true \
-    PIA_PF=true \
-    PIA_DNS=false \
-    PIA_USER="$PIA_USER" \
-    PIA_PASS="$PIA_PASS" \
-    ./run_setup.sh
+    # Step 1: Get PIA token
+    echo "🔐 Step 1: Getting PIA token..."
+    export PIA_USER PIA_PASS
+    TOKEN_OUTPUT=$(./get_token.sh 2>&1)
+    if ! PIA_TOKEN=$(echo "$TOKEN_OUTPUT" | grep "PIA_TOKEN=" | cut -d'=' -f2); then
+        echo "❌ Failed to extract PIA token from output: $TOKEN_OUTPUT"
+        exit 1
+    fi
+    if [[ -z "$PIA_TOKEN" ]]; then
+        echo "❌ PIA_TOKEN is empty. Output was: $TOKEN_OUTPUT"
+        exit 1
+    fi
+    echo "✅ PIA token obtained: ${PIA_TOKEN:0:20}..."
+    export PIA_TOKEN
+    
+    # Step 2: Connect to WireGuard with dedicated IP
+    echo "🚀 Step 2: Connecting to WireGuard with dedicated IP..."
+    DIP_TOKEN="$PIA_DIP_TOKEN" ./connect_to_wireguard_with_token.sh
+    
+    # Step 3: Enable port forwarding
+    echo "🔀 Enabling port forwarding..."
+    ./port_forwarding.sh
     
     # Check if WireGuard connection was established
     if wg show | grep -q "interface"; then
