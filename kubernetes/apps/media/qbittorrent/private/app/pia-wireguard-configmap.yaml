@@ -46,7 +46,7 @@ data:
     # Step 2: Connect to WireGuard with dedicated IP
     echo "🚀 Step 2: Connecting to WireGuard with dedicated IP..."
     export WG_SERVER_IP WG_HOSTNAME DIP_TOKEN="$PIA_DIP_TOKEN"
-    PIA_PF=true ./connect_to_wireguard_with_token.sh
+    PIA_PF=false ./connect_to_wireguard_with_token.sh
     
     # Step 3: Enable port forwarding (in background)
     echo "🔀 Enabling port forwarding..."
