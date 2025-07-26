@@ -98,6 +98,40 @@ data:
             echo "✅ Default route set through VPN interface"
         fi
         
+        # Configure incoming traffic routing
+        echo "📥 Configuring incoming traffic routing..."
+        
+        # Get pod and VPN IPs
+        POD_IP=$(ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1)
+        VPN_IP=$(ip addr show pia | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1)
+        
+        # Route incoming traffic properly
+        if [[ -n "$POD_IP" && -n "$VPN_IP" ]]; then
+            echo "Pod IP: $POD_IP, VPN IP: $VPN_IP"
+            
+            # Allow local traffic to stay local (health probes, etc.)
+            ip route add local $POD_IP dev lo scope host
+            
+            # DNAT incoming VPN traffic to pod IP for qBittorrent
+            iptables -t nat -A PREROUTING -d $VPN_IP -p tcp --dport 80 -j DNAT --to-destination $POD_IP:80
+            iptables -t nat -A PREROUTING -d $VPN_IP -p tcp --dport 8000 -j DNAT --to-destination $POD_IP:8000
+            
+            # Forward incoming traffic on forwarded port to qBittorrent
+            if [[ -f "/tmp/port" ]]; then
+                FORWARDED_PORT=$(cat /tmp/port)
+                iptables -t nat -A PREROUTING -i pia -p tcp --dport $FORWARDED_PORT -j DNAT --to-destination $POD_IP:$FORWARDED_PORT
+                iptables -t nat -A PREROUTING -i pia -p udp --dport $FORWARDED_PORT -j DNAT --to-destination $POD_IP:$FORWARDED_PORT
+                echo "✅ Forwarding port $FORWARDED_PORT to qBittorrent"
+            fi
+            
+            # Enable NAT for outgoing traffic
+            iptables -t nat -A POSTROUTING -o pia -j MASQUERADE
+            
+            echo "✅ Incoming traffic routing configured"
+        else
+            echo "❌ Could not determine pod or VPN IP addresses"
+        fi
+        
         # Start control server in background
         echo "🌐 Starting control server..."
         chmod +x /scripts/control-server.py
