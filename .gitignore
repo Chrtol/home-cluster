@@ -21,6 +21,4 @@ talosconfig
 Thumbs.db
 .sopsrc
 1password-credentials*
-tmp_activity.md
-tmp_activity.md
-indexer_issues.md
+ai-activity/*
