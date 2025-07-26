@@ -1,0 +1,143 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pia-vpn-scripts
+  namespace: media
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "🔧 PIA WireGuard Dedicated IP + Control Server Starting..."
+    
+    # Environment validation
+    if [[ -z "$PIA_DIP_TOKEN" || -z "$PIA_USER" || -z "$PIA_PASS" ]]; then
+        echo "❌ Missing required environment variables"
+        exit 1
+    fi
+    
+    # Install dependencies
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq curl jq wireguard-tools iptables python3 python3-pip git
+    pip3 install flask
+    
+    # Clone PIA scripts
+    cd /tmp
+    git clone https://github.com/pia-foss/manual-connections.git
+    cd manual-connections
+    
+    # Connect using run_setup.sh with dedicated IP and port forwarding
+    echo "🚀 Connecting to PIA with dedicated IP and port forwarding..."
+    VPN_PROTOCOL=wireguard \
+    DISABLE_IPV6=yes \
+    DIP_TOKEN="$PIA_DIP_TOKEN" \
+    AUTOCONNECT=true \
+    PIA_PF=true \
+    PIA_DNS=false \
+    PIA_USER="$PIA_USER" \
+    PIA_PASS="$PIA_PASS" \
+    ./run_setup.sh
+    
+    # Start WireGuard connection
+    if [[ -f "/etc/wireguard/pia.conf" ]]; then
+        echo "🚀 Starting WireGuard connection..."
+        wg-quick up pia
+        
+        # Configure firewall for Kubernetes networking
+        echo "🔀 Configuring firewall rules..."
+        
+        # Allow cluster communication
+        iptables -A INPUT -s 10.42.0.0/16 -j ACCEPT
+        iptables -A INPUT -s 10.43.0.0/16 -j ACCEPT
+        iptables -A OUTPUT -d 10.42.0.0/16 -j ACCEPT  
+        iptables -A OUTPUT -d 10.43.0.0/16 -j ACCEPT
+        
+        # Allow health check traffic on port 80 and 8000
+        iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+        iptables -A INPUT -p tcp --dport 8000 -j ACCEPT
+        
+        # Allow forwarded port if available
+        if [[ -f "/tmp/port" ]]; then
+            FORWARDED_PORT=$(cat /tmp/port)
+            echo "🔀 Opening forwarded port: $FORWARDED_PORT"
+            iptables -A INPUT -p tcp --dport $FORWARDED_PORT -j ACCEPT
+            iptables -A INPUT -p udp --dport $FORWARDED_PORT -j ACCEPT
+        fi
+        
+        # Start control server in background
+        echo "🌐 Starting control server..."
+        chmod +x /scripts/control-server.py
+        python3 /scripts/control-server.py &
+        
+        # Monitor VPN connection
+        echo "📊 Monitoring VPN connection..."
+        while true; do
+            if wg show wg0 | grep -q "endpoint"; then
+                echo "✅ VPN connection active"
+                if [[ -f "/tmp/port" ]]; then
+                    echo "🔀 Port forwarded: $(cat /tmp/port)"
+                fi
+            else
+                echo "❌ VPN connection lost, attempting reconnection..."
+                wg-quick down pia 2>/dev/null || true
+                wg-quick up pia
+            fi
+            sleep 60
+        done
+    else
+        echo "❌ Failed to generate WireGuard config"
+        exit 1
+    fi
+
+  control-server.py: |
+    #!/usr/bin/env python3
+    import json
+    import subprocess
+    import os
+    from flask import Flask, jsonify
+    
+    app = Flask(__name__)
+    
+    def get_public_ip():
+        """Get the public IP address via the VPN"""
+        try:
+            result = subprocess.run(['curl', '-s', 'https://ipinfo.io/ip'], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except:
+            pass
+        return "unknown"
+    
+    def get_forwarded_port():
+        """Get the forwarded port from PIA"""
+        try:
+            if os.path.exists('/tmp/port'):
+                with open('/tmp/port', 'r') as f:
+                    port = f.read().strip()
+                    return int(port) if port.isdigit() else 0
+        except:
+            pass
+        return 0
+    
+    @app.route('/v1/publicip/ip')
+    def public_ip():
+        """Return public IP for gluetun compatibility"""
+        ip = get_public_ip()
+        return jsonify({"public_ip": ip})
+    
+    @app.route('/v1/openvpn/portforwarded')  
+    def port_forwarded():
+        """Return forwarded port for gluetun compatibility"""
+        port = get_forwarded_port()
+        return jsonify({"port": port})
+    
+    @app.route('/health')
+    def health():
+        """Health check endpoint"""
+        return jsonify({"status": "healthy"})
+    
+    if __name__ == '__main__':
+        app.run(host='0.0.0.0', port=8000)
