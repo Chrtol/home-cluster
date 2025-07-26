@@ -68,7 +68,7 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: 50414
-              QBT_WEBUI_ADDRESS: "0.0.0.0"
+              QBT_WEBUI_ADDRESS: "*"
             probes:
               liveness: &probes
                 enabled: true
@@ -77,11 +77,10 @@ spec:
                   httpGet:
                     path: /
                     port: *port
-                    host: localhost
                   initialDelaySeconds: 30
                   periodSeconds: 15
-                  timeoutSeconds: 5
-                  failureThreshold: 3
+                  timeoutSeconds: 10
+                  failureThreshold: 5
               readiness: *probes
               startup:
                 enabled: true
@@ -90,9 +89,9 @@ spec:
                   httpGet:
                     path: /
                     port: *port
-                    host: localhost
                   failureThreshold: 30
                   periodSeconds: 10
+                  timeoutSeconds: 10
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
