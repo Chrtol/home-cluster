@@ -59,6 +59,13 @@ data:
         # Configure firewall for Kubernetes networking
         echo "🔀 Configuring firewall rules..."
         
+        # Allow loopback traffic
+        iptables -A INPUT -i lo -j ACCEPT
+        iptables -A OUTPUT -o lo -j ACCEPT
+        
+        # Allow established and related connections
+        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        
         # Allow cluster communication
         iptables -A INPUT -s 10.42.0.0/16 -j ACCEPT
         iptables -A INPUT -s 10.43.0.0/16 -j ACCEPT
