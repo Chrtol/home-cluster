@@ -48,9 +48,13 @@ data:
     export WG_SERVER_IP WG_HOSTNAME DIP_TOKEN="$PIA_DIP_TOKEN"
     PIA_PF=true ./connect_to_wireguard_with_token.sh
     
-    # Step 3: Enable port forwarding
+    # Step 3: Enable port forwarding (in background)
     echo "🔀 Enabling port forwarding..."
-    ./port_forwarding.sh
+    ./port_forwarding.sh &
+    PF_PID=$!
+    
+    # Wait a moment for port forwarding to establish
+    sleep 10
     
     # Check if WireGuard connection was established
     if wg show | grep -q "interface"; then
@@ -130,10 +134,10 @@ data:
         chmod +x /scripts/control-server.py
         python3 /scripts/control-server.py &
         
-        # Monitor VPN connection
-        echo "📊 Monitoring VPN connection..."
+        # Monitor VPN connection and port forwarding
+        echo "📊 Monitoring VPN connection and port forwarding..."
         while true; do
-            if wg show wg0 | grep -q "endpoint"; then
+            if wg show pia | grep -q "endpoint"; then
                 echo "✅ VPN connection active"
                 if [[ -f "/tmp/port" ]]; then
                     echo "🔀 Port forwarded: $(cat /tmp/port)"
@@ -143,6 +147,14 @@ data:
                 wg-quick down pia 2>/dev/null || true
                 wg-quick up pia
             fi
+            
+            # Check if port forwarding process is still running
+            if ! kill -0 $PF_PID 2>/dev/null; then
+                echo "⚠️ Port forwarding process died, restarting..."
+                ./port_forwarding.sh &
+                PF_PID=$!
+            fi
+            
             sleep 60
         done
     else
