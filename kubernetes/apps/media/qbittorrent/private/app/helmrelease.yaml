@@ -55,19 +55,11 @@ spec:
               VPN_SERVICE_PROVIDER: "private internet access"
               VPN_TYPE: openvpn
               VPN_PORT_FORWARDING: "on"
-              SERVER_REGIONS: Stockholm
-              OPENVPN_USER:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-private-secret
-                    key: PIA_USER
-              OPENVPN_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-private-secret
-                    key: PIA_PASS
               FIREWALL_INPUT_PORTS: "80,8000"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
+            envFrom:
+              - secretRef:
+                  name: qbittorrent-private-secret
             lifecycle:
               postStart:
                 exec:
