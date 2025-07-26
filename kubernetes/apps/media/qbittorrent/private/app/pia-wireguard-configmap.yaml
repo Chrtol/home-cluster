@@ -24,6 +24,7 @@ data:
     
     # Clone PIA scripts
     cd /tmp
+    rm -rf manual-connections
     git clone https://github.com/pia-foss/manual-connections.git
     cd manual-connections
     
