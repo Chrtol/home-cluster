@@ -5,14 +5,14 @@ kind: Kustomization
 namespace: media
 components:
   - ../../components/common
-patchesJson6902:
+patches:
   - target:
       version: v1
       kind: Namespace
       name: media
     patch: |
       - op: add
-        path: "/metadata/labels/goldilocks.fairwinds.com~1enabled"
+        path: /metadata/labels/goldilocks.fairwinds.com~1enabled
         value: "true"
 resources:
   - ./plex/ks.yaml
