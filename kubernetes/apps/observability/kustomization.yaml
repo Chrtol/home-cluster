@@ -11,3 +11,4 @@ resources:
   - ./gatus/ks.yaml
   - ./loki/ks.yaml
   - ./promtail/ks.yaml
+  - ./goldilocks/ks.yaml
