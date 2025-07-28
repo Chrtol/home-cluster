@@ -26,6 +26,7 @@ spec:
         type: cronjob
         cronjob:
           schedule: "@daily"
+          suspend: true
           successfulJobsHistory: 1
           failedJobsHistory: 1
         containers:
