@@ -8,9 +8,8 @@ components:
 patches:
   - patch: |
       - op: add
-        path: /metadata/labels
-        value:
-          goldilocks.fairwinds.com/enabled: "true"
+        path: /metadata/labels/goldilocks.fairwinds.com~1enabled
+        value: "true"
     target:
       kind: Namespace
       name: media
