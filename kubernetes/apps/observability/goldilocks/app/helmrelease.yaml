@@ -20,14 +20,14 @@ spec:
       enabled: true
       replicaCount: 1
 
-    ingress:
-      enabled: true
-      ingressClassName: internal
-      hosts:
-        - host: &host "goldilocks.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              type: Prefix
-      tls:
-        - hosts:
-            - *host
+      ingress:
+        enabled: true
+        ingressClassName: internal
+        hosts:
+          - host: &host "goldilocks.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                type: Prefix
+        tls:
+          - hosts:
+              - *host
