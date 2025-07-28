@@ -5,6 +5,15 @@ kind: Kustomization
 namespace: media
 components:
   - ../../components/common
+patches:
+  - patch: |
+      - op: add
+        path: /metadata/labels
+        value:
+          goldilocks.fairwinds.com/enabled: "true"
+    target:
+      kind: Namespace
+      name: media
 resources:
   - ./plex/ks.yaml
   - ./flaresolverr/ks.yaml
