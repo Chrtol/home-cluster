@@ -16,3 +16,4 @@ resources:
   - ./hajimari.yaml
   - ./descheduler.yaml
   - ./fairwinds-charts.yaml
+  - ./crowdsec.yaml
