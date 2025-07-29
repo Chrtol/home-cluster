@@ -30,8 +30,9 @@ spec:
     excludeNamespaces: "kube-system,flux-system,cert-manager,volsync-system"
     operator:
       replicas: 1
-      scanJobsConcurrentLimit: 5
-      scanJobTTL: 10s
+      scanJobsConcurrentLimit: 3
+      scanJobTTL: 300s
+      scanJobTimeout: 20m
       builtInTrivyServer: true
       vulnerabilityScannerScanOnlyCurrentRevisions: true
       configAuditScannerScanOnlyCurrentRevisions: true
@@ -44,15 +45,20 @@ spec:
       severity: HIGH,CRITICAL
       storageClassEnabled: false # ephemeral storage
       resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: 1000m
+          memory: 2Gi
     trivyOperator:
       excludeImages: "quay.io/backube/*"
       skipResourceByLabels: "app.kubernetes.io/created-by=volsync"
     # https://github.com/aquasecurity/trivy-operator/issues/2566
+    # Disable node collector for Talos Linux (immutable filesystem)
     nodeCollector:
       useNodeSelector: false
+      enabled: false
     serviceMonitor:
       enabled: true
     dashboard:
