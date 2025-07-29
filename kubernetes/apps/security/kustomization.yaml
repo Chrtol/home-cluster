@@ -9,3 +9,4 @@ resources:
   - ./lldap/ks.yaml
   - ./authentik/ks.yaml
   - ./crowdsec/ks.yaml
+  - ./trivy-operator/ks.yaml
