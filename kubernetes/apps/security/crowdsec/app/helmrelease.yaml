@@ -42,6 +42,13 @@ spec:
   values:
     container_runtime: containerd
     lapi:
+      ingress:
+        ingressClassName: "internal"
+        enabled: true
+        host: &host "crowdsec.${SECRET_DOMAIN}"
+        tls: 
+          - hosts:
+            - *host
       env:
         - name: TZ
           value: ${SECRET_TIMEZONE}
