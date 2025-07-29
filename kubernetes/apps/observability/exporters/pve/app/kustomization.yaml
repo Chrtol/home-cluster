@@ -8,7 +8,7 @@ resources:
 configMapGenerator:
   - name: grafana-dashboard-proxmox-cluster
     files:
-      - ./proxmox-cluster.json
+      - ./resources/proxmox-cluster.json
 generatorOptions:
   disableNameSuffixHash: true
   labels:
