@@ -46,7 +46,7 @@ spec:
         - name: TZ
           value: ${SECRET_TIMEZONE}
         - name: ENROLL_INSTANCE_NAME
-          value: "homelab infrastructure"
+          value: homelab-infrastructure
         - name: ENROLL_KEY
           valueFrom:
             secretKeyRef:
