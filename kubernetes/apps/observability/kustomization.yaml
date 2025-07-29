@@ -12,3 +12,4 @@ resources:
   - ./loki/ks.yaml
   - ./promtail/ks.yaml
   - ./goldilocks/ks.yaml
+  - ./exporters/ks.yaml
