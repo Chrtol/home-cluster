@@ -1,0 +1,39 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trivy-operator-alerts
+  namespace: security
+spec:
+  groups:
+    - name: trivy-operator
+      rules:
+        - alert: TrivyVulnerabilityHigh
+          expr: sum(trivy_vulnerability_count{severity="HIGH"}) by (namespace, workload) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: trivy-operator
+          annotations:
+            summary: "High severity vulnerabilities found"
+            description: "Trivy found {{ $value }} HIGH severity vulnerabilities in {{ $labels.namespace }}/{{ $labels.workload }}"
+
+        - alert: TrivyVulnerabilityCritical
+          expr: sum(trivy_vulnerability_count{severity="CRITICAL"}) by (namespace, workload) > 0
+          for: 1m
+          labels:
+            severity: critical
+            component: trivy-operator
+          annotations:
+            summary: "Critical vulnerabilities found!"
+            description: "Trivy found {{ $value }} CRITICAL vulnerabilities in {{ $labels.namespace }}/{{ $labels.workload }} - immediate action required!"
+
+        - alert: TrivyScannerDown
+          expr: up{job="trivy-operator"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            component: trivy-operator
+          annotations:
+            summary: "Trivy Operator is down"
+            description: "Trivy Operator has been down for more than 10 minutes"

@@ -17,3 +17,4 @@ resources:
   - ./descheduler.yaml
   - ./fairwinds-charts.yaml
   - ./crowdsec.yaml
+  - ./trivy-charts.yaml
