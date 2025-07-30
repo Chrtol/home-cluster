@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: network-monitor
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: network-monitor
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: network-monitor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: network-monitor
+    spec:
+      hostNetwork: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: network-monitor
+          image: quay.io/prometheus/blackbox-exporter:v0.25.0
+          ports:
+            - containerPort: 9115
+              name: http
+          args:
+            - "--config.file=/config/blackbox.yml"
+            - "--web.listen-address=:9115"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: network-monitor-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-monitor-config
+  namespace: observability
+data:
+  blackbox.yml: |
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 5s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          valid_status_codes: []
+          method: GET
+          follow_redirects: true
+          fail_if_ssl: false
+          fail_if_not_ssl: false
+          tls_config:
+            insecure_skip_verify: false
+          preferred_ip_protocol: "ip4"
+      
+      dns:
+        prober: dns
+        timeout: 5s
+        dns:
+          query_name: "kubernetes.default.svc.cluster.local"
+          query_type: "A"
+          valid_rcodes:
+            - NOERROR
+          validate_answer_rrs:
+            fail_if_matches_regexp:
+              - ".*127.0.0.1"
+            fail_if_not_matches_regexp:
+              - "10\.43\..*"
+      
+      icmp:
+        prober: icmp
+        timeout: 5s
+        icmp:
+          preferred_ip_protocol: "ip4"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-monitor
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: network-monitor
+spec:
+  selector:
+    app.kubernetes.io/name: network-monitor
+  ports:
+    - name: http
+      port: 9115
+      targetPort: 9115

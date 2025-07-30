@@ -1,0 +1,80 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: network-monitor
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: network-monitor
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: network-monitor
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /metrics
+---
+# Monitor DNS resolution across cluster
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: network-monitor-dns
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: network-monitor-dns
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: network-monitor
+  endpoints:
+    - port: http
+      interval: 15s
+      path: /probe
+      params:
+        module: [dns]
+        target: 
+          - kubernetes.default.svc.cluster.local
+          - plex.cftollefsen.com
+          - 8.8.8.8
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: probe_.*
+          targetLabel: __tmp_probe_type
+          replacement: dns
+        - sourceLabels: [instance]
+          targetLabel: dns_target
+        - targetLabel: instance
+          replacement: "{{ $labels.node }}"
+---
+# Monitor HTTP connectivity to critical services
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: network-monitor-http
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: network-monitor-http
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: network-monitor
+  endpoints:
+    - port: http
+      interval: 15s
+      path: /probe
+      params:
+        module: [http_2xx]
+        target:
+          - http://plex.media.svc.cluster.local:32400/web
+          - https://plex.cftollefsen.com
+          - http://gatus.observability.svc.cluster.local
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: probe_.*
+          targetLabel: __tmp_probe_type
+          replacement: http
+        - sourceLabels: [instance]
+          targetLabel: http_target
+        - targetLabel: instance
+          replacement: "{{ $labels.node }}"

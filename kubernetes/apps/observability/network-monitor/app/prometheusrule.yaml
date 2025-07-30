@@ -1,0 +1,72 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: network-connectivity-alerts
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: network-monitor
+spec:
+  groups:
+    - name: network.connectivity
+      interval: 15s
+      rules:
+        - alert: ClusterDNSDown
+          expr: probe_success{job="network-monitor-dns"} == 0
+          for: 30s
+          labels:
+            severity: critical
+          annotations:
+            summary: "DNS resolution failing on {{ $labels.instance }}"
+            description: "DNS probe failed for {{ $labels.dns_target }} on node {{ $labels.instance }}"
+
+        - alert: ServiceConnectivityDown
+          expr: probe_success{job="network-monitor-http"} == 0
+          for: 45s
+          labels:
+            severity: warning
+          annotations:
+            summary: "HTTP connectivity failing to {{ $labels.http_target }}"
+            description: "HTTP probe failed for {{ $labels.http_target }} from node {{ $labels.instance }}"
+
+        - alert: HighDNSLatency
+          expr: probe_duration_seconds{job="network-monitor-dns"} > 1
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High DNS resolution latency on {{ $labels.instance }}"
+            description: "DNS resolution taking {{ $value }}s for {{ $labels.dns_target }}"
+
+        - alert: HighHTTPLatency
+          expr: probe_duration_seconds{job="network-monitor-http"} > 5
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High HTTP response time to {{ $labels.http_target }}"
+            description: "HTTP request taking {{ $value }}s to {{ $labels.http_target }}"
+
+        - alert: ClusterWideConnectivityIssue
+          expr: |
+            (
+              count by() (probe_success{job="network-monitor-http"} == 0) > 2
+            ) and (
+              count by() (probe_success{job="network-monitor-dns"} == 0) > 1
+            )
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Cluster-wide connectivity issues detected"
+            description: "Multiple services and DNS failing simultaneously - potential cluster-wide outage"
+
+        - alert: NodeConnectivityDegraded
+          expr: |
+            count by(instance) (probe_success == 0) > 2
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} has connectivity issues"
+            description: "Node {{ $labels.instance }} failing multiple connectivity probes"

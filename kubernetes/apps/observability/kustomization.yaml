@@ -13,3 +13,4 @@ resources:
   - ./promtail/ks.yaml
   - ./goldilocks/ks.yaml
   - ./exporters/ks.yaml
+  - ./network-monitor/ks.yaml
