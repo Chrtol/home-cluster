@@ -1,0 +1,59 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+omitStages:
+  - RequestReceived
+rules:
+  # Log connectivity/networking events
+  - level: RequestResponse
+    namespaces: ["kube-system", "cilium-system", "network"]
+    resources:
+    - group: ""
+      resources: ["services", "endpoints", "pods"]
+    - group: "networking.k8s.io"
+      resources: ["networkpolicies", "ingresses"]
+    - group: "cilium.io"
+      resources: ["*"]
+
+  # Log service failures and timeouts
+  - level: RequestResponse
+    resources:
+    - group: ""
+      resources: ["events"]
+    namespaceNames: ["media", "observability", "security"]
+
+  # Log DNS and connectivity issues
+  - level: Request
+    resources:
+    - group: ""
+      resources: ["services/proxy", "services/status"]
+
+  # Log high-level cluster events
+  - level: Metadata
+    omitStages:
+      - RequestReceived
+    resources:
+    - group: ""
+      resources: ["events", "nodes", "nodes/status"]
+    - group: "coordination.k8s.io"
+      resources: ["leases"]
+
+  # Don't log routine requests
+  - level: None
+    users: ["system:kube-proxy"]
+    verbs: ["watch"]
+    resources:
+    - group: ""
+      resources: ["services", "endpoints"]
+
+  # Don't log authenticated requests to certain non-resource URL paths
+  - level: None
+    userGroups: ["system:authenticated"]
+    nonResourceURLs:
+    - "/api*" # Wildcard matching.
+    - "/version"
+    - "/healthz"
+
+  # Default catch-all
+  - level: Metadata
+    omitStages:
+      - RequestReceived
