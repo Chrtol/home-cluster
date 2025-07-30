@@ -6,6 +6,18 @@ cluster:
       enable-aggregator-routing: true
       feature-gates: MutatingAdmissionPolicy=true
       runtime-config: admissionregistration.k8s.io/v1alpha1=true
+      # Audit logging configuration
+      audit-log-path: /var/log/audit.log
+      audit-log-maxage: 30
+      audit-log-maxbackup: 10
+      audit-log-maxsize: 100
+      audit-policy-file: /etc/kubernetes/audit-policy.yaml
+    extraVolumes:
+      - hostPath: /etc/kubernetes/audit-policy.yaml
+        mountPath: /etc/kubernetes/audit-policy.yaml
+        readonly: true
+      - hostPath: /var/log
+        mountPath: /var/log
   controllerManager:
     extraArgs:
       bind-address: 0.0.0.0
