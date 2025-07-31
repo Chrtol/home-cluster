@@ -10,7 +10,7 @@ spec:
       rules:
         - alert: ProxmoxNodeDown
           expr: pve_up == 0
-          for: 5m
+          for: 15m
           labels:
             severity: critical
             component: proxmox
