@@ -105,3 +105,8 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /usr/share/tessdata
+      pipeline:
+        enabled: true
+        type: emptyDir
+        globalMounts:
+          - path: /pipeline
