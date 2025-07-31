@@ -76,7 +76,7 @@ data:
             fail_if_matches_regexp:
               - ".*127.0.0.1"
             fail_if_not_matches_regexp:
-              - "10\.43\..*"
+              - '10\.43\..*'
       
       icmp:
         prober: icmp
