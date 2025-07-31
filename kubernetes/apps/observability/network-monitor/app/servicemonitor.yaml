@@ -36,7 +36,7 @@ spec:
         target: 
           - kubernetes.default.svc.cluster.local
           - plex.cftollefsen.com
-          - 8.8.8.8
+          - google.com
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: probe_.*
