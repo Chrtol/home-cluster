@@ -17,59 +17,7 @@ spec:
       clients:
         - url: http://loki-headless.observability.svc.cluster.local:3100/loki/api/v1/push
       
-      scrape_configs:
-        # Collect Kubernetes audit logs
-        - job_name: kubernetes-audit
-          static_configs:
-            - targets:
-                - localhost
-              labels:
-                job: kubernetes-audit
-                __path__: /var/log/audit.log
-          
-          pipeline_stages:
-            - json:
-                expressions:
-                  timestamp: timestamp
-                  level: level
-                  verb: verb
-                  uri: requestURI
-                  user: user.username
-                  namespace: objectRef.namespace
-                  resource: objectRef.resource
-                  name: objectRef.name
-                  source_ip: sourceIPs[0]
-            
-            - timestamp:
-                source: timestamp
-                format: RFC3339Nano
-            
-            - labels:
-                level:
-                verb:
-                namespace:
-                resource:
-                user:
-            
-            # Only keep connectivity-related events
-            - match:
-                selector: '{resource=~"services|endpoints|pods|events"}'
-                action: keep
-            
-            - match:
-                selector: '{verb=~"get|list|watch"}'
-                action: keep
+      scrape_configs: []
 
     serviceMonitor:
       enabled: true
-    
-    # Mount audit logs from host
-    extraVolumes:
-      - name: audit-logs
-        hostPath:
-          path: /var/log
-    
-    extraVolumeMounts:
-      - name: audit-logs
-        mountPath: /var/log
-        readOnly: true
