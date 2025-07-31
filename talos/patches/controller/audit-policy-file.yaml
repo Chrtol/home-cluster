@@ -1,50 +1,26 @@
 machine:
   files:
-    - content: |
+    - op: create
+      path: /var/lib/kubernetes/audit-policy.yaml
+      permissions: 0o644
+      content: |
         apiVersion: audit.k8s.io/v1
         kind: Policy
         omitStages:
           - RequestReceived
         rules:
-          # Log connectivity/networking events in key namespaces
+          # Log connectivity events in core namespaces
           - level: RequestResponse
-            namespaces: ["kube-system", "network"]
+            namespaces: ["kube-system", "media", "observability"]
             resources:
             - group: ""
-              resources: ["services", "endpoints", "pods"]
-            - group: "networking.k8s.io"
-              resources: ["networkpolicies", "ingresses"]
-            - group: "cilium.io"
-              resources: ["*"]
+              resources: ["services", "endpoints", "pods", "events"]
 
-          # Log service failures and timeouts in application namespaces
-          - level: RequestResponse
-            resources:
-            - group: ""
-              resources: ["events"]
-            namespaceNames: ["media", "observability", "security"]
-
-          # Log DNS and connectivity issues
-          - level: Request
-            resources:
-            - group: ""
-              resources: ["services/proxy", "services/status"]
-
-          # Log high-level cluster events that could indicate outages
+          # Log node and cluster-level events
           - level: Metadata
-            omitStages:
-              - RequestReceived
             resources:
             - group: ""
-              resources: ["events", "nodes", "nodes/status"]
-            - group: "coordination.k8s.io"
-              resources: ["leases"]
-
-          # Log Cilium-specific resources for network debugging
-          - level: Request
-            resources:
-            - group: "cilium.io"
-              resources: ["ciliumendpoints", "ciliumnodes", "ciliumnetworkpolicies"]
+              resources: ["nodes", "nodes/status"]
 
           # Don't log routine requests
           - level: None
@@ -54,7 +30,7 @@ machine:
             - group: ""
               resources: ["services", "endpoints"]
 
-          # Don't log authenticated requests to certain non-resource URL paths
+          # Don't log health checks
           - level: None
             userGroups: ["system:authenticated"]
             nonResourceURLs:
@@ -64,9 +40,7 @@ machine:
             - "/readyz"
             - "/livez"
 
-          # Default catch-all for other events
+          # Default catch-all
           - level: Metadata
             omitStages:
               - RequestReceived
-      path: /etc/kubernetes/audit-policy.yaml
-      mode: 0644
