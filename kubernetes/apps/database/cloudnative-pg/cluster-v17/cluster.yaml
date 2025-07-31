@@ -26,6 +26,20 @@ spec:
   nodeMaintenanceWindow:
     inProgress: false
     reusePVC: true
+  
+  bootstrap:
+    initdb:
+      options:
+        - "--data-checksums"
+      postInitSQL:
+        - "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+  
+  startDelay: 30
+  stopDelay: 30
+  switchoverDelay: 60
+  
+  priorityClassName: database-high-priority
+  
   resources:
     requests:
       cpu: 50m
