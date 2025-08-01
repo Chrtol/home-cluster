@@ -30,7 +30,8 @@ spec:
         limits:
           memory: 128Mi
         requests:
-          cpu: 0.2
+          cpu: 11m
+          memory: 64M
       httpPort: 8080
       serviceMonitor:
         enabled: true
@@ -41,7 +42,8 @@ spec:
           limits:
             memory: 128Mi
           requests:
-            cpu: 0.2
+            cpu: 11M
+            memory: 64M
         httpPort: 8081
       serviceType: ClusterIP
       credentialsName: op-credentials
