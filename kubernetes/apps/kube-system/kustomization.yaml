@@ -20,3 +20,4 @@ resources:
   - ./priority-classes/control-plane-priority.yaml
   - ./priority-classes/network-critical.yaml
   - ./priority-classes/security-critical.yaml
+  - ./priority-classes/media-high.yaml

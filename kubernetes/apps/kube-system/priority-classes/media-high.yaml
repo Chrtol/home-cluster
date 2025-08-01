@@ -1,0 +1,9 @@
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: media-high
+value: 300
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "High priority media services - ensures core media infrastructure stays available during resource pressure"
