@@ -32,6 +32,7 @@ spec:
       retries: 3
   values:
     fullnameOverride: reloader
+    priorityClassName: control-plane-priority
     reloader:
       readOnlyRootFileSystem: true
       podMonitor:

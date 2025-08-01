@@ -17,3 +17,4 @@ resources:
   - ./csi-driver-nfs/ks.yaml
   - ./generic-device-plugin/ks.yaml
   - ./descheduler/ks.yaml
+  - ./priority-classes/control-plane-priority.yaml

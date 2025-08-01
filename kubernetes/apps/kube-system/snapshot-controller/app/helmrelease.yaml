@@ -35,5 +35,6 @@ spec:
   values:
     controller:
       replicaCount: 2
+      priorityClassName: control-plane-priority
       serviceMonitor:
         create: true
