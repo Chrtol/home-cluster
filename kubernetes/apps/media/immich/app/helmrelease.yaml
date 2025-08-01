@@ -23,6 +23,7 @@ spec:
     keepHistory: false
   values:
     defaultPodOptions:
+      priorityClassName: external-facing
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000

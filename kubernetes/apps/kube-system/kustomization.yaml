@@ -21,3 +21,4 @@ resources:
   - ./priority-classes/network-critical.yaml
   - ./priority-classes/security-critical.yaml
   - ./priority-classes/media-high.yaml
+  - ./priority-classes/external-facing.yaml
