@@ -27,6 +27,5 @@ resources:
   - ./autobrr/ks.yaml
   - ./cross-seed/ks.yaml
   - ./rreading-glasses/ks.yaml
-  - ./lazylibrarian/ks.yaml
   - ./audiobookrequest/ks.yaml
   - ./recommendarr/ks.yaml

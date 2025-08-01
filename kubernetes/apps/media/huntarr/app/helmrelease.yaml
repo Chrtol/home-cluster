@@ -54,11 +54,13 @@ spec:
                   failureThreshold: 3
               readiness: *probes
 
-            resources:
+            resources: # Based on goldilocks
               requests:
-                cpu: 100m
+                cpu: 15m
+                memory: 105M
               limits:
-                memory: 1Gi
+                cpu: 29m
+                memory: 119M
 
     service:
       app :

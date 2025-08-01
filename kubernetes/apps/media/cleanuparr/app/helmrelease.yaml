@@ -13,13 +13,13 @@ spec:
     namespace: flux-system
   driftDetection:
     mode: enabled
-  # install:
-  #   remediation:
-  #     retries: -1
-  # upgrade:
-  #   cleanupOnFail: true
-  #   remediation:
-  #     retries: 3
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     controllers:
       cleanuparr:
@@ -46,12 +46,13 @@ spec:
             envFrom:
               - secretRef:
                   name: cleanuparr-config
-            resources:
+            resources: # Based on goldilocks
               requests:
-                cpu: 10m
-                memory: 256Mi
+                cpu: 15m
+                memory: 352M
               limits:
-                memory: 512Mi
+                cpu: 15m
+                memory: 446M
     defaultPodOptions:
       securityContext:
         fsGroup: &pgid 1000
