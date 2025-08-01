@@ -10,3 +10,4 @@ resources:
   - ./pgadmin/ks.yaml
   - ./dragonfly/ks.yaml
   - ./seaweedfs/ks.yaml
+  - ./mariadb/ks.yaml
