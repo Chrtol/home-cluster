@@ -24,6 +24,7 @@ spec:
       retries: 3
   values:
     fullnameOverride: *app
+    priorityClassName: network-critical
     provider: cloudflare
     env:
       - name: CF_API_TOKEN

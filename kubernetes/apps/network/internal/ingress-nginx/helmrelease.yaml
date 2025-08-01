@@ -24,6 +24,7 @@ spec:
   values:
     fullnameOverride: internal-ingress-nginx
     controller:
+      priorityClassName: network-critical
       service:
         annotations:
           lbipam.cilium.io/ips: "10.0.30.40"

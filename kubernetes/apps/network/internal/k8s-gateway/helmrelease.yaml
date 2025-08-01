@@ -33,6 +33,7 @@ spec:
       retries: 3
   values:
     fullnameOverride: k8s-gateway
+    priorityClassName: network-critical
     domain: "${SECRET_DOMAIN}"
     ttl: 1
     service:
