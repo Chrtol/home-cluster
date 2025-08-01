@@ -4,12 +4,6 @@ bpf:
   masquerade: true
   # Ref: https://github.com/siderolabs/talos/issues/10002
   hostLegacyRouting: true
-resources:
-  requests:
-    cpu: 100m
-    memory: 1Gi
-  limits:
-    memory: 2Gi
 bgpControlPlane:
   enabled: true
 gatewayAPI:
@@ -27,12 +21,6 @@ endpointRoutes:
   enabled: true
 envoy:
   enabled: true
-  resources:
-    requests:
-      cpu: 15m
-      memory: 105M
-    limits:
-      memory: 256M
 dashboards:
   enabled: true
 hubble:
@@ -58,12 +46,6 @@ hubble:
     prometheus:
       serviceMonitor:
         enabled: true
-    resources:
-      requests:
-        cpu: 15m
-        memory: 105M
-      limits:
-        memory: 192M
   ui:
     enabled: true
     rollOutPods: true
@@ -99,12 +81,6 @@ operator:
       enabled: true
   replicas: 1
   rollOutPods: true
-  resources:
-    requests:
-      cpu: 15m
-      memory: 381M
-    limits:
-      memory: 1Gi
 prometheus:
   enabled: true
   serviceMonitor:

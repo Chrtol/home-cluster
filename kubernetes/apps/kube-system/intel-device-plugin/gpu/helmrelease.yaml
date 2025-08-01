@@ -26,9 +26,3 @@ spec:
     timeout: 10m
   values:
     name: intel-gpu-plugin
-    resources:
-      requests:
-        cpu: 15m
-        memory: 105M
-      limits:
-        memory: 192M

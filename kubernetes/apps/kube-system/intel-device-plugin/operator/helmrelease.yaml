@@ -26,10 +26,3 @@ spec:
     remediation:
       retries: 5
     timeout: 10m
-  values:
-    resources:
-      requests:
-        cpu: 15m
-        memory: 110M
-      limits:
-        memory: 256M
