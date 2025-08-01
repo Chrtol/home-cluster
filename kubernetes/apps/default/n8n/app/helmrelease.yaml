@@ -50,8 +50,8 @@ spec:
                     key: N8N_ENCRYPTION_KEY
             resources:
               requests:
-                cpu: 5m
-                memory: 128Mi
+                cpu: 15m
+                memory: 512Mi
               limits:
                 memory: 2Gi
 

@@ -41,6 +41,12 @@ spec:
               tag: v3.0.2
               pullPolicy: IfNotPresent
             envFrom: *envFrom # All values are created on the externalsecret
+            resources:
+              requests:
+                cpu: 15m
+                memory: 477M
+              limits:
+                memory: 1Gi
 
     service:
       app:

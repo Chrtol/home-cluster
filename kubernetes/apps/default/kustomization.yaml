@@ -19,7 +19,6 @@ resources:
   - ./pingvin/ks.yaml
   - ./affine/ks.yaml
   - ./glance/ks.yaml
-  - ./kitchenowl/ks.yaml
   - ./actual/ks.yaml
   - ./joplin/ks.yaml
   - ./apprise/ks.yaml

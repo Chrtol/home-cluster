@@ -52,10 +52,10 @@ spec:
                   name: homepage-secret
             resources:
               requests:
-                cpu: 25m
-                memory: 105M
+                cpu: 15m
+                memory: 184M
               limits:
-                memory: 225M
+                memory: 256M
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }

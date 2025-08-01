@@ -21,11 +21,13 @@ spec:
             env:
               TRUST_PROXY: "true"
               TZ: ${SECRET_TIMEZONE}
+
             resources:
               requests:
-                cpu: 10m
+                memory: 381M
+                cpu: 15m
               limits:
-                memory: 512Mi
+                memory: 1Gi
 
     service:
       app:
