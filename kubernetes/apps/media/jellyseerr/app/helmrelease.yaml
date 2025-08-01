@@ -52,11 +52,12 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
-            resources:
+            resources: # Based on goldilocks
               requests:
-                cpu: 10m
+                cpu: 15m
+                memory: 411M
               limits:
-                memory: 2Gi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
