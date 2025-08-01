@@ -52,7 +52,8 @@ spec:
                 enabled: true
             resources:
               requests:
-                cpu: 10m
+                cpu: 15m
+                memory: 549M
               limits:
                 memory: 1Gi
 
@@ -80,9 +81,10 @@ spec:
                   - ALL
             resources:
               requests:
-                cpu: 10m
+                cpu: 15m
+                memory: 256M
               limits:
-                memory: 1Gi
+                memory: 512M
 
       meilisearch:
         annotations:
@@ -104,7 +106,8 @@ spec:
                     key: MEILI_MASTER_KEY
             resources:
               requests:
-                cpu: 10m
+                cpu: 15m
+                memory: 105M
               limits:
                 memory: 4Gi
 

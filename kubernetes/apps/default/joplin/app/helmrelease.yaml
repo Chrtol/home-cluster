@@ -45,8 +45,10 @@ spec:
                   name: joplin-secret
             resources:
               requests:
-                cpu: 50m
-                memory: 256Mi
+                cpu: 15m
+                memory: 443Mi
+              limits:
+                memory: 1024M
     service:
       app:
         controller: *app
