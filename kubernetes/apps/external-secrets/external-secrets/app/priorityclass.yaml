@@ -1,0 +1,9 @@
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: secrets-high-priority
+value: 1000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "High priority for secrets management workloads to ensure scheduling during resource pressure"
