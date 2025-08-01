@@ -61,14 +61,14 @@ spec:
                 exclude:
                   - "remote"
               args:
-                thresholds:
-                  cpu: 60
-                  memory: 60
-                  pods: 25
                 targetThresholds:
-                  cpu: 80
-                  memory: 80
-                  pods: 60
+                  cpu: 50
+                  memory: 50
+                  pods: 50
+                thresholds:
+                  cpu: 20
+                  memory: 20
+                  pods: 20
           plugins:
             balance:
               enabled:
