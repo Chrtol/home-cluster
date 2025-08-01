@@ -35,3 +35,9 @@ spec:
       podMonitorEnabled: false
       grafanaDashboard:
         create: true
+    resources: # Based on goldilocks
+      requests:
+        cpu: 15m
+        memory: 272M
+      limits:
+        memory: 512M
