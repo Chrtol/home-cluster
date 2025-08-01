@@ -52,6 +52,7 @@ spec:
                 memory: 2Gi
 
     defaultPodOptions:
+      priorityClassName: external-facing
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

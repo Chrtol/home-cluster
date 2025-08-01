@@ -1,0 +1,9 @@
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: external-facing
+value: 200
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "External-facing applications that users depend on - prioritized over internal tooling during resource pressure"
