@@ -30,3 +30,5 @@ spec:
     master:
       extraLabelNs:
         - gpu.intel.com
+    worker:
+      priorityClassName: system-node-critical
