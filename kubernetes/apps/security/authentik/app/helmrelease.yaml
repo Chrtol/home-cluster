@@ -26,6 +26,7 @@ spec:
       retries: -1
   values:
     global:
+      priorityClassName: security-critical
       podAnnotations:
         # secret.reloader.stakater.com/reload: &secret authentik-secret
         reloader.stakater.com/auto: 'true'
