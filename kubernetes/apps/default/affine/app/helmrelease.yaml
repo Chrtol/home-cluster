@@ -47,9 +47,10 @@ spec:
                   name: affine-secret
             resources:
               requests:
-                cpu: 20m
+                cpu: 15m
+                memory: 324M
               limits:
-                memory: 1Gi
+                memory: 512M
         containers:
           app:
             image:

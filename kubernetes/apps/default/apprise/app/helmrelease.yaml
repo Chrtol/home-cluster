@@ -32,10 +32,10 @@ spec:
               readOnlyRootFilesystem: false
             resources:
               requests:
-                cpu: 10m
-                memory: 100Mi
+                cpu: 15m
+                memory: 300M
               limits:
-                memory: 500Mi
+                memory: 512M
                 
     defaultPodOptions:
       securityContext:
