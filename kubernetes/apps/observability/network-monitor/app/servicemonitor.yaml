@@ -34,7 +34,7 @@ spec:
       params:
         module: [dns]
         target: 
-          - kubernetes.default.svc.cluster.local
+          - 8.8.8.8
           - plex.cftollefsen.com
           - google.com
       metricRelabelings:
@@ -66,9 +66,9 @@ spec:
       params:
         module: [http_2xx]
         target:
-          - http://plex.media.svc.cluster.local:32400/web
           - https://plex.cftollefsen.com
-          - http://gatus.observability.svc.cluster.local
+          - https://google.com
+          - http://10.0.30.70:32400/web
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: probe_.*
