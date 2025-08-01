@@ -19,6 +19,12 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    resources:
+      requests: 
+        cpu: 15m
+        memory: 128M
+      limits:
+        memory: 256M
     installCRDs: true
     replicaCount: 1
     leaderElect: true
@@ -30,12 +36,22 @@ spec:
       serviceMonitor:
         enabled: true
         interval: 1m
+      resources:
+        requests:
+          cpu: 15m
+          memory: 164M
+        limits:
+          memory: 256M
     certController:
       image:
         repository: *repo
       serviceMonitor:
         enabled: true
         interval: 1m
+      resources:
+        requests:
+          cpu: 15m
+          memory: 184M
     serviceMonitor:
       enabled: true
       interval: 1m
