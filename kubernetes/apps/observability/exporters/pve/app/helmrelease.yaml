@@ -69,7 +69,7 @@ spec:
               target:
                 - proxmox.${SECRET_DOMAIN}
             port: http
-            scheme: http
+            scheme: https
             relabelings:
               - sourceLabels: [__param_target]
                 targetLabel: instance
@@ -88,7 +88,7 @@ spec:
               target:
                 - proxmox.${SECRET_DOMAIN}
             port: http
-            scheme: http
+            scheme: https
             relabelings:
               - sourceLabels: [__param_target]
                 targetLabel: instance
