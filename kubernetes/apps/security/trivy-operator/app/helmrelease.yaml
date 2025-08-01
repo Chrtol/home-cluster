@@ -46,14 +46,20 @@ spec:
       storageClassEnabled: false # ephemeral storage
       resources:
         requests:
-          cpu: 200m
-          memory: 512Mi
+          cpu: 15m
+          memory: 324M
         limits:
-          cpu: 1000m
-          memory: 2Gi
+          memory: 512M
     trivyOperator:
       excludeImages: "quay.io/backube/*"
       skipResourceByLabels: "app.kubernetes.io/created-by=volsync"
+      resources:
+        requests:
+          cpu: 15m
+          memory: 672M
+        limits:
+          memory: 1500Mi
+      
     # https://github.com/aquasecurity/trivy-operator/issues/2566
     # Configure node collector for Talos Linux (only mount writable /var paths)
     nodeCollector:

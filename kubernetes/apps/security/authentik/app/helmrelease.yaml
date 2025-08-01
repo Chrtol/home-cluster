@@ -72,15 +72,22 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+      resources:
+        requests:
+          cpu: 25m
+          memory: 717M
+        limits:
+          memory: 1Gi
     worker:
-      replicas: 1
+      replicas: 3
       autoscaling:
         enabled: true
         minReplicas: 1
         maxReplicas: 10
       resources:
         requests:
-          cpu: 200m
+          cpu: 100m
+          memory: 629M
         limits:
           memory: 1Gi
     prometheus:

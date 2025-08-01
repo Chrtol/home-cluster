@@ -78,6 +78,12 @@ spec:
             - ReadWriteOnce
           storageClassName: "csi-rbd-sc"
           size: 100Mi
+      resources:
+        requests:
+          cpu: 15m
+          memory: 184M
+        limits:
+          memory: 512M
     agent:
       acquisition:
         - namespace: network
@@ -90,6 +96,12 @@ spec:
         enabled: true
         serviceMonitor:
           enabled: true
+      resources:
+        requests:
+          cpu: 15m
+          memory: 128M
+        limits:
+          memory: 256M
     reflector:
       enabled: true
       env:

@@ -56,10 +56,10 @@ spec:
               LLDAP_FORCE_LDAP_USER_PASS_RESET: "false"
             resources:
               requests:
-                cpu: 100m
-                memory: 100Mi
+                cpu: 15m
+                memory: 105Mi
               limits:
-                memory: 500Mi
+                memory: 128M
     service:
       app:
         controller: lldap
