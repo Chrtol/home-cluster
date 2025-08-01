@@ -19,3 +19,4 @@ resources:
   - ./descheduler/ks.yaml
   - ./priority-classes/control-plane-priority.yaml
   - ./priority-classes/network-critical.yaml
+  - ./priority-classes/security-critical.yaml

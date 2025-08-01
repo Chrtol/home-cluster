@@ -60,6 +60,8 @@ spec:
                 memory: 105Mi
               limits:
                 memory: 128M
+    defaultPodOptions:
+      priorityClassName: security-critical
     service:
       app:
         controller: lldap
