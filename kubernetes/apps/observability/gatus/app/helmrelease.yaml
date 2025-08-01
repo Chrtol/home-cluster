@@ -73,6 +73,7 @@ spec:
               limits:
                 memory: 256Mi
     defaultPodOptions:
+      priorityClassName: control-plane-priority
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

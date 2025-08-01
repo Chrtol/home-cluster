@@ -43,12 +43,14 @@ hubble:
   relay:
     enabled: true
     rollOutPods: true
+    priorityClassName: control-plane-priority
     prometheus:
       serviceMonitor:
         enabled: true
   ui:
     enabled: true
     rollOutPods: true
+    priorityClassName: control-plane-priority
     ingress:
       enabled: true
       annotations:
@@ -79,6 +81,7 @@ operator:
     enabled: true
     serviceMonitor:
       enabled: true
+  priorityClassName: system-cluster-critical
   replicas: 1
   rollOutPods: true
 prometheus:
