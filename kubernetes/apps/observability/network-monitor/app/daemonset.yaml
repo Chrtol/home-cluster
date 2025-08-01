@@ -75,6 +75,8 @@ data:
           valid_rcodes:
             - NOERROR
           preferred_ip_protocol: "ip4"
+          dns_servers:
+            - "10.0.30.1:53"
       
       icmp:
         prober: icmp
