@@ -31,7 +31,7 @@ spec:
         limits:
           memory: 128Mi
         requests:
-          cpu: 11m
+          cpu: 15m
           memory: 64M
       httpPort: 8080
       serviceMonitor:
@@ -43,7 +43,7 @@ spec:
           limits:
             memory: 128Mi
           requests:
-            cpu: 11M
+            cpu: 15m
             memory: 64M
         httpPort: 8081
       serviceType: ClusterIP
