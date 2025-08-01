@@ -34,9 +34,9 @@ spec:
       params:
         module: [dns]
         target: 
-          - 8.8.8.8
-          - plex.cftollefsen.com
-          - google.com
+          - google.com@8.8.8.8
+          - plex.cftollefsen.com@8.8.8.8
+          - cloudflare.com@1.1.1.1
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: probe_.*
