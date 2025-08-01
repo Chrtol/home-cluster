@@ -19,6 +19,7 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    priorityClassName: secrets-high-priority
     resources:
       requests: 
         cpu: 15m
@@ -33,6 +34,7 @@ spec:
     webhook:
       image:
         repository: *repo
+      priorityClassName: secrets-high-priority
       serviceMonitor:
         enabled: true
         interval: 1m
@@ -45,6 +47,7 @@ spec:
     certController:
       image:
         repository: *repo
+      priorityClassName: secrets-high-priority
       serviceMonitor:
         enabled: true
         interval: 1m

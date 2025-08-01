@@ -25,6 +25,7 @@ spec:
     connect:
       create: true
       name: connect-api
+      priorityClassName: secrets-high-priority
       imageRepository: 1password/connect-api
       resources:
         limits:
