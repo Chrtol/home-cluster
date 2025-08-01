@@ -83,7 +83,8 @@ spec:
       autoscaling:
         enabled: true
         minReplicas: 1
-        maxReplicas: 10
+        maxReplicas: 8
+        targetCPUUtilizationPercentage: 70
       resources:
         requests:
           cpu: 100m
