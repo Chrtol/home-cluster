@@ -37,6 +37,12 @@ spec:
                 evictFailedBarePods: true
                 evictLocalStoragePods: true
                 evictSystemCriticalPods: true
+                nodeFit: true
+            - name: RemoveDuplicates
+            - name: RemovePodsHavingTooManyRestarts
+              args:
+                podRestartThreshold: 5
+                includingInitContainers: true
             - name: RemoveFailedPods
               args:
                 reasons:
@@ -74,6 +80,7 @@ spec:
               enabled:
                 - RemovePodsViolatingTopologySpreadConstraint
                 - LowNodeUtilization
+                - RemoveDuplicates
             deschedule:
               enabled:
                 - RemoveFailedPods
