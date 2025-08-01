@@ -37,3 +37,9 @@ spec:
       podMonitor:
         enabled: true
         namespace: "{{ .Release.Namespace }}"
+      resources:
+        requests:
+          cpu: 15m
+          memory: 273M
+        limits:
+          memory: 512M
