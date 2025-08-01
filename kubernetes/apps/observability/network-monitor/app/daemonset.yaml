@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: network-monitor
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       hostNetwork: true
       tolerations:
@@ -72,11 +74,6 @@ data:
           valid_rcodes:
             - NOERROR
           preferred_ip_protocol: "ip4"
-          validate_answer_rrs:
-            fail_if_matches_regexp:
-              - ".*127.0.0.1"
-            fail_if_not_matches_regexp:
-              - '10\.43\..*'
       
       icmp:
         prober: icmp
