@@ -29,10 +29,6 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 8Gi
-      BOOKLORE_DB_USERNAME: "${BOOKLORE_DB_USERNAME}"
-      BOOKLORE_DB_PASSWORD: "${BOOKLORE_DB_PASSWORD}"
     substituteFrom:
       - name: cluster-secrets
-        kind: Secret
-      - name: mariadb-secret
         kind: Secret

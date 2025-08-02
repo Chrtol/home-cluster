@@ -32,9 +32,20 @@ spec:
       persistence:
         enabled: true
         existingClaim: *app
+      extraEnvVars:
+        - name: BOOKLORE_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: BOOKLORE_DB_USERNAME
+        - name: BOOKLORE_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: BOOKLORE_DB_PASSWORD
       initdbScripts:
         init-booklore.sql: |
           CREATE DATABASE IF NOT EXISTS booklore;
-          CREATE USER IF NOT EXISTS '${BOOKLORE_DB_USERNAME}'@'%' IDENTIFIED BY '${BOOKLORE_DB_PASSWORD}';
-          GRANT ALL PRIVILEGES ON booklore.* TO '${BOOKLORE_DB_USERNAME}'@'%';
+          CREATE USER IF NOT EXISTS '$BOOKLORE_DB_USERNAME'@'%' IDENTIFIED BY '$BOOKLORE_DB_PASSWORD';
+          GRANT ALL PRIVILEGES ON booklore.* TO '$BOOKLORE_DB_USERNAME'@'%';
           FLUSH PRIVILEGES;
