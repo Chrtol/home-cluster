@@ -98,7 +98,7 @@ spec:
 
     persistence:
       config:
-        existingClaim: booklore-config-v1
+        existingClaim: *app
         globalMounts:
           - path: /home/booklore/data
 
