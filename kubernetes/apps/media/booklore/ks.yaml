@@ -12,6 +12,8 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: mariadb
+      namespace: database
   interval: 1h
   path: ./kubernetes/apps/media/booklore/app
   components:
