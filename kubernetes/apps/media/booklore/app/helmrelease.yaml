@@ -66,13 +66,8 @@ spec:
                   failureThreshold: 3
               readiness: *probes
 
-            # resources: # Based on goldilocks
-            #   requests:
-            #     cpu: 15m
-            #     memory: 105M
-            #   limits:
-            #     cpu: 29m
-            #     memory: 119M
+    defaultPodOptions:
+      priorityClassName: external-facing
 
     service:
       app :
