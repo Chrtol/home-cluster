@@ -59,7 +59,7 @@ spec:
                 custom: true
                 spec:
                   tcpSocket:
-                    port: &port 8080
+                    port: &port 6060
                   initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 5
