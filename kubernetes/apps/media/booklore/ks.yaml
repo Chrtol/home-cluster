@@ -17,7 +17,7 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/booklore/app
   components:
-    - ../../../../components/gatus/guarded
+    - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
   postBuild:
     substitute:
