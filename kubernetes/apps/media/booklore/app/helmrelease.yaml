@@ -34,10 +34,24 @@ spec:
           *app :
             image:
               repository: ghcr.io/adityachandelgit/booklore-app
-              tag: v0.35.0@sha256:f1a84b4ef2d41c1bcdfae711f9f3de0c99dd5e97b5dc450c37525965224da8ae
+              tag: latest
 
             env:
               TZ: "${SECRET_TIMEZONE}"
+              PUID: "1000"
+              PGID: "1000"
+              DATABASE_URL: "jdbc:mariadb://mariadb.database.svc.cluster.local:3306/booklore"
+              DATABASE_USERNAME:
+                valueFrom:
+                  secretKeyRef:
+                    name: booklore-secret
+                    key: DATABASE_USERNAME
+              DATABASE_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: booklore-secret
+                    key: DATABASE_PASSWORD
+              SWAGGER_ENABLED: "false"
 
             probes:
               liveness: &probes
@@ -46,7 +60,7 @@ spec:
                 spec:
                   httpGet:
                     path: /api/health
-                    port: &port 9705
+                    port: &port 6060
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
@@ -84,17 +98,19 @@ spec:
 
     persistence:
       config:
-        existingClaim: huntarr-config-v1
+        existingClaim: booklore-config-v1
+        globalMounts:
+          - path: /home/booklore/data
 
       books:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
+        path: /mnt/truenas/cf-nas/data/media/books
         globalMounts:
-          - path: ~/booklore/books
+          - path: /home/booklore/books
             readOnly: false
 
       bookdrop:
         type: emptyDir
         globalMounts:
-          - path: ~/booklore/bookdrop
+          - path: /home/booklore/bookdrop
