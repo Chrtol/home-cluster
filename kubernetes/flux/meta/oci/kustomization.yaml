@@ -12,3 +12,4 @@ resources:
   - ./volsync.yaml
   - ./loki.yaml
   - ./promtail.yaml
+  - ./mariadb.yaml
