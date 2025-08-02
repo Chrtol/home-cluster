@@ -29,4 +29,5 @@ resources:
   - ./cross-seed/ks.yaml
   - ./rreading-glasses/ks.yaml
   - ./audiobookrequest/ks.yaml
+  - ./booklore/ks.yaml
   - ./recommendarr/ks.yaml
