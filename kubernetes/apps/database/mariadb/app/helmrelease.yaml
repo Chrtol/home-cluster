@@ -22,6 +22,7 @@ spec:
     auth:
       usePasswordFiles: false
       existingSecret: mariadb-secret
+      secretKey: MARIADB_ROOT_PASSWORD
     metrics:
       enabled: true
       resourcesPreset: small
@@ -35,6 +36,6 @@ spec:
       initdbScripts:
         init-booklore.sql: |
           CREATE DATABASE IF NOT EXISTS booklore;
-          CREATE USER IF NOT EXISTS '${booklore-db-username}'@'%' IDENTIFIED BY '${booklore-db-password}';
-          GRANT ALL PRIVILEGES ON booklore.* TO '${booklore-db-username}'@'%';
+          CREATE USER IF NOT EXISTS '${BOOKLORE_DB_USERNAME}'@'%' IDENTIFIED BY '${BOOKLORE_DB_PASSWORD}';
+          GRANT ALL PRIVILEGES ON booklore.* TO '${BOOKLORE_DB_USERNAME}'@'%';
           FLUSH PRIVILEGES;
