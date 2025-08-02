@@ -32,3 +32,5 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+      - name: mariadb-secret
+        kind: Secret
