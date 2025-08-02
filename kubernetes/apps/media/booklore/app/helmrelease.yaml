@@ -58,8 +58,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /api/health
+                  tcpSocket:
                     port: &port 8080
                   initialDelaySeconds: 30
                   periodSeconds: 10
