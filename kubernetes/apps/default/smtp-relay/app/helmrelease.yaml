@@ -69,9 +69,7 @@ spec:
     service:
       app:
         controller: smtp-relay
-        type: LoadBalancer
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "smtp.${SECRET_DOMAIN}"
+        type: ClusterIP
         ports:
           http:
             primary: true
