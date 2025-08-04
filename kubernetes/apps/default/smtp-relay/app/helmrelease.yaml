@@ -105,3 +105,11 @@ spec:
         globalMounts:
           - path: /tls
             readOnly: true
+      state:
+        type: emptyDir
+        globalMounts:
+          - path: /var/lib/maddy
+      runtime:
+        type: emptyDir
+        globalMounts:
+          - path: /run/maddy
