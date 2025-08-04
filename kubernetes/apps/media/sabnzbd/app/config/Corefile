@@ -1,0 +1,26 @@
+.:53 {
+    bind 127.0.0.2
+    rewrite stop type AAAA A
+    errors
+    health :8081 {
+        lameduck 5s
+    }
+    log {
+        class error
+    }
+    forward . 208.67.222.222:53 208.67.220.220:53 8.8.8.8:53 8.8.4.4:53 {
+        policy sequential
+        health_check 5s
+    }
+    reload
+}
+
+cluster.local:53 {
+    bind 127.0.0.2
+    rewrite stop type AAAA A
+    errors
+    log {
+        class error
+    }
+    forward . 10.43.0.10
+}
