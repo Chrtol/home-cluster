@@ -23,14 +23,26 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
+          coredns:
+            image:
+              repository: coredns/coredns
+              tag: 1.12.2
+            args: ["-conf", "/etc/coredns/Corefile"]
+            restartPolicy: Always
+            securityContext:
+              capabilities:
+                add: ["NET_BIND_SERVICE"]
+              readOnlyRootFilesystem: false
           gluetun:
+            dependsOn:
+              - coredns
             image:
               repository: ghcr.io/qdm12/gluetun
               tag: v3.40.0@sha256:2b42bfa046757145a5155acece417b65b4443c8033fb88661a8e9dcf7fda5a00
             restartPolicy: Always
             env:
               DOT: "off"
-              DNS_ADDRESS: 127.0.0.1
+              DNS_ADDRESS: 127.0.0.2
               DNS_KEEP_NAMESERVER: "on"
               HTTP_CONTROL_SERVER_ADDRESS: ":8000"
               HTTP_CONTROL_SERVER_API_KEY:
@@ -143,3 +155,20 @@ spec:
             readOnly: true
       tmp:
         type: emptyDir
+      coredns:
+        type: configMap
+        name: sabnzbd-coredns
+        advancedMounts:
+          sabnzbd:
+            coredns:
+              - path: /etc/coredns/Corefile
+                subPath: Corefile
+                readOnly: true
+      gluetun-auth:
+        type: secret
+        name: sabnzbd-gluetun-secret
+        advancedMounts:
+          sabnzbd:
+            gluetun:
+              - path: /config/auth.toml
+                subPath: auth.toml

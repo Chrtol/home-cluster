@@ -10,6 +10,9 @@ configMapGenerator:
   - name: sabnzbd-scripts
     files:
       - cross-seed.sh=./resources/cross-seed.sh
+  - name: sabnzbd-coredns
+    files:
+      - Corefile=./config/Corefile
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
