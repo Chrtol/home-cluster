@@ -22,6 +22,39 @@ spec:
       sabnzbd:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          gluetun:
+            image:
+              repository: ghcr.io/qdm12/gluetun
+              tag: v3.40.0@sha256:2b42bfa046757145a5155acece417b65b4443c8033fb88661a8e9dcf7fda5a00
+            restartPolicy: Always
+            env:
+              DOT: "off"
+              DNS_ADDRESS: 127.0.0.1
+              DNS_KEEP_NAMESERVER: "on"
+              HTTP_CONTROL_SERVER_ADDRESS: ":8000"
+              HTTP_CONTROL_SERVER_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-gluetun-secret
+                    key: GLUETUN_CONTROL_SERVER_API_KEY
+              VPN_SERVICE_PROVIDER: protonvpn
+              VPN_TYPE: openvpn
+              SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
+              FIREWALL_INPUT_PORTS: "80,8000"
+              FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16
+            envFrom:
+              - secretRef:
+                  name: sabnzbd-gluetun-secret
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+              runAsNonRoot: false
+              capabilities: { add: ["NET_ADMIN"] }
+              allowPrivilegeEscalation: true
+            resources:
+              limits:
+                squat.ai/tun: "1"
         containers:
           app:
             image:
