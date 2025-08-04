@@ -20,7 +20,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      CEPH_RBD_CAPACITY: 5Gi
+      CEPH_RBD_CAPACITY: 1Gi
       GATUS_SUBDOMAIN: abr
     substituteFrom:
       - name: cluster-secrets
