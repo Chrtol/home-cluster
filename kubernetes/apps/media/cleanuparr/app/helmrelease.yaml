@@ -29,7 +29,7 @@ spec:
           app:
             image:
               repository: ghcr.io/cleanuparr/cleanuparr
-              tag: 2.0.18@sha256:29caca812cf9bba046c65e56205f9ed3c4f3615989900c7f2d42697a5df503bb
+              tag: 2.1.3@sha256:7c024573f57b92e338afd04bd3ad4283b7879de5f848736ddd67220c0e2f1d8b
             args: ["/app/Cleanuparr"]
             env:
               TZ: ${SECRET_TIMEZONE}
