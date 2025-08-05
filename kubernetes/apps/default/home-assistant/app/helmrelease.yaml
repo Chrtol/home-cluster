@@ -78,7 +78,21 @@ spec:
             sectionName: https
 
     ingress:
-      app:
+      internal:
+        enabled: true
+        className: internal
+        hosts:
+          - host: &internalHost "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+            - *internalHost
+            
+      external:
         enabled: true
         className: external
         annotations:
