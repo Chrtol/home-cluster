@@ -48,19 +48,18 @@ spec:
                   httpGet:
                     path: /api/health
                     port: &port 9705
-                  initialDelaySeconds: 0
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
               readiness: *probes
 
             resources: # Based on goldilocks
               requests:
-                cpu: 15m
-                memory: 105M
+                cpu: 25m
+                memory: 128M
               limits:
-                cpu: 29m
-                memory: 119M
+                memory: 256M
 
     service:
       app :
