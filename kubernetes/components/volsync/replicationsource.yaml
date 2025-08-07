@@ -12,6 +12,7 @@ spec:
     storageClassName: "${VOLSYNC_STORAGECLASS:=csi-rbd-sc}"
     volumeSnapshotClassName: "${VOLSYNC_STORAGECLASS:=csi-rbd-sc}"
     repository: ${APP}-volsync-secret
+    cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:=1Gi}"
     retain:
       daily: 7
       weekly: 4
