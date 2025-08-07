@@ -19,13 +19,6 @@ spec:
       weekly: 4
       monthly: 3
     pruneIntervalDays: 7
-    exclude:
-      # Exclude large cache files that can be regenerated
-      - "/Library/Application Support/Plex Media Server/Cache/PhotoTranscoder/*"
-      # Exclude temporary and runtime files
-      - "/Library/Application Support/Plex Media Server/Crash Reports/*"
-      - "*.tmp"
-      - "*.temp"
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
