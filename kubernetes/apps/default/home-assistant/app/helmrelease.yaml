@@ -54,7 +54,13 @@ spec:
     defaultPodOptions:
       priorityClassName: external-facing
       annotations:
-        k8s.v1.cni.cncf.io/networks: '[{"name": "multus-wlan", "namespace": "network", "ips": ["10.0.20.200/24"]}]'
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "multus-wlan",
+            "namespace": "network",
+            "ips": ["10.0.20.200/24"],
+            "mac": "3e:59:e4:f7:43:09"
+          }]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
