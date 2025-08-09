@@ -88,7 +88,7 @@ spec:
         targetCPUUtilizationPercentage: 70
       resources:
         requests:
-          cpu: 100m
+          cpu: 150m
           memory: 629M
         limits:
           memory: 1Gi
