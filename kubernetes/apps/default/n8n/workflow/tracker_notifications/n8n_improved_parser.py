@@ -62,29 +62,29 @@ try:
     
     result["total_notifications"] = len(notification_rows)
     
-    # Get today's date for filtering new notifications
-    today = datetime.now().strftime("%Y-%m-%d")
-    new_today = 0
+    # Get recent timeframe for filtering new notifications (last 2 hours)
+    from datetime import timedelta
+    recent_cutoff = datetime.now() - timedelta(hours=2)
+    recent_cutoff_str = recent_cutoff.strftime("%Y-%m-%d %H")
+    new_recent = 0
     
     # Process notifications
     for i, (sent_timestamp, sent_date, read_timestamp, read_date, message) in enumerate(notification_rows):
         # Clean up HTML tags from message
         clean_message = re.sub(r'<[^>]+>', '', message).strip()
         
-        # Check if sent today
-        if today in sent_date:
-            new_today += 1
-            result["alerts"].append(f"New notification today: {clean_message[:50]}...")
+        # Check if sent recently (last 2 hours) to avoid hourly repeats
+        sent_hour = sent_date[:13]  # "2025-08-10 20" format
+        if sent_hour >= recent_cutoff_str:
+            new_recent += 1
+            result["alerts"].append(f"Recent notification: {clean_message[:50]}...")
         
-        # Add to details (limit to 3 most recent)
+        # Add to details (limit to 3 most recent) - return as string for Discord
         if i < 3:
-            result["notification_details"].append({
-                "sent": sent_date,
-                "read": read_date if read_date else "Unread",
-                "message": clean_message[:100] + "..." if len(clean_message) > 100 else clean_message
-            })
+            short_message = clean_message[:80] + "..." if len(clean_message) > 80 else clean_message
+            result["notification_details"].append(short_message)
     
-    result["new_notifications"] = new_today
+    result["new_notifications"] = new_recent
     
     # Check for achievements
     if '<sup style="color:red;">new</sup>' in html_content:
@@ -100,8 +100,8 @@ try:
     if result["total_notifications"] > 0:
         result["alerts"].append(f"{result['total_notifications']} total notifications in history")
     
-    if new_today > 0:
-        result["alerts"].append(f"{new_today} notifications received today")
+    if new_recent > 0:
+        result["alerts"].append(f"{new_recent} notifications received recently")
         
 except Exception as e:
     result["status"] = "error"
