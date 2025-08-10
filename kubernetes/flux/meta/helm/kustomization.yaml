@@ -18,4 +18,4 @@ resources:
   - ./fairwinds-charts.yaml
   - ./crowdsec.yaml
   - ./trivy-charts.yaml
-  - ./lwolf--charts.yaml
+  - ./lwolf-charts.yaml
