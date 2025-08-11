@@ -6,10 +6,11 @@
     "files.trimTrailingWhitespace": true,
     "sops.defaults.ageKeyFile": "age.key",
     "vs-kubernetes": {
-        "vs-kubernetes.kubeconfig": "./kubeconfig",
+        "vs-kubernetes.kubeconfig": "/home/chrto/Homelab/github/chrtol/home-cluster/kubeconfig",
         "vs-kubernetes.knownKubeconfigs": [
-          "./kubeconfig"
-      ]
+            "./kubeconfig",
+            "/home/chrto/Homelab/github/chrtol/home-cluster/kubeconfig"
+        ]
     },
     "yaml.schemaStore.enable": true,
     "yaml.schemas": {
