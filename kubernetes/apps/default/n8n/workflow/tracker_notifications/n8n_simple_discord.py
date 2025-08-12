@@ -4,16 +4,19 @@ from datetime import datetime
 # Get data from previous node
 data = items[0]['json']
 
-# Determine alert level and color
-if data.get("hnr_count", 0) > 0:
+# Determine alert level and color - prioritize new issues
+if data.get("status") == "error":
     color = 16711680  # Red
-    title = "🚨 Tracker HnR Warning!"
+    title = "❌ Tracker Connection Error"
+elif data.get("new_hnrs", 0) > 0:  # Only alert for NEW HnRs
+    color = 16711680  # Red
+    title = "🚨 New Tracker HnR Warning!"
+elif data.get("hnr_count", 0) > 0 and data.get("new_notifications", 0) > 0:
+    color = 16753920  # Orange - existing HnR but new notifications
+    title = "⚠️ HnR Status Update"
 elif data.get("unread_notifications", 0) > 0:
     color = 16753920  # Orange  
     title = "📧 New Tracker Notifications"
-elif data.get("status") == "error":
-    color = 16711680  # Red
-    title = "❌ Tracker Connection Error"
 elif len(data.get("alerts", [])) > 0:
     color = 16776960  # Yellow
     title = "⚠️ Tracker Update"
@@ -21,56 +24,62 @@ else:
     color = 65280  # Green
     title = "✅ Tracker Status OK"
 
-# Build description
-description_parts = [
-    f"**Status:** {data.get('status', 'unknown').upper()}",
-    f"**Unread:** {data.get('unread_notifications', 0)}",
-    f"**Total:** {data.get('total_notifications', 0)}",
-    f"**HnR:** {data.get('hnr_count', 0)}",
-    f"**Ratio:** {data.get('ratio', '0.000')}"
-]
+# Build clean description with everything
+description_parts = []
 
-# Add alerts if any
+# Add error status only when needed
+if data.get("status") == "error":
+    description_parts.append(f"**Status:** {data.get('status', 'unknown').upper()}")
+elif data.get('hnr_count', 0) == 0:
+    description_parts.append(f"**Status:** {data.get('status', 'unknown').upper()}")
+
+# Add stats in a compact format without code blocks
+stats_line = f"**Unread:** {data.get('unread_notifications', 0)} • **Total:** {data.get('total_notifications', 0)} • **HnR:** {data.get('hnr_count', 0)} • **Ratio:** {data.get('ratio', '0.000')}"
+
+description_parts.append(stats_line)
+
+# Add HnR details 
+hnr_details = data.get('hnr_details', [])
+if hnr_details:
+    description_parts.append("")  # Spacing
+    for i, hnr in enumerate(hnr_details[:2]):  # Show first 2 HnRs
+        if hnr.get('name'):
+            short_name = hnr['name'][:50] + '...' if len(hnr['name']) > 50 else hnr['name']
+            ratio_info = f"⚖️ **{hnr.get('ratio', 'N/A')}**" 
+            seeded_info = f"⏱️ **{hnr.get('seeding_time', 'N/A')}**"
+            description_parts.append(f"🎬 **{short_name}**")
+            description_parts.append(f"{ratio_info} • {seeded_info}")
+            if i < len(hnr_details[:2]) - 1:  # Add spacing between multiple HnRs
+                description_parts.append("")
+
+# Add non-HnR alerts
 alerts = data.get("alerts", [])
 if alerts:
-    first_two_alerts = []
-    for i, alert in enumerate(alerts):
-        if i < 2:
-            first_two_alerts.append(alert)
-    description_parts.append(f"**Alerts:** {', '.join(first_two_alerts)}")
+    non_hnr_alerts = [alert for alert in alerts if not alert.startswith('HnR')]
+    if non_hnr_alerts:
+        description_parts.append("")  # Spacing
+        description_parts.append(f"📢 {', '.join(non_hnr_alerts[:2])}")
 
-# Add recent notification if available
-details = data.get("notification_details", [])
-if details and len(details) > 0:
-    if isinstance(details[0], dict):
-        recent = details[0].get("message", "")
-    else:
-        recent = str(details[0])  # Convert to string
-    
-    if recent:
-        if len(recent) > 80:
-            recent_short = recent[0:80] + "..."
-        else:
-            recent_short = recent
-        description_parts.append(f"**Recent:** {recent_short}")
+# Simple fields - just links (censored for privacy)
+fields = [
+    {
+        "name": "Links",
+        "value": "[Tracker Profile](https://www.example.com/profile/user) • [HnR Page](https://www.example.com/profile/user/hnr)", 
+        "inline": False
+    }
+]
 
 # Create Discord payload
 discord_payload = {
     "embeds": [{
         "title": title,
-        "description": "\n".join(description_parts),
+        "description": "\n".join(description_parts) if description_parts else None,
         "color": color,
         "timestamp": data.get("timestamp", datetime.now().isoformat()),
         "footer": {
             "text": "Tracker Monitor"
         },
-        "fields": [
-            {
-                "name": "Links", 
-                "value": "Check your tracker notifications and profile",
-                "inline": False
-            }
-        ]
+        "fields": fields
     }]
 }
 
