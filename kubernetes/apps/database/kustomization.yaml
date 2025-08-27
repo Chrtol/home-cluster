@@ -12,3 +12,4 @@ resources:
   - ./seaweedfs/ks.yaml
   - ./garage/ks.yaml
   - ./mariadb/ks.yaml
+  - ./versity/ks.yaml
