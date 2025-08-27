@@ -1,0 +1,21 @@
+metadata_dir = "/mnt/meta"
+data_dir = "/mnt/data"
+
+replication_mode = "3"
+compression_level = 1
+
+rpc_bind_addr = "0.0.0.0:3901"
+rpc_public_addr = "garage.database.svc.cluster.local:3901"
+rpc_secret = "${SECRET_GARAGE_RPC_SECRET}"
+
+[s3_api]
+s3_region = "us-east-1"
+api_bind_addr = "0.0.0.0:3900"
+root_domain = ".s3.${SECRET_DOMAIN}"
+
+[s3_web]
+bind_addr = "0.0.0.0:3902"
+root_domain = ".web.${SECRET_DOMAIN}"
+
+[admin]
+api_bind_addr = "0.0.0.0:3903"
