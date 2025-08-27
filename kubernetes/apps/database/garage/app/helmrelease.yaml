@@ -1,0 +1,140 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app garage
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      garage:
+        strategy: RollingUpdate
+        replicas: 3
+        containers:
+          app:
+            image:
+              repository: dxflrs/garage
+              tag: v1.0.1
+            args:
+              - server
+            env:
+              GARAGE_RPC_BIND_ADDR: "0.0.0.0:3901"
+              GARAGE_API_BIND_ADDR: "0.0.0.0:3900"
+              GARAGE_WEB_BIND_ADDR: "0.0.0.0:3902"
+              GARAGE_METADATA_DIR: "/mnt/meta"
+              GARAGE_DATA_DIR: "/mnt/data"
+              GARAGE_REPLICATION_MODE: "3"
+              GARAGE_COMPRESSION_LEVEL: "1"
+              GARAGE_LOG_LEVEL: "info"
+              POD_IP:
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.podIP
+              GARAGE_RPC_PUBLIC_ADDR: "$(POD_IP):3901"
+            envFrom:
+              - secretRef:
+                  name: garage-secret
+            ports:
+              - name: api
+                containerPort: 3900
+              - name: rpc
+                containerPort: 3901
+              - name: web
+                containerPort: 3902
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 3900
+                    scheme: HTTP
+                  initialDelaySeconds: 30
+                  periodSeconds: 15
+                  successThreshold: 1
+                  failureThreshold: 5
+                  timeoutSeconds: 10
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 3900
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  successThreshold: 1
+                  failureThreshold: 3
+                  timeoutSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          api:
+            port: 3900
+          rpc:
+            port: 3901
+          web:
+            port: 3902
+    ingress:
+      app:
+        className: internal
+        hosts:
+          - host: &host s3.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: app
+                  port: api
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      data:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/s3/data
+        globalMounts:
+          - path: /mnt/data
+            readOnly: false
+      meta:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/s3/meta
+        globalMounts:
+          - path: /mnt/meta
+            readOnly: false
