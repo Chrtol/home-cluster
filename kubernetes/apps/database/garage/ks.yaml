@@ -26,5 +26,5 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
-      - name: garage-secrets
+      - name: garage-secret
         kind: Secret
