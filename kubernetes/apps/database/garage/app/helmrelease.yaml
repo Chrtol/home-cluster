@@ -27,6 +27,9 @@ spec:
             image:
               repository: dxflrs/garage
               tag: v1.0.1
+            command:
+              - /garage
+              - server
             env:
               GARAGE_RPC_BIND_ADDR: "0.0.0.0:3901"
               GARAGE_API_BIND_ADDR: "0.0.0.0:3900"
