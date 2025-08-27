@@ -42,7 +42,7 @@ spec:
           01-init-db:
             image:
               repository: ghcr.io/home-operations/postgres-init
-              tag: 17.5.0@sha256:e0c87ce7df39d06b93f27cf2cc6a056611f13faaa88cc07ab4dc8bf7a85d0b11
+              tag: 17.6.0@sha256:86a1992d46273c58fd4ad95b626081dfaabfe16bd56944675169e406d1a660dd
             envFrom:
               - secretRef:
                   name: immich-secret
@@ -92,7 +92,7 @@ spec:
           main:
             image:
               repository: ghcr.io/immich-app/immich-server
-              tag: v1.137.3@sha256:e517f806457057d44695152a0af2dfa094225a7d85eb37f518925e68864c658d
+              tag: v1.139.4@sha256:c3c5eeafa5549e446b5fd71394399178d9c87da1dec5fd9e9a80a5a0f13e9fad
             env:
               IMMICH_MEDIA_LOCATION: &mediaLocation /usr/src/app/upload
               THUMB_LOCATION: &thumbLocation /thumbnails
@@ -120,7 +120,7 @@ spec:
           main:
             image:
               repository: ghcr.io/immich-app/immich-machine-learning
-              tag: v1.137.3@sha256:ef517c041fa4a6a84a6c3c4f88a1124058e686c9c92bf09a973e7e60c3c3ea1e
+              tag: v1.139.4@sha256:7eb755fd9989f8554ed8f5332b931caf996826c51498400534c8c78d1c2f226f
             envFrom:
               - secretRef:
                   name: immich-secret
