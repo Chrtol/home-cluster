@@ -30,23 +30,6 @@ spec:
             command:
               - /garage
               - server
-            env:
-              GARAGE_RPC_BIND_ADDR: "0.0.0.0:3901"
-              GARAGE_API_BIND_ADDR: "0.0.0.0:3900"
-              GARAGE_WEB_BIND_ADDR: "0.0.0.0:3902"
-              GARAGE_METADATA_DIR: "/mnt/meta"
-              GARAGE_DATA_DIR: "/mnt/data"
-              GARAGE_REPLICATION_MODE: "3"
-              GARAGE_COMPRESSION_LEVEL: "1"
-              GARAGE_LOG_LEVEL: "info"
-              POD_IP:
-                valueFrom:
-                  fieldRef:
-                    fieldPath: status.podIP
-              GARAGE_RPC_PUBLIC_ADDR: "$(POD_IP):3901"
-            envFrom:
-              - secretRef:
-                  name: garage-secret
             ports:
               - name: api
                 containerPort: 3900
@@ -139,3 +122,10 @@ spec:
         globalMounts:
           - path: /mnt/meta
             readOnly: false
+      config:
+        type: configMap
+        name: config.toml
+        globalMounts:
+          - path: /etc/garage.toml
+            subPath: config.toml
+            readOnly: true
