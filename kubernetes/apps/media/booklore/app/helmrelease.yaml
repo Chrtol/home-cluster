@@ -33,7 +33,7 @@ spec:
         containers:
           *app :
             image:
-              repository: https://ghcr.io/booklore-app/booklore
+              repository: ghcr.io/booklore-app/booklore
               tag: v0.38.2
 
             env:
