@@ -9,20 +9,8 @@ spec:
   trigger:
     schedule: "0 3 * * *"  # Daily at 3 AM
   restic:
-    copyMethod: Snapshot
-    storageClassName: csi-rbd-sc
-    volumeSnapshotClassName: csi-rbd-sc
+    copyMethod: Direct
     repository: plex-secret
-    cacheCapacity: 20Gi
-    customCA:
-      secretName: ""
-      configMapName: ""
-    exclude:
-      - "/Library/Application Support/Plex Media Server/Media"
-      - "*test-movie*"
-      - "*.mkv"
-      - "*.mp4"
-      - "*.avi"
     retain:
       daily: 7
       weekly: 4
