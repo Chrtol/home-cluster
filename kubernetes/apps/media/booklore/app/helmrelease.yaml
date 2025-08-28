@@ -33,8 +33,8 @@ spec:
         containers:
           *app :
             image:
-              repository: ghcr.io/adityachandelgit/booklore-app
-              tag: latest
+              repository: https://ghcr.io/booklore-app/booklore
+              tag: v0.38.2
 
             env:
               TZ: "${SECRET_TIMEZONE}"
