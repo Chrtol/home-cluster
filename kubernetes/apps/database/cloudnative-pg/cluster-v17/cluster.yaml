@@ -54,25 +54,25 @@ spec:
     podMonitorMetricRelabelings:
       - { sourceLabels: ["cluster"], targetLabel: cnpg_cluster, action: replace }
       - { regex: cluster, action: labeldrop }
-  backup:
-    retentionPolicy: 7d
-    barmanObjectStore: &barmanObjectStore
-      data:
-        compression: bzip2
-      # WAL archiving disabled - SeaweedFS doesn't support WAL streaming
-      # wal:
-      #   compression: bzip2
-      #   maxParallel: 2
-      destinationPath: s3://postgres-wal/
-      endpointURL: http://garage.database.svc.cluster.local:3900
-      serverName: &currentCluster postgres17-v1
-      s3Credentials:
-        accessKeyId:
-          name: cloudnative-pg-secret
-          key: aws-access-key-id
-        secretAccessKey:
-          name: cloudnative-pg-secret
-          key: aws-secret-access-key
-        region:
-          name: cloudnative-pg-secret
-          key: aws-default-region
+  # backup:
+  #   retentionPolicy: 7d
+  #   barmanObjectStore: &barmanObjectStore
+  #     data:
+  #       compression: bzip2
+  #     # WAL archiving disabled - SeaweedFS doesn't support WAL streaming
+  #     # wal:
+  #     #   compression: bzip2
+  #     #   maxParallel: 2
+  #     destinationPath: s3://postgres-wal/
+  #     endpointURL: http://garage.database.svc.cluster.local:3900
+  #     serverName: &currentCluster postgres17-v1
+  #     s3Credentials:
+  #       accessKeyId:
+  #         name: cloudnative-pg-secret
+  #         key: aws-access-key-id
+  #       secretAccessKey:
+  #         name: cloudnative-pg-secret
+  #         key: aws-secret-access-key
+  #       region:
+  #         name: cloudnative-pg-secret
+  #         key: aws-default-region
