@@ -14,6 +14,15 @@ spec:
     volumeSnapshotClassName: csi-rbd-sc
     repository: plex-secret
     cacheCapacity: 20Gi
+    customCA:
+      secretName: ""
+      configMapName: ""
+    exclude:
+      - "/Library/Application Support/Plex Media Server/Media"
+      - "*test-movie*"
+      - "*.mkv"
+      - "*.mp4"
+      - "*.avi"
     retain:
       daily: 7
       weekly: 4
