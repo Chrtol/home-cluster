@@ -63,8 +63,8 @@ spec:
       # wal:
       #   compression: bzip2
       #   maxParallel: 2
-      destinationPath: s3://postgres17/
-      endpointURL: http://seaweedfs.database.svc.cluster.local:8888
+      destinationPath: s3://postgres-wal/
+      endpointURL: http://garage.database.svc.cluster.local:3900
       serverName: &currentCluster postgres17-v1
       s3Credentials:
         accessKeyId:
@@ -73,3 +73,6 @@ spec:
         secretAccessKey:
           name: cloudnative-pg-secret
           key: aws-secret-access-key
+        region:
+          name: cloudnative-pg-secret
+          key: aws-default-region
