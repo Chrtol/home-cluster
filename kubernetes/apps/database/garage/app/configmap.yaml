@@ -17,7 +17,7 @@ data:
     rpc_secret = "${SECRET_GARAGE_RPC_SECRET}"
 
     [s3_api]
-    s3_region = "us-east-1"
+    s3_region = "homelab"
     api_bind_addr = "0.0.0.0:3900"
     root_domain = ".s3.${SECRET_DOMAIN}"
 
