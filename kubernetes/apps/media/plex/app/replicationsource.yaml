@@ -9,8 +9,11 @@ spec:
   trigger:
     schedule: "0 3 * * *"  # Daily at 3 AM
   restic:
-    copyMethod: Direct
+    copyMethod: Snapshot
+    storageClassName: csi-rbd-sc
+    volumeSnapshotClassName: csi-rbd-sc
     repository: plex-secret
+    cacheCapacity: 30Gi
     retain:
       daily: 7
       weekly: 4
