@@ -9,7 +9,7 @@ data:
     metadata_dir = "/mnt/meta"
     data_dir = "/mnt/data"
 
-    replication_mode = "3"
+    replication_mode = "1"
     compression_level = 1
 
     rpc_bind_addr = "0.0.0.0:3901"
