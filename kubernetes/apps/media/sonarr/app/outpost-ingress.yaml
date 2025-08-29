@@ -6,7 +6,6 @@ metadata:
   namespace: media
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   ingressClassName: internal
   tls:
@@ -16,8 +15,8 @@ spec:
     - host: sonarr.cftollefsen.com
       http:
         paths:
-          - path: /outpost.goauthentik.io/(.*)
-            pathType: ImplementationSpecific
+          - path: /outpost.goauthentik.io
+            pathType: Prefix
             backend:
               service:
                 name: authentik-outpost
