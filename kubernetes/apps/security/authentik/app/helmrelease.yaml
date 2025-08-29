@@ -85,7 +85,7 @@ spec:
         enabled: true
         minReplicas: 3
         maxReplicas: 25
-        targetCPUUtilizationPercentage: 80
+        targetCPUUtilizationPercentage: 70
       resources:
         requests:
           cpu: 150m
