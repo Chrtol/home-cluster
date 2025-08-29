@@ -94,4 +94,4 @@ spec:
           memory: 1Gi
     prometheus:
       rules:
-        enabled: false
+        enabled: true
