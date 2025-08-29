@@ -6,7 +6,7 @@ metadata:
   namespace: media
 spec:
   type: ExternalName
-  externalName: ak-outpost-authentik-embedded-outpost.security.svc.cluster.local
+  externalName: ak-outpost-internal-proxy-outpost.security.svc.cluster.local
   ports:
     - port: 9000
       targetPort: 9000
