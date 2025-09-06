@@ -5,3 +5,8 @@ devices:
       - count: 1000
         paths:
           - path: /dev/net/tun
+  - name: bluetooth
+    groups:
+      - count: 10
+        paths:
+          - path: /dev/bus/usb

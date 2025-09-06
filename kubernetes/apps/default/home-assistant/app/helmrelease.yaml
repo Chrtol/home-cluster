@@ -43,7 +43,9 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+              capabilities: 
+                drop: ["ALL"]
+                add: ["NET_RAW", "NET_ADMIN"]
             resources:
               requests:
                 cpu: 23m
@@ -53,6 +55,8 @@ spec:
 
     defaultPodOptions:
       priorityClassName: external-facing
+      nodeSelector:
+        kubernetes.io/hostname: lenovo2
       annotations:
         k8s.v1.cni.cncf.io/networks: |
           [{
@@ -123,6 +127,11 @@ spec:
         existingClaim: home-assistant-cache
         globalMounts:
           - path: /config/.venv
+      usb-devices:
+        type: hostPath
+        hostPath: /dev/bus/usb
+        globalMounts:
+          - path: /dev/bus/usb
       tmpfs:
         type: emptyDir
         advancedMounts:
