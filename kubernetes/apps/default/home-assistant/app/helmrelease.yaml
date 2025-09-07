@@ -41,11 +41,9 @@ spec:
               - secretRef:
                   name: home-assistant-secret
             securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
+              privileged: true
               capabilities: 
-                drop: ["ALL"]
-                add: ["NET_RAW", "NET_ADMIN"]
+                add: ["NET_RAW", "NET_ADMIN", "SYS_ADMIN", "DAC_OVERRIDE"]
             resources:
               requests:
                 cpu: 23m
