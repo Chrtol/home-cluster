@@ -86,6 +86,19 @@ spec:
         minReplicas: 3
         maxReplicas: 10
         targetCPUUtilizationPercentage: 70
+      probes:
+        liveness:
+          enabled: true
+          spec:
+            timeoutSeconds: 10
+        readiness:
+          enabled: true
+          spec:
+            timeoutSeconds: 10
+        startup:
+          enabled: true
+          spec:
+            timeoutSeconds: 10
       resources:
         requests:
           cpu: 300m
