@@ -69,7 +69,7 @@ spec:
         readiness:
           enabled: true
           spec:
-            initialDelaySeconds: 30 
+            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
@@ -84,14 +84,14 @@ spec:
       autoscaling:
         enabled: true
         minReplicas: 3
-        maxReplicas: 25
+        maxReplicas: 10
         targetCPUUtilizationPercentage: 70
       resources:
         requests:
           cpu: 150m
           memory: 629M
         limits:
-          memory: 1Gi
+          memory: 1.5Gi
     prometheus:
       rules:
         enabled: true
