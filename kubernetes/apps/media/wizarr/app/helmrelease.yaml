@@ -39,9 +39,9 @@ spec:
             resources:
               requests:
                 cpu: 15m
-                memory: 273M
+                memory: 411M
               limits:
-                memory: 346M
+                memory: 564M
     defaultPodOptions:
       priorityClassName: external-facing
     service:
