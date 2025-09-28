@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: ghcr.io/home-operations/bazarr
-              tag: 1.4.5@sha256:27a8b3a2ca9ca8cf0e10a87c8ccd7feaa0b8ca4b58dc9c6e0e36b72bfb80bdb4
+              tag: 1.5.2@sha256:dbc87e5ce9e199709188e152e82b3ff5d33e6521a1b3d61e465aa75b4b739e7f
             env:
               TZ: ${SECRET_TIMEZONE}
             probes:
