@@ -26,8 +26,8 @@ spec:
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/bazarr
-              tag: 1.4.4
+              repository: ghcr.io/home-operations/bazarr
+              tag: 1.4.5
             env:
               TZ: ${SECRET_TIMEZONE}
             probes:
