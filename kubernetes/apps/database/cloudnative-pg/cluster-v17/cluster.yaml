@@ -19,9 +19,9 @@ spec:
     parameters:
       max_connections: "600"
       shared_buffers: 512MB
-      archive_mode: "off"
-      wal_keep_size: "1GB"
-      max_wal_size: "2GB"
+      archive_mode: "on"
+      wal_keep_size: "512MB"
+      max_wal_size: "1GB"
     #shared_preload_libraries:
     #  - "vectors.so"
 
