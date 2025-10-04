@@ -6,7 +6,7 @@ metadata:
   namespace: media
 spec:
   trigger:
-    manual: restore-latest
+    manual: restore-1month-ago
   restic:
     destinationPVC: bazarr
     repository: bazarr-secret
@@ -15,6 +15,7 @@ spec:
     accessModes:
       - ReadWriteOnce
     capacity: 5Gi
+    restoreAsOf: "2025-09-04T03:00:00Z"
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
