@@ -1,0 +1,21 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: bazarr-config-restore
+  namespace: media
+spec:
+  trigger:
+    manual: restore-latest
+  restic:
+    destinationPVC: bazarr
+    repository: bazarr-secret
+    copyMethod: Direct
+    storageClassName: csi-rbd-sc
+    accessModes:
+      - ReadWriteOnce
+    capacity: 5Gi
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
