@@ -19,6 +19,13 @@ data:
     logger = logging.getLogger(__name__)
     app = Flask(__name__)
 
+    # Suppress health check logs
+    werkzeug_logger = logging.getLogger('werkzeug')
+    class HealthCheckFilter(logging.Filter):
+        def filter(self, record):
+            return 'GET /health' not in record.getMessage()
+    werkzeug_logger.addFilter(HealthCheckFilter())
+
     AUTHENTIK_URL = os.getenv('AUTHENTIK_URL', 'http://authentik-server.security.svc.cluster.local')
     AUTHENTIK_TOKEN = os.getenv('AUTHENTIK_TOKEN')
     DEFAULT_GROUPS = os.getenv('DEFAULT_GROUPS', 'audiobookshelf-users,media-users').split(',')
@@ -129,11 +136,15 @@ data:
     def webhook_handler():
         try:
             logger.info(f"Webhook request received from {request.remote_addr}")
-            
+            logger.info(f"All headers: {list(request.headers.keys())}")
+            logger.info(f"X-Webhook-Secret header: '{request.headers.get('X-Webhook-Secret', 'NOT_FOUND')}'")
+
             if WEBHOOK_SECRET:
                 provided_secret = request.headers.get('X-Webhook-Secret', '')
+                expected_secret = WEBHOOK_SECRET
+                logger.info(f"Secret comparison - Expected: '{expected_secret}' (len={len(expected_secret)}), Provided: '{provided_secret}' (len={len(provided_secret)})")
                 if provided_secret != WEBHOOK_SECRET:
-                    logger.warning("Invalid webhook secret")
+                    logger.warning("Invalid webhook secret - mismatch detected")
                     return jsonify({'error': 'Unauthorized'}), 401
 
             data = request.get_json()
@@ -179,7 +190,11 @@ data:
 
     @app.route('/health', methods=['GET'])
     def health_check():
-        return jsonify({'status': 'healthy'}), 200
+        try:
+            return jsonify({'status': 'healthy'}), 200
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
 
     @app.route('/status', methods=['GET'])
     def status():
