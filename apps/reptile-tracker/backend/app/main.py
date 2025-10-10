@@ -42,18 +42,9 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Add trusted host middleware for additional security
-# This prevents Host header attacks
-if settings.environment == "production":
-    # Extract domain from frontend_url (e.g., https://reptile-tracker.domain.com -> reptile-tracker.domain.com)
-    from urllib.parse import urlparse
-    parsed_url = urlparse(settings.frontend_url)
-    allowed_host = parsed_url.netloc if parsed_url.netloc else "localhost"
-
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=[allowed_host, "localhost"]
-    )
+# Note: TrustedHostMiddleware disabled - host validation handled by nginx-ingress
+# The middleware was causing issues with Kubernetes health probes and internal service calls
+# Security is maintained via ingress controller which validates Host headers at the edge
 
 # Include routers
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
