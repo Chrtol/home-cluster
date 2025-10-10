@@ -97,9 +97,8 @@ async def root():
 
 
 @app.get("/health")
-@limiter.limit("30/minute")  # Rate limit health checks
-async def health_check(request: Request):
-    """Health check endpoint"""
+async def health_check():
+    """Health check endpoint - no rate limiting for Kubernetes probes"""
     return {
         "status": "healthy",
         "environment": settings.environment,
