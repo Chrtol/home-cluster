@@ -2,6 +2,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import init_db
@@ -29,6 +30,15 @@ app = FastAPI(
 # M-2 Fix: Add rate limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+# Session middleware - required for OAuth/OIDC flow
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key,
+    max_age=3600,  # 1 hour session for OAuth state
+    same_site="lax",
+    https_only=settings.cookie_secure
+)
 
 # CORS middleware
 # M-1 Note: CSRF protection is handled via SameSite cookies
