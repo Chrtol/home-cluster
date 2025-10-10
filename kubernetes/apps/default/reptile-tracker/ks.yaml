@@ -3,9 +3,9 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app reptile-tracker-database
-  namespace: &db database
+  namespace: &ns database
 spec:
-  targetNamespace: *db
+  targetNamespace: *ns
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
@@ -30,9 +30,9 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app reptile-tracker-database
-  namespace: &db database
+  namespace: &ns database
 spec:
-  targetNamespace: *db
+  targetNamespace: *ns
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
