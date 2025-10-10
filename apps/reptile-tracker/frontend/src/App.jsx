@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import ReptileList from './pages/ReptileList'
 import ReptileDetail from './pages/ReptileDetail'
+import ReptileForm from './pages/ReptileForm' // Import the new form
 import FeedingLog from './pages/FeedingLog'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
@@ -80,7 +81,10 @@ function App() {
           <Route element={<Layout user={user} onLogout={handleLogout} />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/reptiles" element={<ReptileList />} />
+            {/* The 'new' route must come BEFORE the ':id' route */}
+            <Route path="/reptiles/new" element={<ReptileForm />} />
             <Route path="/reptiles/:id" element={<ReptileDetail />} />
+            <Route path="/reptiles/:id/edit" element={<ReptileForm />} />
             <Route path="/feed/:id?" element={<FeedingLog />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
