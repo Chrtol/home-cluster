@@ -67,8 +67,9 @@ async def auth_callback(
 
         logger.info(f"User {user.email} authenticated successfully via OIDC")
 
-        # Redirect to frontend without token in URL
-        return RedirectResponse(url=f"{settings.frontend_url}/", status_code=302)
+        # Redirect to frontend auth callback to complete login flow
+        # Cookies are set in the response headers
+        return RedirectResponse(url=f"{settings.frontend_url}/auth/callback", status_code=302)
 
     except HTTPException:
         raise
