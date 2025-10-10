@@ -22,6 +22,17 @@ spec:
       backend:
         annotations:
           reloader.stakater.com/auto: "true"
+
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 17.6
+              pullPolicy: IfNotPresent
+            envFrom:
+              - secretRef:
+                  name: reptile-tracker-database-secret
+
         containers:
           app:
             image:
@@ -32,8 +43,8 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: reptile-tracker-secret
-                    key: database-url
+                    name: reptile-tracker-database-secret
+                    key: DATABASE_URL
               SECRET_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -56,7 +67,20 @@ spec:
                     key: oidc-discovery-url
               OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
               FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
+
+              # Optional - Webhooks (leave empty, users configure in-app)
               WEBHOOK_URL: ""
+
+              # Security settings - Production
+              ENVIRONMENT: "production"
+              SQL_ECHO: "false"
+              COOKIE_SECURE: "true"
+              COOKIE_HTTPONLY: "true"
+              COOKIE_SAMESITE: "lax"
+
+              # Token expiration
+              ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+              REFRESH_TOKEN_EXPIRE_DAYS: "7"
             probes:
               liveness:
                 enabled: true
