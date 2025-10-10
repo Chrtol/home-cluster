@@ -67,18 +67,12 @@ spec:
                     key: oidc-discovery-url
               OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
               FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
-
-              # Optional - Webhooks (leave empty, users configure in-app)
               WEBHOOK_URL: ""
-
-              # Security settings - Production
               ENVIRONMENT: "production"
               SQL_ECHO: "false"
               COOKIE_SECURE: "true"
               COOKIE_HTTPONLY: "true"
               COOKIE_SAMESITE: "lax"
-
-              # Token expiration
               ACCESS_TOKEN_EXPIRE_MINUTES: "15"
               REFRESH_TOKEN_EXPIRE_DAYS: "7"
             probes:
@@ -160,7 +154,6 @@ spec:
       main:
         className: internal
         annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-production
           hajimari.io/enable: "true"
           hajimari.io/icon: mdi:snake
           hajimari.io/group: apps
@@ -185,4 +178,3 @@ spec:
         tls:
           - hosts:
               - "reptile-tracker.${SECRET_DOMAIN}"
-            secretName: reptile-tracker-tls
