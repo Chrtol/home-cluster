@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/reptile-tracker/database
+  path: ./kubernetes/apps/default/reptile-tracker/database
   prune: true
   sourceRef:
     kind: GitRepository
@@ -38,7 +38,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: reptile-tracker-database
-  path: ./kubernetes/apps/reptile-tracker/app
+  path: ./kubernetes/apps/default/reptile-tracker/app
   prune: true
   sourceRef:
     kind: GitRepository
