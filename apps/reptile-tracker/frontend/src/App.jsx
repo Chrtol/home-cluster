@@ -18,42 +18,43 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || ''
 axios.defaults.withCredentials = true
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'))
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      fetchUser()
-    } else {
-      setLoading(false)
-    }
-  }, [token])
+    // Check authentication status on mount
+    fetchUser()
+  }, [])
 
   const fetchUser = async () => {
     try {
       const response = await axios.get('/auth/me')
       setUser(response.data)
+      setIsAuthenticated(true)
     } catch (error) {
       console.error('Failed to fetch user:', error)
-      handleLogout()
+      setIsAuthenticated(false)
+      setUser(null)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleLogin = (newToken) => {
-    localStorage.setItem('token', newToken)
-    setToken(newToken)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+  const handleLogin = () => {
+    // Cookies are already set by backend, just fetch user info
+    fetchUser()
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    setToken(null)
-    setUser(null)
-    delete axios.defaults.headers.common['Authorization']
+  const handleLogout = async () => {
+    try {
+      await axios.post('/auth/logout')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    } finally {
+      setIsAuthenticated(false)
+      setUser(null)
+    }
   }
 
   if (loading) {
@@ -73,7 +74,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback onLogin={handleLogin} />} />
 
-        {!token ? (
+        {!isAuthenticated ? (
           <Route path="*" element={<Navigate to="/login" replace />} />
         ) : (
           <Route element={<Layout user={user} onLogout={handleLogout} />}>

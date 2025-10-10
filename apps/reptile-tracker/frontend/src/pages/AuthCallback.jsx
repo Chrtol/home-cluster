@@ -1,19 +1,15 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function AuthCallback({ onLogin }) {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    if (token) {
-      onLogin(token)
-      navigate('/')
-    } else {
-      navigate('/login')
-    }
-  }, [searchParams, onLogin, navigate])
+    // Backend has already set HTTP-only cookies and redirected
+    // Just notify parent to fetch user info and redirect to home
+    onLogin()
+    navigate('/')
+  }, [onLogin, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center">
