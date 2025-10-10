@@ -37,8 +37,8 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: latest
-              pullPolicy: Always
+              tag: main-d331e0ce
+              pullPolicy: IfNotPresent
             env:
               DATABASE_URL:
                 valueFrom:
