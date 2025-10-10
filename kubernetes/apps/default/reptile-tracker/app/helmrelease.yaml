@@ -19,7 +19,7 @@ spec:
       retries: 3
   values:
     controllers:
-      backend:
+      reptile-tracker:
         annotations:
           reloader.stakater.com/auto: "true"
 
@@ -34,7 +34,7 @@ spec:
                   name: reptile-tracker-database-secret
 
         containers:
-          app:
+          backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
               tag: latest
@@ -107,11 +107,7 @@ spec:
               limits:
                 memory: 512Mi
 
-      frontend:
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
+          frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
               tag: latest
@@ -144,15 +140,21 @@ spec:
 
     service:
       backend:
-        controller: backend
+        controller: reptile-tracker
         ports:
           http:
             port: 8000
+            targetPort: 8000
+            protocol: HTTP
+            appProtocol: http
       frontend:
-        controller: frontend
+        controller: reptile-tracker
         ports:
           http:
             port: 80
+            targetPort: 80
+            protocol: HTTP
+            appProtocol: http
 
     ingress:
       main:
