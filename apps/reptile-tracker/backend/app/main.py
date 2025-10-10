@@ -45,9 +45,14 @@ app.add_middleware(
 # Add trusted host middleware for additional security
 # This prevents Host header attacks
 if settings.environment == "production":
+    # Extract domain from frontend_url (e.g., https://reptile-tracker.domain.com -> reptile-tracker.domain.com)
+    from urllib.parse import urlparse
+    parsed_url = urlparse(settings.frontend_url)
+    allowed_host = parsed_url.netloc if parsed_url.netloc else "localhost"
+
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=["reptile-tracker.*", "localhost"]
+        allowed_hosts=[allowed_host, "localhost"]
     )
 
 # Include routers
