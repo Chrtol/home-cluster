@@ -69,7 +69,7 @@ async def auth_callback(
 
         # Redirect to frontend auth callback to complete login flow
         # Cookies are set in the response headers
-        return RedirectResponse(url=f"{settings.frontend_url}/auth/callback", status_code=302)
+        return RedirectResponse(url=f"{settings.frontend_url}/", status_code=302)
 
     except HTTPException:
         raise
