@@ -3,7 +3,7 @@ uvicorn[standard]==0.32.0
 sqlalchemy==2.0.36
 asyncpg==0.30.0
 alembic==1.14.0
-pydantic==2.9.2
+pydantic[email]==2.9.2
 pydantic-settings==2.6.1
 email-validator==2.2.0
 PyJWT[crypto]==2.10.1
@@ -14,4 +14,3 @@ itsdangerous==2.2.0
 python-dateutil==2.9.0
 slowapi==0.1.9
 ipaddress==1.0.23
-pydantic[email]==2.12.0
