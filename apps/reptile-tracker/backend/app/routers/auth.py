@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, Cookie
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Cookie
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import (
@@ -15,12 +15,7 @@ from app.config import settings
 from app.database import get_db
 from app.schemas import User
 from app.rate_limit import limiter
-
-# Security fixes:
-# - H-1: Using secure cookies instead of URL query parameters
-# - M-2: Rate limiting on authentication endpoints
-# - M-4: Better exception handling
-# - I-3: Security logging
+import jwt
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +23,7 @@ router = APIRouter()
 
 
 @router.get("/login")
-@limiter.limit("10/minute")  # M-2 Fix: Rate limit login attempts
+@limiter.limit("10/minute")
 async def login(request: Request):
     """Initiate OIDC login flow"""
     logger.info("OIDC login initiated")
@@ -37,15 +32,14 @@ async def login(request: Request):
 
 
 @router.get("/callback")
-@limiter.limit("20/minute")  # M-2 Fix: Rate limit callbacks
+@limiter.limit("20/minute")
 async def auth_callback(
     request: Request,
-    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Handle OIDC callback
-    H-1 Fix: Sets secure HTTP-only cookies instead of passing token in URL
+    Sets secure HTTP-only cookies instead of passing token in URL
     """
     try:
         token = await oauth.authentik.authorize_access_token(request)
@@ -62,19 +56,24 @@ async def auth_callback(
         access_token = create_access_token(data={"sub": user.oidc_sub})
         refresh_token = create_refresh_token(data={"sub": user.oidc_sub})
 
-        # H-1 Fix: Set secure cookies instead of URL parameter
+        # Create the response object first
+        response = RedirectResponse(url=f"{settings.frontend_url}/", status_code=302)
+
+        # Set cookies on the response object that will actually be returned
         set_auth_cookies(response, access_token, refresh_token)
 
         logger.info(f"User {user.email} authenticated successfully via OIDC")
 
-        # Redirect to frontend auth callback to complete login flow
-        # Cookies are set in the response headers
-        return RedirectResponse(url=f"{settings.frontend_url}/", status_code=302)
+        return response
 
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Authentication failed: {str(e)}")
+        # Provide a more specific error for the CSRF case
+        if "mismatching_state" in str(e):
+             raise HTTPException(
+                status_code=400,
+                detail="CSRF Warning: State mismatch. Please try logging in again."
+             )
         raise HTTPException(
             status_code=400,
             detail="Authentication failed. Please try again."
@@ -82,19 +81,15 @@ async def auth_callback(
 
 
 @router.post("/refresh")
-@limiter.limit("30/minute")  # M-2 Fix: Rate limit token refresh
+@limiter.limit("30/minute")
 async def refresh_token(
     request: Request,
-    response: Response,
     refresh_token: str = Cookie(None),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Refresh access token using refresh token
-    L-2 Fix: Enables short-lived access tokens with refresh mechanism
     """
-    import jwt
-
     if not refresh_token:
         logger.warning("Token refresh failed: No refresh token provided")
         raise HTTPException(
@@ -117,9 +112,9 @@ async def refresh_token(
 
         # Verify user exists
         from sqlalchemy import select
-        from app.models import User
+        from app.models import User as UserModel
 
-        result = await db.execute(select(User).where(User.oidc_sub == oidc_sub))
+        result = await db.execute(select(UserModel).where(UserModel.oidc_sub == oidc_sub))
         user = result.scalar_one_or_none()
 
         if not user:
@@ -133,12 +128,15 @@ async def refresh_token(
         new_access_token = create_access_token(data={"sub": user.oidc_sub})
         new_refresh_token = create_refresh_token(data={"sub": user.oidc_sub})
 
+        # Create a new response to set cookies
+        response = RedirectResponse(url="/", status_code=200)
+
         # Set new cookies
         set_auth_cookies(response, new_access_token, new_refresh_token)
 
         logger.info(f"Token refreshed successfully for user: {user.email}")
 
-        return {"message": "Token refreshed successfully"}
+        return response
 
     except jwt.ExpiredSignatureError:
         logger.info("Token refresh failed: Refresh token expired")
@@ -161,10 +159,9 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(response: RedirectResponse):
     """
     Logout - clear authentication cookies
-    H-1 Fix: Clear secure cookies
     """
     clear_auth_cookies(response)
     logger.info("User logged out")
