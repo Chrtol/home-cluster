@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: reptile_tracker
+      POSTGRES_USER: reptile_tracker
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reptile_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      # H-2 Fix: Removed default secrets - must be provided via .env file or export
+      DATABASE_URL: postgresql+asyncpg://reptile_tracker:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/reptile_tracker
+      SECRET_KEY: ${SECRET_KEY:?ERROR - SECRET_KEY must be set in environment}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-reptile-tracker}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?ERROR - OIDC_CLIENT_SECRET must be set}
+      OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-http://localhost:8000/auth/.well-known/openid-configuration}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      WEBHOOK_URL: ${WEBHOOK_URL:-}
+      # Security settings for development
+      ENVIRONMENT: development
+      SQL_ECHO: "true"
+      COOKIE_SECURE: "false"  # Set to true in production with HTTPS
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8000
+
+volumes:
+  postgres_data:

@@ -1,0 +1,166 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reptile-tracker
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.5.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      backend:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/chrtol/reptile-tracker-backend
+              tag: latest
+              pullPolicy: Always
+            env:
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: database-url
+              SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: secret-key
+              OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: oidc-client-id
+              OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: oidc-client-secret
+              OIDC_DISCOVERY_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: oidc-discovery-url
+              OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
+              FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
+              WEBHOOK_URL: ""
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8000
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8000
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+
+      frontend:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/chrtol/reptile-tracker-frontend
+              tag: latest
+              pullPolicy: Always
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 80
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 80
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                memory: 128Mi
+
+    service:
+      backend:
+        controller: backend
+        ports:
+          http:
+            port: 8000
+      frontend:
+        controller: frontend
+        ports:
+          http:
+            port: 80
+
+    ingress:
+      main:
+        className: internal
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-production
+          hajimari.io/enable: "true"
+          hajimari.io/icon: mdi:snake
+          hajimari.io/group: apps
+        hosts:
+          - host: "reptile-tracker.${SECRET_DOMAIN}"
+            paths:
+              - path: /api
+                pathType: Prefix
+                service:
+                  identifier: backend
+                  port: http
+              - path: /auth
+                pathType: Prefix
+                service:
+                  identifier: backend
+                  port: http
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: frontend
+                  port: http
+        tls:
+          - hosts:
+              - "reptile-tracker.${SECRET_DOMAIN}"
+            secretName: reptile-tracker-tls
