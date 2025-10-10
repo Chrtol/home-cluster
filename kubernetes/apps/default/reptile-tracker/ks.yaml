@@ -1,0 +1,42 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app reptile-tracker-database
+  namespace: flux-system
+spec:
+  targetNamespace: database
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  path: ./kubernetes/apps/reptile-tracker/database
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app reptile-tracker-app
+  namespace: flux-system
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: reptile-tracker-database
+  path: ./kubernetes/apps/reptile-tracker/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m

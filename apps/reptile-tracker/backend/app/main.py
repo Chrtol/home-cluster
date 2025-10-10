@@ -1,0 +1,111 @@
+import logging
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi.errors import RateLimitExceeded
+from app.config import settings
+from app.database import init_db
+from app.rate_limit import limiter, rate_limit_exceeded_handler
+from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats
+
+# Security fixes applied:
+# - M-1: CSRF protection via SameSite cookies (configured in auth.py)
+# - M-2: Rate limiting on all endpoints
+# - I-3: Security logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Reptile Tracker API",
+    description="API for tracking reptile feeding schedules, health, and weight",
+    version="2.0.0",  # Incremented for security updates
+)
+
+# M-2 Fix: Add rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+# CORS middleware
+# M-1 Note: CSRF protection is handled via SameSite cookies
+# Since we're using HTTP-only SameSite cookies, traditional CSRF tokens aren't needed
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.frontend_url],
+    allow_credentials=True,  # Required for cookies
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
+# Add trusted host middleware for additional security
+# This prevents Host header attacks
+if settings.environment == "production":
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=["reptile-tracker.*", "localhost"]
+    )
+
+# Include routers
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(reptiles.router, prefix="/api/reptiles", tags=["Reptiles"])
+app.include_router(feedings.router, prefix="/api/feedings", tags=["Feedings"])
+app.include_router(foods.router, prefix="/api/foods", tags=["Foods"])
+app.include_router(supplements.router, prefix="/api/supplements", tags=["Supplements"])
+app.include_router(weight.router, prefix="/api/weight", tags=["Weight Tracking"])
+app.include_router(health.router, prefix="/api/health", tags=["Health Records"])
+app.include_router(stats.router, prefix="/api/stats", tags=["Statistics"])
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and log startup"""
+    logger.info(f"Starting Reptile Tracker API v2.0.0 in {settings.environment} mode")
+
+    # H-2 Fix: Validate secret key on startup
+    if settings.secret_key in ["your-secret-key-here-change-in-production", "dev_secret_key_change_in_production"]:
+        logger.error("SECURITY ERROR: Default secret key detected!")
+        raise ValueError("Default secret key detected. Set SECRET_KEY environment variable.")
+
+    logger.info(f"Security settings: cookie_secure={settings.cookie_secure}, sql_echo={settings.sql_echo}")
+
+    await init_db()
+    logger.info("Database initialized successfully")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Log shutdown"""
+    logger.info("Shutting down Reptile Tracker API")
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "Reptile Tracker API",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "security_updates": [
+            "Secure cookie-based authentication",
+            "Rate limiting enabled",
+            "SSRF protection on webhooks",
+            "Enhanced logging",
+            "Short-lived access tokens"
+        ]
+    }
+
+
+@app.get("/health")
+@limiter.limit("30/minute")  # Rate limit health checks
+async def health_check(request: Request):
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "environment": settings.environment,
+        "version": "2.0.0"
+    }
