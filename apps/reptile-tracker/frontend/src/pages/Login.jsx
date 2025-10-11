@@ -4,14 +4,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
-      <div className="card max-w-md w-full mx-4 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700 max-w-md w-full mx-4 text-center">
         <div className="text-6xl mb-4">🦎</div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Reptile Tracker</h1>
-        <p className="text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Reptile Tracker</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
           Track feeding schedules, weight, and health for your reptiles
         </p>
-        <button onClick={handleLogin} className="btn-primary w-full text-lg py-3">
+        <button onClick={handleLogin} className="w-full text-lg py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
           Login with Authentik
         </button>
       </div>
