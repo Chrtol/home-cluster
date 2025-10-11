@@ -11,7 +11,7 @@ from app.schemas import Supplement as SupplementSchema, SupplementCreate
 router = APIRouter()
 
 
-@router.get("/", response_model=List[SupplementSchema])
+@router.get("", response_model=List[SupplementSchema])
 async def list_supplements(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -23,7 +23,7 @@ async def list_supplements(
     return supplements
 
 
-@router.post("/", response_model=SupplementSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=SupplementSchema, status_code=status.HTTP_201_CREATED)
 async def create_supplement(
     supplement: SupplementCreate,
     current_user: User = Depends(get_current_user),

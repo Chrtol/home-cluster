@@ -40,6 +40,7 @@ app = FastAPI(
     title="Reptile Tracker API",
     description="API for tracking reptile feeding schedules, health, and weight",
     version="2.0.0",  # Incremented for security updates
+    redirect_slashes=False,  # Disable automatic slash redirects to avoid 307s that break auth cookies
 )
 
 # M-2 Fix: Add rate limiting

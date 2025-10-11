@@ -18,7 +18,7 @@ from app.schemas import (
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ReptileWithAccess])
+@router.get("", response_model=List[ReptileWithAccess])
 async def list_reptiles(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -35,7 +35,7 @@ async def list_reptiles(
     ]
 
 
-@router.post("/", response_model=ReptileSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ReptileSchema, status_code=status.HTTP_201_CREATED)
 async def create_reptile(
     reptile: ReptileCreate,
     current_user: User = Depends(get_current_user),

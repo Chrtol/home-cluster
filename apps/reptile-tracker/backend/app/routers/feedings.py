@@ -24,7 +24,7 @@ from app.notifications import notify_feeding_logged
 router = APIRouter()
 
 
-@router.get("/", response_model=List[FeedingWithUser])
+@router.get("", response_model=List[FeedingWithUser])
 async def list_feedings(
     reptile_id: Optional[int] = Query(None),
     start_date: Optional[datetime] = Query(None),
@@ -73,7 +73,7 @@ async def list_feedings(
     return feedings
 
 
-@router.post("/", response_model=FeedingSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=FeedingSchema, status_code=status.HTTP_201_CREATED)
 async def create_feeding(
     feeding: FeedingCreate,
     current_user: User = Depends(get_current_user),
