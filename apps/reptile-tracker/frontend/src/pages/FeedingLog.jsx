@@ -21,7 +21,8 @@ export default function FeedingLog() {
   const [selectedSupplements, setSelectedSupplements] = useState([]);
 
   // Log-type specific state
-  const [insectCounts, setInsectCounts] = useState({});
+  const [selectedInsectFood, setSelectedInsectFood] = useState('');
+  const [insectQuantity, setInsectQuantity] = useState(1);
   const [selectedSaladComponents, setSelectedSaladComponents] = useState([]);
   const [selectedPreparedFood, setSelectedPreparedFood] = useState('');
   const [preparedFoodQuantity, setPreparedFoodQuantity] = useState(1);
@@ -44,6 +45,11 @@ export default function FeedingLog() {
         const initialReptileId = id || (reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '');
         setSelectedReptile(initialReptileId);
 
+        const insectFoods = foodsRes.data.filter(f => f.category === 'insect');
+        if (insectFoods.length > 0) {
+          setSelectedInsectFood(insectFoods[0].id);
+        }
+
         const preparedFoods = foodsRes.data.filter(f => f.category === 'prepared' && f.name !== 'Salad');
         if (preparedFoods.length > 0) {
           setSelectedPreparedFood(preparedFoods[0].id);
@@ -63,8 +69,8 @@ export default function FeedingLog() {
   const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
   const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
 
-  const handleInsectCountChange = (foodId, delta) => {
-    setInsectCounts(prev => ({ ...prev, [foodId]: Math.max(0, (prev[foodId] || 0) + delta) }));
+  const handleInsectQuantityChange = (delta) => {
+    setInsectQuantity(prev => Math.max(1, prev + delta));
   };
 
   const handleSaladToggle = (foodId) => {
@@ -96,13 +102,11 @@ export default function FeedingLog() {
     };
 
     if (logType === 'insect') {
-        payload.foods = Object.entries(insectCounts)
-            .filter(([, quantity]) => quantity > 0)
-            .map(([food_id, quantity]) => ({ food_id: parseInt(food_id), quantity }));
-        if (payload.foods.length === 0) {
-            setError("Please add at least one insect.");
+        if (!selectedInsectFood) {
+            setError("Please select an insect type.");
             return;
         }
+        payload.foods = [{ food_id: parseInt(selectedInsectFood), quantity: insectQuantity }];
     } else if (logType === 'salad') {
         const saladFood = foods.find(f => f.name === 'Salad');
         if (!saladFood) {
@@ -129,10 +133,11 @@ export default function FeedingLog() {
         const reptileName = reptiles.find(r => r.id === parseInt(selectedReptile))?.name;
         setSuccess(`Feeding successfully logged for ${reptileName}!`);
         // Reset form
-        setInsectCounts({});
+        setInsectQuantity(1);
         setSelectedSaladComponents([]);
         setSelectedSupplements([]);
         setNotes('');
+        setPreparedFoodQuantity(1);
 
         setTimeout(() => navigate(`/reptiles/${selectedReptile}`), 1500);
     } catch (err) {
@@ -174,16 +179,43 @@ export default function FeedingLog() {
 
             {logType === 'insect' && (
                 <div className="space-y-4">
-                    {insectFoods.map(food => (
-                        <div key={food.id} className="flex items-center justify-between">
-                            <span className="font-medium">{food.name}</span>
-                            <div className="flex items-center gap-2">
-                                <button type="button" onClick={() => handleInsectCountChange(food.id, -1)} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">-</button>
-                                <input type="number" value={insectCounts[food.id] || 0} onChange={e => setInsectCounts(p => ({...p, [food.id]: parseInt(e.target.value) || 0}))} className="input text-center w-16" />
-                                <button type="button" onClick={() => handleInsectCountChange(food.id, 1)} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">+</button>
-                            </div>
+                    <div>
+                        <label className="block font-medium mb-2">Insect Type</label>
+                        <select
+                            value={selectedInsectFood}
+                            onChange={(e) => setSelectedInsectFood(e.target.value)}
+                            className="input w-full"
+                        >
+                            {insectFoods.map(food => (
+                                <option key={food.id} value={food.id}>{food.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block font-medium mb-2">Quantity</label>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => handleInsectQuantityChange(-1)}
+                                className="counter-button w-12 h-12 bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                            >
+                                -
+                            </button>
+                            <input
+                                type="number"
+                                value={insectQuantity}
+                                onChange={e => setInsectQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="input text-center w-20 text-lg font-semibold"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handleInsectQuantityChange(1)}
+                                className="counter-button w-12 h-12 bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                            >
+                                +
+                            </button>
                         </div>
-                    ))}
+                    </div>
                 </div>
             )}
 
