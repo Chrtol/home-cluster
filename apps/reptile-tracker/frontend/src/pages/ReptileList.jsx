@@ -24,7 +24,7 @@ export default function ReptileList() {
   useEffect(() => {
     const fetchReptiles = async () => {
       try {
-        const response = await axios.get('/api/reptiles');
+        const response = await axios.get('/api/reptiles/');
         setReptiles(response.data);
       } catch (error) {
         console.error('Failed to fetch reptiles:', error);

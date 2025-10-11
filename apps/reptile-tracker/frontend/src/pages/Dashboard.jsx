@@ -13,8 +13,8 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const [feedingsRes, reptilesRes] = await Promise.all([
-          axios.get('/api/feedings?limit=5'),
-          axios.get('/api/reptiles')
+          axios.get('/api/feedings/?limit=5'),
+          axios.get('/api/reptiles/')
         ]);
         setRecentFeedings(feedingsRes.data);
         setReptiles(reptilesRes.data);
