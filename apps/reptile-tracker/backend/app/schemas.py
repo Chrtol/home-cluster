@@ -148,6 +148,7 @@ class Feeding(BaseModel):
 
 class FeedingWithUser(Feeding):
     user: Optional[User] = None
+    reptile: Optional["Reptile"] = None
 
 
 # Weight log schemas

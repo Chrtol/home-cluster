@@ -9,6 +9,8 @@ export default function ReptileForm() {
 
     const [name, setName] = useState('');
     const [species, setSpecies] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [notes, setNotes] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -17,6 +19,8 @@ export default function ReptileForm() {
                 .then(res => {
                     setName(res.data.name);
                     setSpecies(res.data.species);
+                    setDateOfBirth(res.data.date_of_birth ? res.data.date_of_birth.split('T')[0] : '');
+                    setNotes(res.data.notes || '');
                 })
                 .catch(err => {
                     console.error("Failed to fetch reptile for editing:", err);
@@ -27,7 +31,12 @@ export default function ReptileForm() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const payload = { name, species };
+        const payload = {
+            name,
+            species,
+            date_of_birth: dateOfBirth || null,
+            notes: notes || null
+        };
 
         try {
             if (isEditing) {
@@ -67,6 +76,27 @@ export default function ReptileForm() {
                         onChange={(e) => setSpecies(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date of Birth (optional)</label>
+                    <input
+                        id="dateOfBirth"
+                        type="date"
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="notes" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Notes (optional)</label>
+                    <textarea
+                        id="notes"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        rows="4"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Any additional information about your reptile..."
                     />
                 </div>
                 <button type="submit" className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
