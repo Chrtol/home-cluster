@@ -238,23 +238,29 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `GET /api/stats/weekly-summary` - Weekly feeding summary
 - `GET /api/stats/reptile/{id}` - Reptile statistics
 
-## Frontend Components (To Be Implemented)
+## Frontend Status
 
-### Key Components
-1. **Dashboard**: Overview of all reptiles and recent feedings
-2. **ReptileList**: Grid/list view of all reptiles
-3. **ReptileDetail**: Detailed view with tabs for feedings, weight, health
-4. **FeedingForm**: Quick feeding log with +/- buttons
-5. **SaladPicker**: Bring-app style component selector
-6. **WeightChart**: Line chart showing weight trends
-7. **Calendar**: Calendar view of feeding schedule
-8. **Statistics**: Daily/weekly reports and analytics
+### ✅ Implemented Components
+1. **Dashboard**: Overview with recent feedings and reptile list
+2. **ReptileList**: Grid view with edit/delete functionality
+3. **ReptileDetail**: Tabbed view (feedings, weight, health) with WeightChart
+4. **ReptileForm**: Create/edit forms with date_of_birth and notes
+5. **FeedingLog**: Complete feeding interface with +/- counter and salad picker
+6. **Layout**: Modern sidebar navigation with dark mode toggle
+7. **WeightChart**: Line chart using Recharts for weight trends
+8. **Dark Mode**: Full support with localStorage persistence
+
+### ❌ To Be Implemented
+1. **Calendar**: Calendar view of feeding schedule (using react-calendar)
+2. **Statistics**: Dedicated analytics and reports page
+3. **Notifications**: Webhook settings and configuration
+4. **PWA**: Service worker and offline support
 
 ### Mobile-First Design
-- Responsive layout using Tailwind CSS
-- Touch-friendly buttons (large tap targets)
-- Optimized for one-handed use during feeding
-- Progressive Web App (PWA) capabilities
+- ✅ Responsive layout using Tailwind CSS
+- ✅ Touch-friendly buttons (large tap targets)
+- ✅ Optimized for one-handed use during feeding
+- ❌ Progressive Web App (PWA) capabilities (planned)
 
 ## Webhook Notifications
 
