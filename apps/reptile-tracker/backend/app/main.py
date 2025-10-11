@@ -5,9 +5,10 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from slowapi.errors import RateLimitExceeded
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, async_session_maker
 from app.rate_limit import limiter, rate_limit_exceeded_handler
 from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats
+from app.seed_data import seed_database
 
 # Security fixes applied:
 # - M-1: CSRF protection via SameSite cookies (configured in auth.py)
@@ -97,6 +98,11 @@ async def startup_event():
 
     await init_db()
     logger.info("Database initialized successfully")
+
+    # Seed default foods and supplements on startup
+    async with async_session_maker() as session:
+        await seed_database(session)
+    logger.info("Default foods and supplements seeded")
 
 
 @app.on_event("shutdown")
