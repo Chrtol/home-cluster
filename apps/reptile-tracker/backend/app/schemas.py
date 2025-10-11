@@ -64,6 +64,7 @@ class Reptile(ReptileBase):
 
 class ReptileWithAccess(Reptile):
     access_level: AccessLevel
+    last_feeding: Optional[datetime] = None
 
 
 # Food schemas

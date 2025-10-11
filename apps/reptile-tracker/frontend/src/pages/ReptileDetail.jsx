@@ -132,6 +132,7 @@ export default function ReptileDetail() {
         <div className="flex justify-between items-center mb-2">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
             <div className="flex gap-2">
+                <Link to="/health-log" className="btn-primary">Log Health/Weight</Link>
                 <Link to={`/reptiles/${id}/edit`} className="btn-secondary">Edit</Link>
                 <button onClick={handleDelete} className="btn-danger">Delete</button>
             </div>
