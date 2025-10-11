@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/axios';
 
 export default function FeedingLog() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
   const [reptiles, setReptiles] = useState([]);
   const [foods, setFoods] = useState([]);
   const [supplements, setSupplements] = useState([]);
@@ -25,9 +21,9 @@ export default function FeedingLog() {
     const fetchData = async () => {
       try {
         const [reptilesRes, foodsRes, supplementsRes] = await Promise.all([
-          axios.get('/api/reptiles'),
-          axios.get('/api/foods'),
-          axios.get('/api/supplements'),
+          apiClient.get('/api/reptiles'),
+          apiClient.get('/api/foods'),
+          apiClient.get('/api/supplements'),
         ]);
         setReptiles(reptilesRes.data);
         setFoods(foodsRes.data);
@@ -68,18 +64,19 @@ export default function FeedingLog() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = {
-      reptile_id: parseInt(selectedReptile),
-      is_salad: isSalad,
-      foods: Object.entries(insectCounts).map(([food_id, quantity]) => ({ food_id: parseInt(food_id), quantity })),
-      salad_components: selectedSalad,
-      supplements: selectedSupplements,
-      notes,
-      fed_at: new Date(fedAt).toISOString(),
-    };
-
+    if (!selectedReptile || !selectedFood) {
+      alert('Please select a reptile and a food item.');
+      return;
+    }
     try {
-      await axios.post('/api/feedings', payload);
+      await apiClient.post('/api/feedings', {
+        reptile_id: selectedReptile,
+        food_id: selectedFood,
+        quantity,
+        supplements: selectedSupplements,
+        notes,
+        fed_at: new Date(fedAt).toISOString(),
+      });
       navigate(`/reptiles/${selectedReptile}`);
     } catch (error) {
       console.error("Failed to log feeding:", error);

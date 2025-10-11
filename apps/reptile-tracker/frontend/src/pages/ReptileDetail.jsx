@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -51,10 +51,10 @@ export default function ReptileDetail() {
     const fetchData = async () => {
       try {
         const [reptileRes, feedingsRes, weightRes, healthRes] = await Promise.all([
-          axios.get(`/api/reptiles/${id}`),
-          axios.get(`/api/feedings/reptile/${id}`),
-          axios.get(`/api/weight/reptile/${id}`),
-          axios.get(`/api/health/reptile/${id}`)
+          apiClient.get(`/api/reptiles/${id}`),
+          apiClient.get(`/api/feedings/reptile/${id}`),
+          apiClient.get(`/api/weight/reptile/${id}`),
+          apiClient.get(`/api/health/reptile/${id}`)
         ]);
         setReptile(reptileRes.data);
         setFeedings(feedingsRes.data);
