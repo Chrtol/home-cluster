@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/axios';
 import { Plus } from 'lucide-react';
 
 export default function ReptileList() {
@@ -10,7 +10,7 @@ export default function ReptileList() {
   useEffect(() => {
     const fetchReptiles = async () => {
       try {
-        const response = await axios.get('/api/reptiles');
+        const response = await apiClient.get('/api/reptiles');
         setReptiles(response.data);
       } catch (error) {
         console.error('Failed to fetch reptiles:', error);
@@ -24,7 +24,7 @@ export default function ReptileList() {
   const handleDelete = (id, e) => {
     e.preventDefault(); // Prevent navigation
     if (window.confirm('Are you sure you want to delete this reptile?')) {
-      axios.delete(`/api/reptiles/${id}`)
+      apiClient.delete(`/api/reptiles/${id}`)
         .then(() => {
           setReptiles(reptiles.filter(reptile => reptile.id !== id));
         })
