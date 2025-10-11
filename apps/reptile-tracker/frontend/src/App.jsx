@@ -91,6 +91,7 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
+            <Route path="/health-log/:reptileId" element={<HealthLog />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         )}
