@@ -70,7 +70,11 @@ export default function Dashboard() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-semibold">
-                          Fed <Link to={`/reptiles/${feeding.reptile.id}`} className="text-primary-600 hover:underline">{feeding.reptile.name}</Link>
+                          {feeding.reptile ? (
+                            <>Fed <Link to={`/reptiles/${feeding.reptile.id}`} className="text-primary-600 hover:underline">{feeding.reptile.name}</Link></>
+                          ) : (
+                            <span className="text-gray-500">Fed (reptile deleted)</span>
+                          )}
                         </p>
                         <p className="text-sm text-gray-600">
                           {format(new Date(feeding.fed_at), 'PPP p')} by {feeding.user?.name || 'Unknown'}
