@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import apiClient from '/src/api/axios';
+import axios from 'axios';
 
 export default function FeedingLog() {
   const [reptiles, setReptiles] = useState([]);
@@ -21,9 +21,9 @@ export default function FeedingLog() {
     const fetchData = async () => {
       try {
         const [reptilesRes, foodsRes, supplementsRes] = await Promise.all([
-          apiClient.get('/api/reptiles'),
-          apiClient.get('/api/foods'),
-          apiClient.get('/api/supplements'),
+          axios.get('/api/reptiles'),
+          axios.get('/api/foods'),
+          axios.get('/api/supplements'),
         ]);
         setReptiles(reptilesRes.data);
         setFoods(foodsRes.data);
@@ -69,7 +69,7 @@ export default function FeedingLog() {
       return;
     }
     try {
-      await apiClient.post('/api/feedings', {
+      await axios.post('/api/feedings', {
         reptile_id: selectedReptile,
         food_id: selectedFood,
         quantity,
