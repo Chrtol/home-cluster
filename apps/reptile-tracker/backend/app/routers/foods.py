@@ -117,10 +117,11 @@ async def update_food(
 @router.delete("/{food_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_food(
     food_id: int,
+    force: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a food"""
+    """Delete a food. Use force=true to delete default foods."""
     result = await db.execute(select(Food).where(Food.id == food_id))
     food = result.scalar_one_or_none()
 
@@ -130,11 +131,11 @@ async def delete_food(
             detail="Food not found",
         )
 
-    # Don't allow deleting default foods
-    if food.is_default:
+    # Don't allow deleting default foods unless force=true
+    if food.is_default and not force:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete default foods",
+            detail="Cannot delete default foods without force parameter",
         )
 
     await db.delete(food)

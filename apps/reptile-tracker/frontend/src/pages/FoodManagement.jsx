@@ -62,17 +62,22 @@ export default function FoodManagement() {
   };
 
   const handleDelete = async (food) => {
+    let confirmMessage = `Are you sure you want to delete "${food.name}"?`;
+
     if (food.is_default) {
-      setError('Cannot delete default foods');
-      return;
+      confirmMessage = `"${food.name}" is a default food. Are you sure you want to delete it? This action cannot be undone.`;
     }
 
-    if (!confirm(`Are you sure you want to delete "${food.name}"?`)) {
+    if (!confirm(confirmMessage)) {
       return;
     }
 
     try {
-      await axios.delete(`/api/foods/${food.id}`);
+      const url = food.is_default
+        ? `/api/foods/${food.id}?force=true`
+        : `/api/foods/${food.id}`;
+
+      await axios.delete(url);
       setSuccess(`"${food.name}" deleted successfully`);
       fetchFoods();
       setTimeout(() => setSuccess(''), 3000);
@@ -203,7 +208,7 @@ export default function FoodManagement() {
                     <button
                       onClick={() => handleDelete(food)}
                       className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                      disabled={food.is_default}
+                      title={food.is_default ? "Delete default food (requires confirmation)" : "Delete food"}
                     >
                       <Trash2 size={16} />
                     </button>
