@@ -9,7 +9,7 @@ export default function FeedingLog() {
   const [reptiles, setReptiles] = useState([]);
   const [foods, setFoods] = useState([]);
   const [supplements, setSupplements] = useState([]);
-  
+
   const [selectedReptile, setSelectedReptile] = useState('');
   const [selectedFood, setSelectedFood] = useState('');
   const [quantity, setQuantity] = useState(1);
