@@ -44,32 +44,32 @@ export default function ReptileForm() {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6">{isEditing ? 'Edit Reptile' : 'Add New Reptile'}</h1>
-            {error && <p className="text-red-500 bg-red-100 p-3 rounded-lg mb-4">{error}</p>}
-            <form onSubmit={handleSubmit} className="card space-y-4">
+            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">{isEditing ? 'Edit Reptile' : 'Add New Reptile'}</h1>
+            {error && <p className="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
+            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 space-y-4">
                 <div>
-                    <label htmlFor="name" className="block font-medium mb-1">Name</label>
+                    <label htmlFor="name" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Name</label>
                     <input
                         id="name"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="input"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         required
                     />
                 </div>
                 <div>
-                    <label htmlFor="species" className="block font-medium mb-1">Species</label>
+                    <label htmlFor="species" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Species</label>
                     <input
                         id="species"
                         type="text"
                         value={species}
                         onChange={(e) => setSpecies(e.target.value)}
-                        className="input"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         required
                     />
                 </div>
-                <button type="submit" className="btn-primary w-full py-2">
+                <button type="submit" className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
                     {isEditing ? 'Save Changes' : 'Create Reptile'}
                 </button>
             </form>
