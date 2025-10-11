@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Leaf, Bug, Utensils } from 'lucide-react';
+import { getUserTimeFormat } from '../utils/dateFormatting';
 
 export default function FeedingLog() {
   const { id } = useParams();
@@ -21,6 +22,12 @@ export default function FeedingLog() {
   const [notes, setNotes] = useState('');
   const [selectedSupplements, setSelectedSupplements] = useState([]);
 
+  // Time input format state
+  const [timeFormat, setTimeFormat] = useState('24h');
+  const [hours, setHours] = useState(new Date().getHours());
+  const [minutes, setMinutes] = useState(new Date().getMinutes());
+  const [period, setPeriod] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
+
   // Log-type specific state
   const [selectedInsectFood, setSelectedInsectFood] = useState('');
   const [insectQuantity, setInsectQuantity] = useState(1);
@@ -32,6 +39,35 @@ export default function FeedingLog() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    // Load user's time format preference and initialize time
+    const format = getUserTimeFormat();
+    setTimeFormat(format);
+
+    const now = new Date();
+    const currentHour24 = now.getHours();
+    const currentMinutes = now.getMinutes();
+
+    setMinutes(currentMinutes);
+
+    if (format === '12h') {
+      // Convert to 12h format
+      if (currentHour24 === 0) {
+        setHours(12);
+        setPeriod('AM');
+      } else if (currentHour24 < 12) {
+        setHours(currentHour24);
+        setPeriod('AM');
+      } else if (currentHour24 === 12) {
+        setHours(12);
+        setPeriod('PM');
+      } else {
+        setHours(currentHour24 - 12);
+        setPeriod('PM');
+      }
+    } else {
+      setHours(currentHour24);
+    }
+
     const fetchData = async () => {
       try {
         const [reptilesRes, foodsRes, supplementsRes] = await Promise.all([
@@ -69,6 +105,34 @@ export default function FeedingLog() {
   const insectFoods = foods.filter(f => f.category === 'insect');
   const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
   const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
+
+  // Update fedTime whenever hours/minutes/period change
+  useEffect(() => {
+    let hour24 = hours;
+    if (timeFormat === '12h') {
+      if (period === 'PM' && hours !== 12) {
+        hour24 = hours + 12;
+      } else if (period === 'AM' && hours === 12) {
+        hour24 = 0;
+      }
+    }
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    setFedTime(timeString);
+  }, [hours, minutes, period, timeFormat]);
+
+  const handleHoursChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    if (timeFormat === '12h') {
+      setHours(Math.max(1, Math.min(12, numValue)));
+    } else {
+      setHours(Math.max(0, Math.min(23, numValue)));
+    }
+  };
+
+  const handleMinutesChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    setMinutes(Math.max(0, Math.min(59, numValue)));
+  };
 
   const handleInsectQuantityChange = (delta) => {
     setInsectQuantity(prev => Math.max(1, prev + delta));
@@ -280,15 +344,38 @@ export default function FeedingLog() {
                     />
                 </div>
                 <div>
-                    <label htmlFor="fedTime" className="block font-medium mb-1">Time (24h)</label>
-                    <input
-                        type="time"
-                        id="fedTime"
-                        value={fedTime}
-                        onChange={e => setFedTime(e.target.value)}
-                        className="input w-full"
-                        required
-                    />
+                    <label className="block font-medium mb-1">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
+                    <div className="flex gap-2">
+                        <input
+                            type="number"
+                            value={hours}
+                            onChange={e => handleHoursChange(e.target.value)}
+                            className="input w-20 text-center"
+                            min={timeFormat === '12h' ? 1 : 0}
+                            max={timeFormat === '12h' ? 12 : 23}
+                            required
+                        />
+                        <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                        <input
+                            type="number"
+                            value={String(minutes).padStart(2, '0')}
+                            onChange={e => handleMinutesChange(e.target.value)}
+                            className="input w-20 text-center"
+                            min="0"
+                            max="59"
+                            required
+                        />
+                        {timeFormat === '12h' && (
+                            <select
+                                value={period}
+                                onChange={e => setPeriod(e.target.value)}
+                                className="input w-20"
+                            >
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        )}
+                    </div>
                 </div>
             </div>
 
