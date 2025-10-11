@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function FeedingLog() {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [reptiles, setReptiles] = useState([]);
   const [foods, setFoods] = useState([]);
   const [supplements, setSupplements] = useState([]);
