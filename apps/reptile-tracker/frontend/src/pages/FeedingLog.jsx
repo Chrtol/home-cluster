@@ -16,7 +16,8 @@ export default function FeedingLog() {
   // Form state
   const [logType, setLogType] = useState('insect'); // insect, salad, prepared
   const [selectedReptile, setSelectedReptile] = useState('');
-  const [fedAt, setFedAt] = useState(new Date().toISOString().slice(0, 16));
+  const [fedDate, setFedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [fedTime, setFedTime] = useState(new Date().toTimeString().slice(0, 5));
   const [notes, setNotes] = useState('');
   const [selectedSupplements, setSelectedSupplements] = useState([]);
 
@@ -91,9 +92,11 @@ export default function FeedingLog() {
         return;
     }
 
+    const fedAtDateTime = new Date(`${fedDate}T${fedTime}`);
+
     let payload = {
         reptile_id: parseInt(selectedReptile),
-        fed_at: new Date(fedAt).toISOString(),
+        fed_at: fedAtDateTime.toISOString(),
         notes,
         supplements: selectedSupplements,
         foods: [],
@@ -264,9 +267,29 @@ export default function FeedingLog() {
                 </div>
             </div>
 
-            <div>
-                <label htmlFor="fedAt" className="block font-medium mb-1">Date & Time</label>
-                <input type="datetime-local" id="fedAt" value={fedAt} onChange={e => setFedAt(e.target.value)} className="input" required />
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="fedDate" className="block font-medium mb-1">Date</label>
+                    <input
+                        type="date"
+                        id="fedDate"
+                        value={fedDate}
+                        onChange={e => setFedDate(e.target.value)}
+                        className="input w-full"
+                        required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="fedTime" className="block font-medium mb-1">Time (24h)</label>
+                    <input
+                        type="time"
+                        id="fedTime"
+                        value={fedTime}
+                        onChange={e => setFedTime(e.target.value)}
+                        className="input w-full"
+                        required
+                    />
+                </div>
             </div>
 
             <div>
