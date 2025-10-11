@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
 import HealthLog from './pages/HealthLog';
+import FoodManagement from './pages/FoodManagement';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -92,6 +93,7 @@ function App() {
             <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
             <Route path="/health-log/:reptileId" element={<HealthLog />} />
+            <Route path="/foods" element={<FoodManagement />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         )}
