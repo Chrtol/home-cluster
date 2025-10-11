@@ -5,14 +5,14 @@ import axios from 'axios';
 export default function ReptileForm() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const isEditing = id !== 'new';
+    const isEditing = !!id; // This is the corrected logic
 
     const [name, setName] = useState('');
     const [species, setSpecies] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (isEditing && id) {
+        if (isEditing) {
             axios.get(`/api/reptiles/${id}`)
                 .then(res => {
                     setName(res.data.name);
