@@ -1,0 +1,78 @@
+/**
+ * Utility functions for formatting dates and times according to user preferences
+ */
+
+export function getUserTimeFormat() {
+  return localStorage.getItem('timeFormat') || '24h';
+}
+
+export function getUserDateFormat() {
+  return localStorage.getItem('dateFormat') || 'YYYY-MM-DD';
+}
+
+export function getUserTimezone() {
+  return localStorage.getItem('timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+export function formatDate(date, format = null) {
+  const dateFormat = format || getUserDateFormat();
+  const d = new Date(date);
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+
+  switch (dateFormat) {
+    case 'DD/MM/YYYY':
+      return `${day}/${month}/${year}`;
+    case 'MM/DD/YYYY':
+      return `${month}/${day}/${year}`;
+    case 'DD.MM.YYYY':
+      return `${day}.${month}.${year}`;
+    case 'YYYY-MM-DD':
+    default:
+      return `${year}-${month}-${day}`;
+  }
+}
+
+export function formatTime(date, format = null) {
+  const timeFormat = format || getUserTimeFormat();
+  const d = new Date(date);
+
+  const hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+
+  if (timeFormat === '12h') {
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes} ${period}`;
+  } else {
+    return `${String(hours).padStart(2, '0')}:${minutes}`;
+  }
+}
+
+export function formatDateTime(date, options = {}) {
+  const dateFormat = options.dateFormat || getUserDateFormat();
+  const timeFormat = options.timeFormat || getUserTimeFormat();
+
+  const formattedDate = formatDate(date, dateFormat);
+  const formattedTime = formatTime(date, timeFormat);
+
+  return `${formattedDate} ${formattedTime}`;
+}
+
+export function formatRelativeTime(date) {
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+
+  return formatDate(date);
+}
