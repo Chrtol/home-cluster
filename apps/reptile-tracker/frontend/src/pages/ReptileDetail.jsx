@@ -52,7 +52,7 @@ export default function ReptileDetail() {
       try {
         const [reptileRes, feedingsRes, weightRes, healthRes] = await Promise.all([
           axios.get(`/api/reptiles/${id}`),
-          axios.get(`/api/feedings?reptile_id=${id}`),
+          axios.get(`/api/feedings/reptile/${id}`),
           axios.get(`/api/weight/reptile/${id}`),
           axios.get(`/api/health/reptile/${id}`)
         ]);
