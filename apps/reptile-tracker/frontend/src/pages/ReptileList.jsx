@@ -1,21 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { PlusCircle } from 'lucide-react';
-
-const ReptileCard = ({ reptile }) => (
-  <Link to={`/reptiles/${reptile.id}`} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow">
-    <div className="flex flex-col h-full">
-      <div className="flex-grow">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{reptile.name}</h3>
-        <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
-      </div>
-      <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-        <p>Access: <span className="font-medium capitalize">{reptile.access_level}</span></p>
-      </div>
-    </div>
-  </Link>
-);
+import axios from 'axios';
+import { Plus } from 'lucide-react';
 
 export default function ReptileList() {
   const [reptiles, setReptiles] = useState([]);
@@ -35,6 +21,19 @@ export default function ReptileList() {
     fetchReptiles();
   }, []);
 
+  const handleDelete = (id, e) => {
+    e.preventDefault(); // Prevent navigation
+    if (window.confirm('Are you sure you want to delete this reptile?')) {
+      axios.delete(`/api/reptiles/${id}`)
+        .then(() => {
+          setReptiles(reptiles.filter(reptile => reptile.id !== id));
+        })
+        .catch(error => {
+          console.error('Error deleting reptile:', error);
+        });
+    }
+  };
+
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptiles...</div>;
   }
@@ -42,20 +41,30 @@ export default function ReptileList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Reptiles</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Reptiles</h1>
         <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
-          <PlusCircle size={20} /> Add Reptile
+          <Plus size={20} />
+          Add Reptile
         </Link>
       </div>
-      {reptiles.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reptiles.map(reptile => (
-            <ReptileCard key={reptile.id} reptile={reptile} />
-          ))}
+
+      {reptiles.length === 0 ? (
+        <div className="text-center py-12 card">
+          <h2 className="text-xl font-medium text-gray-900 dark:text-white">No reptiles found</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Get started by adding your first reptile.</p>
         </div>
       ) : (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">You haven't added any reptiles yet.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reptiles.map(reptile => (
+            <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="card group relative hover:shadow-lg hover:border-primary-500/50 transition-all">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{reptile.name}</h2>
+              <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
+              <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Link to={`/reptiles/${reptile.id}/edit`} className="btn-secondary p-2 h-8 w-8" onClick={(e) => e.stopPropagation()}>Edit</Link>
+                <button onClick={(e) => handleDelete(reptile.id, e)} className="btn-danger p-2 h-8 w-8">Del</button>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>
