@@ -18,6 +18,26 @@ from app.schemas import (
 router = APIRouter()
 
 
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select, insert, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+from app.auth import get_current_user
+from app.database import get_db
+from app.models import User, Reptile, AccessLevel, reptile_access, Feeding
+from app.permissions import check_reptile_access, get_user_reptiles, is_owner
+from app.schemas import (
+    Reptile as ReptileSchema,
+    ReptileCreate,
+    ReptileUpdate,
+    ReptileWithAccess,
+    GrantAccess,
+)
+
+router = APIRouter()
+
+
 @router.get("", response_model=List[ReptileWithAccess])
 async def list_reptiles(
     current_user: User = Depends(get_current_user),
@@ -26,13 +46,27 @@ async def list_reptiles(
     """List all reptiles the current user has access to"""
     reptiles_with_access = await get_user_reptiles(db, current_user)
 
-    return [
-        ReptileWithAccess(
-            **item["reptile"].__dict__,
-            access_level=item["access_level"],
+    response_data = []
+    for item in reptiles_with_access:
+        reptile = item["reptile"]
+        # Get last feeding for this reptile
+        last_feeding_result = await db.execute(
+            select(Feeding.fed_at)
+            .where(Feeding.reptile_id == reptile.id)
+            .order_by(Feeding.fed_at.desc())
+            .limit(1)
         )
-        for item in reptiles_with_access
-    ]
+        last_feeding = last_feeding_result.scalar_one_or_none()
+
+        response_data.append(
+            ReptileWithAccess(
+                **reptile.__dict__,
+                access_level=item["access_level"],
+                last_feeding=last_feeding,
+            )
+        )
+
+    return response_data
 
 
 @router.post("", response_model=ReptileSchema, status_code=status.HTTP_201_CREATED)

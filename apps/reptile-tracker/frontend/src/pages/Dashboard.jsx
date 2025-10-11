@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { PlusCircle } from 'lucide-react';
 
 export default function Dashboard() {
@@ -44,7 +44,12 @@ export default function Dashboard() {
                 reptiles.map(reptile => (
                   <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-900 dark:text-white">{reptile.name}</span>
+                        <div>
+                            <span className="font-semibold text-gray-900 dark:text-white">{reptile.name}</span>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {reptile.last_feeding ? `Last fed: ${formatDistanceToNow(new Date(reptile.last_feeding), { addSuffix: true })}` : 'Never fed'}
+                            </p>
+                        </div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">{reptile.species}</span>
                     </div>
                   </Link>
