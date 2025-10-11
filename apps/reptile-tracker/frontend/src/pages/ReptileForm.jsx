@@ -13,7 +13,7 @@ export default function ReptileForm() {
 
     useEffect(() => {
         if (isEditing) {
-            axios.get(`/api/reptiles/${id}/`)
+            axios.get(`/api/reptiles/${id}`)
                 .then(res => {
                     setName(res.data.name);
                     setSpecies(res.data.species);
@@ -31,9 +31,9 @@ export default function ReptileForm() {
 
         try {
             if (isEditing) {
-                await axios.patch(`/api/reptiles/${id}/`, payload);
+                await axios.patch(`/api/reptiles/${id}`, payload);
             } else {
-                await axios.post('/api/reptiles/', payload);
+                await axios.post('/api/reptiles', payload);
             }
             navigate('/reptiles');
         } catch (err) {
