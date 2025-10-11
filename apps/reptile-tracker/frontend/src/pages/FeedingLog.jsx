@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import apiClient from '../api/axios';
+import apiClient from '/src/api/axios';
 
 export default function FeedingLog() {
   const [reptiles, setReptiles] = useState([]);
