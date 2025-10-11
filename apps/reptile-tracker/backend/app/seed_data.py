@@ -11,6 +11,15 @@ async def seed_foods(db: AsyncSession):
     """Seed default food types with nutritional data"""
 
     foods = [
+        # New "Salad" entry
+        Food(
+            name="Salad",
+            category=FoodCategory.PREPARED,
+            is_default=True,
+            nutritional_data={
+                "note": "A mix of fresh vegetables and fruits.",
+            },
+        ),
         # Insects - Small
         Food(
             name="Crickets (Small)",
