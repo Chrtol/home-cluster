@@ -178,9 +178,9 @@ export default function FeedingLog() {
                         <div key={food.id} className="flex items-center justify-between">
                             <span className="font-medium">{food.name}</span>
                             <div className="flex items-center gap-2">
-                                <button type="button" onClick={() => handleInsectCountChange(food.id, -1)} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">-</button>
+                                <button type="button" onClick={() => handleInsectCountChange(food.id, -1)} className="counter-button bg-gray-200 dark:bg-gray-700">-</button>
                                 <input type="number" value={insectCounts[food.id] || 0} onChange={e => setInsectCounts(p => ({...p, [food.id]: parseInt(e.target.value) || 0}))} className="input text-center w-16" />
-                                <button type="button" onClick={() => handleInsectCountChange(food.id, 1)} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">+</button>
+                                <button type="button" onClick={() => handleInsectCountChange(food.id, 1)} className="counter-button bg-gray-200 dark:bg-gray-700">+</button>
                             </div>
                         </div>
                     ))}
@@ -212,9 +212,9 @@ export default function FeedingLog() {
                     <div>
                         <label htmlFor="prepared-quantity" className="block font-medium mb-1">Quantity</label>
                         <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => setPreparedFoodQuantity(q => Math.max(1, q - 1))} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">-</button>
+                            <button type="button" onClick={() => setPreparedFoodQuantity(q => Math.max(1, q - 1))} className="counter-button bg-gray-200 dark:bg-gray-700">-</button>
                             <input id="prepared-quantity" type="number" value={preparedFoodQuantity} onChange={e => setPreparedFoodQuantity(parseInt(e.target.value) || 1)} className="input text-center w-16" />
-                            <button type="button" onClick={() => setPreparedFoodQuantity(q => q + 1)} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">+</button>
+                            <button type="button" onClick={() => setPreparedFoodQuantity(q => q + 1)} className="counter-button bg-gray-200 dark:bg-gray-700">+</button>
                         </div>
                     </div>
                 </div>
