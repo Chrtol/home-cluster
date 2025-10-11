@@ -128,9 +128,9 @@ async def seed_foods(db: AsyncSession):
                 "note": "High fat content - use as occasional treat",
             },
         ),
-        # Salad components (Norwegian names)
+        # Salad components
         Food(
-            name="Hjertesalat",
+            name="Romaine Lettuce",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
@@ -141,7 +141,7 @@ async def seed_foods(db: AsyncSession):
             },
         ),
         Food(
-            name="Ruccola",
+            name="Arugula",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
@@ -153,7 +153,7 @@ async def seed_foods(db: AsyncSession):
             },
         ),
         Food(
-            name="Grønnkål",
+            name="Kale",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
@@ -165,7 +165,7 @@ async def seed_foods(db: AsyncSession):
             },
         ),
         Food(
-            name="Gulrot",
+            name="Carrot",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
@@ -176,7 +176,7 @@ async def seed_foods(db: AsyncSession):
             },
         ),
         Food(
-            name="Paprika",
+            name="Bell Pepper",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
@@ -188,7 +188,7 @@ async def seed_foods(db: AsyncSession):
             },
         ),
         Food(
-            name="Snackspaprika",
+            name="Mini Bell Pepper",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
@@ -200,7 +200,7 @@ async def seed_foods(db: AsyncSession):
             },
         ),
         Food(
-            name="Gulrottopper",
+            name="Carrot Greens",
             category=FoodCategory.VEGETABLE,
             is_default=True,
             nutritional_data={
