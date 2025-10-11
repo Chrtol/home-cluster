@@ -11,7 +11,7 @@ from app.schemas import Food as FoodSchema, FoodCreate
 router = APIRouter()
 
 
-@router.get("/", response_model=List[FoodSchema])
+@router.get("", response_model=List[FoodSchema])
 async def list_foods(
     category: str | None = None,
     current_user: User = Depends(get_current_user),
@@ -29,7 +29,7 @@ async def list_foods(
     return foods
 
 
-@router.post("/", response_model=FoodSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=FoodSchema, status_code=status.HTTP_201_CREATED)
 async def create_food(
     food: FoodCreate,
     current_user: User = Depends(get_current_user),

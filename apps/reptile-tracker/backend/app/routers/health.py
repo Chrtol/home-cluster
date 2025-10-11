@@ -37,7 +37,7 @@ async def list_health_records(
     return records
 
 
-@router.post("/", response_model=HealthRecordSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=HealthRecordSchema, status_code=status.HTTP_201_CREATED)
 async def create_health_record(
     record: HealthRecordCreate,
     current_user: User = Depends(get_current_user),

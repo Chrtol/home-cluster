@@ -32,7 +32,7 @@ async def list_weight_logs(
     return logs
 
 
-@router.post("/", response_model=WeightLogSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=WeightLogSchema, status_code=status.HTTP_201_CREATED)
 async def create_weight_log(
     log: WeightLogCreate,
     current_user: User = Depends(get_current_user),
