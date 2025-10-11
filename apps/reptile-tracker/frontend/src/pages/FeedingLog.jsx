@@ -18,6 +18,7 @@ const SaladPicker = ({ foods, selected, onToggle }) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {foods.map(food => (
             <button
+                type="button"
                 key={food.id}
                 onClick={() => onToggle(food.id)}
                 className={`card p-4 text-center transition-all ${selected.includes(food.id) ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-gray-50'}`}
@@ -49,9 +50,9 @@ export default function FeedingLog() {
     const fetchData = async () => {
       try {
         const [reptilesRes, foodsRes, supplementsRes] = await Promise.all([
-          axios.get('/api/reptiles'),
-          axios.get('/api/foods'),
-          axios.get('/api/supplements')
+          axios.get('/api/reptiles/'),
+          axios.get('/api/foods/'),
+          axios.get('/api/supplements/')
         ]);
         setReptiles(reptilesRes.data);
         setFoods(foodsRes.data);
@@ -102,7 +103,7 @@ export default function FeedingLog() {
     };
 
     try {
-      await axios.post('/api/feedings', payload);
+      await axios.post('/api/feedings/', payload);
       navigate(`/reptiles/${selectedReptile}`);
     } catch (error) {
       console.error("Failed to log feeding:", error);
