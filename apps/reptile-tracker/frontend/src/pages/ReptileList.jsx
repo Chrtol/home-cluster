@@ -21,19 +21,6 @@ export default function ReptileList() {
     fetchReptiles();
   }, []);
 
-  const handleDelete = (id, e) => {
-    e.preventDefault(); // Prevent navigation
-    if (window.confirm('Are you sure you want to delete this reptile?')) {
-      axios.delete(`/api/reptiles/${id}`)
-        .then(() => {
-          setReptiles(reptiles.filter(reptile => reptile.id !== id));
-        })
-        .catch(error => {
-          console.error('Error deleting reptile:', error);
-        });
-    }
-  };
-
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptiles...</div>;
   }
@@ -59,10 +46,6 @@ export default function ReptileList() {
             <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="card group relative hover:shadow-lg hover:border-primary-500/50 transition-all">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">{reptile.name}</h2>
               <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
-              <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Link to={`/reptiles/${reptile.id}/edit`} className="btn-secondary p-2 h-8 w-8" onClick={(e) => e.stopPropagation()}>Edit</Link>
-                <button onClick={(e) => handleDelete(reptile.id, e)} className="btn-danger p-2 h-8 w-8">Del</button>
-              </div>
             </Link>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -40,6 +40,7 @@ const WeightChart = ({ data }) => {
 
 export default function ReptileDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [reptile, setReptile] = useState(null);
   const [feedings, setFeedings] = useState([]);
   const [weightLogs, setWeightLogs] = useState([]);
@@ -68,6 +69,18 @@ export default function ReptileDetail() {
     };
     fetchData();
   }, [id]);
+
+    const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this reptile?')) {
+      axios.delete(`/api/reptiles/${id}`)
+        .then(() => {
+          navigate('/reptiles');
+        })
+        .catch(error => {
+          console.error('Error deleting reptile:', error);
+        });
+    }
+  };
 
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptile details...</div>;
@@ -116,7 +129,13 @@ export default function ReptileDetail() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">{reptile.name}</h1>
+        <div className="flex justify-between items-center mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
+            <div className="flex gap-2">
+                <Link to={`/reptiles/${id}/edit`} className="btn-secondary">Edit</Link>
+                <button onClick={handleDelete} className="btn-danger">Delete</button>
+            </div>
+        </div>
       <p className="text-gray-600 dark:text-gray-400 mb-6">{reptile.species}</p>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
