@@ -37,7 +37,7 @@ All critical, high, and medium severity security issues have been addressed. Low
 ### H-2: Weak Secret Key in Development ✅ FIXED
 
 **Files Modified**:
-- `docker-compose.yml` - Removed hardcoded secrets
+- `apps/reptile-tracker/docker-compose.yml` - Removed hardcoded secrets
 - `backend/app/main.py` - Added startup validation
 - `.env.example` - Created with instructions
 
