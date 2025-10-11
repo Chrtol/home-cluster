@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatDate, formatDateTime } from '../utils/dateFormatting';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -95,7 +96,7 @@ export default function ReptileDetail() {
       <div className="space-y-4">
         {feedings.map(f => (
           <div key={f.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <p className="text-gray-900 dark:text-white"><strong>{format(new Date(f.fed_at), 'PPP p')}</strong> by {f.user?.name}</p>
+            <p className="text-gray-900 dark:text-white"><strong>{formatDateTime(f.fed_at)}</strong> by {f.user?.name}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">{f.notes || 'No notes'}</p>
           </div>
         ))}
@@ -108,7 +109,7 @@ export default function ReptileDetail() {
             <div className="space-y-4 mt-6">
                 {weightLogs.map(w => (
                     <div key={w.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <p className="text-gray-900 dark:text-white"><strong>{w.weight_grams}g</strong> on {format(new Date(w.measured_at), 'PPP')}</p>
+                        <p className="text-gray-900 dark:text-white"><strong>{w.weight_grams}g</strong> on {formatDate(w.measured_at)}</p>
                         {w.notes && <p className="text-sm text-gray-600 dark:text-gray-400">{w.notes}</p>}
                     </div>
                 ))}
@@ -119,7 +120,7 @@ export default function ReptileDetail() {
       <div className="space-y-4">
         {healthRecords.map(h => (
           <div key={h.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <p className="text-gray-900 dark:text-white"><strong>{h.title}</strong> ({h.record_type}) on {format(new Date(h.date), 'PPP')}</p>
+            <p className="text-gray-900 dark:text-white"><strong>{h.title}</strong> ({h.record_type}) on {formatDate(h.date)}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">{h.description}</p>
           </div>
         ))}
@@ -141,7 +142,7 @@ export default function ReptileDetail() {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Details</h2>
-        <p className="text-gray-900 dark:text-white"><strong>Date of Birth:</strong> {reptile.date_of_birth ? format(new Date(reptile.date_of_birth), 'PPP') : 'N/A'}</p>
+        <p className="text-gray-900 dark:text-white"><strong>Date of Birth:</strong> {reptile.date_of_birth ? formatDate(reptile.date_of_birth) : 'N/A'}</p>
         <p className="text-gray-900 dark:text-white"><strong>Notes:</strong> {reptile.notes || 'None'}</p>
       </div>
 
