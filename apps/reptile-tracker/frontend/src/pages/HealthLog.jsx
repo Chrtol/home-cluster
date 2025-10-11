@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 export default function HealthLog() {
   const navigate = useNavigate();
+  const { reptileId } = useParams(); // Get reptileId from URL
+
   const [reptiles, setReptiles] = useState([]);
   const [logType, setLogType] = useState('weight');
   const [selectedReptile, setSelectedReptile] = useState('');
@@ -22,12 +24,15 @@ export default function HealthLog() {
     axios.get('/api/reptiles')
       .then(res => {
         setReptiles(res.data);
-        if (res.data.length > 0) {
+        // Use the ID from the URL if it exists, otherwise default to the first reptile
+        if (reptileId) {
+          setSelectedReptile(reptileId);
+        } else if (res.data.length > 0) {
           setSelectedReptile(res.data[0].id);
         }
       })
       .catch(err => console.error("Failed to fetch reptiles:", err));
-  }, []);
+  }, [reptileId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
