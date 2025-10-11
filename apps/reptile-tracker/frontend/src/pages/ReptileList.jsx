@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import apiClient from '../api/axios';
+import apiClient from '/src/api/axios';
 import { Plus } from 'lucide-react';
 
 export default function ReptileList() {
