@@ -37,7 +37,7 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-d045280
+              tag: main-3cc8671
               pullPolicy: IfNotPresent
             env:
               DATABASE_URL:
@@ -104,7 +104,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-d045280
+              tag: main-3cc8671
               pullPolicy: IfNotPresent
             probes:
               liveness:
@@ -154,6 +154,7 @@ spec:
       main:
         className: internal
         annotations:
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
           hajimari.io/enable: "true"
           hajimari.io/icon: mdi:snake
           hajimari.io/group: apps
