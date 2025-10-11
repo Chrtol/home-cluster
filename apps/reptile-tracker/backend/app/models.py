@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
@@ -44,7 +44,7 @@ reptile_access = Table(
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("reptile_id", Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), primary_key=True),
     Column("access_level", Enum(AccessLevel), nullable=False),
-    Column("granted_at", DateTime(timezone=True), default=datetime.utcnow),
+    Column("granted_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
 )
 
 
@@ -83,8 +83,8 @@ class User(Base):
     oidc_sub = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
-    last_login = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    last_login = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     reptiles = relationship("Reptile", secondary=reptile_access, back_populates="users")
@@ -100,8 +100,8 @@ class Reptile(Base):
     date_of_birth = Column(DateTime(timezone=True), nullable=True)
     notes = Column(Text, nullable=True)
     photo_url = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Feeding schedule settings
     feeding_schedule_enabled = Column(Boolean, default=False)
@@ -128,7 +128,7 @@ class Food(Base):
     nutritional_data = Column(JSON, nullable=True)  # {protein, fat, calcium, phosphorus, vitamins, etc.}
 
     is_default = Column(Boolean, default=False)  # System-provided vs user-added
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 class Supplement(Base):
@@ -141,7 +141,7 @@ class Supplement(Base):
     nutritional_data = Column(JSON, nullable=True)  # {calcium, vitamin_d3, vitamin_a, etc.}
 
     is_default = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 class Feeding(Base):
@@ -151,13 +151,13 @@ class Feeding(Base):
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
-    fed_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    fed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     notes = Column(Text, nullable=True)
 
     # Is this a salad feeding (multiple components)?
     is_salad = Column(Boolean, default=False)
 
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     reptile = relationship("Reptile", back_populates="feedings")
@@ -173,7 +173,7 @@ class WeightLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
     weight_grams = Column(Float, nullable=False)
-    measured_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    measured_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     notes = Column(Text, nullable=True)
 
     # Relationships
@@ -191,7 +191,7 @@ class HealthRecord(Base):
     description = Column(Text, nullable=True)
 
     date = Column(DateTime(timezone=True), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     reptile = relationship("Reptile", back_populates="health_records")
@@ -207,5 +207,5 @@ class NotificationSettings(Base):
     webhook_url = Column(String, nullable=True)
     webhook_type = Column(String, default="discord")  # discord, pushover, generic
 
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
