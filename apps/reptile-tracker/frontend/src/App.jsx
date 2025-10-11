@@ -89,7 +89,7 @@ function App() {
             <Route path="/feed/:id" element={<FeedingLog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/calendar" element={<Calendar />} />
-            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
