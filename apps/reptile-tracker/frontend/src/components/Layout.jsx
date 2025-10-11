@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
@@ -39,7 +39,7 @@ export default function Layout({ user, onLogout }) {
     { path: '/feed', icon: Plus, label: 'Log Feeding' },
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
     { path: '/stats', icon: BarChart3, label: 'Statistics' },
-    { path: '/settings', icon: 'Settings', label: 'Settings' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ]
 
   const NavLink = ({ item, onClick }) => {
