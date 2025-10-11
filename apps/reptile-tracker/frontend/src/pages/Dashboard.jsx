@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { PlusCircle } from 'lucide-react';
+import { formatDateTime } from '../utils/dateFormatting';
 
 export default function Dashboard() {
   const [recentFeedings, setRecentFeedings] = useState([]);
@@ -82,7 +83,7 @@ export default function Dashboard() {
                           )}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {format(new Date(feeding.fed_at), 'PPP p')} by {feeding.user?.name || 'Unknown'}
+                          {formatDateTime(feeding.fed_at)} by {feeding.user?.name || 'Unknown'}
                         </p>
                       </div>
                       <Link to={`/feed/${feeding.id}`} className="text-sm text-primary-600 dark:text-primary-400 hover:underline">View Details</Link>
