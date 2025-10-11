@@ -53,9 +53,9 @@ export default function FeedingLog() {
     const fetchData = async () => {
       try {
         const [reptilesRes, foodsRes, supplementsRes] = await Promise.all([
-          axios.get('/api/reptiles/'),
-          axios.get('/api/foods/'),
-          axios.get('/api/supplements/')
+          axios.get('/api/reptiles'),
+          axios.get('/api/foods'),
+          axios.get('/api/supplements')
         ]);
         setReptiles(reptilesRes.data);
         setFoods(foodsRes.data);
@@ -106,7 +106,7 @@ export default function FeedingLog() {
     };
 
     try {
-      await axios.post('/api/feedings/', payload);
+      await axios.post('/api/feedings', payload);
       navigate(`/reptiles/${selectedReptile}`);
     } catch (error) {
       console.error("Failed to log feeding:", error);
