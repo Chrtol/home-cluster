@@ -3,14 +3,14 @@
 ## 🎯 High Priority
 
 ### Authentication & Session Management
-- [ ] **Fix session timeout issues** - Sessions expire too quickly, shows blank pages instead of redirect
+- [x] **Fix session timeout issues** - ✅ COMPLETED - Sessions expire too quickly, shows blank pages instead of redirect
   - Should immediately redirect to login when session expires
   - Increase session timeout to minimum 24 hours
   - Backend: Check JWT token expiration settings
   - Frontend: Add session expiration detection and auto-redirect
 
 ### User Experience
-- [ ] **Dark mode improvements**
+- [x] **Dark mode improvements** - ✅ COMPLETED
   - Make dark mode the default
   - Apply dark mode to login page
   - Change login button text from "Login with authentik" to "Login with single sign-on"
@@ -186,6 +186,11 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+- [x] **Edit/Delete feeding records** - ✅ COMPLETED
+  - Implemented in reptile detail page
+  - Allows editing date, time, and notes
+  - Allows deleting feeding records with confirmation
 
 - [x] **Settings page with date/time formatting** - ✅ COMPLETED
   - 12h/24h time format preference
