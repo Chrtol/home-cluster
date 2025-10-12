@@ -1,4 +1,17 @@
+import { useEffect } from 'react';
+
 export default function Login() {
+  useEffect(() => {
+    // Apply dark mode on login page (defaults to dark)
+    const savedMode = localStorage.getItem('darkMode')
+    const isDark = savedMode === null ? true : savedMode === 'true'
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [])
+
   const handleLogin = () => {
     window.location.href = '/auth/login'
   }
@@ -12,7 +25,7 @@ export default function Login() {
           Track feeding schedules, weight, and health for your reptiles
         </p>
         <button onClick={handleLogin} className="w-full text-lg py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
-          Login with Authentik
+          Login with Single Sign-On
         </button>
       </div>
     </div>
