@@ -250,3 +250,43 @@ class ReptileStats(BaseModel):
     last_feeding: Optional[datetime]
     weight_trend: List[WeightLog]
     nutritional_summary: dict
+
+
+# Household schemas
+class HouseholdCreate(BaseModel):
+    name: str
+
+
+class HouseholdOut(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Invitation schemas
+class InvitationCreate(BaseModel):
+    household_id: int
+    code: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    max_uses: Optional[int] = None
+
+
+class InvitationOut(BaseModel):
+    id: int
+    code: str
+    household_id: int
+    created_by: Optional[int]
+    expires_at: Optional[datetime]
+    max_uses: Optional[int]
+    used_count: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class InvitationAccept(BaseModel):
+    code: str

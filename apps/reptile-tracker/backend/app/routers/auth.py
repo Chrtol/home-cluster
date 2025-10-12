@@ -16,6 +16,9 @@ from app.database import get_db
 from app.schemas import User
 from app.rate_limit import limiter
 import jwt
+from sqlalchemy import select, update
+from app import models
+from urllib.parse import urlparse, parse_qs
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,10 @@ router = APIRouter()
 async def login(request: Request):
     """Initiate OIDC login flow"""
     logger.info("OIDC login initiated")
+    # Preserve an optional `next` parameter so we can redirect users back after auth
+    next_url = request.query_params.get('next')
+    if next_url:
+        request.session['next'] = next_url
     redirect_uri = settings.oidc_redirect_uri
     return await oauth.authentik.authorize_redirect(request, redirect_uri)
 
@@ -56,8 +63,34 @@ async def auth_callback(
         access_token = create_access_token(data={"sub": user.oidc_sub})
         refresh_token = create_refresh_token(data={"sub": user.oidc_sub})
 
+        # Determine redirect target (respect stored `next` in session)
+        next_url = request.session.pop('next', None)
+        target = f"{settings.frontend_url}/" if not next_url else f"{settings.frontend_url}{next_url}"
+
+        # If next_url contains an invitation code (e.g. /accept-invite?code=XYZ),
+        # attempt to accept the invitation server-side so the user is immediately a member.
+        try:
+            if next_url and 'code=' in next_url:
+                # parse code
+                parsed = urlparse(next_url)
+                qs = parse_qs(parsed.query)
+                code = qs.get('code', [None])[0]
+                if code:
+                    # Validate invitation
+                    result = await db.execute(select(models.Invitation).where(models.Invitation.code == code))
+                    inv = result.scalar_one_or_none()
+                    from datetime import datetime, timezone
+                    now = datetime.now(timezone.utc)
+                    if inv and (not inv.expires_at or inv.expires_at > now) and (not inv.max_uses or inv.used_count < inv.max_uses):
+                        # Add membership
+                        await db.execute(models.household_members.insert().values(household_id=inv.household_id, user_id=user.id, access_level=models.AccessLevel.FEEDER))
+                        await db.execute(update(models.Invitation).where(models.Invitation.id == inv.id).values(used_count=inv.used_count + 1))
+                        await db.commit()
+        except Exception as e:
+            logger.warning(f"Auto-accept invite failed: {e}")
+
         # Create the response object first
-        response = RedirectResponse(url=f"{settings.frontend_url}/", status_code=302)
+        response = RedirectResponse(url=target, status_code=302)
 
         # Set cookies on the response object that will actually be returned
         set_auth_cookies(response, access_token, refresh_token)

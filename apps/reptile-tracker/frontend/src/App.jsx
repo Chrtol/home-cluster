@@ -5,6 +5,7 @@ import axios from 'axios';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
+import AcceptInvite from './pages/AcceptInvite';
 import Dashboard from './pages/Dashboard';
 import ReptileList from './pages/ReptileList';
 import ReptileDetail from './pages/ReptileDetail';
@@ -121,6 +122,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback onLogin={handleLogin} />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
 
         {!isAuthenticated ? (
           <Route path="*" element={<Navigate to="/login" replace />} />
