@@ -124,6 +124,8 @@ function HouseholdSection() {
   const [households, setHouseholds] = useState([]);
   const [inviteLink, setInviteLink] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newHouseholdName, setNewHouseholdName] = useState('');
 
   useEffect(() => {
     const fetchHouseholds = async () => {
@@ -139,6 +141,37 @@ function HouseholdSection() {
     };
     fetchHouseholds();
   }, []);
+
+  const createHousehold = async () => {
+    if (!newHouseholdName.trim()) {
+      alert('Please enter a household name');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const res = await fetch('/api/households', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newHouseholdName })
+      });
+      if (res.ok) {
+        const newHousehold = await res.json();
+        setHouseholds([...households, newHousehold]);
+        setNewHouseholdName('');
+        setShowCreateForm(false);
+      } else {
+        const err = await res.json();
+        alert('Failed to create household: ' + (err.detail || res.statusText));
+      }
+    } catch (e) {
+      console.error('createHousehold error', e);
+      alert('Failed to create household');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const createInvite = async (householdId) => {
     setCreating(true);
@@ -175,35 +208,80 @@ function HouseholdSection() {
   };
 
   return (
-    <div>
-      {households.length === 0 ? (
-        <p className="text-gray-600 dark:text-gray-400">You are not a member of any households yet.</p>
+    <div className="space-y-4">
+      {households.length === 0 && !showCreateForm ? (
+        <div className="text-center py-8">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">You are not a member of any households yet.</p>
+          <button onClick={() => setShowCreateForm(true)} className="btn-primary">
+            Create Household
+          </button>
+        </div>
       ) : (
-        <div className="space-y-4">
-          {households.map(h => (
-            <div key={h.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{h.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Created at: {new Date(h.created_at).toLocaleString()}</p>
-                </div>
+        <>
+          {/* Create Household Form */}
+          {showCreateForm && (
+            <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Create New Household</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Household name (e.g., 'Smith Family')"
+                  value={newHouseholdName}
+                  onChange={(e) => setNewHouseholdName(e.target.value)}
+                  className="input w-full"
+                  onKeyDown={(e) => e.key === 'Enter' && createHousehold()}
+                />
                 <div className="flex gap-2">
-                  <button onClick={() => createInvite(h.id)} disabled={creating} className="btn-primary">Create Invite</button>
+                  <button onClick={createHousehold} disabled={creating} className="btn-primary">
+                    {creating ? 'Creating...' : 'Create'}
+                  </button>
+                  <button onClick={() => { setShowCreateForm(false); setNewHouseholdName(''); }} className="btn-secondary">
+                    Cancel
+                  </button>
                 </div>
-              </div>
-            </div>
-          ))}
-
-          {inviteLink && (
-            <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Invite Link</label>
-              <div className="flex gap-2">
-                <input readOnly value={inviteLink} className="input flex-1" />
-                <button onClick={copyLink} className="btn-secondary">Copy</button>
               </div>
             </div>
           )}
-        </div>
+
+          {/* Existing Households */}
+          {households.length > 0 && (
+            <>
+              {!showCreateForm && (
+                <button onClick={() => setShowCreateForm(true)} className="btn-secondary mb-4">
+                  + Create Another Household
+                </button>
+              )}
+
+              <div className="space-y-4">
+                {households.map(h => (
+                  <div key={h.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{h.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Created at: {new Date(h.created_at).toLocaleString()}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => createInvite(h.id)} disabled={creating} className="btn-primary">
+                          Create Invite
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {inviteLink && (
+                  <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Invite Link</label>
+                    <div className="flex gap-2">
+                      <input readOnly value={inviteLink} className="input flex-1" />
+                      <button onClick={copyLink} className="btn-secondary">Copy</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   );
