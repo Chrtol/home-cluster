@@ -73,7 +73,7 @@ spec:
               COOKIE_SECURE: "true"
               COOKIE_HTTPONLY: "true"
               COOKIE_SAMESITE: "lax"
-              ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+              ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
               REFRESH_TOKEN_EXPIRE_DAYS: "7"
             probes:
               liveness:

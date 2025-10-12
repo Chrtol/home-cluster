@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Leaf, Bug, Utensils } from 'lucide-react';
 import { getUserTimeFormat } from '../utils/dateFormatting';
+import DateInput from '../components/DateInput';
 
 export default function FeedingLog() {
   const { id } = useParams();
@@ -334,8 +335,7 @@ export default function FeedingLog() {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label htmlFor="fedDate" className="block font-medium mb-1">Date</label>
-                    <input
-                        type="date"
+                    <DateInput
                         id="fedDate"
                         value={fedDate}
                         onChange={e => setFedDate(e.target.value)}

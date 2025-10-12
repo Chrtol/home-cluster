@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { getUserTimeFormat } from '../utils/dateFormatting';
+import DateInput from '../components/DateInput';
 
 export default function HealthLog() {
   const navigate = useNavigate();
@@ -186,8 +187,7 @@ export default function HealthLog() {
         <div className="grid grid-cols-2 gap-4">
             <div>
                 <label htmlFor="logDate" className="block font-medium mb-1">Date</label>
-                <input
-                    type="date"
+                <DateInput
                     id="logDate"
                     value={logDate}
                     onChange={e => setLogDate(e.target.value)}

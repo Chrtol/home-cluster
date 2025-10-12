@@ -46,6 +46,16 @@ async def accept_invitation(payload: schemas.InvitationAccept, db: AsyncSession 
     if inv.max_uses and inv.used_count >= inv.max_uses:
         raise HTTPException(status_code=400, detail="Invitation already used")
 
+    # Check if user is already a member
+    existing_member = await db.execute(
+        select(models.household_members).where(
+            models.household_members.c.household_id == inv.household_id,
+            models.household_members.c.user_id == user.id
+        )
+    )
+    if existing_member.first():
+        raise HTTPException(status_code=400, detail="You are already a member of this household")
+
     # Add user to household
     stmt = insert(models.household_members).values(household_id=inv.household_id, user_id=user.id, access_level=models.AccessLevel.FEEDER)
     await db.execute(stmt)
