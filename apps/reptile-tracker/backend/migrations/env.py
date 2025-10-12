@@ -18,7 +18,9 @@ from app.database import Base
 config = context.config
 
 # Interpret the config file for Python logging.
-fileConfig(config.config_file_name)
+# Provide 'sys' to the logging config defaults so expressions like
+# "args = (sys.stderr,)" in alembic.ini can be evaluated.
+fileConfig(config.config_file_name, defaults={"sys": sys})
 
 # Set the SQLAlchemy URL from settings
 # Alembic expects a sync driver, convert async url if necessary
