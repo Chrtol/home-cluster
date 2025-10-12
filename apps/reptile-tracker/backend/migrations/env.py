@@ -3,8 +3,7 @@ import sys
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool, create_engine
 
 from alembic import context
 
@@ -48,11 +47,11 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix='sqlalchemy.',
-        poolclass=pool.NullPool,
-    )
+    # Create a sync engine directly from the URL resolved from settings.
+    # This avoids relying on parsing config sections and works reliably
+    # in containerized environments where alembic is invoked from a
+    # different working directory.
+    connectable = create_engine(sqlalchemy_url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=Base.metadata)
