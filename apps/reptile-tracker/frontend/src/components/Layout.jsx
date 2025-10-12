@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react'
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Load dark mode preference
+  // Load dark mode preference (defaults to true/dark)
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true'
+    const savedMode = localStorage.getItem('darkMode')
+    const isDark = savedMode === null ? true : savedMode === 'true'
     setDarkMode(isDark)
     if (isDark) {
       document.documentElement.classList.add('dark')
