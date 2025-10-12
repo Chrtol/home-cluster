@@ -94,45 +94,71 @@
 ## 👥 Multi-User & Households
 
 ### Household System
-- [ ] **Backend: Household model**
+- [x] **Backend: Household model** - ✅ COMPLETED
   - Create household table
-  - Link users to households (many-to-many)
-  - Link reptiles to households
+  - Link users to households (many-to-many via household_members)
+  - Link reptiles to households (household_id on reptiles table)
   - Backend API for household management
 
-- [ ] **Invitation system**
+- [x] **Invitation system** - ✅ COMPLETED
   - Generate invitation codes/links
   - Backend: Invitation table (code, household_id, expires_at, max_uses)
-  - Frontend: Invitation code input on signup/onboarding
+  - Frontend: Invitation code input in Settings page
   - Backend: Validate and accept invitations
+  - Invitation tracking (used_count, created_at)
+
+- [x] **Household management endpoints** - ✅ COMPLETED
+  - GET /api/households/me - List user's households
+  - POST /api/households - Create new household
+  - PUT /api/households/{id} - Update household name (owner only)
+  - GET /api/households/{id}/members - List household members
+  - DELETE /api/households/{id}/members/{user_id} - Remove member (owner only)
+  - POST /api/households/{id}/leave - Leave household
+
+- [x] **Invitation management endpoints** - ✅ COMPLETED
+  - POST /api/invitations - Create invitation
+  - POST /api/invitations/accept - Accept invitation by code
+  - GET /api/invitations/household/{id} - List household invitations
+  - DELETE /api/invitations/{id} - Revoke invitation (owner only)
 
 ### User Roles & Permissions
-- [ ] **Granular access control**
-  - Roles: Owner, Admin, Caretaker, Feeder, Viewer
-  - Permissions matrix:
-    - Owner: Full access, manage users
-    - Admin: All data access, cannot delete household
-    - Caretaker: View/edit health, weight, feeding
-    - Feeder: View reptiles, log feedings only
-    - Viewer: Read-only access
-  - Backend: Role-based authorization middleware
-  - Frontend: Conditional UI based on permissions
+- [x] **Basic access control** - ✅ COMPLETED
+  - Current roles implemented: Owner, Feeder, Viewer
+  - Permission hierarchy: VIEWER (1) < FEEDER (2) < OWNER (3)
+  - Backend: Role-based authorization in permissions.py
+  - Household members automatically get FEEDER access to household reptiles
+  - Direct access via reptile_access table still supported
+
+- [ ] **Granular access control expansion** - 🔜 FUTURE
+  - Add Admin and Caretaker roles
+  - Refine permissions matrix
+  - Per-user role management UI
 
 ### Settings - Household Tab
-- [ ] **Household management in settings**
-  - Create tabbed settings interface
-  - Household tab:
-    - View household info
-    - Generate invitation links
-    - View active invitations
-    - Manage household name/settings
+- [x] **Comprehensive household management UI** - ✅ COMPLETED
+  - Tabbed interface with Overview, Members, and Invitations tabs
+  - Overview tab:
+    - View household info (name, creation date)
+    - Quick stats (member count, active invites)
+    - Edit household name (owner only)
+    - Create invitation button
+    - Leave household button
+  - Members tab:
+    - List all household members
+    - Show name, email, role, join date
+    - Remove member button (owner only, cannot remove other owners)
+  - Invitations tab:
+    - List all invitations with status (active/expired/maxed out)
+    - Show invitation code, usage count, expiry date
+    - Copy code/link functionality
+    - Revoke invitation button (owner only)
+  - Household selector dropdown for multi-household users
+  - Create and join household forms integrated
 
-- [ ] **Admin tab - User management**
-  - List all users in household
-  - Show user info (name, email, role, last active)
-  - Edit user roles
-  - Remove users from household
-  - Require Owner role to access
+- [ ] **Advanced user management** - 🔜 FUTURE
+  - Edit user roles (currently roles are fixed at join time)
+  - View last active timestamp
+  - User activity logs
 
 ### Settings - OIDC Configuration
 - [ ] **OIDC settings UI** (Advanced)
@@ -187,6 +213,39 @@
 
 ## ✅ Recently Completed
 
+### January 2025 - Household Management & Bug Fixes
+- [x] **Comprehensive household management system** - ✅ COMPLETED
+  - Backend endpoints for household CRUD, member management, invitation system
+  - Frontend tabbed UI in Settings page
+  - Member list with roles and remove functionality
+  - Invitation list with status tracking and revoke functionality
+  - Leave household functionality with safeguards
+  - Edit household name (owner only)
+
+- [x] **Fixed household member access to reptiles** - ✅ COMPLETED
+  - Updated permissions.py to check household membership
+  - Household members automatically get FEEDER access
+  - New reptiles auto-assign to creator's household
+
+- [x] **Fixed date format issues** - ✅ COMPLETED
+  - Created custom DateInput component
+  - Respects user's date format preference (DD/MM/YYYY, MM/DD/YYYY, etc.)
+  - Converts between display format and ISO format for backend
+
+- [x] **Fixed session timeout** - ✅ COMPLETED
+  - Updated ACCESS_TOKEN_EXPIRE_MINUTES from 15 to 1440 (24 hours)
+  - Fixed in both backend config.py and helmrelease.yaml
+
+- [x] **Fixed invitation acceptance errors** - ✅ COMPLETED
+  - Added duplicate membership check
+  - Proper error messages for already-joined households
+
+- [x] **Fixed migration issues** - ✅ COMPLETED
+  - Reorganized migrations with baseline
+  - Fixed async/await in household routers
+  - Fixed import errors (require_authenticated_user → get_current_user)
+
+### Earlier Completions
 - [x] **Edit/Delete feeding records** - ✅ COMPLETED
   - Implemented in reptile detail page
   - Allows editing date, time, and notes
