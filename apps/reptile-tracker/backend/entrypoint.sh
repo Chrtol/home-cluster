@@ -55,5 +55,13 @@ else
   fi
 fi
 
+# Optional debug startup run - when set, run the app's init_db and seed steps
+# and exit (helps capture startup exceptions before Uvicorn). Useful during
+# debugging in cluster.
+if [ "${DEBUG_STARTUP:-0}" = "1" ]; then
+  echo "DEBUG_STARTUP=1 detected — running debug_startup.py"
+  python /app/debug_startup.py || true
+fi
+
 echo "Starting Uvicorn"
 exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
