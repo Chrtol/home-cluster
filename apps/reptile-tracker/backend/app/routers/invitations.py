@@ -6,13 +6,13 @@ import secrets
 
 from app.database import get_db
 from app import models, schemas
-from app.permissions import require_authenticated_user
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/invitations", tags=["invitations"])
 
 
 @router.post("/", response_model=schemas.InvitationOut)
-async def create_invitation(payload: schemas.InvitationCreate, db: AsyncSession = Depends(get_db), user=Depends(require_authenticated_user)):
+async def create_invitation(payload: schemas.InvitationCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     # Only household owners can create invites - simple check
     household = await db.get(models.Household, payload.household_id)
     if not household:
@@ -33,7 +33,7 @@ async def create_invitation(payload: schemas.InvitationCreate, db: AsyncSession 
 
 
 @router.post("/accept")
-async def accept_invitation(payload: schemas.InvitationAccept, db: AsyncSession = Depends(get_db), user=Depends(require_authenticated_user)):
+async def accept_invitation(payload: schemas.InvitationAccept, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     # Validate invitation
     result = await db.execute(select(models.Invitation).where(models.Invitation.code == payload.code))
     inv = result.scalar_one_or_none()
@@ -58,7 +58,7 @@ async def accept_invitation(payload: schemas.InvitationAccept, db: AsyncSession 
 
 
 @router.get("/household/{household_id}", response_model=list[schemas.InvitationOut])
-async def list_invitations(household_id: int, db: AsyncSession = Depends(get_db), user=Depends(require_authenticated_user)):
+async def list_invitations(household_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     # Simple permission: only members can list
     member_result = await db.execute(select(models.household_members).where(models.household_members.c.household_id == household_id, models.household_members.c.user_id == user.id))
     member = member_result.first()
