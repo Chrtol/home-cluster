@@ -107,6 +107,104 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      {/* Household management */}
+      <div className="card space-y-6 mt-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Household</h2>
+          <HouseholdSection />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function HouseholdSection() {
+  const [households, setHouseholds] = useState([]);
+  const [inviteLink, setInviteLink] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const fetchHouseholds = async () => {
+      try {
+        const res = await fetch('/api/households/me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setHouseholds(data);
+        }
+      } catch (e) {
+        console.error('Failed to load households', e);
+      }
+    };
+    fetchHouseholds();
+  }, []);
+
+  const createInvite = async (householdId) => {
+    setCreating(true);
+    try {
+      const res = await fetch('/api/invitations', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ household_id: householdId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const link = `${window.location.origin}/accept-invite?code=${encodeURIComponent(data.code)}`;
+        setInviteLink(link);
+      } else {
+        const err = await res.json();
+        alert('Failed to create invite: ' + (err.detail || res.statusText));
+      }
+    } catch (e) {
+      console.error('createInvite error', e);
+      alert('Failed to create invite');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      alert('Invite link copied to clipboard');
+    } catch (e) {
+      console.error('copy failed', e);
+    }
+  };
+
+  return (
+    <div>
+      {households.length === 0 ? (
+        <p className="text-gray-600 dark:text-gray-400">You are not a member of any households yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {households.map(h => (
+            <div key={h.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{h.name}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Created at: {new Date(h.created_at).toLocaleString()}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => createInvite(h.id)} disabled={creating} className="btn-primary">Create Invite</button>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {inviteLink && (
+            <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Invite Link</label>
+              <div className="flex gap-2">
+                <input readOnly value={inviteLink} className="input flex-1" />
+                <button onClick={copyLink} className="btn-secondary">Copy</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -159,6 +159,13 @@ The frontend will be available at `http://localhost:3000`
 ### Building Docker Images
 
 ```bash
+## Container startup and migrations
+
+The backend image now runs Alembic migrations automatically on container start (if `alembic` is available in the image). The container entrypoint runs:
+
+- `alembic -c migrations/alembic.ini upgrade head` (attempted; skipped if alembic not present)
+
+This keeps the database schema up-to-date on startup. If you prefer to run migrations in CI/CD instead, adjust your deployment to run Alembic before starting the application process.
 # Backend
 cd apps/reptile-tracker/backend
 docker build -t ghcr.io/chrtol/reptile-tracker-backend:latest .

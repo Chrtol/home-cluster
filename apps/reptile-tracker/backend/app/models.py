@@ -109,6 +109,9 @@ class Reptile(Base):
     reminder_enabled = Column(Boolean, default=False)
     reminder_hours_before = Column(Integer, default=2)
 
+    # Household relation
+    household_id = Column(Integer, ForeignKey("households.id", ondelete="SET NULL"), nullable=True)
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
@@ -209,3 +212,42 @@ class NotificationSettings(Base):
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+# Household and Invitation models
+household_members = Table(
+    "household_members",
+    Base.metadata,
+    Column("household_id", Integer, ForeignKey("households.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("access_level", Enum(AccessLevel), nullable=False, default=AccessLevel.FEEDER),
+    Column("joined_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+)
+
+
+class Household(Base):
+    __tablename__ = "households"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    users = relationship("User", secondary=household_members, backref="households")
+    reptiles = relationship("Reptile", backref="household")
+
+
+class Invitation(Base):
+    __tablename__ = "invitations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, nullable=False, index=True)
+    household_id = Column(Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    max_uses = Column(Integer, nullable=True)
+    used_count = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    household = relationship("Household", backref="invitations")
+    creator = relationship("User")
