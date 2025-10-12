@@ -3,6 +3,13 @@ set -euo pipefail
 
 cd /app
 
+# Ensure Python can import the local `app` package when Alembic runs
+# (some environments don't automatically include the CWD in sys.path when
+# running the alembic CLI). Export PYTHONPATH so `from app.config import ...`
+# works inside migrations/env.py
+export PYTHONPATH="/app:${PYTHONPATH:-}"
+echo "PYTHONPATH=$PYTHONPATH"
+
 MIGRATIONS_DIR=/app/migrations
 
 if [ -z "${DATABASE_URL:-}" ]; then
