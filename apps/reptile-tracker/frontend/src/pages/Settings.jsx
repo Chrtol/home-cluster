@@ -123,9 +123,12 @@ export default function Settings() {
 function HouseholdSection() {
   const [households, setHouseholds] = useState([]);
   const [inviteLink, setInviteLink] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showJoinForm, setShowJoinForm] = useState(false);
   const [newHouseholdName, setNewHouseholdName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
 
   useEffect(() => {
     const fetchHouseholds = async () => {
@@ -173,10 +176,47 @@ function HouseholdSection() {
     }
   };
 
+  const joinHousehold = async () => {
+    if (!joinCode.trim()) {
+      alert('Please enter an invitation code');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const res = await fetch('/api/invitations/accept', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: joinCode.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert('Successfully joined household!');
+        setJoinCode('');
+        setShowJoinForm(false);
+        // Refresh households list
+        const householdsRes = await fetch('/api/households/me', { credentials: 'include' });
+        if (householdsRes.ok) {
+          const householdsData = await householdsRes.json();
+          setHouseholds(householdsData);
+        }
+      } else {
+        const err = await res.json();
+        alert('Failed to join household: ' + (err.detail || res.statusText));
+      }
+    } catch (e) {
+      console.error('joinHousehold error', e);
+      alert('Failed to join household');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const createInvite = async (householdId) => {
     setCreating(true);
     try {
-      const res = await fetch('/api/invitations', {
+      const res = await fetch('/api/invitations/', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -186,6 +226,7 @@ function HouseholdSection() {
         const data = await res.json();
         const link = `${window.location.origin}/accept-invite?code=${encodeURIComponent(data.code)}`;
         setInviteLink(link);
+        setInviteCode(data.code);
       } else {
         const err = await res.json();
         alert('Failed to create invite: ' + (err.detail || res.statusText));
@@ -207,14 +248,28 @@ function HouseholdSection() {
     }
   };
 
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      alert('Invite code copied to clipboard');
+    } catch (e) {
+      console.error('copy failed', e);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {households.length === 0 && !showCreateForm ? (
+      {households.length === 0 && !showCreateForm && !showJoinForm ? (
         <div className="text-center py-8">
           <p className="text-gray-600 dark:text-gray-400 mb-4">You are not a member of any households yet.</p>
-          <button onClick={() => setShowCreateForm(true)} className="btn-primary">
-            Create Household
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setShowCreateForm(true)} className="btn-primary">
+              Create Household
+            </button>
+            <button onClick={() => setShowJoinForm(true)} className="btn-secondary">
+              Join Household
+            </button>
+          </div>
         </div>
       ) : (
         <>
@@ -243,13 +298,43 @@ function HouseholdSection() {
             </div>
           )}
 
+          {/* Join Household Form */}
+          {showJoinForm && (
+            <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Join Household</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Enter invitation code"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value)}
+                  className="input w-full"
+                  onKeyDown={(e) => e.key === 'Enter' && joinHousehold()}
+                />
+                <div className="flex gap-2">
+                  <button onClick={joinHousehold} disabled={creating} className="btn-primary">
+                    {creating ? 'Joining...' : 'Join'}
+                  </button>
+                  <button onClick={() => { setShowJoinForm(false); setJoinCode(''); }} className="btn-secondary">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Existing Households */}
           {households.length > 0 && (
             <>
-              {!showCreateForm && (
-                <button onClick={() => setShowCreateForm(true)} className="btn-secondary mb-4">
-                  + Create Another Household
-                </button>
+              {!showCreateForm && !showJoinForm && (
+                <div className="flex gap-2 mb-4">
+                  <button onClick={() => setShowCreateForm(true)} className="btn-secondary">
+                    + Create Household
+                  </button>
+                  <button onClick={() => setShowJoinForm(true)} className="btn-secondary">
+                    + Join Household
+                  </button>
+                </div>
               )}
 
               <div className="space-y-4">
@@ -270,11 +355,27 @@ function HouseholdSection() {
                 ))}
 
                 {inviteLink && (
-                  <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Invite Link</label>
-                    <div className="flex gap-2">
-                      <input readOnly value={inviteLink} className="input flex-1" />
-                      <button onClick={copyLink} className="btn-secondary">Copy</button>
+                  <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-green-50 dark:bg-green-900/20">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Invitation Created!</h3>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invitation Code</label>
+                        <div className="flex gap-2">
+                          <input readOnly value={inviteCode} className="input flex-1 font-mono" />
+                          <button onClick={copyCode} className="btn-secondary whitespace-nowrap">Copy Code</button>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Share this code with others to join your household</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invitation Link</label>
+                        <div className="flex gap-2">
+                          <input readOnly value={inviteLink} className="input flex-1 text-sm" />
+                          <button onClick={copyLink} className="btn-secondary whitespace-nowrap">Copy Link</button>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Or send this link directly</p>
+                      </div>
                     </div>
                   </div>
                 )}
