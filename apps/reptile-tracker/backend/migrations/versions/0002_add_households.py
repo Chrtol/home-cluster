@@ -1,16 +1,16 @@
-"""initial schema
+"""add households and invitations
 
-Revision ID: 0001
-Revises:
-Create Date: 2025-10-12 00:00:00.000000
+Revision ID: 0002
+Revises: 0001
+Create Date: 2025-10-12 00:00:00.000001
 
 """
 from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0001'
-down_revision = None
+revision = '0002'
+down_revision = '0001'
 branch_labels = None
 depends_on = None
 

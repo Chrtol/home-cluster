@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt && pip list
 COPY app ./app
 COPY migrations ./migrations
 COPY entrypoint.sh ./entrypoint.sh
+COPY debug_startup.py ./debug_startup.py
 RUN chmod +x ./entrypoint.sh
 
 # Create non-root user
