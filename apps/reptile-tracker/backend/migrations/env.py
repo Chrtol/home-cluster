@@ -17,10 +17,19 @@ from app.database import Base
 # access to the values within the .ini file in use.
 config = context.config
 
+import logging
+
 # Interpret the config file for Python logging.
 # Provide 'sys' to the logging config defaults so expressions like
 # "args = (sys.stderr,)" in alembic.ini can be evaluated.
-fileConfig(config.config_file_name, defaults={"sys": sys})
+try:
+    fileConfig(config.config_file_name, defaults={"sys": sys})
+except Exception as e:
+    # If the alembic.ini logging config can't be processed (various
+    # environments may not allow arbitrary expressions in ini), fall
+    # back to a basic logging configuration so migrations can run.
+    print(f"Warning: failed to configure logging from {config.config_file_name}: {e}")
+    logging.basicConfig(level=logging.INFO)
 
 # Set the SQLAlchemy URL from settings
 # Alembic expects a sync driver, convert async url if necessary
