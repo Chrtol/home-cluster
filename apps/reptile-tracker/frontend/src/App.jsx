@@ -24,11 +24,56 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     // Check authentication status on mount
     fetchUser()
-  }, [])
+
+    // Setup axios interceptor for handling 401 errors
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config
+
+        // If error is 401 and we haven't tried to refresh yet
+        if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
+          originalRequest._retry = true
+
+          try {
+            setIsRefreshing(true)
+            // Try to refresh the token
+            await axios.post('/auth/refresh')
+            // Retry the original request
+            return axios(originalRequest)
+          } catch (refreshError) {
+            // Refresh failed - redirect to login
+            console.error('Token refresh failed:', refreshError)
+            setIsAuthenticated(false)
+            setUser(null)
+            window.location.href = '/login'
+            return Promise.reject(refreshError)
+          } finally {
+            setIsRefreshing(false)
+          }
+        }
+
+        // If it's a 401 but we already tried refreshing, or if refresh is in progress
+        if (error.response?.status === 401) {
+          setIsAuthenticated(false)
+          setUser(null)
+          window.location.href = '/login'
+        }
+
+        return Promise.reject(error)
+      }
+    )
+
+    // Cleanup interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(interceptor)
+    }
+  }, [isRefreshing])
 
   const fetchUser = async () => {
     try {

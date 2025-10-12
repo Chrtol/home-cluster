@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # Security settings
     environment: str = "production"  # development, staging, production
-    access_token_expire_minutes: int = 15  # Reduced from 7 days
+    access_token_expire_minutes: int = 1440  # 24 hours (balances security and UX)
     refresh_token_expire_days: int = 7
     sql_echo: bool = False  # Only enable in development
 
