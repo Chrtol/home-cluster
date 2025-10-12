@@ -150,7 +150,7 @@ function HouseholdSection() {
 
     setCreating(true);
     try {
-      const res = await fetch('/api/households', {
+      const res = await fetch('/api/households/', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
