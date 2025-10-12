@@ -194,6 +194,90 @@ async def get_feeding(
     return feeding
 
 
+@router.put("/{feeding_id}", response_model=FeedingSchema)
+async def update_feeding(
+    feeding_id: int,
+    feeding_update: FeedingCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a feeding (must be owner or the user who logged it)"""
+
+    result = await db.execute(select(Feeding).where(Feeding.id == feeding_id))
+    feeding = result.scalar_one_or_none()
+
+    if not feeding:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Feeding not found",
+        )
+
+    # Check if user is either the feeder or has owner access to reptile
+    from app.permissions import is_owner
+    is_reptile_owner = await is_owner(db, current_user, feeding.reptile_id)
+
+    if feeding.user_id != current_user.id and not is_reptile_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only edit your own feedings unless you're the reptile owner",
+        )
+
+    # Update basic fields
+    feeding.fed_at = feeding_update.fed_at or feeding.fed_at
+    feeding.notes = feeding_update.notes
+    feeding.is_salad = feeding_update.is_salad
+
+    # Delete existing associations
+    await db.execute(delete(feeding_foods).where(feeding_foods.c.feeding_id == feeding_id))
+    await db.execute(delete(feeding_supplements).where(feeding_supplements.c.feeding_id == feeding_id))
+    await db.execute(delete(feeding_salad_components).where(feeding_salad_components.c.feeding_id == feeding_id))
+
+    # Add new foods
+    for food_item in feeding_update.foods:
+        await db.execute(
+            insert(feeding_foods).values(
+                feeding_id=feeding_id,
+                food_id=food_item.food_id,
+                quantity=food_item.quantity,
+            )
+        )
+
+    # Add new supplements
+    for supplement_id in feeding_update.supplements:
+        await db.execute(
+            insert(feeding_supplements).values(
+                feeding_id=feeding_id,
+                supplement_id=supplement_id,
+            )
+        )
+
+    # Add new salad components
+    if feeding_update.is_salad and feeding_update.salad_components:
+        for food_id in feeding_update.salad_components:
+            await db.execute(
+                insert(feeding_salad_components).values(
+                    feeding_id=feeding_id,
+                    food_id=food_id,
+                )
+            )
+
+    await db.commit()
+
+    # Reload with relationships
+    result = await db.execute(
+        select(Feeding)
+        .where(Feeding.id == feeding_id)
+        .options(
+            selectinload(Feeding.foods),
+            selectinload(Feeding.supplements),
+            selectinload(Feeding.salad_components),
+        )
+    )
+    updated_feeding = result.scalar_one()
+
+    return updated_feeding
+
+
 @router.delete("/{feeding_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_feeding(
     feeding_id: int,
