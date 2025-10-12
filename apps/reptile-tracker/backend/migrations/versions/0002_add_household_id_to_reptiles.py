@@ -1,15 +1,15 @@
 """add household_id to reptiles
 
-Revision ID: 0002_add_household_id_to_reptiles
-Revises: 0001_initial
+Revision ID: 0002
+Revises: 0001
 Create Date: 2025-10-12 00:00:00.000001
 """
 from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0002_add_household_id_to_reptiles'
-down_revision = '0001_initial'
+revision = '0002'
+down_revision = '0001'
 branch_labels = None
 depends_on = None
 
