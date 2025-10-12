@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert
+from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user
@@ -25,9 +26,11 @@ async def create_household(payload: schemas.HouseholdCreate, db: AsyncSession = 
 
 @router.get("/me", response_model=list[schemas.HouseholdOut])
 async def get_my_households(db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    # Return households the user belongs to (need to eagerly load)
+    # Query households directly via the association table
     result = await db.execute(
-        select(models.User).where(models.User.id == user.id)
+        select(models.Household)
+        .join(models.household_members)
+        .where(models.household_members.c.user_id == user.id)
     )
-    user_with_households = result.scalar_one()
-    return user_with_households.households
+    households = result.scalars().all()
+    return households
