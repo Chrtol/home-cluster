@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, Reptile, AccessLevel, reptile_access
+from app.models import User, Reptile, AccessLevel, reptile_access, household_members
 from app.permissions import check_reptile_access, get_user_reptiles, is_owner
 from app.schemas import (
     Reptile as ReptileSchema,
@@ -76,8 +76,18 @@ async def create_reptile(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new reptile"""
+
+    # Get user's primary household (first household they're a member of)
+    household_result = await db.execute(
+        select(household_members.c.household_id)
+        .where(household_members.c.user_id == current_user.id)
+        .limit(1)
+    )
+    household_id = household_result.scalar_one_or_none()
+
     new_reptile = Reptile(
         **reptile.model_dump(),
+        household_id=household_id,  # Automatically assign to user's household
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )

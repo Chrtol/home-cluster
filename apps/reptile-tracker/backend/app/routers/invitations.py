@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, insert
+from sqlalchemy import select, update, insert, delete
 from datetime import datetime, timezone
 import secrets
 
@@ -78,3 +78,30 @@ async def list_invitations(household_id: int, db: AsyncSession = Depends(get_db)
     result = await db.execute(select(models.Invitation).where(models.Invitation.household_id == household_id))
     rows = result.scalars().all()
     return rows
+
+
+@router.delete("/{invitation_id}")
+async def delete_invitation(invitation_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+    """Delete/revoke an invitation (owner only)"""
+    # Get invitation
+    result = await db.execute(select(models.Invitation).where(models.Invitation.id == invitation_id))
+    invitation = result.scalar_one_or_none()
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+
+    # Check if user is owner of the household
+    owner_result = await db.execute(
+        select(models.household_members).where(
+            models.household_members.c.household_id == invitation.household_id,
+            models.household_members.c.user_id == user.id
+        )
+    )
+    owner_row = owner_result.first()
+    if not owner_row or owner_row.access_level != models.AccessLevel.OWNER.value:
+        raise HTTPException(status_code=403, detail="Only household owners can delete invitations")
+
+    # Delete invitation
+    await db.execute(delete(models.Invitation).where(models.Invitation.id == invitation_id))
+    await db.commit()
+
+    return {"status": "deleted", "invitation_id": invitation_id}
