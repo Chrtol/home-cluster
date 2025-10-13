@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Leaf, Bug, Utensils, Edit2, Trash2 } from 'lucide-react';
+import { Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import DateInput from '../components/DateInput';
 
@@ -20,25 +20,23 @@ export default function FeedingLog() {
   const [loading, setLoading] = useState(true);
 
   // Form state
-  const [logType, setLogType] = useState('insect'); // insect, salad, prepared
   const [selectedReptile, setSelectedReptile] = useState('');
   const [fedDate, setFedDate] = useState(new Date().toISOString().slice(0, 10));
   const [fedTime, setFedTime] = useState(new Date().toTimeString().slice(0, 5));
   const [notes, setNotes] = useState('');
-  const [selectedSupplements, setSelectedSupplements] = useState([]);
+
+  // NEW: Food items array - each item has food_id, quantity, and supplements
+  const [foodItems, setFoodItems] = useState([]);
+
+  // NEW: Salad state - separate from regular foods
+  const [isSalad, setIsSalad] = useState(false);
+  const [saladComponents, setSaladComponents] = useState([]);
 
   // Time input format state
   const [timeFormat, setTimeFormat] = useState('24h');
   const [hours, setHours] = useState(new Date().getHours());
   const [minutes, setMinutes] = useState(new Date().getMinutes());
   const [period, setPeriod] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
-
-  // Log-type specific state
-  const [selectedInsectFood, setSelectedInsectFood] = useState('');
-  const [insectQuantity, setInsectQuantity] = useState(1);
-  const [selectedSaladComponents, setSelectedSaladComponents] = useState([]);
-  const [selectedPreparedFood, setSelectedPreparedFood] = useState('');
-  const [preparedFoodQuantity, setPreparedFoodQuantity] = useState(1);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -61,34 +59,34 @@ export default function FeedingLog() {
             const feedingRes = await axios.get(`/api/feedings/${id}`);
             setExistingFeeding(feedingRes.data);
             setMode('view');
-            loadFeedingData(feedingRes.data, foodsRes.data);
+            loadFeedingData(feedingRes.data);
           } catch (err) {
             console.error('Failed to load feeding:', err);
             setError('Failed to load feeding. It may not exist or you may not have permission.');
           }
         } else {
-          // Creating new feeding
+          // Creating new feeding - start with one empty food item
           const initialReptileId = reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '';
           setSelectedReptile(initialReptileId);
 
+          // Add initial food item
           const insectFoods = foodsRes.data.filter(f => f.category === 'insect');
           if (insectFoods.length > 0) {
-            setSelectedInsectFood(insectFoods[0].id);
-          }
-
-          const preparedFoods = foodsRes.data.filter(f => f.category === 'prepared' && f.name !== 'Salad');
-          if (preparedFoods.length > 0) {
-            setSelectedPreparedFood(preparedFoods[0].id);
+            setFoodItems([{
+              id: Date.now(),
+              food_id: insectFoods[0].id,
+              quantity: 1,
+              supplements: []
+            }]);
           }
         }
 
-        // Load user's time format preference
-        const format = getUserTimeFormat();
-        setTimeFormat(format);
-
-      } catch (error) {
-        console.error("Failed to load data for feeding log:", error);
-        setError("Failed to load required data. Please refresh the page.");
+        // Load time format preference
+        const savedTimeFormat = getUserTimeFormat();
+        setTimeFormat(savedTimeFormat);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError('Failed to load data.');
       } finally {
         setLoading(false);
       }
@@ -96,66 +94,35 @@ export default function FeedingLog() {
     fetchData();
   }, [id]);
 
-  const loadFeedingData = (feeding, foodsList) => {
-    // Set reptile
+  const loadFeedingData = (feeding) => {
     setSelectedReptile(feeding.reptile_id);
+    setNotes(feeding.notes || '');
 
-    // Parse fed_at datetime
+    // Parse the fed_at datetime
     const fedAtDate = new Date(feeding.fed_at);
     setFedDate(fedAtDate.toISOString().slice(0, 10));
 
-    const hours24 = fedAtDate.getHours();
-    const mins = fedAtDate.getMinutes();
-    setMinutes(mins);
+    const hour = fedAtDate.getHours();
+    const minute = fedAtDate.getMinutes();
+    setHours(hour);
+    setMinutes(minute);
+    setPeriod(hour >= 12 ? 'PM' : 'AM');
 
-    const format = getUserTimeFormat();
-    if (format === '12h') {
-      if (hours24 === 0) {
-        setHours(12);
-        setPeriod('AM');
-      } else if (hours24 < 12) {
-        setHours(hours24);
-        setPeriod('AM');
-      } else if (hours24 === 12) {
-        setHours(12);
-        setPeriod('PM');
-      } else {
-        setHours(hours24 - 12);
-        setPeriod('PM');
-      }
-    } else {
-      setHours(hours24);
-    }
-
-    // Set notes
-    setNotes(feeding.notes || '');
-
-    // Set supplements
-    setSelectedSupplements(feeding.supplements?.map(s => s.id) || []);
-
-    // Determine log type and set foods
+    // Load food items
     if (feeding.is_salad) {
-      setLogType('salad');
-      setSelectedSaladComponents(feeding.salad_components?.map(sc => sc.id) || []);
+      setIsSalad(true);
+      setSaladComponents(feeding.salad_components?.map(sc => sc.id) || []);
     } else if (feeding.foods && feeding.foods.length > 0) {
-      const firstFood = feeding.foods[0];
-      const foodItem = foodsList.find(f => f.id === firstFood.id);
-
-      if (foodItem?.category === 'insect') {
-        setLogType('insect');
-        setSelectedInsectFood(firstFood.id);
-        setInsectQuantity(firstFood.quantity || 1);
-      } else if (foodItem?.category === 'prepared') {
-        setLogType('prepared');
-        setSelectedPreparedFood(firstFood.id);
-        setPreparedFoodQuantity(firstFood.quantity || 1);
-      }
+      // Convert foods to food items format
+      const items = feeding.foods.map(food => ({
+        id: Date.now() + Math.random(), // Unique ID for React keys
+        food_id: food.id,
+        quantity: food.quantity || 1,
+        supplements: feeding.supplements?.map(s => s.id) || [] // Note: global supplements for now
+      }));
+      setFoodItems(items);
     }
   };
-
-  const insectFoods = foods.filter(f => f.category === 'insect');
-  const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
-  const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
 
   // Update fedTime whenever hours/minutes/period change
   useEffect(() => {
@@ -172,12 +139,10 @@ export default function FeedingLog() {
   }, [hours, minutes, period, timeFormat]);
 
   const handleHoursChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    if (timeFormat === '12h') {
-      setHours(Math.max(1, Math.min(12, numValue)));
-    } else {
-      setHours(Math.max(0, Math.min(23, numValue)));
-    }
+    const numValue = parseInt(value) || (timeFormat === '12h' ? 12 : 0);
+    const maxHours = timeFormat === '12h' ? 12 : 23;
+    const minHours = timeFormat === '12h' ? 1 : 0;
+    setHours(Math.max(minHours, Math.min(maxHours, numValue)));
   };
 
   const handleMinutesChange = (value) => {
@@ -185,26 +150,60 @@ export default function FeedingLog() {
     setMinutes(Math.max(0, Math.min(59, numValue)));
   };
 
-  const handleInsectQuantityChange = (delta) => {
-    setInsectQuantity(prev => Math.max(1, prev + delta));
+  // NEW: Add a new food item
+  const addFoodItem = () => {
+    const insectFoods = foods.filter(f => f.category === 'insect');
+    const defaultFood = insectFoods.length > 0 ? insectFoods[0].id : (foods.length > 0 ? foods[0].id : '');
+
+    setFoodItems([...foodItems, {
+      id: Date.now(),
+      food_id: defaultFood,
+      quantity: 1,
+      supplements: []
+    }]);
   };
 
-  const handleSaladToggle = (foodId) => {
-    setSelectedSaladComponents(prev => prev.includes(foodId) ? prev.filter(fid => fid !== foodId) : [...prev, foodId]);
+  // NEW: Remove a food item
+  const removeFoodItem = (itemId) => {
+    setFoodItems(foodItems.filter(item => item.id !== itemId));
   };
 
-  const handleSupplementToggle = (supId) => {
-    setSelectedSupplements(prev => prev.includes(supId) ? prev.filter(sid => sid !== supId) : [...prev, supId]);
+  // NEW: Update food item field
+  const updateFoodItem = (itemId, field, value) => {
+    setFoodItems(foodItems.map(item =>
+      item.id === itemId ? { ...item, [field]: value } : item
+    ));
+  };
+
+  // NEW: Toggle supplement for a specific food item
+  const toggleItemSupplement = (itemId, supplementId) => {
+    setFoodItems(foodItems.map(item => {
+      if (item.id === itemId) {
+        const supplements = item.supplements.includes(supplementId)
+          ? item.supplements.filter(id => id !== supplementId)
+          : [...item.supplements, supplementId];
+        return { ...item, supplements };
+      }
+      return item;
+    }));
+  };
+
+  // Toggle salad component
+  const toggleSaladComponent = (foodId) => {
+    if (saladComponents.includes(foodId)) {
+      setSaladComponents(saladComponents.filter(id => id !== foodId));
+    } else {
+      setSaladComponents([...saladComponents, foodId]);
+    }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this feeding?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this feeding?')) return;
 
     try {
       await axios.delete(`/api/feedings/${id}`);
-      navigate(`/reptiles/${existingFeeding.reptile_id}`);
+      setSuccess('Feeding deleted successfully!');
+      setTimeout(() => navigate('/'), 1500);
     } catch (err) {
       console.error('Failed to delete feeding:', err);
       setError(err.response?.data?.detail || 'Failed to delete feeding. You may not have permission.');
@@ -217,8 +216,8 @@ export default function FeedingLog() {
     setSuccess('');
 
     if (!selectedReptile) {
-        setError("Please select a reptile.");
-        return;
+      setError("Please select a reptile.");
+      return;
     }
 
     // Construct datetime string with timezone offset to preserve local time
@@ -232,74 +231,85 @@ export default function FeedingLog() {
     const fedAtWithTimezone = `${fedDate}T${fedTime}:00${offsetString}`;
 
     let payload = {
-        reptile_id: parseInt(selectedReptile),
-        fed_at: fedAtWithTimezone,
-        notes,
-        supplements: selectedSupplements,
-        foods: [],
-        is_salad: false,
-        salad_components: []
+      reptile_id: parseInt(selectedReptile),
+      fed_at: fedAtWithTimezone,
+      notes,
+      is_salad: isSalad,
+      foods: [],
+      supplements: [],
+      salad_components: []
     };
 
-    if (logType === 'insect') {
-        if (!selectedInsectFood) {
-            setError("Please select an insect type.");
-            return;
-        }
-        payload.foods = [{ food_id: parseInt(selectedInsectFood), quantity: insectQuantity }];
-    } else if (logType === 'salad') {
-        const saladFood = foods.find(f => f.name === 'Salad');
-        if (!saladFood) {
-            setError("Could not find 'Salad' food type. Please contact support.");
-            return;
-        }
-        if (selectedSaladComponents.length === 0) {
-            setError("Please select at least one salad component.");
-            return;
-        }
-        payload.is_salad = true;
-        payload.foods = [{ food_id: saladFood.id, quantity: 1 }];
-        payload.salad_components = selectedSaladComponents;
-    } else if (logType === 'prepared') {
-        if (!selectedPreparedFood) {
-            setError("Please select a prepared food.");
-            return;
-        }
-        payload.foods = [{ food_id: parseInt(selectedPreparedFood), quantity: preparedFoodQuantity }];
+    if (isSalad) {
+      // Salad mode
+      if (saladComponents.length === 0) {
+        setError("Please select at least one salad component.");
+        return;
+      }
+
+      const saladFood = foods.find(f => f.name === 'Salad');
+      if (!saladFood) {
+        setError("Salad food item not found. Please create it in Food Management.");
+        return;
+      }
+
+      payload.foods = [{ food_id: saladFood.id, quantity: 1 }];
+      payload.salad_components = saladComponents;
+
+      // Collect all unique supplements from food items (even though salad doesn't use foodItems)
+      // For now, salad doesn't have per-item supplements
+    } else {
+      // Regular food mode
+      if (foodItems.length === 0) {
+        setError("Please add at least one food item.");
+        return;
+      }
+
+      // Convert food items to API format
+      payload.foods = foodItems.map(item => ({
+        food_id: parseInt(item.food_id),
+        quantity: item.quantity
+      }));
+
+      // Collect all unique supplements from all food items
+      const allSupplements = new Set();
+      foodItems.forEach(item => {
+        item.supplements.forEach(suppId => allSupplements.add(suppId));
+      });
+      payload.supplements = Array.from(allSupplements);
     }
 
     try {
-        if (mode === 'edit' && existingFeeding) {
-          // Update existing feeding
-          await axios.put(`/api/feedings/${id}`, payload);
-          setSuccess('Feeding updated successfully!');
-          setTimeout(() => navigate(`/reptiles/${selectedReptile}`), 1500);
-        } else {
-          // Create new feeding
-          await axios.post('/api/feedings', payload);
-          const reptileName = reptiles.find(r => r.id === parseInt(selectedReptile))?.name;
-          setSuccess(`Feeding successfully logged for ${reptileName}!`);
-          // Reset form
-          setInsectQuantity(1);
-          setSelectedSaladComponents([]);
-          setSelectedSupplements([]);
-          setNotes('');
-          setPreparedFoodQuantity(1);
-
-          setTimeout(() => navigate(`/reptiles/${selectedReptile}`), 1500);
-        }
+      if (mode === 'edit') {
+        await axios.put(`/api/feedings/${id}`, payload);
+        setSuccess('Feeding updated successfully!');
+        setMode('view');
+        // Reload the feeding data
+        const feedingRes = await axios.get(`/api/feedings/${id}`);
+        setExistingFeeding(feedingRes.data);
+        loadFeedingData(feedingRes.data);
+      } else {
+        await axios.post('/api/feedings', payload);
+        setSuccess('Feeding logged successfully!');
+        setTimeout(() => navigate('/'), 1500);
+      }
     } catch (err) {
-        console.error("Failed to save feeding:", err);
-        setError(err.response?.data?.detail || "An unexpected error occurred while saving.");
+      console.error('Failed to log feeding:', err);
+      setError(err.response?.data?.detail || 'Failed to log feeding.');
     }
   };
 
-  if (loading) return <p className="text-center py-12">Loading...</p>;
+  const insectFoods = foods.filter(f => f.category === 'insect');
+  const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
+  const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
+  const allRegularFoods = [...insectFoods, ...preparedFoods];
 
-  // VIEW MODE - Read-only display with Edit/Delete buttons
+  if (loading) {
+    return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;
+  }
+
+  // VIEW MODE
   if (mode === 'view' && existingFeeding) {
-    const reptileName = reptiles.find(r => r.id === existingFeeding.reptile_id)?.name || 'Unknown';
-
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
@@ -314,8 +324,6 @@ export default function FeedingLog() {
           </div>
         </div>
 
-        {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</p>}
-
         <div className="card space-y-6">
           <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Logged at</p>
@@ -329,19 +337,23 @@ export default function FeedingLog() {
 
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">{reptileName}</p>
+            <p className="text-lg font-medium text-gray-900 dark:text-white">
+              {existingFeeding.reptile?.name || 'Unknown'}
+            </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Fed At</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">{formatDateTime(existingFeeding.fed_at)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Fed at</p>
+            <p className="text-lg font-medium text-gray-900 dark:text-white">
+              {formatDateTime(existingFeeding.fed_at)}
+            </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Food</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Food</p>
             {existingFeeding.is_salad ? (
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white mb-2">Salad</p>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <p className="font-medium text-green-900 dark:text-green-100 mb-1">Salad</p>
                 <p className="text-gray-700 dark:text-gray-300">
                   Components: {existingFeeding.salad_components?.map(sc => sc.name).join(', ') || 'None'}
                 </p>
@@ -362,7 +374,7 @@ export default function FeedingLog() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Supplements</p>
               <div className="flex flex-wrap gap-2">
                 {existingFeeding.supplements.map(sup => (
-                  <span key={sup.id} className="px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm">
+                  <span key={sup.id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
                     {sup.name}
                   </span>
                 ))}
@@ -373,7 +385,7 @@ export default function FeedingLog() {
           {existingFeeding.notes && (
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Notes</p>
-              <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{existingFeeding.notes}</p>
+              <p className="text-gray-900 dark:text-white">{existingFeeding.notes}</p>
             </div>
           )}
         </div>
@@ -381,197 +393,247 @@ export default function FeedingLog() {
     );
   }
 
-  // EDIT/CREATE MODE - Editable form
-  const pageTitle = mode === 'edit' ? 'Edit Feeding' : 'Log Feeding';
-
+  // CREATE/EDIT MODE
   return (
     <div>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{pageTitle}</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {mode === 'edit' ? 'Edit Feeding' : 'Log Feeding'}
+        </h1>
+      </div>
+
+      {mode === 'edit' && existingFeeding && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-blue-900 dark:text-blue-100 text-sm">
+            Originally logged at {formatDateTime(existingFeeding.created_at || existingFeeding.fed_at)} by {existingFeeding.user?.name || 'Unknown'}
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-red-800 dark:text-red-200">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-green-800 dark:text-green-200">{success}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="card space-y-6">
+        <div>
+          <label htmlFor="reptile" className="block font-medium mb-1">Reptile</label>
+          <select
+            id="reptile"
+            value={selectedReptile}
+            onChange={e => setSelectedReptile(e.target.value)}
+            className="input"
+            required
+            disabled={mode === 'edit'}
+          >
+            {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </div>
+
+        {/* Salad Toggle */}
+        <div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isSalad}
+              onChange={(e) => setIsSalad(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="font-medium">This is a salad feeding</span>
+          </label>
+        </div>
+
+        {/* SALAD MODE */}
+        {isSalad ? (
+          <div>
+            <label className="block font-medium mb-2">Salad Components</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {saladFoods.map(food => (
+                <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={saladComponents.includes(food.id)}
+                    onChange={() => toggleSaladComponent(food.id)}
+                  />
+                  <span className="text-sm">{food.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* REGULAR FOOD MODE */
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <label className="block font-medium">Food Items</label>
+              <button
+                type="button"
+                onClick={addFoodItem}
+                className="btn-secondary text-sm flex items-center gap-1"
+              >
+                <Plus size={16} /> Add Food
+              </button>
+            </div>
+
+            {foodItems.length === 0 && (
+              <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+                No food items added. Click "Add Food" to get started.
+              </p>
+            )}
+
+            {foodItems.map((item, index) => (
+              <div key={item.id} className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg space-y-3">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-medium text-gray-900 dark:text-white">Food Item {index + 1}</h4>
+                  {foodItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeFoodItem(item.id)}
+                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Food Type</label>
+                  <select
+                    value={item.food_id}
+                    onChange={(e) => updateFoodItem(item.id, 'food_id', e.target.value)}
+                    className="input w-full"
+                  >
+                    {allRegularFoods.map(food => (
+                      <option key={food.id} value={food.id}>
+                        {food.name} ({food.category})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Quantity</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateFoodItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                      className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => updateFoodItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                      className="input text-center w-20"
+                      min="1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateFoodItem(item.id, 'quantity', item.quantity + 1)}
+                      className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Supplements for this item</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {supplements.map(sup => (
+                      <label key={sup.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={item.supplements.includes(sup.id)}
+                          onChange={() => toggleItemSupplement(item.id, sup.id)}
+                        />
+                        <span>{sup.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="fedDate" className="block font-medium mb-1">Date</label>
+            <DateInput
+              id="fedDate"
+              value={fedDate}
+              onChange={e => setFedDate(e.target.value)}
+              className="input w-full"
+              required
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={hours}
+                onChange={e => handleHoursChange(e.target.value)}
+                className="input w-20 text-center"
+                min={timeFormat === '12h' ? 1 : 0}
+                max={timeFormat === '12h' ? 12 : 23}
+                required
+              />
+              <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+              <input
+                type="number"
+                value={String(minutes).padStart(2, '0')}
+                onChange={e => handleMinutesChange(e.target.value)}
+                className="input w-20 text-center"
+                min="0"
+                max="59"
+                required
+              />
+              {timeFormat === '12h' && (
+                <select value={period} onChange={e => setPeriod(e.target.value)} className="input w-20">
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="notes" className="block font-medium mb-1">Notes (optional)</label>
+          <textarea
+            id="notes"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={3}
+            className="input w-full"
+            placeholder="Any observations or notes about this feeding"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button type="submit" className="btn-primary flex-1">
+            {mode === 'edit' ? 'Update Feeding' : 'Log Feeding'}
+          </button>
           {mode === 'edit' && (
-            <button onClick={() => setMode('view')} className="btn-secondary">
+            <button
+              type="button"
+              onClick={() => setMode('view')}
+              className="btn-secondary"
+            >
               Cancel
             </button>
           )}
         </div>
-
-        {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</p>}
-        {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">{success}</p>}
-
-        {mode === 'edit' && existingFeeding && (
-          <div className="card mb-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Originally logged at {formatDateTime(existingFeeding.created_at || existingFeeding.fed_at)} by {existingFeeding.user?.name || 'Unknown'}
-            </p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="card space-y-6">
-            <div>
-                <label htmlFor="reptile" className="block font-medium mb-1">Reptile</label>
-                <select id="reptile" value={selectedReptile} onChange={e => setSelectedReptile(e.target.value)} className="input" required disabled={mode === 'edit'}>
-                    {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
-            </div>
-
-            <div>
-                <label className="block font-medium mb-2">Feeding Type</label>
-                <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-                    <button type="button" onClick={() => setLogType('insect')} className={`flex-1 p-3 text-sm font-medium flex items-center justify-center gap-2 ${logType === 'insect' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
-                        <Bug size={16} /> Insects
-                    </button>
-                    <button type="button" onClick={() => setLogType('salad')} className={`flex-1 p-3 text-sm font-medium flex items-center justify-center gap-2 border-l border-r border-gray-300 dark:border-gray-600 ${logType === 'salad' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
-                        <Leaf size={16} /> Salad
-                    </button>
-                    <button type="button" onClick={() => setLogType('prepared')} className={`flex-1 p-3 text-sm font-medium flex items-center justify-center gap-2 ${logType === 'prepared' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
-                        <Utensils size={16} /> Prepared
-                    </button>
-                </div>
-            </div>
-
-            {logType === 'insect' && (
-                <div className="space-y-4">
-                    <div>
-                        <label className="block font-medium mb-2">Insect Type</label>
-                        <select
-                            value={selectedInsectFood}
-                            onChange={(e) => setSelectedInsectFood(e.target.value)}
-                            className="input w-full"
-                        >
-                            {insectFoods.map(food => (
-                                <option key={food.id} value={food.id}>{food.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block font-medium mb-2">Quantity</label>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleInsectQuantityChange(-1)}
-                                className="counter-button w-12 h-12 bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                            >
-                                -
-                            </button>
-                            <input
-                                type="number"
-                                value={insectQuantity}
-                                onChange={e => setInsectQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                className="input text-center w-20 text-lg font-semibold"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleInsectQuantityChange(1)}
-                                className="counter-button w-12 h-12 bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                            >
-                                +
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {logType === 'salad' && (
-                <div>
-                    <label className="block font-medium mb-2">Salad Components</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {saladFoods.map(food => (
-                            <label key={food.id} className={`flex items-center gap-2 p-3 rounded-lg border transition-colors cursor-pointer ${selectedSaladComponents.includes(food.id) ? 'bg-primary-100 dark:bg-primary-900 border-primary-400 dark:border-primary-600' : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600'}`}>
-                                <input type="checkbox" checked={selectedSaladComponents.includes(food.id)} onChange={() => handleSaladToggle(food.id)} className="rounded text-primary-600 focus:ring-primary-500" />
-                                <span>{food.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {logType === 'prepared' && (
-                <div className="space-y-4">
-                    <div>
-                        <label htmlFor="prepared-food" className="block font-medium mb-1">Prepared Food</label>
-                        <select id="prepared-food" value={selectedPreparedFood} onChange={e => setSelectedPreparedFood(e.target.value)} className="input">
-                            {preparedFoods.map(food => <option key={food.id} value={food.id}>{food.name}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="prepared-quantity" className="block font-medium mb-1">Quantity</label>
-                        <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => setPreparedFoodQuantity(q => Math.max(1, q - 1))} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">-</button>
-                            <input id="prepared-quantity" type="number" value={preparedFoodQuantity} onChange={e => setPreparedFoodQuantity(parseInt(e.target.value) || 1)} className="input text-center w-16" />
-                            <button type="button" onClick={() => setPreparedFoodQuantity(q => q + 1)} className="counter-button w-10 h-10 bg-gray-200 dark:bg-gray-700">+</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div>
-                <label className="block font-medium mb-2">Supplements</label>
-                <div className="flex flex-wrap gap-2">
-                    {supplements.map(sup => (
-                        <label key={sup.id} className={`flex items-center gap-2 p-2 px-3 rounded-full border cursor-pointer transition-colors ${selectedSupplements.includes(sup.id) ? 'bg-primary-100 dark:bg-primary-900 border-primary-400 dark:border-primary-600' : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600'}`}>
-                            <input type="checkbox" checked={selectedSupplements.includes(sup.id)} onChange={() => handleSupplementToggle(sup.id)} className="hidden" />
-                            <span>{sup.name}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="fedDate" className="block font-medium mb-1">Date</label>
-                    <DateInput
-                        id="fedDate"
-                        value={fedDate}
-                        onChange={e => setFedDate(e.target.value)}
-                        className="input w-full"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block font-medium mb-1">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
-                    <div className="flex gap-2">
-                        <input
-                            type="number"
-                            value={hours}
-                            onChange={e => handleHoursChange(e.target.value)}
-                            className="input w-20 text-center"
-                            min={timeFormat === '12h' ? 1 : 0}
-                            max={timeFormat === '12h' ? 12 : 23}
-                            required
-                        />
-                        <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
-                        <input
-                            type="number"
-                            value={String(minutes).padStart(2, '0')}
-                            onChange={e => handleMinutesChange(e.target.value)}
-                            className="input w-20 text-center"
-                            min="0"
-                            max="59"
-                            required
-                        />
-                        {timeFormat === '12h' && (
-                            <select
-                                value={period}
-                                onChange={e => setPeriod(e.target.value)}
-                                className="input w-20"
-                            >
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </select>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <label htmlFor="notes" className="block font-medium mb-1">Notes (optional)</label>
-                <textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="input" placeholder="e.g., Good feeding response"></textarea>
-            </div>
-
-            <button type="submit" className="btn-primary w-full !mt-8">
-              {mode === 'edit' ? 'Update Feeding' : 'Log Feeding'}
-            </button>
-        </form>
+      </form>
     </div>
   );
 }
