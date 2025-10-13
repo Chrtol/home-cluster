@@ -15,19 +15,22 @@
   - Apply dark mode to login page
   - Change login button text from "Login with authentik" to "Login with single sign-on"
 
-- [ ] **New user onboarding wizard**
+- [x] **New user onboarding wizard** - ✅ COMPLETED
   - Option 1: Paste code to join existing household
-  - Option 2: Create new household + add first reptile
-  - Tour of key pages: food items, health info, etc.
+  - Option 2: Create new household
+  - Mandatory before accessing app
+  - Beautiful two-option interface
 
 ### Food & Supplement Management
 - [x] **Food Management Page** - ✅ COMPLETED
   - Create/edit/delete food items
   - Manage nutritional values
-- [ ] **Extend to Supplements**
-  - Add supplement management to food page
-  - Include calcium, calcium with D3, multivitamins
-  - Allow editing dosage information
+- [x] **Extend to Supplements** - ✅ COMPLETED
+  - Added supplements tab to Food Management page
+  - Full CRUD operations for supplements
+  - Nutritional data fields: Calcium (mg), Vitamin D3 (IU), Vitamin A (IU), Notes
+  - Default supplement protection with force delete option
+  - Common supplements: Calcium, Calcium with D3, Multivitamins
 - [ ] **Add frozen/dead animal food category**
   - New category for frozen rodents (mice, rats, etc.)
   - For snakes and larger lizards
