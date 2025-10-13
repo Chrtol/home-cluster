@@ -166,7 +166,8 @@ async def create_feeding(
     )
 
     # Create feeding
-    print(f"[DEBUG] Creating feeding with fed_at: {feeding.fed_at} (type: {type(feeding.fed_at)})")
+    import sys
+    print(f"[DEBUG] Creating feeding with fed_at: {feeding.fed_at} (type: {type(feeding.fed_at)})", file=sys.stderr, flush=True)
     new_feeding = Feeding(
         reptile_id=feeding.reptile_id,
         user_id=current_user.id,
@@ -177,7 +178,7 @@ async def create_feeding(
     )
     db.add(new_feeding)
     await db.flush()
-    print(f"[DEBUG] Feeding created with ID: {new_feeding.id}, fed_at stored as: {new_feeding.fed_at}")
+    print(f"[DEBUG] Feeding created with ID: {new_feeding.id}, fed_at stored as: {new_feeding.fed_at}", file=sys.stderr, flush=True)
 
     # Add foods with quantities
     for food_item in feeding.foods:
@@ -432,7 +433,11 @@ async def update_feeding(
         )
 
     # Update basic fields
+    import sys
+    print(f"[DEBUG UPDATE] Original fed_at: {feeding.fed_at}", file=sys.stderr, flush=True)
+    print(f"[DEBUG UPDATE] New fed_at from request: {feeding_update.fed_at} (type: {type(feeding_update.fed_at)})", file=sys.stderr, flush=True)
     feeding.fed_at = feeding_update.fed_at or feeding.fed_at
+    print(f"[DEBUG UPDATE] After assignment: {feeding.fed_at}", file=sys.stderr, flush=True)
     feeding.notes = feeding_update.notes
     feeding.is_salad = feeding_update.is_salad
 
