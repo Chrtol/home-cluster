@@ -166,6 +166,7 @@ async def create_feeding(
     )
 
     # Create feeding
+    print(f"[DEBUG] Creating feeding with fed_at: {feeding.fed_at} (type: {type(feeding.fed_at)})")
     new_feeding = Feeding(
         reptile_id=feeding.reptile_id,
         user_id=current_user.id,
@@ -176,6 +177,7 @@ async def create_feeding(
     )
     db.add(new_feeding)
     await db.flush()
+    print(f"[DEBUG] Feeding created with ID: {new_feeding.id}, fed_at stored as: {new_feeding.fed_at}")
 
     # Add foods with quantities
     for food_item in feeding.foods:

@@ -104,6 +104,14 @@ export default function FeedingLog() {
 
     const hour = fedAtDate.getHours();
     const minute = fedAtDate.getMinutes();
+
+    console.log('Loading feeding data:', {
+      rawFedAt: feeding.fed_at,
+      parsedDate: fedAtDate.toString(),
+      extractedHour: hour,
+      extractedMinute: minute
+    });
+
     setHours(hour);
     setMinutes(minute);
     setPeriod(hour >= 12 ? 'PM' : 'AM');
@@ -235,6 +243,14 @@ export default function FeedingLog() {
 
     // Construct: YYYY-MM-DDTHH:MM:SS+TZ
     const fedAtISO = `${fedDate}T${fedTime}:00${offsetString}`;
+
+    console.log('Submitting feeding:', {
+      inputDate: fedDate,
+      inputTime: fedTime,
+      tzOffset,
+      offsetString,
+      finalISO: fedAtISO
+    });
 
     let payload = {
       reptile_id: parseInt(selectedReptile),
