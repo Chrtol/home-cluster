@@ -14,6 +14,17 @@ export default function Onboarding() {
   // Join household state
   const [inviteCode, setInviteCode] = useState('');
 
+  // Apply dark mode by default (same logic as Layout component)
+  useEffect(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    const isDark = savedMode === null ? true : savedMode === 'true';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   const handleCreateHousehold = async (e) => {
     e.preventDefault();
     if (!householdName.trim()) {

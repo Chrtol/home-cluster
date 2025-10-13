@@ -221,11 +221,19 @@ export default function FeedingLog() {
         return;
     }
 
+    // Construct datetime string with timezone offset to preserve local time
     const fedAtDateTime = new Date(`${fedDate}T${fedTime}`);
+    // Get timezone offset and format as +HH:MM or -HH:MM
+    const tzOffset = -fedAtDateTime.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(tzOffset) / 60);
+    const offsetMinutes = Math.abs(tzOffset) % 60;
+    const offsetSign = tzOffset >= 0 ? '+' : '-';
+    const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+    const fedAtWithTimezone = `${fedDate}T${fedTime}:00${offsetString}`;
 
     let payload = {
         reptile_id: parseInt(selectedReptile),
-        fed_at: fedAtDateTime.toISOString(),
+        fed_at: fedAtWithTimezone,
         notes,
         supplements: selectedSupplements,
         foods: [],
