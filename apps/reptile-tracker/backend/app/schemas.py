@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_serializer
 from app.models import AccessLevel, FoodCategory, InsectSize
 
 
@@ -149,6 +149,15 @@ class Feeding(BaseModel):
     supplements: List[Supplement]
     salad_components: List[Food]
     created_at: datetime
+
+    @field_serializer('fed_at', 'created_at')
+    def serialize_datetime(self, dt: datetime, _info):
+        """Ensure datetimes are serialized with timezone info (UTC 'Z' suffix)"""
+        if dt.tzinfo is not None:
+            # Convert to UTC and use 'Z' suffix
+            return dt.isoformat().replace('+00:00', 'Z')
+        # If naive datetime, treat as UTC
+        return dt.isoformat() + 'Z'
 
     class Config:
         from_attributes = True
