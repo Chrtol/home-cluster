@@ -220,19 +220,25 @@ export default function FeedingLog() {
       return;
     }
 
-    // Construct datetime string with timezone offset to preserve local time
-    const fedAtDateTime = new Date(`${fedDate}T${fedTime}`);
-    // Get timezone offset and format as +HH:MM or -HH:MM
-    const tzOffset = -fedAtDateTime.getTimezoneOffset();
+    // Construct ISO 8601 datetime WITH local timezone offset
+    // This tells the backend "17:00 in the user's timezone"
+    const [year, month, day] = fedDate.split('-').map(Number);
+    const [hour, minute] = fedTime.split(':').map(Number);
+    const localDate = new Date(year, month - 1, day, hour, minute, 0);
+
+    // Get timezone offset in minutes and convert to +HH:MM format
+    const tzOffset = -localDate.getTimezoneOffset(); // Negative because getTimezoneOffset returns opposite sign
     const offsetHours = Math.floor(Math.abs(tzOffset) / 60);
     const offsetMinutes = Math.abs(tzOffset) % 60;
     const offsetSign = tzOffset >= 0 ? '+' : '-';
     const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
-    const fedAtWithTimezone = `${fedDate}T${fedTime}:00${offsetString}`;
+
+    // Construct: YYYY-MM-DDTHH:MM:SS+TZ
+    const fedAtISO = `${fedDate}T${fedTime}:00${offsetString}`;
 
     let payload = {
       reptile_id: parseInt(selectedReptile),
-      fed_at: fedAtWithTimezone,
+      fed_at: fedAtISO,
       notes,
       is_salad: isSalad,
       foods: [],
