@@ -28,6 +28,10 @@
   - Add supplement management to food page
   - Include calcium, calcium with D3, multivitamins
   - Allow editing dosage information
+- [ ] **Add frozen/dead animal food category**
+  - New category for frozen rodents (mice, rats, etc.)
+  - For snakes and larger lizards
+  - Track size (pinky, fuzzy, adult, etc.)
 
 ## 🔧 Core Features
 

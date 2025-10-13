@@ -75,7 +75,7 @@ async def create_reptile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new reptile"""
+    """Create a new reptile (requires household membership)"""
 
     # Get user's primary household (first household they're a member of)
     household_result = await db.execute(
@@ -84,6 +84,13 @@ async def create_reptile(
         .limit(1)
     )
     household_id = household_result.scalar_one_or_none()
+
+    # Require household membership
+    if not household_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must be a member of a household to create reptiles. Please create or join a household first.",
+        )
 
     new_reptile = Reptile(
         **reptile.model_dump(),
