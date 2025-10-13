@@ -144,11 +144,11 @@ export default function FeedingLog() {
       if (foodItem?.category === 'insect') {
         setLogType('insect');
         setSelectedInsectFood(firstFood.id);
-        setInsectQuantity(firstFood.FeedingFood?.quantity || 1);
+        setInsectQuantity(firstFood.quantity || 1);
       } else if (foodItem?.category === 'prepared') {
         setLogType('prepared');
         setSelectedPreparedFood(firstFood.id);
-        setPreparedFoodQuantity(firstFood.FeedingFood?.quantity || 1);
+        setPreparedFoodQuantity(firstFood.quantity || 1);
       }
     }
   };
@@ -341,7 +341,7 @@ export default function FeedingLog() {
             ) : existingFeeding.foods && existingFeeding.foods.length > 0 ? (
               existingFeeding.foods.map(food => (
                 <p key={food.id} className="text-gray-900 dark:text-white">
-                  {food.name} × {food.FeedingFood?.quantity || 1}
+                  {food.name} × {food.quantity || 1}
                 </p>
               ))
             ) : (

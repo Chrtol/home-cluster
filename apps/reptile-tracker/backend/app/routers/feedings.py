@@ -39,7 +39,6 @@ async def list_feedings(
     query = (
         select(Feeding)
         .options(
-            selectinload(Feeding.foods),
             selectinload(Feeding.supplements),
             selectinload(Feeding.salad_components),
             selectinload(Feeding.user),
@@ -70,7 +69,87 @@ async def list_feedings(
     result = await db.execute(query)
     feedings = result.scalars().all()
 
-    return feedings
+    # For each feeding, manually load foods with quantities
+    feedings_list = []
+    for feeding in feedings:
+        # Load foods with quantities from association table
+        foods_result = await db.execute(
+            select(Food, feeding_foods.c.quantity)
+            .join(feeding_foods, Food.id == feeding_foods.c.food_id)
+            .where(feeding_foods.c.feeding_id == feeding.id)
+        )
+        foods_with_qty = []
+        for food, quantity in foods_result:
+            food_dict = {
+                "id": food.id,
+                "name": food.name,
+                "category": food.category,
+                "insect_size": food.insect_size,
+                "nutritional_data": food.nutritional_data,
+                "is_default": food.is_default,
+                "created_at": food.created_at,
+                "quantity": quantity,
+            }
+            foods_with_qty.append(food_dict)
+
+        # Convert feeding to dict with all data
+        feeding_dict = {
+            "id": feeding.id,
+            "reptile_id": feeding.reptile_id,
+            "user_id": feeding.user_id,
+            "fed_at": feeding.fed_at,
+            "notes": feeding.notes,
+            "is_salad": feeding.is_salad,
+            "foods": foods_with_qty,
+            "supplements": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "nutritional_data": s.nutritional_data,
+                    "is_default": s.is_default,
+                    "created_at": s.created_at,
+                }
+                for s in feeding.supplements
+            ],
+            "salad_components": [
+                {
+                    "id": f.id,
+                    "name": f.name,
+                    "category": f.category,
+                    "insect_size": f.insect_size,
+                    "nutritional_data": f.nutritional_data,
+                    "is_default": f.is_default,
+                    "created_at": f.created_at,
+                }
+                for f in feeding.salad_components
+            ],
+            "created_at": feeding.created_at,
+            "user": {
+                "id": feeding.user.id,
+                "email": feeding.user.email,
+                "name": feeding.user.name,
+                "oidc_sub": feeding.user.oidc_sub,
+                "created_at": feeding.user.created_at,
+                "last_login": feeding.user.last_login,
+            } if feeding.user else None,
+            "reptile": {
+                "id": feeding.reptile.id,
+                "name": feeding.reptile.name,
+                "species": feeding.reptile.species,
+                "date_of_birth": feeding.reptile.date_of_birth,
+                "notes": feeding.reptile.notes,
+                "photo_url": feeding.reptile.photo_url,
+                "feeding_schedule_enabled": feeding.reptile.feeding_schedule_enabled,
+                "feeding_frequency_days": feeding.reptile.feeding_frequency_days,
+                "reminder_enabled": feeding.reptile.reminder_enabled,
+                "reminder_hours_before": feeding.reptile.reminder_hours_before,
+                "created_at": feeding.reptile.created_at,
+                "updated_at": feeding.reptile.updated_at,
+            } if feeding.reptile else None,
+        }
+        feedings_list.append(feeding_dict)
+
+    return feedings_list
 
 
 @router.post("", response_model=FeedingSchema, status_code=status.HTTP_201_CREATED)
@@ -134,12 +213,65 @@ async def create_feeding(
         select(Feeding)
         .where(Feeding.id == new_feeding.id)
         .options(
-            selectinload(Feeding.foods),
             selectinload(Feeding.supplements),
             selectinload(Feeding.salad_components),
         )
     )
     new_feeding = result.scalar_one()
+
+    # Manually load foods with quantities from association table
+    foods_result = await db.execute(
+        select(Food, feeding_foods.c.quantity)
+        .join(feeding_foods, Food.id == feeding_foods.c.food_id)
+        .where(feeding_foods.c.feeding_id == new_feeding.id)
+    )
+    foods_with_qty = []
+    for food, quantity in foods_result:
+        food_dict = {
+            "id": food.id,
+            "name": food.name,
+            "category": food.category,
+            "insect_size": food.insect_size,
+            "nutritional_data": food.nutritional_data,
+            "is_default": food.is_default,
+            "created_at": food.created_at,
+            "quantity": quantity,
+        }
+        foods_with_qty.append(food_dict)
+
+    # Convert feeding to dict with all data
+    feeding_dict = {
+        "id": new_feeding.id,
+        "reptile_id": new_feeding.reptile_id,
+        "user_id": new_feeding.user_id,
+        "fed_at": new_feeding.fed_at,
+        "notes": new_feeding.notes,
+        "is_salad": new_feeding.is_salad,
+        "foods": foods_with_qty,
+        "supplements": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "nutritional_data": s.nutritional_data,
+                "is_default": s.is_default,
+                "created_at": s.created_at,
+            }
+            for s in new_feeding.supplements
+        ],
+        "salad_components": [
+            {
+                "id": f.id,
+                "name": f.name,
+                "category": f.category,
+                "insect_size": f.insect_size,
+                "nutritional_data": f.nutritional_data,
+                "is_default": f.is_default,
+                "created_at": f.created_at,
+            }
+            for f in new_feeding.salad_components
+        ],
+        "created_at": new_feeding.created_at,
+    }
 
     # Send notification if configured
     notif_result = await db.execute(
@@ -158,7 +290,7 @@ async def create_feeding(
             webhook_type=notif_settings.webhook_type,
         )
 
-    return new_feeding
+    return feeding_dict
 
 
 @router.get("/{feeding_id}", response_model=FeedingWithUser)
@@ -173,7 +305,6 @@ async def get_feeding(
         select(Feeding)
         .where(Feeding.id == feeding_id)
         .options(
-            selectinload(Feeding.foods),
             selectinload(Feeding.supplements),
             selectinload(Feeding.salad_components),
             selectinload(Feeding.user),
@@ -191,7 +322,83 @@ async def get_feeding(
     # Check access to reptile
     await check_reptile_access(db, current_user, feeding.reptile_id, AccessLevel.VIEWER)
 
-    return feeding
+    # Manually load foods with quantities from association table
+    foods_result = await db.execute(
+        select(Food, feeding_foods.c.quantity)
+        .join(feeding_foods, Food.id == feeding_foods.c.food_id)
+        .where(feeding_foods.c.feeding_id == feeding_id)
+    )
+    foods_with_qty = []
+    for food, quantity in foods_result:
+        food_dict = {
+            "id": food.id,
+            "name": food.name,
+            "category": food.category,
+            "insect_size": food.insect_size,
+            "nutritional_data": food.nutritional_data,
+            "is_default": food.is_default,
+            "created_at": food.created_at,
+            "quantity": quantity,
+        }
+        foods_with_qty.append(food_dict)
+
+    # Convert feeding to dict and add foods with quantities
+    feeding_dict = {
+        "id": feeding.id,
+        "reptile_id": feeding.reptile_id,
+        "user_id": feeding.user_id,
+        "fed_at": feeding.fed_at,
+        "notes": feeding.notes,
+        "is_salad": feeding.is_salad,
+        "foods": foods_with_qty,
+        "supplements": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "nutritional_data": s.nutritional_data,
+                "is_default": s.is_default,
+                "created_at": s.created_at,
+            }
+            for s in feeding.supplements
+        ],
+        "salad_components": [
+            {
+                "id": f.id,
+                "name": f.name,
+                "category": f.category,
+                "insect_size": f.insect_size,
+                "nutritional_data": f.nutritional_data,
+                "is_default": f.is_default,
+                "created_at": f.created_at,
+            }
+            for f in feeding.salad_components
+        ],
+        "created_at": feeding.created_at,
+        "user": {
+            "id": feeding.user.id,
+            "email": feeding.user.email,
+            "name": feeding.user.name,
+            "oidc_sub": feeding.user.oidc_sub,
+            "created_at": feeding.user.created_at,
+            "last_login": feeding.user.last_login,
+        } if feeding.user else None,
+        "reptile": {
+            "id": feeding.reptile.id,
+            "name": feeding.reptile.name,
+            "species": feeding.reptile.species,
+            "date_of_birth": feeding.reptile.date_of_birth,
+            "notes": feeding.reptile.notes,
+            "photo_url": feeding.reptile.photo_url,
+            "feeding_schedule_enabled": feeding.reptile.feeding_schedule_enabled,
+            "feeding_frequency_days": feeding.reptile.feeding_frequency_days,
+            "reminder_enabled": feeding.reptile.reminder_enabled,
+            "reminder_hours_before": feeding.reptile.reminder_hours_before,
+            "created_at": feeding.reptile.created_at,
+            "updated_at": feeding.reptile.updated_at,
+        } if feeding.reptile else None,
+    }
+
+    return feeding_dict
 
 
 @router.put("/{feeding_id}", response_model=FeedingSchema)
@@ -268,14 +475,67 @@ async def update_feeding(
         select(Feeding)
         .where(Feeding.id == feeding_id)
         .options(
-            selectinload(Feeding.foods),
             selectinload(Feeding.supplements),
             selectinload(Feeding.salad_components),
         )
     )
     updated_feeding = result.scalar_one()
 
-    return updated_feeding
+    # Manually load foods with quantities from association table
+    foods_result = await db.execute(
+        select(Food, feeding_foods.c.quantity)
+        .join(feeding_foods, Food.id == feeding_foods.c.food_id)
+        .where(feeding_foods.c.feeding_id == feeding_id)
+    )
+    foods_with_qty = []
+    for food, quantity in foods_result:
+        food_dict = {
+            "id": food.id,
+            "name": food.name,
+            "category": food.category,
+            "insect_size": food.insect_size,
+            "nutritional_data": food.nutritional_data,
+            "is_default": food.is_default,
+            "created_at": food.created_at,
+            "quantity": quantity,
+        }
+        foods_with_qty.append(food_dict)
+
+    # Convert feeding to dict with all data
+    feeding_dict = {
+        "id": updated_feeding.id,
+        "reptile_id": updated_feeding.reptile_id,
+        "user_id": updated_feeding.user_id,
+        "fed_at": updated_feeding.fed_at,
+        "notes": updated_feeding.notes,
+        "is_salad": updated_feeding.is_salad,
+        "foods": foods_with_qty,
+        "supplements": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "nutritional_data": s.nutritional_data,
+                "is_default": s.is_default,
+                "created_at": s.created_at,
+            }
+            for s in updated_feeding.supplements
+        ],
+        "salad_components": [
+            {
+                "id": f.id,
+                "name": f.name,
+                "category": f.category,
+                "insect_size": f.insect_size,
+                "nutritional_data": f.nutritional_data,
+                "is_default": f.is_default,
+                "created_at": f.created_at,
+            }
+            for f in updated_feeding.salad_components
+        ],
+        "created_at": updated_feeding.created_at,
+    }
+
+    return feeding_dict
 
 
 @router.delete("/{feeding_id}", status_code=status.HTTP_204_NO_CONTENT)

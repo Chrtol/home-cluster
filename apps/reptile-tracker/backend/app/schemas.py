@@ -123,9 +123,16 @@ class FeedingCreate(BaseModel):
     notes: Optional[str] = None
 
 
-class FeedingFood(BaseModel):
-    food: Food
-    quantity: int
+class FoodWithQuantity(BaseModel):
+    """Food item with quantity from association table"""
+    id: int
+    name: str
+    category: FoodCategory
+    insect_size: Optional[InsectSize] = None
+    nutritional_data: Optional[dict] = None
+    is_default: bool
+    created_at: datetime
+    quantity: int  # From feeding_foods association table
 
     class Config:
         from_attributes = True
@@ -138,7 +145,7 @@ class Feeding(BaseModel):
     fed_at: datetime
     notes: Optional[str]
     is_salad: bool
-    foods: List[Food]
+    foods: List[FoodWithQuantity]
     supplements: List[Supplement]
     salad_components: List[Food]
     created_at: datetime
