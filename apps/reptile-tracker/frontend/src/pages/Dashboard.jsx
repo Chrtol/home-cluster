@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { PlusCircle } from 'lucide-react';
+import { Utensils } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatting';
 
 export default function Dashboard() {
@@ -34,7 +34,12 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <Link to="/feed" className="btn-primary flex items-center gap-2">
+          <Utensils size={20} /> Log Feeding
+        </Link>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Reptile Summary */}
         <div className="md:col-span-1">
@@ -56,12 +61,14 @@ export default function Dashboard() {
                   </Link>
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400">No reptiles added yet.</p>
+                <div className="text-center py-4">
+                  <p className="text-gray-500 dark:text-gray-400 mb-3">No reptiles added yet.</p>
+                  <Link to="/reptiles/new" className="text-primary-600 dark:text-primary-400 hover:underline text-sm">
+                    Add your first reptile
+                  </Link>
+                </div>
               )}
             </div>
-            <Link to="/reptiles/new" className="btn-primary mt-4 w-full text-center flex items-center justify-center gap-2">
-              <PlusCircle size={20} /> Add Reptile
-            </Link>
           </div>
         </div>
 
