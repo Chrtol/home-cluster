@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import AcceptInvite from './pages/AcceptInvite';
+import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import ReptileList from './pages/ReptileList';
 import ReptileDetail from './pages/ReptileDetail';
@@ -26,6 +27,7 @@ function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [hasHousehold, setHasHousehold] = useState(null) // null = checking, true/false = result
 
   useEffect(() => {
     // Check authentication status on mount
@@ -81,12 +83,26 @@ function App() {
       const response = await axios.get('/auth/me')
       setUser(response.data)
       setIsAuthenticated(true)
+
+      // Check if user has household
+      await checkHouseholdStatus()
     } catch (error) {
       console.error('Failed to fetch user:', error)
       setIsAuthenticated(false)
       setUser(null)
+      setHasHousehold(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkHouseholdStatus = async () => {
+    try {
+      const response = await axios.get('/api/households/me')
+      setHasHousehold(response.data && response.data.length > 0)
+    } catch (error) {
+      console.error('Failed to check household status:', error)
+      setHasHousehold(false)
     }
   }
 
@@ -126,7 +142,14 @@ function App() {
 
         {!isAuthenticated ? (
           <Route path="*" element={<Navigate to="/login" replace />} />
-        ) : (
+        ) : hasHousehold === false ? (
+          // Authenticated but no household - force onboarding
+          <>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          </>
+        ) : hasHousehold === true ? (
+          // Authenticated with household - normal app
           <Route element={<Layout user={user} onLogout={handleLogout} />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/reptiles" element={<ReptileList />} />
@@ -143,6 +166,9 @@ function App() {
             <Route path="/foods" element={<FoodManagement />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
+        ) : (
+          // Still checking household status - show nothing (loading screen already shown above)
+          <Route path="*" element={<div />} />
         )}
       </Routes>
     </Router>
