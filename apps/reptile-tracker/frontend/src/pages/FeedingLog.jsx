@@ -246,8 +246,22 @@ export default function FeedingLog() {
       salad_components: []
     };
 
+    // Validate that at least something is being fed
+    if (foodItems.length === 0 && !isSalad) {
+      setError("Please add at least one food item or include salad.");
+      return;
+    }
+
+    // Add regular food items
+    if (foodItems.length > 0) {
+      payload.foods = foodItems.map(item => ({
+        food_id: parseInt(item.food_id),
+        quantity: item.quantity
+      }));
+    }
+
+    // Add salad if included
     if (isSalad) {
-      // Salad mode
       if (saladComponents.length === 0) {
         setError("Please select at least one salad component.");
         return;
@@ -259,31 +273,17 @@ export default function FeedingLog() {
         return;
       }
 
-      payload.foods = [{ food_id: saladFood.id, quantity: 1 }];
+      // Add the Salad food to the foods array
+      payload.foods.push({ food_id: saladFood.id, quantity: 1 });
       payload.salad_components = saladComponents;
-
-      // Collect all unique supplements from food items (even though salad doesn't use foodItems)
-      // For now, salad doesn't have per-item supplements
-    } else {
-      // Regular food mode
-      if (foodItems.length === 0) {
-        setError("Please add at least one food item.");
-        return;
-      }
-
-      // Convert food items to API format
-      payload.foods = foodItems.map(item => ({
-        food_id: parseInt(item.food_id),
-        quantity: item.quantity
-      }));
-
-      // Collect all unique supplements from all food items
-      const allSupplements = new Set();
-      foodItems.forEach(item => {
-        item.supplements.forEach(suppId => allSupplements.add(suppId));
-      });
-      payload.supplements = Array.from(allSupplements);
     }
+
+    // Collect all unique supplements from all food items
+    const allSupplements = new Set();
+    foodItems.forEach(item => {
+      item.supplements.forEach(suppId => allSupplements.add(suppId));
+    });
+    payload.supplements = Array.from(allSupplements);
 
     try {
       if (mode === 'edit') {
@@ -357,22 +357,32 @@ export default function FeedingLog() {
 
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Food</p>
-            {existingFeeding.is_salad ? (
-              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                <p className="font-medium text-green-900 dark:text-green-100 mb-1">Salad</p>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Components: {existingFeeding.salad_components?.map(sc => sc.name).join(', ') || 'None'}
-                </p>
-              </div>
-            ) : existingFeeding.foods && existingFeeding.foods.length > 0 ? (
-              existingFeeding.foods.map(food => (
-                <p key={food.id} className="text-gray-900 dark:text-white">
-                  {food.name} × {food.quantity || 1}
-                </p>
-              ))
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400">None specified</p>
-            )}
+            <div className="space-y-2">
+              {existingFeeding.foods && existingFeeding.foods.length > 0 ? (
+                existingFeeding.foods.map(food => {
+                  // Don't display the "Salad" food item itself, as it's shown separately below
+                  if (food.name === 'Salad' && existingFeeding.is_salad) {
+                    return null;
+                  }
+                  return (
+                    <p key={food.id} className="text-gray-900 dark:text-white">
+                      {food.name} × {food.quantity || 1}
+                    </p>
+                  );
+                })
+              ) : !existingFeeding.is_salad ? (
+                <p className="text-gray-500 dark:text-gray-400">None specified</p>
+              ) : null}
+
+              {existingFeeding.is_salad && existingFeeding.salad_components && existingFeeding.salad_components.length > 0 && (
+                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                  <p className="font-medium text-green-900 dark:text-green-100 mb-1">Salad</p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Components: {existingFeeding.salad_components.map(sc => sc.name).join(', ')}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {existingFeeding.supplements && existingFeeding.supplements.length > 0 && (
@@ -443,132 +453,134 @@ export default function FeedingLog() {
           </select>
         </div>
 
-        {/* Salad Toggle */}
-        <div>
-          <label className="flex items-center gap-2 cursor-pointer">
+        {/* REGULAR FOOD ITEMS */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <label className="block font-medium">Food Items</label>
+            <button
+              type="button"
+              onClick={addFoodItem}
+              className="btn-secondary text-sm flex items-center gap-1"
+            >
+              <Plus size={16} /> Add Food
+            </button>
+          </div>
+
+          {foodItems.length === 0 && (
+            <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+              No food items added. Click "Add Food" to get started.
+            </p>
+          )}
+
+          {foodItems.map((item, index) => (
+            <div key={item.id} className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg space-y-3">
+              <div className="flex justify-between items-start">
+                <h4 className="font-medium text-gray-900 dark:text-white">Food Item {index + 1}</h4>
+                {foodItems.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeFoodItem(item.id)}
+                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Food Type</label>
+                <select
+                  value={item.food_id}
+                  onChange={(e) => updateFoodItem(item.id, 'food_id', e.target.value)}
+                  className="input w-full"
+                >
+                  {allRegularFoods.map(food => (
+                    <option key={food.id} value={food.id}>
+                      {food.name} ({food.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Quantity</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateFoodItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                    className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateFoodItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                    className="input text-center w-20"
+                    min="1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateFoodItem(item.id, 'quantity', item.quantity + 1)}
+                    className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Supplements for this item</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {supplements.map(sup => (
+                    <label key={sup.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={item.supplements.includes(sup.id)}
+                        onChange={() => toggleItemSupplement(item.id, sup.id)}
+                      />
+                      <span>{sup.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* SALAD COMPONENTS - Optional addition */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
+              id="includeSalad"
               checked={isSalad}
               onChange={(e) => setIsSalad(e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="font-medium">This is a salad feeding</span>
-          </label>
-        </div>
-
-        {/* SALAD MODE */}
-        {isSalad ? (
-          <div>
-            <label className="block font-medium mb-2">Salad Components</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {saladFoods.map(food => (
-                <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={saladComponents.includes(food.id)}
-                    onChange={() => toggleSaladComponent(food.id)}
-                  />
-                  <span className="text-sm">{food.name}</span>
-                </label>
-              ))}
-            </div>
+            <label htmlFor="includeSalad" className="font-medium cursor-pointer">
+              Also include salad
+            </label>
           </div>
-        ) : (
-          /* REGULAR FOOD MODE */
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="block font-medium">Food Items</label>
-              <button
-                type="button"
-                onClick={addFoodItem}
-                className="btn-secondary text-sm flex items-center gap-1"
-              >
-                <Plus size={16} /> Add Food
-              </button>
-            </div>
 
-            {foodItems.length === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm italic">
-                No food items added. Click "Add Food" to get started.
-              </p>
-            )}
-
-            {foodItems.map((item, index) => (
-              <div key={item.id} className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg space-y-3">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Food Item {index + 1}</h4>
-                  {foodItems.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeFoodItem(item.id)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                    >
-                      <X size={20} />
-                    </button>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Food Type</label>
-                  <select
-                    value={item.food_id}
-                    onChange={(e) => updateFoodItem(item.id, 'food_id', e.target.value)}
-                    className="input w-full"
-                  >
-                    {allRegularFoods.map(food => (
-                      <option key={food.id} value={food.id}>
-                        {food.name} ({food.category})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Quantity</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateFoodItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                      className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
-                    >
-                      -
-                    </button>
+          {isSalad && (
+            <div className="pl-6">
+              <label className="block text-sm font-medium mb-2">Salad Components</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {saladFoods.map(food => (
+                  <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
                     <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateFoodItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                      className="input text-center w-20"
-                      min="1"
+                      type="checkbox"
+                      checked={saladComponents.includes(food.id)}
+                      onChange={() => toggleSaladComponent(food.id)}
                     />
-                    <button
-                      type="button"
-                      onClick={() => updateFoodItem(item.id, 'quantity', item.quantity + 1)}
-                      className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Supplements for this item</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {supplements.map(sup => (
-                      <label key={sup.id} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={item.supplements.includes(sup.id)}
-                          onChange={() => toggleItemSupplement(item.id, sup.id)}
-                        />
-                        <span>{sup.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                    <span className="text-sm">{food.name}</span>
+                  </label>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
