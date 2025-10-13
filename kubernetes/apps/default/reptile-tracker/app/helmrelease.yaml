@@ -152,12 +152,13 @@ spec:
 
     ingress:
       main:
-        className: internal
+        className: external
         annotations:
           nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
           hajimari.io/enable: "true"
           hajimari.io/icon: mdi:snake
           hajimari.io/group: apps
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
         hosts:
           - host: "reptile-tracker.${SECRET_DOMAIN}"
             paths:
