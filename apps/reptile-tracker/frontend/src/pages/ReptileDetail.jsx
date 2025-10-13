@@ -6,113 +6,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { Edit2, Trash2 } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 
-// Edit Feeding Form Component
-const EditFeedingForm = ({ feeding, reptileId, onUpdate, onCancel }) => {
-  const [formData, setFormData] = useState({
-    fed_at: feeding.fed_at ? new Date(feeding.fed_at).toISOString().slice(0, 16) : '',
-    notes: feeding.notes || '',
-    is_salad: feeding.is_salad || false,
-    foods: feeding.foods?.map(f => ({ food_id: f.id, quantity: f.FeedingFood?.quantity || 1 })) || [],
-    supplements: feeding.supplements?.map(s => s.id) || [],
-    salad_components: feeding.salad_components?.map(sc => sc.id) || []
-  });
-
-  const [availableFoods, setAvailableFoods] = useState([]);
-  const [availableSupplements, setAvailableSupplements] = useState([]);
-
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [foodsRes, supplementsRes] = await Promise.all([
-          axios.get('/api/foods'),
-          axios.get('/api/supplements')
-        ]);
-        setAvailableFoods(foodsRes.data);
-        setAvailableSupplements(supplementsRes.data);
-      } catch (error) {
-        console.error('Error fetching options:', error);
-      }
-    };
-    fetchOptions();
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onUpdate(feeding.id, formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Date & Time
-        </label>
-        <input
-          type="datetime-local"
-          value={formData.fed_at}
-          onChange={(e) => setFormData({ ...formData, fed_at: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Notes
-        </label>
-        <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          placeholder="Optional notes about this feeding"
-        />
-      </div>
-
-      <div className="text-sm text-gray-600 dark:text-gray-400">
-        <p className="mb-2"><strong>Current Foods:</strong></p>
-        {formData.foods.length > 0 ? (
-          <ul className="list-disc list-inside">
-            {formData.foods.map((f, idx) => {
-              const food = availableFoods.find(af => af.id === f.food_id);
-              return <li key={idx}>{food?.name} (Quantity: {f.quantity})</li>;
-            })}
-          </ul>
-        ) : (
-          <p className="italic">No foods selected</p>
-        )}
-      </div>
-
-      {formData.supplements.length > 0 && (
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          <p className="mb-2"><strong>Current Supplements:</strong></p>
-          <ul className="list-disc list-inside">
-            {formData.supplements.map((suppId, idx) => {
-              const supp = availableSupplements.find(s => s.id === suppId);
-              return <li key={idx}>{supp?.name}</li>;
-            })}
-          </ul>
-        </div>
-      )}
-
-      <div className="flex gap-3 pt-4">
-        <button
-          type="submit"
-          className="flex-1 btn-primary"
-        >
-          Save Changes
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 btn-secondary"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-};
-
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
   if (!data || data.length === 0) {
@@ -156,8 +49,6 @@ export default function ReptileDetail() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [activeTab, setActiveTab] = useState('feedings');
   const [loading, setLoading] = useState(true);
-  const [editingFeeding, setEditingFeeding] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -205,23 +96,6 @@ export default function ReptileDetail() {
     }
   };
 
-  const handleEditFeeding = (feeding) => {
-    setEditingFeeding(feeding);
-    setShowEditModal(true);
-  };
-
-  const handleUpdateFeeding = async (feedingId, updatedData) => {
-    try {
-      const response = await axios.put(`/api/feedings/${feedingId}`, updatedData);
-      setFeedings(feedings.map(f => f.id === feedingId ? response.data : f));
-      setShowEditModal(false);
-      setEditingFeeding(null);
-    } catch (error) {
-      console.error('Error updating feeding:', error);
-      alert('Failed to update feeding. You may not have permission.');
-    }
-  };
-
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptile details...</div>;
   }
@@ -241,7 +115,7 @@ export default function ReptileDetail() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">{f.notes || 'No notes'}</p>
                 {f.foods && f.foods.length > 0 && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Foods: {f.foods.map(food => `${food.name} (${food.FeedingFood?.quantity || 0})`).join(', ')}
+                    Foods: {f.foods.map(food => `${food.name} (${food.quantity || 1})`).join(', ')}
                   </p>
                 )}
                 {f.supplements && f.supplements.length > 0 && (
@@ -251,13 +125,13 @@ export default function ReptileDetail() {
                 )}
               </div>
               <div className="flex gap-2 ml-4">
-                <button
-                  onClick={() => handleEditFeeding(f)}
+                <Link
+                  to={`/feed/${f.id}`}
                   className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 p-1"
-                  title="Edit feeding"
+                  title="View/Edit feeding"
                 >
                   <Edit2 size={18} />
-                </button>
+                </Link>
                 <button
                   onClick={() => handleDeleteFeeding(f.id)}
                   className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1"
@@ -299,38 +173,7 @@ export default function ReptileDetail() {
 
   return (
     <div>
-      {/* Edit Feeding Modal */}
-      {showEditModal && editingFeeding && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Feeding</h2>
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingFeeding(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  ✕
-                </button>
-              </div>
-              <EditFeedingForm
-                feeding={editingFeeding}
-                reptileId={id}
-                onUpdate={handleUpdateFeeding}
-                onCancel={() => {
-                  setShowEditModal(false);
-                  setEditingFeeding(null);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-        <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-2">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
             <div className="flex gap-2">
                 <Link to={`/health-log/${id}`} className="btn-primary">Log Health/Weight</Link>
