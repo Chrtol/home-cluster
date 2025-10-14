@@ -5,11 +5,53 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, WeightLog, AccessLevel
+from app.models import User, WeightLog, AccessLevel, Reptile, UserReptileAccess
 from app.permissions import check_reptile_access
-from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate
+from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate, WeightLogWithReptile
 
 router = APIRouter()
+
+@router.get("/dashboard", response_model=List[WeightLogWithReptile])
+async def get_dashboard_weights(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get recent weight logs for all user's reptiles (for dashboard graph)"""
+    # Get all reptiles the user has access to
+    result = await db.execute(
+        select(Reptile)
+        .join(UserReptileAccess)
+        .where(UserReptileAccess.user_id == current_user.id)
+    )
+    reptiles = result.scalars().all()
+    reptile_ids = [r.id for r in reptiles]
+
+    if not reptile_ids:
+        return []
+
+    # Get recent weight logs with reptile names
+    result = await db.execute(
+        select(WeightLog, Reptile.name)
+        .join(Reptile, WeightLog.reptile_id == Reptile.id)
+        .where(WeightLog.reptile_id.in_(reptile_ids))
+        .order_by(WeightLog.measured_at.desc())
+        .limit(100)  # Reasonable limit for dashboard
+    )
+
+    # Transform results to include reptile name
+    logs = []
+    for weight_log, reptile_name in result.all():
+        log_dict = {
+            "id": weight_log.id,
+            "reptile_id": weight_log.reptile_id,
+            "weight_grams": weight_log.weight_grams,
+            "measured_at": weight_log.measured_at,
+            "notes": weight_log.notes,
+            "reptile_name": reptile_name
+        }
+        logs.append(log_dict)
+
+    return logs
 
 @router.get("/reptile/{reptile_id}", response_model=List[WeightLogSchema])
 async def list_weight_logs(

@@ -188,6 +188,11 @@ class WeightLog(WeightLogBase):
         from_attributes = True
 
 
+class WeightLogWithReptile(WeightLog):
+    """Weight log with reptile name for dashboard display"""
+    reptile_name: Optional[str] = None
+
+
 # Health record schemas
 class HealthRecordBase(BaseModel):
     record_type: str
