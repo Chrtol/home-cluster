@@ -12,8 +12,19 @@ export default function ReptileForm() {
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [notes, setNotes] = useState('');
     const [error, setError] = useState('');
+    const [speciesList, setSpeciesList] = useState([]);
 
     useEffect(() => {
+        // Fetch list of existing species for autocomplete
+        axios.get('/api/reptiles/species')
+            .then(res => {
+                setSpeciesList(res.data);
+            })
+            .catch(err => {
+                console.error("Failed to fetch species list:", err);
+                // Non-critical error, continue without autocomplete
+            });
+
         if (isEditing) {
             axios.get(`/api/reptiles/${id}`)
                 .then(res => {
@@ -68,15 +79,27 @@ export default function ReptileForm() {
                     />
                 </div>
                 <div>
-                    <label htmlFor="species" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Species</label>
+                    <label htmlFor="species" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        Species
+                        {speciesList.length > 0 && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">(select from list or type new)</span>
+                        )}
+                    </label>
                     <input
                         id="species"
                         type="text"
+                        list="species-list"
                         value={species}
                         onChange={(e) => setSpecies(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="e.g., Bearded Dragon, Leopard Gecko"
                         required
                     />
+                    <datalist id="species-list">
+                        {speciesList.map((sp, index) => (
+                            <option key={index} value={sp} />
+                        ))}
+                    </datalist>
                 </div>
                 <div>
                     <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date of Birth (optional)</label>
