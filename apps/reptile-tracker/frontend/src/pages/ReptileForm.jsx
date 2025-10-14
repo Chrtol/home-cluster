@@ -13,6 +13,8 @@ export default function ReptileForm() {
     const [notes, setNotes] = useState('');
     const [error, setError] = useState('');
     const [speciesList, setSpeciesList] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [filteredSpecies, setFilteredSpecies] = useState([]);
 
     useEffect(() => {
         // Fetch list of existing species for autocomplete
@@ -78,7 +80,7 @@ export default function ReptileForm() {
                         required
                     />
                 </div>
-                <div>
+                <div className="relative">
                     <label htmlFor="species" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
                         Species
                         {speciesList.length > 0 && (
@@ -88,18 +90,52 @@ export default function ReptileForm() {
                     <input
                         id="species"
                         type="text"
-                        list="species-list"
                         value={species}
-                        onChange={(e) => setSpecies(e.target.value)}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setSpecies(value);
+                            // Filter species list based on input
+                            if (value) {
+                                const filtered = speciesList.filter(sp =>
+                                    sp.toLowerCase().includes(value.toLowerCase())
+                                );
+                                setFilteredSpecies(filtered);
+                                setShowDropdown(filtered.length > 0);
+                            } else {
+                                setFilteredSpecies(speciesList);
+                                setShowDropdown(speciesList.length > 0);
+                            }
+                        }}
+                        onFocus={() => {
+                            setFilteredSpecies(speciesList);
+                            setShowDropdown(speciesList.length > 0);
+                        }}
+                        onBlur={() => {
+                            // Delay to allow click on dropdown item
+                            setTimeout(() => setShowDropdown(false), 200);
+                        }}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="e.g., Bearded Dragon, Leopard Gecko"
                         required
+                        autoComplete="off"
                     />
-                    <datalist id="species-list">
-                        {speciesList.map((sp, index) => (
-                            <option key={index} value={sp} />
-                        ))}
-                    </datalist>
+                    {showDropdown && filteredSpecies.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {filteredSpecies.map((sp, index) => (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    onClick={() => {
+                                        setSpecies(sp);
+                                        setShowDropdown(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white transition-colors"
+                                >
+                                    {sp}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <div>
                     <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date of Birth (optional)</label>
