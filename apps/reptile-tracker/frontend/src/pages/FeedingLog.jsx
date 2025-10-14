@@ -211,7 +211,7 @@ export default function FeedingLog() {
 
   // Prepared food item management
   const addPreparedItem = () => {
-    const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
+    const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal') && f.name !== 'Salad');
     const defaultFood = preparedFoods.length > 0 ? preparedFoods[0].id : '';
     setPreparedItems([...preparedItems, {
       id: Date.now(),
@@ -371,7 +371,7 @@ export default function FeedingLog() {
 
   const insectFoods = foods.filter(f => f.category === 'insect');
   const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
-  const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
+  const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal') && f.name !== 'Salad');
 
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;

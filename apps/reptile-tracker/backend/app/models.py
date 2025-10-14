@@ -28,6 +28,7 @@ class FoodCategory(str, PyEnum):
     VEGETABLE = "vegetable"
     FRUIT = "fruit"
     PREPARED = "prepared"
+    FROZEN_ANIMAL = "frozen_animal"
     OTHER = "other"
 
 
@@ -35,6 +36,18 @@ class InsectSize(str, PyEnum):
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
+
+
+class AnimalSize(str, PyEnum):
+    """Size categories for frozen prey animals (rodents, etc.)"""
+    PINKY = "pinky"  # Newborn mouse/rat
+    FUZZY = "fuzzy"  # Young with fur starting
+    HOPPER = "hopper"  # Young, mobile
+    WEANER = "weaner"  # Juvenile, weaned
+    ADULT_SMALL = "adult_small"  # Small adult mouse
+    ADULT_MEDIUM = "adult_medium"  # Medium adult mouse or small rat
+    ADULT_LARGE = "adult_large"  # Large mouse or medium rat
+    JUMBO = "jumbo"  # Large rat or rabbit
 
 
 # Association table for reptile access
@@ -126,6 +139,7 @@ class Food(Base):
     name = Column(String, nullable=False, unique=True, index=True)
     category = Column(Enum(FoodCategory), nullable=False)
     insect_size = Column(Enum(InsectSize), nullable=True)  # Only for insects
+    animal_size = Column(Enum(AnimalSize), nullable=True)  # Only for frozen animals
 
     # Nutritional data per 100g (or per item for insects)
     nutritional_data = Column(JSON, nullable=True)  # {protein, fat, calcium, phosphorus, vitamins, etc.}
