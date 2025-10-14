@@ -112,13 +112,14 @@ class Supplement(SupplementBase):
 class FeedingFoodItem(BaseModel):
     food_id: int
     quantity: int = 1
+    supplement_ids: List[int] = []  # Per-item supplements
 
 
 class FeedingCreate(BaseModel):
     reptile_id: int
     fed_at: Optional[datetime] = None
     foods: List[FeedingFoodItem]
-    supplements: List[int] = []  # List of supplement IDs
+    supplements: List[int] = []  # Global supplements (applied to whole feeding)
     is_salad: bool = False
     salad_components: List[int] = []  # List of food IDs for salad
     notes: Optional[str] = None
@@ -134,6 +135,7 @@ class FoodWithQuantity(BaseModel):
     is_default: bool
     created_at: datetime
     quantity: int  # From feeding_foods association table
+    supplements: List[Supplement] = []  # Per-item supplements
 
     class Config:
         from_attributes = True
