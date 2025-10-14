@@ -108,11 +108,18 @@ export default function ReptileDetail() {
     feedings: (
       <div className="space-y-4">
         {feedings.map(f => (
-          <div key={f.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div key={f.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <p className="text-gray-900 dark:text-white"><strong>{formatDateTime(f.fed_at)}</strong> by {f.user?.name}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{f.notes || 'No notes'}</p>
+                <Link
+                  to={`/feed/${f.id}`}
+                  className="block hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
+                  <p className="text-gray-900 dark:text-white">
+                    <strong className="hover:underline">{formatDateTime(f.fed_at)}</strong> by <span className="hover:underline">{f.user?.name}</span>
+                  </p>
+                </Link>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{f.notes || 'No notes'}</p>
                 {f.foods && f.foods.length > 0 && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Foods: {f.foods.map(food => `${food.name} (${food.quantity || 1})`).join(', ')}
