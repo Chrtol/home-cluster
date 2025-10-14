@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import DateInput from '../components/DateInput';
 
@@ -25,12 +25,22 @@ export default function FeedingLog() {
   const [fedTime, setFedTime] = useState(new Date().toTimeString().slice(0, 5));
   const [notes, setNotes] = useState('');
 
-  // NEW: Food items array - each item has food_id, quantity, and supplements
-  const [foodItems, setFoodItems] = useState([]);
+  // Food type toggles
+  const [includeInsects, setIncludeInsects] = useState(true);
+  const [includeSalad, setIncludeSalad] = useState(false);
+  const [includePrepared, setIncludePrepared] = useState(false);
 
-  // NEW: Salad state - separate from regular foods
-  const [isSalad, setIsSalad] = useState(false);
+  // Insect feeding items (array to support multiple different insects)
+  const [insectItems, setInsectItems] = useState([]);
+
+  // Salad components
   const [saladComponents, setSaladComponents] = useState([]);
+
+  // Prepared food items (array to support multiple different prepared foods)
+  const [preparedItems, setPreparedItems] = useState([]);
+
+  // Global supplements (applied to entire feeding)
+  const [selectedSupplements, setSelectedSupplements] = useState([]);
 
   // Time input format state
   const [timeFormat, setTimeFormat] = useState('24h');
@@ -59,24 +69,22 @@ export default function FeedingLog() {
             const feedingRes = await axios.get(`/api/feedings/${id}`);
             setExistingFeeding(feedingRes.data);
             setMode('view');
-            loadFeedingData(feedingRes.data);
+            loadFeedingData(feedingRes.data, foodsRes.data);
           } catch (err) {
             console.error('Failed to load feeding:', err);
             setError('Failed to load feeding. It may not exist or you may not have permission.');
           }
         } else {
-          // Creating new feeding - start with one empty food item
+          // Creating new feeding - start with one insect item
           const initialReptileId = reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '';
           setSelectedReptile(initialReptileId);
 
-          // Add initial food item
           const insectFoods = foodsRes.data.filter(f => f.category === 'insect');
           if (insectFoods.length > 0) {
-            setFoodItems([{
+            setInsectItems([{
               id: Date.now(),
               food_id: insectFoods[0].id,
-              quantity: 1,
-              supplements: []
+              quantity: 1
             }]);
           }
         }
@@ -94,9 +102,10 @@ export default function FeedingLog() {
     fetchData();
   }, [id]);
 
-  const loadFeedingData = (feeding) => {
+  const loadFeedingData = (feeding, foodsList) => {
     setSelectedReptile(feeding.reptile_id);
     setNotes(feeding.notes || '');
+    setSelectedSupplements(feeding.supplements?.map(s => s.id) || []);
 
     // Parse the fed_at datetime
     const fedAtDate = new Date(feeding.fed_at);
@@ -116,20 +125,41 @@ export default function FeedingLog() {
     setMinutes(minute);
     setPeriod(hour >= 12 ? 'PM' : 'AM');
 
-    // Load food items
-    if (feeding.is_salad) {
-      setIsSalad(true);
-      setSaladComponents(feeding.salad_components?.map(sc => sc.id) || []);
-    } else if (feeding.foods && feeding.foods.length > 0) {
-      // Convert foods to food items format
-      const items = feeding.foods.map(food => ({
-        id: Date.now() + Math.random(), // Unique ID for React keys
-        food_id: food.id,
-        quantity: food.quantity || 1,
-        supplements: feeding.supplements?.map(s => s.id) || [] // Note: global supplements for now
-      }));
-      setFoodItems(items);
-    }
+    // Determine which food types are included
+    const insects = [];
+    const prepared = [];
+    let hasSalad = false;
+
+    feeding.foods?.forEach(food => {
+      const foodData = foodsList.find(f => f.id === food.id);
+      if (!foodData) return;
+
+      if (food.name === 'Salad' && feeding.is_salad) {
+        hasSalad = true;
+      } else if (foodData.category === 'insect') {
+        insects.push({
+          id: Date.now() + Math.random(),
+          food_id: food.id,
+          quantity: food.quantity || 1
+        });
+      } else if (foodData.category === 'prepared') {
+        prepared.push({
+          id: Date.now() + Math.random(),
+          food_id: food.id,
+          quantity: food.quantity || 1
+        });
+      }
+    });
+
+    // Set food type toggles
+    setIncludeInsects(insects.length > 0);
+    setIncludeSalad(hasSalad);
+    setIncludePrepared(prepared.length > 0);
+
+    // Set food items
+    if (insects.length > 0) setInsectItems(insects);
+    if (prepared.length > 0) setPreparedItems(prepared);
+    if (hasSalad) setSaladComponents(feeding.salad_components?.map(sc => sc.id) || []);
   };
 
   // Update fedTime whenever hours/minutes/period change
@@ -158,42 +188,46 @@ export default function FeedingLog() {
     setMinutes(Math.max(0, Math.min(59, numValue)));
   };
 
-  // NEW: Add a new food item
-  const addFoodItem = () => {
+  // Insect item management
+  const addInsectItem = () => {
     const insectFoods = foods.filter(f => f.category === 'insect');
-    const defaultFood = insectFoods.length > 0 ? insectFoods[0].id : (foods.length > 0 ? foods[0].id : '');
-
-    setFoodItems([...foodItems, {
+    const defaultFood = insectFoods.length > 0 ? insectFoods[0].id : '';
+    setInsectItems([...insectItems, {
       id: Date.now(),
       food_id: defaultFood,
-      quantity: 1,
-      supplements: []
+      quantity: 1
     }]);
   };
 
-  // NEW: Remove a food item
-  const removeFoodItem = (itemId) => {
-    setFoodItems(foodItems.filter(item => item.id !== itemId));
+  const removeInsectItem = (itemId) => {
+    setInsectItems(insectItems.filter(item => item.id !== itemId));
   };
 
-  // NEW: Update food item field
-  const updateFoodItem = (itemId, field, value) => {
-    setFoodItems(foodItems.map(item =>
+  const updateInsectItem = (itemId, field, value) => {
+    setInsectItems(insectItems.map(item =>
       item.id === itemId ? { ...item, [field]: value } : item
     ));
   };
 
-  // NEW: Toggle supplement for a specific food item
-  const toggleItemSupplement = (itemId, supplementId) => {
-    setFoodItems(foodItems.map(item => {
-      if (item.id === itemId) {
-        const supplements = item.supplements.includes(supplementId)
-          ? item.supplements.filter(id => id !== supplementId)
-          : [...item.supplements, supplementId];
-        return { ...item, supplements };
-      }
-      return item;
-    }));
+  // Prepared food item management
+  const addPreparedItem = () => {
+    const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
+    const defaultFood = preparedFoods.length > 0 ? preparedFoods[0].id : '';
+    setPreparedItems([...preparedItems, {
+      id: Date.now(),
+      food_id: defaultFood,
+      quantity: 1
+    }]);
+  };
+
+  const removePreparedItem = (itemId) => {
+    setPreparedItems(preparedItems.filter(item => item.id !== itemId));
+  };
+
+  const updatePreparedItem = (itemId, field, value) => {
+    setPreparedItems(preparedItems.map(item =>
+      item.id === itemId ? { ...item, [field]: value } : item
+    ));
   };
 
   // Toggle salad component
@@ -202,6 +236,15 @@ export default function FeedingLog() {
       setSaladComponents(saladComponents.filter(id => id !== foodId));
     } else {
       setSaladComponents([...saladComponents, foodId]);
+    }
+  };
+
+  // Toggle supplement
+  const toggleSupplement = (suppId) => {
+    if (selectedSupplements.includes(suppId)) {
+      setSelectedSupplements(selectedSupplements.filter(id => id !== suppId));
+    } else {
+      setSelectedSupplements([...selectedSupplements, suppId]);
     }
   };
 
@@ -228,20 +271,23 @@ export default function FeedingLog() {
       return;
     }
 
+    // Validate at least one food type is selected
+    if (!includeInsects && !includeSalad && !includePrepared) {
+      setError("Please select at least one feeding type (Insects, Salad, or Prepared Food).");
+      return;
+    }
+
     // Construct ISO 8601 datetime WITH local timezone offset
-    // This tells the backend "17:00 in the user's timezone"
     const [year, month, day] = fedDate.split('-').map(Number);
     const [hour, minute] = fedTime.split(':').map(Number);
     const localDate = new Date(year, month - 1, day, hour, minute, 0);
 
-    // Get timezone offset in minutes and convert to +HH:MM format
-    const tzOffset = -localDate.getTimezoneOffset(); // Negative because getTimezoneOffset returns opposite sign
+    const tzOffset = -localDate.getTimezoneOffset();
     const offsetHours = Math.floor(Math.abs(tzOffset) / 60);
     const offsetMinutes = Math.abs(tzOffset) % 60;
     const offsetSign = tzOffset >= 0 ? '+' : '-';
     const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
 
-    // Construct: YYYY-MM-DDTHH:MM:SS+TZ
     const fedAtISO = `${fedDate}T${fedTime}:00${offsetString}`;
 
     console.log('Submitting feeding:', {
@@ -256,30 +302,40 @@ export default function FeedingLog() {
       reptile_id: parseInt(selectedReptile),
       fed_at: fedAtISO,
       notes,
-      is_salad: isSalad,
+      is_salad: includeSalad,
       foods: [],
-      supplements: [],
+      supplements: selectedSupplements,
       salad_components: []
     };
 
-    // Validate that at least something is being fed
-    if (foodItems.length === 0 && !isSalad) {
-      setError("Please add at least one food item or include salad.");
-      return;
-    }
-
-    // Add regular food items
-    if (foodItems.length > 0) {
-      payload.foods = foodItems.map(item => ({
+    // Add insect foods
+    if (includeInsects) {
+      if (insectItems.length === 0) {
+        setError("Please add at least one insect item or uncheck Insects.");
+        return;
+      }
+      payload.foods.push(...insectItems.map(item => ({
         food_id: parseInt(item.food_id),
         quantity: item.quantity
-      }));
+      })));
     }
 
-    // Add salad if included
-    if (isSalad) {
+    // Add prepared foods
+    if (includePrepared) {
+      if (preparedItems.length === 0) {
+        setError("Please add at least one prepared food item or uncheck Prepared Food.");
+        return;
+      }
+      payload.foods.push(...preparedItems.map(item => ({
+        food_id: parseInt(item.food_id),
+        quantity: item.quantity
+      })));
+    }
+
+    // Add salad
+    if (includeSalad) {
       if (saladComponents.length === 0) {
-        setError("Please select at least one salad component.");
+        setError("Please select at least one salad component or uncheck Salad.");
         return;
       }
 
@@ -289,17 +345,9 @@ export default function FeedingLog() {
         return;
       }
 
-      // Add the Salad food to the foods array
       payload.foods.push({ food_id: saladFood.id, quantity: 1 });
       payload.salad_components = saladComponents;
     }
-
-    // Collect all unique supplements from all food items
-    const allSupplements = new Set();
-    foodItems.forEach(item => {
-      item.supplements.forEach(suppId => allSupplements.add(suppId));
-    });
-    payload.supplements = Array.from(allSupplements);
 
     try {
       if (mode === 'edit') {
@@ -309,7 +357,7 @@ export default function FeedingLog() {
         // Reload the feeding data
         const feedingRes = await axios.get(`/api/feedings/${id}`);
         setExistingFeeding(feedingRes.data);
-        loadFeedingData(feedingRes.data);
+        loadFeedingData(feedingRes.data, foods);
       } else {
         await axios.post('/api/feedings', payload);
         setSuccess('Feeding logged successfully!');
@@ -324,7 +372,6 @@ export default function FeedingLog() {
   const insectFoods = foods.filter(f => f.category === 'insect');
   const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
   const preparedFoods = foods.filter(f => f.category === 'prepared' && f.name !== 'Salad');
-  const allRegularFoods = [...insectFoods, ...preparedFoods];
 
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;
@@ -469,133 +516,229 @@ export default function FeedingLog() {
           </select>
         </div>
 
-        {/* REGULAR FOOD ITEMS */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <label className="block font-medium">Food Items</label>
+        {/* Food Type Selection Buttons */}
+        <div>
+          <label className="block font-medium mb-2">Feeding Type (select one or more)</label>
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={addFoodItem}
-              className="btn-secondary text-sm flex items-center gap-1"
+              onClick={() => {
+                setIncludeInsects(!includeInsects);
+                if (!includeInsects && insectItems.length === 0 && insectFoods.length > 0) {
+                  setInsectItems([{ id: Date.now(), food_id: insectFoods[0].id, quantity: 1 }]);
+                }
+              }}
+              className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all ${
+                includeInsects
+                  ? 'bg-primary-600 border-primary-600 text-white'
+                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+              }`}
             >
-              <Plus size={16} /> Add Food
+              <div className="flex flex-col items-center gap-2">
+                <Bug size={24} />
+                <span className="font-medium">Insects</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIncludeSalad(!includeSalad)}
+              className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all ${
+                includeSalad
+                  ? 'bg-primary-600 border-primary-600 text-white'
+                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Leaf size={24} />
+                <span className="font-medium">Salad</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIncludePrepared(!includePrepared);
+                if (!includePrepared && preparedItems.length === 0 && preparedFoods.length > 0) {
+                  setPreparedItems([{ id: Date.now(), food_id: preparedFoods[0].id, quantity: 1 }]);
+                }
+              }}
+              className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all ${
+                includePrepared
+                  ? 'bg-primary-600 border-primary-600 text-white'
+                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Utensils size={24} />
+                <span className="font-medium">Prepared</span>
+              </div>
             </button>
           </div>
+        </div>
 
-          {foodItems.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm italic">
-              No food items added. Click "Add Food" to get started.
-            </p>
-          )}
+        {/* INSECTS SECTION */}
+        {includeInsects && (
+          <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <h3 className="font-medium text-gray-900 dark:text-white">Insect Feeding</h3>
+              <button
+                type="button"
+                onClick={addInsectItem}
+                className="btn-secondary text-sm flex items-center gap-1"
+              >
+                <Plus size={16} /> Add Another Insect
+              </button>
+            </div>
 
-          {foodItems.map((item, index) => (
-            <div key={item.id} className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg space-y-3">
-              <div className="flex justify-between items-start">
-                <h4 className="font-medium text-gray-900 dark:text-white">Food Item {index + 1}</h4>
-                {foodItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeFoodItem(item.id)}
-                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+            {insectItems.map((item, index) => (
+              <div key={item.id} className="flex items-center gap-3 bg-white dark:bg-gray-700 p-3 rounded">
+                <div className="flex-1">
+                  <select
+                    value={item.food_id}
+                    onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
+                    className="input w-full"
                   >
-                    <X size={20} />
-                  </button>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Food Type</label>
-                <select
-                  value={item.food_id}
-                  onChange={(e) => updateFoodItem(item.id, 'food_id', e.target.value)}
-                  className="input w-full"
-                >
-                  {allRegularFoods.map(food => (
-                    <option key={food.id} value={food.id}>
-                      {food.name} ({food.category})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Quantity</label>
+                    {insectFoods.map(food => (
+                      <option key={food.id} value={food.id}>{food.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => updateFoodItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                    className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
+                    onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
                   >
                     -
                   </button>
                   <input
                     type="number"
                     value={item.quantity}
-                    onChange={(e) => updateFoodItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                    className="input text-center w-20"
+                    onChange={(e) => updateInsectItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                    className="input text-center w-16"
                     min="1"
                   />
                   <button
                     type="button"
-                    onClick={() => updateFoodItem(item.id, 'quantity', item.quantity + 1)}
-                    className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded font-bold text-lg"
+                    onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
+                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
                   >
                     +
                   </button>
                 </div>
+                {insectItems.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeInsectItem(item.id)}
+                    className="text-red-600 dark:text-red-400 p-1"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Supplements for this item</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {supplements.map(sup => (
-                    <label key={sup.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={item.supplements.includes(sup.id)}
-                        onChange={() => toggleItemSupplement(item.id, sup.id)}
-                      />
-                      <span>{sup.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* SALAD COMPONENTS - Optional addition */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="includeSalad"
-              checked={isSalad}
-              onChange={(e) => setIsSalad(e.target.checked)}
-              className="w-4 h-4"
-            />
-            <label htmlFor="includeSalad" className="font-medium cursor-pointer">
-              Also include salad
-            </label>
+            ))}
           </div>
+        )}
 
-          {isSalad && (
-            <div className="pl-6">
-              <label className="block text-sm font-medium mb-2">Salad Components</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {saladFoods.map(food => (
-                  <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={saladComponents.includes(food.id)}
-                      onChange={() => toggleSaladComponent(food.id)}
-                    />
-                    <span className="text-sm">{food.name}</span>
-                  </label>
-                ))}
-              </div>
+        {/* SALAD SECTION */}
+        {includeSalad && (
+          <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <h3 className="font-medium text-gray-900 dark:text-white">Salad Components</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {saladFoods.map(food => (
+                <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={saladComponents.includes(food.id)}
+                    onChange={() => toggleSaladComponent(food.id)}
+                  />
+                  <span className="text-sm">{food.name}</span>
+                </label>
+              ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* PREPARED FOOD SECTION */}
+        {includePrepared && (
+          <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <h3 className="font-medium text-gray-900 dark:text-white">Prepared Food</h3>
+              <button
+                type="button"
+                onClick={addPreparedItem}
+                className="btn-secondary text-sm flex items-center gap-1"
+              >
+                <Plus size={16} /> Add Another Item
+              </button>
+            </div>
+
+            {preparedItems.map((item, index) => (
+              <div key={item.id} className="flex items-center gap-3 bg-white dark:bg-gray-700 p-3 rounded">
+                <div className="flex-1">
+                  <select
+                    value={item.food_id}
+                    onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
+                    className="input w-full"
+                  >
+                    {preparedFoods.map(food => (
+                      <option key={food.id} value={food.id}>{food.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updatePreparedItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                    className="input text-center w-16"
+                    min="1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
+                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+                {preparedItems.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removePreparedItem(item.id)}
+                    className="text-red-600 dark:text-red-400 p-1"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SUPPLEMENTS */}
+        <div>
+          <label className="block font-medium mb-2">Supplements (optional)</label>
+          <div className="grid grid-cols-2 gap-2">
+            {supplements.map(sup => (
+              <label key={sup.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                <input
+                  type="checkbox"
+                  checked={selectedSupplements.includes(sup.id)}
+                  onChange={() => toggleSupplement(sup.id)}
+                />
+                <span className="text-sm">{sup.name}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
