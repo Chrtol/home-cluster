@@ -135,12 +135,21 @@ function FoodsTab() {
     setError('');
     setSuccess('');
 
+    // Clean up the payload - convert empty strings to null
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      insect_size: formData.insect_size || null,
+      animal_size: formData.animal_size || null,
+      nutritional_data: Object.keys(formData.nutritional_data).length > 0 ? formData.nutritional_data : null
+    };
+
     try {
       if (editingFood) {
-        await axios.put(`/api/foods/${editingFood.id}`, formData);
+        await axios.put(`/api/foods/${editingFood.id}`, payload);
         setSuccess('Food updated successfully');
       } else {
-        await axios.post('/api/foods', formData);
+        await axios.post('/api/foods', payload);
         setSuccess('Food created successfully');
       }
       setShowForm(false);
