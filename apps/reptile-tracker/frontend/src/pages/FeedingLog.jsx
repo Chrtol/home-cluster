@@ -211,7 +211,7 @@ export default function FeedingLog() {
 
   // Prepared food item management
   const addPreparedItem = () => {
-    const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal') && f.name !== 'Salad');
+    const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad');
     const defaultFood = preparedFoods.length > 0 ? preparedFoods[0].id : '';
     setPreparedItems([...preparedItems, {
       id: Date.now(),
@@ -369,9 +369,9 @@ export default function FeedingLog() {
     }
   };
 
-  const insectFoods = foods.filter(f => f.category === 'insect');
+  const insectFoods = foods.filter(f => f.category === 'insect' || f.category === 'worms');
   const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
-  const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal') && f.name !== 'Salad');
+  const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad');
 
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;
@@ -536,7 +536,7 @@ export default function FeedingLog() {
             >
               <div className="flex flex-col items-center gap-2">
                 <Bug size={24} />
-                <span className="font-medium">Insects</span>
+                <span className="font-medium">Insects/Worms</span>
               </div>
             </button>
 
@@ -571,23 +571,23 @@ export default function FeedingLog() {
             >
               <div className="flex flex-col items-center gap-2">
                 <Utensils size={24} />
-                <span className="font-medium">Prepared</span>
+                <span className="font-medium">Other Food</span>
               </div>
             </button>
           </div>
         </div>
 
-        {/* INSECTS SECTION */}
+        {/* INSECTS/WORMS SECTION */}
         {includeInsects && (
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             <div className="flex justify-between items-center">
-              <h3 className="font-medium text-gray-900 dark:text-white">Insect Feeding</h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Insects/Worms</h3>
               <button
                 type="button"
                 onClick={addInsectItem}
                 className="btn-secondary text-sm flex items-center gap-1"
               >
-                <Plus size={16} /> Add Another Insect
+                <Plus size={16} /> Add Another Item
               </button>
             </div>
 
@@ -664,7 +664,7 @@ export default function FeedingLog() {
         {includePrepared && (
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             <div className="flex justify-between items-center">
-              <h3 className="font-medium text-gray-900 dark:text-white">Prepared Food</h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Other Food</h3>
               <button
                 type="button"
                 onClick={addPreparedItem}

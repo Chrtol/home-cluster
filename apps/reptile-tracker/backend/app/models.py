@@ -25,10 +25,14 @@ class AccessLevel(str, PyEnum):
 
 class FoodCategory(str, PyEnum):
     INSECT = "insect"
+    WORMS = "worms"
     VEGETABLE = "vegetable"
     FRUIT = "fruit"
     PREPARED = "prepared"
     FROZEN_ANIMAL = "frozen_animal"
+    LIVE_RODENT = "live_rodent"
+    FISH_SEAFOOD = "fish_seafood"
+    EGGS = "eggs"
     OTHER = "other"
 
 
