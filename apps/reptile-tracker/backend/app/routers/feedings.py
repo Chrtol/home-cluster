@@ -15,6 +15,7 @@ from app.models import (
     feeding_foods,
     feeding_supplements,
     feeding_salad_components,
+    feeding_food_supplements,
     NotificationSettings,
 )
 from app.permissions import check_reptile_access
@@ -80,6 +81,26 @@ async def list_feedings(
         )
         foods_with_qty = []
         for food, quantity in foods_result:
+            # Load per-item supplements for this food
+            supplements_result = await db.execute(
+                select(Supplement)
+                .join(feeding_food_supplements, Supplement.id == feeding_food_supplements.c.supplement_id)
+                .where(
+                    feeding_food_supplements.c.feeding_id == feeding.id,
+                    feeding_food_supplements.c.food_id == food.id
+                )
+            )
+            food_supplements = [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "nutritional_data": s.nutritional_data,
+                    "is_default": s.is_default,
+                    "created_at": s.created_at,
+                }
+                for s in supplements_result.scalars().all()
+            ]
+
             food_dict = {
                 "id": food.id,
                 "name": food.name,
@@ -89,6 +110,7 @@ async def list_feedings(
                 "is_default": food.is_default,
                 "created_at": food.created_at,
                 "quantity": quantity,
+                "supplements": food_supplements,
             }
             foods_with_qty.append(food_dict)
 
@@ -180,7 +202,7 @@ async def create_feeding(
     await db.flush()
     print(f"[DEBUG] Feeding created with ID: {new_feeding.id}, fed_at stored as: {new_feeding.fed_at}", file=sys.stderr, flush=True)
 
-    # Add foods with quantities
+    # Add foods with quantities and per-item supplements
     for food_item in feeding.foods:
         await db.execute(
             insert(feeding_foods).values(
@@ -190,7 +212,17 @@ async def create_feeding(
             )
         )
 
-    # Add supplements
+        # Add per-item supplements
+        for supplement_id in food_item.supplement_ids:
+            await db.execute(
+                insert(feeding_food_supplements).values(
+                    feeding_id=new_feeding.id,
+                    food_id=food_item.food_id,
+                    supplement_id=supplement_id,
+                )
+            )
+
+    # Add global supplements
     for supplement_id in feeding.supplements:
         await db.execute(
             insert(feeding_supplements).values(
@@ -230,6 +262,26 @@ async def create_feeding(
     )
     foods_with_qty = []
     for food, quantity in foods_result:
+        # Load per-item supplements for this food
+        supplements_result = await db.execute(
+            select(Supplement)
+            .join(feeding_food_supplements, Supplement.id == feeding_food_supplements.c.supplement_id)
+            .where(
+                feeding_food_supplements.c.feeding_id == new_feeding.id,
+                feeding_food_supplements.c.food_id == food.id
+            )
+        )
+        food_supplements = [
+            {
+                "id": s.id,
+                "name": s.name,
+                "nutritional_data": s.nutritional_data,
+                "is_default": s.is_default,
+                "created_at": s.created_at,
+            }
+            for s in supplements_result.scalars().all()
+        ]
+
         food_dict = {
             "id": food.id,
             "name": food.name,
@@ -239,6 +291,7 @@ async def create_feeding(
             "is_default": food.is_default,
             "created_at": food.created_at,
             "quantity": quantity,
+            "supplements": food_supplements,
         }
         foods_with_qty.append(food_dict)
 
@@ -333,6 +386,26 @@ async def get_feeding(
     )
     foods_with_qty = []
     for food, quantity in foods_result:
+        # Load per-item supplements for this food
+        supplements_result = await db.execute(
+            select(Supplement)
+            .join(feeding_food_supplements, Supplement.id == feeding_food_supplements.c.supplement_id)
+            .where(
+                feeding_food_supplements.c.feeding_id == feeding_id,
+                feeding_food_supplements.c.food_id == food.id
+            )
+        )
+        food_supplements = [
+            {
+                "id": s.id,
+                "name": s.name,
+                "nutritional_data": s.nutritional_data,
+                "is_default": s.is_default,
+                "created_at": s.created_at,
+            }
+            for s in supplements_result.scalars().all()
+        ]
+
         food_dict = {
             "id": food.id,
             "name": food.name,
@@ -342,6 +415,7 @@ async def get_feeding(
             "is_default": food.is_default,
             "created_at": food.created_at,
             "quantity": quantity,
+            "supplements": food_supplements,
         }
         foods_with_qty.append(food_dict)
 
@@ -445,8 +519,9 @@ async def update_feeding(
     await db.execute(delete(feeding_foods).where(feeding_foods.c.feeding_id == feeding_id))
     await db.execute(delete(feeding_supplements).where(feeding_supplements.c.feeding_id == feeding_id))
     await db.execute(delete(feeding_salad_components).where(feeding_salad_components.c.feeding_id == feeding_id))
+    await db.execute(delete(feeding_food_supplements).where(feeding_food_supplements.c.feeding_id == feeding_id))
 
-    # Add new foods
+    # Add new foods with per-item supplements
     for food_item in feeding_update.foods:
         await db.execute(
             insert(feeding_foods).values(
@@ -456,7 +531,17 @@ async def update_feeding(
             )
         )
 
-    # Add new supplements
+        # Add per-item supplements
+        for supplement_id in food_item.supplement_ids:
+            await db.execute(
+                insert(feeding_food_supplements).values(
+                    feeding_id=feeding_id,
+                    food_id=food_item.food_id,
+                    supplement_id=supplement_id,
+                )
+            )
+
+    # Add new global supplements
     for supplement_id in feeding_update.supplements:
         await db.execute(
             insert(feeding_supplements).values(
@@ -496,6 +581,26 @@ async def update_feeding(
     )
     foods_with_qty = []
     for food, quantity in foods_result:
+        # Load per-item supplements for this food
+        supplements_result = await db.execute(
+            select(Supplement)
+            .join(feeding_food_supplements, Supplement.id == feeding_food_supplements.c.supplement_id)
+            .where(
+                feeding_food_supplements.c.feeding_id == feeding_id,
+                feeding_food_supplements.c.food_id == food.id
+            )
+        )
+        food_supplements = [
+            {
+                "id": s.id,
+                "name": s.name,
+                "nutritional_data": s.nutritional_data,
+                "is_default": s.is_default,
+                "created_at": s.created_at,
+            }
+            for s in supplements_result.scalars().all()
+        ]
+
         food_dict = {
             "id": food.id,
             "name": food.name,
@@ -505,6 +610,7 @@ async def update_feeding(
             "is_default": food.is_default,
             "created_at": food.created_at,
             "quantity": quantity,
+            "supplements": food_supplements,
         }
         foods_with_qty.append(food_dict)
 

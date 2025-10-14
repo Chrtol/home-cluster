@@ -93,6 +93,16 @@ feeding_salad_components = Table(
 )
 
 
+# Association table for per-item supplements (supplements applied to specific food items)
+feeding_food_supplements = Table(
+    "feeding_food_supplements",
+    Base.metadata,
+    Column("feeding_id", Integer, ForeignKey("feedings.id", ondelete="CASCADE"), primary_key=True),
+    Column("food_id", Integer, ForeignKey("foods.id", ondelete="CASCADE"), primary_key=True),
+    Column("supplement_id", Integer, ForeignKey("supplements.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
 class User(Base):
     __tablename__ = "users"
 

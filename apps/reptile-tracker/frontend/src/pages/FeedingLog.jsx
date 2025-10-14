@@ -39,6 +39,9 @@ export default function FeedingLog() {
   // Prepared food items (array to support multiple different prepared foods)
   const [preparedItems, setPreparedItems] = useState([]);
 
+  // Salad supplements (applied to salad if selected)
+  const [saladSupplements, setSaladSupplements] = useState([]);
+
   // Global supplements (applied to entire feeding)
   const [selectedSupplements, setSelectedSupplements] = useState([]);
 
@@ -84,7 +87,8 @@ export default function FeedingLog() {
             setInsectItems([{
               id: Date.now(),
               food_id: insectFoods[0].id,
-              quantity: 1
+              quantity: 1,
+              supplement_ids: []
             }]);
           }
         }
@@ -136,17 +140,21 @@ export default function FeedingLog() {
 
       if (food.name === 'Salad' && feeding.is_salad) {
         hasSalad = true;
+        // Load salad supplements
+        setSaladSupplements(food.supplements?.map(s => s.id) || []);
       } else if (foodData.category === 'insect') {
         insects.push({
           id: Date.now() + Math.random(),
           food_id: food.id,
-          quantity: food.quantity || 1
+          quantity: food.quantity || 1,
+          supplement_ids: food.supplements?.map(s => s.id) || []
         });
       } else if (foodData.category === 'prepared') {
         prepared.push({
           id: Date.now() + Math.random(),
           food_id: food.id,
-          quantity: food.quantity || 1
+          quantity: food.quantity || 1,
+          supplement_ids: food.supplements?.map(s => s.id) || []
         });
       }
     });
@@ -195,7 +203,8 @@ export default function FeedingLog() {
     setInsectItems([...insectItems, {
       id: Date.now(),
       food_id: defaultFood,
-      quantity: 1
+      quantity: 1,
+      supplement_ids: []
     }]);
   };
 
@@ -216,7 +225,8 @@ export default function FeedingLog() {
     setPreparedItems([...preparedItems, {
       id: Date.now(),
       food_id: defaultFood,
-      quantity: 1
+      quantity: 1,
+      supplement_ids: []
     }]);
   };
 
@@ -239,7 +249,44 @@ export default function FeedingLog() {
     }
   };
 
-  // Toggle supplement
+  // Toggle supplement for a specific insect item
+  const toggleInsectSupplement = (itemId, suppId) => {
+    setInsectItems(insectItems.map(item => {
+      if (item.id === itemId) {
+        const currentSupps = item.supplement_ids || [];
+        const newSupps = currentSupps.includes(suppId)
+          ? currentSupps.filter(id => id !== suppId)
+          : [...currentSupps, suppId];
+        return { ...item, supplement_ids: newSupps };
+      }
+      return item;
+    }));
+  };
+
+  // Toggle supplement for a specific prepared item
+  const togglePreparedSupplement = (itemId, suppId) => {
+    setPreparedItems(preparedItems.map(item => {
+      if (item.id === itemId) {
+        const currentSupps = item.supplement_ids || [];
+        const newSupps = currentSupps.includes(suppId)
+          ? currentSupps.filter(id => id !== suppId)
+          : [...currentSupps, suppId];
+        return { ...item, supplement_ids: newSupps };
+      }
+      return item;
+    }));
+  };
+
+  // Toggle supplement for salad
+  const toggleSaladSupplement = (suppId) => {
+    if (saladSupplements.includes(suppId)) {
+      setSaladSupplements(saladSupplements.filter(id => id !== suppId));
+    } else {
+      setSaladSupplements([...saladSupplements, suppId]);
+    }
+  };
+
+  // Toggle global supplement
   const toggleSupplement = (suppId) => {
     if (selectedSupplements.includes(suppId)) {
       setSelectedSupplements(selectedSupplements.filter(id => id !== suppId));
@@ -308,7 +355,7 @@ export default function FeedingLog() {
       salad_components: []
     };
 
-    // Add insect foods
+    // Add insect foods with per-item supplements
     if (includeInsects) {
       if (insectItems.length === 0) {
         setError("Please add at least one insect item or uncheck Insects.");
@@ -316,11 +363,12 @@ export default function FeedingLog() {
       }
       payload.foods.push(...insectItems.map(item => ({
         food_id: parseInt(item.food_id),
-        quantity: item.quantity
+        quantity: item.quantity,
+        supplement_ids: item.supplement_ids || []
       })));
     }
 
-    // Add prepared foods
+    // Add prepared foods with per-item supplements
     if (includePrepared) {
       if (preparedItems.length === 0) {
         setError("Please add at least one prepared food item or uncheck Prepared Food.");
@@ -328,11 +376,12 @@ export default function FeedingLog() {
       }
       payload.foods.push(...preparedItems.map(item => ({
         food_id: parseInt(item.food_id),
-        quantity: item.quantity
+        quantity: item.quantity,
+        supplement_ids: item.supplement_ids || []
       })));
     }
 
-    // Add salad
+    // Add salad with per-salad supplements
     if (includeSalad) {
       if (saladComponents.length === 0) {
         setError("Please select at least one salad component or uncheck Salad.");
@@ -345,7 +394,11 @@ export default function FeedingLog() {
         return;
       }
 
-      payload.foods.push({ food_id: saladFood.id, quantity: 1 });
+      payload.foods.push({
+        food_id: saladFood.id,
+        quantity: 1,
+        supplement_ids: saladSupplements || []
+      });
       payload.salad_components = saladComponents;
     }
 
@@ -592,49 +645,70 @@ export default function FeedingLog() {
             </div>
 
             {insectItems.map((item, index) => (
-              <div key={item.id} className="flex items-center gap-3 bg-white dark:bg-gray-700 p-3 rounded">
-                <div className="flex-1">
-                  <select
-                    value={item.food_id}
-                    onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
-                    className="input w-full"
-                  >
-                    {insectFoods.map(food => (
-                      <option key={food.id} value={food.id}>{food.name}</option>
-                    ))}
-                  </select>
+              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-3 rounded">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <select
+                      value={item.food_id}
+                      onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
+                      className="input w-full"
+                    >
+                      {insectFoods.map(food => (
+                        <option key={food.id} value={food.id}>{food.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => updateInsectItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                      className="input text-center w-16"
+                      min="1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
+                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                  {insectItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeInsectItem(item.id)}
+                      className="text-red-600 dark:text-red-400 p-1"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateInsectItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                    className="input text-center w-16"
-                    min="1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
-                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-                {insectItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeInsectItem(item.id)}
-                    className="text-red-600 dark:text-red-400 p-1"
-                  >
-                    <X size={20} />
-                  </button>
+                {/* Per-item supplements */}
+                {supplements.length > 0 && (
+                  <div className="pl-2 border-l-2 border-gray-200 dark:border-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Supplements for this item:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {supplements.map(sup => (
+                        <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={(item.supplement_ids || []).includes(sup.id)}
+                            onChange={() => toggleInsectSupplement(item.id, sup.id)}
+                            className="rounded"
+                          />
+                          <span>{sup.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
@@ -657,6 +731,25 @@ export default function FeedingLog() {
                 </label>
               ))}
             </div>
+            {/* Salad supplements */}
+            {supplements.length > 0 && (
+              <div className="pt-2 border-t border-gray-300 dark:border-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Supplements for salad:</p>
+                <div className="flex flex-wrap gap-2">
+                  {supplements.map(sup => (
+                    <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saladSupplements.includes(sup.id)}
+                        onChange={() => toggleSaladSupplement(sup.id)}
+                        className="rounded"
+                      />
+                      <span>{sup.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -675,58 +768,82 @@ export default function FeedingLog() {
             </div>
 
             {preparedItems.map((item, index) => (
-              <div key={item.id} className="flex items-center gap-3 bg-white dark:bg-gray-700 p-3 rounded">
-                <div className="flex-1">
-                  <select
-                    value={item.food_id}
-                    onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
-                    className="input w-full"
-                  >
-                    {preparedFoods.map(food => (
-                      <option key={food.id} value={food.id}>{food.name}</option>
-                    ))}
-                  </select>
+              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-3 rounded">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <select
+                      value={item.food_id}
+                      onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
+                      className="input w-full"
+                    >
+                      {preparedFoods.map(food => (
+                        <option key={food.id} value={food.id}>{food.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => updatePreparedItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                      className="input text-center w-16"
+                      min="1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
+                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                  {preparedItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePreparedItem(item.id)}
+                      className="text-red-600 dark:text-red-400 p-1"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updatePreparedItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                    className="input text-center w-16"
-                    min="1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
-                    className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-                {preparedItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removePreparedItem(item.id)}
-                    className="text-red-600 dark:text-red-400 p-1"
-                  >
-                    <X size={20} />
-                  </button>
+                {/* Per-item supplements */}
+                {supplements.length > 0 && (
+                  <div className="pl-2 border-l-2 border-gray-200 dark:border-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Supplements for this item:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {supplements.map(sup => (
+                        <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={(item.supplement_ids || []).includes(sup.id)}
+                            onChange={() => togglePreparedSupplement(item.id, sup.id)}
+                            className="rounded"
+                          />
+                          <span>{sup.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
 
-        {/* SUPPLEMENTS */}
+        {/* GLOBAL SUPPLEMENTS */}
         <div>
-          <label className="block font-medium mb-2">Supplements (optional)</label>
+          <label className="block font-medium mb-1">Global Supplements (optional)</label>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+            Applied to all food items in this feeding. You can also add supplements to individual items above.
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {supplements.map(sup => (
               <label key={sup.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
