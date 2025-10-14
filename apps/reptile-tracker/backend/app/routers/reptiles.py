@@ -1,11 +1,11 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, insert, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, Reptile, AccessLevel, reptile_access, household_members
+from app.models import User, Reptile, AccessLevel, reptile_access, household_members, Feeding
 from app.permissions import check_reptile_access, get_user_reptiles, is_owner
 from app.schemas import (
     Reptile as ReptileSchema,
@@ -18,24 +18,20 @@ from app.schemas import (
 router = APIRouter()
 
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, insert, update, delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
-from app.auth import get_current_user
-from app.database import get_db
-from app.models import User, Reptile, AccessLevel, reptile_access, Feeding
-from app.permissions import check_reptile_access, get_user_reptiles, is_owner
-from app.schemas import (
-    Reptile as ReptileSchema,
-    ReptileCreate,
-    ReptileUpdate,
-    ReptileWithAccess,
-    GrantAccess,
-)
-
-router = APIRouter()
+@router.get("/species", response_model=List[str])
+async def list_species(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get list of unique species from all reptiles"""
+    result = await db.execute(
+        select(Reptile.species)
+        .distinct()
+        .where(Reptile.species.isnot(None))
+        .order_by(Reptile.species)
+    )
+    species_list = [row[0] for row in result.all()]
+    return species_list
 
 
 @router.get("", response_model=List[ReptileWithAccess])

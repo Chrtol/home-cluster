@@ -31,10 +31,12 @@
   - Nutritional data fields: Calcium (mg), Vitamin D3 (IU), Vitamin A (IU), Notes
   - Default supplement protection with force delete option
   - Common supplements: Calcium, Calcium with D3, Multivitamins
-- [ ] **Add frozen/dead animal food category**
+- [x] **Add frozen/dead animal food category** - ✅ COMPLETED
   - New category for frozen rodents (mice, rats, etc.)
   - For snakes and larger lizards
   - Track size (pinky, fuzzy, adult, etc.)
+  - Added multiple categories: frozen_animal, live_rodent, fish_seafood, eggs, other
+  - Added AnimalSize enum for tracking sizes (pinky, fuzzy, hopper, weaner, adult_small, etc.)
 
 ## 🔧 Core Features
 
