@@ -569,8 +569,8 @@ export default function FeedingLog() {
   // CREATE/EDIT MODE
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
           {mode === 'edit' ? 'Edit Feeding' : 'Log Feeding'}
         </h1>
       </div>
@@ -612,40 +612,40 @@ export default function FeedingLog() {
 
         {/* Food Type Selection Buttons */}
         <div>
-          <label className="block font-medium mb-2">Feeding Type (select one or more)</label>
-          <div className="flex flex-wrap gap-3">
+          <label className="block font-medium mb-2 text-sm sm:text-base">Feeding Type (select one or more)</label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => {
                 setIncludeInsects(!includeInsects);
                 if (!includeInsects && insectItems.length === 0 && insectFoods.length > 0) {
-                  setInsectItems([{ id: Date.now(), food_id: insectFoods[0].id, quantity: 1 }]);
+                  setInsectItems([{ id: Date.now(), food_id: insectFoods[0].id, quantity: 1, supplement_ids: [] }]);
                 }
               }}
-              className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all ${
+              className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                 includeInsects
                   ? 'bg-primary-600 border-primary-600 text-white'
                   : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
               }`}
             >
-              <div className="flex flex-col items-center gap-2">
-                <Bug size={24} />
-                <span className="font-medium">Insects/Worms</span>
+              <div className="flex flex-col items-center gap-1 sm:gap-2">
+                <Bug size={20} className="sm:w-6 sm:h-6" />
+                <span className="font-medium text-sm sm:text-base">Insects/Worms</span>
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => setIncludeSalad(!includeSalad)}
-              className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all ${
+              className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                 includeSalad
                   ? 'bg-primary-600 border-primary-600 text-white'
                   : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
               }`}
             >
-              <div className="flex flex-col items-center gap-2">
-                <Leaf size={24} />
-                <span className="font-medium">Salad</span>
+              <div className="flex flex-col items-center gap-1 sm:gap-2">
+                <Leaf size={20} className="sm:w-6 sm:h-6" />
+                <span className="font-medium text-sm sm:text-base">Salad</span>
               </div>
             </button>
 
@@ -654,18 +654,18 @@ export default function FeedingLog() {
               onClick={() => {
                 setIncludePrepared(!includePrepared);
                 if (!includePrepared && preparedItems.length === 0 && preparedFoods.length > 0) {
-                  setPreparedItems([{ id: Date.now(), food_id: preparedFoods[0].id, quantity: 1 }]);
+                  setPreparedItems([{ id: Date.now(), food_id: preparedFoods[0].id, quantity: 1, supplement_ids: [] }]);
                 }
               }}
-              className={`flex-1 min-w-[150px] p-4 rounded-lg border-2 transition-all ${
+              className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                 includePrepared
                   ? 'bg-primary-600 border-primary-600 text-white'
                   : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
               }`}
             >
-              <div className="flex flex-col items-center gap-2">
-                <Utensils size={24} />
-                <span className="font-medium">Other Food</span>
+              <div className="flex flex-col items-center gap-1 sm:gap-2">
+                <Utensils size={20} className="sm:w-6 sm:h-6" />
+                <span className="font-medium text-sm sm:text-base">Other Food</span>
               </div>
             </button>
           </div>
@@ -686,66 +686,68 @@ export default function FeedingLog() {
             </div>
 
             {insectItems.map((item, index) => (
-              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-3 rounded">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
+              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                  <div className="flex-1 min-w-0">
                     <select
                       value={item.food_id}
                       onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
-                      className="input w-full"
+                      className="input w-full text-sm sm:text-base"
                     >
                       {insectFoods.map(food => (
                         <option key={food.id} value={food.id}>{food.name}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateInsectItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                      className="input text-center w-16"
-                      min="1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
-                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                    >
-                      +
-                    </button>
+                  <div className="flex items-center justify-between sm:justify-start gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateInsectItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                        className="input text-center w-16 sm:w-16 text-lg sm:text-base font-semibold"
+                        min="1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
+                    {insectItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeInsectItem(item.id)}
+                        className="text-red-600 dark:text-red-400 p-1 sm:p-1"
+                      >
+                        <X size={22} className="sm:w-5 sm:h-5" />
+                      </button>
+                    )}
                   </div>
-                  {insectItems.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeInsectItem(item.id)}
-                      className="text-red-600 dark:text-red-400 p-1"
-                    >
-                      <X size={20} />
-                    </button>
-                  )}
                 </div>
                 {/* Per-item supplements */}
                 {supplements.length > 0 && (
-                  <div className="pl-2 border-l-2 border-gray-200 dark:border-gray-600">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Supplements for this item:</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="pl-2 sm:pl-2 border-l-2 border-gray-200 dark:border-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5">Supplements:</p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {supplements.map(sup => (
-                        <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                        <label key={sup.id} className="flex items-center gap-1.5 text-xs sm:text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                           <input
                             type="checkbox"
                             checked={(item.supplement_ids || []).includes(sup.id)}
                             onChange={() => toggleInsectSupplement(item.id, sup.id)}
-                            className="rounded"
+                            className="rounded w-4 h-4"
                           />
-                          <span>{sup.name}</span>
+                          <span className="select-none">{sup.name}</span>
                         </label>
                       ))}
                     </div>
@@ -775,17 +777,17 @@ export default function FeedingLog() {
             {/* Salad supplements */}
             {supplements.length > 0 && (
               <div className="pt-2 border-t border-gray-300 dark:border-gray-600">
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Supplements for salad:</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Supplements:</p>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {supplements.map(sup => (
-                    <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                    <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                       <input
                         type="checkbox"
                         checked={saladSupplements.includes(sup.id)}
                         onChange={() => toggleSaladSupplement(sup.id)}
-                        className="rounded"
+                        className="rounded w-4 h-4"
                       />
-                      <span>{sup.name}</span>
+                      <span className="select-none">{sup.name}</span>
                     </label>
                   ))}
                 </div>
@@ -809,66 +811,68 @@ export default function FeedingLog() {
             </div>
 
             {preparedItems.map((item, index) => (
-              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-3 rounded">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
+              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                  <div className="flex-1 min-w-0">
                     <select
                       value={item.food_id}
                       onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
-                      className="input w-full"
+                      className="input w-full text-sm sm:text-base"
                     >
                       {preparedFoods.map(food => (
                         <option key={food.id} value={food.id}>{food.name}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updatePreparedItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                      className="input text-center w-16"
-                      min="1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
-                      className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded font-bold"
-                    >
-                      +
-                    </button>
+                  <div className="flex items-center justify-between sm:justify-start gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updatePreparedItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                        className="input text-center w-16 sm:w-16 text-lg sm:text-base font-semibold"
+                        min="1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
+                    {preparedItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePreparedItem(item.id)}
+                        className="text-red-600 dark:text-red-400 p-1 sm:p-1"
+                      >
+                        <X size={22} className="sm:w-5 sm:h-5" />
+                      </button>
+                    )}
                   </div>
-                  {preparedItems.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePreparedItem(item.id)}
-                      className="text-red-600 dark:text-red-400 p-1"
-                    >
-                      <X size={20} />
-                    </button>
-                  )}
                 </div>
                 {/* Per-item supplements */}
                 {supplements.length > 0 && (
-                  <div className="pl-2 border-l-2 border-gray-200 dark:border-gray-600">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Supplements for this item:</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="pl-2 sm:pl-2 border-l-2 border-gray-200 dark:border-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5">Supplements:</p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {supplements.map(sup => (
-                        <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                        <label key={sup.id} className="flex items-center gap-1.5 text-xs sm:text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                           <input
                             type="checkbox"
                             checked={(item.supplement_ids || []).includes(sup.id)}
                             onChange={() => togglePreparedSupplement(item.id, sup.id)}
-                            className="rounded"
+                            className="rounded w-4 h-4"
                           />
-                          <span>{sup.name}</span>
+                          <span className="select-none">{sup.name}</span>
                         </label>
                       ))}
                     </div>
@@ -881,19 +885,20 @@ export default function FeedingLog() {
 
         {/* GLOBAL SUPPLEMENTS */}
         <div>
-          <label className="block font-medium mb-1">Global Supplements (optional)</label>
+          <label className="block font-medium mb-1 text-sm sm:text-base">Global Supplements (optional)</label>
           <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-            Applied to all food items in this feeding. You can also add supplements to individual items above.
+            Applied to all food items. You can also add supplements to individual items above.
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {supplements.map(sup => (
-              <label key={sup.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+              <label key={sup.id} className="flex items-center gap-2 p-2.5 sm:p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <input
                   type="checkbox"
                   checked={selectedSupplements.includes(sup.id)}
                   onChange={() => toggleSupplement(sup.id)}
+                  className="rounded w-4 h-4"
                 />
-                <span className="text-sm">{sup.name}</span>
+                <span className="text-sm select-none">{sup.name}</span>
               </label>
             ))}
           </div>
