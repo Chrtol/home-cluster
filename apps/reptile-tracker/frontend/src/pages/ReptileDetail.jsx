@@ -180,24 +180,24 @@ export default function ReptileDetail() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-2">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
-            <div className="flex gap-2">
-                <Link to={`/health-log/${id}`} className="btn-primary">Log Health/Weight</Link>
-                <Link to={`/reptiles/${id}/edit`} className="btn-secondary">Edit</Link>
-                <button onClick={handleDelete} className="btn-danger">Delete</button>
+      <div className="mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-0">{reptile.name}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-3 sm:mb-0">{reptile.species}</p>
+            <div className="flex flex-wrap gap-2">
+                <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base">Log Health/Weight</Link>
+                <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
+                <button onClick={handleDelete} className="btn-danger text-sm sm:text-base">Delete</button>
             </div>
         </div>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">{reptile.species}</p>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Details</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">Details</h2>
         <p className="text-gray-900 dark:text-white"><strong>Date of Birth:</strong> {reptile.date_of_birth ? formatDate(reptile.date_of_birth) : 'N/A'}</p>
         <p className="text-gray-900 dark:text-white"><strong>Notes:</strong> {reptile.notes || 'None'}</p>
       </div>
 
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
           {Object.keys(tabs).map(tab => (
             <button
               key={tab}
@@ -206,7 +206,7 @@ export default function ReptileDetail() {
                 activeTab === tab
                   ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize`}
+              } whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm capitalize`}
             >
               {tab}
             </button>
@@ -214,7 +214,7 @@ export default function ReptileDetail() {
         </nav>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
         {tabs[activeTab]}
       </div>
     </div>
