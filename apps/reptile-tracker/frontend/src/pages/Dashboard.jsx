@@ -133,10 +133,10 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <Link to="/feed" className="btn-primary flex items-center gap-2">
-          <Utensils size={20} /> Log Feeding
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <Link to="/feed" className="btn-primary flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center">
+          <Utensils size={18} className="sm:w-5 sm:h-5" /> Log Feeding
         </Link>
       </div>
 
