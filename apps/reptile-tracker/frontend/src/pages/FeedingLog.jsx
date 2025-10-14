@@ -674,7 +674,7 @@ export default function FeedingLog() {
         {/* INSECTS/WORMS SECTION */}
         {includeInsects && (
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
               <h3 className="font-medium text-gray-900 dark:text-white">Insects/Worms</h3>
               <button
                 type="button"
@@ -799,7 +799,7 @@ export default function FeedingLog() {
         {/* PREPARED FOOD SECTION */}
         {includePrepared && (
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
               <h3 className="font-medium text-gray-900 dark:text-white">Other Food</h3>
               <button
                 type="button"

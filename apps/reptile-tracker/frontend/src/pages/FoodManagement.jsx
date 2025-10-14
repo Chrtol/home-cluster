@@ -174,17 +174,17 @@ function FoodsTab() {
       {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
 
-      <div className="flex justify-between items-center mb-6">
-        <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 sm:gap-0 mb-6">
+        <button onClick={handleCreate} className="btn-primary flex items-center gap-2 justify-center sm:justify-start">
           <PlusCircle size={20} /> Add Food
         </button>
 
-        <div>
-          <label className="block font-medium mb-2 text-gray-900 dark:text-white">Filter by Category</label>
+        <div className="w-full sm:w-auto">
+          <label className="block font-medium mb-2 text-sm sm:text-base text-gray-900 dark:text-white">Filter by Category</label>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="input w-64"
+            className="input w-full sm:w-64"
           >
             <option value="">All Categories</option>
             <option value="insect">Insects</option>
@@ -504,11 +504,11 @@ function SupplementsTab() {
       {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
 
-      <div className="flex justify-between items-center mb-6">
-        <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
+        <button onClick={handleCreate} className="btn-primary flex items-center gap-2 justify-center sm:justify-start">
           <PlusCircle size={20} /> Add Supplement
         </button>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-right">
           Common supplements: Calcium, Calcium with D3, Multivitamins
         </p>
       </div>
