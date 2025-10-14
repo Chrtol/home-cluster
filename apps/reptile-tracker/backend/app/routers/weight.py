@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, WeightLog, AccessLevel, Reptile, UserReptileAccess
+from app.models import User, WeightLog, AccessLevel, Reptile, reptile_access
 from app.permissions import check_reptile_access
 from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate, WeightLogWithReptile
 
@@ -19,12 +19,12 @@ async def get_dashboard_weights(
     """Get recent weight logs for all user's reptiles (for dashboard graph)"""
     # Get all reptiles the user has access to
     result = await db.execute(
-        select(Reptile)
-        .join(UserReptileAccess)
-        .where(UserReptileAccess.user_id == current_user.id)
+        select(Reptile.id)
+        .select_from(reptile_access)
+        .join(Reptile, reptile_access.c.reptile_id == Reptile.id)
+        .where(reptile_access.c.user_id == current_user.id)
     )
-    reptiles = result.scalars().all()
-    reptile_ids = [r.id for r in reptiles]
+    reptile_ids = [row[0] for row in result.all()]
 
     if not reptile_ids:
         return []
