@@ -472,8 +472,8 @@ export default function FeedingLog() {
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Food</p>
-            <div className="space-y-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Food Items</p>
+            <div className="space-y-3">
               {existingFeeding.foods && existingFeeding.foods.length > 0 ? (
                 existingFeeding.foods.map(food => {
                   // Don't display the "Salad" food item itself, as it's shown separately below
@@ -481,9 +481,27 @@ export default function FeedingLog() {
                     return null;
                   }
                   return (
-                    <p key={food.id} className="text-gray-900 dark:text-white">
-                      {food.name} × {food.quantity || 1}
-                    </p>
+                    <div key={food.id} className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {food.name} × {food.quantity || 1}
+                        </p>
+                        {food.supplements && food.supplements.length > 0 && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {food.supplements.length} supplement{food.supplements.length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                      {food.supplements && food.supplements.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {food.supplements.map(sup => (
+                            <span key={sup.id} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs">
+                              {sup.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 })
               ) : !existingFeeding.is_salad ? (
@@ -492,10 +510,32 @@ export default function FeedingLog() {
 
               {existingFeeding.is_salad && existingFeeding.salad_components && existingFeeding.salad_components.length > 0 && (
                 <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                  <p className="font-medium text-green-900 dark:text-green-100 mb-1">Salad</p>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    Components: {existingFeeding.salad_components.map(sc => sc.name).join(', ')}
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-medium text-green-900 dark:text-green-100">Salad</p>
+                    {(() => {
+                      const saladFood = existingFeeding.foods?.find(f => f.name === 'Salad');
+                      return saladFood?.supplements && saladFood.supplements.length > 0 && (
+                        <span className="text-xs text-green-700 dark:text-green-300">
+                          {saladFood.supplements.length} supplement{saladFood.supplements.length !== 1 ? 's' : ''}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    <span className="font-medium">Components:</span> {existingFeeding.salad_components.map(sc => sc.name).join(', ')}
                   </p>
+                  {(() => {
+                    const saladFood = existingFeeding.foods?.find(f => f.name === 'Salad');
+                    return saladFood?.supplements && saladFood.supplements.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {saladFood.supplements.map(sup => (
+                          <span key={sup.id} className="px-2 py-0.5 bg-green-200 dark:bg-green-800/30 text-green-900 dark:text-green-200 rounded text-xs">
+                            {sup.name}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -503,10 +543,11 @@ export default function FeedingLog() {
 
           {existingFeeding.supplements && existingFeeding.supplements.length > 0 && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Supplements</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Global Supplements</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">Applied to all food items</p>
               <div className="flex flex-wrap gap-2">
                 {existingFeeding.supplements.map(sup => (
-                  <span key={sup.id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  <span key={sup.id} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-full text-sm">
                     {sup.name}
                   </span>
                 ))}
