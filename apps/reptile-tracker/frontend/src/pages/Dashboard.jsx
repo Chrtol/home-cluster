@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
-import { Utensils } from 'lucide-react';
+import { formatDistanceToNow, differenceInDays } from 'date-fns';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatting';
 
 export default function Dashboard() {
@@ -28,6 +28,40 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+  const getFeedingStatus = (reptile) => {
+    // Don't show schedule status if feeding schedule not enabled
+    if (!reptile.feeding_schedule_enabled || !reptile.feeding_frequency_days) {
+      return null; // No status to display
+    }
+
+    if (!reptile.last_feeding) {
+      return { status: 'never_fed', color: 'yellow', icon: AlertCircle, text: 'Never fed' };
+    }
+
+    const daysSinceFeeding = differenceInDays(new Date(), new Date(reptile.last_feeding));
+    const daysUntilDue = reptile.feeding_frequency_days - daysSinceFeeding;
+
+    if (daysUntilDue < 0) {
+      return {
+        status: 'overdue',
+        color: 'red',
+        icon: AlertCircle,
+        text: `Overdue by ${Math.abs(daysUntilDue)} day${Math.abs(daysUntilDue) !== 1 ? 's' : ''}`
+      };
+    } else if (daysUntilDue === 0) {
+      return { status: 'due_today', color: 'orange', icon: Clock, text: 'Due today' };
+    } else if (daysUntilDue <= 1) {
+      return { status: 'due_soon', color: 'yellow', icon: Clock, text: 'Due tomorrow' };
+    } else {
+      return {
+        status: 'on_track',
+        color: 'green',
+        icon: CheckCircle,
+        text: `Due in ${daysUntilDue} days`
+      };
+    }
+  };
+
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading dashboard...</div>;
   }
@@ -43,23 +77,61 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Reptile Summary */}
         <div className="md:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Your Reptiles ({reptiles.length})</h2>
-            <div className="space-y-3">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 h-full">
+            <h2 className="text-lg font-bold mb-3 text-gray-900 dark:text-white">Your Reptiles ({reptiles.length})</h2>
+            <div className="space-y-2">
               {reptiles.length > 0 ? (
-                reptiles.map(reptile => (
-                  <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <span className="font-semibold text-gray-900 dark:text-white">{reptile.name}</span>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {reptile.last_feeding ? `Last fed: ${formatDistanceToNow(new Date(reptile.last_feeding), { addSuffix: true })}` : 'Never fed'}
-                            </p>
+                reptiles.map(reptile => {
+                  const feedingStatus = getFeedingStatus(reptile);
+                  const daysSinceFeeding = reptile.last_feeding
+                    ? differenceInDays(new Date(), new Date(reptile.last_feeding))
+                    : null;
+
+                  return (
+                    <Link
+                      to={`/reptiles/${reptile.id}`}
+                      key={reptile.id}
+                      className="block p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-gray-900 dark:text-white truncate">{reptile.name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{reptile.species}</span>
+                          </div>
+
+                          <div className="flex flex-col gap-1 text-xs">
+                            {/* Last fed info */}
+                            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                              <Clock size={12} className="flex-shrink-0" />
+                              {reptile.last_feeding ? (
+                                <span>
+                                  {daysSinceFeeding === 0 ? 'Fed today' : `${daysSinceFeeding}d ago`}
+                                </span>
+                              ) : (
+                                <span>Never fed</span>
+                              )}
+                            </div>
+
+                            {/* Feeding status - only show if schedule is enabled */}
+                            {feedingStatus && (
+                              <div className={`flex items-center gap-1.5 ${
+                                feedingStatus.color === 'red' ? 'text-red-600 dark:text-red-400 font-medium' :
+                                feedingStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' :
+                                feedingStatus.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                                feedingStatus.color === 'green' ? 'text-green-600 dark:text-green-400' :
+                                'text-gray-500 dark:text-gray-400'
+                              }`}>
+                                <feedingStatus.icon size={12} className="flex-shrink-0" />
+                                <span>{feedingStatus.text}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{reptile.species}</span>
-                    </div>
-                  </Link>
-                ))
+                      </div>
+                    </Link>
+                  );
+                })
               ) : (
                 <div className="text-center py-4">
                   <p className="text-gray-500 dark:text-gray-400 mb-3">No reptiles added yet.</p>
