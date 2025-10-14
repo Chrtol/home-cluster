@@ -176,10 +176,14 @@ function FoodsTab() {
           >
             <option value="">All Categories</option>
             <option value="insect">Insects</option>
+            <option value="worms">Worms</option>
             <option value="vegetable">Vegetables</option>
             <option value="fruit">Fruits</option>
             <option value="prepared">Prepared Foods</option>
             <option value="frozen_animal">Frozen Animals</option>
+            <option value="live_rodent">Live Rodents</option>
+            <option value="fish_seafood">Fish/Seafood</option>
+            <option value="eggs">Eggs</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -287,10 +291,14 @@ function FoodsTab() {
                     className="input w-full"
                   >
                     <option value="insect">Insect</option>
+                    <option value="worms">Worms</option>
                     <option value="vegetable">Vegetable</option>
                     <option value="fruit">Fruit</option>
                     <option value="prepared">Prepared Food</option>
                     <option value="frozen_animal">Frozen Animal</option>
+                    <option value="live_rodent">Live Rodent</option>
+                    <option value="fish_seafood">Fish/Seafood</option>
+                    <option value="eggs">Eggs</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
