@@ -54,6 +54,7 @@ function FoodsTab() {
     name: '',
     category: 'insect',
     insect_size: '',
+    animal_size: '',
     nutritional_data: {}
   });
 
@@ -82,6 +83,7 @@ function FoodsTab() {
       name: '',
       category: 'insect',
       insect_size: '',
+      animal_size: '',
       nutritional_data: {}
     });
     setShowForm(true);
@@ -95,6 +97,7 @@ function FoodsTab() {
       name: food.name,
       category: food.category,
       insect_size: food.insect_size || '',
+      animal_size: food.animal_size || '',
       nutritional_data: food.nutritional_data || {}
     });
     setShowForm(true);
@@ -176,6 +179,7 @@ function FoodsTab() {
             <option value="vegetable">Vegetables</option>
             <option value="fruit">Fruits</option>
             <option value="prepared">Prepared Foods</option>
+            <option value="frozen_animal">Frozen Animals</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -286,6 +290,7 @@ function FoodsTab() {
                     <option value="vegetable">Vegetable</option>
                     <option value="fruit">Fruit</option>
                     <option value="prepared">Prepared Food</option>
+                    <option value="frozen_animal">Frozen Animal</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -293,13 +298,37 @@ function FoodsTab() {
                 {formData.category === 'insect' && (
                   <div>
                     <label className="block font-medium mb-1 text-gray-900 dark:text-white">Insect Size</label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.insect_size}
                       onChange={(e) => setFormData({ ...formData, insect_size: e.target.value })}
                       className="input w-full"
-                      placeholder="e.g., Small, Medium, Large"
-                    />
+                    >
+                      <option value="">Select size...</option>
+                      <option value="small">Small</option>
+                      <option value="medium">Medium</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </div>
+                )}
+
+                {formData.category === 'frozen_animal' && (
+                  <div>
+                    <label className="block font-medium mb-1 text-gray-900 dark:text-white">Animal Size</label>
+                    <select
+                      value={formData.animal_size}
+                      onChange={(e) => setFormData({ ...formData, animal_size: e.target.value })}
+                      className="input w-full"
+                    >
+                      <option value="">Select size...</option>
+                      <option value="pinky">Pinky (Newborn)</option>
+                      <option value="fuzzy">Fuzzy (Young with fur)</option>
+                      <option value="hopper">Hopper (Young, mobile)</option>
+                      <option value="weaner">Weaner (Juvenile, weaned)</option>
+                      <option value="adult_small">Adult Small</option>
+                      <option value="adult_medium">Adult Medium</option>
+                      <option value="adult_large">Adult Large</option>
+                      <option value="jumbo">Jumbo (Large rat/rabbit)</option>
+                    </select>
                   </div>
                 )}
 

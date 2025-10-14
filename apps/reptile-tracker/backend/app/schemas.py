@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field, field_serializer
-from app.models import AccessLevel, FoodCategory, InsectSize
+from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize
 
 
 # User schemas
@@ -72,6 +72,7 @@ class FoodBase(BaseModel):
     name: str
     category: FoodCategory
     insect_size: Optional[InsectSize] = None
+    animal_size: Optional[AnimalSize] = None
     nutritional_data: Optional[dict] = None
 
 
