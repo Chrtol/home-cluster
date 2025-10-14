@@ -144,8 +144,6 @@ function FoodsTab() {
       nutritional_data: Object.keys(formData.nutritional_data).length > 0 ? formData.nutritional_data : null
     };
 
-    console.log('Submitting food payload:', payload);
-
     try {
       if (editingFood) {
         await axios.put(`/api/foods/${editingFood.id}`, payload);
@@ -158,8 +156,7 @@ function FoodsTab() {
       fetchFoods();
     } catch (error) {
       console.error('Failed to save food:', error);
-      console.error('Error response:', error.response?.data);
-      setError(error.response?.data?.detail || JSON.stringify(error.response?.data) || 'Failed to save food');
+      setError(error.response?.data?.detail || 'Failed to save food');
     }
   };
 
