@@ -19,9 +19,13 @@ async def list_misting_logs(
     db: AsyncSession = Depends(get_db),
 ):
     """List all misting logs for a reptile"""
+    from sqlalchemy.orm import selectinload
+    from app.models import Reptile
+
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
     result = await db.execute(
         select(MistingLog)
+        .options(selectinload(MistingLog.reptile))
         .where(MistingLog.reptile_id == reptile_id)
         .order_by(MistingLog.misted_at.desc())
     )
