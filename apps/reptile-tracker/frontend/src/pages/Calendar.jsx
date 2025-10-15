@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from "lucide-react";
 
@@ -259,6 +259,27 @@ function Calendar() {
     return days;
   };
 
+  const getDaysInWeek = () => {
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  };
+
+  const getHoursInDay = () => {
+    const hours = [];
+    for (let i = 0; i < 24; i++) {
+      hours.push(i);
+    }
+    return hours;
+  };
+
   const getEventsForDate = (date) => {
     if (!date) return [];
 
@@ -313,6 +334,52 @@ function Calendar() {
     setTimeout(() => calculateEvents(schedules), 0);
   };
 
+  const navigateWeek = (direction) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + (direction * 7));
+    setCurrentDate(newDate);
+  };
+
+  const navigateDay = (direction) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + direction);
+    setCurrentDate(newDate);
+  };
+
+  const navigate = (direction) => {
+    if (view === "month") {
+      navigateMonth(direction);
+    } else if (view === "week") {
+      navigateWeek(direction);
+    } else {
+      navigateDay(direction);
+    }
+  };
+
+  const getViewTitle = () => {
+    if (view === "month") {
+      return currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+    } else if (view === "week") {
+      const weekDays = getDaysInWeek();
+      const start = weekDays[0].toLocaleDateString("default", { month: "short", day: "numeric" });
+      const end = weekDays[6].toLocaleDateString("default", { month: "short", day: "numeric", year: "numeric" });
+      return `${start} - ${end}`;
+    } else {
+      return currentDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    }
+  };
+
+  const getEventLink = (event) => {
+    if (!event.is_actual) return null;
+
+    if (event.type === "feeding") {
+      return `/feed/${event.id}`;
+    } else if (event.type === "misting") {
+      return `/misting/${event.id}`;
+    }
+    return null;
+  };
+
   const handleDateClick = (date) => {
     setSelectedDate(date);
   };
@@ -348,9 +415,6 @@ function Calendar() {
       }
     }
   };
-
-  const days = getDaysInMonth();
-  const monthName = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
 
   if (loading) {
     return (
@@ -415,93 +479,260 @@ function Calendar() {
 
       {/* Calendar Controls */}
       <div className="card mb-4">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => navigateMonth(-1)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ChevronLeft size={24} />
-          </button>
+        {/* View Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-full sm:w-auto">
+            <button
+              onClick={() => setView("month")}
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
+                view === "month"
+                  ? "bg-primary-600 text-white"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              Month
+            </button>
+            <button
+              onClick={() => setView("week")}
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                view === "week"
+                  ? "bg-primary-600 text-white"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setView("day")}
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                view === "day"
+                  ? "bg-primary-600 text-white"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              Day
+            </button>
+          </div>
 
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {monthName}
-          </h2>
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <ChevronLeft size={24} />
+            </button>
 
-          <button
-            onClick={() => navigateMonth(1)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ChevronRight size={24} />
-          </button>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white min-w-[200px] text-center">
+              {getViewTitle()}
+            </h2>
+
+            <button
+              onClick={() => navigate(1)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
         </div>
 
-        {/* Weekday Headers */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-            <div key={day} className="text-center text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
-              {day}
+        {/* Month View */}
+        {view === "month" && (
+          <>
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+                <div key={day} className="text-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
+                  {day}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2">
-          {days.map((date, index) => {
-            const dayEvents = date ? getEventsForDate(date) : [];
-            const isToday = date && date.toDateString() === new Date().toDateString();
-            const isSelected = selectedDate && date && date.toDateString() === selectedDate.toDateString();
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+              {getDaysInMonth().map((date, index) => {
+                const dayEvents = date ? getEventsForDate(date) : [];
+                const isToday = date && date.toDateString() === new Date().toDateString();
+                const isSelected = selectedDate && date && date.toDateString() === selectedDate.toDateString();
 
-            return (
-              <div
-                key={index}
-                onClick={() => date && handleDateClick(date)}
-                className={`
-                  min-h-24 p-2 rounded-lg border transition-all
-                  ${!date ? "bg-gray-50 dark:bg-gray-800/50" : "cursor-pointer hover:border-primary-300 dark:hover:border-primary-600"}
-                  ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
-                  ${isSelected ? "ring-2 ring-primary-500" : ""}
-                `}
-              >
-                {date && (
-                  <>
-                    <div className={`text-sm font-semibold mb-1 ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
-                      {date.getDate()}
+                return (
+                  <div
+                    key={index}
+                    onClick={() => date && handleDateClick(date)}
+                    className={`
+                      min-h-16 sm:min-h-24 p-1 sm:p-2 rounded-lg border transition-all
+                      ${!date ? "bg-gray-50 dark:bg-gray-800/50" : "cursor-pointer hover:border-primary-300 dark:hover:border-primary-600"}
+                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+                      ${isSelected ? "ring-2 ring-primary-500" : ""}
+                    `}
+                  >
+                    {date && (
+                      <>
+                        <div className={`text-xs sm:text-sm font-semibold mb-1 ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
+                          {date.getDate()}
+                        </div>
+
+                        <div className="space-y-1 hidden sm:block">
+                          {dayEvents.slice(0, 3).map((event, idx) => {
+                            const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                            const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+
+                            return (
+                              <div
+                                key={idx}
+                                className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
+                                title={`${displayName}${detail}`}
+                              >
+                                {event.is_actual && "✓ "}
+                                {displayName}
+                                {detail && <span className="opacity-75">{detail}</span>}
+                              </div>
+                            );
+                          })}
+                          {dayEvents.length > 3 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 px-2">
+                              +{dayEvents.length - 3} more
+                            </div>
+                          )}
+                        </div>
+                        {dayEvents.length > 0 && (
+                          <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
+                            {dayEvents.length}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Week View */}
+        {view === "week" && (
+          <>
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+                <div key={day} className="text-center text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+              {getDaysInWeek().map((date, index) => {
+                const dayEvents = getEventsForDate(date);
+                const isToday = date.toDateString() === new Date().toDateString();
+                const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => handleDateClick(date)}
+                    className={`
+                      p-3 rounded-lg border transition-all cursor-pointer hover:border-primary-300 dark:hover:border-primary-600
+                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+                      ${isSelected ? "ring-2 ring-primary-500" : ""}
+                    `}
+                  >
+                    <div className="flex sm:block items-center justify-between sm:justify-start mb-2">
+                      <div className={`text-sm font-semibold ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
+                        <span className="sm:hidden">{date.toLocaleDateString("default", { weekday: "short" })} </span>
+                        {date.getDate()}
+                      </div>
+                      {dayEvents.length > 0 && (
+                        <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400">
+                          {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Event indicators */}
-                    <div className="space-y-1">
-                      {dayEvents.slice(0, 3).map((event, idx) => {
-                        const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
-                        const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+                    <div className="space-y-1.5 hidden sm:block">
+                      {dayEvents.map((event, idx) => {
+                        const displayName = event.name || `${event.reptile_name}`;
 
                         return (
                           <div
                             key={idx}
-                            className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
-                            title={`${displayName}${detail}`}
+                            className={`text-xs px-2 py-1.5 rounded ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
+                            title={displayName}
                           >
                             {event.is_actual && "✓ "}
-                            {displayName}
-                            {detail && <span className="opacity-75">{detail}</span>}
+                            <div className="truncate">{displayName}</div>
+                            <div className="text-xs opacity-75 truncate capitalize">{event.schedule_type}</div>
                           </div>
                         );
                       })}
-                      {dayEvents.length > 3 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 px-2">
-                          +{dayEvents.length - 3} more
-                        </div>
-                      )}
                     </div>
-                  </>
-                )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Day View */}
+        {view === "day" && (
+          <div className="space-y-2">
+            {getEventsForDate(currentDate).length > 0 ? (
+              <div className="space-y-2">
+                {getEventsForDate(currentDate).map((event, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-lg border ${
+                      event.is_actual
+                        ? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50"
+                        : "border-gray-200 dark:border-gray-700"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          {event.is_actual && (
+                            <span className="text-green-600 dark:text-green-400">✓</span>
+                          )}
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {event.name || event.reptile_name}
+                          </div>
+                          {event.is_actual && event.time && (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {event.time}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                          {event.is_actual ? "Completed: " : "Scheduled: "}
+                          {event.schedule_type}
+                          {event.food_category && ` • ${event.food_category}`}
+                          {event.time_slot && ` • ${event.time_slot}`}
+                        </div>
+                        {!event.name && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {event.reptile_name}
+                          </div>
+                        )}
+                        {event.notes && (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                            {event.notes}
+                          </div>
+                        )}
+                      </div>
+                      <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
+                        {event.schedule_type}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-16">
+                No events for this day
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Selected Date Details */}
-      {selectedDate && (
+      {selectedDate && view !== "day" && (
         <div className="card">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             {selectedDate.toLocaleDateString("default", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
@@ -509,51 +740,61 @@ function Calendar() {
 
           <div className="space-y-2">
             {getEventsForDate(selectedDate).length > 0 ? (
-              getEventsForDate(selectedDate).map((event, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-start justify-between p-3 rounded-lg border ${
-                    event.is_actual
-                      ? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50"
-                      : "border-gray-200 dark:border-gray-700"
-                  }`}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      {event.is_actual && (
-                        <span className="text-green-600 dark:text-green-400">✓</span>
-                      )}
-                      <div className="font-semibold text-gray-900 dark:text-white">
-                        {event.name || event.reptile_name}
+              getEventsForDate(selectedDate).map((event, idx) => {
+                const eventLink = getEventLink(event);
+                const content = (
+                  <div className="flex items-start justify-between p-3 rounded-lg border">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        {event.is_actual && (
+                          <span className="text-green-600 dark:text-green-400">✓</span>
+                        )}
+                        <div className="font-semibold text-gray-900 dark:text-white">
+                          {event.name || event.reptile_name}
+                        </div>
+                        {event.is_actual && event.time && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {event.time}
+                          </span>
+                        )}
                       </div>
-                      {event.is_actual && event.time && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {event.time}
-                        </span>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 capitalize mt-1">
+                        {event.is_actual ? "Completed: " : "Scheduled: "}
+                        {event.schedule_type}
+                        {event.food_category && ` • ${event.food_category}`}
+                        {event.time_slot && ` • ${event.time_slot}`}
+                      </div>
+                      {!event.name && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {event.reptile_name}
+                        </div>
+                      )}
+                      {event.notes && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          {event.notes}
+                        </div>
                       )}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 capitalize mt-1">
-                      {event.is_actual ? "Completed: " : "Scheduled: "}
+                    <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
                       {event.schedule_type}
-                      {event.food_category && ` • ${event.food_category}`}
-                      {event.time_slot && ` • ${event.time_slot}`}
-                    </div>
-                    {!event.name && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {event.reptile_name}
-                      </div>
-                    )}
-                    {event.notes && (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {event.notes}
-                      </div>
-                    )}
+                    </span>
                   </div>
-                  <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
-                    {event.schedule_type}
-                  </span>
-                </div>
-              ))
+                );
+
+                if (eventLink) {
+                  return (
+                    <Link key={idx} to={eventLink} className="block hover:opacity-80 transition-opacity">
+                      {content}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={idx} className={event.is_actual ? "" : "opacity-75"}>
+                    {content}
+                  </div>
+                );
+              })
             ) : (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                 No events for this day
