@@ -474,26 +474,35 @@ export default function Dashboard() {
                   };
 
                   let summary = '';
+                  let details = '';
                   let detailLink = '';
 
                   switch (activity.type) {
                     case 'feeding':
-                      summary = activity.data.foods && activity.data.foods.length > 0
-                        ? activity.data.foods.map(f => f.food?.name).filter(Boolean).join(', ')
+                      const foods = activity.data.foods && activity.data.foods.length > 0
+                        ? activity.data.foods.map(f => `${f.food?.name || f.name}${f.quantity > 1 ? ` (${f.quantity})` : ''}`).filter(Boolean).join(', ')
                         : 'Feeding logged';
+                      const supplements = activity.data.supplements && activity.data.supplements.length > 0
+                        ? ` + ${activity.data.supplements.map(s => s.name).join(', ')}`
+                        : '';
+                      summary = foods + supplements;
+                      details = activity.data.notes || '';
                       detailLink = `/feed/${activity.data.id}`;
                       break;
                     case 'misting':
                       summary = 'Misting logged';
-                      detailLink = `/reptiles/${activity.reptile?.id}`;
+                      details = activity.data.notes || '';
+                      detailLink = `/misting/${activity.data.id}`;
                       break;
                     case 'weight':
                       summary = `Weight: ${activity.data.weight_grams}g`;
-                      detailLink = `/reptiles/${activity.reptile?.id}`;
+                      details = activity.data.notes || '';
+                      detailLink = `/health-log/weight/${activity.data.id}`;
                       break;
                     case 'health':
-                      summary = `${activity.data.record_type}: ${activity.data.title}`;
-                      detailLink = `/reptiles/${activity.reptile?.id}`;
+                      summary = `${activity.data.record_type.replace('_', ' ')}: ${activity.data.title}`;
+                      details = activity.data.description || '';
+                      detailLink = `/health-log/health/${activity.data.id}`;
                       break;
                   }
 
@@ -513,6 +522,11 @@ export default function Dashboard() {
                             <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                               {summary}
                             </p>
+                            {details && (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 truncate italic">
+                                "{details}"
+                              </p>
+                            )}
                             <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
                               {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
                             </p>
