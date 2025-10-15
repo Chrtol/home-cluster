@@ -67,30 +67,41 @@
   - Note: "Last Misted" dashboard display still pending
 
 ### Dashboard Enhancements
-- [ ] **Add more reptile info cards**
-  - Last misting date/time
-  - Last shed date/time
-  - Days since last feeding
-  - Days since last shed
-  - Review visual structure/layout for readability
+- [x] **Add more reptile info cards** - ✅ COMPLETED
+  - Added last misting, last shed, and last feeding to reptile cards
+  - Shows days since each event with color-coded icons
+  - Added summary cards: Need Feeding, Fed This Week, Misted Today, Shed This Month
+  - 4-column grid layout on desktop, 2 columns on mobile
+  - Improved visual structure and readability
 
 ## 📅 Calendar & Scheduling
 
 ### Calendar Page
-- [ ] **Replace placeholder with functional calendar**
-  - Display previous feedings on calendar
+- [ ] **Functional calendar with multiple views** - 🚧 IN PROGRESS
+  - Backend: Schedule model created (0009 migration)
+  - Backend: Basic schedule support (schedule_type, frequency_days)
+  - Frontend: Need to implement calendar component
+  - Views: Monthly (default), Weekly, Daily
+  - Click date to view events and create schedules
+  - Display past events: feedings, misting, weigh-ins, health records
+  - Display scheduled events with visual indicators
   - Filter by reptile (default: show all)
-  - Visual indicators for different event types
 
-- [ ] **Feeding scheduler**
-  - Create recurring feeding schedules (every X days, specific weekdays)
-  - Assign supplements to scheduled feedings
-  - Examples:
-    - Multivitamin: twice a month
-    - Calcium with D3: once a week
-    - Calcium without D3: all other feedings
-  - Backend: Scheduling table and logic
-  - Frontend: Scheduling UI with calendar integration
+- [ ] **Advanced scheduling system** - 🎯 NEXT PRIORITY
+  - Backend: Extend schedule model for advanced rules
+    - Every X days (already supported)
+    - Specific days of week (e.g., Mon, Wed, Fri)
+    - Monthly (specific day of month)
+    - Dependent schedules (e.g., supplements based on feeding schedule)
+  - Schedule types: feeding, misting, weighing, supplement
+  - Dependent scheduling examples:
+    - "Multivitamin every 2nd feeding"
+    - "Calcium with D3 every Monday feeding"
+    - "Calcium without D3 on all other feedings"
+  - Frontend: Schedule creation UI with smart rules
+  - Frontend: Visual schedule preview on calendar
+  - Backend: Calculate next occurrence based on rules
+  - Backend: Support for supplement assignment to feeding schedules
 
 ## 📊 Statistics & Analytics
 
