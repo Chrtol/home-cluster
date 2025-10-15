@@ -19,6 +19,8 @@ export default function HealthLog() {
   // Health specific
   const [recordType, setRecordType] = useState('observation');
   const [title, setTitle] = useState('');
+  // Bowel movement specific
+  const [consistency, setConsistency] = useState('normal');
 
   // Time input format state
   const [timeFormat, setTimeFormat] = useState('24h');
@@ -122,19 +124,27 @@ export default function HealthLog() {
         });
         setSuccess(`Weight logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
       } else {
-        await axios.post('/api/health', {
+        const payload = {
           reptile_id: parseInt(selectedReptile),
           record_type: recordType,
           title,
           description: notes,
           date: new Date(dateTimeString).toISOString(),
-        });
+        };
+
+        // Add consistency for bowel movements
+        if (recordType === 'bowel_movement') {
+          payload.consistency = consistency;
+        }
+
+        await axios.post('/api/health', payload);
         setSuccess(`Health record logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
       }
       // Reset form partially
       setWeight('');
       setTitle('');
       setNotes('');
+      setConsistency('normal');
     } catch (err) {
       console.error("Failed to submit log:", err);
       setError(err.response?.data?.detail || "An unexpected error occurred.");
@@ -148,45 +158,63 @@ export default function HealthLog() {
       {success && <p className="text-green-500 bg-green-100 p-3 rounded mb-4">{success}</p>}
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div>
-          <label htmlFor="reptile" className="block font-medium mb-1">Reptile</label>
+          <label htmlFor="reptile" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Reptile</label>
           <select id="reptile" value={selectedReptile} onChange={e => setSelectedReptile(e.target.value)} className="input" required>
             {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         </div>
 
         <div>
-            <label className="block font-medium mb-1">Log Type</label>
-            <div className="flex gap-4">
-                <button type="button" onClick={() => setLogType('weight')} className={logType === 'weight' ? 'btn-primary' : 'btn-secondary'}>Weight</button>
-                <button type="button" onClick={() => setLogType('health')} className={logType === 'health' ? 'btn-primary' : 'btn-secondary'}>Health Record</button>
+            <label className="block font-medium mb-2 text-gray-700 dark:text-gray-300">Log Type</label>
+            <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setLogType('weight')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'weight' ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
+                  Weight
+                </button>
+                <button type="button" onClick={() => setLogType('health')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'health' ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
+                  Health Record
+                </button>
             </div>
         </div>
 
         {logType === 'weight' ? (
           <div>
-            <label htmlFor="weight" className="block font-medium mb-1">Weight (grams)</label>
+            <label htmlFor="weight" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Weight (grams)</label>
             <input id="weight" type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} className="input" required />
           </div>
         ) : (
           <>
             <div>
-              <label htmlFor="title" className="block font-medium mb-1">Title</label>
-              <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="input" required />
-            </div>
-            <div>
-              <label htmlFor="recordType" className="block font-medium mb-1">Record Type</label>
+              <label htmlFor="recordType" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Record Type</label>
               <select id="recordType" value={recordType} onChange={e => setRecordType(e.target.value)} className="input">
-                <option value="observation">Observation</option>
+                <option value="observation">General Observation</option>
+                <option value="shedding">Shedding</option>
+                <option value="bowel_movement">Bowel Movement</option>
                 <option value="vet_visit">Vet Visit</option>
                 <option value="medication">Medication</option>
               </select>
             </div>
+            <div>
+              <label htmlFor="title" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
+              <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="input" placeholder={recordType === 'shedding' ? 'e.g., Complete shed' : recordType === 'bowel_movement' ? 'e.g., Morning bowel movement' : 'Brief description'} required />
+            </div>
+            {recordType === 'bowel_movement' && (
+              <div>
+                <label htmlFor="consistency" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Consistency</label>
+                <select id="consistency" value={consistency} onChange={e => setConsistency(e.target.value)} className="input">
+                  <option value="normal">Normal</option>
+                  <option value="soft">Soft</option>
+                  <option value="hard">Hard</option>
+                  <option value="watery">Watery</option>
+                  <option value="mucus">Mucus Present</option>
+                </select>
+              </div>
+            )}
           </>
         )}
 
         <div className="grid grid-cols-2 gap-4">
             <div>
-                <label htmlFor="logDate" className="block font-medium mb-1">Date</label>
+                <label htmlFor="logDate" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date</label>
                 <DateInput
                     id="logDate"
                     value={logDate}
@@ -196,7 +224,7 @@ export default function HealthLog() {
                 />
             </div>
             <div>
-                <label className="block font-medium mb-1">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
+                <label className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
                 <div className="flex gap-2">
                     <input
                         type="number"
@@ -232,8 +260,8 @@ export default function HealthLog() {
         </div>
 
         <div>
-            <label htmlFor="notes" className="block font-medium mb-1">Notes (optional)</label>
-            <textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="input" placeholder={logType === 'weight' ? 'e.g., after shedding' : 'e.g., noticed a small scratch'}/>
+            <label htmlFor="notes" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Notes (optional)</label>
+            <textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="input" placeholder={logType === 'weight' ? 'e.g., after shedding' : recordType === 'bowel_movement' ? 'Additional observations...' : 'e.g., noticed a small scratch'}/>
         </div>
 
         <button type="submit" className="btn-primary w-full">Save Log</button>

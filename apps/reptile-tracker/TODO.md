@@ -41,11 +41,11 @@
 ## 🔧 Core Features
 
 ### Reptile Management
-- [ ] **Species dropdown with free-text** - ⚠️ PARTIALLY DONE
-  - Backend: Store unique species in database
-  - Frontend: Dropdown populated from existing species
-  - Frontend: Allow free-text entry for new species
-  - Backend: Auto-add new species to dropdown list
+- [x] **Species dropdown with free-text** - ✅ COMPLETED
+  - Backend: GET /api/reptiles/species endpoint returns unique species list
+  - Frontend: Custom autocomplete dropdown with filtering
+  - Frontend: Free-text entry for new species supported
+  - Backend: New species automatically added via existing POST endpoint
 
 ### Health & Weight Logging
 - [ ] **Enhanced health logging UI**

@@ -217,9 +217,13 @@ class HealthRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
 
-    record_type = Column(String, nullable=False)  # "vet_visit", "medication", "observation", etc.
+    record_type = Column(String, nullable=False)  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+
+    # Bowel movement specific fields
+    consistency = Column(String, nullable=True)  # "normal", "soft", "hard", "watery", "mucus"
+    photo_url = Column(String, nullable=True)  # For bowel movement photos
 
     date = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
