@@ -117,6 +117,14 @@ export default function Dashboard() {
     differenceInDays(new Date(), new Date(f.fed_at)) <= 7
   ).length;
 
+  const mistedToday = Object.values(mistingData).filter(date => {
+    return differenceInDays(new Date(), new Date(date)) === 0;
+  }).length;
+
+  const shedThisMonth = Object.values(healthData).filter(date => {
+    return differenceInDays(new Date(), new Date(date)) <= 30;
+  }).length;
+
   // Prepare weight chart data
   const prepareWeightChartData = () => {
     if (!weightData || weightData.length === 0) return { chartData: [], reptileColors: {} };
@@ -178,11 +186,11 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className={`p-2 rounded-lg ${reptilesNeedingFeeding > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-              <AlertCircle size={20} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
+              <AlertCircle size={18} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">Need Feeding</p>
@@ -192,13 +200,37 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <TrendingUp size={20} className="text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <Utensils size={18} className="text-primary-600 dark:text-primary-400" />
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">Fed This Week</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{feedingsThisWeek}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Droplets size={18} className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Misted Today</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{mistedToday}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <Activity size={18} className="text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Shed This Month</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{shedThisMonth}</p>
             </div>
           </div>
         </div>
