@@ -209,13 +209,19 @@ function HouseholdSection() {
       const res = await fetch(`/api/households/${selectedHousehold.id}/members`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
+        console.log('Household members:', data);
+        console.log('Current user ID:', currentUserId);
         setMembers(data);
 
         // Find current user's role
         if (currentUserId) {
           const currentUser = data.find(m => m.user_id === currentUserId);
+          console.log('Current user member data:', currentUser);
+          console.log('User role:', currentUser?.access_level);
           setUserRole(currentUser?.access_level);
         }
+      } else {
+        console.error('Failed to fetch members, status:', res.status);
       }
     } catch (e) {
       console.error('Failed to load members', e);
