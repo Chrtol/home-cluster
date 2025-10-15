@@ -457,7 +457,9 @@ function Statistics() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Daily feeding activity over the past {timeRange} days
               </p>
-              <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
+              <div className="flex justify-start">
+                <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
+              </div>
             </div>
           )}
 
