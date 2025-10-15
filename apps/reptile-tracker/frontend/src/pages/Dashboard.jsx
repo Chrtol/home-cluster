@@ -507,36 +507,33 @@ export default function Dashboard() {
                   }
 
                   return (
-                    <div key={activity.id} className="p-2 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex gap-2 flex-1 min-w-0">
-                          <Icon size={16} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              {activity.reptile ? (
-                                <Link to={`/reptiles/${activity.reptile.id}`} className="text-primary-600 dark:text-primary-400 hover:underline">{activity.reptile.name}</Link>
-                              ) : (
-                                <span className="text-gray-500 dark:text-gray-400">(deleted reptile)</span>
-                              )}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                    <Link
+                      key={activity.id}
+                      to={detailLink}
+                      className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
+                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
+                          <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">
+                            {activity.reptile ? activity.reptile.name : '(deleted reptile)'}
+                          </p>
+                          <div className="min-w-0">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                               {summary}
                             </p>
                             {details && (
-                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 truncate italic">
+                              <p className="text-xs text-gray-500 dark:text-gray-500 truncate italic mt-0.5">
                                 "{details}"
                               </p>
                             )}
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-                              {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
-                            </p>
                           </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap sm:text-right">
+                            {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                          </p>
                         </div>
-                        {detailLink && (
-                          <Link to={detailLink} className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex-shrink-0">Details</Link>
-                        )}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })
               ) : (
