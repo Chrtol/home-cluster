@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, Calendar, Droplet, Heart, Scale } from 'lucide-react';
 import axios from 'axios';
 
@@ -71,6 +71,33 @@ function Statistics() {
   const getWeightTrendColor = () => {
     if (!stats?.summary?.weight_change) return 'text-gray-600 dark:text-gray-400';
     return stats.summary.weight_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  };
+
+  // Merge weight and feeding data for combined chart
+  const getCombinedData = () => {
+    if (!stats) return [];
+
+    // Create a map of all dates
+    const dateMap = new Map();
+
+    // Add weight data
+    stats.weight_data.forEach(item => {
+      const dateKey = item.date.split('T')[0];
+      dateMap.set(dateKey, { date: dateKey, weight: item.weight });
+    });
+
+    // Add feeding data
+    stats.feeding_data.forEach(item => {
+      const dateKey = item.date;
+      const existing = dateMap.get(dateKey) || { date: dateKey };
+      existing.feedings = item.count;
+      dateMap.set(dateKey, existing);
+    });
+
+    // Convert to array and sort by date
+    return Array.from(dateMap.values()).sort((a, b) =>
+      new Date(a.date) - new Date(b.date)
+    );
   };
 
   if (loading && !stats) {
@@ -255,73 +282,80 @@ function Statistics() {
             </div>
           </div>
 
-          {/* Weight Growth Chart */}
-          {visibleData.weight && stats.weight_data.length > 0 && (
+          {/* Combined Weight & Feeding Chart */}
+          {(visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
             <div className="card">
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Weight Over Time</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={stats.weight_data}>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                Weight & Feeding Correlation
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                See how feeding frequency affects weight over time
+              </p>
+              <ResponsiveContainer width="100%" height={350}>
+                <ComposedChart data={getCombinedData()}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={formatDate}
                     stroke="#9CA3AF"
                   />
-                  <YAxis
-                    label={{ value: 'Weight (g)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                    stroke="#9CA3AF"
-                  />
+                  {/* Left Y-axis for Weight */}
+                  {visibleData.weight && (
+                    <YAxis
+                      yAxisId="weight"
+                      orientation="left"
+                      label={{ value: 'Weight (g)', angle: -90, position: 'insideLeft', fill: '#3B82F6' }}
+                      stroke="#3B82F6"
+                    />
+                  )}
+                  {/* Right Y-axis for Feedings */}
+                  {visibleData.feeding && (
+                    <YAxis
+                      yAxisId="feedings"
+                      orientation="right"
+                      label={{ value: 'Feedings', angle: 90, position: 'insideRight', fill: '#10B981' }}
+                      stroke="#10B981"
+                    />
+                  )}
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
                     labelStyle={{ color: '#F3F4F6' }}
-                    formatter={(value) => [`${value}g`, 'Weight']}
-                    labelFormatter={(label) => new Date(label).toLocaleString()}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot={{ fill: '#3B82F6', r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Weight (g)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Feeding Frequency Chart */}
-          {visibleData.feeding && stats.feeding_data.length > 0 && (
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Frequency</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={stats.feeding_data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={formatDate}
-                    stroke="#9CA3AF"
-                  />
-                  <YAxis
-                    label={{ value: 'Feedings', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                    stroke="#9CA3AF"
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6' }}
-                    formatter={(value) => [`${value}`, 'Feedings']}
+                    formatter={(value, name) => {
+                      if (name === 'Weight (g)') return [`${value}g`, name];
+                      if (name === 'Feedings') return [`${value}`, name];
+                      return [value, name];
+                    }}
                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                   />
                   <Legend />
-                  <Bar
-                    dataKey="count"
-                    fill="#10B981"
-                    name="Feedings"
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
+
+                  {/* Weight Line */}
+                  {visibleData.weight && (
+                    <Line
+                      yAxisId="weight"
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#3B82F6"
+                      strokeWidth={2}
+                      dot={{ fill: '#3B82F6', r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Weight (g)"
+                      connectNulls
+                    />
+                  )}
+
+                  {/* Feeding Bars */}
+                  {visibleData.feeding && (
+                    <Bar
+                      yAxisId="feedings"
+                      dataKey="feedings"
+                      fill="#10B981"
+                      name="Feedings"
+                      radius={[8, 8, 0, 0]}
+                      opacity={0.7}
+                    />
+                  )}
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}
@@ -397,17 +431,10 @@ function Statistics() {
           )}
 
           {/* No Data Messages */}
-          {visibleData.weight && stats.weight_data.length === 0 && (
+          {(visibleData.weight || visibleData.feeding) && getCombinedData().length === 0 && (
             <div className="card">
               <p className="text-center text-gray-600 dark:text-gray-400">
-                No weight data available for this period. Start tracking weight to see trends!
-              </p>
-            </div>
-          )}
-          {visibleData.feeding && stats.feeding_data.length === 0 && (
-            <div className="card">
-              <p className="text-center text-gray-600 dark:text-gray-400">
-                No feeding data available for this period.
+                No weight or feeding data available for this period. Start logging to see trends!
               </p>
             </div>
           )}
