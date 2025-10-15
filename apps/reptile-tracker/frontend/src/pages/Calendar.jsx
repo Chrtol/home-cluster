@@ -10,6 +10,8 @@ function Calendar() {
   const [reptiles, setReptiles] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [events, setEvents] = useState([]); // Calculated events based on schedules
+  const [feedings, setFeedings] = useState([]); // Past feedings
+  const [mistings, setMistings] = useState([]); // Past mistings
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
 
@@ -20,8 +22,9 @@ function Calendar() {
   useEffect(() => {
     if (reptiles.length > 0) {
       fetchSchedules();
+      fetchPastData();
     }
-  }, [reptiles]);
+  }, [reptiles, currentDate]);
 
   const fetchReptiles = async () => {
     try {
@@ -46,6 +49,39 @@ function Calendar() {
       console.error("Error fetching schedules:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPastData = async () => {
+    try {
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      const allFeedings = [];
+      const allMistings = [];
+
+      for (const reptile of reptiles) {
+        // Fetch feedings for the current month
+        const feedingResponse = await axios.get(`/api/feedings/reptile/${reptile.id}`);
+        const monthFeedings = feedingResponse.data.filter(f => {
+          const feedDate = new Date(f.fed_at);
+          return feedDate >= monthStart && feedDate <= monthEnd;
+        }).map(f => ({ ...f, reptile_name: reptile.name, type: "feeding" }));
+        allFeedings.push(...monthFeedings);
+
+        // Fetch mistings for the current month
+        const mistingResponse = await axios.get(`/api/misting/reptile/${reptile.id}`);
+        const monthMistings = mistingResponse.data.filter(m => {
+          const mistDate = new Date(m.misted_at);
+          return mistDate >= monthStart && mistDate <= monthEnd;
+        }).map(m => ({ ...m, reptile_name: reptile.name, type: "misting" }));
+        allMistings.push(...monthMistings);
+      }
+
+      setFeedings(allFeedings);
+      setMistings(allMistings);
+    } catch (error) {
+      console.error("Error fetching past data:", error);
     }
   };
 
@@ -166,6 +202,26 @@ function Calendar() {
             });
           }
         });
+      } else if (schedule.dependent_rule === "once_per_day") {
+        // Add event only for the first parent occurrence each day
+        const eventsByDate = new Map();
+
+        parentEvents.forEach(parentEvent => {
+          const dateKey = parentEvent.date.toDateString();
+          // Only add if we haven't already added an event for this date
+          if (!eventsByDate.has(dateKey)) {
+            eventsByDate.set(dateKey, true);
+            calculatedEvents.push({
+              date: new Date(parentEvent.date),
+              schedule_id: schedule.id,
+              schedule_type: schedule.schedule_type,
+              reptile_name: schedule.reptile_name,
+              reptile_id: schedule.reptile_id,
+              notes: schedule.notes,
+              parent_schedule_id: schedule.parent_schedule_id,
+            });
+          }
+        });
       }
     });
 
@@ -197,9 +253,48 @@ function Calendar() {
 
   const getEventsForDate = (date) => {
     if (!date) return [];
-    return events.filter(event => {
+
+    // Get scheduled events for this date
+    const scheduledEvents = events.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate.toDateString() === date.toDateString();
+    }).map(e => ({
+      ...e,
+      is_actual: false, // This is a schedule, not an actual feeding
+    }));
+
+    // Get actual completed feedings for this date
+    const actualFeedings = feedings.filter(feeding => {
+      const feedDate = new Date(feeding.fed_at);
+      return feedDate.toDateString() === date.toDateString();
+    }).map(f => ({
+      ...f,
+      schedule_type: "feeding",
+      reptile_name: f.reptile_name,
+      notes: f.notes,
+      is_actual: true, // This is an actual feeding that happened
+      time: new Date(f.fed_at).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" }),
+    }));
+
+    // Get actual completed mistings for this date
+    const actualMistings = mistings.filter(misting => {
+      const mistDate = new Date(misting.misted_at);
+      return mistDate.toDateString() === date.toDateString();
+    }).map(m => ({
+      ...m,
+      schedule_type: "misting",
+      reptile_name: m.reptile_name,
+      notes: m.notes,
+      is_actual: true, // This is an actual misting that happened
+      time: new Date(m.misted_at).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" }),
+    }));
+
+    // Combine all events and sort: actual events first, then scheduled
+    return [...actualFeedings, ...actualMistings, ...scheduledEvents].sort((a, b) => {
+      // Sort actual events before scheduled events
+      if (a.is_actual && !b.is_actual) return -1;
+      if (!a.is_actual && b.is_actual) return 1;
+      return 0;
     });
   };
 
@@ -214,18 +309,35 @@ function Calendar() {
     setSelectedDate(date);
   };
 
-  const getScheduleTypeColor = (type) => {
-    switch (type) {
-      case "feeding":
-        return "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400";
-      case "misting":
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-      case "weighing":
-        return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
-      case "supplement":
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      default:
-        return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+  const getScheduleTypeColor = (type, isActual) => {
+    if (isActual) {
+      // Solid colors for actual completed activities
+      switch (type) {
+        case "feeding":
+          return "bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700";
+        case "misting":
+          return "bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700";
+        case "weighing":
+          return "bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700";
+        case "supplement":
+          return "bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700";
+        default:
+          return "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600";
+      }
+    } else {
+      // Outlined/lighter colors for scheduled events
+      switch (type) {
+        case "feeding":
+          return "bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800";
+        case "misting":
+          return "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800";
+        case "weighing":
+          return "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-200 dark:border-purple-800";
+        case "supplement":
+          return "bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800";
+        default:
+          return "bg-gray-50 text-gray-700 dark:bg-gray-900/50 dark:text-gray-400 border border-gray-200 dark:border-gray-700";
+      }
     }
   };
 
@@ -316,8 +428,9 @@ function Calendar() {
                       {dayEvents.slice(0, 3).map((event, idx) => (
                         <div
                           key={idx}
-                          className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type)}`}
+                          className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
                         >
+                          {event.is_actual && "✓ "}
                           {event.reptile_name}: {event.schedule_type}
                         </div>
                       ))}
@@ -347,13 +460,28 @@ function Calendar() {
               getEventsForDate(selectedDate).map((event, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+                  className={`flex items-start justify-between p-3 rounded-lg border ${
+                    event.is_actual
+                      ? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50"
+                      : "border-gray-200 dark:border-gray-700"
+                  }`}
                 >
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
-                      {event.reptile_name}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      {event.is_actual && (
+                        <span className="text-green-600 dark:text-green-400">✓</span>
+                      )}
+                      <div className="font-semibold text-gray-900 dark:text-white">
+                        {event.reptile_name}
+                      </div>
+                      {event.is_actual && event.time && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {event.time}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 capitalize mt-1">
+                      {event.is_actual ? "Completed: " : "Scheduled: "}
                       {event.schedule_type}
                     </div>
                     {event.notes && (
@@ -362,14 +490,14 @@ function Calendar() {
                       </div>
                     )}
                   </div>
-                  <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type)}`}>
+                  <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
                     {event.schedule_type}
                   </span>
                 </div>
               ))
             ) : (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                No scheduled events for this day
+                No events for this day
               </div>
             )}
           </div>
