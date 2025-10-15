@@ -264,16 +264,17 @@ async def get_comprehensive_stats(
         select(HealthRecord)
         .where(
             HealthRecord.reptile_id == reptile_id,
-            HealthRecord.recorded_at >= start_date
+            HealthRecord.date >= start_date
         )
-        .order_by(HealthRecord.recorded_at)
+        .order_by(HealthRecord.date)
     )
     health_records = result.scalars().all()
     health_data = [
         {
-            "date": record.recorded_at.isoformat(),
+            "date": record.date.isoformat(),
             "type": record.record_type,
-            "notes": record.notes
+            "title": record.title,
+            "description": record.description
         }
         for record in health_records
     ]
