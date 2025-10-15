@@ -371,6 +371,7 @@ function SupplementsTab() {
   const [supplements, setSupplements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [viewingSupplement, setViewingSupplement] = useState(null);
   const [editingSupplement, setEditingSupplement] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -538,7 +539,11 @@ function SupplementsTab() {
                   if (nutritional.vitamin_a_iu) composition.push(`A: ${nutritional.vitamin_a_iu} IU`);
 
                   return (
-                    <tr key={supplement.id}>
+                    <tr
+                      key={supplement.id}
+                      onClick={() => setViewingSupplement(supplement)}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {supplement.name}
                       </td>
@@ -558,13 +563,13 @@ function SupplementsTab() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleEdit(supplement)}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(supplement); }}
                           className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 mr-4"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => handleDelete(supplement)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(supplement); }}
                           className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                         >
                           <Trash2 size={16} />
@@ -680,6 +685,106 @@ function SupplementsTab() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supplement Read-Only View Modal */}
+      {viewingSupplement && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {viewingSupplement.name}
+                </h2>
+                <button
+                  onClick={() => setViewingSupplement(null)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Type Badge */}
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Type</p>
+                  {viewingSupplement.is_default ? (
+                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      Default Supplement
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                      Custom Supplement
+                    </span>
+                  )}
+                </div>
+
+                {/* Nutritional Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nutritional Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Calcium</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {viewingSupplement.nutritional_data?.calcium_mg ? `${viewingSupplement.nutritional_data.calcium_mg} mg` : 'Not specified'}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin D3</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {viewingSupplement.nutritional_data?.vitamin_d3_iu ? `${viewingSupplement.nutritional_data.vitamin_d3_iu} IU` : 'Not specified'}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin A</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {viewingSupplement.nutritional_data?.vitamin_a_iu ? `${viewingSupplement.nutritional_data.vitamin_a_iu} IU` : 'Not specified'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {viewingSupplement.nutritional_data?.notes && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Notes</h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {viewingSupplement.nutritional_data.notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => {
+                      setViewingSupplement(null);
+                      handleEdit(viewingSupplement);
+                    }}
+                    className="flex-1 btn-primary flex items-center justify-center gap-2"
+                  >
+                    <Edit2 size={18} /> Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setViewingSupplement(null);
+                      handleDelete(viewingSupplement);
+                    }}
+                    className="flex-1 btn-secondary text-red-600 dark:text-red-400 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} /> Delete
+                  </button>
+                  <button
+                    onClick={() => setViewingSupplement(null)}
+                    className="flex-1 btn-secondary"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
