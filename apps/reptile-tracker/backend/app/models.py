@@ -255,8 +255,27 @@ class Schedule(Base):
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing"
-    frequency_days = Column(Integer, nullable=False)  # Repeat every X days
+    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
+    schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly", "dependent"
+
+    # For every_x_days
+    frequency_days = Column(Integer, nullable=True)
+
+    # For days_of_week (comma-separated: '1,3,5' for Mon,Wed,Fri - 0=Sunday, 6=Saturday)
+    days_of_week = Column(String, nullable=True)
+
+    # For monthly (day of month: 1-31)
+    day_of_month = Column(Integer, nullable=True)
+
+    # For dependent schedules
+    parent_schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=True)
+    dependent_rule = Column(String, nullable=True)  # "every_occurrence", "every_nth", "specific_days"
+    dependent_frequency = Column(Integer, nullable=True)  # For every_nth (e.g., every 2nd feeding)
+    dependent_days = Column(String, nullable=True)  # For specific_days (e.g., '1,3' for Mon,Wed)
+
+    # For supplement schedules
+    supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="SET NULL"), nullable=True)
+
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
 
@@ -265,6 +284,9 @@ class Schedule(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="schedules")
+    parent_schedule = relationship("Schedule", remote_side=[id], back_populates="child_schedules")
+    child_schedules = relationship("Schedule", back_populates="parent_schedule", cascade="all, delete-orphan")
+    supplement = relationship("Supplement")
 
 
 class NotificationSettings(Base):

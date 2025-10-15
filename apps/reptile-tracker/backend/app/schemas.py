@@ -252,6 +252,58 @@ class MistingLog(MistingLogBase):
         from_attributes = True
 
 
+# Schedule schemas
+class ScheduleBase(BaseModel):
+    schedule_type: str  # "feeding", "misting", "weighing", "supplement"
+    schedule_rule: str  # "every_x_days", "days_of_week", "monthly", "dependent"
+    frequency_days: Optional[int] = None  # For every_x_days
+    days_of_week: Optional[str] = None  # For days_of_week (comma-separated: '1,3,5')
+    day_of_month: Optional[int] = None  # For monthly (1-31)
+    parent_schedule_id: Optional[int] = None  # For dependent schedules
+    dependent_rule: Optional[str] = None  # "every_occurrence", "every_nth", "specific_days"
+    dependent_frequency: Optional[int] = None  # For every_nth
+    dependent_days: Optional[str] = None  # For specific_days
+    supplement_id: Optional[int] = None  # For supplement schedules
+    enabled: bool = True
+    notes: Optional[str] = None
+
+
+class ScheduleCreate(ScheduleBase):
+    reptile_id: int
+
+
+class ScheduleUpdate(BaseModel):
+    schedule_type: Optional[str] = None
+    schedule_rule: Optional[str] = None
+    frequency_days: Optional[int] = None
+    days_of_week: Optional[str] = None
+    day_of_month: Optional[int] = None
+    parent_schedule_id: Optional[int] = None
+    dependent_rule: Optional[str] = None
+    dependent_frequency: Optional[int] = None
+    dependent_days: Optional[str] = None
+    supplement_id: Optional[int] = None
+    enabled: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class Schedule(ScheduleBase):
+    id: int
+    reptile_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ScheduleWithDetails(Schedule):
+    """Schedule with supplement and parent schedule details"""
+    supplement: Optional[Supplement] = None
+    parent_schedule: Optional[Schedule] = None
+    child_schedules: List[Schedule] = []
+
+
 # Access control schemas
 class GrantAccess(BaseModel):
     user_email: EmailStr
