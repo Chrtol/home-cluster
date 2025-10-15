@@ -163,6 +163,7 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/schedule-create" element={<ScheduleForm />} />
+            <Route path="/schedule-edit/:id" element={<ScheduleForm />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
             <Route path="/health-log/:reptileId" element={<HealthLog />} />

@@ -392,8 +392,8 @@ function Calendar() {
 
     try {
       await axios.delete(`/api/schedules/${scheduleId}`);
-      // Refresh schedules
-      fetchSchedules();
+      // Refresh schedules and recalculate events
+      await fetchSchedules();
     } catch (error) {
       console.error("Error deleting schedule:", error);
       alert("Failed to delete schedule");
