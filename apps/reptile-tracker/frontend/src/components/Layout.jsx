@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
@@ -7,6 +7,7 @@ export default function Layout({ user, onLogout }) {
   const location = useLocation()
   const [darkMode, setDarkMode] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [trackMenuOpen, setTrackMenuOpen] = useState(false)
 
   // Load dark mode preference (defaults to true/dark)
   useEffect(() => {
@@ -37,7 +38,6 @@ export default function Layout({ user, onLogout }) {
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/reptiles', icon: List, label: 'Reptiles' },
-    { path: '/feed', icon: Plus, label: 'Log Feeding' },
     { path: '/foods', icon: Utensils, label: 'Foods' },
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
     { path: '/stats', icon: BarChart3, label: 'Statistics' },
@@ -63,6 +63,56 @@ export default function Layout({ user, onLogout }) {
     )
   }
 
+  const TrackButton = ({ onClose }) => {
+    const [isOpen, setIsOpen] = useState(false)
+
+    const handleOptionClick = (path) => {
+      navigate(path)
+      setIsOpen(false)
+      if (onClose) onClose()
+    }
+
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 dark:from-primary-700 dark:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 text-white transition-all shadow-lg hover:shadow-xl"
+        >
+          <div className="flex items-center gap-3">
+            <Plus size={22} className="font-bold" />
+            <span className="font-bold text-lg">Track</span>
+          </div>
+          <ChevronDown size={18} className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+            <button
+              onClick={() => handleOptionClick('/feed')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
+            >
+              <Utensils size={20} className="text-primary-600 dark:text-primary-400" />
+              <div className="text-left">
+                <div className="font-semibold text-gray-900 dark:text-white">Log Feeding</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Record food and supplements</div>
+              </div>
+            </button>
+            <button
+              onClick={() => handleOptionClick('/health-log')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+            >
+              <Activity size={20} className="text-green-600 dark:text-green-400" />
+              <div className="text-left">
+                <div className="font-semibold text-gray-900 dark:text-white">Log Health/Weight</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Desktop Sidebar */}
@@ -79,14 +129,10 @@ export default function Layout({ user, onLogout }) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {/* Prominent Health/Weight Log Button */}
-            <Link
-              to="/health-log"
-              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white transition-colors mb-4 shadow-md"
-            >
-              <Activity size={20} />
-              <span className="font-semibold">Log Health/Weight</span>
-            </Link>
+            {/* Prominent Track Button */}
+            <div className="mb-4">
+              <TrackButton />
+            </div>
 
             {navItems.map(item => (
               <NavLink key={item.path} item={item} />
@@ -176,15 +222,10 @@ export default function Layout({ user, onLogout }) {
                 </div>
               </div>
               <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-                {/* Prominent Health/Weight Log Button */}
-                <Link
-                  to="/health-log"
-                  onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white transition-colors mb-4 shadow-md"
-                >
-                  <Activity size={20} />
-                  <span className="font-semibold">Log Health/Weight</span>
-                </Link>
+                {/* Prominent Track Button */}
+                <div className="mb-4">
+                  <TrackButton onClose={() => setSidebarOpen(false)} />
+                </div>
 
                 {navItems.map(item => (
                   <NavLink key={item.path} item={item} onClick={() => setSidebarOpen(false)} />
@@ -213,8 +254,37 @@ export default function Layout({ user, onLogout }) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pb-safe">
-        <div className="flex justify-around">
-          {navItems.slice(0, 4).map(item => {
+        <div className="flex items-center justify-around relative">
+          {/* Left nav items */}
+          {navItems.slice(0, 2).map(item => {
+            const Icon = item.icon
+            const isActive = location.pathname === item.path
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center px-3 py-2 min-w-0 flex-1 ${
+                  isActive
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                }`}
+              >
+                <Icon size={24} />
+                <span className="text-xs mt-1 truncate">{item.label}</span>
+              </Link>
+            )
+          })}
+
+          {/* Center Track Button */}
+          <button
+            onClick={() => setTrackMenuOpen(!trackMenuOpen)}
+            className="relative -mt-6 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 text-white shadow-lg"
+          >
+            <Plus size={28} strokeWidth={3} />
+          </button>
+
+          {/* Right nav items */}
+          {navItems.slice(2, 4).map(item => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
             return (
@@ -233,6 +303,37 @@ export default function Layout({ user, onLogout }) {
             )
           })}
         </div>
+
+        {/* Mobile Track Menu Popup */}
+        {trackMenuOpen && (
+          <>
+            <div className="fixed inset-0 bg-black/20" onClick={() => setTrackMenuOpen(false)} style={{ bottom: '64px' }}></div>
+            <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <Link
+                to="/feed"
+                onClick={() => setTrackMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-4 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
+              >
+                <Utensils size={24} className="text-primary-600 dark:text-primary-400" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900 dark:text-white">Log Feeding</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Record food and supplements</div>
+                </div>
+              </Link>
+              <Link
+                to="/health-log"
+                onClick={() => setTrackMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-4 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+              >
+                <Activity size={24} className="text-green-600 dark:text-green-400" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900 dark:text-white">Log Health/Weight</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
+                </div>
+              </Link>
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Spacer for bottom nav on mobile */}
