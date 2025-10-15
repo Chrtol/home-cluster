@@ -103,7 +103,7 @@ export default function Layout({ user, onLogout }) {
             >
               <Activity size={20} className="text-green-600 dark:text-green-400" />
               <div className="text-left">
-                <div className="font-semibold text-gray-900 dark:text-white">Log Health/Weight</div>
+                <div className="font-semibold text-gray-900 dark:text-white">Log Health</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
               </div>
             </button>
@@ -327,7 +327,7 @@ export default function Layout({ user, onLogout }) {
               >
                 <Activity size={24} className="text-green-600 dark:text-green-400" />
                 <div className="text-left flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-white">Log Health/Weight</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">Log Health</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
                 </div>
               </Link>
