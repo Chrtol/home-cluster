@@ -225,9 +225,9 @@ export default function Layout({ user, onLogout }) {
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                   </div>
                 </div>
               </div>
