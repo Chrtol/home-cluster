@@ -17,9 +17,15 @@ depends_on = None
 
 
 def upgrade():
-    # First, add new enum values to the accesslevel type
-    op.execute("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'admin'")
-    op.execute("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'caretaker'")
+    # Get connection to execute outside transaction for enum alterations
+    connection = op.get_bind()
+
+    # Add new enum values - these must be committed before use
+    # We need to use execute_outside_transaction for this
+    connection.execute(sa.text("COMMIT"))
+    connection.execute(sa.text("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'admin'"))
+    connection.execute(sa.text("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'caretaker'"))
+    connection.execute(sa.text("BEGIN"))
 
     # Now update existing 'feeder' values to 'caretaker' in household_members table
     # Use text casting to bypass enum validation

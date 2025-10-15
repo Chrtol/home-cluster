@@ -1,0 +1,197 @@
+PYTHONPATH=/app:
+Checking database migration state...
+alembic_version table found — running migrations
+2025-10-15 15:15:46,648 INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2025-10-15 15:15:46,648 INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2025-10-15 15:15:46,679 INFO  [alembic.runtime.migration] Running upgrade 0010 -> 0011, Rename feeder to caretaker and add admin role
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UnsafeNewEnumValueUsage: unsafe use of new value "caretaker" of enum type accesslevel
+LINE 3:         SET access_level = 'caretaker'::accesslevel
+                                   ^
+HINT:  New enum values must be committed before they can be used.
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 636, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 626, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 603, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 406, in upgrade
+Warning: failed to configure logging from /app/migrations/alembic.ini: 'logger_sqlalchemy'
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 586, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 95, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 113, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/migrations/env.py", line 66, in <module>
+    run_migrations_online()
+  File "/app/migrations/env.py", line 60, in run_migrations_online
+    context.run_migrations()
+  File "<string>", line 8, in run_migrations
+  File "/usr/local/lib/python3.11/site-packages/alembic/runtime/environment.py", line 946, in run_migrations
+    self.get_context().run_migrations(**kw)
+  File "/usr/local/lib/python3.11/site-packages/alembic/runtime/migration.py", line 623, in run_migrations
+    step.migration_fn(**kw)
+  File "/app/migrations/versions/0011_rename_feeder_to_caretaker_add_admin.py", line 26, in upgrade
+    op.execute("""
+  File "<string>", line 8, in execute
+  File "<string>", line 3, in execute
+  File "/usr/local/lib/python3.11/site-packages/alembic/operations/ops.py", line 2551, in execute
+    return operations.invoke(op)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/operations/base.py", line 442, in invoke
+    return fn(self, operation)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/operations/toimpl.py", line 236, in execute_sql
+    operations.migration_context.impl.execute(
+  File "/usr/local/lib/python3.11/site-packages/alembic/ddl/impl.py", line 254, in execute
+    self._exec(sql, execution_options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/ddl/impl.py", line 247, in _exec
+    return conn.execute(construct, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (psycopg2.errors.UnsafeNewEnumValueUsage) unsafe use of new value "caretaker" of enum type accesslevel
+LINE 3:         SET access_level = 'caretaker'::accesslevel
+                                   ^
+HINT:  New enum values must be committed before they can be used.
+
+[SQL: 
+        UPDATE household_members
+        SET access_level = 'caretaker'::accesslevel
+        WHERE access_level::text = 'feeder'
+    ]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+DEBUG_STARTUP=1 detected — running debug_startup.py
+Running debug startup: init_db()
+init_db() completed successfully
+Seeding database
+Database seeded successfully!
+Seeding completed successfully
+Starting Uvicorn
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+2025-10-15 15:15:49,615 - app.main - INFO - Starting Reptile Tracker API v2.0.0 in production mode
+2025-10-15 15:15:49,615 - app.main - INFO - Security settings: cookie_secure=True, sql_echo=False
+2025-10-15 15:15:49,708 - app.main - INFO - Database initialized successfully
+2025-10-15 15:15:49,794 - app.main - INFO - Default foods and supplements seeded
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Database seeded successfully!
+INFO:     10.0.30.100:36954 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:60014 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:60020 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:60034 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:48392 - "GET /health HTTP/1.1" 200 OK
+2025-10-15 15:16:19,775 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /auth/me HTTP/1.1" 200 OK
+2025-10-15 15:16:19,844 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/households/me HTTP/1.1" 200 OK
+2025-10-15 15:16:19,889 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,096 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54148 - "GET /api/weight/dashboard HTTP/1.1" 200 OK
+2025-10-15 15:16:20,113 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/feedings?limit=5 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54152 - "GET /api/reptiles HTTP/1.1" 200 OK
+2025-10-15 15:16:20,193 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,196 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,200 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54148 - "GET /api/misting/reptile/3 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54136 - "GET /api/misting/reptile/2 HTTP/1.1" 200 OK
+2025-10-15 15:16:20,259 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,265 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54152 - "GET /api/misting/reptile/1 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54192 - "GET /api/health/reptile/3 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54194 - "GET /api/health/reptile/2 HTTP/1.1" 200 OK
+2025-10-15 15:16:20,464 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,468 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,472 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54210 - "GET /api/misting/reptile/4 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54180 - "GET /api/health/reptile/4 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54168 - "GET /api/health/reptile/1 HTTP/1.1" 200 OK
+2025-10-15 15:16:20,549 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,551 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,552 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,559 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,562 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54180 - "GET /api/misting/reptile/2 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54210 - "GET /api/misting/reptile/3 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54168 - "GET /api/misting/reptile/1 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54192 - "GET /api/health/reptile/1 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54194 - "GET /api/misting/reptile/4 HTTP/1.1" 200 OK
+2025-10-15 15:16:20,750 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,769 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:20,779 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54148 - "GET /api/health/reptile/4 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54136 - "GET /api/health/reptile/3 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54152 - "GET /api/health/reptile/2 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,269 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54152 - "GET /api/reptiles HTTP/1.1" 200 OK
+2025-10-15 15:16:23,299 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:23,311 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54152 - "GET /api/schedules/reptile/1 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,350 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/feedings?reptile_id=1&start_date=2025-09-30T22:00:00.000Z&end_date=2025-10-30T23:00:00.000Z&limit=1000 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54152 - "GET /api/schedules/reptile/2 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,376 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:23,380 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/schedules/reptile/3 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54152 - "GET /api/misting/reptile/1 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,416 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+2025-10-15 15:16:23,418 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54152 - "GET /api/schedules/reptile/4 HTTP/1.1" 200 OK
+INFO:     10.42.2.88:54136 - "GET /api/feedings?reptile_id=2&start_date=2025-09-30T22:00:00.000Z&end_date=2025-10-30T23:00:00.000Z&limit=1000 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,467 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/misting/reptile/2 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,492 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/feedings?reptile_id=3&start_date=2025-09-30T22:00:00.000Z&end_date=2025-10-30T23:00:00.000Z&limit=1000 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,561 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/misting/reptile/3 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,589 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/feedings?reptile_id=4&start_date=2025-09-30T22:00:00.000Z&end_date=2025-10-30T23:00:00.000Z&limit=1000 HTTP/1.1" 200 OK
+2025-10-15 15:16:23,613 - app.auth - INFO - User authenticated successfully: chrtol95@gmail.com
+INFO:     10.42.2.88:54136 - "GET /api/misting/reptile/4 HTTP/1.1" 200 OK
+INFO:     10.0.30.100:48402 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:48410 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:50792 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:50794 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:50798 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:45028 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:45044 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:45054 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.0.30.100:46302 - "GET /health HTTP/1.1" 200 OK
