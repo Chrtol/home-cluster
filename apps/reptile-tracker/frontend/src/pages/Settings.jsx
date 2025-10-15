@@ -194,7 +194,8 @@ function HouseholdSection() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const res = await axios.get('/api/users/me');
+        const res = await axios.get('/auth/me');
+        console.log('Current user data:', res.data);
         setCurrentUserId(res.data.id);
       } catch (e) {
         console.error('Failed to get current user', e);
