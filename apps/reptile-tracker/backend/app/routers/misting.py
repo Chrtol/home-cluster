@@ -82,7 +82,11 @@ async def update_misting_log(
     db: AsyncSession = Depends(get_db),
 ):
     """Update a misting log"""
-    result = await db.execute(select(MistingLog).where(MistingLog.id == log_id))
+    result = await db.execute(
+        select(MistingLog)
+        .options(selectinload(MistingLog.reptile))
+        .where(MistingLog.id == log_id)
+    )
     log = result.scalar_one_or_none()
     if not log:
         raise HTTPException(

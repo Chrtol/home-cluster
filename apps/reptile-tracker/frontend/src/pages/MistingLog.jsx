@@ -159,16 +159,13 @@ export default function MistingLog() {
 
     try {
       if (mode === 'edit') {
-        await axios.patch(`/api/misting/${id}`, {
+        const response = await axios.patch(`/api/misting/${id}`, {
           misted_at: new Date(dateTimeString).toISOString(),
           notes,
         });
         setSuccess('Misting log updated successfully!');
-        setMode('view');
-        // Reload the misting data
-        const logRes = await axios.get(`/api/misting/${id}`);
-        setExistingLog(logRes.data);
-        loadLogData(logRes.data);
+        // Redirect to read-only view
+        setTimeout(() => navigate(`/misting/${id}`), 1500);
       } else {
         const response = await axios.post('/api/misting', {
           reptile_id: parseInt(selectedReptile),
@@ -177,7 +174,7 @@ export default function MistingLog() {
         });
         setSuccess(`Misting logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
         // Redirect to read-only view
-        setTimeout(() => navigate(`/misting-log/${response.data.id}`), 1500);
+        setTimeout(() => navigate(`/misting/${response.data.id}`), 1500);
       }
     } catch (err) {
       console.error("Failed to submit misting log:", err);

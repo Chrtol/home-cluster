@@ -11,7 +11,8 @@
       "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     },
     "access": {
-      "format": "%(levelprefix)s %(client_addr)s - \"%(request_line)s\" %(status_code)s"
+      "()": "uvicorn.logging.AccessFormatter",
+      "fmt": "%(levelprefix)s %(client_addr)s - \"%(request_line)s\" %(status_code)s"
     }
   },
   "handlers": {
