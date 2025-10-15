@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import DateInput from '../components/DateInput';
 
 export default function ReptileForm() {
     const { id } = useParams();
@@ -138,10 +139,11 @@ export default function ReptileForm() {
                     )}
                 </div>
                 <div>
-                    <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date of Birth (optional)</label>
-                    <input
+                    <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        Date of Birth (optional)
+                    </label>
+                    <DateInput
                         id="dateOfBirth"
-                        type="date"
                         value={dateOfBirth}
                         onChange={(e) => setDateOfBirth(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
