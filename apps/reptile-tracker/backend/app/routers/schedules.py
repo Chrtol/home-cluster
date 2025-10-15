@@ -115,9 +115,16 @@ async def update_schedule(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
         )
+
+    # Check access to the current reptile
     await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.CARETAKER)
 
     update_data = schedule_update.model_dump(exclude_unset=True)
+
+    # If changing reptile, check access to the new reptile as well
+    if "reptile_id" in update_data and update_data["reptile_id"] != schedule.reptile_id:
+        await check_reptile_access(db, current_user, update_data["reptile_id"], AccessLevel.CARETAKER)
+
     for field, value in update_data.items():
         setattr(schedule, field, value)
 
