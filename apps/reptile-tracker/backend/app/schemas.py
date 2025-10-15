@@ -182,6 +182,12 @@ class WeightLogCreate(WeightLogBase):
     reptile_id: int
 
 
+class WeightLogUpdate(BaseModel):
+    weight_grams: Optional[float] = None
+    measured_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
 class WeightLog(WeightLogBase):
     id: int
     reptile_id: int

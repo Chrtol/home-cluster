@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getUserTimeFormat } from '../utils/dateFormatting';
+import { Edit2, Trash2 } from 'lucide-react';
+import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import DateInput from '../components/DateInput';
 
 export default function MistingLog() {
   const navigate = useNavigate();
-  const { reptileId } = useParams();
+  const { reptileId, id } = useParams();
+
+  // Mode state
+  const [mode, setMode] = useState('create'); // create, view, edit
+  const [existingLog, setExistingLog] = useState(null);
 
   const [reptiles, setReptiles] = useState([]);
   const [selectedReptile, setSelectedReptile] = useState('');
@@ -24,46 +29,80 @@ export default function MistingLog() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    // Load user's time format preference and initialize time
-    const format = getUserTimeFormat();
-    setTimeFormat(format);
+    const fetchData = async () => {
+      // Load user's time format preference and initialize time
+      const format = getUserTimeFormat();
+      setTimeFormat(format);
 
-    const now = new Date();
-    const currentHour24 = now.getHours();
-    const currentMinutes = now.getMinutes();
+      const now = new Date();
+      const currentHour24 = now.getHours();
+      const currentMinutes = now.getMinutes();
 
-    setMinutes(currentMinutes);
+      setMinutes(currentMinutes);
 
-    if (format === '12h') {
-      // Convert to 12h format
-      if (currentHour24 === 0) {
-        setHours(12);
-        setPeriod('AM');
-      } else if (currentHour24 < 12) {
-        setHours(currentHour24);
-        setPeriod('AM');
-      } else if (currentHour24 === 12) {
-        setHours(12);
-        setPeriod('PM');
-      } else {
-        setHours(currentHour24 - 12);
-        setPeriod('PM');
-      }
-    } else {
-      setHours(currentHour24);
-    }
-
-    axios.get('/api/reptiles')
-      .then(res => {
-        setReptiles(res.data);
-        if (reptileId) {
-          setSelectedReptile(reptileId);
-        } else if (res.data.length > 0) {
-          setSelectedReptile(res.data[0].id);
+      if (format === '12h') {
+        // Convert to 12h format
+        if (currentHour24 === 0) {
+          setHours(12);
+          setPeriod('AM');
+        } else if (currentHour24 < 12) {
+          setHours(currentHour24);
+          setPeriod('AM');
+        } else if (currentHour24 === 12) {
+          setHours(12);
+          setPeriod('PM');
+        } else {
+          setHours(currentHour24 - 12);
+          setPeriod('PM');
         }
-      })
-      .catch(err => console.error("Failed to fetch reptiles:", err));
-  }, [reptileId]);
+      } else {
+        setHours(currentHour24);
+      }
+
+      try {
+        const reptilesRes = await axios.get('/api/reptiles');
+        setReptiles(reptilesRes.data);
+
+        // Check if we're viewing/editing an existing misting log
+        if (id && !isNaN(id)) {
+          try {
+            const logRes = await axios.get(`/api/misting/${id}`);
+            setExistingLog(logRes.data);
+            setMode('view');
+            loadLogData(logRes.data);
+          } catch (err) {
+            console.error('Failed to load misting log:', err);
+            setError('Failed to load misting log. It may not exist or you may not have permission.');
+          }
+        } else {
+          if (reptileId) {
+            setSelectedReptile(reptileId);
+          } else if (reptilesRes.data.length > 0) {
+            setSelectedReptile(reptilesRes.data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch reptiles:", err);
+      }
+    };
+    fetchData();
+  }, [reptileId, id]);
+
+  const loadLogData = (log) => {
+    setSelectedReptile(log.reptile_id);
+    setNotes(log.notes || '');
+
+    // Parse the misted_at datetime
+    const mistedAtDate = new Date(log.misted_at);
+    setMistingDate(mistedAtDate.toISOString().slice(0, 10));
+
+    const hour = mistedAtDate.getHours();
+    const minute = mistedAtDate.getMinutes();
+
+    setHours(hour);
+    setMinutes(minute);
+    setPeriod(hour >= 12 ? 'PM' : 'AM');
+  };
 
   // Update mistingTime whenever hours/minutes/period change
   useEffect(() => {
@@ -93,6 +132,19 @@ export default function MistingLog() {
     setMinutes(Math.max(0, Math.min(59, numValue)));
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this misting log?')) return;
+
+    try {
+      await axios.delete(`/api/misting/${id}`);
+      setSuccess('Misting log deleted successfully!');
+      setTimeout(() => navigate('/'), 1500);
+    } catch (err) {
+      console.error('Failed to delete misting log:', err);
+      setError(err.response?.data?.detail || 'Failed to delete misting log. You may not have permission.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -106,24 +158,101 @@ export default function MistingLog() {
     const dateTimeString = `${mistingDate}T${mistingTime}`;
 
     try {
-      await axios.post('/api/misting', {
-        reptile_id: parseInt(selectedReptile),
-        misted_at: new Date(dateTimeString).toISOString(),
-        notes,
-      });
-      setSuccess(`Misting logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
-      setNotes('');
+      if (mode === 'edit') {
+        await axios.patch(`/api/misting/${id}`, {
+          misted_at: new Date(dateTimeString).toISOString(),
+          notes,
+        });
+        setSuccess('Misting log updated successfully!');
+        setMode('view');
+        // Reload the misting data
+        const logRes = await axios.get(`/api/misting/${id}`);
+        setExistingLog(logRes.data);
+        loadLogData(logRes.data);
+      } else {
+        const response = await axios.post('/api/misting', {
+          reptile_id: parseInt(selectedReptile),
+          misted_at: new Date(dateTimeString).toISOString(),
+          notes,
+        });
+        setSuccess(`Misting logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
+        // Redirect to read-only view
+        setTimeout(() => navigate(`/misting-log/${response.data.id}`), 1500);
+      }
     } catch (err) {
       console.error("Failed to submit misting log:", err);
       setError(err.response?.data?.detail || "An unexpected error occurred.");
     }
   };
 
+  // VIEW MODE
+  if (mode === 'view' && existingLog) {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">View Misting Log</h1>
+          <div className="flex gap-2">
+            <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
+              <Edit2 size={18} /> Edit
+            </button>
+            <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">
+              <Trash2 size={18} /> Delete
+            </button>
+          </div>
+        </div>
+
+        {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
+        {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
+
+        <div className="card space-y-6">
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Logged at</p>
+            <p className="text-lg font-medium text-gray-900 dark:text-white">
+              {formatDateTime(existingLog.created_at || existingLog.misted_at)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
+            <p className="text-lg font-medium text-gray-900 dark:text-white">
+              {existingLog.reptile?.name || 'Unknown'}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Misted at</p>
+            <p className="text-lg font-medium text-gray-900 dark:text-white">
+              {formatDateTime(existingLog.misted_at)}
+            </p>
+          </div>
+
+          {existingLog.notes && (
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Notes</p>
+              <p className="text-gray-900 dark:text-white">{existingLog.notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // CREATE/EDIT MODE
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Log Misting</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+        {mode === 'edit' ? 'Edit Misting Log' : 'Log Misting'}
+      </h1>
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
       {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
+
+      {mode === 'edit' && existingLog && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-blue-900 dark:text-blue-100 text-sm">
+            Originally logged at {formatDateTime(existingLog.created_at || existingLog.misted_at)}
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div>
@@ -134,6 +263,7 @@ export default function MistingLog() {
             onChange={e => setSelectedReptile(e.target.value)}
             className="input"
             required
+            disabled={mode === 'edit'}
           >
             {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
@@ -198,7 +328,20 @@ export default function MistingLog() {
           />
         </div>
 
-        <button type="submit" className="btn-primary w-full">Save Misting Log</button>
+        <div className="flex gap-3">
+          <button type="submit" className="btn-primary flex-1">
+            {mode === 'edit' ? 'Update Misting Log' : 'Save Misting Log'}
+          </button>
+          {mode === 'edit' && (
+            <button
+              type="button"
+              onClick={() => setMode('view')}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );
