@@ -267,15 +267,29 @@
   - Leave household functionality with safeguards
   - Edit household name (owner only)
 
+- [x] **Fixed household permissions system** - ✅ COMPLETED (2025-01-15)
+  - Fixed check_reptile_access() to use actual household roles instead of hardcoded CARETAKER
+  - Fixed get_user_reptiles() to use actual household roles
+  - Fixed is_owner() to check household membership for OWNER/ADMIN roles
+  - Household owners can now edit reptiles and feedings as expected
+  - Permission hierarchy properly respected: VIEWER < CARETAKER < OWNER < ADMIN
+
 - [x] **Fixed household member access to reptiles** - ✅ COMPLETED
   - Updated permissions.py to check household membership
   - Household members automatically get FEEDER access
   - New reptiles auto-assign to creator's household
 
-- [x] **Fixed date format issues** - ✅ COMPLETED
-  - Created custom DateInput component
-  - Respects user's date format preference (DD/MM/YYYY, MM/DD/YYYY, etc.)
+- [x] **Fixed date format issues** - ✅ COMPLETED (2025-01-15)
+  - Replaced HTML5 date input with custom DateInput component
+  - Respects user's date format preference (DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY, YYYY-MM-DD)
   - Converts between display format and ISO format for backend
+  - Auto-detects browser locale for smart default format
+  - Fixed issue where dates were interpreted as MM/DD/YYYY regardless of display
+
+- [x] **Fixed user interface issues** - ✅ COMPLETED (2025-01-15)
+  - Fixed user name overflow in sidebar (bottom left)
+  - Added proper text truncation with ellipsis
+  - Improved layout constraints for long names
 
 - [x] **Fixed session timeout** - ✅ COMPLETED
   - Updated ACCESS_TOKEN_EXPIRE_MINUTES from 15 to 1440 (24 hours)
