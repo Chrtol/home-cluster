@@ -59,11 +59,12 @@
   - Record types: General Observation, Shedding, Bowel Movement, Vet Visit, Medication
 
 ### Humidity & Environment
-- [ ] **Misting logs**
-  - Backend: Create misting table (reptile_id, misted_at, notes)
-  - Backend: API endpoints for misting CRUD
-  - Frontend: Misting log page/form
-  - Frontend: Add "Last Misted" to dashboard
+- [x] **Misting logs** - ✅ COMPLETED
+  - Backend: Created misting_logs table with migration
+  - Backend: Full CRUD API endpoints at /api/misting
+  - Frontend: MistingLog page with date/time picker
+  - Frontend: Added to Track button dropdown (desktop & mobile)
+  - Note: "Last Misted" dashboard display still pending
 
 ### Dashboard Enhancements
 - [ ] **Add more reptile info cards**
