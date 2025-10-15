@@ -77,15 +77,14 @@
 ## 📅 Calendar & Scheduling
 
 ### Calendar Page
-- [ ] **Functional calendar with multiple views** - 🚧 IN PROGRESS
+- [x] **Functional calendar with multiple views** - ✅ COMPLETED
   - Backend: Schedule model created (0009 migration)
   - Backend: Basic schedule support (schedule_type, frequency_days)
-  - Frontend: Need to implement calendar component
-  - Views: Monthly (default), Weekly, Daily
-  - Click date to view events and create schedules
+  - Frontend: Calendar component with Month/Week/Day views
+  - Views: Monthly (default), Weekly, Daily with navigation
   - Display past events: feedings, misting, weigh-ins, health records
-  - Display scheduled events with visual indicators
-  - Filter by reptile (default: show all)
+  - Clickable completed events link to detail pages
+  - Mobile-responsive design
 
 - [ ] **Advanced scheduling system** - 🎯 NEXT PRIORITY
   - Backend: Extend schedule model for advanced rules
@@ -152,36 +151,37 @@
   - Household members automatically get FEEDER access to household reptiles
   - Direct access via reptile_access table still supported
 
-- [ ] **Granular access control expansion** - 🔜 FUTURE
-  - Add Admin and Caretaker roles
-  - Refine permissions matrix
-  - Per-user role management UI
+- [x] **Granular access control expansion** - ✅ COMPLETED
+  - Added Admin and Caretaker roles
+  - Updated permissions matrix: VIEWER < CARETAKER < OWNER < ADMIN
+  - Per-user role management UI in Settings > Users tab
+  - Household creators automatically become admins
+  - Role assignment dropdown (admin-only)
 
 ### Settings - Household Tab
 - [x] **Comprehensive household management UI** - ✅ COMPLETED
-  - Tabbed interface with Overview, Members, and Invitations tabs
+  - Tabbed interface with Overview, Users, and Invitations tabs
   - Overview tab:
     - View household info (name, creation date)
     - Quick stats (member count, active invites)
-    - Edit household name (owner only)
+    - Edit household name (admin only)
     - Create invitation button
     - Leave household button
-  - Members tab:
-    - List all household members
-    - Show name, email, role, join date
-    - Remove member button (owner only, cannot remove other owners)
+  - Users tab:
+    - Combined Members and Roles functionality
+    - List all household members with count badge
+    - Show name, email, role badge, join date
+    - Role assignment dropdown (admin only)
+    - Remove member button (admin only, cannot remove self)
+    - Role permissions reference section
+    - Non-admin notice
   - Invitations tab:
     - List all invitations with status (active/expired/maxed out)
     - Show invitation code, usage count, expiry date
     - Copy code/link functionality
-    - Revoke invitation button (owner only)
+    - Revoke invitation button (admin only)
   - Household selector dropdown for multi-household users
   - Create and join household forms integrated
-
-- [ ] **Advanced user management** - 🔜 FUTURE
-  - Edit user roles (currently roles are fixed at join time)
-  - View last active timestamp
-  - User activity logs
 
 ### Settings - OIDC Configuration
 - [ ] **OIDC settings UI** (Advanced)
@@ -293,6 +293,158 @@
 
 - [x] **Calendar placeholder page** - ✅ COMPLETED (needs functionality)
 - [x] **Statistics placeholder page** - ✅ COMPLETED (needs functionality)
+
+---
+
+---
+
+## 🎓 Feature Assessment & Recommendations
+
+### Current Application Functionality
+The Reptile Tracker currently provides:
+
+**Core Tracking:**
+- Individual reptile profiles (name, species, morph, date of birth, etc.)
+- Feeding logs with food items, quantities, and supplements
+- Weight tracking with historical data
+- Health records (observations, shedding, bowel movements, vet visits, medications)
+- Misting/humidity logs
+- Dashboard with summary cards and reptile status indicators
+
+**Data Management:**
+- Custom food library with nutritional data
+- Supplement library with dosage tracking
+- Multi-food feeding support (e.g., "3 crickets + 2 mealworms")
+- Per-item supplement application
+
+**Multi-User & Organization:**
+- Household system for shared reptile management
+- Role-based permissions (Admin, Owner, Caretaker, Viewer)
+- Invitation system for adding household members
+- OIDC/SSO authentication
+
+**User Experience:**
+- Calendar view (month/week/day) showing historical events
+- Mobile-responsive design with bottom navigation
+- Dark mode by default
+- Custom date/time format preferences
+- New user onboarding wizard
+
+### 🌟 High-Impact Feature Recommendations
+
+#### 1. **Care Schedules & Recommendations** - 🎯 HIGHEST PRIORITY
+**Why:** This transforms the app from a logging tool into an active care assistant
+- **Recommended Feeding Schedule**
+  - Based on species, age, and size
+  - Frequency (e.g., "Juvenile bearded dragon: daily", "Adult ball python: every 7-10 days")
+  - Food type recommendations (prey size for age/weight)
+  - Link to source/care sheet (e.g., reptifiles.com, morphmarket care guides)
+  - User can override/customize schedule
+
+- **Supplement Schedule Automation**
+  - Based on species and feeding schedule
+  - Example: "Calcium without D3 every feeding, Calcium with D3 once per week, Multivitamin twice per month"
+  - Auto-suggest supplements when logging feeding
+
+- **Implementation:**
+  - Database: `care_guidelines` table (species, age_range, feeding_frequency, source_url)
+  - Backend: GET /api/care-guidelines/{species} endpoint
+  - Frontend: Show recommendations on reptile detail page
+  - Frontend: "Use recommended schedule" button to auto-create schedules
+
+#### 2. **Smart Notifications & Reminders** - 🎯 HIGH PRIORITY
+**Why:** Ensures reptiles don't go without care, especially for multi-reptile households
+- Feeding reminders based on schedule
+- Weight check reminders (monthly/weekly depending on age)
+- Missed misting alerts (for tropical species)
+- Upcoming vet appointment reminders
+- Implementation: Browser notifications (PWA) or email digest
+
+#### 3. **Photo Gallery & Visual Progress Tracking** - 🔧 MEDIUM PRIORITY
+**Why:** Visual proof of growth, shedding issues, health concerns
+- Photo upload for each log type (feeding, health, weight, shedding)
+- Photo gallery per reptile sorted by date
+- Before/after shed photos
+- Growth comparison (photo timeline)
+- Implementation: Backend already has photo_url field in health_records
+
+#### 4. **Environmental Data Tracking** - 🔧 MEDIUM PRIORITY
+**Why:** Temperature and humidity are critical for reptile health
+- **Ambient conditions logging:**
+  - Basking spot temperature
+  - Cool side temperature
+  - Humidity percentage
+  - UVB bulb age tracking (replacement reminders)
+- **Ideal ranges per species:**
+  - Display recommended ranges on dashboard
+  - Alert when out of range (if manual logging)
+  - Optional: IoT sensor integration (future)
+
+#### 5. **Breeding & Genetics Tracker** - 📊 LOW PRIORITY (Specialized)
+**Why:** Valuable for breeders, but niche use case
+- Breeding pairs tracking
+- Egg laying/incubation logs
+- Clutch tracking (hatch dates, success rate)
+- Morph genetics calculator (for certain species)
+- Only implement if user base requests it
+
+#### 6. **Veterinary & Medical Records** - 🔧 MEDIUM PRIORITY
+**Why:** Centralized medical history for vet visits
+- **Enhanced vet visit logs:**
+  - Vet clinic info (name, phone, address)
+  - Diagnosis, treatment plan
+  - Medication prescriptions with dosage/schedule
+  - Follow-up appointment dates
+  - Attach lab results/documents
+- **Medication reminders:**
+  - Active medication list with schedule
+  - Mark doses as given
+  - Alert when running low
+
+#### 7. **Species Care Sheets** - 📚 MEDIUM PRIORITY
+**Why:** Educational resource for new owners
+- Built-in care sheets for common species
+- Categories: habitat setup, feeding, temperature/humidity, common health issues
+- Link to external resources (reputable sites)
+- Community contributions (moderated)
+
+#### 8. **Data Export & Reports** - 📊 MEDIUM PRIORITY
+**Why:** Useful for vet visits, breeding records, insurance claims
+- Export reptile history to PDF
+- Weight growth charts (printable)
+- Feeding summary reports
+- Health timeline
+- CSV export for advanced users
+
+### 🚫 Features to Avoid (Low Value/High Complexity)
+- Social features (sharing, forums) - out of scope
+- Marketplace/buying features - different app domain
+- Live video streaming of enclosures - too complex
+- AI diagnosis - medical liability concerns
+- Real-time sensor dashboards - requires hardware integration (future PWA feature)
+
+### 📋 Recommended Priority Order
+
+**Phase 1 - Care Assistant (Next 2-4 weeks):**
+1. Care schedules & recommendations database
+2. Feeding schedule recommendations based on species/age
+3. Supplement schedule automation
+4. Smart reminders/notifications
+
+**Phase 2 - Visual & Environmental (Next 1-2 months):**
+5. Photo upload for logs
+6. Environmental data tracking (temp/humidity)
+7. Photo gallery per reptile
+
+**Phase 3 - Medical & Professional (Next 2-3 months):**
+8. Enhanced vet records
+9. Medication tracking
+10. Data export/reports
+
+**Phase 4 - Advanced (Future):**
+11. Species care sheets
+12. Breeding tracker (if requested)
+13. PWA features (offline mode, push notifications)
 
 ---
 
