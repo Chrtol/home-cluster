@@ -62,7 +62,7 @@ async def get_household_members(household_id: int, db: AsyncSession = Depends(ge
             "user_id": member[0].id,
             "name": member[0].name,
             "email": member[0].email,
-            "access_level": member[1],
+            "access_level": member[1].value if hasattr(member[1], 'value') else str(member[1]),
             "joined_at": member[2]
         }
         for member in members
