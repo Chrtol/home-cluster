@@ -92,6 +92,35 @@
   - Clickable completed events link to detail pages
   - Mobile-responsive design
 
+- [ ] **Calendar filtering by reptile** - 🔧 MEDIUM PRIORITY
+  - Filter controls to show/hide schedules per reptile
+  - All reptiles shown by default
+  - Checkbox/toggle for each reptile
+  - Filter state persisted in localStorage
+  - Visual indicator showing which reptiles are filtered
+  - Apply filters to both scheduled events and completed activities
+
+- [ ] **Schedule time constraints** - 🔧 MEDIUM PRIORITY
+  - **Target time:**
+    - Optional time field for schedules (e.g., "Feed at 10:00 AM")
+    - Display target time in calendar view
+    - Used for notification reminders
+  - **Latest time (deadline):**
+    - Optional "must complete by" time (e.g., "Feed before 8:00 PM")
+    - Important for animals that need heat for digestion
+    - Visual warning if deadline is approaching
+    - Red indicator if deadline passed without completion
+  - **Implementation:**
+    - Backend: Add `target_time` and `latest_time` fields to Schedule model
+    - Backend: Migration to add time constraint fields
+    - Frontend: Time pickers in schedule form
+    - Frontend: Display times in calendar events
+    - Frontend: Visual indicators for deadlines
+  - **Use cases:**
+    - Ensure feeding happens before lights/heat turns off
+    - Critical medication timing
+    - Notification service (future): "Feed Gecko in 30 minutes" or "Deadline in 1 hour!"
+
 - [ ] **Advanced scheduling system** - 🎯 NEXT PRIORITY
   - Backend: Extend schedule model for advanced rules
     - Every X days (already supported)
@@ -340,10 +369,21 @@
   - Edit and delete functionality for schedules
   - Human-readable schedule frequency formatting
   - Empty state with call-to-action
+  - Full edit support: added /schedule-edit/:id route
+  - ScheduleForm loads and updates existing schedules
+  - Allow changing reptile when editing schedule
+  - Backend validates permissions on both old and new reptile
 
 - [x] **Fixed supplement modal bug** - ✅ COMPLETED (2025-01-15)
   - Added missing X icon import in FoodManagement.jsx
   - Fixed blank page when clicking supplements
+
+- [x] **Feeding heatmap improvements** - ✅ COMPLETED (2025-01-15)
+  - Fixed calendar heatmap layout and alignment issues
+  - Proper week grouping with padding for partial weeks
+  - Day labels in left column, weeks as vertical columns
+  - Constrained heatmap width to content size (about 1/3 card width)
+  - GitHub-style contribution graph now displays correctly
 
 - [x] **Fixed session timeout** - ✅ COMPLETED
   - Updated ACCESS_TOKEN_EXPIRE_MINUTES from 15 to 1440 (24 hours)
