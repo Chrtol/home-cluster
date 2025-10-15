@@ -17,14 +17,11 @@ async def get_dashboard_weights(
     db: AsyncSession = Depends(get_db),
 ):
     """Get recent weight logs for all user's reptiles (for dashboard graph)"""
-    # Get all reptiles the user has access to
-    result = await db.execute(
-        select(Reptile.id)
-        .select_from(reptile_access)
-        .join(Reptile, reptile_access.c.reptile_id == Reptile.id)
-        .where(reptile_access.c.user_id == current_user.id)
-    )
-    reptile_ids = [row[0] for row in result.all()]
+    # Get all reptiles the user has access to (via direct access or household membership)
+    from app.permissions import get_user_reptiles
+
+    user_reptiles = await get_user_reptiles(db, current_user)
+    reptile_ids = [item["reptile"].id for item in user_reptiles]
 
     if not reptile_ids:
         return []
