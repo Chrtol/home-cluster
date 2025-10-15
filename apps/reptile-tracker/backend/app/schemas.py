@@ -228,6 +228,30 @@ class HealthRecord(HealthRecordBase):
         from_attributes = True
 
 
+# Misting log schemas
+class MistingLogBase(BaseModel):
+    misted_at: datetime
+    notes: Optional[str] = None
+
+
+class MistingLogCreate(MistingLogBase):
+    reptile_id: int
+
+
+class MistingLogUpdate(BaseModel):
+    misted_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class MistingLog(MistingLogBase):
+    id: int
+    reptile_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Access control schemas
 class GrantAccess(BaseModel):
     user_email: EmailStr
