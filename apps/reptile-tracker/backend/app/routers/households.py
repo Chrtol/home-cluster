@@ -11,13 +11,13 @@ router = APIRouter(prefix="/api/households", tags=["households"])
 
 @router.post("/", response_model=schemas.HouseholdOut)
 async def create_household(payload: schemas.HouseholdCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    # Create household and add creator as owner
+    # Create household and add creator as admin
     household = models.Household(name=payload.name)
     db.add(household)
     await db.flush()
 
-    # add membership
-    stmt = insert(models.household_members).values(household_id=household.id, user_id=user.id, access_level=models.AccessLevel.OWNER)
+    # add membership - creator gets admin role to manage household
+    stmt = insert(models.household_members).values(household_id=household.id, user_id=user.id, access_level=models.AccessLevel.ADMIN)
     await db.execute(stmt)
     await db.commit()
     await db.refresh(household)

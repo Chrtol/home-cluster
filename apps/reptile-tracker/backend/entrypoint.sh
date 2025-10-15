@@ -64,4 +64,4 @@ if [ "${DEBUG_STARTUP:-0}" = "1" ]; then
 fi
 
 echo "Starting Uvicorn"
-exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-config /app/logging_config.json

@@ -203,13 +203,6 @@ function HouseholdSection() {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    if (selectedHousehold && currentUserId) {
-      fetchMembers();
-      fetchInvitations();
-    }
-  }, [selectedHousehold, currentUserId]);
-
   const fetchMembers = async () => {
     if (!selectedHousehold) return;
     try {
@@ -228,6 +221,13 @@ function HouseholdSection() {
       console.error('Failed to load members', e);
     }
   };
+
+  useEffect(() => {
+    if (selectedHousehold && currentUserId) {
+      fetchMembers();
+      fetchInvitations();
+    }
+  }, [selectedHousehold, currentUserId]);
 
   const fetchInvitations = async () => {
     if (!selectedHousehold) return;
