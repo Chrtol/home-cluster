@@ -283,6 +283,7 @@ class ScheduleCreate(ScheduleBase):
 
 
 class ScheduleUpdate(BaseModel):
+    reptile_id: Optional[int] = None
     name: Optional[str] = None
     schedule_type: Optional[str] = None
     schedule_rule: Optional[str] = None
