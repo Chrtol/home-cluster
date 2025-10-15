@@ -48,13 +48,13 @@
   - Backend: New species automatically added via existing POST endpoint
 
 ### Health & Weight Logging
-- [ ] **Enhanced health logging UI**
-  - Move button to sidebar/more prominent location
-  - Add shedding log type
-  - Add bowel movement log type with:
-    - Consistency field (dropdown or scale)
-    - Photo upload capability
-  - Organize with tabs or sections for different log types
+- [x] **Enhanced health logging UI** - ✅ COMPLETED
+  - Prominent green "Log Health/Weight" button added to sidebar (desktop & mobile)
+  - Added shedding log type
+  - Added bowel movement log type with consistency field (normal, soft, hard, watery, mucus)
+  - Database migration and backend ready for photo upload capability (frontend deferred)
+  - Improved UI organization with better styling and dark mode support
+  - Record types: General Observation, Shedding, Bowel Movement, Vet Visit, Medication
 
 ### Humidity & Environment
 - [ ] **Misting logs**

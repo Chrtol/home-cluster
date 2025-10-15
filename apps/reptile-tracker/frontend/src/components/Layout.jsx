@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
@@ -79,6 +79,15 @@ export default function Layout({ user, onLogout }) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {/* Prominent Health/Weight Log Button */}
+            <Link
+              to="/health-log"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white transition-colors mb-4 shadow-md"
+            >
+              <Activity size={20} />
+              <span className="font-semibold">Log Health/Weight</span>
+            </Link>
+
             {navItems.map(item => (
               <NavLink key={item.path} item={item} />
             ))}
@@ -167,6 +176,16 @@ export default function Layout({ user, onLogout }) {
                 </div>
               </div>
               <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                {/* Prominent Health/Weight Log Button */}
+                <Link
+                  to="/health-log"
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white transition-colors mb-4 shadow-md"
+                >
+                  <Activity size={20} />
+                  <span className="font-semibold">Log Health/Weight</span>
+                </Link>
+
                 {navItems.map(item => (
                   <NavLink key={item.path} item={item} onClick={() => setSidebarOpen(false)} />
                 ))}
