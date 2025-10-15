@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -10,6 +10,8 @@ export default function Dashboard() {
   const [recentFeedings, setRecentFeedings] = useState([]);
   const [reptiles, setReptiles] = useState([]);
   const [weightData, setWeightData] = useState([]);
+  const [mistingData, setMistingData] = useState({});
+  const [healthData, setHealthData] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +25,41 @@ export default function Dashboard() {
         setRecentFeedings(feedingsRes.data);
         setReptiles(reptilesRes.data);
         setWeightData(weightRes.data);
+
+        // Fetch misting and health data for each reptile
+        const mistingPromises = reptilesRes.data.map(r =>
+          axios.get(`/api/misting/reptile/${r.id}`).catch(() => ({ data: [] }))
+        );
+        const healthPromises = reptilesRes.data.map(r =>
+          axios.get(`/api/health/reptile/${r.id}`).catch(() => ({ data: [] }))
+        );
+
+        const [mistingResults, healthResults] = await Promise.all([
+          Promise.all(mistingPromises),
+          Promise.all(healthPromises)
+        ]);
+
+        // Process misting data - get last misting for each reptile
+        const mistingMap = {};
+        reptilesRes.data.forEach((reptile, index) => {
+          const logs = mistingResults[index].data;
+          if (logs && logs.length > 0) {
+            mistingMap[reptile.id] = logs[0].misted_at; // Already sorted by misted_at desc
+          }
+        });
+        setMistingData(mistingMap);
+
+        // Process health data - get last shed for each reptile
+        const healthMap = {};
+        reptilesRes.data.forEach((reptile, index) => {
+          const records = healthResults[index].data;
+          const sheds = records.filter(r => r.record_type === 'shedding');
+          if (sheds && sheds.length > 0) {
+            healthMap[reptile.id] = sheds[0].date; // Already sorted by date desc
+          }
+        });
+        setHealthData(healthMap);
+
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -230,6 +267,12 @@ export default function Dashboard() {
                   const daysSinceFeeding = reptile.last_feeding
                     ? differenceInDays(new Date(), new Date(reptile.last_feeding))
                     : null;
+                  const daysSinceMisting = mistingData[reptile.id]
+                    ? differenceInDays(new Date(), new Date(mistingData[reptile.id]))
+                    : null;
+                  const daysSinceShed = healthData[reptile.id]
+                    ? differenceInDays(new Date(), new Date(healthData[reptile.id]))
+                    : null;
 
                   return (
                     <Link
@@ -244,16 +287,40 @@ export default function Dashboard() {
                             <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{reptile.species}</span>
                           </div>
 
-                          <div className="flex items-center gap-3 text-xs">
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
                             {/* Last fed info */}
                             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                              <Clock size={11} className="flex-shrink-0" />
+                              <Utensils size={11} className="flex-shrink-0" />
                               {reptile.last_feeding ? (
-                                <span>
+                                <span title="Days since last feeding">
                                   {daysSinceFeeding === 0 ? 'Today' : `${daysSinceFeeding}d`}
                                 </span>
                               ) : (
-                                <span>Never</span>
+                                <span>-</span>
+                              )}
+                            </div>
+
+                            {/* Last misted info */}
+                            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                              <Droplets size={11} className="flex-shrink-0" />
+                              {mistingData[reptile.id] ? (
+                                <span title="Days since last misting">
+                                  {daysSinceMisting === 0 ? 'Today' : `${daysSinceMisting}d`}
+                                </span>
+                              ) : (
+                                <span>-</span>
+                              )}
+                            </div>
+
+                            {/* Last shed info */}
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                              <Activity size={11} className="flex-shrink-0" />
+                              {healthData[reptile.id] ? (
+                                <span title="Days since last shed">
+                                  {daysSinceShed === 0 ? 'Today' : `${daysSinceShed}d`}
+                                </span>
+                              ) : (
+                                <span>-</span>
                               )}
                             </div>
 
