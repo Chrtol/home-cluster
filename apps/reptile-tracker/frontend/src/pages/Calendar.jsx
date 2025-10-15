@@ -376,6 +376,56 @@ function Calendar() {
         </div>
       </div>
 
+      {/* Legend */}
+      <div className="card mb-4">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Legend</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Scheduled Events */}
+          <div>
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Scheduled Events (Planned)</div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-xs rounded bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+                  Feeding
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-xs rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                  Misting
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-xs rounded bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800">
+                  Supplement
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actual Events */}
+          <div>
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Completed Events (Actual)</div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-xs rounded bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
+                  ✓ Feeding
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-xs rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
+                  ✓ Misting
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-xs rounded bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700">
+                  ✓ Supplement
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Calendar Controls */}
       <div className="card mb-4">
         <div className="flex items-center justify-between mb-4">
@@ -433,15 +483,22 @@ function Calendar() {
 
                     {/* Event indicators */}
                     <div className="space-y-1">
-                      {dayEvents.slice(0, 3).map((event, idx) => (
-                        <div
-                          key={idx}
-                          className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
-                        >
-                          {event.is_actual && "✓ "}
-                          {event.reptile_name}: {event.schedule_type}
-                        </div>
-                      ))}
+                      {dayEvents.slice(0, 3).map((event, idx) => {
+                        const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                        const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
+                            title={`${displayName}${detail}`}
+                          >
+                            {event.is_actual && "✓ "}
+                            {displayName}
+                            {detail && <span className="opacity-75">{detail}</span>}
+                          </div>
+                        );
+                      })}
                       {dayEvents.length > 3 && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 px-2">
                           +{dayEvents.length - 3} more
@@ -480,7 +537,7 @@ function Calendar() {
                         <span className="text-green-600 dark:text-green-400">✓</span>
                       )}
                       <div className="font-semibold text-gray-900 dark:text-white">
-                        {event.reptile_name}
+                        {event.name || event.reptile_name}
                       </div>
                       {event.is_actual && event.time && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -491,7 +548,14 @@ function Calendar() {
                     <div className="text-sm text-gray-600 dark:text-gray-400 capitalize mt-1">
                       {event.is_actual ? "Completed: " : "Scheduled: "}
                       {event.schedule_type}
+                      {event.food_category && ` • ${event.food_category}`}
+                      {event.time_slot && ` • ${event.time_slot}`}
                     </div>
+                    {!event.name && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {event.reptile_name}
+                      </div>
+                    )}
                     {event.notes && (
                       <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {event.notes}
