@@ -28,15 +28,9 @@ class HealthCheckFilter(logging.Filter):
         return not ('"GET /health HTTP' in message and '200 OK' in message)
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Configure logging - note: uvicorn logging is configured via logging_config.json
+# passed to uvicorn via --log-config flag
 logger = logging.getLogger(__name__)
-
-# Add health check filter to uvicorn access logger
-logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
 
 app = FastAPI(
     title="Reptile Tracker API",
