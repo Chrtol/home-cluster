@@ -73,31 +73,98 @@ function Statistics() {
     return stats.summary.weight_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
   };
 
-  // Merge weight and feeding data for combined chart
+  // Merge weight and feeding data for combined chart with interpolation
   const getCombinedData = () => {
     if (!stats) return [];
 
-    // Create a map of all dates
-    const dateMap = new Map();
+    // Get all unique dates from both datasets
+    const allDates = new Set();
 
-    // Add weight data
+    stats.weight_data.forEach(item => {
+      allDates.add(item.date.split('T')[0]);
+    });
+
+    stats.feeding_data.forEach(item => {
+      allDates.add(item.date);
+    });
+
+    // Convert to sorted array
+    const sortedDates = Array.from(allDates).sort((a, b) =>
+      new Date(a) - new Date(b)
+    );
+
+    // Create weight lookup map (actual measurements)
+    const weightMap = new Map();
     stats.weight_data.forEach(item => {
       const dateKey = item.date.split('T')[0];
-      dateMap.set(dateKey, { date: dateKey, weight: item.weight });
+      weightMap.set(dateKey, item.weight);
     });
 
-    // Add feeding data
+    // Create feeding lookup map
+    const feedingMap = new Map();
     stats.feeding_data.forEach(item => {
-      const dateKey = item.date;
-      const existing = dateMap.get(dateKey) || { date: dateKey };
-      existing.feedings = item.count;
-      dateMap.set(dateKey, existing);
+      feedingMap.set(item.date, item.count);
     });
 
-    // Convert to array and sort by date
-    return Array.from(dateMap.values()).sort((a, b) =>
-      new Date(a.date) - new Date(b.date)
-    );
+    // Linear interpolation for weight
+    const interpolateWeight = (date) => {
+      if (weightMap.has(date)) {
+        return { weight: weightMap.get(date), isActual: true };
+      }
+
+      // Find surrounding actual measurements
+      const dateTime = new Date(date).getTime();
+      let before = null, after = null;
+
+      sortedDates.forEach(d => {
+        const w = weightMap.get(d);
+        if (w !== undefined) {
+          const dTime = new Date(d).getTime();
+          if (dTime < dateTime) {
+            if (!before || new Date(d) > new Date(before.date)) {
+              before = { date: d, weight: w };
+            }
+          } else if (dTime > dateTime) {
+            if (!after || new Date(d) < new Date(after.date)) {
+              after = { date: d, weight: w };
+            }
+          }
+        }
+      });
+
+      // Interpolate if we have both before and after
+      if (before && after) {
+        const beforeTime = new Date(before.date).getTime();
+        const afterTime = new Date(after.date).getTime();
+        const ratio = (dateTime - beforeTime) / (afterTime - beforeTime);
+        const interpolated = before.weight + (after.weight - before.weight) * ratio;
+        return { weight: parseFloat(interpolated.toFixed(1)), isActual: false };
+      }
+
+      // Extrapolate forward if we only have before
+      if (before && !after) {
+        return { weight: before.weight, isActual: false };
+      }
+
+      // Extrapolate backward if we only have after
+      if (!before && after) {
+        return { weight: after.weight, isActual: false };
+      }
+
+      return null;
+    };
+
+    // Build final dataset
+    return sortedDates.map(date => {
+      const weightData = interpolateWeight(date);
+      return {
+        date,
+        weight: weightData?.weight,
+        weightActual: weightData?.isActual ? weightData.weight : null,
+        weightInterpolated: !weightData?.isActual ? weightData?.weight : null,
+        feedings: feedingMap.get(date)
+      };
+    });
   };
 
   if (loading && !stats) {
@@ -285,11 +352,19 @@ function Statistics() {
           {/* Combined Weight & Feeding Chart */}
           {(visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
             <div className="card">
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
                 Weight & Feeding Correlation
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                 See how feeding frequency affects weight over time
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-blue-500"></span> Actual measurements
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-blue-300 border-t-2 border-dashed border-blue-300"></span> Interpolated
+                </span>
               </p>
               <ResponsiveContainer width="100%" height={350}>
                 <ComposedChart data={getCombinedData()}>
@@ -329,19 +404,34 @@ function Statistics() {
                   />
                   <Legend />
 
-                  {/* Weight Line */}
+                  {/* Weight Lines - Actual and Interpolated */}
                   {visibleData.weight && (
-                    <Line
-                      yAxisId="weight"
-                      type="monotone"
-                      dataKey="weight"
-                      stroke="#3B82F6"
-                      strokeWidth={2}
-                      dot={{ fill: '#3B82F6', r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Weight (g)"
-                      connectNulls
-                    />
+                    <>
+                      {/* Interpolated weight (dashed, lighter) */}
+                      <Line
+                        yAxisId="weight"
+                        type="monotone"
+                        dataKey="weightInterpolated"
+                        stroke="#93C5FD"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        name="Weight (interpolated)"
+                        connectNulls
+                      />
+                      {/* Actual weight measurements (solid, darker, with dots) */}
+                      <Line
+                        yAxisId="weight"
+                        type="monotone"
+                        dataKey="weightActual"
+                        stroke="#3B82F6"
+                        strokeWidth={3}
+                        dot={{ fill: '#3B82F6', r: 5, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 7 }}
+                        name="Weight (actual)"
+                        connectNulls
+                      />
+                    </>
                   )}
 
                   {/* Feeding Bars */}
