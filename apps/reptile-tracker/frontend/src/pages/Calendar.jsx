@@ -377,50 +377,37 @@ function Calendar() {
       </div>
 
       {/* Legend */}
-      <div className="card mb-4">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Legend</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Scheduled Events */}
-          <div>
-            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Scheduled Events (Planned)</div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 text-xs rounded bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
-                  Feeding
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 text-xs rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                  Misting
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 text-xs rounded bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800">
-                  Supplement
-                </div>
-              </div>
+      <div className="card mb-4 p-3">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <span className="font-medium text-gray-600 dark:text-gray-400">Legend:</span>
+
+          {/* Scheduled */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 dark:text-gray-400">Scheduled:</span>
+            <div className="px-2 py-0.5 rounded bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+              Feed
+            </div>
+            <div className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+              Mist
+            </div>
+            <div className="px-2 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800">
+              Supp
             </div>
           </div>
 
-          {/* Actual Events */}
-          <div>
-            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Completed Events (Actual)</div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 text-xs rounded bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
-                  ✓ Feeding
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 text-xs rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
-                  ✓ Misting
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 text-xs rounded bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700">
-                  ✓ Supplement
-                </div>
-              </div>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
+
+          {/* Completed */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 dark:text-gray-400">Completed:</span>
+            <div className="px-2 py-0.5 rounded bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
+              ✓ Feed
+            </div>
+            <div className="px-2 py-0.5 rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
+              ✓ Mist
+            </div>
+            <div className="px-2 py-0.5 rounded bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700">
+              ✓ Supp
             </div>
           </div>
         </div>
