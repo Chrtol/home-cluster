@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PlusCircle, Edit2, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, X } from 'lucide-react';
 
 export default function FoodManagement() {
   const [activeTab, setActiveTab] = useState('foods'); // foods, supplements
