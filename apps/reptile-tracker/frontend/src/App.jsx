@@ -18,6 +18,7 @@ import Statistics from './pages/Statistics';
 import HealthLog from './pages/HealthLog';
 import MistingLog from './pages/MistingLog';
 import FoodManagement from './pages/FoodManagement';
+import ScheduleForm from './pages/ScheduleForm';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -161,6 +162,7 @@ function App() {
             <Route path="/feed/:id" element={<FeedingLog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/calendar" element={<Calendar />} />
+            <Route path="/schedule-create" element={<ScheduleForm />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
             <Route path="/health-log/:reptileId" element={<HealthLog />} />
