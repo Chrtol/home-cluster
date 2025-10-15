@@ -169,7 +169,7 @@ function HouseholdSection() {
   const [joinCode, setJoinCode] = useState('');
   const [editingHouseholdId, setEditingHouseholdId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [activeTab, setActiveTab] = useState('overview'); // overview, members, roles, invitations
+  const [activeTab, setActiveTab] = useState('overview'); // overview, users, invitations
   const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
 
@@ -627,24 +627,14 @@ function HouseholdSection() {
                     Overview
                   </button>
                   <button
-                    onClick={() => setActiveTab('members')}
+                    onClick={() => setActiveTab('users')}
                     className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === 'members'
+                      activeTab === 'users'
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                     }`}
                   >
-                    Members ({members.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('roles')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === 'roles'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    Roles
+                    Users ({members.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('invitations')}
@@ -742,41 +732,7 @@ function HouseholdSection() {
                 </div>
               )}
 
-              {activeTab === 'members' && (
-                <div className="space-y-4">
-                  {members.length === 0 ? (
-                    <p className="text-center py-8 text-gray-600 dark:text-gray-400">No members found</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {members.map(member => (
-                        <div key={member.user_id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium text-gray-900 dark:text-white">{member.name}</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
-                            <div className="flex gap-2 mt-1">
-                              {getRoleBadge(member.access_level)}
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Joined {new Date(member.joined_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          {isAdmin && member.user_id !== currentUserId && (
-                            <button
-                              onClick={() => removeMember(member.user_id)}
-                              disabled={creating}
-                              className="btn-secondary text-red-600 dark:text-red-400"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'roles' && (
+              {activeTab === 'users' && (
                 <div className="space-y-4">
                   {!isAdmin && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 px-4 py-3 rounded mb-4">
