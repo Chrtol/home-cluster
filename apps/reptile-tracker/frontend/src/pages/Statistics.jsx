@@ -613,60 +613,68 @@ function FeedingHeatmap({ feedingData, timeRange }) {
 
   const days = generateCalendarGrid();
 
-  // Group by week
+  // Group days into weeks (columns)
   const weeks = [];
-  let currentWeek = [];
-  let lastWeek = null;
+  const startDayOfWeek = days[0]?.dayOfWeek || 0;
 
-  days.forEach(day => {
-    if (lastWeek !== null && day.weekOfYear !== lastWeek && day.dayOfWeek === 0) {
+  // Add padding for first week if it doesn't start on Sunday (0)
+  let currentWeek = Array(startDayOfWeek).fill(null);
+
+  days.forEach((day, idx) => {
+    currentWeek.push(day);
+
+    // Complete week when we hit Saturday (6) or last day
+    if (day.dayOfWeek === 6 || idx === days.length - 1) {
+      // Pad the end if needed to reach 7 days
+      while (currentWeek.length < 7) {
+        currentWeek.push(null);
+      }
       weeks.push(currentWeek);
       currentWeek = [];
     }
-    currentWeek.push(day);
-    lastWeek = day.weekOfYear;
   });
-
-  if (currentWeek.length > 0) {
-    weeks.push(currentWeek);
-  }
 
   const maxFeedingsPerDay = Math.max(...days.map(d => d.count), 1);
 
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-block min-w-full">
-        {/* Day labels */}
-        <div className="flex gap-1 mb-2">
-          <div className="w-8"></div>
-          <div className="flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-400">
-            <div className="h-3">Mon</div>
-            <div className="h-3"></div>
-            <div className="h-3">Wed</div>
-            <div className="h-3"></div>
-            <div className="h-3">Fri</div>
-            <div className="h-3"></div>
-            <div className="h-3">Sun</div>
-          </div>
-          {weeks.map((week, weekIdx) => (
-            <div key={weekIdx} className="flex flex-col gap-1">
-              {/* Show month label on first day of month */}
-              {week[0] && week[0].date.getDate() <= 7 && (
-                <div className="text-xs text-gray-600 dark:text-gray-400 h-3 -mb-1">
-                  {week[0].date.toLocaleDateString('en-US', { month: 'short' })}
-                </div>
-              )}
-            </div>
-          ))}
+    <div className="overflow-x-auto pb-2">
+      <div className="inline-flex flex-col gap-2">
+        {/* Month labels row */}
+        <div className="flex gap-1 pl-14">
+          {weeks.map((week, weekIdx) => {
+            const firstValidDay = week.find(d => d !== null);
+            const showMonth = firstValidDay && (
+              weekIdx === 0 ||
+              firstValidDay.date.getDate() <= 7
+            );
+
+            return (
+              <div key={weekIdx} className="w-3">
+                {showMonth && (
+                  <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap -ml-2">
+                    {firstValidDay.date.toLocaleDateString('en-US', { month: 'short' })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Calendar grid */}
+        {/* Grid with day labels */}
         <div className="flex gap-1">
+          {/* Day of week labels column */}
+          <div className="flex flex-col gap-1 pr-2 text-right">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="h-3 text-xs text-gray-600 dark:text-gray-400 flex items-center justify-end" style={{minWidth: '28px'}}>
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid columns (weeks) */}
           {weeks.map((week, weekIdx) => (
             <div key={weekIdx} className="flex flex-col gap-1">
-              {Array.from({ length: 7 }).map((_, dayIdx) => {
-                const day = week.find(d => d.dayOfWeek === dayIdx);
-
+              {week.map((day, dayIdx) => {
                 if (!day) {
                   return <div key={dayIdx} className="w-3 h-3"></div>;
                 }
