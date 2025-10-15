@@ -452,6 +452,34 @@ The Reptile Tracker currently provides:
 - Health timeline
 - CSV export for advanced users
 
+#### 9. **Complete Backup & Restore System** - 📦 HIGH PRIORITY
+**Why:** Data portability, migration between instances, disaster recovery
+- **Full Export Functionality:**
+  - Export entire household data as a single JSON/ZIP file
+  - Includes: household info, all reptiles, foods, supplements, schedules
+  - Includes: all historical data (feedings, weights, health records, mistings)
+  - Includes: user preferences and settings
+  - Option to export with or without photos (large file size consideration)
+  - Encrypted export option for sensitive data
+- **Full Import/Restore Functionality:**
+  - Import from exported backup file
+  - Conflict resolution for existing data (skip, merge, or overwrite)
+  - Preview import contents before applying
+  - Selective import (choose which reptiles, foods, etc. to import)
+  - Validation and error handling for corrupted/invalid backups
+- **Use Cases:**
+  - Migrate to new server/instance
+  - Share household setup with another user
+  - Backup before major changes
+  - Disaster recovery
+  - Data portability between deployments
+- **Implementation:**
+  - Backend: GET /api/export/household/{id} endpoint
+  - Backend: POST /api/import/household endpoint with multipart/form-data
+  - Frontend: Export button in Settings with progress indicator
+  - Frontend: Import page with drag-drop file upload
+  - File format: JSON with schema versioning for future compatibility
+
 ### 🚫 Features to Avoid (Low Value/High Complexity)
 - Social features (sharing, forums) - out of scope
 - Marketplace/buying features - different app domain
@@ -472,15 +500,16 @@ The Reptile Tracker currently provides:
 
 **Tier 3 - IMPORTANT (Next 2-3 months):**
 6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
-7. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
-8. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
-9. **Data Export & Reports** - PDF export for vet visits
+7. **Complete Backup & Restore System** - Full household export/import for data portability
+8. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
+9. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
+10. **Data Export & Reports** - PDF export for vet visits
 
 **Tier 4 - ADVANCED (Future - 3+ months):**
-10. **Species Care Sheets** - Built-in educational resources
-11. **Statistics Phase 4** - Predictive analytics, growth projections
-12. **Breeding Tracker** - If requested by user base
-13. **PWA Features** - Offline mode, push notifications, install prompt
+11. **Species Care Sheets** - Built-in educational resources
+12. **Statistics Phase 4** - Predictive analytics, growth projections
+13. **Breeding Tracker** - If requested by user base
+14. **PWA Features** - Offline mode, push notifications, install prompt
 
 **Why Statistics Moved to Tier 1:**
 - All data already exists in database
