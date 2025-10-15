@@ -19,7 +19,6 @@ import HealthLog from './pages/HealthLog';
 import MistingLog from './pages/MistingLog';
 import FoodManagement from './pages/FoodManagement';
 import ScheduleForm from './pages/ScheduleForm';
-import HouseholdSettings from './pages/HouseholdSettings';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -172,7 +171,6 @@ function App() {
             <Route path="/misting-log/:reptileId" element={<MistingLog />} />
             <Route path="/misting/:id" element={<MistingLog />} />
             <Route path="/foods" element={<FoodManagement />} />
-            <Route path="/household" element={<HouseholdSettings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         ) : (
