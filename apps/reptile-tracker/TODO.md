@@ -1,5 +1,11 @@
 # Reptile Tracker - Todo List
 
+## 🚀 NEXT UP - Tier 1 Priorities
+1. **Statistics Page Phase 1** - Weight charts & feeding frequency (see [📊 Statistics & Analytics](#-statistics--analytics))
+2. **Care Schedules & Recommendations** - Species-based guidelines (see recommendations below)
+
+---
+
 ## 🎯 High Priority
 
 ### Authentication & Session Management
@@ -104,14 +110,30 @@
 
 ## 📊 Statistics & Analytics
 
-### Statistics Page
-- [ ] **Replace placeholder with data visualization**
-  - Feeding frequency graphs (per reptile, overall)
-  - Weight tracking charts (growth over time)
-  - Supplement usage tracking
-  - Shedding frequency analysis
-  - Misting frequency
-  - Export data to CSV/PDF
+### Statistics Page - 🎯 CRITICAL PRIORITY (Tier 1)
+**Why High Priority:** Uses existing data, high visual impact, easy to implement, medical value
+
+- [ ] **Phase 1 - Essential Charts** (1-2 weeks)
+  - Weight growth chart (line graph per reptile)
+  - Feeding frequency calendar heatmap
+  - Summary cards: days since last feeding/misting/shed
+  - Chart library: Recharts or Chart.js
+
+- [ ] **Phase 2 - Health Analytics** (1-2 weeks)
+  - Shed frequency tracking (bar chart)
+  - Health events timeline (visual timeline)
+  - Weight change rate indicator (gaining/losing/stable)
+
+- [ ] **Phase 3 - Advanced Analytics** (2-3 weeks)
+  - Supplement adherence tracking (% of feedings with supplements)
+  - Multi-reptile comparison charts
+  - Feeding cost analysis (if prices tracked)
+  - Export charts as images/PDF
+
+- [ ] **Phase 4 - Predictive** (Future)
+  - Growth predictions based on species norms
+  - Next shed prediction
+  - Health score algorithms
 
 ## 👥 Multi-User & Households
 
@@ -423,28 +445,36 @@ The Reptile Tracker currently provides:
 - AI diagnosis - medical liability concerns
 - Real-time sensor dashboards - requires hardware integration (future PWA feature)
 
-### 📋 Recommended Priority Order
+### 📋 Recommended Priority Order (UPDATED)
 
-**Phase 1 - Care Assistant (Next 2-4 weeks):**
-1. Care schedules & recommendations database
-2. Feeding schedule recommendations based on species/age
-3. Supplement schedule automation
-4. Smart reminders/notifications
+**Tier 1 - CRITICAL (Implement Immediately - Next 2-4 weeks):**
+1. **Statistics Page Phase 1** - Weight charts, feeding frequency heatmaps (uses existing data!)
+2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines with sources
 
-**Phase 2 - Visual & Environmental (Next 1-2 months):**
-5. Photo upload for logs
-6. Environmental data tracking (temp/humidity)
-7. Photo gallery per reptile
+**Tier 2 - HIGH VALUE (Next 1-2 months):**
+3. **Statistics Page Phase 2** - Health analytics, shed tracking, timeline
+4. **Smart Notifications & Reminders** - Feeding alerts, weight check reminders
+5. **Photo Upload & Gallery** - Visual health tracking and progress photos
 
-**Phase 3 - Medical & Professional (Next 2-3 months):**
-8. Enhanced vet records
-9. Medication tracking
-10. Data export/reports
+**Tier 3 - IMPORTANT (Next 2-3 months):**
+6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
+7. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
+8. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
+9. **Data Export & Reports** - PDF export for vet visits
 
-**Phase 4 - Advanced (Future):**
-11. Species care sheets
-12. Breeding tracker (if requested)
-13. PWA features (offline mode, push notifications)
+**Tier 4 - ADVANCED (Future - 3+ months):**
+10. **Species Care Sheets** - Built-in educational resources
+11. **Statistics Phase 4** - Predictive analytics, growth projections
+12. **Breeding Tracker** - If requested by user base
+13. **PWA Features** - Offline mode, push notifications, install prompt
+
+**Why Statistics Moved to Tier 1:**
+- All data already exists in database
+- High visual impact and user delight factor
+- Medical value (weight charts for vets)
+- Foundation for future analytics features
+- Relatively quick to implement with modern chart libraries
+- Validates the value of consistent data logging
 
 ---
 
