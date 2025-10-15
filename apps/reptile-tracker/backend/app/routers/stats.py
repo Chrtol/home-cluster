@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, Feeding, WeightLog, AccessLevel
+from app.models import User, Feeding, WeightLog, AccessLevel, HealthRecord, MistingLog, Reptile
 from app.permissions import check_reptile_access, get_user_reptiles
 from app.schemas import DailySummary, WeeklySummary, ReptileStats
 
@@ -180,3 +181,134 @@ async def get_reptile_stats(
         weight_trend=weight_logs,
         nutritional_summary=nutritional_summary,
     )
+
+
+@router.get("/comprehensive/{reptile_id}")
+async def get_comprehensive_stats(
+    reptile_id: int,
+    days: int = Query(90, le=730),  # Default 90 days, max 2 years
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get comprehensive statistics for charts including weight, feeding, misting, and health events"""
+
+    reptile = await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+
+    start_date = datetime.utcnow() - timedelta(days=days)
+
+    # Weight data - all weight logs in period
+    result = await db.execute(
+        select(WeightLog)
+        .where(
+            WeightLog.reptile_id == reptile_id,
+            WeightLog.measured_at >= start_date
+        )
+        .order_by(WeightLog.measured_at)
+    )
+    weight_logs = result.scalars().all()
+    weight_data = [
+        {
+            "date": log.measured_at.isoformat(),
+            "weight": float(log.weight),
+            "notes": log.notes
+        }
+        for log in weight_logs
+    ]
+
+    # Feeding data - grouped by day
+    result = await db.execute(
+        select(
+            func.date(Feeding.fed_at).label('date'),
+            func.count(Feeding.id).label('count')
+        )
+        .where(
+            Feeding.reptile_id == reptile_id,
+            Feeding.fed_at >= start_date
+        )
+        .group_by(func.date(Feeding.fed_at))
+        .order_by(func.date(Feeding.fed_at))
+    )
+    feeding_by_day = result.all()
+    feeding_data = [
+        {
+            "date": row.date.isoformat(),
+            "count": row.count
+        }
+        for row in feeding_by_day
+    ]
+
+    # Misting data - grouped by day
+    result = await db.execute(
+        select(
+            func.date(MistingLog.misted_at).label('date'),
+            func.count(MistingLog.id).label('count')
+        )
+        .where(
+            MistingLog.reptile_id == reptile_id,
+            MistingLog.misted_at >= start_date
+        )
+        .group_by(func.date(MistingLog.misted_at))
+        .order_by(func.date(MistingLog.misted_at))
+    )
+    misting_by_day = result.all()
+    misting_data = [
+        {
+            "date": row.date.isoformat(),
+            "count": row.count
+        }
+        for row in misting_by_day
+    ]
+
+    # Health events - all health records in period
+    result = await db.execute(
+        select(HealthRecord)
+        .where(
+            HealthRecord.reptile_id == reptile_id,
+            HealthRecord.recorded_at >= start_date
+        )
+        .order_by(HealthRecord.recorded_at)
+    )
+    health_records = result.scalars().all()
+    health_data = [
+        {
+            "date": record.recorded_at.isoformat(),
+            "type": record.record_type,
+            "notes": record.notes
+        }
+        for record in health_records
+    ]
+
+    # Summary statistics
+    total_feedings = len(feeding_by_day)
+    total_mistings = len(misting_by_day)
+    total_health_events = len(health_records)
+
+    # Weight change
+    weight_change = None
+    weight_change_percent = None
+    if len(weight_logs) >= 2:
+        first_weight = float(weight_logs[0].weight)
+        last_weight = float(weight_logs[-1].weight)
+        weight_change = last_weight - first_weight
+        if first_weight > 0:
+            weight_change_percent = (weight_change / first_weight) * 100
+
+    return {
+        "reptile_id": reptile_id,
+        "reptile_name": reptile.name,
+        "period_days": days,
+        "start_date": start_date.isoformat(),
+        "weight_data": weight_data,
+        "feeding_data": feeding_data,
+        "misting_data": misting_data,
+        "health_data": health_data,
+        "summary": {
+            "total_feedings": total_feedings,
+            "total_mistings": total_mistings,
+            "total_health_events": total_health_events,
+            "weight_change": weight_change,
+            "weight_change_percent": weight_change_percent,
+            "current_weight": float(weight_logs[-1].weight) if weight_logs else None,
+            "weight_logs_count": len(weight_logs)
+        }
+    }
