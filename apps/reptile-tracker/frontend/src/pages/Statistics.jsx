@@ -450,6 +450,17 @@ function Statistics() {
             </div>
           )}
 
+          {/* Feeding Frequency Calendar Heatmap */}
+          {visibleData.feeding && stats.feeding_data.length > 0 && (
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Daily feeding activity over the past {timeRange} days
+              </p>
+              <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
+            </div>
+          )}
+
           {/* Misting Frequency Chart */}
           {visibleData.misting && stats.misting_data.length > 0 && (
             <div className="card">
@@ -544,6 +555,148 @@ function Statistics() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// Feeding Heatmap Component (GitHub-style)
+function FeedingHeatmap({ feedingData, timeRange }) {
+  // Generate calendar grid for the past N days
+  const generateCalendarGrid = () => {
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - timeRange);
+
+    // Create a map of dates to feeding counts
+    const feedingMap = new Map();
+    feedingData.forEach(item => {
+      feedingMap.set(item.date, item.count);
+    });
+
+    // Generate all dates in range
+    const days = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= today) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const count = feedingMap.get(dateStr) || 0;
+
+      days.push({
+        date: new Date(currentDate),
+        dateStr: dateStr,
+        count: count,
+        dayOfWeek: currentDate.getDay(),
+        weekOfYear: getWeekNumber(currentDate)
+      });
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return days;
+  };
+
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  };
+
+  const getColor = (count) => {
+    if (count === 0) return 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+    if (count === 1) return 'bg-green-200 dark:bg-green-900 border border-green-300 dark:border-green-800';
+    if (count === 2) return 'bg-green-400 dark:bg-green-700 border border-green-500 dark:border-green-600';
+    if (count === 3) return 'bg-green-500 dark:bg-green-600 border border-green-600 dark:border-green-500';
+    return 'bg-green-600 dark:bg-green-500 border border-green-700 dark:border-green-400';
+  };
+
+  const days = generateCalendarGrid();
+
+  // Group by week
+  const weeks = [];
+  let currentWeek = [];
+  let lastWeek = null;
+
+  days.forEach(day => {
+    if (lastWeek !== null && day.weekOfYear !== lastWeek && day.dayOfWeek === 0) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+    currentWeek.push(day);
+    lastWeek = day.weekOfYear;
+  });
+
+  if (currentWeek.length > 0) {
+    weeks.push(currentWeek);
+  }
+
+  const maxFeedingsPerDay = Math.max(...days.map(d => d.count), 1);
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="inline-block min-w-full">
+        {/* Day labels */}
+        <div className="flex gap-1 mb-2">
+          <div className="w-8"></div>
+          <div className="flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <div className="h-3">Mon</div>
+            <div className="h-3"></div>
+            <div className="h-3">Wed</div>
+            <div className="h-3"></div>
+            <div className="h-3">Fri</div>
+            <div className="h-3"></div>
+            <div className="h-3">Sun</div>
+          </div>
+          {weeks.map((week, weekIdx) => (
+            <div key={weekIdx} className="flex flex-col gap-1">
+              {/* Show month label on first day of month */}
+              {week[0] && week[0].date.getDate() <= 7 && (
+                <div className="text-xs text-gray-600 dark:text-gray-400 h-3 -mb-1">
+                  {week[0].date.toLocaleDateString('en-US', { month: 'short' })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="flex gap-1">
+          {weeks.map((week, weekIdx) => (
+            <div key={weekIdx} className="flex flex-col gap-1">
+              {Array.from({ length: 7 }).map((_, dayIdx) => {
+                const day = week.find(d => d.dayOfWeek === dayIdx);
+
+                if (!day) {
+                  return <div key={dayIdx} className="w-3 h-3"></div>;
+                }
+
+                return (
+                  <div
+                    key={dayIdx}
+                    className={`w-3 h-3 rounded-sm ${getColor(day.count)} transition-all hover:scale-125 cursor-pointer`}
+                    title={`${day.date.toLocaleDateString()}: ${day.count} feeding${day.count !== 1 ? 's' : ''}`}
+                  ></div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-2 mt-4 text-xs text-gray-600 dark:text-gray-400">
+          <span>Less</span>
+          <div className="flex gap-1">
+            <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"></div>
+            <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900 border border-green-300 dark:border-green-800"></div>
+            <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700 border border-green-500 dark:border-green-600"></div>
+            <div className="w-3 h-3 rounded-sm bg-green-500 dark:bg-green-600 border border-green-600 dark:border-green-500"></div>
+            <div className="w-3 h-3 rounded-sm bg-green-600 dark:bg-green-500 border border-green-700 dark:border-green-400"></div>
+          </div>
+          <span>More</span>
+          <span className="ml-4">Max: {maxFeedingsPerDay} per day</span>
+        </div>
+      </div>
     </div>
   );
 }
