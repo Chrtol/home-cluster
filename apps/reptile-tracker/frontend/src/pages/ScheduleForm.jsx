@@ -323,7 +323,13 @@ function ScheduleForm() {
                 <option value="every_occurrence">Every Occurrence</option>
                 <option value="every_nth">Every Nth Occurrence</option>
                 <option value="specific_days">Specific Days of Week</option>
+                <option value="once_per_day">Once Per Day (First Occurrence Only)</option>
               </select>
+              {dependentRule === "once_per_day" && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Will trigger once per day when the parent schedule occurs. Perfect for daily supplements that should be given with one feeding per day (you choose which feeding when logging).
+                </p>
+              )}
             </div>
 
             {dependentRule === "every_nth" && (
