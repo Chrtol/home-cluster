@@ -61,7 +61,7 @@ reptile_access = Table(
     Base.metadata,
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("reptile_id", Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), primary_key=True),
-    Column("access_level", Enum(AccessLevel), nullable=False),
+    Column("access_level", Enum(AccessLevel, values_callable=lambda x: [e.value for e in x]), nullable=False),
     Column("granted_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
 )
 
@@ -315,7 +315,7 @@ household_members = Table(
     Base.metadata,
     Column("household_id", Integer, ForeignKey("households.id", ondelete="CASCADE"), primary_key=True),
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("access_level", Enum(AccessLevel), nullable=False, default=AccessLevel.CARETAKER),
+    Column("access_level", Enum(AccessLevel, values_callable=lambda x: [e.value for e in x]), nullable=False, default=AccessLevel.CARETAKER),
     Column("joined_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
 )
 
