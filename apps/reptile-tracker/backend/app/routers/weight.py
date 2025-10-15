@@ -75,7 +75,13 @@ async def get_weight_log(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific weight log"""
-    result = await db.execute(select(WeightLog).where(WeightLog.id == log_id))
+    from sqlalchemy.orm import selectinload
+
+    result = await db.execute(
+        select(WeightLog)
+        .options(selectinload(WeightLog.reptile))
+        .where(WeightLog.id == log_id)
+    )
     log = result.scalar_one_or_none()
     if not log:
         raise HTTPException(
@@ -91,7 +97,7 @@ async def create_weight_log(
     db: AsyncSession = Depends(get_db),
 ):
     """Log a weight measurement"""
-    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
     # The fix is here: exclude the duplicate timestamp before saving
     new_log = WeightLog(
         **log.model_dump(exclude={"measured_at"}),
@@ -116,7 +122,7 @@ async def update_weight_log(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Weight log not found"
         )
-    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
 
     update_data = log_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():

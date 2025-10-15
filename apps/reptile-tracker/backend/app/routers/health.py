@@ -35,7 +35,13 @@ async def get_health_record(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific health record"""
-    result = await db.execute(select(HealthRecord).where(HealthRecord.id == record_id))
+    from sqlalchemy.orm import selectinload
+
+    result = await db.execute(
+        select(HealthRecord)
+        .options(selectinload(HealthRecord.reptile))
+        .where(HealthRecord.id == record_id)
+    )
     record = result.scalar_one_or_none()
     if not record:
         raise HTTPException(
