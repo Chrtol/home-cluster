@@ -45,6 +45,7 @@ export default function ReptileDetail() {
   const navigate = useNavigate();
   const [reptile, setReptile] = useState(null);
   const [feedings, setFeedings] = useState([]);
+  const [mistingLogs, setMistingLogs] = useState([]);
   const [weightLogs, setWeightLogs] = useState([]);
   const [healthRecords, setHealthRecords] = useState([]);
   const [activeTab, setActiveTab] = useState('feedings');
@@ -53,14 +54,16 @@ export default function ReptileDetail() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [reptileRes, feedingsRes, weightRes, healthRes] = await Promise.all([
+        const [reptileRes, feedingsRes, mistingRes, weightRes, healthRes] = await Promise.all([
           axios.get(`/api/reptiles/${id}`),
           axios.get(`/api/feedings?reptile_id=${id}`),
+          axios.get(`/api/misting/reptile/${id}`),
           axios.get(`/api/weight/reptile/${id}`),
           axios.get(`/api/health/reptile/${id}`)
         ]);
         setReptile(reptileRes.data);
         setFeedings(feedingsRes.data);
+        setMistingLogs(mistingRes.data);
         setWeightLogs(weightRes.data);
         setHealthRecords(healthRes.data);
       } catch (error) {
@@ -92,6 +95,42 @@ export default function ReptileDetail() {
       } catch (error) {
         console.error('Error deleting feeding:', error);
         alert('Failed to delete feeding. You may not have permission.');
+      }
+    }
+  };
+
+  const handleDeleteMisting = async (mistingId) => {
+    if (window.confirm('Are you sure you want to delete this misting log?')) {
+      try {
+        await axios.delete(`/api/misting/${mistingId}`);
+        setMistingLogs(mistingLogs.filter(m => m.id !== mistingId));
+      } catch (error) {
+        console.error('Error deleting misting log:', error);
+        alert('Failed to delete misting log. You may not have permission.');
+      }
+    }
+  };
+
+  const handleDeleteWeight = async (weightId) => {
+    if (window.confirm('Are you sure you want to delete this weight log?')) {
+      try {
+        await axios.delete(`/api/weight/${weightId}`);
+        setWeightLogs(weightLogs.filter(w => w.id !== weightId));
+      } catch (error) {
+        console.error('Error deleting weight log:', error);
+        alert('Failed to delete weight log. You may not have permission.');
+      }
+    }
+  };
+
+  const handleDeleteHealth = async (healthId) => {
+    if (window.confirm('Are you sure you want to delete this health record?')) {
+      try {
+        await axios.delete(`/api/health/${healthId}`);
+        setHealthRecords(healthRecords.filter(h => h.id !== healthId));
+      } catch (error) {
+        console.error('Error deleting health record:', error);
+        alert('Failed to delete health record. You may not have permission.');
       }
     }
   };
@@ -152,15 +191,79 @@ export default function ReptileDetail() {
         ))}
       </div>
     ),
+    misting: (
+      <div className="space-y-4">
+        {mistingLogs.map(m => (
+          <div key={m.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <Link
+                  to={`/misting/${m.id}`}
+                  className="block hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
+                  <p className="text-gray-900 dark:text-white">
+                    <strong className="hover:underline">{formatDateTime(m.misted_at)}</strong>
+                  </p>
+                </Link>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{m.notes || 'No notes'}</p>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <Link
+                  to={`/misting/${m.id}`}
+                  className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 p-1"
+                  title="View/Edit misting"
+                >
+                  <Edit2 size={18} />
+                </Link>
+                <button
+                  onClick={() => handleDeleteMisting(m.id)}
+                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1"
+                  title="Delete misting"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
     weight: (
         <div>
             <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Weight History</h3>
             <WeightChart data={weightLogs} />
             <div className="space-y-4 mt-6">
                 {weightLogs.map(w => (
-                    <div key={w.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <p className="text-gray-900 dark:text-white"><strong>{w.weight_grams}g</strong> on {formatDate(w.measured_at)}</p>
-                        {w.notes && <p className="text-sm text-gray-600 dark:text-gray-400">{w.notes}</p>}
+                    <div key={w.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <Link
+                              to={`/health-log/weight/${w.id}`}
+                              className="block hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                            >
+                              <p className="text-gray-900 dark:text-white">
+                                <strong className="hover:underline">{w.weight_grams}g</strong> on {formatDate(w.measured_at)}
+                              </p>
+                            </Link>
+                            {w.notes && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{w.notes}</p>}
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Link
+                              to={`/health-log/weight/${w.id}`}
+                              className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 p-1"
+                              title="View/Edit weight"
+                            >
+                              <Edit2 size={18} />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteWeight(w.id)}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1"
+                              title="Delete weight"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -169,9 +272,36 @@ export default function ReptileDetail() {
     health: (
       <div className="space-y-4">
         {healthRecords.map(h => (
-          <div key={h.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <p className="text-gray-900 dark:text-white"><strong>{h.title}</strong> ({h.record_type}) on {formatDate(h.date)}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{h.description}</p>
+          <div key={h.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <Link
+                  to={`/health-log/health/${h.id}`}
+                  className="block hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
+                  <p className="text-gray-900 dark:text-white">
+                    <strong className="hover:underline">{h.title}</strong> ({h.record_type}) on {formatDate(h.date)}
+                  </p>
+                </Link>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{h.description}</p>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <Link
+                  to={`/health-log/health/${h.id}`}
+                  className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 p-1"
+                  title="View/Edit health record"
+                >
+                  <Edit2 size={18} />
+                </Link>
+                <button
+                  onClick={() => handleDeleteHealth(h.id)}
+                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1"
+                  title="Delete health record"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
