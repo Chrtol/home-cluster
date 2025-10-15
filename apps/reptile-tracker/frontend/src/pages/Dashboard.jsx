@@ -518,13 +518,13 @@ export default function Dashboard() {
                     >
                       <div className="flex items-start gap-3">
                         <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
-                        {prominentValue && (
-                          <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 w-12 text-center">
+                          {prominentValue && (
                             <span className="text-lg font-bold text-gray-900 dark:text-white">
                               {prominentValue}
                             </span>
-                          </div>
-                        )}
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
                           <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">
                             {activity.reptile ? activity.reptile.name : '(deleted reptile)'}
