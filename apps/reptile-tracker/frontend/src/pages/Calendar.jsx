@@ -61,12 +61,20 @@ function Calendar() {
       const allMistings = [];
 
       for (const reptile of reptiles) {
-        // Fetch feedings for the current month
-        const feedingResponse = await axios.get(`/api/feedings/reptile/${reptile.id}`);
-        const monthFeedings = feedingResponse.data.filter(f => {
-          const feedDate = new Date(f.fed_at);
-          return feedDate >= monthStart && feedDate <= monthEnd;
-        }).map(f => ({ ...f, reptile_name: reptile.name, type: "feeding" }));
+        // Fetch feedings for the current month using query parameters
+        const feedingResponse = await axios.get(`/api/feedings`, {
+          params: {
+            reptile_id: reptile.id,
+            start_date: monthStart.toISOString(),
+            end_date: monthEnd.toISOString(),
+            limit: 1000
+          }
+        });
+        const monthFeedings = feedingResponse.data.map(f => ({
+          ...f,
+          reptile_name: reptile.name,
+          type: "feeding"
+        }));
         allFeedings.push(...monthFeedings);
 
         // Fetch mistings for the current month
