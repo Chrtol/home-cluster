@@ -209,7 +209,7 @@ async def get_comprehensive_stats(
     weight_data = [
         {
             "date": log.measured_at.isoformat(),
-            "weight": float(log.weight),
+            "weight": float(log.weight_grams),
             "notes": log.notes
         }
         for log in weight_logs
@@ -287,8 +287,8 @@ async def get_comprehensive_stats(
     weight_change = None
     weight_change_percent = None
     if len(weight_logs) >= 2:
-        first_weight = float(weight_logs[0].weight)
-        last_weight = float(weight_logs[-1].weight)
+        first_weight = float(weight_logs[0].weight_grams)
+        last_weight = float(weight_logs[-1].weight_grams)
         weight_change = last_weight - first_weight
         if first_weight > 0:
             weight_change_percent = (weight_change / first_weight) * 100
@@ -308,7 +308,7 @@ async def get_comprehensive_stats(
             "total_health_events": total_health_events,
             "weight_change": weight_change,
             "weight_change_percent": weight_change_percent,
-            "current_weight": float(weight_logs[-1].weight) if weight_logs else None,
+            "current_weight": float(weight_logs[-1].weight_grams) if weight_logs else None,
             "weight_logs_count": len(weight_logs)
         }
     }
