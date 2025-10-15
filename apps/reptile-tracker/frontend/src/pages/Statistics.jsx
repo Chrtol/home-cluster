@@ -117,13 +117,13 @@ function Statistics() {
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(parseInt(e.target.value))}
-            className="input"
+            className="input min-w-[140px]"
           >
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={180}>Last 6 months</option>
-            <option value={365}>Last year</option>
-            <option value={730}>Last 2 years</option>
+            <option value={30}>30 days</option>
+            <option value={90}>90 days</option>
+            <option value={180}>6 months</option>
+            <option value={365}>1 year</option>
+            <option value={730}>2 years</option>
           </select>
         </div>
       </div>
@@ -372,12 +372,17 @@ function Statistics() {
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
-                        <div>
-                          <span className="font-medium text-gray-900 dark:text-white capitalize">
-                            {event.type.replace('_', ' ')}
-                          </span>
-                          {event.notes && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.notes}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900 dark:text-white capitalize">
+                              {event.type.replace('_', ' ')}
+                            </span>
+                            {event.title && (
+                              <span className="text-sm text-gray-500 dark:text-gray-400">- {event.title}</span>
+                            )}
+                          </div>
+                          {event.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
                           )}
                         </div>
                         <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
