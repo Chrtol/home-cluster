@@ -113,11 +113,12 @@
 ### Statistics Page - 🎯 CRITICAL PRIORITY (Tier 1)
 **Why High Priority:** Uses existing data, high visual impact, easy to implement, medical value
 
-- [ ] **Phase 1 - Essential Charts** (1-2 weeks)
-  - Weight growth chart (line graph per reptile)
-  - Feeding frequency calendar heatmap
-  - Summary cards: days since last feeding/misting/shed
-  - Chart library: Recharts or Chart.js
+- [x] **Phase 1 - Essential Charts** - ✅ COMPLETED (2025-01-15)
+  - Weight growth chart combined with feeding data (dual-axis)
+  - Weight data interpolation with visual distinction
+  - Feeding frequency calendar heatmap (GitHub-style)
+  - Summary cards: weight change, feeding count, misting count, health events
+  - Chart library: Recharts
 
 - [ ] **Phase 2 - Health Analytics** (1-2 weeks)
   - Shed frequency tracking (bar chart)
@@ -290,6 +291,26 @@
   - Fixed user name overflow in sidebar (bottom left)
   - Added proper text truncation with ellipsis
   - Improved layout constraints for long names
+
+- [x] **Statistics Page Phase 1** - ✅ COMPLETED (2025-01-15)
+  - Implemented comprehensive statistics endpoint
+  - Combined weight and feeding chart with dual Y-axes
+  - Linear interpolation for sparse weight data with visual distinction
+  - GitHub-style feeding frequency calendar heatmap
+  - Summary cards showing weight change, feeding count, health events
+  - Filter toggles for different data types
+  - Time range selector (30, 60, 90, 180, 365, 730 days)
+
+- [x] **Calendar schedule management** - ✅ COMPLETED (2025-01-15)
+  - Added collapsible "Manage Schedules" section to calendar page
+  - List view of all active schedules with details
+  - Edit and delete functionality for schedules
+  - Human-readable schedule frequency formatting
+  - Empty state with call-to-action
+
+- [x] **Fixed supplement modal bug** - ✅ COMPLETED (2025-01-15)
+  - Added missing X icon import in FoodManagement.jsx
+  - Fixed blank page when clicking supplements
 
 - [x] **Fixed session timeout** - ✅ COMPLETED
   - Updated ACCESS_TOKEN_EXPIRE_MINUTES from 15 to 1440 (24 hours)
