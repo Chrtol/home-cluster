@@ -253,6 +253,7 @@ class MistingLog(MistingLogBase):
     id: int
     reptile_id: int
     created_at: datetime
+    reptile: Optional["Reptile"] = None
 
     class Config:
         from_attributes = True
