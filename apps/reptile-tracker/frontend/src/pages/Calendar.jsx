@@ -346,7 +346,7 @@ function Calendar() {
     setCurrentDate(newDate);
   };
 
-  const navigate = (direction) => {
+  const navigateView = (direction) => {
     if (view === "month") {
       navigateMonth(direction);
     } else if (view === "week") {
@@ -516,7 +516,7 @@ function Calendar() {
 
           <div className="flex items-center justify-between sm:justify-start gap-2">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigateView(-1)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ChevronLeft size={24} />
@@ -527,7 +527,7 @@ function Calendar() {
             </h2>
 
             <button
-              onClick={() => navigate(1)}
+              onClick={() => navigateView(1)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ChevronRight size={24} />
