@@ -520,7 +520,7 @@ export default function Dashboard() {
                         <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
                         {prominentValue && (
                           <div className="flex-shrink-0">
-                            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">
                               {prominentValue}
                             </span>
                           </div>
