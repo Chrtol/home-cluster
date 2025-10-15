@@ -120,6 +120,39 @@
   - Summary cards: weight change, feeding count, misting count, health events
   - Chart library: Recharts
 
+- [ ] **Phase 1.5 - Statistics Settings & Customization** (1 week)
+  - **Settings Page Integration:**
+    - Add new "Statistics" tab to Settings page (alongside Date & Time, Household)
+    - Save preferences in localStorage (per user)
+    - Live preview of changes where applicable
+  - **Weight interpolation settings:**
+    - Toggle interpolation on/off
+    - Interpolation modes dropdown: Linear (current), Step (horizontal line from last known), None (dots only)
+    - Visual styling options for each mode
+    - Preview chart showing the difference between modes
+  - **Chart customization:**
+    - Toggle chart elements (grid, legend, axis labels)
+    - Color scheme preferences (per user or per reptile)
+    - Chart height adjustment slider
+  - **Data filtering:**
+    - Filter by specific food types in feeding chart
+    - Filter health events by type
+    - Date range presets (custom, last week, month, quarter, year, all time)
+  - **Display preferences:**
+    - Weight units (grams, ounces, pounds)
+    - Date format in tooltips (respect user settings)
+    - Show/hide trend lines and moving averages
+    - Heatmap intensity adjustment (color scale customization)
+  - **Export settings:**
+    - Image export format (PNG, SVG, PDF)
+    - Include/exclude specific data series
+    - Resolution and size options
+  - **Implementation:**
+    - Frontend: New StatisticsSettings component in Settings page
+    - Frontend: Utility functions in utils/statisticsSettings.js
+    - Statistics page reads from localStorage on load
+    - Default values for all settings
+
 - [ ] **Phase 2 - Health Analytics** (1-2 weeks)
   - Shed frequency tracking (bar chart)
   - Health events timeline (visual timeline)
