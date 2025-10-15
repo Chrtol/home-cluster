@@ -180,15 +180,17 @@ export default function ReptileDetail() {
 
   return (
     <div>
-      <div className="mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-0">{reptile.name}</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-3 sm:mb-0">{reptile.species}</p>
-            <div className="flex flex-wrap gap-2">
-                <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base">Log Health/Weight</Link>
-                <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
-                <button onClick={handleDelete} className="btn-danger text-sm sm:text-base">Delete</button>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
         </div>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health/Weight</Link>
+          <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
+          <button onClick={handleDelete} className="btn-danger text-sm sm:text-base">Delete</button>
+        </div>
+      </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">Details</h2>
