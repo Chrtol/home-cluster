@@ -17,6 +17,7 @@ COPY app ./app
 COPY migrations ./migrations
 COPY entrypoint.sh ./entrypoint.sh
 COPY debug_startup.py ./debug_startup.py
+COPY logging_config.json ./logging_config.json
 RUN chmod +x ./entrypoint.sh
 
 # Create non-root user
