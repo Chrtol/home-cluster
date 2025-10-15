@@ -83,7 +83,7 @@ async def auth_callback(
                     now = datetime.now(timezone.utc)
                     if inv and (not inv.expires_at or inv.expires_at > now) and (not inv.max_uses or inv.used_count < inv.max_uses):
                         # Add membership
-                        await db.execute(models.household_members.insert().values(household_id=inv.household_id, user_id=user.id, access_level=models.AccessLevel.FEEDER))
+                        await db.execute(models.household_members.insert().values(household_id=inv.household_id, user_id=user.id, access_level=models.AccessLevel.CARETAKER))
                         await db.execute(update(models.Invitation).where(models.Invitation.id == inv.id).values(used_count=inv.used_count + 1))
                         await db.commit()
         except Exception as e:

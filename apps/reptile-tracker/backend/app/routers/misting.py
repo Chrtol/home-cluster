@@ -39,7 +39,13 @@ async def get_misting_log(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific misting log"""
-    result = await db.execute(select(MistingLog).where(MistingLog.id == log_id))
+    from sqlalchemy.orm import selectinload
+
+    result = await db.execute(
+        select(MistingLog)
+        .options(selectinload(MistingLog.reptile))
+        .where(MistingLog.id == log_id)
+    )
     log = result.scalar_one_or_none()
     if not log:
         raise HTTPException(
@@ -56,7 +62,7 @@ async def create_misting_log(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new misting log"""
-    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
     new_log = MistingLog(
         **log.model_dump(exclude={"misted_at"}),
         misted_at=log.misted_at or datetime.now(timezone.utc),
@@ -82,7 +88,7 @@ async def update_misting_log(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Misting log not found"
         )
-    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
 
     update_data = log_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -106,7 +112,7 @@ async def delete_misting_log(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Misting log not found"
         )
-    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
     await db.execute(delete(MistingLog).where(MistingLog.id == log_id))
     await db.commit()
     return None

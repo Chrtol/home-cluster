@@ -184,7 +184,7 @@ async def create_feeding(
 
     # Check access
     reptile = await check_reptile_access(
-        db, current_user, feeding.reptile_id, AccessLevel.FEEDER
+        db, current_user, feeding.reptile_id, AccessLevel.CARETAKER
     )
 
     # Create feeding

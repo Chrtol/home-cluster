@@ -66,7 +66,7 @@ async def create_schedule(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new schedule"""
-    await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.CARETAKER)
 
     # Validate schedule data based on schedule_rule
     if schedule.schedule_rule == "every_x_days" and not schedule.frequency_days:
@@ -115,7 +115,7 @@ async def update_schedule(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
         )
-    await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.CARETAKER)
 
     update_data = schedule_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -140,7 +140,7 @@ async def delete_schedule(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
         )
-    await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.FEEDER)
+    await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.CARETAKER)
     await db.execute(delete(Schedule).where(Schedule.id == schedule_id))
     await db.commit()
     return None

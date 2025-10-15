@@ -57,7 +57,7 @@ async def accept_invitation(payload: schemas.InvitationAccept, db: AsyncSession 
         raise HTTPException(status_code=400, detail="You are already a member of this household")
 
     # Add user to household
-    stmt = insert(models.household_members).values(household_id=inv.household_id, user_id=user.id, access_level=models.AccessLevel.FEEDER)
+    stmt = insert(models.household_members).values(household_id=inv.household_id, user_id=user.id, access_level=models.AccessLevel.CARETAKER)
     await db.execute(stmt)
 
     # Increment usage

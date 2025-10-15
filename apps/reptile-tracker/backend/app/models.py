@@ -18,8 +18,9 @@ from app.database import Base
 
 
 class AccessLevel(str, PyEnum):
+    ADMIN = "admin"
     OWNER = "owner"
-    FEEDER = "feeder"
+    CARETAKER = "caretaker"
     VIEWER = "viewer"
 
 
@@ -314,7 +315,7 @@ household_members = Table(
     Base.metadata,
     Column("household_id", Integer, ForeignKey("households.id", ondelete="CASCADE"), primary_key=True),
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("access_level", Enum(AccessLevel), nullable=False, default=AccessLevel.FEEDER),
+    Column("access_level", Enum(AccessLevel), nullable=False, default=AccessLevel.CARETAKER),
     Column("joined_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
 )
 
