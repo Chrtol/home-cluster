@@ -153,7 +153,7 @@ export default function HealthLog() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Log Health & Weight</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Log Health</h1>
       {error && <p className="text-red-500 bg-red-100 p-3 rounded mb-4">{error}</p>}
       {success && <p className="text-green-500 bg-green-100 p-3 rounded mb-4">{success}</p>}
       <form onSubmit={handleSubmit} className="card space-y-4">

@@ -186,7 +186,7 @@ export default function ReptileDetail() {
           <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health/Weight</Link>
+          <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
           <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
           <button onClick={handleDelete} className="btn-danger text-sm sm:text-base">Delete</button>
         </div>
