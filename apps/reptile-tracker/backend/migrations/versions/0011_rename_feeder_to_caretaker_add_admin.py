@@ -22,26 +22,24 @@ def upgrade():
 
     # Add new enum values - these must be committed before use
     # We need to use execute_outside_transaction for this
-    # PostgreSQL enum values are uppercase in this schema
     connection.execute(sa.text("COMMIT"))
-    connection.execute(sa.text("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'ADMIN'"))
-    connection.execute(sa.text("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'CARETAKER'"))
+    connection.execute(sa.text("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'admin'"))
+    connection.execute(sa.text("ALTER TYPE accesslevel ADD VALUE IF NOT EXISTS 'caretaker'"))
     connection.execute(sa.text("BEGIN"))
 
-    # Now update existing 'feeder'/'FEEDER' values to 'caretaker'/'CARETAKER' in household_members table
+    # Now update existing 'feeder' values to 'caretaker' in household_members table
     # Use text casting to bypass enum validation
-    # PostgreSQL enums are case-sensitive, check both cases
     op.execute("""
         UPDATE household_members
-        SET access_level = 'CARETAKER'::accesslevel
-        WHERE access_level::text IN ('feeder', 'FEEDER')
+        SET access_level = 'caretaker'::accesslevel
+        WHERE access_level::text = 'feeder'
     """)
 
-    # Update existing 'feeder'/'FEEDER' values to 'caretaker'/'CARETAKER' in reptile_access table
+    # Update existing 'feeder' values to 'caretaker' in reptile_access table
     op.execute("""
         UPDATE reptile_access
-        SET access_level = 'CARETAKER'::accesslevel
-        WHERE access_level::text IN ('feeder', 'FEEDER')
+        SET access_level = 'caretaker'::accesslevel
+        WHERE access_level::text = 'feeder'
     """)
 
     # Note: We cannot remove 'feeder' from the enum without recreating it,

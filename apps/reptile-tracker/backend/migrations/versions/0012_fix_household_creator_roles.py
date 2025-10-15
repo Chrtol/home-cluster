@@ -28,11 +28,11 @@ def upgrade():
             ORDER BY household_id, joined_at ASC
         )
         UPDATE household_members hm
-        SET access_level = 'ADMIN'::accesslevel
+        SET access_level = 'admin'::accesslevel
         FROM first_members fm
         WHERE hm.household_id = fm.household_id
         AND hm.user_id = fm.user_id
-        AND hm.access_level::text IN ('owner', 'OWNER')
+        AND hm.access_level::text = 'owner'
     """)
 
 
@@ -47,9 +47,9 @@ def downgrade():
             ORDER BY household_id, joined_at ASC
         )
         UPDATE household_members hm
-        SET access_level = 'OWNER'::accesslevel
+        SET access_level = 'owner'::accesslevel
         FROM first_members fm
         WHERE hm.household_id = fm.household_id
         AND hm.user_id = fm.user_id
-        AND hm.access_level::text IN ('admin', 'ADMIN')
+        AND hm.access_level::text = 'admin'
     """)
