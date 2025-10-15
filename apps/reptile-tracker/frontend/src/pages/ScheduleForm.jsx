@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { ArrowLeft, Save } from "lucide-react";
 
 function ScheduleForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = !!id;
   const [reptiles, setReptiles] = useState([]);
   const [supplements, setSupplements] = useState([]);
   const [schedules, setSchedules] = useState([]); // For dependent schedules
@@ -41,6 +43,9 @@ function ScheduleForm() {
   useEffect(() => {
     fetchReptiles();
     fetchSupplements();
+    if (isEditing) {
+      fetchScheduleData();
+    }
   }, []);
 
   useEffect(() => {
@@ -48,6 +53,38 @@ function ScheduleForm() {
       fetchSchedules();
     }
   }, [reptileId]);
+
+  const fetchScheduleData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/schedules/${id}`);
+      const schedule = response.data;
+
+      // Populate form fields with existing schedule data
+      setReptileId(schedule.reptile_id);
+      setName(schedule.name || "");
+      setScheduleType(schedule.schedule_type);
+      setScheduleRule(schedule.schedule_rule);
+      setFoodCategory(schedule.food_category || "");
+      setTimeSlot(schedule.time_slot || "");
+      setFrequencyDays(schedule.frequency_days || "");
+      setDaysOfWeek(schedule.days_of_week ? schedule.days_of_week.split(",").map(Number) : []);
+      setDayOfMonth(schedule.day_of_month || "");
+      setParentScheduleId(schedule.parent_schedule_id || "");
+      setDependentRule(schedule.dependent_rule || "every_occurrence");
+      setDependentFrequency(schedule.dependent_frequency || "");
+      setDependentDays(schedule.dependent_days ? schedule.dependent_days.split(",").map(Number) : []);
+      setSupplementId(schedule.supplement_id || "");
+      setNotes(schedule.notes || "");
+      setEnabled(schedule.enabled);
+    } catch (error) {
+      console.error("Error fetching schedule:", error);
+      alert("Failed to load schedule data");
+      navigate("/calendar");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchReptiles = async () => {
     try {
@@ -137,11 +174,15 @@ function ScheduleForm() {
         scheduleData.supplement_id = parseInt(supplementId);
       }
 
-      await axios.post("/api/schedules", scheduleData);
+      if (isEditing) {
+        await axios.put(`/api/schedules/${id}`, scheduleData);
+      } else {
+        await axios.post("/api/schedules", scheduleData);
+      }
       navigate("/calendar");
     } catch (error) {
-      console.error("Error creating schedule:", error);
-      alert("Error creating schedule. Please check your inputs.");
+      console.error(`Error ${isEditing ? 'updating' : 'creating'} schedule:`, error);
+      alert(`Error ${isEditing ? 'updating' : 'creating'} schedule. Please check your inputs.`);
     } finally {
       setLoading(false);
     }
@@ -150,7 +191,9 @@ function ScheduleForm() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create Schedule</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {isEditing ? 'Edit Schedule' : 'Create Schedule'}
+        </h1>
         <button
           onClick={() => navigate("/calendar")}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -500,7 +543,12 @@ function ScheduleForm() {
             className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={20} />
-            <span>{loading ? "Creating..." : "Create Schedule"}</span>
+            <span>
+              {loading
+                ? (isEditing ? "Saving..." : "Creating...")
+                : (isEditing ? "Save Changes" : "Create Schedule")
+              }
+            </span>
           </button>
         </div>
       </form>
