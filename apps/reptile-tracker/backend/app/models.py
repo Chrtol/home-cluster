@@ -145,6 +145,7 @@ class Reptile(Base):
     weight_logs = relationship("WeightLog", back_populates="reptile", cascade="all, delete-orphan")
     health_records = relationship("HealthRecord", back_populates="reptile", cascade="all, delete-orphan")
     misting_logs = relationship("MistingLog", back_populates="reptile", cascade="all, delete-orphan")
+    schedules = relationship("Schedule", back_populates="reptile", cascade="all, delete-orphan")
 
 
 class Food(Base):
@@ -246,6 +247,24 @@ class MistingLog(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="misting_logs")
+
+
+class Schedule(Base):
+    __tablename__ = "schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing"
+    frequency_days = Column(Integer, nullable=False)  # Repeat every X days
+    enabled = Column(Boolean, default=True, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    reptile = relationship("Reptile", back_populates="schedules")
 
 
 class NotificationSettings(Base):
