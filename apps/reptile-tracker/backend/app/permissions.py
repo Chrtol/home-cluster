@@ -34,15 +34,15 @@ async def check_reptile_access(
     # If no direct access, check household membership
     if not access_level and reptile.household_id:
         household_check = await db.execute(
-            select(household_members.c.user_id).where(
+            select(household_members.c.access_level).where(
                 household_members.c.user_id == user.id,
                 household_members.c.household_id == reptile.household_id,
             )
         )
-        is_household_member = household_check.scalar_one_or_none()
-        if is_household_member:
-            # Grant FEEDER access via household membership
-            access_level = AccessLevel.CARETAKER
+        household_access_level = household_check.scalar_one_or_none()
+        if household_access_level:
+            # Use the household role as the access level
+            access_level = household_access_level
 
     if not access_level:
         raise HTTPException(
@@ -91,9 +91,9 @@ async def get_user_reptiles(
     direct_rows = direct_result.all()
 
     # Query reptiles via household membership
-    # Users in a household get FEEDER access to all reptiles in that household
+    # Users in a household get their household role as access level to all reptiles in that household
     household_query = (
-        select(Reptile)
+        select(Reptile, household_members.c.access_level)
         .join(household_members, Reptile.household_id == household_members.c.household_id)
         .where(
             household_members.c.user_id == user.id,
@@ -101,7 +101,7 @@ async def get_user_reptiles(
         )
     )
     household_result = await db.execute(household_query)
-    household_reptiles = household_result.scalars().all()
+    household_rows = household_result.all()
 
     # Combine results
     reptiles_dict = {}
@@ -112,12 +112,18 @@ async def get_user_reptiles(
         if level_hierarchy[access_level] >= level_hierarchy[min_access_level]:
             reptiles_dict[reptile.id] = {"reptile": reptile, "access_level": access_level}
 
-    # Add household reptiles (with FEEDER access, unless they have better direct access)
-    for reptile in household_reptiles:
+    # Add household reptiles (with their household role, unless they have better direct access)
+    for row in household_rows:
+        reptile, household_access_level = row[0], row[1]
         if reptile.id not in reptiles_dict:
-            # User doesn't have direct access, grant FEEDER via household
-            if level_hierarchy[AccessLevel.CARETAKER] >= level_hierarchy[min_access_level]:
-                reptiles_dict[reptile.id] = {"reptile": reptile, "access_level": AccessLevel.CARETAKER}
+            # User doesn't have direct access, use their household role
+            if level_hierarchy[household_access_level] >= level_hierarchy[min_access_level]:
+                reptiles_dict[reptile.id] = {"reptile": reptile, "access_level": household_access_level}
+        else:
+            # User has direct access, use the higher of the two access levels
+            current_level = reptiles_dict[reptile.id]["access_level"]
+            if level_hierarchy[household_access_level] > level_hierarchy[current_level]:
+                reptiles_dict[reptile.id]["access_level"] = household_access_level
 
     return list(reptiles_dict.values())
 
