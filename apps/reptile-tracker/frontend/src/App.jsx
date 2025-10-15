@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
 import HealthLog from './pages/HealthLog';
+import MistingLog from './pages/MistingLog';
 import FoodManagement from './pages/FoodManagement';
 
 // Configure axios defaults
@@ -163,6 +164,8 @@ function App() {
             <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
             <Route path="/health-log/:reptileId" element={<HealthLog />} />
+            <Route path="/misting-log" element={<MistingLog />} />
+            <Route path="/misting-log/:reptileId" element={<MistingLog />} />
             <Route path="/foods" element={<FoodManagement />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

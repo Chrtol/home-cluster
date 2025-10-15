@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
@@ -99,12 +99,22 @@ export default function Layout({ user, onLogout }) {
             </button>
             <button
               onClick={() => handleOptionClick('/health-log')}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
             >
               <Activity size={20} className="text-green-600 dark:text-green-400" />
               <div className="text-left">
                 <div className="font-semibold text-gray-900 dark:text-white">Log Health</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
+              </div>
+            </button>
+            <button
+              onClick={() => handleOptionClick('/misting-log')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              <Droplets size={20} className="text-blue-600 dark:text-blue-400" />
+              <div className="text-left">
+                <div className="font-semibold text-gray-900 dark:text-white">Log Misting</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Record misting and humidity</div>
               </div>
             </button>
           </div>
@@ -323,12 +333,23 @@ export default function Layout({ user, onLogout }) {
               <Link
                 to="/health-log"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
               >
                 <Activity size={24} className="text-green-600 dark:text-green-400" />
                 <div className="text-left flex-1">
                   <div className="font-semibold text-gray-900 dark:text-white">Log Health</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
+                </div>
+              </Link>
+              <Link
+                to="/misting-log"
+                onClick={() => setTrackMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              >
+                <Droplets size={24} className="text-blue-600 dark:text-blue-400" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900 dark:text-white">Log Misting</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Record misting and humidity</div>
                 </div>
               </Link>
             </div>

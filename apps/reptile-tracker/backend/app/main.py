@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import init_db, async_session_maker
 from app.rate_limit import limiter, rate_limit_exceeded_handler
-from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats
+from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting
 from app.routers import households, invitations
 from app.seed_data import seed_database
 
@@ -82,6 +82,7 @@ app.include_router(foods.router, prefix="/api/foods", tags=["Foods"])
 app.include_router(supplements.router, prefix="/api/supplements", tags=["Supplements"])
 app.include_router(weight.router, prefix="/api/weight", tags=["Weight Tracking"])
 app.include_router(health.router, prefix="/api/health", tags=["Health Records"])
+app.include_router(misting.router, prefix="/api/misting", tags=["Misting Logs"])
 app.include_router(stats.router, prefix="/api/stats", tags=["Statistics"])
 app.include_router(households.router)
 app.include_router(invitations.router)

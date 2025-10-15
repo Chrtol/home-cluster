@@ -49,7 +49,9 @@
 
 ### Health & Weight Logging
 - [x] **Enhanced health logging UI** - ✅ COMPLETED
-  - Prominent green "Log Health/Weight" button added to sidebar (desktop & mobile)
+  - Unified "Track" button with dropdown for Feeding and Health logging
+  - Desktop: Gradient button with elegant dropdown menu
+  - Mobile: Floating circular button in center of bottom nav with popup
   - Added shedding log type
   - Added bowel movement log type with consistency field (normal, soft, hard, watery, mucus)
   - Database migration and backend ready for photo upload capability (frontend deferred)
