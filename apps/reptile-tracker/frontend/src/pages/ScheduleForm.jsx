@@ -175,7 +175,7 @@ function ScheduleForm() {
       }
 
       if (isEditing) {
-        await axios.put(`/api/schedules/${id}`, scheduleData);
+        await axios.patch(`/api/schedules/${id}`, scheduleData);
       } else {
         await axios.post("/api/schedules", scheduleData);
       }
