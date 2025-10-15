@@ -97,10 +97,16 @@ async def update_household(household_id: int, payload: schemas.HouseholdCreate, 
     return household
 
 
-@router.delete("/{household_id}/members/{user_id}")
-async def remove_member(household_id: int, user_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    """Remove a member from household (owner only)"""
-    # Check if requester is owner
+@router.patch("/{household_id}/members/{user_id}/role")
+async def update_member_role(
+    household_id: int,
+    user_id: int,
+    new_role: schemas.MemberRoleUpdate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    """Update a member's role in the household (admin only)"""
+    # Check if requester is admin
     requester_check = await db.execute(
         select(models.household_members.c.access_level).where(
             models.household_members.c.household_id == household_id,
@@ -108,14 +114,14 @@ async def remove_member(household_id: int, user_id: int, db: AsyncSession = Depe
         )
     )
     requester_access = requester_check.scalar_one_or_none()
-    if not requester_access or requester_access != models.AccessLevel.OWNER:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only owners can remove members")
+    if not requester_access or requester_access != models.AccessLevel.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can change member roles")
 
-    # Can't remove yourself (use leave endpoint instead)
+    # Can't change your own role
     if user_id == user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot remove yourself. Use leave endpoint instead.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot change your own role")
 
-    # Check if target is also an owner (can't remove other owners)
+    # Check if target member exists
     target_check = await db.execute(
         select(models.household_members.c.access_level).where(
             models.household_members.c.household_id == household_id,
@@ -123,8 +129,51 @@ async def remove_member(household_id: int, user_id: int, db: AsyncSession = Depe
         )
     )
     target_access = target_check.scalar_one_or_none()
-    if target_access == models.AccessLevel.OWNER:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot remove other owners")
+    if not target_access:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found in household")
+
+    # Update role
+    await db.execute(
+        update(models.household_members)
+        .where(
+            models.household_members.c.household_id == household_id,
+            models.household_members.c.user_id == user_id
+        )
+        .values(access_level=new_role.access_level)
+    )
+    await db.commit()
+
+    return {"status": "updated", "user_id": user_id, "new_role": new_role.access_level}
+
+
+@router.delete("/{household_id}/members/{user_id}")
+async def remove_member(household_id: int, user_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+    """Remove a member from household (admin only)"""
+    # Check if requester is admin
+    requester_check = await db.execute(
+        select(models.household_members.c.access_level).where(
+            models.household_members.c.household_id == household_id,
+            models.household_members.c.user_id == user.id
+        )
+    )
+    requester_access = requester_check.scalar_one_or_none()
+    if not requester_access or requester_access != models.AccessLevel.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can remove members")
+
+    # Can't remove yourself (use leave endpoint instead)
+    if user_id == user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot remove yourself. Use leave endpoint instead.")
+
+    # Check if target member exists
+    target_check = await db.execute(
+        select(models.household_members.c.access_level).where(
+            models.household_members.c.household_id == household_id,
+            models.household_members.c.user_id == user_id
+        )
+    )
+    target_access = target_check.scalar_one_or_none()
+    if not target_access:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found in household")
 
     # Remove member
     await db.execute(

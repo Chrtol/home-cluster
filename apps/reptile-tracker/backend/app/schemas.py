@@ -383,6 +383,10 @@ class HouseholdOut(BaseModel):
         from_attributes = True
 
 
+class MemberRoleUpdate(BaseModel):
+    access_level: str  # "admin", "owner", "caretaker", or "viewer"
+
+
 # Invitation schemas
 class InvitationCreate(BaseModel):
     household_id: int
