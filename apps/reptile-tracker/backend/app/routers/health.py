@@ -7,7 +7,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import User, HealthRecord, AccessLevel
 from app.permissions import check_reptile_access
-from app.schemas import HealthRecord as HealthRecordSchema, HealthRecordCreate
+from app.schemas import HealthRecord as HealthRecordSchema, HealthRecordCreate, HealthRecordUpdate
 
 router = APIRouter()
 
@@ -28,6 +28,23 @@ async def list_health_records(
     return result.scalars().all()
 
 
+@router.get("/{record_id}", response_model=HealthRecordSchema)
+async def get_health_record(
+    record_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a specific health record"""
+    result = await db.execute(select(HealthRecord).where(HealthRecord.id == record_id))
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Health record not found"
+        )
+    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.VIEWER)
+    return record
+
+
 @router.post("", response_model=HealthRecordSchema, status_code=status.HTTP_201_CREATED)
 async def create_health_record(
     record: HealthRecordCreate,
@@ -44,6 +61,31 @@ async def create_health_record(
     await db.commit()
     await db.refresh(new_record)
     return new_record
+
+
+@router.patch("/{record_id}", response_model=HealthRecordSchema)
+async def update_health_record(
+    record_id: int,
+    record_update: HealthRecordUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a health record"""
+    result = await db.execute(select(HealthRecord).where(HealthRecord.id == record_id))
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Health record not found"
+        )
+    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.OWNER)
+
+    update_data = record_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(record, field, value)
+
+    await db.commit()
+    await db.refresh(record)
+    return record
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)

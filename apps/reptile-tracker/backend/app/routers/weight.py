@@ -7,7 +7,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import User, WeightLog, AccessLevel, Reptile, reptile_access
 from app.permissions import check_reptile_access
-from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate, WeightLogWithReptile
+from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate, WeightLogWithReptile, WeightLogUpdate
 
 router = APIRouter()
 
@@ -68,6 +68,22 @@ async def list_weight_logs(
     )
     return result.scalars().all()
 
+@router.get("/{log_id}", response_model=WeightLogSchema)
+async def get_weight_log(
+    log_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a specific weight log"""
+    result = await db.execute(select(WeightLog).where(WeightLog.id == log_id))
+    log = result.scalar_one_or_none()
+    if not log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Weight log not found"
+        )
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.VIEWER)
+    return log
+
 @router.post("", response_model=WeightLogSchema, status_code=status.HTTP_201_CREATED)
 async def create_weight_log(
     log: WeightLogCreate,
@@ -85,6 +101,30 @@ async def create_weight_log(
     await db.commit()
     await db.refresh(new_log)
     return new_log
+
+@router.patch("/{log_id}", response_model=WeightLogSchema)
+async def update_weight_log(
+    log_id: int,
+    log_update: WeightLogUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a weight log"""
+    result = await db.execute(select(WeightLog).where(WeightLog.id == log_id))
+    log = result.scalar_one_or_none()
+    if not log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Weight log not found"
+        )
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.FEEDER)
+
+    update_data = log_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(log, field, value)
+
+    await db.commit()
+    await db.refresh(log)
+    return log
 
 @router.delete("/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_weight_log(

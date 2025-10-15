@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 export default function Dashboard() {
   const [recentFeedings, setRecentFeedings] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]); // Combined activity feed
   const [reptiles, setReptiles] = useState([]);
   const [weightData, setWeightData] = useState([]);
   const [mistingData, setMistingData] = useState({});
@@ -59,6 +60,76 @@ export default function Dashboard() {
           }
         });
         setHealthData(healthMap);
+
+        // Fetch recent activity from all sources
+        const allActivity = [];
+
+        // Add feedings
+        feedingsRes.data.forEach(feeding => {
+          allActivity.push({
+            type: 'feeding',
+            id: `feeding-${feeding.id}`,
+            timestamp: new Date(feeding.fed_at),
+            reptile: feeding.reptile,
+            data: feeding,
+            icon: Utensils,
+            color: 'primary'
+          });
+        });
+
+        // Fetch and add recent mistings
+        const recentMistingsPromises = reptilesRes.data.map(r =>
+          axios.get(`/api/misting/reptile/${r.id}`).then(res =>
+            res.data.slice(0, 5).map(m => ({
+              type: 'misting',
+              id: `misting-${m.id}`,
+              timestamp: new Date(m.misted_at),
+              reptile: { id: r.id, name: r.name },
+              data: m,
+              icon: Droplets,
+              color: 'blue'
+            }))
+          ).catch(() => [])
+        );
+
+        // Fetch and add recent weight logs
+        const recentWeightLogs = weightRes.data.slice(0, 10).map(w => ({
+          type: 'weight',
+          id: `weight-${w.id}`,
+          timestamp: new Date(w.measured_at),
+          reptile: { id: w.reptile_id, name: w.reptile_name },
+          data: w,
+          icon: Scale,
+          color: 'purple'
+        }));
+        allActivity.push(...recentWeightLogs);
+
+        // Fetch and add recent health logs
+        const recentHealthPromises = reptilesRes.data.map(r =>
+          axios.get(`/api/health/reptile/${r.id}`).then(res =>
+            res.data.slice(0, 5).map(h => ({
+              type: 'health',
+              id: `health-${h.id}`,
+              timestamp: new Date(h.date),
+              reptile: { id: r.id, name: r.name },
+              data: h,
+              icon: Activity,
+              color: 'green'
+            }))
+          ).catch(() => [])
+        );
+
+        const [mistingActivities, healthActivities] = await Promise.all([
+          Promise.all(recentMistingsPromises),
+          Promise.all(recentHealthPromises)
+        ]);
+
+        mistingActivities.forEach(arr => allActivity.push(...arr));
+        healthActivities.forEach(arr => allActivity.push(...arr));
+
+        // Sort by timestamp and take top 10
+        allActivity.sort((a, b) => b.timestamp - a.timestamp);
+        setRecentActivity(allActivity.slice(0, 10));
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -392,39 +463,72 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
             <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Recent Activity</h2>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {recentFeedings.length > 0 ? (
-                recentFeedings.map(feeding => {
-                  const foodSummary = feeding.foods && feeding.foods.length > 0
-                    ? feeding.foods.map(f => f.food?.name).filter(Boolean).join(', ')
-                    : 'No food details';
+              {recentActivity.length > 0 ? (
+                recentActivity.map(activity => {
+                  const Icon = activity.icon;
+                  const colorClasses = {
+                    primary: 'text-primary-600 dark:text-primary-400',
+                    blue: 'text-blue-600 dark:text-blue-400',
+                    purple: 'text-purple-600 dark:text-purple-400',
+                    green: 'text-green-600 dark:text-green-400'
+                  };
+
+                  let summary = '';
+                  let detailLink = '';
+
+                  switch (activity.type) {
+                    case 'feeding':
+                      summary = activity.data.foods && activity.data.foods.length > 0
+                        ? activity.data.foods.map(f => f.food?.name).filter(Boolean).join(', ')
+                        : 'Feeding logged';
+                      detailLink = `/feed/${activity.data.id}`;
+                      break;
+                    case 'misting':
+                      summary = 'Misting logged';
+                      detailLink = `/reptiles/${activity.reptile?.id}`;
+                      break;
+                    case 'weight':
+                      summary = `Weight: ${activity.data.weight_grams}g`;
+                      detailLink = `/reptiles/${activity.reptile?.id}`;
+                      break;
+                    case 'health':
+                      summary = `${activity.data.record_type}: ${activity.data.title}`;
+                      detailLink = `/reptiles/${activity.reptile?.id}`;
+                      break;
+                  }
 
                   return (
-                    <div key={feeding.id} className="p-2 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div key={activity.id} className="p-2 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-900 dark:text-white">
-                            {feeding.reptile ? (
-                              <Link to={`/reptiles/${feeding.reptile.id}`} className="text-primary-600 dark:text-primary-400 hover:underline">{feeding.reptile.name}</Link>
-                            ) : (
-                              <span className="text-gray-500 dark:text-gray-400">(deleted reptile)</span>
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                            {foodSummary}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-                            {formatDistanceToNow(new Date(feeding.fed_at), { addSuffix: true })} • {feeding.user?.name || 'Unknown'}
-                          </p>
+                        <div className="flex gap-2 flex-1 min-w-0">
+                          <Icon size={16} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-gray-900 dark:text-white">
+                              {activity.reptile ? (
+                                <Link to={`/reptiles/${activity.reptile.id}`} className="text-primary-600 dark:text-primary-400 hover:underline">{activity.reptile.name}</Link>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">(deleted reptile)</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                              {summary}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
+                              {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                            </p>
+                          </div>
                         </div>
-                        <Link to={`/feed/${feeding.id}`} className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex-shrink-0">Details</Link>
+                        {detailLink && (
+                          <Link to={detailLink} className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex-shrink-0">Details</Link>
+                        )}
                       </div>
                     </div>
                   );
                 })
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">No feedings have been logged yet.</p>
-                  <Link to="/feed" className="btn-primary">Log First Feeding</Link>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">No activity logged yet.</p>
+                  <Link to="/feed" className="btn-primary">Log First Activity</Link>
                 </div>
               )}
             </div>

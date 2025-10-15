@@ -28,6 +28,23 @@ async def list_misting_logs(
     return result.scalars().all()
 
 
+@router.get("/{log_id}", response_model=MistingLogSchema)
+async def get_misting_log(
+    log_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a specific misting log"""
+    result = await db.execute(select(MistingLog).where(MistingLog.id == log_id))
+    log = result.scalar_one_or_none()
+    if not log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Misting log not found"
+        )
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.VIEWER)
+    return log
+
+
 @router.post("", response_model=MistingLogSchema, status_code=status.HTTP_201_CREATED)
 async def create_misting_log(
     log: MistingLogCreate,

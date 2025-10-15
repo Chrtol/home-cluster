@@ -168,6 +168,7 @@ function App() {
             <Route path="/health-log/:reptileId" element={<HealthLog />} />
             <Route path="/misting-log" element={<MistingLog />} />
             <Route path="/misting-log/:reptileId" element={<MistingLog />} />
+            <Route path="/misting/:id" element={<MistingLog />} />
             <Route path="/foods" element={<FoodManagement />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
