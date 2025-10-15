@@ -7,7 +7,27 @@ export function getUserTimeFormat() {
 }
 
 export function getUserDateFormat() {
-  return localStorage.getItem('dateFormat') || 'YYYY-MM-DD';
+  const stored = localStorage.getItem('dateFormat');
+  if (stored) return stored;
+
+  // Auto-detect based on browser locale
+  const locale = navigator.language || navigator.userLanguage || 'en-US';
+
+  // Map common locales to date formats
+  if (locale.startsWith('en-US') || locale.startsWith('en-CA')) {
+    return 'MM/DD/YYYY';
+  } else if (locale.startsWith('en-GB') || locale.startsWith('en-AU') || locale.startsWith('en-NZ') || locale.startsWith('en-IE')) {
+    return 'DD/MM/YYYY';
+  } else if (locale.startsWith('de') || locale.startsWith('no') || locale.startsWith('nb') || locale.startsWith('nn') || locale.startsWith('da') || locale.startsWith('sv') || locale.startsWith('fi') || locale.startsWith('is')) {
+    // German, Norwegian, Danish, Swedish, Finnish, Icelandic use DD.MM.YYYY
+    return 'DD.MM.YYYY';
+  } else if (locale.startsWith('fr') || locale.startsWith('es') || locale.startsWith('it') || locale.startsWith('pt') || locale.startsWith('nl') || locale.startsWith('pl')) {
+    // French, Spanish, Italian, Portuguese, Dutch, Polish use DD/MM/YYYY
+    return 'DD/MM/YYYY';
+  }
+
+  // Default to ISO format
+  return 'YYYY-MM-DD';
 }
 
 export function getUserTimezone() {
