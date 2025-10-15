@@ -198,9 +198,11 @@ class WeightLogWithReptile(WeightLog):
 
 # Health record schemas
 class HealthRecordBase(BaseModel):
-    record_type: str
+    record_type: str  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
     title: str
     description: Optional[str] = None
+    consistency: Optional[str] = None  # For bowel movements: "normal", "soft", "hard", "watery", "mucus"
+    photo_url: Optional[str] = None  # For bowel movement photos
     date: datetime
 
 
@@ -212,6 +214,8 @@ class HealthRecordUpdate(BaseModel):
     record_type: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
+    consistency: Optional[str] = None
+    photo_url: Optional[str] = None
     date: Optional[datetime] = None
 
 
