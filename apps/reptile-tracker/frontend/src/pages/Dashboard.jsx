@@ -474,18 +474,21 @@ export default function Dashboard() {
                   };
 
                   let summary = '';
+                  let prominentValue = null; // For highlighting numbers
                   let details = '';
                   let detailLink = '';
 
                   switch (activity.type) {
                     case 'feeding':
-                      const foods = activity.data.foods && activity.data.foods.length > 0
-                        ? activity.data.foods.map(f => `${f.food?.name || f.name}${f.quantity > 1 ? ` (${f.quantity})` : ''}`).filter(Boolean).join(', ')
-                        : 'Feeding logged';
+                      const foodItems = activity.data.foods || [];
+                      const totalItems = foodItems.reduce((sum, f) => sum + (f.quantity || 1), 0);
+                      prominentValue = totalItems > 0 ? `${totalItems}` : null;
+
+                      const foodNames = foodItems.map(f => f.food?.name || f.name).filter(Boolean).join(', ');
                       const supplements = activity.data.supplements && activity.data.supplements.length > 0
                         ? ` + ${activity.data.supplements.map(s => s.name).join(', ')}`
                         : '';
-                      summary = foods + supplements;
+                      summary = (foodNames || 'Food items') + supplements;
                       details = activity.data.notes || '';
                       detailLink = `/feed/${activity.data.id}`;
                       break;
@@ -495,7 +498,8 @@ export default function Dashboard() {
                       detailLink = `/misting/${activity.data.id}`;
                       break;
                     case 'weight':
-                      summary = `Weight: ${activity.data.weight_grams}g`;
+                      prominentValue = `${activity.data.weight_grams}g`;
+                      summary = 'Weight recorded';
                       details = activity.data.notes || '';
                       detailLink = `/health-log/weight/${activity.data.id}`;
                       break;
@@ -514,6 +518,13 @@ export default function Dashboard() {
                     >
                       <div className="flex items-start gap-3">
                         <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
+                        {prominentValue && (
+                          <div className="flex-shrink-0">
+                            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {prominentValue}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
                           <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">
                             {activity.reptile ? activity.reptile.name : '(deleted reptile)'}
