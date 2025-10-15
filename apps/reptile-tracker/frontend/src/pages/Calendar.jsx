@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
 function Calendar() {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ function Calendar() {
   const [mistings, setMistings] = useState([]); // Past mistings
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showSchedules, setShowSchedules] = useState(false);
 
   useEffect(() => {
     fetchReptiles();
@@ -384,6 +385,37 @@ function Calendar() {
     setSelectedDate(date);
   };
 
+  const handleDeleteSchedule = async (scheduleId) => {
+    if (!window.confirm("Are you sure you want to delete this schedule?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/schedules/${scheduleId}`);
+      // Refresh schedules
+      fetchSchedules();
+    } catch (error) {
+      console.error("Error deleting schedule:", error);
+      alert("Failed to delete schedule");
+    }
+  };
+
+  const formatScheduleRule = (schedule) => {
+    switch (schedule.schedule_rule) {
+      case "every_x_days":
+        return `Every ${schedule.frequency_days} day${schedule.frequency_days > 1 ? 's' : ''}`;
+      case "days_of_week":
+        const days = schedule.days_of_week.split(",").map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][parseInt(d)]);
+        return `Every ${days.join(", ")}`;
+      case "monthly":
+        return `Monthly on day ${schedule.day_of_month}`;
+      case "dependent":
+        return `Dependent on parent schedule`;
+      default:
+        return schedule.schedule_rule;
+    }
+  };
+
   const getScheduleTypeColor = (type, isActual) => {
     if (isActual) {
       // Solid colors for actual completed activities
@@ -431,14 +463,109 @@ function Calendar() {
 
         <div className="flex gap-2">
           <button
+            onClick={() => setShowSchedules(!showSchedules)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <List size={20} />
+            <span className="hidden sm:inline">Manage Schedules</span>
+            <span className="sm:hidden">Schedules</span>
+            {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          <button
             onClick={() => navigate("/schedule-create")}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <Plus size={20} />
-            <span>Add Schedule</span>
+            <span className="hidden sm:inline">Add Schedule</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
+
+      {/* Schedules Management Section */}
+      {showSchedules && (
+        <div className="card mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Schedules</h2>
+
+          {schedules.length === 0 ? (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <p className="mb-4">No schedules created yet</p>
+              <button
+                onClick={() => navigate("/schedule-create")}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <Plus size={20} />
+                Create your first schedule
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {schedules.map(schedule => (
+                <div
+                  key={schedule.id}
+                  className="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {schedule.reptile_name}
+                      </span>
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${getScheduleTypeColor(schedule.schedule_type, false)}`}>
+                        {schedule.schedule_type}
+                      </span>
+                      {!schedule.enabled && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          Disabled
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {formatScheduleRule(schedule)}
+                      {schedule.name && <span className="ml-2">• {schedule.name}</span>}
+                    </div>
+
+                    {schedule.food_category && (
+                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        Food: {schedule.food_category}
+                      </div>
+                    )}
+
+                    {schedule.time_slot && (
+                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        Time: {schedule.time_slot}
+                      </div>
+                    )}
+
+                    {schedule.notes && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        {schedule.notes}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => navigate(`/schedule-edit/${schedule.id}`)}
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Edit schedule"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSchedule(schedule.id)}
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Delete schedule"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="card mb-4 p-3">
