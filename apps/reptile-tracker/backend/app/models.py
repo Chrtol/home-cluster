@@ -255,8 +255,13 @@ class Schedule(Base):
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
 
+    name = Column(String, nullable=True)  # User-friendly name for the schedule
     schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
     schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly", "dependent"
+
+    # Additional details
+    food_category = Column(String, nullable=True)  # For feeding schedules: "insects", "salad", "mixed", etc.
+    time_slot = Column(String, nullable=True)  # For misting schedules: "morning", "midday", "afternoon", "evening", "night"
 
     # For every_x_days
     frequency_days = Column(Integer, nullable=True)

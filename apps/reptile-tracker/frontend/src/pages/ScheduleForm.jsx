@@ -12,8 +12,11 @@ function ScheduleForm() {
 
   // Form state
   const [reptileId, setReptileId] = useState("");
+  const [name, setName] = useState("");
   const [scheduleType, setScheduleType] = useState("feeding");
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
+  const [foodCategory, setFoodCategory] = useState("");
+  const [timeSlot, setTimeSlot] = useState("");
   const [frequencyDays, setFrequencyDays] = useState("");
   const [daysOfWeek, setDaysOfWeek] = useState([]);
   const [dayOfMonth, setDayOfMonth] = useState("");
@@ -96,11 +99,20 @@ function ScheduleForm() {
     try {
       const scheduleData = {
         reptile_id: parseInt(reptileId),
+        name: name || null,
         schedule_type: scheduleType,
         schedule_rule: scheduleRule,
         enabled,
         notes,
       };
+
+      // Add type-specific fields
+      if (scheduleType === "feeding" && foodCategory) {
+        scheduleData.food_category = foodCategory;
+      }
+      if (scheduleType === "misting" && timeSlot) {
+        scheduleData.time_slot = timeSlot;
+      }
 
       // Add rule-specific fields
       if (scheduleRule === "every_x_days") {
@@ -169,6 +181,23 @@ function ScheduleForm() {
           </select>
         </div>
 
+        {/* Schedule Name */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Schedule Name
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Morning Insects, Evening Salad"
+            className="input-field"
+          />
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Optional: Give this schedule a friendly name for easy identification
+          </p>
+        </div>
+
         {/* Schedule Type */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -186,6 +215,53 @@ function ScheduleForm() {
             <option value="supplement">Supplement</option>
           </select>
         </div>
+
+        {/* Food Category (only for feeding schedules) */}
+        {scheduleType === "feeding" && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Food Category
+            </label>
+            <select
+              value={foodCategory}
+              onChange={(e) => setFoodCategory(e.target.value)}
+              className="input-field"
+            >
+              <option value="">Not specified</option>
+              <option value="insects">Insects/Worms</option>
+              <option value="salad">Salad/Vegetables</option>
+              <option value="mixed">Mixed (Insects + Salad)</option>
+              <option value="other">Other</option>
+            </select>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Optional: Specify what type of food this feeding is for
+            </p>
+          </div>
+        )}
+
+        {/* Time Slot (only for misting schedules) */}
+        {scheduleType === "misting" && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Time Slot
+            </label>
+            <select
+              value={timeSlot}
+              onChange={(e) => setTimeSlot(e.target.value)}
+              className="input-field"
+            >
+              <option value="">Not specified</option>
+              <option value="morning">Morning</option>
+              <option value="midday">Midday</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+              <option value="night">Night</option>
+            </select>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Optional: Specify the time of day for misting
+            </p>
+          </div>
+        )}
 
         {/* Supplement Selection (only for supplement schedules) */}
         {scheduleType === "supplement" && (
