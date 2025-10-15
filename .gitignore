@@ -22,3 +22,5 @@ Thumbs.db
 .sopsrc
 1password-credentials*
 ai-activity/*
+# Log files
+*.log
