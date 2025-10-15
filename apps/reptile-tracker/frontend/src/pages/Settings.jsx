@@ -1,7 +1,52 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Shield, Trash2, Settings as SettingsIcon, Users } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 
 export default function Settings() {
+  const [activeTab, setActiveTab] = useState('preferences'); // preferences, household
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Settings</h1>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('preferences')}
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm ${
+              activeTab === 'preferences'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <SettingsIcon size={18} />
+            Preferences
+          </button>
+          <button
+            onClick={() => setActiveTab('household')}
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm ${
+              activeTab === 'household'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <Users size={18} />
+            Household
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'preferences' && <PreferencesTab />}
+      {activeTab === 'household' && <HouseholdSection />}
+    </div>
+  );
+}
+
+// PREFERENCES TAB COMPONENT
+function PreferencesTab() {
   const [timeFormat, setTimeFormat] = useState('24h');
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
   const [timezone, setTimezone] = useState('');
@@ -29,8 +74,6 @@ export default function Settings() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Settings</h1>
-
       {success && (
         <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
           {success}
@@ -107,14 +150,6 @@ export default function Settings() {
           </button>
         </div>
       </div>
-
-      {/* Household management */}
-      <div className="card space-y-6 mt-8">
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Household</h2>
-          <HouseholdSection />
-        </div>
-      </div>
     </div>
   );
 }
@@ -134,7 +169,9 @@ function HouseholdSection() {
   const [joinCode, setJoinCode] = useState('');
   const [editingHouseholdId, setEditingHouseholdId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [activeTab, setActiveTab] = useState('overview'); // overview, members, invitations
+  const [activeTab, setActiveTab] = useState('overview'); // overview, members, roles, invitations
+  const [userRole, setUserRole] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     const fetchHouseholds = async () => {
@@ -155,11 +192,23 @@ function HouseholdSection() {
   }, []);
 
   useEffect(() => {
-    if (selectedHousehold) {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await axios.get('/api/users/me');
+        setCurrentUserId(res.data.id);
+      } catch (e) {
+        console.error('Failed to get current user', e);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (selectedHousehold && currentUserId) {
       fetchMembers();
       fetchInvitations();
     }
-  }, [selectedHousehold]);
+  }, [selectedHousehold, currentUserId]);
 
   const fetchMembers = async () => {
     if (!selectedHousehold) return;
@@ -168,6 +217,12 @@ function HouseholdSection() {
       if (res.ok) {
         const data = await res.json();
         setMembers(data);
+
+        // Find current user's role
+        if (currentUserId) {
+          const currentUser = data.find(m => m.user_id === currentUserId);
+          setUserRole(currentUser?.access_level);
+        }
       }
     } catch (e) {
       console.error('Failed to load members', e);
@@ -333,6 +388,26 @@ function HouseholdSection() {
     }
   };
 
+  const handleRoleChange = async (userId, newRole) => {
+    if (!confirm(`Are you sure you want to change this member's role to ${newRole}?`)) {
+      return;
+    }
+
+    setCreating(true);
+    try {
+      await axios.patch(`/api/households/${selectedHousehold.id}/members/${userId}/role`, {
+        access_level: newRole
+      });
+      alert('Role updated successfully');
+      fetchMembers();
+    } catch (err) {
+      console.error('Failed to update role:', err);
+      alert(err.response?.data?.detail || 'Failed to update role');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const removeMember = async (userId) => {
     if (!confirm('Are you sure you want to remove this member from the household?')) {
       return;
@@ -417,9 +492,23 @@ function HouseholdSection() {
     }
   };
 
-  // Get current user info from members list
-  const currentUserMember = members.find(m => m.user_id === selectedHousehold?.id); // This should actually get current user ID from auth context
-  const isOwner = currentUserMember?.access_level === 'owner';
+  const isAdmin = userRole === 'admin';
+  const isOwner = userRole === 'owner';
+
+  const getRoleBadge = (role) => {
+    const colors = {
+      admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      caretaker: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+    };
+
+    return (
+      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${colors[role]}`}>
+        {role.charAt(0).toUpperCase() + role.slice(1)}
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -519,10 +608,10 @@ function HouseholdSection() {
 
               {/* Tabs */}
               <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
-                <nav className="flex gap-4">
+                <nav className="flex gap-4 overflow-x-auto">
                   <button
                     onClick={() => setActiveTab('overview')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm ${
+                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
                       activeTab === 'overview'
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -532,7 +621,7 @@ function HouseholdSection() {
                   </button>
                   <button
                     onClick={() => setActiveTab('members')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm ${
+                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
                       activeTab === 'members'
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -541,8 +630,18 @@ function HouseholdSection() {
                     Members ({members.length})
                   </button>
                   <button
+                    onClick={() => setActiveTab('roles')}
+                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
+                      activeTab === 'roles'
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    Roles
+                  </button>
+                  <button
                     onClick={() => setActiveTab('invitations')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm ${
+                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
                       activeTab === 'invitations'
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -648,21 +747,13 @@ function HouseholdSection() {
                             <h4 className="font-medium text-gray-900 dark:text-white">{member.name}</h4>
                             <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
                             <div className="flex gap-2 mt-1">
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                member.access_level === 'owner'
-                                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
-                                  : member.access_level === 'feeder'
-                                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-                              }`}>
-                                {member.access_level}
-                              </span>
+                              {getRoleBadge(member.access_level)}
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 Joined {new Date(member.joined_at).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
-                          {isOwner && member.access_level !== 'owner' && (
+                          {isAdmin && member.user_id !== currentUserId && (
                             <button
                               onClick={() => removeMember(member.user_id)}
                               disabled={creating}
@@ -673,6 +764,93 @@ function HouseholdSection() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'roles' && (
+                <div className="space-y-4">
+                  {!isAdmin && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 px-4 py-3 rounded mb-4">
+                      <div className="flex items-center gap-2">
+                        <Shield size={20} />
+                        <p className="text-sm">
+                          You are a <strong>{userRole || 'member'}</strong>. Only admins can manage member roles.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {members.length === 0 ? (
+                    <p className="text-center py-8 text-gray-600 dark:text-gray-400">No members found</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {members.map(member => (
+                        <div
+                          key={member.user_id}
+                          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900 dark:text-white">{member.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                              Joined {new Date(member.joined_at).toLocaleDateString()}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {getRoleBadge(member.access_level)}
+
+                            {isAdmin && member.user_id !== currentUserId && (
+                              <div className="flex gap-2">
+                                <select
+                                  value={member.access_level}
+                                  onChange={(e) => handleRoleChange(member.user_id, e.target.value)}
+                                  className="input py-1 px-2 text-sm"
+                                  disabled={creating}
+                                >
+                                  <option value="viewer">Viewer</option>
+                                  <option value="caretaker">Caretaker</option>
+                                  <option value="owner">Owner</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+
+                                <button
+                                  onClick={() => removeMember(member.user_id)}
+                                  className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                                  title="Remove member"
+                                  disabled={creating}
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Role Permissions</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Can manage household members and roles</span>
+                          </div>
+                          <div>
+                            <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Can edit/delete all reptiles and logs</span>
+                          </div>
+                          <div>
+                            <strong className="text-green-600 dark:text-green-400">Caretaker:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Can log feedings, misting, weights</span>
+                          </div>
+                          <div>
+                            <strong className="text-gray-600 dark:text-gray-400">Viewer:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Can only view reptiles and logs</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
