@@ -104,7 +104,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-698381d1cd9f2f
+              tag: main-81d1cd9
               pullPolicy: Always
             probes:
               liveness:
