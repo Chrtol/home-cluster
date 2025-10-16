@@ -1,9 +1,11 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time as py_time, date as py_date
 from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Date,
+    Time,
     Enum,
     Float,
     ForeignKey,
@@ -53,6 +55,23 @@ class AnimalSize(str, PyEnum):
     ADULT_MEDIUM = "adult_medium"  # Medium adult mouse or small rat
     ADULT_LARGE = "adult_large"  # Large mouse or medium rat
     JUMBO = "jumbo"  # Large rat or rabbit
+
+
+class CompletionStatus(str, PyEnum):
+    """Status of a schedule completion"""
+    COMPLETED_ON_TIME = "completed_on_time"  # Completed within time window
+    COMPLETED_EARLY = "completed_early"  # Completed before earliest_time
+    COMPLETED_LATE = "completed_late"  # Completed after latest_time
+    MISSED = "missed"  # Not completed at all
+    PENDING = "pending"  # Future/current, not yet completed
+
+
+class CompletionType(str, PyEnum):
+    """Type of activity that completed a schedule"""
+    FEEDING = "feeding"
+    MISTING = "misting"
+    WEIGHING = "weighing"
+    MANUAL = "manual"  # Manually marked as complete
 
 
 # Association table for reptile access
@@ -191,6 +210,9 @@ class Feeding(Base):
     # Is this a salad feeding (multiple components)?
     is_salad = Column(Boolean, default=False)
 
+    # Link to schedule completion (if this feeding fulfilled a schedule)
+    schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -199,6 +221,7 @@ class Feeding(Base):
     foods = relationship("Food", secondary=feeding_foods)
     supplements = relationship("Supplement", secondary=feeding_supplements)
     salad_components = relationship("Food", secondary=feeding_salad_components)
+    schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
 class WeightLog(Base):
@@ -210,8 +233,12 @@ class WeightLog(Base):
     measured_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     notes = Column(Text, nullable=True)
 
+    # Link to schedule completion (if this weighing fulfilled a schedule)
+    schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
+
     # Relationships
     reptile = relationship("Reptile", back_populates="weight_logs")
+    schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
 class HealthRecord(Base):
@@ -244,10 +271,14 @@ class MistingLog(Base):
     misted_at = Column(DateTime(timezone=True), nullable=False)
     notes = Column(Text, nullable=True)
 
+    # Link to schedule completion (if this misting fulfilled a schedule)
+    schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     reptile = relationship("Reptile", back_populates="misting_logs")
+    schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
 class Schedule(Base):
@@ -282,6 +313,12 @@ class Schedule(Base):
     # For supplement schedules
     supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="SET NULL"), nullable=True)
 
+    # Time window settings
+    earliest_time = Column(Time, nullable=True)  # Start of valid feeding window (e.g., 10:00 AM)
+    latest_time = Column(Time, nullable=True)  # End of valid feeding window (e.g., 8:00 PM)
+    time_window_enabled = Column(Boolean, default=False, nullable=False)
+    reminder_minutes_before = Column(Integer, nullable=True)  # For future notifications
+
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
 
@@ -293,6 +330,32 @@ class Schedule(Base):
     parent_schedule = relationship("Schedule", remote_side=[id], back_populates="child_schedules")
     child_schedules = relationship("Schedule", back_populates="parent_schedule", cascade="all, delete-orphan")
     supplement = relationship("Supplement")
+    completions = relationship("ScheduleCompletion", back_populates="schedule", cascade="all, delete-orphan")
+
+
+class ScheduleCompletion(Base):
+    """Tracks completion status of individual schedule occurrences"""
+    __tablename__ = "schedule_completions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    scheduled_date = Column(Date, nullable=False, index=True)  # The date this occurrence was scheduled for
+
+    completed_at = Column(DateTime(timezone=True), nullable=True)  # When it was actually completed
+    completion_type = Column(Enum(CompletionType, values_callable=lambda x: [e.value for e in x]), nullable=True)
+    completion_id = Column(Integer, nullable=True)  # ID of the feeding/misting/weighing that fulfilled this
+
+    within_time_window = Column(Boolean, nullable=True)  # True if completed within earliest/latest times
+    status = Column(Enum(CompletionStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    schedule = relationship("Schedule", back_populates="completions")
+    reptile = relationship("Reptile")
 
 
 class NotificationSettings(Base):
