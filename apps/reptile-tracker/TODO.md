@@ -336,6 +336,32 @@
 
 ## ✅ Recently Completed
 
+### January 2025 - Supplement Rotation System & Calendar Improvements
+- [x] **Schedule-based supplement rotation triggers** - ✅ COMPLETED (2025-01-16)
+  - Two trigger modes: feeding_count (every N feedings) and schedule_based (specific days)
+  - Day-of-week rotation support for time-based supplements (e.g., multivitamin 2x/week)
+  - Migration 0016 adds trigger_mode, schedule_days_of_week fields
+  - Backend rotation calculator with day-of-week checking and date parameter
+  - Frontend trigger mode selector and day-of-week picker with user preference support
+  - Multiple supplements per feeding support (priority-based display order)
+  - Schedule-based preview showing realistic 2-week schedule from actual calendar schedules
+  - Preview queries feeding schedules and evaluates schedule rules for accurate display
+
+- [x] **First day of week preference** - ✅ COMPLETED (2025-01-16)
+  - User preference for calendar first day (Sunday/Monday)
+  - Auto-detection from browser locale (US/Americas → Sunday, Europe/Asia → Monday)
+  - Affects all calendar views (month/week), statistics heatmap, and rotation pickers
+  - Helper functions: getDayNames(), getDayNumbers(), getUserFirstDayOfWeek()
+  - Calendar grid calculations and week grouping respect preference
+
+- [x] **Calendar completion status improvements** - ✅ COMPLETED (2025-01-16)
+  - Completed events now merge with their scheduled items (no duplicates)
+  - Intelligent matching with food category normalization (Food model singular → schedule plural)
+  - Scheduled items show green checkmark and completion timestamp
+  - Completed timestamps use user's time format preference (24h/12h)
+  - Clicking completed schedules links to feeding/misting detail views
+  - Manual entries without schedules still show separately
+
 ### January 2025 - Schedule Time Windows & Calendar Enhancements
 - [x] **Schedule time windows system** - ✅ COMPLETED (2025-01-16)
   - Full time window support for schedules (earliest time, latest time)
