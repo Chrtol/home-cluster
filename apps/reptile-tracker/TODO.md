@@ -103,26 +103,29 @@
   - Click-to-expand modal for day details ✅
   - Legend inline with view switcher ✅
 
-- [ ] **Schedule time constraints** - 🔧 MEDIUM PRIORITY
-  - **Target time:**
-    - Optional time field for schedules (e.g., "Feed at 10:00 AM")
-    - Display target time in calendar view
-    - Used for notification reminders
-  - **Latest time (deadline):**
-    - Optional "must complete by" time (e.g., "Feed before 8:00 PM")
-    - Important for animals that need heat for digestion
-    - Visual warning if deadline is approaching
-    - Red indicator if deadline passed without completion
-  - **Implementation:**
-    - Backend: Add `target_time` and `latest_time` fields to Schedule model
-    - Backend: Migration to add time constraint fields
-    - Frontend: Time pickers in schedule form
-    - Frontend: Display times in calendar events
-    - Frontend: Visual indicators for deadlines
+- [x] **Schedule time windows** - ✅ COMPLETED (2025-01-16)
+  - Backend: Added `earliest_time`, `latest_time`, `time_window_enabled`, `reminder_minutes_before` to Schedule model
+  - Backend: Created `schedule_completions` table to track individual occurrences
+  - Backend: Automatic schedule matching system with scoring algorithm
+  - Backend: Tracks completion status: `completed_on_time`, `completed_early`, `completed_late`, `missed`, `pending`
+  - Backend: 30-minute tolerance window for flexible matching
+  - Backend: Integrated into feeding, misting, and weight log routers
+  - Frontend: Custom time pickers respecting user format preferences (12h/24h)
+  - Frontend: Time window display in schedule management list
+  - Frontend: Enhanced calendar modal with dashboard-style icons and colors
+  - Frontend: Structured 4-column layout showing reptile, frequency, food, and time window
+  - **Features:**
+    - Set earliest time (when feeding window opens, e.g., after basking)
+    - Set latest time (when feeding must be completed by)
+    - Optional reminder minutes before deadline
+    - Activities auto-assigned to matching schedules
+    - Visual indicators with Clock icon throughout UI
+    - Respects user time format preferences
   - **Use cases:**
+    - Ensure feeding happens after basking for diurnal reptiles
     - Ensure feeding happens before lights/heat turns off
     - Critical medication timing
-    - Notification service (future): "Feed Gecko in 30 minutes" or "Deadline in 1 hour!"
+    - Foundation for future notification service
 
 - [x] **Advanced scheduling system** - ✅ COMPLETED
   - Backend: Schedule model supports all advanced rules
@@ -332,6 +335,18 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### January 2025 - Schedule Time Windows & Calendar Enhancements
+- [x] **Schedule time windows system** - ✅ COMPLETED (2025-01-16)
+  - Full time window support for schedules (earliest time, latest time)
+  - Automatic activity-to-schedule matching with intelligent scoring algorithm
+  - Schedule completion tracking (on_time, early, late, missed, pending)
+  - Custom time pickers respecting 12h/24h user preferences
+  - Enhanced calendar modal with dashboard-style design
+  - 4-column horizontal layout for better space utilization
+  - Visual indicators with Clock icons throughout UI
+  - 30-minute tolerance window for realistic usage patterns
+  - Foundation for future notification system
 
 ### January 2025 - Household Management & Bug Fixes
 - [x] **Comprehensive household management system** - ✅ COMPLETED
