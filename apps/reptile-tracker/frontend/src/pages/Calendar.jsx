@@ -409,10 +409,21 @@ function Calendar() {
 
     // For each actual feeding/misting, find matching schedule and mark it as completed
     actualFeedings.forEach(actual => {
+      // Determine the food category from the feeding
+      // Feedings have is_salad flag or foods array with categories
+      let actualFoodCategory = null;
+
+      if (actual.is_salad) {
+        actualFoodCategory = "salad";
+      } else if (actual.foods && actual.foods.length > 0) {
+        // Use the category of the first food item
+        actualFoodCategory = actual.foods[0].category;
+      }
+
       const matchingSchedule = scheduledEvents.find(scheduled =>
         scheduled.reptile_id === actual.reptile_id &&
         scheduled.schedule_type === "feeding" &&
-        scheduled.food_category === actual.food_category &&
+        scheduled.food_category === actualFoodCategory &&
         !matchedScheduleIds.has(scheduled.schedule_id)
       );
 
@@ -443,10 +454,18 @@ function Calendar() {
 
     // Only include actual events that didn't match any schedule (manual entries)
     const unmatchedActualFeedings = actualFeedings.filter(actual => {
+      // Determine the food category from the feeding
+      let actualFoodCategory = null;
+      if (actual.is_salad) {
+        actualFoodCategory = "salad";
+      } else if (actual.foods && actual.foods.length > 0) {
+        actualFoodCategory = actual.foods[0].category;
+      }
+
       const hasMatchingSchedule = scheduledEvents.some(scheduled =>
         scheduled.reptile_id === actual.reptile_id &&
         scheduled.schedule_type === "feeding" &&
-        scheduled.food_category === actual.food_category
+        scheduled.food_category === actualFoodCategory
       );
       return !hasMatchingSchedule;
     });
