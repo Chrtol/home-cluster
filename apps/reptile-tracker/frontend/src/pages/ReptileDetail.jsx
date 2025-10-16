@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Edit2, Trash2 } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
+import FeedingRotationManager from '../components/FeedingRotationManager';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -144,6 +145,9 @@ export default function ReptileDetail() {
   }
 
   const tabs = {
+    rotation: (
+      <FeedingRotationManager reptileId={reptile.id} reptileName={reptile.name} />
+    ),
     feedings: (
       <div className="space-y-4">
         {feedings.map(f => (
