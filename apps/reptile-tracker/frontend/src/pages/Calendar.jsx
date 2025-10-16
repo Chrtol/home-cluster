@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale } from "lucide-react";
 import { formatTime } from "../utils/dateFormatting";
 
 function Calendar() {
@@ -437,6 +437,29 @@ function Calendar() {
     }
   };
 
+  const getScheduleTypeIcon = (type) => {
+    switch (type) {
+      case "feeding":
+        return { Icon: Utensils, color: "primary" };
+      case "misting":
+        return { Icon: Droplets, color: "blue" };
+      case "weighing":
+        return { Icon: Scale, color: "purple" };
+      default:
+        return { Icon: CalendarIcon, color: "gray" };
+    }
+  };
+
+  const getIconColorClasses = (color) => {
+    const colors = {
+      primary: "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400",
+      blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+      purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+      gray: "bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400"
+    };
+    return colors[color] || colors.gray;
+  };
+
   const handleDeleteSchedule = async (scheduleId) => {
     if (!window.confirm("Are you sure you want to delete this schedule?")) {
       return;
@@ -723,13 +746,18 @@ function Calendar() {
                     const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                     const link = getEventLink(event);
 
+                    const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
+
                     const EventContent = (
                       <div className={`px-4 py-3 rounded-lg border-2 ${
                         event.is_actual
                           ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
                           : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                       }`}>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
+                            <TypeIcon size={20} />
+                          </div>
                           <div className="flex items-center gap-2 flex-1">
                             {event.is_actual && (
                               <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
@@ -738,7 +766,7 @@ function Calendar() {
                               {displayName}
                             </div>
                           </div>
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getScheduleTypeColor(event.schedule_type, false)}`}>
+                          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                             {event.schedule_type}
                           </span>
                         </div>
@@ -763,15 +791,8 @@ function Calendar() {
                             </div>
                           )}
 
-                          {event.time_slot && (
+                          {event.time_window_enabled && event.earliest_time && event.latest_time ? (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
-                              <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
-                            </div>
-                          )}
-
-                          {event.time_window_enabled && event.earliest_time && event.latest_time && (
-                            <div className="flex flex-col col-span-2">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
@@ -780,7 +801,12 @@ function Calendar() {
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
                               </span>
                             </div>
-                          )}
+                          ) : event.time_slot ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
+                              <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
+                            </div>
+                          ) : null}
 
                           {event.time && (
                             <div className="flex flex-col">
