@@ -193,84 +193,87 @@ function Statistics() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistics</h1>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Reptile Selector */}
-          <select
-            value={selectedReptile || ''}
-            onChange={(e) => setSelectedReptile(parseInt(e.target.value))}
-            className="input"
-          >
-            {reptiles.map(reptile => (
-              <option key={reptile.id} value={reptile.id}>
-                {reptile.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Left: Dropdowns */}
+          <div className="flex flex-wrap gap-3">
+            {/* Reptile Selector */}
+            <select
+              value={selectedReptile || ''}
+              onChange={(e) => setSelectedReptile(parseInt(e.target.value))}
+              className="input"
+            >
+              {reptiles.map(reptile => (
+                <option key={reptile.id} value={reptile.id}>
+                  {reptile.name}
+                </option>
+              ))}
+            </select>
 
-          {/* Time Range Selector */}
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(parseInt(e.target.value))}
-            className="input min-w-[140px]"
-          >
-            <option value={30}>30 days</option>
-            <option value={90}>90 days</option>
-            <option value={180}>6 months</option>
-            <option value={365}>1 year</option>
-            <option value={730}>2 years</option>
-          </select>
+            {/* Time Range Selector */}
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(parseInt(e.target.value))}
+              className="input min-w-[140px]"
+            >
+              <option value={30}>30 days</option>
+              <option value={90}>90 days</option>
+              <option value={180}>6 months</option>
+              <option value={365}>1 year</option>
+              <option value={730}>2 years</option>
+            </select>
+          </div>
+
+          {/* Right: Filter Toggles - Inline and Horizontal */}
+          {stats && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => toggleDataVisibility('weight')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  visibleData.weight
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <Scale size={16} className="inline mr-1" />
+                Weight
+              </button>
+              <button
+                onClick={() => toggleDataVisibility('feeding')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  visibleData.feeding
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <Calendar size={16} className="inline mr-1" />
+                Feeding
+              </button>
+              <button
+                onClick={() => toggleDataVisibility('misting')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  visibleData.misting
+                    ? 'bg-blue-400 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <Droplet size={16} className="inline mr-1" />
+                Misting
+              </button>
+              <button
+                onClick={() => toggleDataVisibility('health')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  visibleData.health
+                    ? 'bg-red-400 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <Heart size={16} className="inline mr-1" />
+                Health
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Filter Toggles - Horizontal Row */}
-      {stats && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => toggleDataVisibility('weight')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              visibleData.weight
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            <Scale size={16} className="inline mr-1" />
-            Weight
-          </button>
-          <button
-            onClick={() => toggleDataVisibility('feeding')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              visibleData.feeding
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            <Calendar size={16} className="inline mr-1" />
-            Feeding
-          </button>
-          <button
-            onClick={() => toggleDataVisibility('misting')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              visibleData.misting
-                ? 'bg-blue-400 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            <Droplet size={16} className="inline mr-1" />
-            Misting
-          </button>
-          <button
-            onClick={() => toggleDataVisibility('health')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              visibleData.health
-                ? 'bg-red-400 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            <Heart size={16} className="inline mr-1" />
-            Health
-          </button>
-        </div>
-      )}
 
       {stats && (
         <>
