@@ -25,7 +25,7 @@ def upgrade():
         'missed',
         'pending',
         name='completionstatus',
-        create_type=True
+        create_type=False
     )
     completion_status.create(op.get_bind(), checkfirst=True)
 
@@ -36,7 +36,7 @@ def upgrade():
         'weighing',
         'manual',
         name='completiontype',
-        create_type=True
+        create_type=False
     )
     completion_type.create(op.get_bind(), checkfirst=True)
 
