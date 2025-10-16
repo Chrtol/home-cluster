@@ -190,10 +190,10 @@ function Statistics() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistics</h1>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 lg:flex-1 lg:justify-end">
           {/* Reptile Selector */}
           <select
             value={selectedReptile || ''}
@@ -219,6 +219,54 @@ function Statistics() {
             <option value={365}>1 year</option>
             <option value={730}>2 years</option>
           </select>
+
+          {/* Filter Toggles - Inline */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => toggleDataVisibility('weight')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                visibleData.weight
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+              title="Toggle weight data"
+            >
+              <Scale size={16} className="inline" />
+            </button>
+            <button
+              onClick={() => toggleDataVisibility('feeding')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                visibleData.feeding
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+              title="Toggle feeding data"
+            >
+              <Calendar size={16} className="inline" />
+            </button>
+            <button
+              onClick={() => toggleDataVisibility('misting')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                visibleData.misting
+                  ? 'bg-blue-400 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+              title="Toggle misting data"
+            >
+              <Droplet size={16} className="inline" />
+            </button>
+            <button
+              onClick={() => toggleDataVisibility('health')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                visibleData.health
+                  ? 'bg-red-400 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+              title="Toggle health events"
+            >
+              <Heart size={16} className="inline" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -295,57 +343,6 @@ function Statistics() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Logs recorded
               </p>
-            </div>
-          </div>
-
-          {/* Filter Toggles */}
-          <div className="card">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Show/Hide Data</h3>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => toggleDataVisibility('weight')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  visibleData.weight
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Scale size={16} className="inline mr-2" />
-                Weight
-              </button>
-              <button
-                onClick={() => toggleDataVisibility('feeding')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  visibleData.feeding
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Calendar size={16} className="inline mr-2" />
-                Feeding
-              </button>
-              <button
-                onClick={() => toggleDataVisibility('misting')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  visibleData.misting
-                    ? 'bg-blue-400 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Droplet size={16} className="inline mr-2" />
-                Misting
-              </button>
-              <button
-                onClick={() => toggleDataVisibility('health')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  visibleData.health
-                    ? 'bg-red-400 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Heart size={16} className="inline mr-2" />
-                Health Events
-              </button>
             </div>
           </div>
 
@@ -457,7 +454,7 @@ function Statistics() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Daily feeding activity over the past {timeRange} days
               </p>
-              <div className="flex justify-start">
+              <div className="overflow-x-auto">
                 <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
               </div>
             </div>
@@ -639,8 +636,7 @@ function FeedingHeatmap({ feedingData, timeRange }) {
   const maxFeedingsPerDay = Math.max(...days.map(d => d.count), 1);
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div className="inline-flex flex-col gap-2">
+    <div className="inline-flex flex-col gap-2">
         {/* Month labels row */}
         <div className="flex gap-1 pl-14">
           {weeks.map((week, weekIdx) => {
@@ -706,7 +702,6 @@ function FeedingHeatmap({ feedingData, timeRange }) {
           <span>More</span>
           <span className="ml-4">Max: {maxFeedingsPerDay} per day</span>
         </div>
-      </div>
     </div>
   );
 }
