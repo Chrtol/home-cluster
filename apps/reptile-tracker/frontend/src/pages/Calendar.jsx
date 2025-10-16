@@ -407,14 +407,6 @@ function Calendar() {
     // Match actual events to their corresponding schedules
     const matchedScheduleIds = new Set();
 
-    console.log('Available scheduled events:', scheduledEvents.map(s => ({
-      name: s.name,
-      reptile: s.reptile_name,
-      type: s.schedule_type,
-      food_category: s.food_category,
-      schedule_id: s.schedule_id
-    })));
-
     // Helper function to normalize food category (Food model uses singular, schedules use plural)
     const normalizeFoodCategory = (category) => {
       if (!category) return null;
@@ -444,27 +436,12 @@ function Calendar() {
         actualFoodCategory = normalizeFoodCategory(actual.foods[0].category);
       }
 
-      console.log('Trying to match feeding:', {
-        reptile: actual.reptile_name,
-        actualFoodCategory,
-        raw_category: actual.foods?.[0]?.category,
-        is_salad: actual.is_salad,
-        foods: actual.foods,
-        fed_at: actual.fed_at
-      });
-
       const matchingSchedule = scheduledEvents.find(scheduled =>
         scheduled.reptile_id === actual.reptile_id &&
         scheduled.schedule_type === "feeding" &&
         scheduled.food_category === actualFoodCategory &&
         !matchedScheduleIds.has(scheduled.schedule_id)
       );
-
-      console.log('Found matching schedule:', matchingSchedule ? {
-        name: matchingSchedule.name,
-        food_category: matchingSchedule.food_category,
-        schedule_id: matchingSchedule.schedule_id
-      } : 'NONE');
 
       if (matchingSchedule) {
         matchingSchedule.is_completed = true;
