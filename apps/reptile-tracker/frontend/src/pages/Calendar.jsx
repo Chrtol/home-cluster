@@ -10,6 +10,7 @@ function Calendar() {
   const [view, setView] = useState("month"); // "month", "week", "day"
   const [reptiles, setReptiles] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [feedingRotations, setFeedingRotations] = useState([]); // Feeding rotations for supplement suggestions
   const [events, setEvents] = useState([]); // Calculated events based on schedules
   const [feedings, setFeedings] = useState([]); // Past feedings
   const [mistings, setMistings] = useState([]); // Past mistings
@@ -53,12 +54,22 @@ function Calendar() {
     try {
       setLoading(true);
       const allSchedules = [];
+      const allRotations = [];
       for (const reptile of reptiles) {
         const response = await axios.get(`/api/schedules/reptile/${reptile.id}`);
         allSchedules.push(...response.data.map(s => ({ ...s, reptile_name: reptile.name })));
+
+        // Fetch feeding rotations for this reptile
+        try {
+          const rotationsResponse = await axios.get(`/api/feeding-rotations/reptile/${reptile.id}`);
+          allRotations.push(...rotationsResponse.data.map(r => ({ ...r, reptile_name: reptile.name })));
+        } catch (rotError) {
+          console.error(`Error fetching rotations for ${reptile.name}:`, rotError);
+        }
       }
       setSchedules(allSchedules);
-      calculateEvents(allSchedules);
+      setFeedingRotations(allRotations);
+      calculateEvents(allSchedules, allRotations);
     } catch (error) {
       console.error("Error fetching schedules:", error);
     } finally {
@@ -107,11 +118,81 @@ function Calendar() {
     }
   };
 
-  const calculateEvents = (scheduleList) => {
+  const calculateEvents = (scheduleList, rotationsList = []) => {
     // Calculate events for the current month view
     const calculatedEvents = [];
     const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+    // Group rotations by reptile for easy lookup
+    const rotationsByReptile = {};
+    rotationsList.forEach(rotation => {
+      if (!rotationsByReptile[rotation.reptile_id]) {
+        rotationsByReptile[rotation.reptile_id] = [];
+      }
+      rotationsByReptile[rotation.reptile_id].push(rotation);
+    });
+
+    // Helper function to find applicable supplement for a feeding event
+    // NOTE: This is a simplified client-side calculation for display purposes
+    // The actual rotation calculation happens server-side when logging feedings
+    const getSuggestedSupplement = (reptileId, foodCategory, eventIndex) => {
+      const rotations = rotationsByReptile[reptileId] || [];
+
+      // Filter rotations that apply to this food category
+      const applicable = rotations.filter(r => {
+        if (r.rotation_type !== 'supplement') return false;
+        if (!r.applies_to_category || r.applies_to_category === 'all') return true;
+        return r.applies_to_category === foodCategory;
+      });
+
+      // Sort by priority
+      applicable.sort((a, b) => a.priority - b.priority);
+
+      // Find first rotation that triggers on this event
+      // Using eventIndex as a rough approximation of feeding number
+      for (const rotation of applicable) {
+        if ((eventIndex + 1) % rotation.every_n_feedings === 0) {
+          return rotation.supplement;
+        }
+      }
+      return null;
+    };
+
+    // Helper to create event object with supplement suggestion
+    let eventIndexCounter = 0;
+    const createEvent = (schedule, date) => {
+      const event = {
+        date: new Date(date),
+        schedule_id: schedule.id,
+        schedule_type: schedule.schedule_type,
+        schedule_rule: schedule.schedule_rule,
+        reptile_name: schedule.reptile_name,
+        reptile_id: schedule.reptile_id,
+        name: schedule.name,
+        food_category: schedule.food_category,
+        time_slot: schedule.time_slot,
+        time_window_enabled: schedule.time_window_enabled,
+        earliest_time: schedule.earliest_time,
+        latest_time: schedule.latest_time,
+        notes: schedule.notes,
+      };
+
+      // Add supplement suggestion for feeding schedules
+      if (schedule.schedule_type === 'feeding' && schedule.food_category) {
+        const supplement = getSuggestedSupplement(
+          schedule.reptile_id,
+          schedule.food_category,
+          eventIndexCounter
+        );
+        if (supplement) {
+          event.suggested_supplement = supplement;
+        }
+        eventIndexCounter++;
+      }
+
+      return event;
+    };
 
     // First pass: Calculate base schedules (non-dependent)
     const baseSchedules = scheduleList.filter(s => s.schedule_rule !== "dependent");
@@ -129,21 +210,7 @@ function Calendar() {
         // Use schedule created_at as reference point (simplified version)
         // In a real app, you'd want to track the last actual occurrence
         while (currentDay <= monthEnd) {
-          calculatedEvents.push({
-            date: new Date(currentDay),
-            schedule_id: schedule.id,
-            schedule_type: schedule.schedule_type,
-            schedule_rule: schedule.schedule_rule,
-            reptile_name: schedule.reptile_name,
-            reptile_id: schedule.reptile_id,
-            name: schedule.name,
-            food_category: schedule.food_category,
-            time_slot: schedule.time_slot,
-            time_window_enabled: schedule.time_window_enabled,
-            earliest_time: schedule.earliest_time,
-            latest_time: schedule.latest_time,
-            notes: schedule.notes,
-          });
+          calculatedEvents.push(createEvent(schedule, currentDay));
           currentDay.setDate(currentDay.getDate() + frequency);
         }
       } else if (schedule.schedule_rule === "days_of_week") {
@@ -152,21 +219,7 @@ function Calendar() {
 
         while (currentDay <= monthEnd) {
           if (days.includes(currentDay.getDay())) {
-            calculatedEvents.push({
-              date: new Date(currentDay),
-              schedule_id: schedule.id,
-              schedule_type: schedule.schedule_type,
-              schedule_rule: schedule.schedule_rule,
-              reptile_name: schedule.reptile_name,
-              reptile_id: schedule.reptile_id,
-              name: schedule.name,
-              food_category: schedule.food_category,
-              time_slot: schedule.time_slot,
-              time_window_enabled: schedule.time_window_enabled,
-              earliest_time: schedule.earliest_time,
-              latest_time: schedule.latest_time,
-              notes: schedule.notes,
-            });
+            calculatedEvents.push(createEvent(schedule, currentDay));
           }
           currentDay.setDate(currentDay.getDate() + 1);
         }
@@ -174,21 +227,7 @@ function Calendar() {
         const day = schedule.day_of_month;
         const eventDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
         if (eventDate >= monthStart && eventDate <= monthEnd) {
-          calculatedEvents.push({
-            date: eventDate,
-            schedule_id: schedule.id,
-            schedule_type: schedule.schedule_type,
-            schedule_rule: schedule.schedule_rule,
-            reptile_name: schedule.reptile_name,
-            reptile_id: schedule.reptile_id,
-            name: schedule.name,
-            food_category: schedule.food_category,
-            time_slot: schedule.time_slot,
-            time_window_enabled: schedule.time_window_enabled,
-            earliest_time: schedule.earliest_time,
-            latest_time: schedule.latest_time,
-            notes: schedule.notes,
-          });
+          calculatedEvents.push(createEvent(schedule, eventDate));
         }
       }
     });
@@ -200,34 +239,21 @@ function Calendar() {
       // Find parent schedule events
       const parentEvents = calculatedEvents.filter(e => e.schedule_id === schedule.parent_schedule_id);
 
-      const createEventFromSchedule = (date) => ({
-        date: new Date(date),
-        schedule_id: schedule.id,
-        schedule_type: schedule.schedule_type,
-        schedule_rule: schedule.schedule_rule,
-        reptile_name: schedule.reptile_name,
-        reptile_id: schedule.reptile_id,
-        name: schedule.name,
-        food_category: schedule.food_category,
-        time_slot: schedule.time_slot,
-        time_window_enabled: schedule.time_window_enabled,
-        earliest_time: schedule.earliest_time,
-        latest_time: schedule.latest_time,
-        notes: schedule.notes,
-        parent_schedule_id: schedule.parent_schedule_id,
-      });
-
       if (schedule.dependent_rule === "every_occurrence") {
         // Add event for every parent occurrence
         parentEvents.forEach(parentEvent => {
-          calculatedEvents.push(createEventFromSchedule(parentEvent.date));
+          const event = createEvent(schedule, parentEvent.date);
+          event.parent_schedule_id = schedule.parent_schedule_id;
+          calculatedEvents.push(event);
         });
       } else if (schedule.dependent_rule === "every_nth") {
         // Add event for every Nth parent occurrence
         const frequency = schedule.dependent_frequency;
         parentEvents.forEach((parentEvent, index) => {
           if ((index + 1) % frequency === 0) {
-            calculatedEvents.push(createEventFromSchedule(parentEvent.date));
+            const event = createEvent(schedule, parentEvent.date);
+            event.parent_schedule_id = schedule.parent_schedule_id;
+            calculatedEvents.push(event);
           }
         });
       } else if (schedule.dependent_rule === "specific_days") {
@@ -235,7 +261,9 @@ function Calendar() {
         const days = schedule.dependent_days.split(",").map(d => parseInt(d));
         parentEvents.forEach(parentEvent => {
           if (days.includes(parentEvent.date.getDay())) {
-            calculatedEvents.push(createEventFromSchedule(parentEvent.date));
+            const event = createEvent(schedule, parentEvent.date);
+            event.parent_schedule_id = schedule.parent_schedule_id;
+            calculatedEvents.push(event);
           }
         });
       } else if (schedule.dependent_rule === "once_per_day") {
@@ -247,7 +275,9 @@ function Calendar() {
           // Only add if we haven't already added an event for this date
           if (!eventsByDate.has(dateKey)) {
             eventsByDate.set(dateKey, true);
-            calculatedEvents.push(createEventFromSchedule(parentEvent.date));
+            const event = createEvent(schedule, parentEvent.date);
+            event.parent_schedule_id = schedule.parent_schedule_id;
+            calculatedEvents.push(event);
           }
         });
       }
@@ -351,7 +381,7 @@ function Calendar() {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() + direction);
     setCurrentDate(newDate);
-    setTimeout(() => calculateEvents(schedules), 0);
+    setTimeout(() => calculateEvents(schedules, feedingRotations), 0);
   };
 
   const navigateWeek = (direction) => {
@@ -766,6 +796,11 @@ function Calendar() {
                               {displayName}
                             </div>
                           </div>
+                          {event.suggested_supplement && (
+                            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700">
+                              + {event.suggested_supplement.name}
+                            </span>
+                          )}
                           <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                             {event.schedule_type}
                           </span>
@@ -982,16 +1017,18 @@ function Calendar() {
                           {dayEvents.slice(0, 2).map((event, idx) => {
                             const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                             const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+                            const supplementName = event.suggested_supplement?.name;
 
                             return (
                               <div
                                 key={idx}
                                 className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
-                                title={`${displayName}${detail}`}
+                                title={`${displayName}${detail}${supplementName ? ` + ${supplementName}` : ''}`}
                               >
                                 {event.is_actual && "✓ "}
                                 {displayName}
                                 {detail && <span className="opacity-75">{detail}</span>}
+                                {supplementName && <span className="ml-1 text-green-600 dark:text-green-400 font-medium">+{supplementName}</span>}
                               </div>
                             );
                           })}
@@ -1000,7 +1037,8 @@ function Calendar() {
                               {dayEvents.slice(2).map((event, idx) => {
                                 const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                                 const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
-                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}`;
+                                const supplementName = event.suggested_supplement?.name;
+                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementName ? ` + ${supplementName}` : ''}`;
 
                                 return (
                                   <div
@@ -1019,7 +1057,8 @@ function Calendar() {
                             {dayEvents.map((event, idx) => {
                               const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                               const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
-                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}`;
+                              const supplementName = event.suggested_supplement?.name;
+                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementName ? ` + ${supplementName}` : ''}`;
 
                               return (
                                 <div
