@@ -238,23 +238,36 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
                       <div className="p-4 space-y-3">
                         {day.feedings.map((feeding, feedIdx) => (
                           <div key={feedIdx} className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700">
-                                {feeding.food_category}
-                              </span>
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                #{feeding.feeding_number}
-                              </span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700">
+                                  {feeding.food_category}
+                                </span>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  #{feeding.feeding_number}
+                                </span>
+                              </div>
+                              {feeding.schedule_name && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {feeding.schedule_name}
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-wrap gap-2 justify-end">
-                              {feeding.supplements.map((supplement, suppIdx) => (
-                                <span
-                                  key={suppIdx}
-                                  className="px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700"
-                                >
-                                  {supplement.name}
+                              {feeding.supplements && feeding.supplements.length > 0 ? (
+                                feeding.supplements.map((supplement, suppIdx) => (
+                                  <span
+                                    key={suppIdx}
+                                    className="px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700"
+                                  >
+                                    {supplement.name}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                  No supplements
                                 </span>
-                              ))}
+                              )}
                             </div>
                           </div>
                         ))}
