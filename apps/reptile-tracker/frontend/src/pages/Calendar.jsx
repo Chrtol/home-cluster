@@ -724,62 +724,75 @@ function Calendar() {
                     const link = getEventLink(event);
 
                     const EventContent = (
-                      <div className={`px-4 py-3 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="font-medium">
-                              {event.is_actual && "✓ "}
+                      <div className={`px-4 py-3 rounded-lg border-2 ${
+                        event.is_actual
+                          ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
+                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="flex items-center gap-2 flex-1">
+                            {event.is_actual && (
+                              <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                            )}
+                            <div className="font-semibold text-gray-900 dark:text-white">
                               {displayName}
                             </div>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
-                              {event.schedule_type}
-                            </span>
                           </div>
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getScheduleTypeColor(event.schedule_type, false)}`}>
+                            {event.schedule_type}
+                          </span>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-xs opacity-75">
-                          <div>
-                            <span className="font-medium">Reptile:</span> {event.reptile_name}
+                        <div className="grid grid-cols-4 gap-x-6 gap-y-2 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Reptile</span>
+                            <span className="text-gray-900 dark:text-white font-medium">{event.reptile_name}</span>
                           </div>
 
                           {event.schedule_rule && (
-                            <div>
-                              <span className="font-medium">Frequency:</span> {event.schedule_rule.replace(/_/g, ' ')}
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Frequency</span>
+                              <span className="text-gray-900 dark:text-white">{event.schedule_rule.replace(/_/g, ' ')}</span>
                             </div>
                           )}
 
                           {event.food_category && (
-                            <div>
-                              <span className="font-medium">Food:</span> {event.food_category}
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Food</span>
+                              <span className="text-gray-900 dark:text-white">{event.food_category}</span>
                             </div>
                           )}
 
                           {event.time_slot && (
-                            <div>
-                              <span className="font-medium">Time:</span> {event.time_slot}
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
+                              <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
                             </div>
                           )}
 
                           {event.time_window_enabled && event.earliest_time && event.latest_time && (
-                            <div className="flex items-center gap-1">
-                              <Clock size={12} />
-                              <span className="font-medium">Window:</span>
-                              <span className="whitespace-nowrap">
+                            <div className="flex flex-col col-span-2">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                <Clock size={12} />
+                                Time Window
+                              </span>
+                              <span className="text-gray-900 dark:text-white font-medium whitespace-nowrap">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
                               </span>
                             </div>
                           )}
 
                           {event.time && (
-                            <div>
-                              <span className="font-medium">Done:</span> {event.time}
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Completed</span>
+                              <span className="text-green-600 dark:text-green-400 font-medium">{event.time}</span>
                             </div>
                           )}
                         </div>
 
                         {event.notes && (
-                          <div className="text-xs opacity-60 mt-2 pt-2 border-t border-black/10 dark:border-white/10">
-                            <span className="font-medium">Notes:</span> {event.notes}
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Notes:</span> {event.notes}
                           </div>
                         )}
                       </div>
