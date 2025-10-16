@@ -144,7 +144,7 @@ async def delete_feeding_rotation(
     return None
 
 
-@router.get("/reptile/{reptile_id}/calculate", response_model=Optional[Dict[str, Any]])
+@router.get("/reptile/{reptile_id}/calculate", response_model=List[Dict[str, Any]])
 async def calculate_next_rotation(
     reptile_id: int,
     food_category: Optional[str] = Query(None, description="Food category (e.g., 'insects', 'salad')"),
@@ -152,13 +152,14 @@ async def calculate_next_rotation(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Calculate which rotation (supplement or food replacement) should apply to the next feeding.
+    Calculate which rotations (supplements or food replacements) should apply to the next feeding.
+    Returns ALL applicable rotations sorted by priority.
     Used when logging a new feeding to suggest supplements or food replacements.
     """
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
 
-    rotation = await calculate_rotation_for_feeding(db, reptile_id, food_category)
-    return rotation
+    rotations = await calculate_rotation_for_feeding(db, reptile_id, food_category)
+    return rotations
 
 
 @router.get("/reptile/{reptile_id}/preview", response_model=List[Dict[str, Any]])

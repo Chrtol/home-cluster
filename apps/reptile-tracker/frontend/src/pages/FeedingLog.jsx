@@ -45,8 +45,8 @@ export default function FeedingLog() {
   // Global supplements (applied to entire feeding)
   const [selectedSupplements, setSelectedSupplements] = useState([]);
 
-  // Suggested supplement from rotation rules
-  const [suggestedSupplement, setSuggestedSupplement] = useState(null);
+  // Suggested supplements from rotation rules (can be multiple)
+  const [suggestedSupplements, setSuggestedSupplements] = useState([]);
   const [showSuggestion, setShowSuggestion] = useState(false);
 
   // Time input format state
@@ -132,24 +132,31 @@ export default function FeedingLog() {
             { params: { food_category: foodCategory } }
           );
 
-          if (response.data && response.data.supplement_id) {
-            const supplement = supplements.find(s => s.id === response.data.supplement_id);
-            if (supplement) {
-              setSuggestedSupplement({
-                ...response.data,
-                supplement
-              });
+          // API now returns an array of rotations
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            const suggestionsWithSupplements = response.data
+              .map(rotation => {
+                const supplement = supplements.find(s => s.id === rotation.supplement_id);
+                return supplement ? { ...rotation, supplement } : null;
+              })
+              .filter(Boolean);
+
+            if (suggestionsWithSupplements.length > 0) {
+              setSuggestedSupplements(suggestionsWithSupplements);
               setShowSuggestion(true);
+            } else {
+              setSuggestedSupplements([]);
+              setShowSuggestion(false);
             }
           } else {
-            setSuggestedSupplement(null);
+            setSuggestedSupplements([]);
             setShowSuggestion(false);
           }
         }
       } catch (error) {
         // Silently fail if no rotation rules exist
         console.debug('No rotation suggestion:', error);
-        setSuggestedSupplement(null);
+        setSuggestedSupplements([]);
         setShowSuggestion(false);
       }
     };
@@ -157,13 +164,15 @@ export default function FeedingLog() {
     fetchSuggestion();
   }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode]);
 
-  const applySuggestedSupplement = () => {
-    if (suggestedSupplement && suggestedSupplement.supplement_id) {
-      if (!selectedSupplements.includes(suggestedSupplement.supplement_id)) {
-        setSelectedSupplements([...selectedSupplements, suggestedSupplement.supplement_id]);
-      }
-      setShowSuggestion(false);
+  const applyAllSuggestedSupplements = () => {
+    const newSupplementIds = suggestedSupplements
+      .map(s => s.supplement_id)
+      .filter(id => !selectedSupplements.includes(id));
+
+    if (newSupplementIds.length > 0) {
+      setSelectedSupplements([...selectedSupplements, ...newSupplementIds]);
     }
+    setShowSuggestion(false);
   };
 
   const dismissSuggestion = () => {
@@ -947,41 +956,47 @@ export default function FeedingLog() {
           </div>
         )}
 
-        {/* SUPPLEMENT SUGGESTION */}
-        {showSuggestion && suggestedSupplement && (
+        {/* SUPPLEMENT SUGGESTIONS */}
+        {showSuggestion && suggestedSupplements.length > 0 && (
           <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">💡</span>
                   <h4 className="font-semibold text-green-900 dark:text-green-300">
-                    Supplement Suggestion
+                    Supplement {suggestedSupplements.length > 1 ? 'Suggestions' : 'Suggestion'}
                   </h4>
                 </div>
                 <p className="text-sm text-green-800 dark:text-green-300 mb-2">
                   Based on your rotation rules, this feeding should include:
                 </p>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-3 py-1.5 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 rounded-lg font-medium">
-                    {suggestedSupplement.supplement.name}
-                  </span>
-                  <span className="text-xs text-green-700 dark:text-green-400">
-                    (Feeding #{suggestedSupplement.feeding_number}, every {suggestedSupplement.every_n_feedings})
-                  </span>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {suggestedSupplements.map((suggestion, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="px-3 py-1.5 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 rounded-lg font-medium">
+                        {suggestion.supplement.name}
+                      </span>
+                      <span className="text-xs text-green-700 dark:text-green-400">
+                        (Every {suggestion.every_n_feedings})
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                {suggestedSupplement.notes && (
-                  <p className="text-xs text-green-700 dark:text-green-400 italic">
-                    Note: {suggestedSupplement.notes}
-                  </p>
+                {suggestedSupplements.some(s => s.notes) && (
+                  <div className="text-xs text-green-700 dark:text-green-400 italic space-y-1">
+                    {suggestedSupplements.filter(s => s.notes).map((s, idx) => (
+                      <p key={idx}>• {s.supplement.name}: {s.notes}</p>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={applySuggestedSupplement}
+                  onClick={applyAllSuggestedSupplements}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
                 >
-                  Apply
+                  Apply All
                 </button>
                 <button
                   type="button"
