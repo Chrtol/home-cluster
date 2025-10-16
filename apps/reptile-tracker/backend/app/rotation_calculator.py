@@ -90,9 +90,10 @@ async def calculate_rotation_for_feeding(
     db: AsyncSession,
     reptile_id: int,
     food_category: Optional[str] = None
-) -> Optional[Dict[str, Any]]:
+) -> List[Dict[str, Any]]:
     """
-    Calculate which rotation (supplement or food replacement) should apply to the next feeding.
+    Calculate which rotations (supplements or food replacements) should apply to the next feeding.
+    Returns ALL applicable rotations, not just the highest priority one.
 
     Args:
         db: Database session
@@ -100,24 +101,31 @@ async def calculate_rotation_for_feeding(
         food_category: Category of food being fed (e.g., "insects", "salad")
 
     Returns:
-        Dictionary with rotation details if applicable, None otherwise:
-        {
-            "rotation_id": int,
-            "rotation_type": "supplement" or "food_replacement",
-            "supplement_id": int (if supplement rotation),
-            "replacement_food_category": str (if food replacement),
-            "replacement_note": str (if food replacement),
-            "priority": int,
-            "notes": str
-        }
+        List of dictionaries with rotation details (empty list if none apply):
+        [
+            {
+                "rotation_id": int,
+                "rotation_type": "supplement" or "food_replacement",
+                "supplement_id": int (if supplement rotation),
+                "replacement_food_category": str (if food replacement),
+                "replacement_note": str (if food replacement),
+                "priority": int,
+                "notes": str,
+                "feeding_number": int,
+                "every_n_feedings": int
+            },
+            ...
+        ]
     """
     # Get all applicable rotations for this reptile and food category
     rotations = await get_applicable_rotations(db, reptile_id, food_category)
 
     if not rotations:
-        return None
+        return []
 
-    # Count feedings for each rotation based on its counting mode
+    applicable_rotations = []
+
+    # Check each rotation to see if it triggers on the next feeding
     for rotation in rotations:
         # Determine the category filter for counting
         if rotation.counting_mode == "all_feedings":
@@ -136,7 +144,7 @@ async def calculate_rotation_for_feeding(
 
         # Check if this rotation should trigger on the next feeding
         if next_feeding_number % rotation.every_n_feedings == 0:
-            # This rotation triggers! Return it
+            # This rotation triggers! Add it to results
             result = {
                 "rotation_id": rotation.id,
                 "rotation_type": rotation.rotation_type,
@@ -152,10 +160,12 @@ async def calculate_rotation_for_feeding(
                 result["replacement_food_category"] = rotation.replacement_food_category
                 result["replacement_note"] = rotation.replacement_note
 
-            return result
+            applicable_rotations.append(result)
 
-    # No rotations trigger on this feeding
-    return None
+    # Sort by priority (lower number = higher priority) before returning
+    applicable_rotations.sort(key=lambda r: r["priority"])
+
+    return applicable_rotations
 
 
 async def get_rotation_preview(

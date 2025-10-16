@@ -133,10 +133,10 @@ function Calendar() {
       rotationsByReptile[rotation.reptile_id].push(rotation);
     });
 
-    // Helper function to find applicable supplement for a feeding event
+    // Helper function to find applicable supplements for a feeding event
     // NOTE: This is a simplified client-side calculation for display purposes
     // The actual rotation calculation happens server-side when logging feedings
-    const getSuggestedSupplement = (reptileId, foodCategory, eventIndex) => {
+    const getSuggestedSupplements = (reptileId, foodCategory, eventIndex) => {
       const rotations = rotationsByReptile[reptileId] || [];
 
       // Filter rotations that apply to this food category
@@ -149,14 +149,17 @@ function Calendar() {
       // Sort by priority
       applicable.sort((a, b) => a.priority - b.priority);
 
-      // Find first rotation that triggers on this event
+      // Find ALL rotations that trigger on this event (not just the first one)
       // Using eventIndex as a rough approximation of feeding number
+      const triggeredSupplements = [];
       for (const rotation of applicable) {
         if ((eventIndex + 1) % rotation.every_n_feedings === 0) {
-          return rotation.supplement;
+          if (rotation.supplement) {
+            triggeredSupplements.push(rotation.supplement);
+          }
         }
       }
-      return null;
+      return triggeredSupplements;
     };
 
     // Helper to create event object with supplement suggestion
@@ -178,15 +181,15 @@ function Calendar() {
         notes: schedule.notes,
       };
 
-      // Add supplement suggestion for feeding schedules
+      // Add supplement suggestions for feeding schedules
       if (schedule.schedule_type === 'feeding' && schedule.food_category) {
-        const supplement = getSuggestedSupplement(
+        const supplements = getSuggestedSupplements(
           schedule.reptile_id,
           schedule.food_category,
           eventIndexCounter
         );
-        if (supplement) {
-          event.suggested_supplement = supplement;
+        if (supplements && supplements.length > 0) {
+          event.suggested_supplements = supplements;
         }
         eventIndexCounter++;
       }
@@ -796,10 +799,14 @@ function Calendar() {
                               {displayName}
                             </div>
                           </div>
-                          {event.suggested_supplement && (
-                            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700">
-                              + {event.suggested_supplement.name}
-                            </span>
+                          {event.suggested_supplements && event.suggested_supplements.length > 0 && (
+                            <div className="flex gap-1.5 flex-wrap">
+                              {event.suggested_supplements.map((supp, suppIdx) => (
+                                <span key={suppIdx} className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700">
+                                  + {supp.name}
+                                </span>
+                              ))}
+                            </div>
                           )}
                           <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                             {event.schedule_type}
@@ -1017,18 +1024,23 @@ function Calendar() {
                           {dayEvents.slice(0, 2).map((event, idx) => {
                             const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                             const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
-                            const supplementName = event.suggested_supplement?.name;
+                            const supplements = event.suggested_supplements || [];
+                            const supplementText = supplements.map(s => s.name).join(', ');
 
                             return (
                               <div
                                 key={idx}
                                 className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
-                                title={`${displayName}${detail}${supplementName ? ` + ${supplementName}` : ''}`}
+                                title={`${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}`}
                               >
                                 {event.is_actual && "✓ "}
                                 {displayName}
                                 {detail && <span className="opacity-75">{detail}</span>}
-                                {supplementName && <span className="ml-1 text-green-600 dark:text-green-400 font-medium">+{supplementName}</span>}
+                                {supplements.length > 0 && (
+                                  <span className="ml-1 text-green-600 dark:text-green-400 font-medium">
+                                    +{supplements.map(s => s.name).join(' +')}
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
@@ -1037,8 +1049,9 @@ function Calendar() {
                               {dayEvents.slice(2).map((event, idx) => {
                                 const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                                 const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
-                                const supplementName = event.suggested_supplement?.name;
-                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementName ? ` + ${supplementName}` : ''}`;
+                                const supplements = event.suggested_supplements || [];
+                                const supplementText = supplements.map(s => s.name).join(', ');
+                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}`;
 
                                 return (
                                   <div
@@ -1057,8 +1070,9 @@ function Calendar() {
                             {dayEvents.map((event, idx) => {
                               const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                               const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
-                              const supplementName = event.suggested_supplement?.name;
-                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementName ? ` + ${supplementName}` : ''}`;
+                              const supplements = event.suggested_supplements || [];
+                              const supplementText = supplements.map(s => s.name).join(', ');
+                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}`;
 
                               return (
                                 <div
