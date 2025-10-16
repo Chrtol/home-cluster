@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { formatTime } from "../utils/dateFormatting";
 
 function Calendar() {
   const navigate = useNavigate();
@@ -132,8 +133,15 @@ function Calendar() {
             date: new Date(currentDay),
             schedule_id: schedule.id,
             schedule_type: schedule.schedule_type,
+            schedule_rule: schedule.schedule_rule,
             reptile_name: schedule.reptile_name,
             reptile_id: schedule.reptile_id,
+            name: schedule.name,
+            food_category: schedule.food_category,
+            time_slot: schedule.time_slot,
+            time_window_enabled: schedule.time_window_enabled,
+            earliest_time: schedule.earliest_time,
+            latest_time: schedule.latest_time,
             notes: schedule.notes,
           });
           currentDay.setDate(currentDay.getDate() + frequency);
@@ -148,8 +156,15 @@ function Calendar() {
               date: new Date(currentDay),
               schedule_id: schedule.id,
               schedule_type: schedule.schedule_type,
+              schedule_rule: schedule.schedule_rule,
               reptile_name: schedule.reptile_name,
               reptile_id: schedule.reptile_id,
+              name: schedule.name,
+              food_category: schedule.food_category,
+              time_slot: schedule.time_slot,
+              time_window_enabled: schedule.time_window_enabled,
+              earliest_time: schedule.earliest_time,
+              latest_time: schedule.latest_time,
               notes: schedule.notes,
             });
           }
@@ -163,8 +178,15 @@ function Calendar() {
             date: eventDate,
             schedule_id: schedule.id,
             schedule_type: schedule.schedule_type,
+            schedule_rule: schedule.schedule_rule,
             reptile_name: schedule.reptile_name,
             reptile_id: schedule.reptile_id,
+            name: schedule.name,
+            food_category: schedule.food_category,
+            time_slot: schedule.time_slot,
+            time_window_enabled: schedule.time_window_enabled,
+            earliest_time: schedule.earliest_time,
+            latest_time: schedule.latest_time,
             notes: schedule.notes,
           });
         }
@@ -178,33 +200,34 @@ function Calendar() {
       // Find parent schedule events
       const parentEvents = calculatedEvents.filter(e => e.schedule_id === schedule.parent_schedule_id);
 
+      const createEventFromSchedule = (date) => ({
+        date: new Date(date),
+        schedule_id: schedule.id,
+        schedule_type: schedule.schedule_type,
+        schedule_rule: schedule.schedule_rule,
+        reptile_name: schedule.reptile_name,
+        reptile_id: schedule.reptile_id,
+        name: schedule.name,
+        food_category: schedule.food_category,
+        time_slot: schedule.time_slot,
+        time_window_enabled: schedule.time_window_enabled,
+        earliest_time: schedule.earliest_time,
+        latest_time: schedule.latest_time,
+        notes: schedule.notes,
+        parent_schedule_id: schedule.parent_schedule_id,
+      });
+
       if (schedule.dependent_rule === "every_occurrence") {
         // Add event for every parent occurrence
         parentEvents.forEach(parentEvent => {
-          calculatedEvents.push({
-            date: new Date(parentEvent.date),
-            schedule_id: schedule.id,
-            schedule_type: schedule.schedule_type,
-            reptile_name: schedule.reptile_name,
-            reptile_id: schedule.reptile_id,
-            notes: schedule.notes,
-            parent_schedule_id: schedule.parent_schedule_id,
-          });
+          calculatedEvents.push(createEventFromSchedule(parentEvent.date));
         });
       } else if (schedule.dependent_rule === "every_nth") {
         // Add event for every Nth parent occurrence
         const frequency = schedule.dependent_frequency;
         parentEvents.forEach((parentEvent, index) => {
           if ((index + 1) % frequency === 0) {
-            calculatedEvents.push({
-              date: new Date(parentEvent.date),
-              schedule_id: schedule.id,
-              schedule_type: schedule.schedule_type,
-              reptile_name: schedule.reptile_name,
-              reptile_id: schedule.reptile_id,
-              notes: schedule.notes,
-              parent_schedule_id: schedule.parent_schedule_id,
-            });
+            calculatedEvents.push(createEventFromSchedule(parentEvent.date));
           }
         });
       } else if (schedule.dependent_rule === "specific_days") {
@@ -212,15 +235,7 @@ function Calendar() {
         const days = schedule.dependent_days.split(",").map(d => parseInt(d));
         parentEvents.forEach(parentEvent => {
           if (days.includes(parentEvent.date.getDay())) {
-            calculatedEvents.push({
-              date: new Date(parentEvent.date),
-              schedule_id: schedule.id,
-              schedule_type: schedule.schedule_type,
-              reptile_name: schedule.reptile_name,
-              reptile_id: schedule.reptile_id,
-              notes: schedule.notes,
-              parent_schedule_id: schedule.parent_schedule_id,
-            });
+            calculatedEvents.push(createEventFromSchedule(parentEvent.date));
           }
         });
       } else if (schedule.dependent_rule === "once_per_day") {
@@ -232,15 +247,7 @@ function Calendar() {
           // Only add if we haven't already added an event for this date
           if (!eventsByDate.has(dateKey)) {
             eventsByDate.set(dateKey, true);
-            calculatedEvents.push({
-              date: new Date(parentEvent.date),
-              schedule_id: schedule.id,
-              schedule_type: schedule.schedule_type,
-              reptile_name: schedule.reptile_name,
-              reptile_id: schedule.reptile_id,
-              notes: schedule.notes,
-              parent_schedule_id: schedule.parent_schedule_id,
-            });
+            calculatedEvents.push(createEventFromSchedule(parentEvent.date));
           }
         });
       }
@@ -629,17 +636,29 @@ function Calendar() {
                       {schedule.name && <span className="ml-2">• {schedule.name}</span>}
                     </div>
 
-                    {schedule.food_category && (
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        Food: {schedule.food_category}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      {schedule.food_category && (
+                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                          <span className="font-medium">Food:</span> {schedule.food_category}
+                        </div>
+                      )}
 
-                    {schedule.time_slot && (
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        Time: {schedule.time_slot}
-                      </div>
-                    )}
+                      {schedule.time_slot && (
+                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                          <span className="font-medium">Time:</span> {schedule.time_slot}
+                        </div>
+                      )}
+
+                      {schedule.time_window_enabled && schedule.earliest_time && schedule.latest_time && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+                          <Clock size={12} />
+                          <span className="font-medium">Window:</span>
+                          <span>
+                            {formatTime(new Date(`2000-01-01T${schedule.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${schedule.latest_time}`))}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
                     {schedule.notes && (
                       <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -699,52 +718,84 @@ function Calendar() {
                   No events scheduled for this day
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {getEventsForDate(selectedDate).map((event, idx) => {
                     const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
-                    const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
                     const link = getEventLink(event);
+
+                    const EventContent = (
+                      <div className={`px-4 py-3 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium">
+                              {event.is_actual && "✓ "}
+                              {displayName}
+                            </div>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
+                              {event.schedule_type}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-xs opacity-75">
+                          <div>
+                            <span className="font-medium">Reptile:</span> {event.reptile_name}
+                          </div>
+
+                          {event.schedule_rule && (
+                            <div>
+                              <span className="font-medium">Frequency:</span> {event.schedule_rule.replace(/_/g, ' ')}
+                            </div>
+                          )}
+
+                          {event.food_category && (
+                            <div>
+                              <span className="font-medium">Food:</span> {event.food_category}
+                            </div>
+                          )}
+
+                          {event.time_slot && (
+                            <div>
+                              <span className="font-medium">Time:</span> {event.time_slot}
+                            </div>
+                          )}
+
+                          {event.time_window_enabled && event.earliest_time && event.latest_time && (
+                            <div className="flex items-center gap-1">
+                              <Clock size={12} />
+                              <span className="font-medium">Window:</span>
+                              <span className="whitespace-nowrap">
+                                {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
+                              </span>
+                            </div>
+                          )}
+
+                          {event.time && (
+                            <div>
+                              <span className="font-medium">Done:</span> {event.time}
+                            </div>
+                          )}
+                        </div>
+
+                        {event.notes && (
+                          <div className="text-xs opacity-60 mt-2 pt-2 border-t border-black/10 dark:border-white/10">
+                            <span className="font-medium">Notes:</span> {event.notes}
+                          </div>
+                        )}
+                      </div>
+                    );
 
                     return link ? (
                       <Link
                         key={idx}
                         to={link}
-                        className={`block px-4 py-3 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual)} hover:opacity-80 transition-opacity`}
+                        className="block hover:opacity-80 transition-opacity"
                       >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">
-                              {event.is_actual && "✓ "}
-                              {displayName}
-                            </div>
-                            {detail && (
-                              <div className="text-sm opacity-75 mt-1">{detail}</div>
-                            )}
-                            {event.time && (
-                              <div className="text-xs opacity-60 mt-1">{event.time}</div>
-                            )}
-                          </div>
-                        </div>
+                        {EventContent}
                       </Link>
                     ) : (
-                      <div
-                        key={idx}
-                        className={`px-4 py-3 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">
-                              {event.is_actual && "✓ "}
-                              {displayName}
-                            </div>
-                            {detail && (
-                              <div className="text-sm opacity-75 mt-1">{detail}</div>
-                            )}
-                            {event.notes && (
-                              <div className="text-sm opacity-60 mt-1">{event.notes}</div>
-                            )}
-                          </div>
-                        </div>
+                      <div key={idx}>
+                        {EventContent}
                       </div>
                     );
                   })}
