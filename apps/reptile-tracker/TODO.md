@@ -121,21 +121,22 @@
     - Critical medication timing
     - Notification service (future): "Feed Gecko in 30 minutes" or "Deadline in 1 hour!"
 
-- [ ] **Advanced scheduling system** - 🎯 NEXT PRIORITY
-  - Backend: Extend schedule model for advanced rules
-    - Every X days (already supported)
-    - Specific days of week (e.g., Mon, Wed, Fri)
-    - Monthly (specific day of month)
-    - Dependent schedules (e.g., supplements based on feeding schedule)
-  - Schedule types: feeding, misting, weighing, supplement
-  - Dependent scheduling examples:
-    - "Multivitamin every 2nd feeding"
-    - "Calcium with D3 every Monday feeding"
-    - "Calcium without D3 on all other feedings"
-  - Frontend: Schedule creation UI with smart rules
-  - Frontend: Visual schedule preview on calendar
-  - Backend: Calculate next occurrence based on rules
-  - Backend: Support for supplement assignment to feeding schedules
+- [x] **Advanced scheduling system** - ✅ COMPLETED
+  - Backend: Schedule model supports all advanced rules
+    - Every X days ✅
+    - Specific days of week (e.g., Mon, Wed, Fri) ✅
+    - Monthly (specific day of month) ✅
+    - Dependent schedules (e.g., supplements based on feeding schedule) ✅
+  - Schedule types: feeding, misting, weighing, supplement ✅
+  - Dependent scheduling rules:
+    - Every occurrence of parent schedule ✅
+    - Every Nth occurrence ✅
+    - Specific days of week ✅
+    - Once per day (first occurrence only) ✅
+  - Frontend: Complete schedule creation/edit UI ✅
+  - Frontend: Calendar displays calculated events ✅
+  - Backend: Event calculation based on all rule types ✅
+  - Backend: Supplement assignment to schedules ✅
 
 ## 📊 Statistics & Analytics
 
@@ -392,6 +393,20 @@
   - Day labels in left column, weeks as vertical columns
   - Constrained heatmap width to content size (about 1/3 card width)
   - GitHub-style contribution graph now displays correctly
+
+- [x] **Statistics UI improvements** - ✅ COMPLETED (2025-01-15)
+  - Moved filter toggles to header row for compact layout
+  - Icon-only buttons with tooltips (Weight, Feeding, Misting, Health)
+  - Color-coded active states matching data types
+  - Removed separate filter card, all controls now in header
+
+- [x] **Advanced scheduling system** - ✅ COMPLETED
+  - Full support for all schedule rule types (every X days, days of week, monthly, dependent)
+  - Dependent schedule rules: every occurrence, every Nth, specific days, once per day
+  - Schedule types: feeding, misting, weighing, supplement
+  - Complete frontend UI for creating and editing schedules
+  - Calendar event calculation and display
+  - Supplement assignment to schedules
 
 - [x] **Fixed session timeout** - ✅ COMPLETED
   - Updated ACCESS_TOKEN_EXPIRE_MINUTES from 15 to 1440 (24 hours)
