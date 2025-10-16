@@ -194,8 +194,63 @@ function Statistics() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistics</h1>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Left: Dropdowns */}
-          <div className="flex flex-wrap gap-3">
+          {/* Left: Filter Toggles - Inline and Horizontal */}
+          {stats && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => toggleDataVisibility('weight')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    visibleData.weight
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <Scale size={16} className="inline mr-1" />
+                  Weight
+                </button>
+                <button
+                  onClick={() => toggleDataVisibility('feeding')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    visibleData.feeding
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <Calendar size={16} className="inline mr-1" />
+                  Feeding
+                </button>
+                <button
+                  onClick={() => toggleDataVisibility('misting')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    visibleData.misting
+                      ? 'bg-blue-400 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <Droplet size={16} className="inline mr-1" />
+                  Misting
+                </button>
+                <button
+                  onClick={() => toggleDataVisibility('health')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    visibleData.health
+                      ? 'bg-red-400 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <Heart size={16} className="inline mr-1" />
+                  Health
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+            </>
+          )}
+
+          {/* Right: Dropdowns */}
+          <div className="flex gap-3">
             {/* Reptile Selector */}
             <select
               value={selectedReptile || ''}
@@ -222,56 +277,6 @@ function Statistics() {
               <option value={730}>2 years</option>
             </select>
           </div>
-
-          {/* Right: Filter Toggles - Inline and Horizontal */}
-          {stats && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => toggleDataVisibility('weight')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  visibleData.weight
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Scale size={16} className="inline mr-1" />
-                Weight
-              </button>
-              <button
-                onClick={() => toggleDataVisibility('feeding')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  visibleData.feeding
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Calendar size={16} className="inline mr-1" />
-                Feeding
-              </button>
-              <button
-                onClick={() => toggleDataVisibility('misting')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  visibleData.misting
-                    ? 'bg-blue-400 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Droplet size={16} className="inline mr-1" />
-                Misting
-              </button>
-              <button
-                onClick={() => toggleDataVisibility('health')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  visibleData.health
-                    ? 'bg-red-400 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Heart size={16} className="inline mr-1" />
-                Health
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
