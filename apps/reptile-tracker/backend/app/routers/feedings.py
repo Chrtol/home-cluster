@@ -21,6 +21,7 @@ from app.models import (
 from app.permissions import check_reptile_access
 from app.schemas import FeedingCreate, Feeding as FeedingSchema, FeedingWithUser
 from app.notifications import notify_feeding_logged
+from app.schedule_matcher import assign_feeding_to_schedule
 
 router = APIRouter()
 
@@ -240,6 +241,9 @@ async def create_feeding(
                     food_id=food_id,
                 )
             )
+
+    # Try to assign to a matching schedule
+    await assign_feeding_to_schedule(db, new_feeding)
 
     await db.commit()
 
