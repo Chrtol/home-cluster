@@ -463,3 +463,51 @@ class InvitationOut(BaseModel):
 
 class InvitationAccept(BaseModel):
     code: str
+
+
+# Feeding Rotation schemas
+class FeedingRotationBase(BaseModel):
+    rotation_type: str  # "supplement" or "food_replacement"
+    supplement_id: Optional[int] = None
+    replacement_food_category: Optional[str] = None
+    replacement_note: Optional[str] = None
+    every_n_feedings: int
+    applies_to_category: Optional[str] = None  # "insects", "salad", "mixed", "all", null
+    counting_mode: str = "category_only"  # "category_only" or "all_feedings"
+    application_mode: str = "any_feeding"  # "any_feeding" or "specific_occurrence"
+    priority: int = 10
+    enabled: bool = True
+    notes: Optional[str] = None
+
+
+class FeedingRotationCreate(FeedingRotationBase):
+    reptile_id: int
+
+
+class FeedingRotationUpdate(BaseModel):
+    rotation_type: Optional[str] = None
+    supplement_id: Optional[int] = None
+    replacement_food_category: Optional[str] = None
+    replacement_note: Optional[str] = None
+    every_n_feedings: Optional[int] = None
+    applies_to_category: Optional[str] = None
+    counting_mode: Optional[str] = None
+    application_mode: Optional[str] = None
+    priority: Optional[int] = None
+    enabled: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class FeedingRotation(FeedingRotationBase):
+    id: int
+    reptile_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FeedingRotationWithDetails(FeedingRotation):
+    """Feeding rotation with supplement details"""
+    supplement: Optional[Supplement] = None

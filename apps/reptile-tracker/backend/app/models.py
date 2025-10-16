@@ -358,6 +358,55 @@ class ScheduleCompletion(Base):
     reptile = relationship("Reptile")
 
 
+class FeedingRotation(Base):
+    """Defines supplement or food replacement rotation rules for a reptile"""
+    __tablename__ = "feeding_rotations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Type of rotation: "supplement" or "food_replacement"
+    rotation_type = Column(String, nullable=False)
+
+    # For supplement rotations
+    supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="CASCADE"), nullable=True)
+
+    # For food replacement rotations (e.g., "feed frozen mouse every 10th feeding instead of insects")
+    replacement_food_category = Column(String, nullable=True)  # "eggs", "frozen_animal", etc.
+    replacement_note = Column(String, nullable=True)  # "1 small egg", "1 pinky mouse"
+
+    # Every N feedings (e.g., 3 = every 3rd feeding)
+    every_n_feedings = Column(Integer, nullable=False)
+
+    # Category filter (which feedings does this apply to?)
+    # Can be: "insects", "salad", "mixed", "all", or null (default = all)
+    applies_to_category = Column(String, nullable=True)
+
+    # Counting mode
+    # "category_only": Count only feedings matching applies_to_category
+    # "all_feedings": Count all feedings regardless of category
+    counting_mode = Column(String, nullable=False, default="category_only")
+
+    # Application mode
+    # "any_feeding": Apply to any feeding that day/occurrence (agnostic to which feeding it is)
+    # "specific_occurrence": Apply only to the specific Nth feeding
+    application_mode = Column(String, nullable=False, default="any_feeding")
+
+    # Priority (1 = highest) - used when multiple rotations trigger on same feeding
+    priority = Column(Integer, nullable=False, default=10)
+
+    # Enabled/disabled
+    enabled = Column(Boolean, default=True, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    reptile = relationship("Reptile", backref="feeding_rotations")
+    supplement = relationship("Supplement")
+
+
 class NotificationSettings(Base):
     __tablename__ = "notification_settings"
 
