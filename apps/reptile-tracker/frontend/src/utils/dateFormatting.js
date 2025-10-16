@@ -34,6 +34,44 @@ export function getUserTimezone() {
   return localStorage.getItem('timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
+export function getUserFirstDayOfWeek() {
+  return localStorage.getItem('firstDayOfWeek') || 'sunday';
+}
+
+/**
+ * Get day names in order based on first day of week preference
+ * @param {boolean} short - If true, returns 3-letter abbreviations
+ * @returns {Array<string>} Array of day names starting with preferred first day
+ */
+export function getDayNames(short = false) {
+  const firstDay = getUserFirstDayOfWeek();
+  const full = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const abbrev = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const names = short ? abbrev : full;
+
+  if (firstDay === 'monday') {
+    // Rotate array to start with Monday
+    return [...names.slice(1), names[0]];
+  }
+
+  return names;
+}
+
+/**
+ * Get day numbers in order based on first day of week preference
+ * @returns {Array<number>} Array of day numbers (0-6) starting with preferred first day
+ */
+export function getDayNumbers() {
+  const firstDay = getUserFirstDayOfWeek();
+
+  if (firstDay === 'monday') {
+    return [1, 2, 3, 4, 5, 6, 0]; // Monday through Sunday
+  }
+
+  return [0, 1, 2, 3, 4, 5, 6]; // Sunday through Saturday
+}
+
 export function formatDate(date, format = null) {
   const dateFormat = format || getUserDateFormat();
   const d = new Date(date);

@@ -50,6 +50,7 @@ function PreferencesTab() {
   const [timeFormat, setTimeFormat] = useState('24h');
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
   const [timezone, setTimezone] = useState('');
+  const [firstDayOfWeek, setFirstDayOfWeek] = useState('sunday');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
@@ -57,12 +58,14 @@ function PreferencesTab() {
     setTimeFormat(getUserTimeFormat());
     setDateFormat(getUserDateFormat());
     setTimezone(getUserTimezone());
+    setFirstDayOfWeek(localStorage.getItem('firstDayOfWeek') || 'sunday');
   }, []);
 
   const handleSave = () => {
     localStorage.setItem('timeFormat', timeFormat);
     localStorage.setItem('dateFormat', dateFormat);
     localStorage.setItem('timezone', timezone);
+    localStorage.setItem('firstDayOfWeek', firstDayOfWeek);
 
     setSuccess('Settings saved successfully!');
     setTimeout(() => setSuccess(''), 3000);
@@ -138,6 +141,22 @@ function PreferencesTab() {
               </select>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Current timezone: {timezone}
+              </p>
+            </div>
+
+            {/* First Day of Week */}
+            <div>
+              <label className="block font-medium mb-2 text-gray-900 dark:text-white">First Day of Week</label>
+              <select
+                value={firstDayOfWeek}
+                onChange={(e) => setFirstDayOfWeek(e.target.value)}
+                className="input w-full"
+              >
+                <option value="sunday">Sunday</option>
+                <option value="monday">Monday</option>
+              </select>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Affects calendar view and rotation day-of-week picker
               </p>
             </div>
           </div>
