@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, time, date
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field, field_serializer
-from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize
+from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType
 
 
 # User schemas
@@ -151,6 +151,7 @@ class Feeding(BaseModel):
     foods: List[FoodWithQuantity]
     supplements: List[Supplement]
     salad_components: List[Food]
+    schedule_completion_id: Optional[int] = None
     created_at: datetime
 
     @field_serializer('fed_at', 'created_at')
@@ -192,6 +193,7 @@ class WeightLog(WeightLogBase):
     id: int
     reptile_id: int
     measured_at: datetime
+    schedule_completion_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -253,6 +255,7 @@ class MistingLog(MistingLogBase):
     id: int
     reptile_id: int
     created_at: datetime
+    schedule_completion_id: Optional[int] = None
     reptile: Optional["Reptile"] = None
 
     class Config:
@@ -274,6 +277,13 @@ class ScheduleBase(BaseModel):
     dependent_frequency: Optional[int] = None  # For every_nth
     dependent_days: Optional[str] = None  # For specific_days
     supplement_id: Optional[int] = None  # For supplement schedules
+
+    # Time window settings
+    earliest_time: Optional[time] = None  # Start of valid window (e.g., 10:00 AM - after basking)
+    latest_time: Optional[time] = None  # End of valid window (e.g., 8:00 PM - before lights off)
+    time_window_enabled: bool = False
+    reminder_minutes_before: Optional[int] = None  # For notifications
+
     enabled: bool = True
     notes: Optional[str] = None
 
@@ -297,6 +307,13 @@ class ScheduleUpdate(BaseModel):
     dependent_frequency: Optional[int] = None
     dependent_days: Optional[str] = None
     supplement_id: Optional[int] = None
+
+    # Time window settings
+    earliest_time: Optional[time] = None
+    latest_time: Optional[time] = None
+    time_window_enabled: Optional[bool] = None
+    reminder_minutes_before: Optional[int] = None
+
     enabled: Optional[bool] = None
     notes: Optional[str] = None
 
@@ -316,6 +333,40 @@ class ScheduleWithDetails(Schedule):
     supplement: Optional[Supplement] = None
     parent_schedule: Optional[Schedule] = None
     child_schedules: List[Schedule] = []
+
+
+# Schedule Completion schemas
+class ScheduleCompletionBase(BaseModel):
+    schedule_id: int
+    scheduled_date: date
+    completion_type: Optional[CompletionType] = None
+    completion_id: Optional[int] = None
+    within_time_window: Optional[bool] = None
+    status: CompletionStatus
+
+
+class ScheduleCompletionCreate(ScheduleCompletionBase):
+    reptile_id: int
+    completed_at: Optional[datetime] = None
+
+
+class ScheduleCompletionUpdate(BaseModel):
+    completed_at: Optional[datetime] = None
+    completion_type: Optional[CompletionType] = None
+    completion_id: Optional[int] = None
+    within_time_window: Optional[bool] = None
+    status: Optional[CompletionStatus] = None
+
+
+class ScheduleCompletion(ScheduleCompletionBase):
+    id: int
+    reptile_id: int
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # Access control schemas
