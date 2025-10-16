@@ -15,9 +15,15 @@ function Calendar() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showSchedules, setShowSchedules] = useState(false);
+  const [visibleReptiles, setVisibleReptiles] = useState(new Set());
 
   useEffect(() => {
     fetchReptiles();
+    // Load filter state from localStorage
+    const savedFilters = localStorage.getItem('calendar_reptile_filters');
+    if (savedFilters) {
+      setVisibleReptiles(new Set(JSON.parse(savedFilters)));
+    }
   }, []);
 
   useEffect(() => {
@@ -31,6 +37,12 @@ function Calendar() {
     try {
       const response = await axios.get("/api/reptiles");
       setReptiles(response.data);
+
+      // Initialize all reptiles as visible if no saved filters
+      const savedFilters = localStorage.getItem('calendar_reptile_filters');
+      if (!savedFilters) {
+        setVisibleReptiles(new Set(response.data.map(r => r.id)));
+      }
     } catch (error) {
       console.error("Error fetching reptiles:", error);
     }
@@ -287,7 +299,7 @@ function Calendar() {
     // Get scheduled events for this date
     const scheduledEvents = events.filter(event => {
       const eventDate = new Date(event.date);
-      return eventDate.toDateString() === date.toDateString();
+      return eventDate.toDateString() === date.toDateString() && visibleReptiles.has(event.reptile_id);
     }).map(e => ({
       ...e,
       is_actual: false, // This is a schedule, not an actual feeding
@@ -296,7 +308,7 @@ function Calendar() {
     // Get actual completed feedings for this date
     const actualFeedings = feedings.filter(feeding => {
       const feedDate = new Date(feeding.fed_at);
-      return feedDate.toDateString() === date.toDateString();
+      return feedDate.toDateString() === date.toDateString() && visibleReptiles.has(feeding.reptile_id);
     }).map(f => ({
       ...f,
       schedule_type: "feeding",
@@ -309,7 +321,7 @@ function Calendar() {
     // Get actual completed mistings for this date
     const actualMistings = mistings.filter(misting => {
       const mistDate = new Date(misting.misted_at);
-      return mistDate.toDateString() === date.toDateString();
+      return mistDate.toDateString() === date.toDateString() && visibleReptiles.has(misting.reptile_id);
     }).map(m => ({
       ...m,
       schedule_type: "misting",
@@ -385,6 +397,31 @@ function Calendar() {
     setSelectedDate(date);
   };
 
+  const toggleReptileFilter = (reptileId) => {
+    const newFilters = new Set(visibleReptiles);
+    if (newFilters.has(reptileId)) {
+      newFilters.delete(reptileId);
+    } else {
+      newFilters.add(reptileId);
+    }
+    setVisibleReptiles(newFilters);
+    // Save to localStorage
+    localStorage.setItem('calendar_reptile_filters', JSON.stringify(Array.from(newFilters)));
+  };
+
+  const toggleAllReptiles = () => {
+    if (visibleReptiles.size === reptiles.length) {
+      // If all are visible, hide all
+      setVisibleReptiles(new Set());
+      localStorage.setItem('calendar_reptile_filters', JSON.stringify([]));
+    } else {
+      // Show all
+      const allIds = new Set(reptiles.map(r => r.id));
+      setVisibleReptiles(allIds);
+      localStorage.setItem('calendar_reptile_filters', JSON.stringify(Array.from(allIds)));
+    }
+  };
+
   const handleDeleteSchedule = async (scheduleId) => {
     if (!window.confirm("Are you sure you want to delete this schedule?")) {
       return;
@@ -448,6 +485,38 @@ function Calendar() {
     }
   };
 
+  const getEventSquareColor = (type, isActual) => {
+    if (isActual) {
+      // Solid colors for actual completed activities (for small squares)
+      switch (type) {
+        case "feeding":
+          return "bg-green-500 dark:bg-green-600 border border-green-600 dark:border-green-500";
+        case "misting":
+          return "bg-blue-500 dark:bg-blue-600 border border-blue-600 dark:border-blue-500";
+        case "weighing":
+          return "bg-purple-500 dark:bg-purple-600 border border-purple-600 dark:border-purple-500";
+        case "supplement":
+          return "bg-emerald-500 dark:bg-emerald-600 border border-emerald-600 dark:border-emerald-500";
+        default:
+          return "bg-gray-500 dark:bg-gray-600 border border-gray-600 dark:border-gray-500";
+      }
+    } else {
+      // Lighter/outlined colors for scheduled events
+      switch (type) {
+        case "feeding":
+          return "bg-green-200 dark:bg-green-800 border border-green-400 dark:border-green-700";
+        case "misting":
+          return "bg-blue-200 dark:bg-blue-800 border border-blue-400 dark:border-blue-700";
+        case "weighing":
+          return "bg-purple-200 dark:bg-purple-800 border border-purple-400 dark:border-purple-700";
+        case "supplement":
+          return "bg-emerald-200 dark:bg-emerald-800 border border-emerald-400 dark:border-emerald-700";
+        default:
+          return "bg-gray-200 dark:bg-gray-800 border border-gray-400 dark:border-gray-700";
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -481,6 +550,41 @@ function Calendar() {
           </button>
         </div>
       </div>
+
+      {/* Reptile Filters */}
+      {reptiles.length > 0 && (
+        <div className="card mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Filter by Reptile</h3>
+            <button
+              onClick={toggleAllReptiles}
+              className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            >
+              {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {reptiles.map(reptile => (
+              <button
+                key={reptile.id}
+                onClick={() => toggleReptileFilter(reptile.id)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  visibleReptiles.has(reptile.id)
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {reptile.name}
+              </button>
+            ))}
+          </div>
+          {visibleReptiles.size < reptiles.length && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Showing {visibleReptiles.size} of {reptiles.length} reptiles
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Schedules Management Section */}
       {showSchedules && (
@@ -567,48 +671,97 @@ function Calendar() {
         </div>
       )}
 
-      {/* Legend */}
-      <div className="card mb-4 p-3">
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="font-medium text-gray-600 dark:text-gray-400">Legend:</span>
+      {/* Day Events Modal */}
+      {selectedDate && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedDate(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {selectedDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+              </h2>
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <ChevronUp size={24} />
+              </button>
+            </div>
 
-          {/* Scheduled */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-gray-500 dark:text-gray-400">Scheduled:</span>
-            <div className="px-2 py-0.5 rounded bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
-              Feed
-            </div>
-            <div className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-              Mist
-            </div>
-            <div className="px-2 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800">
-              Supp
-            </div>
-          </div>
+            <div className="px-6 py-4">
+              {getEventsForDate(selectedDate).length === 0 ? (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                  No events scheduled for this day
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {getEventsForDate(selectedDate).map((event, idx) => {
+                    const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                    const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+                    const link = getEventLink(event);
 
-          <span className="text-gray-300 dark:text-gray-600">|</span>
-
-          {/* Completed */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-gray-500 dark:text-gray-400">Completed:</span>
-            <div className="px-2 py-0.5 rounded bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
-              ✓ Feed
-            </div>
-            <div className="px-2 py-0.5 rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
-              ✓ Mist
-            </div>
-            <div className="px-2 py-0.5 rounded bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700">
-              ✓ Supp
+                    return link ? (
+                      <Link
+                        key={idx}
+                        to={link}
+                        className={`block px-4 py-3 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual)} hover:opacity-80 transition-opacity`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">
+                              {event.is_actual && "✓ "}
+                              {displayName}
+                            </div>
+                            {detail && (
+                              <div className="text-sm opacity-75 mt-1">{detail}</div>
+                            )}
+                            {event.time && (
+                              <div className="text-xs opacity-60 mt-1">{event.time}</div>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div
+                        key={idx}
+                        className={`px-4 py-3 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">
+                              {event.is_actual && "✓ "}
+                              {displayName}
+                            </div>
+                            {detail && (
+                              <div className="text-sm opacity-75 mt-1">{detail}</div>
+                            )}
+                            {event.notes && (
+                              <div className="text-sm opacity-60 mt-1">{event.notes}</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Calendar Controls */}
       <div className="card mb-4">
-        {/* View Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-full sm:w-auto">
+        {/* View Switcher with Legend */}
+        <div className="flex flex-col lg:flex-row lg:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* View Buttons */}
+            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-full sm:w-auto">
             <button
               onClick={() => setView("month")}
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
@@ -641,7 +794,45 @@ function Calendar() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-start gap-2">
+          {/* Divider */}
+          <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Scheduled */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-500 dark:text-gray-400">Scheduled:</span>
+              <div className="px-2 py-0.5 rounded bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+                Feed
+              </div>
+              <div className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                Mist
+              </div>
+              <div className="px-2 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800">
+                Supp
+              </div>
+            </div>
+
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+
+            {/* Completed */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-500 dark:text-gray-400">Completed:</span>
+              <div className="px-2 py-0.5 rounded bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
+                ✓ Feed
+              </div>
+              <div className="px-2 py-0.5 rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
+                ✓ Mist
+              </div>
+              <div className="px-2 py-0.5 rounded bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700">
+                ✓ Supp
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Controls */}
+        <div className="flex items-center justify-between sm:justify-start gap-2">
             <button
               onClick={() => navigateView(-1)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -696,8 +887,9 @@ function Calendar() {
                           {date.getDate()}
                         </div>
 
+                        {/* Desktop: Show first 2 events as text, rest as squares */}
                         <div className="space-y-1 hidden sm:block">
-                          {dayEvents.slice(0, 3).map((event, idx) => {
+                          {dayEvents.slice(0, 2).map((event, idx) => {
                             const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                             const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
 
@@ -713,15 +905,40 @@ function Calendar() {
                               </div>
                             );
                           })}
-                          {dayEvents.length > 3 && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 px-2">
-                              +{dayEvents.length - 3} more
+                          {dayEvents.length > 2 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {dayEvents.slice(2).map((event, idx) => {
+                                const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                                const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}`;
+
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`w-3 h-3 rounded-sm ${getEventSquareColor(event.schedule_type, event.is_actual)} transition-transform hover:scale-150 cursor-pointer`}
+                                    title={tooltipText}
+                                  />
+                                );
+                              })}
                             </div>
                           )}
                         </div>
+                        {/* Mobile: Show all events as squares */}
                         {dayEvents.length > 0 && (
-                          <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
-                            {dayEvents.length}
+                          <div className="sm:hidden flex flex-wrap gap-1 justify-center mt-1">
+                            {dayEvents.map((event, idx) => {
+                              const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                              const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
+                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}`;
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`w-2.5 h-2.5 rounded-sm ${getEventSquareColor(event.schedule_type, event.is_actual)}`}
+                                  title={tooltipText}
+                                />
+                              );
+                            })}
                           </div>
                         )}
                       </>
