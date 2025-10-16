@@ -136,7 +136,7 @@ function Calendar() {
     // Helper function to find applicable supplements for a feeding event
     // NOTE: This is a simplified client-side calculation for display purposes
     // The actual rotation calculation happens server-side when logging feedings
-    const getSuggestedSupplements = (reptileId, foodCategory, eventIndex) => {
+    const getSuggestedSupplements = (reptileId, foodCategory, eventIndex, eventDate) => {
       const rotations = rotationsByReptile[reptileId] || [];
 
       // Filter rotations that apply to this food category
@@ -150,13 +150,28 @@ function Calendar() {
       applicable.sort((a, b) => a.priority - b.priority);
 
       // Find ALL rotations that trigger on this event (not just the first one)
-      // Using eventIndex as a rough approximation of feeding number
       const triggeredSupplements = [];
       for (const rotation of applicable) {
-        if ((eventIndex + 1) % rotation.every_n_feedings === 0) {
-          if (rotation.supplement) {
-            triggeredSupplements.push(rotation.supplement);
+        let shouldTrigger = false;
+
+        if (rotation.trigger_mode === 'feeding_count') {
+          // Using eventIndex as a rough approximation of feeding number
+          if ((eventIndex + 1) % rotation.every_n_feedings === 0) {
+            shouldTrigger = true;
           }
+        } else if (rotation.trigger_mode === 'schedule_based') {
+          // Check if event date's day of week matches configured days
+          if (rotation.schedule_days_of_week && eventDate) {
+            const dayOfWeek = eventDate.getDay(); // 0=Sunday, 1=Monday, etc
+            const configuredDays = rotation.schedule_days_of_week.split(',').map(d => parseInt(d));
+            if (configuredDays.includes(dayOfWeek)) {
+              shouldTrigger = true;
+            }
+          }
+        }
+
+        if (shouldTrigger && rotation.supplement) {
+          triggeredSupplements.push(rotation.supplement);
         }
       }
       return triggeredSupplements;
@@ -186,7 +201,8 @@ function Calendar() {
         const supplements = getSuggestedSupplements(
           schedule.reptile_id,
           schedule.food_category,
-          eventIndexCounter
+          eventIndexCounter,
+          event.date
         );
         if (supplements && supplements.length > 0) {
           event.suggested_supplements = supplements;
