@@ -1,5 +1,5 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,6 +13,10 @@ from app.schemas import (
     FeedingRotationCreate,
     FeedingRotationUpdate,
     FeedingRotationWithDetails,
+)
+from app.rotation_calculator import (
+    calculate_rotation_for_feeding,
+    get_rotation_preview,
 )
 
 router = APIRouter()
@@ -138,3 +142,38 @@ async def delete_feeding_rotation(
     await db.execute(delete(FeedingRotation).where(FeedingRotation.id == rotation_id))
     await db.commit()
     return None
+
+
+@router.get("/reptile/{reptile_id}/calculate", response_model=Optional[Dict[str, Any]])
+async def calculate_next_rotation(
+    reptile_id: int,
+    food_category: Optional[str] = Query(None, description="Food category (e.g., 'insects', 'salad')"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Calculate which rotation (supplement or food replacement) should apply to the next feeding.
+    Used when logging a new feeding to suggest supplements or food replacements.
+    """
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+
+    rotation = await calculate_rotation_for_feeding(db, reptile_id, food_category)
+    return rotation
+
+
+@router.get("/reptile/{reptile_id}/preview", response_model=List[Dict[str, Any]])
+async def preview_rotations(
+    reptile_id: int,
+    food_category: Optional[str] = Query(None, description="Food category (e.g., 'insects', 'salad')"),
+    preview_count: int = Query(10, description="Number of future feedings to preview", ge=1, le=50),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Preview upcoming feeding rotations for the next N feedings.
+    Useful for showing users what supplements will be applied in the future.
+    """
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+
+    preview = await get_rotation_preview(db, reptile_id, food_category, preview_count)
+    return preview
