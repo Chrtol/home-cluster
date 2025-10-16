@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale } from "lucide-react";
-import { formatTime } from "../utils/dateFormatting";
+import { formatTime, getDayNames, getUserFirstDayOfWeek } from "../utils/dateFormatting";
 
 function Calendar() {
   const navigate = useNavigate();
@@ -311,12 +311,20 @@ function Calendar() {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+    const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 6 = Saturday
 
     const days = [];
 
+    // Get first day of week preference
+    const firstDayOfWeek = getUserFirstDayOfWeek();
+    const offset = firstDayOfWeek === 'monday' ? 1 : 0;
+
+    // Calculate padding based on first day preference
+    let paddingDays = startingDayOfWeek - offset;
+    if (paddingDays < 0) paddingDays += 7;
+
     // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
+    for (let i = 0; i < paddingDays; i++) {
       days.push(null);
     }
 
@@ -329,8 +337,17 @@ function Calendar() {
   };
 
   const getDaysInWeek = () => {
+    const firstDayOfWeek = getUserFirstDayOfWeek();
+    const offset = firstDayOfWeek === 'monday' ? 1 : 0;
+
     const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    const currentDayOfWeek = currentDate.getDay();
+
+    // Calculate days to subtract to get to the start of the week
+    let daysToSubtract = currentDayOfWeek - offset;
+    if (daysToSubtract < 0) daysToSubtract += 7;
+
+    startOfWeek.setDate(currentDate.getDate() - daysToSubtract);
 
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -1005,7 +1022,7 @@ function Calendar() {
         {view === "month" && (
           <>
             <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+              {getDayNames(true).map(day => (
                 <div key={day} className="text-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
                   {day}
                 </div>
@@ -1113,7 +1130,7 @@ function Calendar() {
         {view === "week" && (
           <>
             <div className="grid grid-cols-7 gap-2 mb-2">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+              {getDayNames(true).map(day => (
                 <div key={day} className="text-center text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
                   {day}
                 </div>
