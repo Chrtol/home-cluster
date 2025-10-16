@@ -388,7 +388,7 @@ function Calendar() {
       reptile_name: f.reptile_name,
       notes: f.notes,
       is_actual: true, // This is an actual feeding that happened
-      time: new Date(f.fed_at).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" }),
+      time: formatTime(new Date(f.fed_at)),
     }));
 
     // Get actual completed mistings for this date
@@ -401,16 +401,66 @@ function Calendar() {
       reptile_name: m.reptile_name,
       notes: m.notes,
       is_actual: true, // This is an actual misting that happened
-      time: new Date(m.misted_at).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" }),
+      time: formatTime(new Date(m.misted_at)),
     }));
 
-    // Combine all events and sort: actual events first, then scheduled
-    return [...actualFeedings, ...actualMistings, ...scheduledEvents].sort((a, b) => {
-      // Sort actual events before scheduled events
-      if (a.is_actual && !b.is_actual) return -1;
-      if (!a.is_actual && b.is_actual) return 1;
-      return 0;
+    // Match actual events to their corresponding schedules
+    const matchedScheduleIds = new Set();
+
+    // For each actual feeding/misting, find matching schedule and mark it as completed
+    actualFeedings.forEach(actual => {
+      const matchingSchedule = scheduledEvents.find(scheduled =>
+        scheduled.reptile_id === actual.reptile_id &&
+        scheduled.schedule_type === "feeding" &&
+        scheduled.food_category === actual.food_category &&
+        !matchedScheduleIds.has(scheduled.schedule_id)
+      );
+
+      if (matchingSchedule) {
+        matchingSchedule.is_completed = true;
+        matchingSchedule.completed_at = actual.fed_at;
+        matchingSchedule.completed_time = actual.time;
+        matchingSchedule.completion_id = actual.id;
+        matchedScheduleIds.add(matchingSchedule.schedule_id);
+      }
     });
+
+    actualMistings.forEach(actual => {
+      const matchingSchedule = scheduledEvents.find(scheduled =>
+        scheduled.reptile_id === actual.reptile_id &&
+        scheduled.schedule_type === "misting" &&
+        !matchedScheduleIds.has(scheduled.schedule_id)
+      );
+
+      if (matchingSchedule) {
+        matchingSchedule.is_completed = true;
+        matchingSchedule.completed_at = actual.misted_at;
+        matchingSchedule.completed_time = actual.time;
+        matchingSchedule.completion_id = actual.id;
+        matchedScheduleIds.add(matchingSchedule.schedule_id);
+      }
+    });
+
+    // Only include actual events that didn't match any schedule (manual entries)
+    const unmatchedActualFeedings = actualFeedings.filter(actual => {
+      const hasMatchingSchedule = scheduledEvents.some(scheduled =>
+        scheduled.reptile_id === actual.reptile_id &&
+        scheduled.schedule_type === "feeding" &&
+        scheduled.food_category === actual.food_category
+      );
+      return !hasMatchingSchedule;
+    });
+
+    const unmatchedActualMistings = actualMistings.filter(actual => {
+      const hasMatchingSchedule = scheduledEvents.some(scheduled =>
+        scheduled.reptile_id === actual.reptile_id &&
+        scheduled.schedule_type === "misting"
+      );
+      return !hasMatchingSchedule;
+    });
+
+    // Combine: scheduled events (some now marked completed) + unmatched actual events
+    return [...scheduledEvents, ...unmatchedActualFeedings, ...unmatchedActualMistings];
   };
 
   const navigateMonth = (direction) => {
@@ -456,17 +506,26 @@ function Calendar() {
   };
 
   const getEventLink = (event) => {
-    // For actual completed events, link to the read-only view
+    // For completed scheduled events, link to the completion view
+    if (event.is_completed && event.completion_id) {
+      if (event.schedule_type === "feeding") {
+        return `/feed/${event.completion_id}`;
+      } else if (event.schedule_type === "misting") {
+        return `/misting/${event.completion_id}`;
+      }
+    }
+
+    // For actual completed events (unmatched), link to the read-only view
     if (event.is_actual) {
-      if (event.type === "feeding") {
+      if (event.type === "feeding" || event.schedule_type === "feeding") {
         return `/feed/${event.id}`;
-      } else if (event.type === "misting") {
+      } else if (event.type === "misting" || event.schedule_type === "misting") {
         return `/misting/${event.id}`;
       }
       return null;
     }
 
-    // For scheduled events, link to the schedule edit page
+    // For uncompleted scheduled events, link to the schedule edit page
     if (event.schedule_id) {
       return `/schedule-edit/${event.schedule_id}`;
     }
@@ -816,7 +875,7 @@ function Calendar() {
 
                     const EventContent = (
                       <div className={`px-4 py-3 rounded-lg border-2 ${
-                        event.is_actual
+                        event.is_completed || event.is_actual
                           ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
                           : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                       }`}>
@@ -825,7 +884,7 @@ function Calendar() {
                             <TypeIcon size={20} />
                           </div>
                           <div className="flex items-center gap-2 flex-1">
-                            {event.is_actual && (
+                            {(event.is_completed || event.is_actual) && (
                               <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
                             )}
                             <div className="font-semibold text-gray-900 dark:text-white">
@@ -883,10 +942,10 @@ function Calendar() {
                             </div>
                           ) : null}
 
-                          {event.time && (
+                          {(event.completed_time || event.time) && (
                             <div className="flex flex-col">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Completed</span>
-                              <span className="text-green-600 dark:text-green-400 font-medium">{event.time}</span>
+                              <span className="text-green-600 dark:text-green-400 font-medium">{event.completed_time || event.time}</span>
                             </div>
                           )}
                         </div>
