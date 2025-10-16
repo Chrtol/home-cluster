@@ -37,7 +37,7 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-f1c95b3
+              tag: main-f0e489c
               pullPolicy: Always
             env:
               DATABASE_URL:
@@ -104,7 +104,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-f1c95b3
+              tag: main-f0e489c
               pullPolicy: Always
             probes:
               liveness:
