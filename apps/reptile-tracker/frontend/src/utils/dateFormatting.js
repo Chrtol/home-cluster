@@ -35,7 +35,25 @@ export function getUserTimezone() {
 }
 
 export function getUserFirstDayOfWeek() {
-  return localStorage.getItem('firstDayOfWeek') || 'sunday';
+  const stored = localStorage.getItem('firstDayOfWeek');
+  if (stored) return stored;
+
+  // Auto-detect based on browser locale
+  const locale = navigator.language || navigator.userLanguage || 'en-US';
+
+  // Countries/regions that use Monday as first day of week
+  const mondayFirstLocales = [
+    'en-GB', 'en-AU', 'en-NZ', 'en-IE', 'en-IN', 'en-ZA', // UK, Australia, NZ, Ireland, India, South Africa
+    'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'tr', // Most of Europe
+    'no', 'nb', 'nn', 'sv', 'da', 'fi', 'is', // Nordics
+    'zh', 'ja', 'ko', // East Asia
+    'ar', 'he', // Middle East (some)
+  ];
+
+  // Check if locale starts with any Monday-first prefix
+  const usesMonday = mondayFirstLocales.some(prefix => locale.startsWith(prefix));
+
+  return usesMonday ? 'monday' : 'sunday';
 }
 
 /**

@@ -201,58 +201,140 @@ async def get_rotation_preview(
     preview_count: int = 10
 ) -> List[Dict[str, Any]]:
     """
-    Preview upcoming feeding rotations for the next N feedings.
+    Preview upcoming feeding rotations showing a realistic schedule.
+    Shows all food categories with their applicable supplements for the next N days.
 
     Args:
         db: Database session
         reptile_id: ID of the reptile
-        food_category: Category of food to preview
-        preview_count: Number of future feedings to preview
+        food_category: If specified, only preview this category. If None, show all categories.
+        preview_count: Number of future days to preview
 
     Returns:
-        List of dictionaries with feeding number and applicable rotation:
+        List of dictionaries with date and feedings:
         [
             {
-                "feeding_number": 16,
-                "rotation": {...} or None
+                "date": "2025-01-20",
+                "date_display": "Mon, Jan 20",
+                "feedings": [
+                    {
+                        "food_category": "insects",
+                        "supplements": [
+                            {"id": 1, "name": "Calcium powder"},
+                            {"id": 2, "name": "Multivitamin"}
+                        ]
+                    },
+                    {
+                        "food_category": "salad",
+                        "supplements": [...]
+                    }
+                ]
             },
             ...
         ]
     """
-    # Get current feeding count
-    rotations = await get_applicable_rotations(db, reptile_id, food_category)
-    if not rotations:
+    from datetime import timedelta
+    from sqlalchemy.orm import selectinload
+
+    # Get all rotations for this reptile
+    query = (
+        select(FeedingRotation)
+        .where(
+            FeedingRotation.reptile_id == reptile_id,
+            FeedingRotation.enabled == True
+        )
+        .options(selectinload(FeedingRotation.supplement))
+    )
+    result = await db.execute(query)
+    all_rotations = result.scalars().all()
+
+    if not all_rotations:
         return []
 
-    # For preview, we'll use the first rotation's counting mode
-    # (ideally all rotations for same category should use same mode)
-    counting_mode = rotations[0].counting_mode
-    category_filter = food_category if counting_mode == "category_only" else None
+    # Determine which food categories to show
+    if food_category and food_category != "all":
+        categories = [food_category]
+    else:
+        # Show all categories that have rotations
+        categories_set = set()
+        for rotation in all_rotations:
+            if rotation.applies_to_category:
+                categories_set.add(rotation.applies_to_category)
+        # Default to insects and salad if no specific categories
+        categories = list(categories_set) if categories_set else ["insects", "salad"]
 
-    current_count = await count_feedings_for_reptile(
-        db, reptile_id, category_filter, counting_mode
-    )
+    # Get feeding counts for each category
+    feeding_counts = {}
+    for category in categories:
+        count = await count_feedings_for_reptile(db, reptile_id, category, "category_only")
+        feeding_counts[category] = count
 
+    # Generate preview for next N days
     preview = []
-    for i in range(1, preview_count + 1):
-        feeding_number = current_count + i
+    today = date.today()
 
-        # Find which rotation (if any) triggers on this feeding
-        applicable_rotation = None
-        for rotation in rotations:
-            if feeding_number % rotation.every_n_feedings == 0:
-                if applicable_rotation is None or rotation.priority < applicable_rotation["priority"]:
-                    applicable_rotation = {
-                        "rotation_id": rotation.id,
-                        "rotation_type": rotation.rotation_type,
-                        "supplement_id": rotation.supplement_id,
-                        "priority": rotation.priority,
-                        "every_n_feedings": rotation.every_n_feedings,
-                    }
+    for i in range(preview_count):
+        preview_date = today + timedelta(days=i)
+        day_of_week = (preview_date.weekday() + 1) % 7  # 0 = Sunday
 
-        preview.append({
-            "feeding_number": feeding_number,
-            "rotation": applicable_rotation
-        })
+        feedings = []
+
+        for category in categories:
+            # Increment feeding count for this preview
+            feeding_counts[category] += 1
+            next_feeding_number = feeding_counts[category]
+
+            # Find applicable supplements for this category and date
+            supplements = []
+
+            for rotation in all_rotations:
+                # Check if rotation applies to this category
+                applies = (
+                    rotation.rotation_type == "supplement" and
+                    (not rotation.applies_to_category or
+                     rotation.applies_to_category == "all" or
+                     rotation.applies_to_category == category)
+                )
+
+                if not applies:
+                    continue
+
+                # Check trigger conditions
+                should_trigger = False
+
+                if rotation.trigger_mode == "feeding_count":
+                    if next_feeding_number % rotation.every_n_feedings == 0:
+                        should_trigger = True
+
+                elif rotation.trigger_mode == "schedule_based":
+                    if rotation.schedule_days_of_week:
+                        configured_days = [int(d) for d in rotation.schedule_days_of_week.split(",")]
+                        if day_of_week in configured_days:
+                            should_trigger = True
+
+                if should_trigger and rotation.supplement:
+                    supplements.append({
+                        "id": rotation.supplement.id,
+                        "name": rotation.supplement.name,
+                        "priority": rotation.priority
+                    })
+
+            # Sort supplements by priority
+            supplements.sort(key=lambda s: s["priority"])
+
+            if supplements:  # Only add feeding if there are supplements
+                feedings.append({
+                    "food_category": category,
+                    "feeding_number": next_feeding_number,
+                    "supplements": supplements
+                })
+
+        if feedings:  # Only add day if there are feedings
+            preview.append({
+                "date": preview_date.isoformat(),
+                "date_display": preview_date.strftime("%a, %b %d"),
+                "day_of_week": day_of_week,
+                "feedings": feedings
+            })
 
     return preview
