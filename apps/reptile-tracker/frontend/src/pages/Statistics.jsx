@@ -459,13 +459,13 @@ function Statistics() {
 
           {/* Feeding Frequency Calendar Heatmap */}
           {visibleData.feeding && stats.feeding_data.length > 0 && (
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Daily feeding activity over the past {timeRange} days
-              </p>
-              <div className="overflow-x-auto">
-                <div className="inline-block">
+            <div className="w-fit max-w-full">
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Daily feeding activity over the past {timeRange} days
+                </p>
+                <div className="overflow-x-auto">
                   <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
                 </div>
               </div>
