@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import User, WeightLog, AccessLevel, Reptile, reptile_access
 from app.permissions import check_reptile_access
 from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate, WeightLogWithReptile, WeightLogUpdate
+from app.schedule_matcher import assign_weighing_to_schedule
 
 router = APIRouter()
 
@@ -101,6 +102,11 @@ async def create_weight_log(
         measured_at=log.measured_at or datetime.now(timezone.utc)
     )
     db.add(new_log)
+    await db.flush()
+
+    # Try to assign to a matching schedule
+    await assign_weighing_to_schedule(db, new_log)
+
     await db.commit()
     await db.refresh(new_log)
     return new_log
