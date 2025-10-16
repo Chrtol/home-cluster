@@ -375,17 +375,30 @@ class FeedingRotation(Base):
     replacement_food_category = Column(String, nullable=True)  # "eggs", "frozen_animal", etc.
     replacement_note = Column(String, nullable=True)  # "1 small egg", "1 pinky mouse"
 
+    # Trigger mode: how the rotation is triggered
+    # "feeding_count": Based on feeding count (every Nth feeding)
+    # "schedule_based": Based on calendar schedule (specific days of week)
+    trigger_mode = Column(String, nullable=False, default="feeding_count")
+
+    # For feeding_count trigger mode:
     # Every N feedings (e.g., 3 = every 3rd feeding)
-    every_n_feedings = Column(Integer, nullable=False)
+    every_n_feedings = Column(Integer, nullable=True)
+
+    # Counting mode (only for feeding_count)
+    # "category_only": Count only feedings matching applies_to_category
+    # "all_feedings": Count all feedings regardless of category
+    counting_mode = Column(String, nullable=True, default="category_only")
+
+    # For schedule_based trigger mode:
+    # Days of week (comma-separated: '0,1,3' for Sun, Mon, Wed)
+    schedule_days_of_week = Column(String, nullable=True)
+
+    # Frequency for schedule-based (e.g., every X days)
+    schedule_frequency_days = Column(Integer, nullable=True)
 
     # Category filter (which feedings does this apply to?)
     # Can be: "insects", "salad", "mixed", "all", or null (default = all)
     applies_to_category = Column(String, nullable=True)
-
-    # Counting mode
-    # "category_only": Count only feedings matching applies_to_category
-    # "all_feedings": Count all feedings regardless of category
-    counting_mode = Column(String, nullable=False, default="category_only")
 
     # Application mode
     # "any_feeding": Apply to any feeding that day/occurrence (agnostic to which feeding it is)

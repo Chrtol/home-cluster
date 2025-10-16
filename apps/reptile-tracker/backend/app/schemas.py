@@ -471,9 +471,19 @@ class FeedingRotationBase(BaseModel):
     supplement_id: Optional[int] = None
     replacement_food_category: Optional[str] = None
     replacement_note: Optional[str] = None
-    every_n_feedings: int
+
+    # Trigger mode
+    trigger_mode: str = "feeding_count"  # "feeding_count" or "schedule_based"
+
+    # For feeding_count mode
+    every_n_feedings: Optional[int] = None
+    counting_mode: Optional[str] = "category_only"  # "category_only" or "all_feedings"
+
+    # For schedule_based mode
+    schedule_days_of_week: Optional[str] = None  # "0,1,3" for Sun, Mon, Wed
+    schedule_frequency_days: Optional[int] = None
+
     applies_to_category: Optional[str] = None  # "insects", "salad", "mixed", "all", null
-    counting_mode: str = "category_only"  # "category_only" or "all_feedings"
     application_mode: str = "any_feeding"  # "any_feeding" or "specific_occurrence"
     priority: int = 10
     enabled: bool = True
@@ -489,9 +499,12 @@ class FeedingRotationUpdate(BaseModel):
     supplement_id: Optional[int] = None
     replacement_food_category: Optional[str] = None
     replacement_note: Optional[str] = None
+    trigger_mode: Optional[str] = None
     every_n_feedings: Optional[int] = None
-    applies_to_category: Optional[str] = None
     counting_mode: Optional[str] = None
+    schedule_days_of_week: Optional[str] = None
+    schedule_frequency_days: Optional[int] = None
+    applies_to_category: Optional[str] = None
     application_mode: Optional[str] = None
     priority: Optional[int] = None
     enabled: Optional[bool] = None
