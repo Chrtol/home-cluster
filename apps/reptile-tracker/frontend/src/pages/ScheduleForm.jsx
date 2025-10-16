@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Clock } from "lucide-react";
+import { getUserTimeFormat } from "../utils/dateFormatting";
 
 function ScheduleForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
+  const userTimeFormat = getUserTimeFormat();
   const [reptiles, setReptiles] = useState([]);
   const [supplements, setSupplements] = useState([]);
   const [schedules, setSchedules] = useState([]); // For dependent schedules
@@ -36,6 +38,16 @@ function ScheduleForm() {
   const [latestTime, setLatestTime] = useState("");
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState("");
 
+  // Time picker state for earliest time
+  const [earliestHours, setEarliestHours] = useState(9);
+  const [earliestMinutes, setEarliestMinutes] = useState(0);
+  const [earliestPeriod, setEarliestPeriod] = useState('AM');
+
+  // Time picker state for latest time
+  const [latestHours, setLatestHours] = useState(4);
+  const [latestMinutes, setLatestMinutes] = useState(0);
+  const [latestPeriod, setLatestPeriod] = useState('PM');
+
   const weekDays = [
     { value: 0, label: "Sunday" },
     { value: 1, label: "Monday" },
@@ -59,6 +71,34 @@ function ScheduleForm() {
       fetchSchedules();
     }
   }, [reptileId]);
+
+  // Update earliestTime string when time picker values change
+  useEffect(() => {
+    let hour24 = earliestHours;
+    if (userTimeFormat === '12h') {
+      if (earliestPeriod === 'PM' && earliestHours !== 12) {
+        hour24 = earliestHours + 12;
+      } else if (earliestPeriod === 'AM' && earliestHours === 12) {
+        hour24 = 0;
+      }
+    }
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(earliestMinutes).padStart(2, '0')}`;
+    setEarliestTime(timeString);
+  }, [earliestHours, earliestMinutes, earliestPeriod, userTimeFormat]);
+
+  // Update latestTime string when time picker values change
+  useEffect(() => {
+    let hour24 = latestHours;
+    if (userTimeFormat === '12h') {
+      if (latestPeriod === 'PM' && latestHours !== 12) {
+        hour24 = latestHours + 12;
+      } else if (latestPeriod === 'AM' && latestHours === 12) {
+        hour24 = 0;
+      }
+    }
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(latestMinutes).padStart(2, '0')}`;
+    setLatestTime(timeString);
+  }, [latestHours, latestMinutes, latestPeriod, userTimeFormat]);
 
   const fetchScheduleData = async () => {
     try {
@@ -86,8 +126,37 @@ function ScheduleForm() {
 
       // Time window fields
       setTimeWindowEnabled(schedule.time_window_enabled || false);
-      setEarliestTime(schedule.earliest_time || "");
-      setLatestTime(schedule.latest_time || "");
+
+      // Parse earliest time
+      if (schedule.earliest_time) {
+        const [hours, minutes] = schedule.earliest_time.split(':').map(Number);
+        if (userTimeFormat === '12h') {
+          const period = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = hours % 12 || 12;
+          setEarliestHours(displayHours);
+          setEarliestPeriod(period);
+        } else {
+          setEarliestHours(hours);
+        }
+        setEarliestMinutes(minutes);
+        setEarliestTime(schedule.earliest_time);
+      }
+
+      // Parse latest time
+      if (schedule.latest_time) {
+        const [hours, minutes] = schedule.latest_time.split(':').map(Number);
+        if (userTimeFormat === '12h') {
+          const period = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = hours % 12 || 12;
+          setLatestHours(displayHours);
+          setLatestPeriod(period);
+        } else {
+          setLatestHours(hours);
+        }
+        setLatestMinutes(minutes);
+        setLatestTime(schedule.latest_time);
+      }
+
       setReminderMinutesBefore(schedule.reminder_minutes_before || "");
     } catch (error) {
       console.error("Error fetching schedule:", error);
@@ -139,6 +208,30 @@ function ScheduleForm() {
     } else {
       setDependentDays([...dependentDays, day]);
     }
+  };
+
+  const handleEarliestHoursChange = (value) => {
+    const numValue = parseInt(value) || (userTimeFormat === '12h' ? 12 : 0);
+    const maxHours = userTimeFormat === '12h' ? 12 : 23;
+    const minHours = userTimeFormat === '12h' ? 1 : 0;
+    setEarliestHours(Math.max(minHours, Math.min(maxHours, numValue)));
+  };
+
+  const handleEarliestMinutesChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    setEarliestMinutes(Math.max(0, Math.min(59, numValue)));
+  };
+
+  const handleLatestHoursChange = (value) => {
+    const numValue = parseInt(value) || (userTimeFormat === '12h' ? 12 : 0);
+    const maxHours = userTimeFormat === '12h' ? 12 : 23;
+    const minHours = userTimeFormat === '12h' ? 1 : 0;
+    setLatestHours(Math.max(minHours, Math.min(maxHours, numValue)));
+  };
+
+  const handleLatestMinutesChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    setLatestMinutes(Math.max(0, Math.min(59, numValue)));
   };
 
   const handleSubmit = async (e) => {
@@ -559,12 +652,37 @@ function ScheduleForm() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Earliest Time
                   </label>
-                  <input
-                    type="time"
-                    value={earliestTime}
-                    onChange={(e) => setEarliestTime(e.target.value)}
-                    className="input-field"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={earliestHours}
+                      onChange={e => handleEarliestHoursChange(e.target.value)}
+                      className="input-field w-20 text-center"
+                      min={userTimeFormat === '12h' ? 1 : 0}
+                      max={userTimeFormat === '12h' ? 12 : 23}
+                      required
+                    />
+                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <input
+                      type="number"
+                      value={String(earliestMinutes).padStart(2, '0')}
+                      onChange={e => handleEarliestMinutesChange(e.target.value)}
+                      className="input-field w-20 text-center"
+                      min="0"
+                      max="59"
+                      required
+                    />
+                    {userTimeFormat === '12h' && (
+                      <select
+                        value={earliestPeriod}
+                        onChange={e => setEarliestPeriod(e.target.value)}
+                        className="input-field w-20"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     When the feeding window opens
                   </p>
@@ -574,12 +692,37 @@ function ScheduleForm() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Latest Time
                   </label>
-                  <input
-                    type="time"
-                    value={latestTime}
-                    onChange={(e) => setLatestTime(e.target.value)}
-                    className="input-field"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={latestHours}
+                      onChange={e => handleLatestHoursChange(e.target.value)}
+                      className="input-field w-20 text-center"
+                      min={userTimeFormat === '12h' ? 1 : 0}
+                      max={userTimeFormat === '12h' ? 12 : 23}
+                      required
+                    />
+                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <input
+                      type="number"
+                      value={String(latestMinutes).padStart(2, '0')}
+                      onChange={e => handleLatestMinutesChange(e.target.value)}
+                      className="input-field w-20 text-center"
+                      min="0"
+                      max="59"
+                      required
+                    />
+                    {userTimeFormat === '12h' && (
+                      <select
+                        value={latestPeriod}
+                        onChange={e => setLatestPeriod(e.target.value)}
+                        className="input-field w-20"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     When the feeding must be completed by
                   </p>
