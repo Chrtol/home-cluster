@@ -30,6 +30,12 @@ function ScheduleForm() {
   const [notes, setNotes] = useState("");
   const [enabled, setEnabled] = useState(true);
 
+  // Time window fields
+  const [timeWindowEnabled, setTimeWindowEnabled] = useState(false);
+  const [earliestTime, setEarliestTime] = useState("");
+  const [latestTime, setLatestTime] = useState("");
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState("");
+
   const weekDays = [
     { value: 0, label: "Sunday" },
     { value: 1, label: "Monday" },
@@ -77,6 +83,12 @@ function ScheduleForm() {
       setSupplementId(schedule.supplement_id || "");
       setNotes(schedule.notes || "");
       setEnabled(schedule.enabled);
+
+      // Time window fields
+      setTimeWindowEnabled(schedule.time_window_enabled || false);
+      setEarliestTime(schedule.earliest_time || "");
+      setLatestTime(schedule.latest_time || "");
+      setReminderMinutesBefore(schedule.reminder_minutes_before || "");
     } catch (error) {
       console.error("Error fetching schedule:", error);
       alert("Failed to load schedule data");
@@ -172,6 +184,14 @@ function ScheduleForm() {
       // Add supplement for supplement schedules
       if (scheduleType === "supplement" && supplementId) {
         scheduleData.supplement_id = parseInt(supplementId);
+      }
+
+      // Add time window fields
+      scheduleData.time_window_enabled = timeWindowEnabled;
+      if (timeWindowEnabled) {
+        scheduleData.earliest_time = earliestTime || null;
+        scheduleData.latest_time = latestTime || null;
+        scheduleData.reminder_minutes_before = reminderMinutesBefore ? parseInt(reminderMinutesBefore) : null;
       }
 
       if (isEditing) {
@@ -512,6 +532,78 @@ function ScheduleForm() {
             placeholder="Add any notes about this schedule..."
             className="input-field"
           />
+        </div>
+
+        {/* Time Window Settings */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <input
+              type="checkbox"
+              id="timeWindowEnabled"
+              checked={timeWindowEnabled}
+              onChange={(e) => setTimeWindowEnabled(e.target.checked)}
+              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="timeWindowEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Enable Time Window
+            </label>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Set a time range when this activity should be completed. Useful for basking reptiles that need to eat after warming up.
+          </p>
+
+          {timeWindowEnabled && (
+            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Earliest Time
+                  </label>
+                  <input
+                    type="time"
+                    value={earliestTime}
+                    onChange={(e) => setEarliestTime(e.target.value)}
+                    className="input-field"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    When the feeding window opens
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Latest Time
+                  </label>
+                  <input
+                    type="time"
+                    value={latestTime}
+                    onChange={(e) => setLatestTime(e.target.value)}
+                    className="input-field"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    When the feeding must be completed by
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Reminder (Minutes Before Latest Time)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={reminderMinutesBefore}
+                  onChange={(e) => setReminderMinutesBefore(e.target.value)}
+                  placeholder="e.g., 30"
+                  className="input-field"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Optional: Get reminded before the time window closes
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Enabled Toggle */}
