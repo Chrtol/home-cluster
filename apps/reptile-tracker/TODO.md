@@ -154,6 +154,13 @@
     - Add new "Statistics" tab to Settings page (alongside Date & Time, Household)
     - Save preferences in localStorage (per user)
     - Live preview of changes where applicable
+  - **Card Management (Drag & Drop Layout):**
+    - Drag and drop to reorder cards/charts
+    - Show/hide individual cards (checkboxes in settings)
+    - Resize cards (small, medium, large, full-width)
+    - Reset to default layout button
+    - Saved layout persisted in localStorage
+    - Visual "Edit Layout" mode toggle
   - **Weight interpolation settings:**
     - Toggle interpolation on/off
     - Interpolation modes dropdown: Linear (current), Step (horizontal line from last known), None (dots only)
@@ -179,6 +186,7 @@
   - **Implementation:**
     - Frontend: New StatisticsSettings component in Settings page
     - Frontend: Utility functions in utils/statisticsSettings.js
+    - Frontend: Consider react-grid-layout or react-beautiful-dnd for drag & drop
     - Statistics page reads from localStorage on load
     - Default values for all settings
 
