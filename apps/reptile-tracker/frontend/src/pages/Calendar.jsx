@@ -415,6 +415,22 @@ function Calendar() {
       schedule_id: s.schedule_id
     })));
 
+    // Helper function to normalize food category (Food model uses singular, schedules use plural)
+    const normalizeFoodCategory = (category) => {
+      if (!category) return null;
+      const normalizeMap = {
+        'insect': 'insects',
+        'insects': 'insects',
+        'worms': 'worms',
+        'salad': 'salad',
+        'vegetable': 'salad',
+        'fruit': 'salad',
+        'prepared': 'prepared',
+        'mixed': 'mixed'
+      };
+      return normalizeMap[category.toLowerCase()] || category;
+    };
+
     // For each actual feeding/misting, find matching schedule and mark it as completed
     actualFeedings.forEach(actual => {
       // Determine the food category from the feeding
@@ -424,13 +440,14 @@ function Calendar() {
       if (actual.is_salad) {
         actualFoodCategory = "salad";
       } else if (actual.foods && actual.foods.length > 0) {
-        // Use the category of the first food item
-        actualFoodCategory = actual.foods[0].category;
+        // Use the category of the first food item and normalize it
+        actualFoodCategory = normalizeFoodCategory(actual.foods[0].category);
       }
 
       console.log('Trying to match feeding:', {
         reptile: actual.reptile_name,
         actualFoodCategory,
+        raw_category: actual.foods?.[0]?.category,
         is_salad: actual.is_salad,
         foods: actual.foods,
         fed_at: actual.fed_at
@@ -481,7 +498,7 @@ function Calendar() {
       if (actual.is_salad) {
         actualFoodCategory = "salad";
       } else if (actual.foods && actual.foods.length > 0) {
-        actualFoodCategory = actual.foods[0].category;
+        actualFoodCategory = normalizeFoodCategory(actual.foods[0].category);
       }
 
       const hasMatchingSchedule = scheduledEvents.some(scheduled =>
