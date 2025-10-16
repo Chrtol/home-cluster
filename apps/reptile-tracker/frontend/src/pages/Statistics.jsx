@@ -465,7 +465,9 @@ function Statistics() {
                 Daily feeding activity over the past {timeRange} days
               </p>
               <div className="overflow-x-auto">
-                <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
+                <div className="inline-block">
+                  <FeedingHeatmap feedingData={stats.feeding_data} timeRange={timeRange} />
+                </div>
               </div>
             </div>
           )}
@@ -545,13 +547,6 @@ function Statistics() {
             <div className="card">
               <p className="text-center text-gray-600 dark:text-gray-400">
                 No weight or feeding data available for this period. Start logging to see trends!
-              </p>
-            </div>
-          )}
-          {visibleData.misting && stats.misting_data.length === 0 && (
-            <div className="card">
-              <p className="text-center text-gray-600 dark:text-gray-400">
-                No misting data available for this period.
               </p>
             </div>
           )}
