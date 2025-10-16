@@ -51,7 +51,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
   const fetchPreview = async () => {
     try {
       const response = await axios.get(`/api/feeding-rotations/reptile/${reptileId}/preview`, {
-        params: { food_category: 'insects', preview_count: 10 }
+        params: { preview_count: 14 } // Show 2 weeks
       });
       setPreview(response.data);
       setShowPreview(true);
@@ -204,11 +204,16 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
       {/* Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Next 10 Insect Feedings
-              </h3>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Rotation Schedule Preview
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Next 2 weeks for {reptileName}
+                </p>
+              </div>
               <button
                 onClick={() => setShowPreview(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -216,21 +221,48 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
                 ✕
               </button>
             </div>
-            <div className="px-6 py-4 space-y-2">
-              {preview.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 rounded border border-gray-200 dark:border-gray-700">
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    Feeding #{item.feeding_number}
-                  </span>
-                  {item.rotation ? (
-                    <span className="px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700">
-                      {getSupplementName(item.rotation.supplement_id)}
-                    </span>
-                  ) : (
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">No supplement</span>
-                  )}
+            <div className="px-6 py-4">
+              {preview.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  No supplements scheduled for the next 2 weeks
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-3">
+                  {preview.map((day, idx) => (
+                    <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 dark:bg-gray-900/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {day.date_display}
+                        </span>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        {day.feedings.map((feeding, feedIdx) => (
+                          <div key={feedIdx} className="flex items-start justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700">
+                                {feeding.food_category}
+                              </span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                #{feeding.feeding_number}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-2 justify-end">
+                              {feeding.supplements.map((supplement, suppIdx) => (
+                                <span
+                                  key={suppIdx}
+                                  className="px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700"
+                                >
+                                  {supplement.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
