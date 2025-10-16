@@ -383,13 +383,21 @@ function Calendar() {
   };
 
   const getEventLink = (event) => {
-    if (!event.is_actual) return null;
-
-    if (event.type === "feeding") {
-      return `/feed/${event.id}`;
-    } else if (event.type === "misting") {
-      return `/misting/${event.id}`;
+    // For actual completed events, link to the read-only view
+    if (event.is_actual) {
+      if (event.type === "feeding") {
+        return `/feed/${event.id}`;
+      } else if (event.type === "misting") {
+        return `/misting/${event.id}`;
+      }
+      return null;
     }
+
+    // For scheduled events, link to the schedule edit page
+    if (event.schedule_id) {
+      return `/schedule-edit/${event.schedule_id}`;
+    }
+
     return null;
   };
 
@@ -1067,78 +1075,6 @@ function Calendar() {
         )}
       </div>
 
-      {/* Selected Date Details */}
-      {selectedDate && view !== "day" && (
-        <div className="card">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {selectedDate.toLocaleDateString("default", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-          </h3>
-
-          <div className="space-y-2">
-            {getEventsForDate(selectedDate).length > 0 ? (
-              getEventsForDate(selectedDate).map((event, idx) => {
-                const eventLink = getEventLink(event);
-                const content = (
-                  <div className="flex items-start justify-between p-3 rounded-lg border">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        {event.is_actual && (
-                          <span className="text-green-600 dark:text-green-400">✓</span>
-                        )}
-                        <div className="font-semibold text-gray-900 dark:text-white">
-                          {event.name || event.reptile_name}
-                        </div>
-                        {event.is_actual && event.time && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {event.time}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 capitalize mt-1">
-                        {event.is_actual ? "Completed: " : "Scheduled: "}
-                        {event.schedule_type}
-                        {event.food_category && ` • ${event.food_category}`}
-                        {event.time_slot && ` • ${event.time_slot}`}
-                      </div>
-                      {!event.name && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {event.reptile_name}
-                        </div>
-                      )}
-                      {event.notes && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {event.notes}
-                        </div>
-                      )}
-                    </div>
-                    <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
-                      {event.schedule_type}
-                    </span>
-                  </div>
-                );
-
-                if (eventLink) {
-                  return (
-                    <Link key={idx} to={eventLink} className="block hover:opacity-80 transition-opacity">
-                      {content}
-                    </Link>
-                  );
-                }
-
-                return (
-                  <div key={idx} className={event.is_actual ? "" : "opacity-75"}>
-                    {content}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                No events for this day
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
