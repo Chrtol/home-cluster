@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, Calendar, Droplet, Heart, Scale } from 'lucide-react';
 import axios from 'axios';
+import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 
 function Statistics() {
   const [reptiles, setReptiles] = useState([]);
@@ -563,6 +564,8 @@ function Statistics() {
 
 // Feeding Heatmap Component (GitHub-style)
 function FeedingHeatmap({ feedingData, timeRange }) {
+  const firstDayOfWeek = getUserFirstDayOfWeek();
+  const dayLabels = getDayNames(true); // Get short names based on user preference
   // Generate calendar grid for the past N days
   const generateCalendarGrid = () => {
     const today = new Date();
@@ -618,15 +621,21 @@ function FeedingHeatmap({ feedingData, timeRange }) {
   // Group days into weeks (columns)
   const weeks = [];
   const startDayOfWeek = days[0]?.dayOfWeek || 0;
+  const weekStartDay = firstDayOfWeek === 'monday' ? 1 : 0; // Monday = 1, Sunday = 0
+  const weekEndDay = firstDayOfWeek === 'monday' ? 0 : 6; // Sunday = 0, Saturday = 6
 
-  // Add padding for first week if it doesn't start on Sunday (0)
-  let currentWeek = Array(startDayOfWeek).fill(null);
+  // Add padding for first week based on first day of week preference
+  const paddingDays = firstDayOfWeek === 'monday'
+    ? (startDayOfWeek === 0 ? 6 : startDayOfWeek - 1) // If Sunday, pad 6 days; otherwise offset by 1
+    : startDayOfWeek; // Sunday-based needs no adjustment
+
+  let currentWeek = Array(paddingDays).fill(null);
 
   days.forEach((day, idx) => {
     currentWeek.push(day);
 
-    // Complete week when we hit Saturday (6) or last day
-    if (day.dayOfWeek === 6 || idx === days.length - 1) {
+    // Complete week when we hit the last day of week or last day
+    if (day.dayOfWeek === weekEndDay || idx === days.length - 1) {
       // Pad the end if needed to reach 7 days
       while (currentWeek.length < 7) {
         currentWeek.push(null);
@@ -665,7 +674,7 @@ function FeedingHeatmap({ feedingData, timeRange }) {
         <div className="flex gap-1">
           {/* Day of week labels column */}
           <div className="flex flex-col gap-1 pr-2 text-right">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            {dayLabels.map(day => (
               <div key={day} className="h-3 text-xs text-gray-600 dark:text-gray-400 flex items-center justify-end" style={{minWidth: '28px'}}>
                 {day}
               </div>

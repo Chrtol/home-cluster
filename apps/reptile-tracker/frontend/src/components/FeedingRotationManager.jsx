@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { getDayNames, getDayNumbers } from '../utils/dateFormatting';
 
 export default function FeedingRotationManager({ reptileId, reptileName }) {
   const [rotations, setRotations] = useState([]);
@@ -155,6 +156,9 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
     return days[dayNum];
   };
 
+  const dayNumbers = getDayNumbers();
+  const dayNames = getDayNames(true); // Get short names
+
   const getPriorityLabel = (priority) => {
     if (priority === 1) return 'Highest';
     if (priority <= 3) return 'High';
@@ -297,7 +301,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
                     Days of Week *
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                    {dayNumbers.map((day, index) => (
                       <button
                         key={day}
                         type="button"
@@ -308,7 +312,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
                             : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400 dark:hover:border-primary-500'
                         }`}
                       >
-                        {getDayName(day)}
+                        {dayNames[index]}
                       </button>
                     ))}
                   </div>
