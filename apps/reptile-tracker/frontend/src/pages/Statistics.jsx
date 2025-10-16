@@ -459,7 +459,7 @@ function Statistics() {
 
           {/* Feeding Frequency Calendar Heatmap */}
           {visibleData.feeding && stats.feeding_data.length > 0 && (
-            <div className="card max-w-xl">
+            <div className="card" style={{ maxWidth: '420px' }}>
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Daily feeding activity over the past {timeRange} days
