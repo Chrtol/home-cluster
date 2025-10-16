@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import User, FeedingRotation, AccessLevel
@@ -81,11 +81,19 @@ async def create_feeding_rotation(
             detail="replacement_food_category is required for food replacement rotations"
         )
 
-    if rotation.every_n_feedings < 1:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="every_n_feedings must be at least 1"
-        )
+    # Validate trigger mode specific fields
+    if rotation.trigger_mode == "feeding_count":
+        if not rotation.every_n_feedings or rotation.every_n_feedings < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="every_n_feedings must be at least 1 for feeding_count trigger mode"
+            )
+    elif rotation.trigger_mode == "schedule_based":
+        if not rotation.schedule_days_of_week:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="schedule_days_of_week is required for schedule_based trigger mode"
+            )
 
     new_rotation = FeedingRotation(
         **rotation.model_dump(),
@@ -148,6 +156,7 @@ async def delete_feeding_rotation(
 async def calculate_next_rotation(
     reptile_id: int,
     food_category: Optional[str] = Query(None, description="Food category (e.g., 'insects', 'salad')"),
+    feeding_date: Optional[date] = Query(None, description="Date of feeding (for schedule-based rotations)"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -155,10 +164,13 @@ async def calculate_next_rotation(
     Calculate which rotations (supplements or food replacements) should apply to the next feeding.
     Returns ALL applicable rotations sorted by priority.
     Used when logging a new feeding to suggest supplements or food replacements.
+
+    Supports both feeding_count and schedule_based rotation triggers.
+    If feeding_date is not provided, uses today's date for schedule-based checks.
     """
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
 
-    rotations = await calculate_rotation_for_feeding(db, reptile_id, food_category)
+    rotations = await calculate_rotation_for_feeding(db, reptile_id, food_category, feeding_date)
     return rotations
 
 

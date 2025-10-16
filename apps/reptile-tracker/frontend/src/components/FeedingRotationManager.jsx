@@ -15,10 +15,13 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
   const [formData, setFormData] = useState({
     rotation_type: 'supplement',
     supplement_id: '',
+    trigger_mode: 'feeding_count',
     every_n_feedings: 2,
     applies_to_category: '',
     counting_mode: 'category_only',
     application_mode: 'any_feeding',
+    schedule_days_of_week: [],
+    schedule_frequency_days: 7,
     priority: 10,
     enabled: true,
     notes: ''
@@ -59,11 +62,19 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare data based on trigger mode
+      const submitData = {
+        ...formData,
+        schedule_days_of_week: formData.trigger_mode === 'schedule_based'
+          ? formData.schedule_days_of_week.join(',')
+          : null
+      };
+
       if (editingRotation) {
-        await axios.patch(`/api/feeding-rotations/${editingRotation.id}`, formData);
+        await axios.patch(`/api/feeding-rotations/${editingRotation.id}`, submitData);
       } else {
         await axios.post('/api/feeding-rotations', {
-          ...formData,
+          ...submitData,
           reptile_id: reptileId
         });
       }
@@ -92,10 +103,15 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
     setFormData({
       rotation_type: rotation.rotation_type,
       supplement_id: rotation.supplement_id || '',
-      every_n_feedings: rotation.every_n_feedings,
+      trigger_mode: rotation.trigger_mode || 'feeding_count',
+      every_n_feedings: rotation.every_n_feedings || 2,
       applies_to_category: rotation.applies_to_category || '',
-      counting_mode: rotation.counting_mode,
+      counting_mode: rotation.counting_mode || 'category_only',
       application_mode: rotation.application_mode,
+      schedule_days_of_week: rotation.schedule_days_of_week
+        ? rotation.schedule_days_of_week.split(',').map(d => parseInt(d))
+        : [],
+      schedule_frequency_days: rotation.schedule_frequency_days || 7,
       priority: rotation.priority,
       enabled: rotation.enabled,
       notes: rotation.notes || ''
@@ -109,14 +125,34 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
     setFormData({
       rotation_type: 'supplement',
       supplement_id: '',
+      trigger_mode: 'feeding_count',
       every_n_feedings: 2,
       applies_to_category: '',
       counting_mode: 'category_only',
       application_mode: 'any_feeding',
+      schedule_days_of_week: [],
+      schedule_frequency_days: 7,
       priority: 10,
       enabled: true,
       notes: ''
     });
+  };
+
+  const toggleDayOfWeek = (day) => {
+    const days = [...formData.schedule_days_of_week];
+    const index = days.indexOf(day);
+    if (index > -1) {
+      days.splice(index, 1);
+    } else {
+      days.push(day);
+      days.sort((a, b) => a - b);
+    }
+    setFormData({ ...formData, schedule_days_of_week: days });
+  };
+
+  const getDayName = (dayNum) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[dayNum];
   };
 
   const getPriorityLabel = (priority) => {
@@ -141,7 +177,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Supplement Rotation</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Automatically apply supplements based on feeding count
+            Automatically apply supplements based on feeding count or schedule
           </p>
         </div>
         <div className="flex gap-2">
@@ -223,20 +259,67 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Every N Feedings *
+                  Trigger Mode *
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.every_n_feedings}
-                  onChange={(e) => setFormData({ ...formData, every_n_feedings: parseInt(e.target.value) })}
+                <select
+                  value={formData.trigger_mode}
+                  onChange={(e) => setFormData({ ...formData, trigger_mode: e.target.value })}
                   required
                   className="input-field"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Apply supplement every {formData.every_n_feedings} feeding(s)
-                </p>
+                >
+                  <option value="feeding_count">Every N Feedings</option>
+                  <option value="schedule_based">Specific Days</option>
+                </select>
               </div>
+
+              {formData.trigger_mode === 'feeding_count' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Every N Feedings *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.every_n_feedings}
+                    onChange={(e) => setFormData({ ...formData, every_n_feedings: parseInt(e.target.value) })}
+                    required
+                    className="input-field"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Apply supplement every {formData.every_n_feedings} feeding(s)
+                  </p>
+                </div>
+              )}
+
+              {formData.trigger_mode === 'schedule_based' && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Days of Week *
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDayOfWeek(day)}
+                        className={`px-4 py-2 rounded-lg border-2 transition-colors ${
+                          formData.schedule_days_of_week.includes(day)
+                            ? 'bg-primary-500 border-primary-500 text-white'
+                            : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400 dark:hover:border-primary-500'
+                        }`}
+                      >
+                        {getDayName(day)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    {formData.schedule_days_of_week.length === 0
+                      ? 'Select at least one day'
+                      : `Applies on: ${formData.schedule_days_of_week.map(d => getDayName(d)).join(', ')}`
+                    }
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -330,7 +413,18 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
                   </div>
 
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Every {rotation.every_n_feedings} feeding{rotation.every_n_feedings > 1 ? 's' : ''}
+                    {rotation.trigger_mode === 'schedule_based' ? (
+                      <>
+                        {rotation.schedule_days_of_week
+                          ? rotation.schedule_days_of_week.split(',').map(d => getDayName(parseInt(d))).join(', ')
+                          : 'No days selected'
+                        }
+                      </>
+                    ) : (
+                      <>
+                        Every {rotation.every_n_feedings} feeding{rotation.every_n_feedings > 1 ? 's' : ''}
+                      </>
+                    )}
                     {rotation.applies_to_category && ` • ${rotation.applies_to_category} only`}
                   </div>
 

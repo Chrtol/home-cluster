@@ -129,7 +129,7 @@ export default function FeedingLog() {
         if (foodCategory) {
           const response = await axios.get(
             `/api/feeding-rotations/reptile/${selectedReptile}/calculate`,
-            { params: { food_category: foodCategory } }
+            { params: { food_category: foodCategory, feeding_date: fedDate } }
           );
 
           // API now returns an array of rotations
@@ -162,7 +162,7 @@ export default function FeedingLog() {
     };
 
     fetchSuggestion();
-  }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode]);
+  }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode, fedDate]);
 
   const applyAllSuggestedSupplements = () => {
     const newSupplementIds = suggestedSupplements

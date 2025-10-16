@@ -2,6 +2,7 @@
 Helper functions for calculating feeding rotations (supplements and food replacements)
 """
 from typing import Optional, List, Dict, Any
+from datetime import datetime, date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.models import FeedingRotation, Feeding
@@ -89,7 +90,8 @@ async def get_applicable_rotations(
 async def calculate_rotation_for_feeding(
     db: AsyncSession,
     reptile_id: int,
-    food_category: Optional[str] = None
+    food_category: Optional[str] = None,
+    feeding_date: Optional[date] = None
 ) -> List[Dict[str, Any]]:
     """
     Calculate which rotations (supplements or food replacements) should apply to the next feeding.
@@ -123,37 +125,61 @@ async def calculate_rotation_for_feeding(
     if not rotations:
         return []
 
+    # Use today if no date provided
+    if feeding_date is None:
+        feeding_date = date.today()
+
+    # Get the day of week (0 = Monday, 6 = Sunday in Python, but we'll use 0 = Sunday like JS)
+    # Convert Python's Monday=0 to Sunday=0 format
+    day_of_week = (feeding_date.weekday() + 1) % 7  # 0 = Sunday, 1 = Monday, etc.
+
     applicable_rotations = []
 
     # Check each rotation to see if it triggers on the next feeding
     for rotation in rotations:
-        # Determine the category filter for counting
-        if rotation.counting_mode == "all_feedings":
-            category_filter = None  # Count all feedings
-        else:
-            # Count only feedings matching the rotation's category filter
-            category_filter = rotation.applies_to_category
+        should_trigger = False
+        result = {
+            "rotation_id": rotation.id,
+            "rotation_type": rotation.rotation_type,
+            "priority": rotation.priority,
+            "notes": rotation.notes,
+            "trigger_mode": rotation.trigger_mode,
+        }
 
-        # Get current feeding count
-        feeding_count = await count_feedings_for_reptile(
-            db, reptile_id, category_filter, rotation.counting_mode
-        )
+        # Handle feeding_count trigger mode
+        if rotation.trigger_mode == "feeding_count":
+            # Determine the category filter for counting
+            if rotation.counting_mode == "all_feedings":
+                category_filter = None  # Count all feedings
+            else:
+                # Count only feedings matching the rotation's category filter
+                category_filter = rotation.applies_to_category
 
-        # Next feeding will be feeding_count + 1
-        next_feeding_number = feeding_count + 1
+            # Get current feeding count
+            feeding_count = await count_feedings_for_reptile(
+                db, reptile_id, category_filter, rotation.counting_mode
+            )
 
-        # Check if this rotation should trigger on the next feeding
-        if next_feeding_number % rotation.every_n_feedings == 0:
-            # This rotation triggers! Add it to results
-            result = {
-                "rotation_id": rotation.id,
-                "rotation_type": rotation.rotation_type,
-                "priority": rotation.priority,
-                "notes": rotation.notes,
-                "feeding_number": next_feeding_number,
-                "every_n_feedings": rotation.every_n_feedings,
-            }
+            # Next feeding will be feeding_count + 1
+            next_feeding_number = feeding_count + 1
 
+            # Check if this rotation should trigger on the next feeding
+            if next_feeding_number % rotation.every_n_feedings == 0:
+                should_trigger = True
+                result["feeding_number"] = next_feeding_number
+                result["every_n_feedings"] = rotation.every_n_feedings
+
+        # Handle schedule_based trigger mode
+        elif rotation.trigger_mode == "schedule_based":
+            if rotation.schedule_days_of_week:
+                # Check if today's day of week matches
+                configured_days = [int(d) for d in rotation.schedule_days_of_week.split(",")]
+                if day_of_week in configured_days:
+                    should_trigger = True
+                    result["schedule_days_of_week"] = rotation.schedule_days_of_week
+
+        if should_trigger:
+            # Add supplement or food replacement info
             if rotation.rotation_type == "supplement":
                 result["supplement_id"] = rotation.supplement_id
             elif rotation.rotation_type == "food_replacement":
