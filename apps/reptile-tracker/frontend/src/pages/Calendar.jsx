@@ -530,61 +530,53 @@ function Calendar() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calendar</h1>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowSchedules(!showSchedules)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            <List size={20} />
-            <span className="hidden sm:inline">Manage Schedules</span>
-            <span className="sm:hidden">Schedules</span>
-            {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-          <button
-            onClick={() => navigate("/schedule-create")}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Add Schedule</span>
-            <span className="sm:hidden">Add</span>
-          </button>
-        </div>
-      </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Reptile Filters */}
+          {reptiles.length > 0 && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {reptiles.map(reptile => (
+                  <button
+                    key={reptile.id}
+                    onClick={() => toggleReptileFilter(reptile.id)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      visibleReptiles.has(reptile.id)
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {reptile.name}
+                  </button>
+                ))}
+              </div>
 
-      {/* Reptile Filters */}
-      {reptiles.length > 0 && (
-        <div className="card mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Filter by Reptile</h3>
+              {/* Divider */}
+              <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+            </>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
             <button
-              onClick={toggleAllReptiles}
-              className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+              onClick={() => setShowSchedules(!showSchedules)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
+              <List size={20} />
+              <span className="hidden sm:inline">Manage Schedules</span>
+              <span className="sm:hidden">Schedules</span>
+              {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+            <button
+              onClick={() => navigate("/schedule-create")}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">Add Schedule</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {reptiles.map(reptile => (
-              <button
-                key={reptile.id}
-                onClick={() => toggleReptileFilter(reptile.id)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  visibleReptiles.has(reptile.id)
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                {reptile.name}
-              </button>
-            ))}
-          </div>
-          {visibleReptiles.size < reptiles.length && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Showing {visibleReptiles.size} of {reptiles.length} reptiles
-            </p>
-          )}
         </div>
-      )}
+      </div>
 
       {/* Schedules Management Section */}
       {showSchedules && (
