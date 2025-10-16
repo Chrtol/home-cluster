@@ -45,6 +45,10 @@ export default function FeedingLog() {
   // Global supplements (applied to entire feeding)
   const [selectedSupplements, setSelectedSupplements] = useState([]);
 
+  // Suggested supplement from rotation rules
+  const [suggestedSupplement, setSuggestedSupplement] = useState(null);
+  const [showSuggestion, setShowSuggestion] = useState(false);
+
   // Time input format state
   const [timeFormat, setTimeFormat] = useState('24h');
   const [hours, setHours] = useState(new Date().getHours());
@@ -105,6 +109,66 @@ export default function FeedingLog() {
     };
     fetchData();
   }, [id]);
+
+  // Fetch supplement suggestion when reptile or food types change
+  useEffect(() => {
+    const fetchSuggestion = async () => {
+      if (!selectedReptile || mode === 'view' || mode === 'edit') return;
+
+      try {
+        // Determine food category based on what's enabled
+        let foodCategory = null;
+        if (includeInsects && !includeSalad && !includePrepared) {
+          foodCategory = 'insects';
+        } else if (includeSalad && !includeInsects && !includePrepared) {
+          foodCategory = 'salad';
+        } else if (includeInsects || includeSalad || includePrepared) {
+          foodCategory = 'mixed';
+        }
+
+        if (foodCategory) {
+          const response = await axios.get(
+            `/api/feeding-rotations/reptile/${selectedReptile}/calculate`,
+            { params: { food_category: foodCategory } }
+          );
+
+          if (response.data && response.data.supplement_id) {
+            const supplement = supplements.find(s => s.id === response.data.supplement_id);
+            if (supplement) {
+              setSuggestedSupplement({
+                ...response.data,
+                supplement
+              });
+              setShowSuggestion(true);
+            }
+          } else {
+            setSuggestedSupplement(null);
+            setShowSuggestion(false);
+          }
+        }
+      } catch (error) {
+        // Silently fail if no rotation rules exist
+        console.debug('No rotation suggestion:', error);
+        setSuggestedSupplement(null);
+        setShowSuggestion(false);
+      }
+    };
+
+    fetchSuggestion();
+  }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode]);
+
+  const applySuggestedSupplement = () => {
+    if (suggestedSupplement && suggestedSupplement.supplement_id) {
+      if (!selectedSupplements.includes(suggestedSupplement.supplement_id)) {
+        setSelectedSupplements([...selectedSupplements, suggestedSupplement.supplement_id]);
+      }
+      setShowSuggestion(false);
+    }
+  };
+
+  const dismissSuggestion = () => {
+    setShowSuggestion(false);
+  };
 
   const loadFeedingData = (feeding, foodsList) => {
     setSelectedReptile(feeding.reptile_id);
@@ -880,6 +944,54 @@ export default function FeedingLog() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* SUPPLEMENT SUGGESTION */}
+        {showSuggestion && suggestedSupplement && (
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">💡</span>
+                  <h4 className="font-semibold text-green-900 dark:text-green-300">
+                    Supplement Suggestion
+                  </h4>
+                </div>
+                <p className="text-sm text-green-800 dark:text-green-300 mb-2">
+                  Based on your rotation rules, this feeding should include:
+                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-3 py-1.5 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 rounded-lg font-medium">
+                    {suggestedSupplement.supplement.name}
+                  </span>
+                  <span className="text-xs text-green-700 dark:text-green-400">
+                    (Feeding #{suggestedSupplement.feeding_number}, every {suggestedSupplement.every_n_feedings})
+                  </span>
+                </div>
+                {suggestedSupplement.notes && (
+                  <p className="text-xs text-green-700 dark:text-green-400 italic">
+                    Note: {suggestedSupplement.notes}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={applySuggestedSupplement}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissSuggestion}
+                  className="px-3 py-2 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-800 rounded-lg transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
