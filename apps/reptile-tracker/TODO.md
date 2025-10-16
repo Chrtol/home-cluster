@@ -92,13 +92,16 @@
   - Clickable completed events link to detail pages
   - Mobile-responsive design
 
-- [ ] **Calendar filtering by reptile** - 🔧 MEDIUM PRIORITY
-  - Filter controls to show/hide schedules per reptile
-  - All reptiles shown by default
-  - Checkbox/toggle for each reptile
-  - Filter state persisted in localStorage
-  - Visual indicator showing which reptiles are filtered
-  - Apply filters to both scheduled events and completed activities
+- [x] **Calendar filtering by reptile** - ✅ COMPLETED
+  - Filter controls to show/hide schedules per reptile ✅
+  - All reptiles shown by default ✅
+  - Toggle buttons for each reptile (inline with header) ✅
+  - Filter state persisted in localStorage ✅
+  - Visual indicator showing which reptiles are filtered ✅
+  - Apply filters to both scheduled events and completed activities ✅
+  - Improved calendar UI with colored squares for events ✅
+  - Click-to-expand modal for day details ✅
+  - Legend inline with view switcher ✅
 
 - [ ] **Schedule time constraints** - 🔧 MEDIUM PRIORITY
   - **Target time:**
