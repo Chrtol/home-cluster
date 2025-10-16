@@ -188,7 +188,12 @@ function ScheduleForm() {
   const fetchSchedules = async () => {
     try {
       const response = await axios.get(`/api/schedules/reptile/${reptileId}`);
-      setSchedules(response.data);
+      // Filter out dependent schedules (can't depend on a dependent schedule)
+      // and exclude the current schedule being edited
+      const validParentSchedules = response.data.filter(s =>
+        s.schedule_rule !== "dependent" && s.id !== parseInt(id)
+      );
+      setSchedules(validParentSchedules);
     } catch (error) {
       console.error("Error fetching schedules:", error);
     }
@@ -531,14 +536,33 @@ function ScheduleForm() {
                 className="input-field"
               >
                 <option value="">Select a parent schedule</option>
-                {schedules.map((schedule) => (
-                  <option key={schedule.id} value={schedule.id}>
-                    {schedule.schedule_type} - {schedule.schedule_rule}
-                  </option>
-                ))}
+                {schedules.length === 0 ? (
+                  <option disabled>No available parent schedules for this reptile</option>
+                ) : (
+                  schedules.map((schedule) => {
+                    // Create a descriptive label
+                    let label = `${schedule.schedule_type}`;
+                    if (schedule.name) {
+                      label += ` - ${schedule.name}`;
+                    }
+                    if (schedule.schedule_rule === "every_x_days") {
+                      label += ` (Every ${schedule.frequency_days} days)`;
+                    } else if (schedule.schedule_rule === "days_of_week") {
+                      const days = schedule.days_of_week.split(",").map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][parseInt(d)]);
+                      label += ` (${days.join(", ")})`;
+                    } else if (schedule.schedule_rule === "monthly") {
+                      label += ` (Day ${schedule.day_of_month} of month)`;
+                    }
+                    return (
+                      <option key={schedule.id} value={schedule.id}>
+                        {label}
+                      </option>
+                    );
+                  })
+                )}
               </select>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                This schedule will trigger based on occurrences of the parent schedule
+                This schedule will trigger based on occurrences of the parent schedule. Only non-dependent schedules can be parents.
               </p>
             </div>
 
