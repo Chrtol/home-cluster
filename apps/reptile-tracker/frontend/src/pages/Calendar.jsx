@@ -18,6 +18,7 @@ function Calendar() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showSchedules, setShowSchedules] = useState(false);
   const [visibleReptiles, setVisibleReptiles] = useState(new Set());
+  const [visibleCategories, setVisibleCategories] = useState(new Set());
 
   useEffect(() => {
     fetchReptiles();
@@ -25,6 +26,15 @@ function Calendar() {
     const savedFilters = localStorage.getItem('calendar_reptile_filters');
     if (savedFilters) {
       setVisibleReptiles(new Set(JSON.parse(savedFilters)));
+    }
+
+    // Load category filter state from localStorage
+    const savedCategoryFilters = localStorage.getItem('calendar_category_filters');
+    if (savedCategoryFilters) {
+      setVisibleCategories(new Set(JSON.parse(savedCategoryFilters)));
+    } else {
+      // Default to all categories visible
+      setVisibleCategories(new Set(['feeding', 'misting', 'weighing', 'supplement']));
     }
   }, []);
 
@@ -203,6 +213,7 @@ function Calendar() {
         name: schedule.name,
         food_category: schedule.food_category,
         time_slot: schedule.time_slot,
+        health_category: schedule.health_category,
         time_window_enabled: schedule.time_window_enabled,
         earliest_time: schedule.earliest_time,
         latest_time: schedule.latest_time,
@@ -385,7 +396,9 @@ function Calendar() {
     // Get scheduled events for this date
     const scheduledEvents = events.filter(event => {
       const eventDate = new Date(event.date);
-      return eventDate.toDateString() === date.toDateString() && visibleReptiles.has(event.reptile_id);
+      return eventDate.toDateString() === date.toDateString() &&
+             visibleReptiles.has(event.reptile_id) &&
+             visibleCategories.has(event.schedule_type);
     }).map(e => ({
       ...e,
       is_actual: false, // This is a schedule, not an actual feeding
@@ -394,7 +407,9 @@ function Calendar() {
     // Get actual completed feedings for this date
     const actualFeedings = feedings.filter(feeding => {
       const feedDate = new Date(feeding.fed_at);
-      return feedDate.toDateString() === date.toDateString() && visibleReptiles.has(feeding.reptile_id);
+      return feedDate.toDateString() === date.toDateString() &&
+             visibleReptiles.has(feeding.reptile_id) &&
+             visibleCategories.has('feeding');
     }).map(f => ({
       ...f,
       schedule_type: "feeding",
@@ -407,7 +422,9 @@ function Calendar() {
     // Get actual completed mistings for this date
     const actualMistings = mistings.filter(misting => {
       const mistDate = new Date(misting.misted_at);
-      return mistDate.toDateString() === date.toDateString() && visibleReptiles.has(misting.reptile_id);
+      return mistDate.toDateString() === date.toDateString() &&
+             visibleReptiles.has(misting.reptile_id) &&
+             visibleCategories.has('misting');
     }).map(m => ({
       ...m,
       schedule_type: "misting",
@@ -610,6 +627,31 @@ function Calendar() {
     }
   };
 
+  const toggleCategoryFilter = (category) => {
+    const newFilters = new Set(visibleCategories);
+    if (newFilters.has(category)) {
+      newFilters.delete(category);
+    } else {
+      newFilters.add(category);
+    }
+    setVisibleCategories(newFilters);
+    // Save to localStorage
+    localStorage.setItem('calendar_category_filters', JSON.stringify(Array.from(newFilters)));
+  };
+
+  const toggleAllCategories = () => {
+    const allCategories = ['feeding', 'misting', 'weighing', 'supplement'];
+    if (visibleCategories.size === allCategories.length) {
+      // If all are visible, hide all
+      setVisibleCategories(new Set());
+      localStorage.setItem('calendar_category_filters', JSON.stringify([]));
+    } else {
+      // Show all
+      setVisibleCategories(new Set(allCategories));
+      localStorage.setItem('calendar_category_filters', JSON.stringify(allCategories));
+    }
+  };
+
   const getScheduleTypeIcon = (type) => {
     switch (type) {
       case "feeding":
@@ -738,33 +780,10 @@ function Calendar() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calendar</h1>
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Reptile Filters */}
-          {reptiles.length > 0 && (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {reptiles.map(reptile => (
-                  <button
-                    key={reptile.id}
-                    onClick={() => toggleReptileFilter(reptile.id)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      visibleReptiles.has(reptile.id)
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {reptile.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Divider */}
-              <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
-            </>
-          )}
+      <div className="flex flex-col gap-4 mb-6">
+        {/* Header with title and action buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calendar</h1>
 
           {/* Action Buttons */}
           <div className="flex gap-2">
@@ -787,6 +806,83 @@ function Calendar() {
             </button>
           </div>
         </div>
+
+        {/* Category Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Categories:</span>
+          <button
+            onClick={() => toggleCategoryFilter('feeding')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              visibleCategories.has('feeding')
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Feeding
+          </button>
+          <button
+            onClick={() => toggleCategoryFilter('misting')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              visibleCategories.has('misting')
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Misting
+          </button>
+          <button
+            onClick={() => toggleCategoryFilter('weighing')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              visibleCategories.has('weighing')
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Health
+          </button>
+          <button
+            onClick={() => toggleCategoryFilter('supplement')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              visibleCategories.has('supplement')
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Supplement
+          </button>
+          <button
+            onClick={toggleAllCategories}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
+          </button>
+        </div>
+
+        {/* Reptile Filters */}
+        {reptiles.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Reptiles:</span>
+            {reptiles.map(reptile => (
+              <button
+                key={reptile.id}
+                onClick={() => toggleReptileFilter(reptile.id)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  visibleReptiles.has(reptile.id)
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {reptile.name}
+              </button>
+            ))}
+            <button
+              onClick={toggleAllReptiles}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Schedules Management Section */}
@@ -807,7 +903,7 @@ function Calendar() {
             </div>
           ) : (
             <div className="space-y-3">
-              {schedules.filter(schedule => visibleReptiles.has(schedule.reptile_id)).map(schedule => (
+              {schedules.filter(schedule => visibleReptiles.has(schedule.reptile_id) && visibleCategories.has(schedule.schedule_type)).map(schedule => (
                 <div
                   key={schedule.id}
                   className="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
@@ -842,6 +938,12 @@ function Calendar() {
                       {schedule.time_slot && (
                         <div className="text-xs text-gray-500 dark:text-gray-500">
                           <span className="font-medium">Time:</span> {schedule.time_slot}
+                        </div>
+                      )}
+
+                      {schedule.health_category && (
+                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                          <span className="font-medium">Activity:</span> {schedule.health_category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </div>
                       )}
 
