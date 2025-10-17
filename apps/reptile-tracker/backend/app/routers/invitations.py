@@ -13,16 +13,16 @@ router = APIRouter(prefix="/api/invitations", tags=["invitations"])
 
 @router.post("", response_model=schemas.InvitationOut)
 async def create_invitation(payload: schemas.InvitationCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    # Only household owners and admins can create invites
+    # Only household owners, admins, and managers can create invites
     household = await db.get(models.Household, payload.household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")
 
-    # Verify user is owner or admin
+    # Verify user is owner, admin, or manager
     member_result = await db.execute(select(models.household_members).where(models.household_members.c.household_id == household.id, models.household_members.c.user_id == user.id))
     member_row = member_result.first()
-    if not member_row or member_row.access_level not in [models.AccessLevel.OWNER.value, models.AccessLevel.ADMIN.value]:
-        raise HTTPException(status_code=403, detail="Only household owners and admins can create invitations")
+    if not member_row or member_row.access_level not in [models.AccessLevel.OWNER.value, models.AccessLevel.ADMIN.value, models.AccessLevel.MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Only household owners, admins, and managers can create invitations")
 
     code = payload.code or secrets.token_urlsafe(16)
     invitation = models.Invitation(code=code, household_id=household.id, created_by=user.id, expires_at=payload.expires_at, max_uses=payload.max_uses)
@@ -89,7 +89,7 @@ async def delete_invitation(invitation_id: int, db: AsyncSession = Depends(get_d
     if not invitation:
         raise HTTPException(status_code=404, detail="Invitation not found")
 
-    # Check if user is owner or admin of the household
+    # Check if user is owner, admin, or manager of the household
     member_result = await db.execute(
         select(models.household_members).where(
             models.household_members.c.household_id == invitation.household_id,
@@ -97,8 +97,8 @@ async def delete_invitation(invitation_id: int, db: AsyncSession = Depends(get_d
         )
     )
     member_row = member_result.first()
-    if not member_row or member_row.access_level not in [models.AccessLevel.OWNER.value, models.AccessLevel.ADMIN.value]:
-        raise HTTPException(status_code=403, detail="Only household owners and admins can delete invitations")
+    if not member_row or member_row.access_level not in [models.AccessLevel.OWNER.value, models.AccessLevel.ADMIN.value, models.AccessLevel.MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Only household owners, admins, and managers can delete invitations")
 
     # Delete invitation
     await db.execute(delete(models.Invitation).where(models.Invitation.id == invitation_id))

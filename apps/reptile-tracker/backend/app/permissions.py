@@ -54,8 +54,9 @@ async def check_reptile_access(
     level_hierarchy = {
         AccessLevel.VIEWER: 1,
         AccessLevel.CARETAKER: 2,
-        AccessLevel.OWNER: 3,
+        AccessLevel.MANAGER: 3,
         AccessLevel.ADMIN: 4,
+        AccessLevel.OWNER: 5,
     }
 
     if level_hierarchy[access_level] < level_hierarchy[required_level]:
@@ -77,8 +78,9 @@ async def get_user_reptiles(
     level_hierarchy = {
         AccessLevel.VIEWER: 1,
         AccessLevel.CARETAKER: 2,
-        AccessLevel.OWNER: 3,
+        AccessLevel.MANAGER: 3,
         AccessLevel.ADMIN: 4,
+        AccessLevel.OWNER: 5,
     }
 
     # Query reptiles with direct access
