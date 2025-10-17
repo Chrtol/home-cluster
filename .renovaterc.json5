@@ -20,6 +20,7 @@
   ],
   ignorePaths: [
     '**/*.sops.*',
+    'apps/**',
   ],
   flux: {
     managerFilePatterns: [
