@@ -20,7 +20,7 @@ spec:
     - name: external-secrets
       namespace: external-secrets
   components:
-    - ../../../../components/gatus/guarded
+    - ../../../../components/gatus/external
   postBuild:
     substitute:
       APP: *app
