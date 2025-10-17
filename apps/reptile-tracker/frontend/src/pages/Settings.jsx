@@ -825,12 +825,16 @@ function HouseholdSection() {
                         <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Role Permissions</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                           <div>
-                            <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Can manage household members and roles</span>
+                            <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Full household control (members, invitations, reptiles)</span>
                           </div>
                           <div>
-                            <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Can edit/delete all reptiles and logs</span>
+                            <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Can manage members, invitations, and reptiles</span>
+                          </div>
+                          <div>
+                            <strong className="text-yellow-600 dark:text-yellow-400">Manager:</strong>
+                            <span className="text-gray-600 dark:text-gray-400"> Can edit reptiles and create invitations</span>
                           </div>
                           <div>
                             <strong className="text-green-600 dark:text-green-400">Caretaker:</strong>
