@@ -339,7 +339,7 @@ function HouseholdSection() {
   const createInvite = async (householdId) => {
     setCreating(true);
     try {
-      const res = await fetch('/api/invitations/', {
+      const res = await fetch('/api/invitations', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
