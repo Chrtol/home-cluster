@@ -24,6 +24,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
     schedule_days_of_week: [],
     schedule_frequency_days: 7,
     priority: 10,
+    is_exclusive: false,
     enabled: true,
     notes: ''
   });
@@ -114,6 +115,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
         : [],
       schedule_frequency_days: rotation.schedule_frequency_days || 7,
       priority: rotation.priority,
+      is_exclusive: rotation.is_exclusive || false,
       enabled: rotation.enabled,
       notes: rotation.notes || ''
     });
@@ -134,6 +136,7 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
       schedule_days_of_week: [],
       schedule_frequency_days: 7,
       priority: 10,
+      is_exclusive: false,
       enabled: true,
       notes: ''
     });
@@ -223,8 +226,14 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
             </div>
             <div className="px-6 py-4">
               {preview.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No supplements scheduled for the next 2 weeks
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400 mb-3">
+                    No feeding schedules found for this reptile
+                  </p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    Create feeding schedules in the Calendar to see when supplements will apply.
+                    Rotations automatically apply to scheduled feedings based on your configured triggers.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -403,6 +412,30 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
                   Lower number = higher priority (1 = highest)
                 </p>
               </div>
+            </div>
+
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={formData.is_exclusive}
+                  onChange={(e) => setFormData({ ...formData, is_exclusive: e.target.checked })}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Exclusive Mode
+                  </span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    When enabled, this supplement will exclude all lower-priority supplements when it triggers.
+                    Only the highest priority supplement will apply. Leave unchecked to allow multiple supplements simultaneously.
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <strong>Example:</strong> If "Calcium + D3" (priority 1, exclusive) and "Multivitamin" (priority 2) both trigger,
+                    only "Calcium + D3" will apply. Without exclusive mode, both would apply.
+                  </p>
+                </div>
+              </label>
             </div>
 
             <div>

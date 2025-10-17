@@ -182,6 +182,7 @@ async def calculate_rotation_for_feeding(
             # Add supplement or food replacement info
             if rotation.rotation_type == "supplement":
                 result["supplement_id"] = rotation.supplement_id
+                result["is_exclusive"] = rotation.is_exclusive
             elif rotation.rotation_type == "food_replacement":
                 result["replacement_food_category"] = rotation.replacement_food_category
                 result["replacement_note"] = rotation.replacement_note
@@ -190,6 +191,14 @@ async def calculate_rotation_for_feeding(
 
     # Sort by priority (lower number = higher priority) before returning
     applicable_rotations.sort(key=lambda r: r["priority"])
+
+    # Handle exclusive mode: If any rotation is marked exclusive, only keep highest priority
+    if applicable_rotations and any(r.get("is_exclusive") for r in applicable_rotations):
+        exclusive_rotations = [r for r in applicable_rotations if r.get("is_exclusive")]
+        if exclusive_rotations:
+            # Keep only the highest priority (first after sorting)
+            highest_priority = exclusive_rotations[0]["priority"]
+            applicable_rotations = [r for r in applicable_rotations if r["priority"] == highest_priority]
 
     return applicable_rotations
 
@@ -346,11 +355,26 @@ async def get_rotation_preview(
                     supplements.append({
                         "id": rotation.supplement.id,
                         "name": rotation.supplement.name,
-                        "priority": rotation.priority
+                        "priority": rotation.priority,
+                        "is_exclusive": rotation.is_exclusive
                     })
 
-            # Sort supplements by priority
+            # Sort supplements by priority (lowest number = highest priority)
             supplements.sort(key=lambda s: s["priority"])
+
+            # Handle exclusive mode: If any supplement is marked exclusive, only keep highest priority
+            if supplements and any(s.get("is_exclusive") for s in supplements):
+                # Find the highest priority exclusive supplement
+                exclusive_supplements = [s for s in supplements if s.get("is_exclusive")]
+                if exclusive_supplements:
+                    # Keep only the highest priority (first after sorting)
+                    highest_priority = exclusive_supplements[0]["priority"]
+                    # Filter to only supplements at this priority level
+                    supplements = [s for s in supplements if s["priority"] == highest_priority]
+
+            # Remove is_exclusive flag from output
+            for supp in supplements:
+                supp.pop("is_exclusive", None)
 
             # Add this feeding (even if no supplements, to show the schedule)
             day_feedings.append({
