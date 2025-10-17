@@ -9,5 +9,6 @@ configMapGenerator:
     options:
       labels:
         gatus.io/enabled: "true"
+        gatus.io/visibility: external
 generatorOptions:
   disableNameSuffixHash: true

@@ -224,12 +224,12 @@ spec:
       enabled: true
       className: internal
       annotations:
-        internal-dns.alpha.kubernetes.io/target: "internal.cftollefsen.com"
-      hosts: ["{{ .Release.Name }}.cftollefsen.com"]
+        internal-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+      hosts: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
     # route:
     #   main:
     #     enabled: true
-    #     hostnames: ["{{ .Release.Name }}.cftollefsen.com"]
+    #     hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
     #     parentRefs:
     #       - name: internal
     #         namespace: kube-system

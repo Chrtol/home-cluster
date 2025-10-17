@@ -33,12 +33,12 @@ data:
           - "[STATUS] == 404"
         alerts:
           - type: custom
-      - name: status
+      - name: internal-gatus-dns
         group: guarded
         url: 1.1.1.1
         interval: 1m
         dns:
-          query-name: "status.${SECRET_DOMAIN}"
+          query-name: "gatus.${SECRET_DOMAIN}"
           query-type: A
         conditions:
           - "len([BODY]) == 0"
