@@ -9,7 +9,7 @@ from app.auth import get_current_user
 router = APIRouter(prefix="/api/households", tags=["households"])
 
 
-@router.post("/", response_model=schemas.HouseholdOut)
+@router.post("", response_model=schemas.HouseholdOut)
 async def create_household(payload: schemas.HouseholdCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     # Create household and add creator as admin
     household = models.Household(name=payload.name)
