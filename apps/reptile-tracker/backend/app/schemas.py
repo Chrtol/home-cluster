@@ -486,6 +486,7 @@ class FeedingRotationBase(BaseModel):
     applies_to_category: Optional[str] = None  # "insects", "salad", "mixed", "all", null
     application_mode: str = "any_feeding"  # "any_feeding" or "specific_occurrence"
     priority: int = 10
+    is_exclusive: bool = False  # If True, only highest priority supplement applies
     enabled: bool = True
     notes: Optional[str] = None
 
@@ -507,6 +508,7 @@ class FeedingRotationUpdate(BaseModel):
     applies_to_category: Optional[str] = None
     application_mode: Optional[str] = None
     priority: Optional[int] = None
+    is_exclusive: Optional[bool] = None
     enabled: Optional[bool] = None
     notes: Optional[str] = None
 

@@ -409,6 +409,10 @@ class FeedingRotation(Base):
     # Priority (1 = highest) - used when multiple rotations trigger on same feeding
     priority = Column(Integer, nullable=False, default=10)
 
+    # Exclusive mode: If True, only the highest priority supplement applies (others are excluded)
+    # If False (default), multiple supplements can apply simultaneously
+    is_exclusive = Column(Boolean, default=False, nullable=False)
+
     # Enabled/disabled
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
