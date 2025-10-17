@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { ArrowLeft, Save, Clock } from "lucide-react";
-import { getUserTimeFormat } from "../utils/dateFormatting";
+import { getUserTimeFormat, getDayNames, getDayNumbers } from "../utils/dateFormatting";
 
 function ScheduleForm() {
   const navigate = useNavigate();
@@ -48,15 +48,13 @@ function ScheduleForm() {
   const [latestMinutes, setLatestMinutes] = useState(0);
   const [latestPeriod, setLatestPeriod] = useState('PM');
 
-  const weekDays = [
-    { value: 0, label: "Sunday" },
-    { value: 1, label: "Monday" },
-    { value: 2, label: "Tuesday" },
-    { value: 3, label: "Wednesday" },
-    { value: 4, label: "Thursday" },
-    { value: 5, label: "Friday" },
-    { value: 6, label: "Saturday" },
-  ];
+  // Build weekDays array respecting first day of week preference
+  const dayNumbers = getDayNumbers();
+  const dayNames = getDayNames();
+  const weekDays = dayNumbers.map((dayNum, index) => ({
+    value: dayNum,
+    label: dayNames[index]
+  }));
 
   useEffect(() => {
     fetchReptiles();
@@ -391,7 +389,9 @@ function ScheduleForm() {
               <option value="">Not specified</option>
               <option value="insects">Insects/Worms</option>
               <option value="salad">Salad/Vegetables</option>
-              <option value="mixed">Mixed (Insects + Salad)</option>
+              <option value="frozen">Frozen Prey (Rodents)</option>
+              <option value="prepared">Prepared Diet (CGD, Repashy, etc.)</option>
+              <option value="mixed">Mixed (Multiple Types)</option>
               <option value="other">Other</option>
             </select>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
