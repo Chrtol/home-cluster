@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, Feeding, WeightLog, AccessLevel, HealthRecord, MistingLog, Reptile
+from app.models import User, Feeding, WeightLog, AccessLevel, HealthRecord, MistingLog, Reptile, Food, feeding_foods
 from app.permissions import check_reptile_access, get_user_reptiles
 from app.schemas import DailySummary, WeeklySummary, ReptileStats
 
@@ -237,6 +237,41 @@ async def get_comprehensive_stats(
         for row in feeding_by_day
     ]
 
+    # Food-specific feeding data - count of each food item by day
+    result = await db.execute(
+        select(
+            func.date(Feeding.fed_at).label('date'),
+            Food.name.label('food_name'),
+            func.sum(feeding_foods.c.quantity).label('quantity')
+        )
+        .join(feeding_foods, Feeding.id == feeding_foods.c.feeding_id)
+        .join(Food, feeding_foods.c.food_id == Food.id)
+        .where(
+            Feeding.reptile_id == reptile_id,
+            Feeding.fed_at >= start_date
+        )
+        .group_by(func.date(Feeding.fed_at), Food.name)
+        .order_by(func.date(Feeding.fed_at), Food.name)
+    )
+    food_by_day = result.all()
+
+    # Group by date
+    food_data = {}
+    for row in food_by_day:
+        date_str = row.date.isoformat()
+        if date_str not in food_data:
+            food_data[date_str] = {}
+        food_data[date_str][row.food_name] = row.quantity
+
+    # Convert to list format
+    food_data_list = [
+        {
+            "date": date,
+            "foods": foods
+        }
+        for date, foods in sorted(food_data.items())
+    ]
+
     # Misting data - grouped by day
     result = await db.execute(
         select(
@@ -301,6 +336,7 @@ async def get_comprehensive_stats(
         "start_date": start_date.isoformat(),
         "weight_data": weight_data,
         "feeding_data": feeding_data,
+        "food_data": food_data_list,
         "misting_data": misting_data,
         "health_data": health_data,
         "summary": {
