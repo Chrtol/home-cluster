@@ -146,11 +146,11 @@ function Calendar() {
         return r.applies_to_category === foodCategory;
       });
 
-      // Sort by priority
+      // Sort by priority (lower number = higher priority)
       applicable.sort((a, b) => a.priority - b.priority);
 
-      // Find ALL rotations that trigger on this event (not just the first one)
-      const triggeredSupplements = [];
+      // Find ALL rotations that trigger on this event
+      const triggeredRotations = [];
       for (const rotation of applicable) {
         let shouldTrigger = false;
 
@@ -171,10 +171,23 @@ function Calendar() {
         }
 
         if (shouldTrigger && rotation.supplement) {
-          triggeredSupplements.push(rotation.supplement);
+          triggeredRotations.push(rotation);
         }
       }
-      return triggeredSupplements;
+
+      // Handle exclusive mode: If any rotation is exclusive, only keep highest priority
+      if (triggeredRotations.length > 0 && triggeredRotations.some(r => r.is_exclusive)) {
+        const exclusiveRotations = triggeredRotations.filter(r => r.is_exclusive);
+        if (exclusiveRotations.length > 0) {
+          // Keep only the highest priority (first after sorting)
+          const highestPriority = exclusiveRotations[0].priority;
+          // Filter to only rotations at this priority level
+          const filtered = triggeredRotations.filter(r => r.priority === highestPriority);
+          return filtered.map(r => r.supplement);
+        }
+      }
+
+      return triggeredRotations.map(r => r.supplement);
     };
 
     // Helper to create event object with supplement suggestion
