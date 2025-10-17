@@ -13,16 +13,16 @@ router = APIRouter(prefix="/api/invitations", tags=["invitations"])
 
 @router.post("", response_model=schemas.InvitationOut)
 async def create_invitation(payload: schemas.InvitationCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    # Only household owners can create invites - simple check
+    # Only household owners and admins can create invites
     household = await db.get(models.Household, payload.household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")
 
-    # Verify user is owner
-    owner_result = await db.execute(select(models.household_members).where(models.household_members.c.household_id == household.id, models.household_members.c.user_id == user.id))
-    owner_row = owner_result.first()
-    if not owner_row or owner_row.access_level != models.AccessLevel.OWNER.value:
-        raise HTTPException(status_code=403, detail="Only household owners can create invitations")
+    # Verify user is owner or admin
+    member_result = await db.execute(select(models.household_members).where(models.household_members.c.household_id == household.id, models.household_members.c.user_id == user.id))
+    member_row = member_result.first()
+    if not member_row or member_row.access_level not in [models.AccessLevel.OWNER.value, models.AccessLevel.ADMIN.value]:
+        raise HTTPException(status_code=403, detail="Only household owners and admins can create invitations")
 
     code = payload.code or secrets.token_urlsafe(16)
     invitation = models.Invitation(code=code, household_id=household.id, created_by=user.id, expires_at=payload.expires_at, max_uses=payload.max_uses)
@@ -82,23 +82,23 @@ async def list_invitations(household_id: int, db: AsyncSession = Depends(get_db)
 
 @router.delete("/{invitation_id}")
 async def delete_invitation(invitation_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    """Delete/revoke an invitation (owner only)"""
+    """Delete/revoke an invitation (owner or admin only)"""
     # Get invitation
     result = await db.execute(select(models.Invitation).where(models.Invitation.id == invitation_id))
     invitation = result.scalar_one_or_none()
     if not invitation:
         raise HTTPException(status_code=404, detail="Invitation not found")
 
-    # Check if user is owner of the household
-    owner_result = await db.execute(
+    # Check if user is owner or admin of the household
+    member_result = await db.execute(
         select(models.household_members).where(
             models.household_members.c.household_id == invitation.household_id,
             models.household_members.c.user_id == user.id
         )
     )
-    owner_row = owner_result.first()
-    if not owner_row or owner_row.access_level != models.AccessLevel.OWNER.value:
-        raise HTTPException(status_code=403, detail="Only household owners can delete invitations")
+    member_row = member_result.first()
+    if not member_row or member_row.access_level not in [models.AccessLevel.OWNER.value, models.AccessLevel.ADMIN.value]:
+        raise HTTPException(status_code=403, detail="Only household owners and admins can delete invitations")
 
     # Delete invitation
     await db.execute(delete(models.Invitation).where(models.Invitation.id == invitation_id))
