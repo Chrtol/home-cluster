@@ -616,10 +616,11 @@ function SupplementsTab() {
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <h3 className="font-medium mb-3 text-gray-900 dark:text-white">Nutritional Information (Optional)</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">All values are per gram of supplement powder</p>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Calcium (mg)</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Calcium (mg/g)</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.calcium_mg}
@@ -633,7 +634,7 @@ function SupplementsTab() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Vitamin D3 (IU)</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Vitamin D3 (IU/g)</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.vitamin_d3_iu}
@@ -647,7 +648,7 @@ function SupplementsTab() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Vitamin A (IU)</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Vitamin A (IU/g)</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.vitamin_a_iu}
