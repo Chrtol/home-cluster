@@ -781,81 +781,85 @@ function Calendar() {
   return (
     <div>
       <div className="flex flex-col gap-4 mb-6">
-        {/* Header with title and action buttons */}
+        {/* Header with title, category filters, and action buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calendar</h1>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowSchedules(!showSchedules)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              <List size={20} />
-              <span className="hidden sm:inline">Manage Schedules</span>
-              <span className="sm:hidden">Schedules</span>
-              {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            <button
-              onClick={() => navigate("/schedule-create")}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              <Plus size={20} />
-              <span className="hidden sm:inline">Add Schedule</span>
-              <span className="sm:hidden">Add</span>
-            </button>
-          </div>
-        </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* Category Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => toggleCategoryFilter('feeding')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  visibleCategories.has('feeding')
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                Feeding
+              </button>
+              <button
+                onClick={() => toggleCategoryFilter('misting')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  visibleCategories.has('misting')
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                Misting
+              </button>
+              <button
+                onClick={() => toggleCategoryFilter('weighing')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  visibleCategories.has('weighing')
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                Health
+              </button>
+              <button
+                onClick={() => toggleCategoryFilter('supplement')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  visibleCategories.has('supplement')
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                Supplement
+              </button>
+              <button
+                onClick={toggleAllCategories}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
+              </button>
+            </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Categories:</span>
-          <button
-            onClick={() => toggleCategoryFilter('feeding')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              visibleCategories.has('feeding')
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Feeding
-          </button>
-          <button
-            onClick={() => toggleCategoryFilter('misting')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              visibleCategories.has('misting')
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Misting
-          </button>
-          <button
-            onClick={() => toggleCategoryFilter('weighing')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              visibleCategories.has('weighing')
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Health
-          </button>
-          <button
-            onClick={() => toggleCategoryFilter('supplement')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              visibleCategories.has('supplement')
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Supplement
-          </button>
-          <button
-            onClick={toggleAllCategories}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          >
-            {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
-          </button>
+            {/* Divider */}
+            <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowSchedules(!showSchedules)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <List size={20} />
+                <span className="hidden sm:inline">Manage Schedules</span>
+                <span className="sm:hidden">Schedules</span>
+                {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              <button
+                onClick={() => navigate("/schedule-create")}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <Plus size={20} />
+                <span className="hidden sm:inline">Add Schedule</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Reptile Filters */}
