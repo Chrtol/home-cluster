@@ -807,7 +807,7 @@ function Calendar() {
             </div>
           ) : (
             <div className="space-y-3">
-              {schedules.map(schedule => (
+              {schedules.filter(schedule => visibleReptiles.has(schedule.reptile_id)).map(schedule => (
                 <div
                   key={schedule.id}
                   className="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
