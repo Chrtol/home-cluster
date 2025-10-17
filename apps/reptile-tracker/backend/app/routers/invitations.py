@@ -11,7 +11,7 @@ from app.auth import get_current_user
 router = APIRouter(prefix="/api/invitations", tags=["invitations"])
 
 
-@router.post("/", response_model=schemas.InvitationOut)
+@router.post("", response_model=schemas.InvitationOut)
 async def create_invitation(payload: schemas.InvitationCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     # Only household owners can create invites - simple check
     household = await db.get(models.Household, payload.household_id)
