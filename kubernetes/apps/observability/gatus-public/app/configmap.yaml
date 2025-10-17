@@ -25,7 +25,7 @@ data:
     endpoints: []
     alerting:
       custom:
-        url: https://n8n-webhook.cftollefsen.com/webhook/gatus
+        url: https://n8n-webhook.${SECRET_DOMAIN}/webhook/gatus
         method: POST
         headers:
           Content-Type: application/json

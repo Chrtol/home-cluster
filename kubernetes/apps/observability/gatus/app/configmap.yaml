@@ -49,11 +49,11 @@ data:
         url: https://nas.${SECRET_DOMAIN}
         interval: 12h
         client:
-          dns-resolver: tcp://1.1.1.1:53
+          dns-resolver: tcp://10.0.30.1:53
           timeout: 10s
         conditions:
-          - "[STATUS] == 200"
-          - "[CERTIFICATE_EXPIRATION] > 720h"
+          - "[CONNECTED] == true"
+          - "[CERTIFICATE_EXPIRATION] > 696h"
         alerts:
           - type: custom
             description: "Certificate expires in [CERTIFICATE_EXPIRATION]"
@@ -65,11 +65,11 @@ data:
         url: https://opnsense.${SECRET_DOMAIN}
         interval: 12h
         client:
-          dns-resolver: tcp://1.1.1.1:53
+          dns-resolver: tcp://10.0.30.1:53
           timeout: 10s
         conditions:
-          - "[STATUS] == 200"
-          - "[CERTIFICATE_EXPIRATION] > 720h"
+          - "[CONNECTED] == true"
+          - "[CERTIFICATE_EXPIRATION] > 696h"
         alerts:
           - type: custom
             description: "Certificate expires in [CERTIFICATE_EXPIRATION]"
@@ -78,7 +78,7 @@ data:
             success-threshold: 1
     alerting:
       custom:
-        url: https://n8n-webhook.cftollefsen.com/webhook/gatus
+        url: https://n8n-webhook.${SECRET_DOMAIN}/webhook/gatus
         method: POST
         headers:
           Content-Type: application/json
