@@ -38,12 +38,44 @@ data:
         url: 1.1.1.1
         interval: 1m
         dns:
-          query-name: "status.${CLUSTER_DOMAIN}"
+          query-name: "status.${SECRET_DOMAIN}"
           query-type: A
         conditions:
           - "len([BODY]) == 0"
         alerts:
           - type: custom
+      - name: nas
+        group: certificates
+        url: https://nas.${SECRET_DOMAIN}
+        interval: 12h
+        client:
+          dns-resolver: tcp://1.1.1.1:53
+          timeout: 10s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CERTIFICATE_EXPIRATION] > 720h"
+        alerts:
+          - type: custom
+            description: "Certificate expires in [CERTIFICATE_EXPIRATION]"
+            send-on-resolved: true
+            failure-threshold: 1
+            success-threshold: 1
+      - name: opnsense
+        group: certificates
+        url: https://opnsense.${SECRET_DOMAIN}
+        interval: 12h
+        client:
+          dns-resolver: tcp://1.1.1.1:53
+          timeout: 10s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CERTIFICATE_EXPIRATION] > 720h"
+        alerts:
+          - type: custom
+            description: "Certificate expires in [CERTIFICATE_EXPIRATION]"
+            send-on-resolved: true
+            failure-threshold: 1
+            success-threshold: 1
     alerting:
       custom:
         url: https://n8n-webhook.cftollefsen.com/webhook/gatus
@@ -53,7 +85,7 @@ data:
         body: |
           {
             "endpoint_name": "[ENDPOINT_NAME]",
-            "group": "[ENDPOINT_GROUP]", 
+            "group": "[ENDPOINT_GROUP]",
             "alert_state": "[ALERT_TRIGGERED_OR_RESOLVED]",
             "description": "[ALERT_DESCRIPTION]"
           }
