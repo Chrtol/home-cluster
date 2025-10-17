@@ -295,6 +295,7 @@ class Schedule(Base):
     # Additional details
     food_category = Column(String, nullable=True)  # For feeding schedules: "insects", "salad", "mixed", etc.
     time_slot = Column(String, nullable=True)  # For misting schedules: "morning", "midday", "afternoon", "evening", "night"
+    health_category = Column(String, nullable=True)  # For weighing schedules: "weight_check", "bathing", "shedding_check", etc.
 
     # For every_x_days
     frequency_days = Column(Integer, nullable=True)

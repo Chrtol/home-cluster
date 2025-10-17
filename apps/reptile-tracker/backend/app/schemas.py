@@ -269,6 +269,7 @@ class ScheduleBase(BaseModel):
     schedule_rule: str  # "every_x_days", "days_of_week", "monthly", "dependent"
     food_category: Optional[str] = None  # For feeding: "insects", "salad", "mixed"
     time_slot: Optional[str] = None  # For misting: "morning", "midday", "afternoon", "evening", "night"
+    health_category: Optional[str] = None  # For weighing/health: "weight_check", "bathing", "shedding_check"
     frequency_days: Optional[int] = None  # For every_x_days
     days_of_week: Optional[str] = None  # For days_of_week (comma-separated: '1,3,5')
     day_of_month: Optional[int] = None  # For monthly (1-31)
@@ -299,6 +300,7 @@ class ScheduleUpdate(BaseModel):
     schedule_rule: Optional[str] = None
     food_category: Optional[str] = None
     time_slot: Optional[str] = None
+    health_category: Optional[str] = None
     frequency_days: Optional[int] = None
     days_of_week: Optional[str] = None
     day_of_month: Optional[int] = None
