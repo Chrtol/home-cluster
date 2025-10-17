@@ -104,7 +104,7 @@ export default function HouseholdSettings() {
     return <div className="text-center py-12 text-red-500 dark:text-red-400">No household found</div>;
   }
 
-  const isAdmin = userRole === 'admin';
+  const isAdmin = ['owner', 'admin'].includes(userRole);
 
   return (
     <div>
@@ -137,7 +137,7 @@ export default function HouseholdSettings() {
           <div className="flex items-center gap-2">
             <Shield size={20} />
             <p className="text-sm">
-              You are a <strong>{userRole}</strong>. Only admins can manage member roles.
+              You are a <strong>{userRole}</strong>. Only owners and admins can manage member roles.
             </p>
           </div>
         </div>

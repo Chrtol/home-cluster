@@ -131,8 +131,8 @@ async def update_reptile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a reptile (requires OWNER access)"""
-    reptile = await check_reptile_access(db, current_user, reptile_id, AccessLevel.OWNER)
+    """Update a reptile (requires MANAGER access or higher)"""
+    reptile = await check_reptile_access(db, current_user, reptile_id, AccessLevel.MANAGER)
 
     # Update only provided fields
     update_data = reptile_update.model_dump(exclude_unset=True)
@@ -153,8 +153,8 @@ async def delete_reptile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a reptile (requires OWNER access)"""
-    await check_reptile_access(db, current_user, reptile_id, AccessLevel.OWNER)
+    """Delete a reptile (requires MANAGER access or higher)"""
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.MANAGER)
 
     await db.execute(delete(Reptile).where(Reptile.id == reptile_id))
     await db.commit()

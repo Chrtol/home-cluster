@@ -436,7 +436,7 @@ class HouseholdOut(BaseModel):
 
 
 class MemberRoleUpdate(BaseModel):
-    access_level: str  # "admin", "owner", "caretaker", or "viewer"
+    access_level: str  # "owner", "admin", "manager", "caretaker", or "viewer"
 
 
 # Invitation schemas

@@ -20,8 +20,9 @@ from app.database import Base
 
 
 class AccessLevel(str, PyEnum):
-    ADMIN = "admin"
     OWNER = "owner"
+    ADMIN = "admin"
+    MANAGER = "manager"
     CARETAKER = "caretaker"
     VIEWER = "viewer"
 

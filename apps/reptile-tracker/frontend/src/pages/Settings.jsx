@@ -518,13 +518,15 @@ function HouseholdSection() {
     }
   };
 
-  const isAdmin = userRole === 'admin';
+  const isAdmin = ['owner', 'admin'].includes(userRole);
   const isOwner = userRole === 'owner';
+  const canManage = ['owner', 'admin', 'manager'].includes(userRole);
 
   const getRoleBadge = (role) => {
     const colors = {
-      admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      manager: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
       caretaker: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
@@ -758,7 +760,7 @@ function HouseholdSection() {
                       <div className="flex items-center gap-2">
                         <Shield size={20} />
                         <p className="text-sm">
-                          You are a <strong>{userRole || 'member'}</strong>. Only admins can manage member roles.
+                          You are a <strong>{userRole || 'member'}</strong>. Only owners and admins can manage member roles.
                         </p>
                       </div>
                     </div>
@@ -794,8 +796,9 @@ function HouseholdSection() {
                                 >
                                   <option value="viewer">Viewer</option>
                                   <option value="caretaker">Caretaker</option>
-                                  <option value="owner">Owner</option>
+                                  <option value="manager">Manager</option>
                                   <option value="admin">Admin</option>
+                                  <option value="owner">Owner</option>
                                 </select>
 
                                 <button
