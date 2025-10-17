@@ -10,6 +10,7 @@ function Statistics() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(90); // Days
+  const [selectedFood, setSelectedFood] = useState('all'); // 'all' or specific food name
   const [visibleData, setVisibleData] = useState({
     weight: true,
     feeding: true,
@@ -74,6 +75,16 @@ function Statistics() {
     return stats.summary.weight_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
   };
 
+  // Get list of all available food names
+  const getAvailableFoods = () => {
+    if (!stats || !stats.food_data) return [];
+    const foodSet = new Set();
+    stats.food_data.forEach(item => {
+      Object.keys(item.foods).forEach(foodName => foodSet.add(foodName));
+    });
+    return Array.from(foodSet).sort();
+  };
+
   // Merge weight and feeding data for combined chart with interpolation
   const getCombinedData = () => {
     if (!stats) return [];
@@ -101,11 +112,21 @@ function Statistics() {
       weightMap.set(dateKey, item.weight);
     });
 
-    // Create feeding lookup map
+    // Create feeding lookup map (total count or specific food)
     const feedingMap = new Map();
-    stats.feeding_data.forEach(item => {
-      feedingMap.set(item.date, item.count);
-    });
+    if (selectedFood === 'all') {
+      // Use total feeding count
+      stats.feeding_data.forEach(item => {
+        feedingMap.set(item.date, item.count);
+      });
+    } else {
+      // Use specific food quantity
+      stats.food_data?.forEach(item => {
+        if (item.foods[selectedFood]) {
+          feedingMap.set(item.date, item.foods[selectedFood]);
+        }
+      });
+    }
 
     // Linear interpolation for weight
     const interpolateWeight = (date) => {
@@ -162,7 +183,7 @@ function Statistics() {
         date,
         weight: weightData?.weight,
         weightActual: weightData?.isActual ? weightData.weight : null,
-        weightInterpolated: !weightData?.isActual ? weightData?.weight : null,
+        weightInterpolated: weightData?.weight, // Show all weights (actual and interpolated) for continuous line
         feedings: feedingMap.get(date)
       };
     });
@@ -360,12 +381,28 @@ function Statistics() {
           {/* Combined Weight & Feeding Chart */}
           {(visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
             <div className="card">
-              <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                Weight & Feeding Correlation
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                See how feeding frequency affects weight over time
-              </p>
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Weight & Feeding Correlation
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    See how feeding frequency affects weight over time
+                  </p>
+                </div>
+                {getAvailableFoods().length > 0 && (
+                  <select
+                    value={selectedFood}
+                    onChange={(e) => setSelectedFood(e.target.value)}
+                    className="input py-1 px-2 text-sm ml-4"
+                  >
+                    <option value="all">All Feedings</option>
+                    {getAvailableFoods().map(food => (
+                      <option key={food} value={food}>{food}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 flex items-center gap-4">
                 <span className="flex items-center gap-1">
                   <span className="w-3 h-0.5 bg-blue-500"></span> Actual measurements
@@ -448,7 +485,7 @@ function Statistics() {
                       yAxisId="feedings"
                       dataKey="feedings"
                       fill="#10B981"
-                      name="Feedings"
+                      name={selectedFood === 'all' ? 'Feedings' : `${selectedFood} (quantity)`}
                       radius={[8, 8, 0, 0]}
                       opacity={0.7}
                     />
