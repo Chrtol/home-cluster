@@ -11,13 +11,13 @@ router = APIRouter(prefix="/api/households", tags=["households"])
 
 @router.post("", response_model=schemas.HouseholdOut)
 async def create_household(payload: schemas.HouseholdCreate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    # Create household and add creator as admin
+    # Create household and add creator as owner
     household = models.Household(name=payload.name)
     db.add(household)
     await db.flush()
 
-    # add membership - creator gets admin role to manage household
-    stmt = insert(models.household_members).values(household_id=household.id, user_id=user.id, access_level=models.AccessLevel.ADMIN)
+    # add membership - creator gets owner role to manage household
+    stmt = insert(models.household_members).values(household_id=household.id, user_id=user.id, access_level=models.AccessLevel.OWNER)
     await db.execute(stmt)
     await db.commit()
     await db.refresh(household)
@@ -105,8 +105,8 @@ async def update_member_role(
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    """Update a member's role in the household (admin only)"""
-    # Check if requester is admin
+    """Update a member's role in the household (owner or admin only)"""
+    # Check if requester is owner or admin
     requester_check = await db.execute(
         select(models.household_members.c.access_level).where(
             models.household_members.c.household_id == household_id,
@@ -114,8 +114,8 @@ async def update_member_role(
         )
     )
     requester_access = requester_check.scalar_one_or_none()
-    if not requester_access or requester_access != models.AccessLevel.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can change member roles")
+    if not requester_access or requester_access not in [models.AccessLevel.OWNER, models.AccessLevel.ADMIN]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only owners and admins can change member roles")
 
     # Can't change your own role
     if user_id == user.id:
@@ -148,8 +148,8 @@ async def update_member_role(
 
 @router.delete("/{household_id}/members/{user_id}")
 async def remove_member(household_id: int, user_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    """Remove a member from household (admin only)"""
-    # Check if requester is admin
+    """Remove a member from household (owner or admin only)"""
+    # Check if requester is owner or admin
     requester_check = await db.execute(
         select(models.household_members.c.access_level).where(
             models.household_members.c.household_id == household_id,
@@ -157,8 +157,8 @@ async def remove_member(household_id: int, user_id: int, db: AsyncSession = Depe
         )
     )
     requester_access = requester_check.scalar_one_or_none()
-    if not requester_access or requester_access != models.AccessLevel.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can remove members")
+    if not requester_access or requester_access not in [models.AccessLevel.OWNER, models.AccessLevel.ADMIN]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only owners and admins can remove members")
 
     # Can't remove yourself (use leave endpoint instead)
     if user_id == user.id:
