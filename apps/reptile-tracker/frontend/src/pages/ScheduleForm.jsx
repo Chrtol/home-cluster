@@ -21,6 +21,7 @@ function ScheduleForm() {
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
   const [foodCategory, setFoodCategory] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
+  const [healthCategory, setHealthCategory] = useState("");
   const [frequencyDays, setFrequencyDays] = useState("");
   const [daysOfWeek, setDaysOfWeek] = useState([]);
   const [dayOfMonth, setDayOfMonth] = useState("");
@@ -111,6 +112,7 @@ function ScheduleForm() {
       setScheduleRule(schedule.schedule_rule);
       setFoodCategory(schedule.food_category || "");
       setTimeSlot(schedule.time_slot || "");
+      setHealthCategory(schedule.health_category || "");
       setFrequencyDays(schedule.frequency_days || "");
       setDaysOfWeek(schedule.days_of_week ? schedule.days_of_week.split(",").map(Number) : []);
       setDayOfMonth(schedule.day_of_month || "");
@@ -258,6 +260,9 @@ function ScheduleForm() {
       if (scheduleType === "misting" && timeSlot) {
         scheduleData.time_slot = timeSlot;
       }
+      if (scheduleType === "weighing" && healthCategory) {
+        scheduleData.health_category = healthCategory;
+      }
 
       // Add rule-specific fields
       if (scheduleRule === "every_x_days") {
@@ -370,7 +375,7 @@ function ScheduleForm() {
           >
             <option value="feeding">Feeding</option>
             <option value="misting">Misting</option>
-            <option value="weighing">Weighing</option>
+            <option value="weighing">Health</option>
             <option value="supplement">Supplement</option>
           </select>
         </div>
@@ -420,6 +425,28 @@ function ScheduleForm() {
             </select>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Optional: Specify the time of day for misting
+            </p>
+          </div>
+        )}
+
+        {/* Health Category (only for health/weighing schedules) */}
+        {scheduleType === "weighing" && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Health Activity Type
+            </label>
+            <select
+              value={healthCategory}
+              onChange={(e) => setHealthCategory(e.target.value)}
+              className="input-field"
+            >
+              <option value="weight_check">Weight Check</option>
+              <option value="bathing">Bathing</option>
+              <option value="shedding_check">Shedding Check</option>
+              <option value="health_inspection">Health Inspection</option>
+            </select>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Specify what type of health activity this schedule is for
             </p>
           </div>
         )}
