@@ -657,16 +657,18 @@ function HouseholdSection() {
                   >
                     Users ({members.length})
                   </button>
-                  <button
-                    onClick={() => setActiveTab('invitations')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === 'invitations'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    Invitations ({invitations.length})
-                  </button>
+                  {canManage && (
+                    <button
+                      onClick={() => setActiveTab('invitations')}
+                      className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
+                        activeTab === 'invitations'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      Invitations ({invitations.length})
+                    </button>
+                  )}
                 </nav>
               </div>
 
@@ -715,16 +717,18 @@ function HouseholdSection() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              createInvite(selectedHousehold.id);
-                              setActiveTab('invitations');
-                            }}
-                            disabled={creating}
-                            className="btn-primary"
-                          >
-                            Create Invite
-                          </button>
+                          {canManage && (
+                            <button
+                              onClick={() => {
+                                createInvite(selectedHousehold.id);
+                                setActiveTab('invitations');
+                              }}
+                              disabled={creating}
+                              className="btn-primary"
+                            >
+                              Create Invite
+                            </button>
+                          )}
                           <button
                             onClick={() => leaveHousehold(selectedHousehold.id)}
                             disabled={creating}
@@ -739,15 +743,17 @@ function HouseholdSection() {
 
                   <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
                     <h4 className="font-medium text-gray-900 dark:text-white mb-2">Quick Stats</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className={`grid ${canManage ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                       <div>
                         <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{members.length}</p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">Members</p>
                       </div>
-                      <div>
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{invitations.filter(i => !i.expires_at || new Date(i.expires_at) > new Date()).length}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Active Invites</p>
-                      </div>
+                      {canManage && (
+                        <div>
+                          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{invitations.filter(i => !i.expires_at || new Date(i.expires_at) > new Date()).length}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Active Invites</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
