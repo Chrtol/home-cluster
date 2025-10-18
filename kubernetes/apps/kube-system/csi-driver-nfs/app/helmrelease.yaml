@@ -31,7 +31,7 @@ spec:
       create: true
       name: nfs-k8s
       parameters:
-        server: nas.cftollefsen.com
+        server: nas.${SECRET_DOMAIN}
         share: /mnt/truenas/cf-nas
       mountOptions:
         - nfsvers=4.2

@@ -10,9 +10,9 @@ spec:
   ingressClassName: internal
   tls:
     - hosts:
-        - prowlarr.cftollefsen.com
+        - prowlarr.${SECRET_DOMAIN}
   rules:
-    - host: prowlarr.cftollefsen.com
+    - host: prowlarr.${SECRET_DOMAIN}
       http:
         paths:
           - path: /outpost.goauthentik.io

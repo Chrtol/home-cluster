@@ -10,9 +10,9 @@ spec:
   ingressClassName: internal
   tls:
     - hosts:
-        - readarr-books.cftollefsen.com
+        - readarr-books.${SECRET_DOMAIN}
   rules:
-    - host: readarr-books.cftollefsen.com
+    - host: readarr-books.${SECRET_DOMAIN}
       http:
         paths:
           - path: /outpost.goauthentik.io

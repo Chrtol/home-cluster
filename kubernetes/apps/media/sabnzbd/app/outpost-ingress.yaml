@@ -10,9 +10,9 @@ spec:
   ingressClassName: internal
   tls:
     - hosts:
-        - sab.cftollefsen.com
+        - sab.${SECRET_DOMAIN}
   rules:
-    - host: sab.cftollefsen.com
+    - host: sab.${SECRET_DOMAIN}
       http:
         paths:
           - path: /outpost.goauthentik.io

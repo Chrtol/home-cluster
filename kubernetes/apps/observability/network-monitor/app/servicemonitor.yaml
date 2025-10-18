@@ -35,7 +35,7 @@ spec:
         module: [dns]
         target: 
           - google.com
-          - plex.cftollefsen.com
+          - plex.${SECRET_DOMAIN}
           - cloudflare.com
       metricRelabelings:
         - sourceLabels: [__name__]
@@ -66,7 +66,7 @@ spec:
       params:
         module: [http_2xx]
         target:
-          - https://plex.cftollefsen.com
+          - https://plex.${SECRET_DOMAIN}
           - https://google.com
           - http://10.0.30.70:32400/web
       metricRelabelings:
