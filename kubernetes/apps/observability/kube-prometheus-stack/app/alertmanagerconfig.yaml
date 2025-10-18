@@ -22,10 +22,20 @@ spec:
           - name: alertname
             value: Watchdog
             matchType: =
+      - receiver: "null"
+        matchers:
+          - name: alertname
+            value: KubeMemoryOvercommit
+            matchType: =
+      - receiver: "null"
+        matchers:
+          - name: alertname
+            value: KubeCPUOvercommit
+            matchType: =
       - receiver: n8n-smart-routing
         matchers:
           - name: alertname
-            value: "(InfoInhibitor|Watchdog)"
+            value: "(InfoInhibitor|Watchdog|KubeMemoryOvercommit|KubeCPUOvercommit)"
             matchType: "!~"
   inhibitRules:
     - equal: ["alertname", "namespace"]

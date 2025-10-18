@@ -22,17 +22,17 @@
       },
       {
         "name": "Resource",
-        "value": "{{ $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job || 'Unknown' }}",
+        "value": "{{ $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job_name || $json.labels.daemonset || $json.labels.cluster_name || 'Unknown' }}",
         "inline": true
       },
       {
-        "name": "{{ $json.labels.horizontalpodautoscaler ? 'Target' : 'Pod' }}",
-        "value": "{{ $json.labels.horizontalpodautoscaler ? ($json.labels.scaletargetkind || 'Deployment') + '/' + ($json.labels.scaletargetname || $json.labels.horizontalpodautoscaler) : ($json.labels.pod || 'N/A') }}",
+        "name": "{{ $json.labels.horizontalpodautoscaler ? 'Target' : ($json.alert.name.includes('Pod') || $json.alert.name.includes('Container') ? 'Pod' : 'Type') }}",
+        "value": "{{ $json.labels.horizontalpodautoscaler ? ($json.labels.scaletargetkind || 'Deployment') + '/' + ($json.labels.scaletargetname || $json.labels.horizontalpodautoscaler) : ($json.alert.name.includes('Pod') || $json.alert.name.includes('Container') ? ($json.labels.pod || 'N/A') : ($json.labels.deployment ? 'Deployment' : ($json.labels.statefulset ? 'StatefulSet' : ($json.labels.job_name ? 'Job' : ($json.labels.daemonset ? 'DaemonSet' : 'N/A'))))) }}",
         "inline": true
       },
       {
-        "name": "{{ $json.labels.horizontalpodautoscaler ? 'Current/Max Replicas' : 'Container' }}",
-        "value": "{{ $json.labels.horizontalpodautoscaler ? ($json.labels.current_replicas || 'N/A') + '/' + ($json.labels.max_replicas || 'N/A') : ($json.labels.container || 'N/A') }}",
+        "name": "{{ $json.labels.horizontalpodautoscaler ? 'Current/Max Replicas' : ($json.alert.name.includes('Container') ? 'Container' : 'Details') }}",
+        "value": "{{ $json.labels.horizontalpodautoscaler ? ($json.labels.current_replicas || 'N/A') + '/' + ($json.labels.max_replicas || 'N/A') : ($json.alert.name.includes('Container') ? ($json.labels.container || 'N/A') : ($json.labels.reason || $json.labels.condition || 'See description')) }}",
         "inline": true
       },
       {

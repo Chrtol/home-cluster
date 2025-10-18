@@ -1,10 +1,12 @@
 Form data fields for Pushover notification:
 
 token: [your pushover app token]
-user: [your pushover user key]  
+user: [your pushover user key]
 message: {{ $json.alert.summary }}
-Resource: {{ $json.labels.job || $json.labels.deployment || $json.labels.statefulset || $json.labels.horizontalpodautoscaler || 'Unknown' }}
+Resource: {{ $json.labels.job_name || $json.labels.job || $json.labels.deployment || $json.labels.statefulset || $json.labels.horizontalpodautoscaler || $json.labels.cluster_name || 'Unknown' }}
 {{ $json.labels.pod ? 'Pod: ' + $json.labels.pod : '' }}
+{{ $json.labels.container ? 'Container: ' + $json.labels.container : '' }}
+Namespace: {{ $json.labels.namespace || 'Unknown' }}
 
 title: {{ $json.alert.name }}
 priority: {{ $json.alert.severity === 'critical' ? '1' : '0' }}

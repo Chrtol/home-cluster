@@ -31,6 +31,7 @@ data:
           Content-Type: application/json
         body: |
           {
+            "gatus_instance": "public",
             "endpoint_name": "[ENDPOINT_NAME]",
             "group": "[ENDPOINT_GROUP]",
             "alert_state": "[ALERT_TRIGGERED_OR_RESOLVED]",
