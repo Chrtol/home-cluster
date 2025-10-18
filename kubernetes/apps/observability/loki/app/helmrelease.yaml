@@ -65,6 +65,12 @@ spec:
         searchNamespace: ALL
     singleBinary:
       replicas: 1
+      extraVolumes:
+        - name: sidecar-tmp
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: sidecar-tmp
+          mountPath: /tmp
       persistence:
         enabled: true
         storageClass: csi-rbd-sc
