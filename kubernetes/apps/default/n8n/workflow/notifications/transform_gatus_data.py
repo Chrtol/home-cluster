@@ -9,6 +9,7 @@ gatus_data = webhook_data.get('body', webhook_data)
 # Extract Gatus fields
 alert_name = gatus_data.get('endpoint_name', gatus_data.get('name', 'UnknownService'))
 group = gatus_data.get('group', 'external')
+gatus_instance = gatus_data.get('gatus_instance', 'unknown')
 
 # Determine if service is down
 is_service_down = False
@@ -34,6 +35,7 @@ transformed = {
         "status": "firing" if is_service_down else "resolved",
         "service_name": alert_name,
         "group": group,
+        "gatus_instance": gatus_instance,
         "is_service_down": is_service_down,
         # Keep original gatus data
         "gatus_data": gatus_data
