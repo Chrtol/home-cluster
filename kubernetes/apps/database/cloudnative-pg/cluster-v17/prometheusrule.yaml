@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudnative-pg-backup-rules
+spec:
+  groups:
+    - name: cloudnative-pg.backup.rules
+      rules:
+        - alert: CNPGBackupFailed
+          expr: |
+            cnpg_pg_backup_status{cluster="postgres17"} == 0
+          for: 15m
+          annotations:
+            summary: >-
+              CloudNative-PG backup failed for cluster {{ $labels.cluster }}
+            description: >-
+              The last backup for PostgreSQL cluster {{ $labels.cluster }} has failed.
+              Check the backup logs for more details.
+          labels:
+            severity: critical
+            component: postgres-backup
+
+        - alert: CNPGBackupStale
+          expr: |
+            (time() - cnpg_pg_backup_last_successful_time{cluster="postgres17"}) > 172800
+          for: 1h
+          annotations:
+            summary: >-
+              CloudNative-PG backup is stale for cluster {{ $labels.cluster }}
+            description: >-
+              No successful backup for PostgreSQL cluster {{ $labels.cluster }} in the last 48 hours.
+              Last successful backup was {{ $value | humanizeDuration }} ago.
+          labels:
+            severity: warning
+            component: postgres-backup
