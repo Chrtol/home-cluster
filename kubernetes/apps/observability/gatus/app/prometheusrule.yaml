@@ -20,10 +20,10 @@ spec:
 
         - alert: GatusEndpointExposed
           expr: |
-            gatus_results_endpoint_success{group="guarded",name="internal-gatus-dns"} == 1
+            gatus_results_endpoint_success{group="guarded",name="internal-gatus-dns"} == 0
           for: 5m
           annotations:
             summary: >-
-              The {{ $labels.name }} internal domain is leaking to public DNS
+              Internal domain {{ $labels.name }} is leaking to public DNS
           labels:
             severity: critical
