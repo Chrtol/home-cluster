@@ -9,14 +9,14 @@ spec:
     - name: proxmox-infrastructure
       rules:
         - alert: ProxmoxNodeDown
-          expr: pve_up == 0
-          for: 15m
+          expr: pve_up{id=~"node/.*"} == 0
+          for: 5m
           labels:
             severity: critical
             component: proxmox
           annotations:
-            summary: "Proxmox node is unreachable"
-            description: "Proxmox node {{ $labels.instance }} has been unreachable for more than 5 minutes"
+            summary: "Proxmox node is down"
+            description: "Proxmox node {{ $labels.id }} has been down for more than 5 minutes"
 
         - alert: ProxmoxNodeStorageFull
           expr: (pve_storage_size_bytes - pve_storage_available_bytes) / pve_storage_size_bytes * 100 > 90
@@ -109,3 +109,23 @@ spec:
           annotations:
             summary: "Ceph slow operations detected"
             description: "OSD {{ $labels.ceph_daemon }} average write latency is {{ $value }}s"
+
+        - alert: CephClusterNearFull
+          expr: (ceph_cluster_total_used_bytes / ceph_cluster_total_bytes) * 100 > 75
+          for: 5m
+          labels:
+            severity: warning
+            component: ceph-storage
+          annotations:
+            summary: "Ceph cluster storage capacity high"
+            description: "Ceph cluster is {{ $value | humanizePercentage }} full. Consider adding more storage or cleaning up data."
+
+        - alert: CephClusterCriticallyFull
+          expr: (ceph_cluster_total_used_bytes / ceph_cluster_total_bytes) * 100 > 85
+          for: 5m
+          labels:
+            severity: critical
+            component: ceph-storage
+          annotations:
+            summary: "Ceph cluster storage capacity critical"
+            description: "Ceph cluster is {{ $value | humanizePercentage }} full. Immediate action required to prevent data loss!"
