@@ -186,7 +186,7 @@ spec:
 
       library:
         type: nfs
-        server: nas.cftollefsen.com
+        server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/applications/immich
         globalMounts:
           - path: *mediaLocation
@@ -201,7 +201,7 @@ spec:
 
       # encoded-video:
       #   type: nfs
-      #   server: nas.cftollefsen.com
+      #   server: nas.${SECRET_DOMAIN}
       #   path: /mnt/truenas/cf-nas/immich-kubernetes/encoded-video
       #   globalMounts:
       #     - path: *evLocation

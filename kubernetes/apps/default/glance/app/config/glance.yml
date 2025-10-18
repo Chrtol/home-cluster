@@ -56,7 +56,7 @@ pages:
                 - title: Twitch
                   url: https://www.twitch.tv/
                 - title: Plex
-                  url: https://www.plex.cftollefsen.com/
+                  url: https://www.plex.${SECRET_DOMAIN}/
             - title: Social
               links:
                 - title: Reddit

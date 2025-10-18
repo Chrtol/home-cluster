@@ -60,7 +60,7 @@ spec:
             - name: Spotify
               url: "https://open.spotify.com/browse"
             - name: QBittorrent
-              url: "https://qbittorrent.cftollefsen.com"
+              url: "https://qbittorrent.${SECRET_DOMAIN}"
     service:
       main:
         ipFamilyPolicy: SingleStack

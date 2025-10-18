@@ -10,9 +10,9 @@ spec:
   ingressClassName: internal
   tls:
     - hosts:
-        - radarr.cftollefsen.com
+        - radarr.${SECRET_DOMAIN}
   rules:
-    - host: radarr.cftollefsen.com
+    - host: radarr.${SECRET_DOMAIN}
       http:
         paths:
           - path: /outpost.goauthentik.io

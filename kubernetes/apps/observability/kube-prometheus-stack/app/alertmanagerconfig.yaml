@@ -46,7 +46,7 @@ spec:
             key: ALERTMANAGER_HEARTBEAT_URL
     - name: n8n-smart-routing
       webhookConfigs:
-        - url: "https://n8n-webhook.cftollefsen.com/webhook/alerts"
+        - url: "https://n8n-webhook.${SECRET_DOMAIN}/webhook/alerts"
           sendResolved: true
           httpConfig:
             followRedirects: true
