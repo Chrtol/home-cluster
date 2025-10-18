@@ -98,7 +98,7 @@ data:
         reload
         loadbalance
     }
-    cftollefsen.com:53 {
+    example.com:53 {
         errors
         cache 30
         forward . 10.0.30.1
@@ -130,15 +130,15 @@ kind: Ingress
 metadata:
   name: example-service
   annotations:
-    nginx.ingress.kubernetes.io/auth-url: "https://auth.cftollefsen.com/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth.example.com/oauth2/auth"
 spec:
   ingressClassName: external
   tls:
     - hosts:
-        - example.cftollefsen.com
-      secretName: cftollefsen-com-tls
+        - example.example.com
+      secretName: example-com-tls
   rules:
-    - host: example.cftollefsen.com
+    - host: example.example.com
       http:
         paths:
           - path: /
@@ -153,7 +153,7 @@ spec:
 ## External Connectivity
 
 ### Cloudflare Integration
-- **Domain**: cftollefsen.com
+- **Domain**: example.com
 - **DNS**: Cloudflare DNS with external-dns automation
 - **Tunnel**: Cloudflared for secure external access
 - **Certificates**: Let's Encrypt via cert-manager
@@ -164,10 +164,10 @@ spec:
 tunnel: kubernetes
 credentials-file: /etc/cloudflared/creds/credentials.json
 ingress:
-  - hostname: "*.cftollefsen.com"
+  - hostname: "*.example.com"
     service: https://10.0.30.60:443
     originRequest:
-      originServerName: "*.cftollefsen.com"
+      originServerName: "*.example.com"
       noTLSVerify: true
   - service: http_status:404
 ```
@@ -226,7 +226,7 @@ kubectl get ingress -A
 kubectl describe ingress ingress-name -n namespace
 
 # Test DNS resolution
-dig @10.0.30.45 service.cftollefsen.com
+dig @10.0.30.45 service.example.com
 ```
 
 #### BGP Troubleshooting

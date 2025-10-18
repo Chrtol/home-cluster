@@ -8,14 +8,14 @@ The home cluster hosts **40+ applications** across **7 namespaces**, providing a
 
 | Application | URL | Purpose | Status |
 |-------------|-----|---------|--------|
-| **Homepage** | [homepage.cftollefsen.com](https://homepage.cftollefsen.com) | Personal dashboard | 🟢 |
-| **Plex** | [plex.cftollefsen.com](https://plex.cftollefsen.com) | Media server | 🟢 |
-| **Immich** | [photos.cftollefsen.com](https://photos.cftollefsen.com) | Photo management | 🟢 |
-| **Jellyseerr** | [request.cftollefsen.com](https://request.cftollefsen.com) | Media requests | 🟢 |
-| **Home Assistant** | [hass.cftollefsen.com](https://hass.cftollefsen.com) | Home automation | 🟢 |
-| **Grafana** | [grafana.cftollefsen.com](https://grafana.cftollefsen.com) | Monitoring | 🟢 |
-| **Authentik** | [sso.cftollefsen.com](https://sso.cftollefsen.com) | Single sign-on | 🟢 |
-| **Wizarr** | [join.cftollefsen.com](https://join.cftollefsen.com) | User invitations | 🟢 |
+| **Homepage** | [homepage.example.com](https://homepage.example.com) | Personal dashboard | 🟢 |
+| **Plex** | [plex.example.com](https://plex.example.com) | Media server | 🟢 |
+| **Immich** | [photos.example.com](https://photos.example.com) | Photo management | 🟢 |
+| **Jellyseerr** | [request.example.com](https://request.example.com) | Media requests | 🟢 |
+| **Home Assistant** | [hass.example.com](https://hass.example.com) | Home automation | 🟢 |
+| **Grafana** | [grafana.example.com](https://grafana.example.com) | Monitoring | 🟢 |
+| **Authentik** | [sso.example.com](https://sso.example.com) | Single sign-on | 🟢 |
+| **Wizarr** | [join.example.com](https://join.example.com) | User invitations | 🟢 |
 
 ## Application Categories
 
@@ -61,13 +61,13 @@ The home cluster hosts **40+ applications** across **7 namespaces**, providing a
 
 ## Access Methods
 
-### External Access (`*.cftollefsen.com`)
+### External Access (`*.example.com`)
 Applications accessible from the internet via Cloudflare tunnel:
-- **Plex**: `plex.cftollefsen.com`
-- **Jellyseerr**: `request.cftollefsen.com`
-- **Home Assistant**: `hass.cftollefsen.com`
-- **Immich**: `photos.cftollefsen.com`
-- **Authentik**: `sso.cftollefsen.com`
+- **Plex**: `plex.example.com`
+- **Jellyseerr**: `request.example.com`
+- **Home Assistant**: `hass.example.com`
+- **Immich**: `photos.example.com`
+- **Authentik**: `sso.example.com`
 
 ### Internal Access (`*.home.arpa`)
 Applications accessible only from internal network:

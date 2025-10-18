@@ -9,7 +9,7 @@ endpoint: https://10.0.30.50:6443
 additionalApiServerCertSans: &sans
   - "127.0.0.1"
   - "10.0.30.50"
-  - "home-cluster.cftollefsen.com"
+  - "home-cluster.${clusterDomain}"
 additionalMachineCertSans: *sans
 
 clusterPodNets: ["10.42.0.0/16"]

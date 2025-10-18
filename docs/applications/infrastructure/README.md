@@ -20,7 +20,7 @@ Core cluster services and operators that provide the foundation for all other ap
 
 **Configuration**:
 - **Repository**: GitHub repository for cluster configuration
-- **Webhook URL**: `flux-webhook.cftollefsen.com`
+- **Webhook URL**: `flux-webhook.example.com`
 - **Reconciliation**: 10-minute automatic sync interval
 - **Manual Sync**: Force sync via webhook or CLI
 
@@ -51,7 +51,7 @@ Core cluster services and operators that provide the foundation for all other ap
 - **Automatic Issuance**: TLS certificate automation
 - **Renewal Management**: Automatic certificate renewal
 - **DNS Challenge**: Cloudflare DNS validation
-- **Wildcard Certificates**: `*.cftollefsen.com` domain coverage
+- **Wildcard Certificates**: `*.example.com` domain coverage
 - **Certificate Monitoring**: Expiry tracking and alerting
 
 **Certificate Configuration**:
@@ -137,7 +137,7 @@ Core cluster services and operators that provide the foundation for all other ap
 - **Use Cases**: Media storage, backup targets
 
 **Configuration**:
-- **NFS Server**: `nas.cftollefsen.com`
+- **NFS Server**: `nas.example.com`
 - **Export Paths**: Various media and backup directories
 - **Mount Options**: Optimized for streaming workloads
 - **Access Modes**: ReadWriteMany for shared access

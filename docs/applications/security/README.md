@@ -5,7 +5,7 @@ Authentication, authorization, and identity management services for the cluster.
 ## Identity Provider
 
 ### 🔐 Authentik
-- **URL**: [sso.cftollefsen.com](https://sso.cftollefsen.com)
+- **URL**: [sso.example.com](https://sso.example.com)
 - **Purpose**: Enterprise-grade identity provider and SSO solution
 - **Role**: Primary authentication system for external applications
 
@@ -57,7 +57,7 @@ Authentication, authorization, and identity management services for the cluster.
 
 **Directory Structure**:
 ```
-dc=cftollefsen,dc=com
+dc=example,dc=com
 ├── ou=people
 │   ├── uid=admin
 │   ├── uid=user1

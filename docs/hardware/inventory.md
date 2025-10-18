@@ -8,7 +8,7 @@ The homelab consists of a Proxmox virtualization cluster hosting the Kubernetes 
 
 ### Proxmox Cluster
 - **High Availability**: Keepalived + HAProxy for automatic failover
-- **Domain**: `proxmox.cftollefsen.com` (points to all nodes)
+- **Domain**: `proxmox.example.com` (points to all nodes)
 - **Management**: Centralized management through HA proxy
 - **Storage**: Ceph distributed storage across nodes
 - **Networking**: Redundant network paths with automatic failover
@@ -71,7 +71,7 @@ The homelab consists of a Proxmox virtualization cluster hosting the Kubernetes 
 - **Memory**: 16GB DDR4 (upgrading to 32GB)
 - **Network**: 2x 2.5GbE (planning link aggregation)
 - **IP Address**: 10.0.30.10
-- **Hostname**: nas.cftollefsen.com
+- **Hostname**: nas.example.com
 
 #### Storage Configuration
 - **Storage Pool**: 4x 12TB HDDs in RAIDZ1

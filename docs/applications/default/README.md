@@ -5,7 +5,7 @@ Personal productivity, home automation, and utility applications for daily use.
 ## Home Automation
 
 ### 🏠 Home Assistant
-- **URL**: [hass.cftollefsen.com](https://hass.cftollefsen.com)
+- **URL**: [hass.example.com](https://hass.example.com)
 - **Purpose**: Smart home automation platform
 - **Features**:
   - Device integration and control
@@ -46,7 +46,7 @@ Personal productivity, home automation, and utility applications for daily use.
 ## Personal Dashboard
 
 ### 🏠 Homepage
-- **URL**: [homepage.cftollefsen.com](https://homepage.cftollefsen.com)
+- **URL**: [homepage.example.com](https://homepage.example.com)
 - **Purpose**: Kubernetes-native personal dashboard
 - **Features**:
   - Service status monitoring
@@ -239,7 +239,7 @@ Personal productivity, home automation, and utility applications for daily use.
 
 ### Internal Access
 - **Load Balancer**: 10.0.30.40 (internal ingress)
-- **Domain Pattern**: `{app}.cftollefsen.com`
+- **Domain Pattern**: `{app}.example.com`
 - **Access Control**: Internal network only (10.0.0.0/8)
 
 ### External Access
