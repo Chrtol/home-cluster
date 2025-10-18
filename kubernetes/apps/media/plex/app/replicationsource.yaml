@@ -13,7 +13,7 @@ spec:
     storageClassName: csi-rbd-sc
     volumeSnapshotClassName: csi-rbd-sc
     repository: plex-secret
-    cacheCapacity: 30Gi
+    cacheCapacity: 50Gi
     retain:
       daily: 7
       weekly: 4
