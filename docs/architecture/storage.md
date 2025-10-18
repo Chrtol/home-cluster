@@ -145,7 +145,7 @@ metadata:
   name: nfs-media
 provisioner: nfs.csi.k8s.io
 parameters:
-  server: nas.cftollefsen.com
+  server: nas.example.com
   share: /mnt/truenas/cf-nas/media
   mountPermissions: "0755"
 reclaimPolicy: Retain

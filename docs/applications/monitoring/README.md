@@ -29,7 +29,7 @@ Complete observability stack for cluster monitoring, alerting, and performance a
 - **Custom Exporters**: Specialized metric collectors
 
 ### 📈 Grafana
-- **URL**: [grafana.cftollefsen.com](https://grafana.cftollefsen.com)
+- **URL**: [grafana.example.com](https://grafana.example.com)
 - **Purpose**: Metrics visualization and dashboarding platform
 - **Authentication**: Authentik SSO integration
 
@@ -240,7 +240,7 @@ Complete observability stack for cluster monitoring, alerting, and performance a
 receivers:
   - name: n8n-smart-routing
     webhookConfigs:
-      - url: "https://n8n-webhook.cftollefsen.com/webhook/alerts"
+      - url: "https://n8n-webhook.example.com/webhook/alerts"
         sendResolved: true
 ```
 
@@ -257,7 +257,7 @@ receivers:
 # Service monitoring with webhook integration
 alerting:
   webhook:
-    url: https://n8n-webhook.cftollefsen.com/webhook/gatus
+    url: https://n8n-webhook.example.com/webhook/gatus
     default-alert:
       send-on-resolved: true
 ```

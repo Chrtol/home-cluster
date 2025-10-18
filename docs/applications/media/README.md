@@ -5,7 +5,7 @@ Complete media automation stack providing content acquisition, management, and s
 ## Core Services
 
 ### 🎬 Plex Media Server
-- **URL**: [plex.cftollefsen.com](https://plex.cftollefsen.com)
+- **URL**: [plex.example.com](https://plex.example.com)
 - **Load Balancer IP**: 10.0.30.70 (dedicated)
 - **Purpose**: Primary media streaming server
 - **Features**:
@@ -16,7 +16,7 @@ Complete media automation stack providing content acquisition, management, and s
   - Metadata enhancement and artwork
 
 **Storage Configuration**:
-- **Media Library**: NFS mount from `nas.cftollefsen.com`
+- **Media Library**: NFS mount from `nas.example.com`
 - **Config Data**: Ceph RBD persistent volume
 - **Transcoding**: RAM disk for temporary files
 
@@ -27,8 +27,8 @@ Complete media automation stack providing content acquisition, management, and s
 
 ### 📸 Immich Photo Management
 - **URLs**: 
-  - [photos.cftollefsen.com](https://photos.cftollefsen.com)
-  - [immich.cftollefsen.com](https://immich.cftollefsen.com)
+  - [photos.example.com](https://photos.example.com)
+  - [immich.example.com](https://immich.example.com)
 - **Purpose**: Self-hosted Google Photos alternative
 - **Features**:
   - Machine learning for face recognition
@@ -51,7 +51,7 @@ Complete media automation stack providing content acquisition, management, and s
 ## Content Acquisition Stack
 
 ### 📺 Sonarr (TV Shows)
-- **URL**: [sonarr.cftollefsen.com](https://sonarr.cftollefsen.com)
+- **URL**: [sonarr.example.com](https://sonarr.example.com)
 - **Purpose**: TV series monitoring and acquisition
 - **Features**:
   - Automatic episode downloading
@@ -61,7 +61,7 @@ Complete media automation stack providing content acquisition, management, and s
   - Subtitle management via Bazarr
 
 ### 🎭 Radarr (Movies)
-- **URL**: [radarr.cftollefsen.com](https://radarr.cftollefsen.com)
+- **URL**: [radarr.example.com](https://radarr.example.com)
 - **Purpose**: Movie monitoring and acquisition
 - **Features**:
   - Movie collection management
@@ -71,7 +71,7 @@ Complete media automation stack providing content acquisition, management, and s
   - Integration with download clients
 
 ### 📚 Readarr (Books)
-- **URL**: [readarr.cftollefsen.com](https://readarr.cftollefsen.com)
+- **URL**: [readarr.example.com](https://readarr.example.com)
 - **Purpose**: Book and audiobook management
 - **Features**:
   - Author and series tracking
@@ -105,7 +105,7 @@ Complete media automation stack providing content acquisition, management, and s
 - Multiple VPN provider support
 
 ### 📰 SABnzbd
-- **URL**: [sab.cftollefsen.com](https://sab.cftollefsen.com)
+- **URL**: [sab.example.com](https://sab.example.com)
 - **Purpose**: Usenet downloader
 - **Features**:
   - Automated post-processing
@@ -178,8 +178,8 @@ Complete media automation stack providing content acquisition, management, and s
 
 ### 🎫 Jellyseerr
 - **URLs**:
-  - [jellyseerr.cftollefsen.com](https://jellyseerr.cftollefsen.com)
-  - [request.cftollefsen.com](https://request.cftollefsen.com)
+  - [jellyseerr.example.com](https://jellyseerr.example.com)
+  - [request.example.com](https://request.example.com)
 - **Purpose**: Media request management interface
 - **Features**:
   - User-friendly request interface
@@ -196,8 +196,8 @@ Complete media automation stack providing content acquisition, management, and s
 
 ### 🧙 Wizarr (User Management)
 - **URLs**:
-  - [join.cftollefsen.com](https://join.cftollefsen.com)
-  - [wizarr.cftollefsen.com](https://wizarr.cftollefsen.com)
+  - [join.example.com](https://join.example.com)
+  - [wizarr.example.com](https://wizarr.example.com)
 - **Purpose**: User invitation and onboarding
 - **Features**:
   - Invitation link generation
@@ -253,7 +253,7 @@ Complete media automation stack providing content acquisition, management, and s
 ## Storage Architecture
 
 ### Primary Storage (NFS)
-- **Source**: TrueNAS (`nas.cftollefsen.com`)
+- **Source**: TrueNAS (`nas.example.com`)
 - **Configuration**: RAIDZ1 with 36TB usable capacity
 - **Performance**: 2.5GbE network, NVMe L2ARC cache
 - **Content Types**:
@@ -281,7 +281,7 @@ Complete media automation stack providing content acquisition, management, and s
 
 ### External Access
 - **Cloudflare Tunnel**: Secure external access
-- **Domain**: `*.cftollefsen.com`
+- **Domain**: `*.example.com`
 - **TLS**: Wildcard certificates via cert-manager
 
 ### VPN Integration
