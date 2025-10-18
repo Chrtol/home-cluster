@@ -3,10 +3,12 @@ Form data fields for Pushover notification:
 token: [your pushover app token]
 user: [your pushover user key]
 message: {{ $json.alert.summary }}
-Resource: {{ $json.labels.job_name || $json.labels.job || $json.labels.deployment || $json.labels.statefulset || $json.labels.horizontalpodautoscaler || $json.labels.cluster_name || 'Unknown' }}
+Resource: {{ $json.alert.service_name || $json.labels.job_name || $json.labels.job || $json.labels.deployment || $json.labels.statefulset || $json.labels.horizontalpodautoscaler || $json.labels.cluster_name || 'Unknown' }}
 {{ $json.labels.pod ? 'Pod: ' + $json.labels.pod : '' }}
 {{ $json.labels.container ? 'Container: ' + $json.labels.container : '' }}
-Namespace: {{ $json.labels.namespace || 'Unknown' }}
+{{ $json.alert.group ? 'Group: ' + $json.alert.group : '' }}
+{{ $json.alert.gatus_instance ? 'Source: Gatus (' + $json.alert.gatus_instance + ')' : '' }}
+Namespace: {{ $json.alert.namespace || $json.labels.namespace || 'Unknown' }}
 
 title: {{ $json.alert.name }}
 priority: {{ $json.alert.severity === 'critical' ? '1' : '0' }}

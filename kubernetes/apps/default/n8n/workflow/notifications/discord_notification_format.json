@@ -22,12 +22,12 @@
       },
       {
         "name": "Resource",
-        "value": "{{ $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job_name || $json.labels.daemonset || $json.labels.cluster_name || 'Unknown' }}",
+        "value": "{{ $json.alert.service_name || $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job_name || $json.labels.daemonset || $json.labels.cluster_name || 'Unknown' }}",
         "inline": true
       },
       {
-        "name": "{{ $json.labels.horizontalpodautoscaler ? 'Target' : ($json.alert.name.includes('Pod') || $json.alert.name.includes('Container') ? 'Pod' : 'Type') }}",
-        "value": "{{ $json.labels.horizontalpodautoscaler ? ($json.labels.scaletargetkind || 'Deployment') + '/' + ($json.labels.scaletargetname || $json.labels.horizontalpodautoscaler) : ($json.alert.name.includes('Pod') || $json.alert.name.includes('Container') ? ($json.labels.pod || 'N/A') : ($json.labels.deployment ? 'Deployment' : ($json.labels.statefulset ? 'StatefulSet' : ($json.labels.job_name ? 'Job' : ($json.labels.daemonset ? 'DaemonSet' : 'N/A'))))) }}",
+        "name": "{{ $json.labels.horizontalpodautoscaler ? 'Target' : ($json.alert.name.includes('Pod') || $json.alert.name.includes('Container') ? 'Pod' : ($json.alert.group ? 'Group' : 'Type')) }}",
+        "value": "{{ $json.labels.horizontalpodautoscaler ? ($json.labels.scaletargetkind || 'Deployment') + '/' + ($json.labels.scaletargetname || $json.labels.horizontalpodautoscaler) : ($json.alert.name.includes('Pod') || $json.alert.name.includes('Container') ? ($json.labels.pod || 'N/A') : ($json.alert.group || ($json.labels.deployment ? 'Deployment' : ($json.labels.statefulset ? 'StatefulSet' : ($json.labels.job_name ? 'Job' : ($json.labels.daemonset ? 'DaemonSet' : 'N/A')))))) }}",
         "inline": true
       },
       {
@@ -39,6 +39,11 @@
         "name": "Routing Decision",
         "value": "{{ $json.routing_context.routing_reason }}",
         "inline": false
+      },
+      {
+        "name": "Source",
+        "value": "{{ $json.alert.gatus_instance ? 'Gatus (' + $json.alert.gatus_instance + ')' : ($json.source || 'Alertmanager') }}",
+        "inline": true
       }
     ],
     "footer": {
