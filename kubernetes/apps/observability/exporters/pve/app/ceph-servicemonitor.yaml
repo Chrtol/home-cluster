@@ -1,0 +1,55 @@
+---
+# ServiceMonitor for Proxmox Ceph Manager Prometheus exporter
+# Requires Ceph Manager Prometheus module to be enabled first
+#
+# To enable on Proxmox:
+# 1. SSH to any Proxmox node
+# 2. Run: ceph mgr module enable prometheus
+# 3. Verify: curl http://localhost:9283/metrics
+apiVersion: v1
+kind: Service
+metadata:
+  name: ceph-mgr-metrics
+  namespace: observability
+  labels:
+    app: ceph-mgr
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 9283
+      protocol: TCP
+      targetPort: 9283
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ceph-mgr-metrics
+  namespace: observability
+subsets:
+  - addresses:
+      # Proxmox host IPs where Ceph Manager runs
+      - ip: 10.0.30.10   # lenovo1 proxmox host
+      - ip: 10.0.30.11   # lenovo2 proxmox host
+      - ip: 10.0.30.12   # dell1 proxmox host
+    ports:
+      - name: metrics
+        port: 9283
+        protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ceph-mgr
+  namespace: observability
+  labels:
+    app: ceph-mgr
+spec:
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http
+  selector:
+    matchLabels:
+      app: ceph-mgr

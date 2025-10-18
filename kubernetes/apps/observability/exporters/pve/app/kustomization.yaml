@@ -6,6 +6,7 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./prometheusrule.yaml
+  - ./ceph-servicemonitor.yaml
 configMapGenerator:
   - name: grafana-dashboard-proxmox-cluster
     files:

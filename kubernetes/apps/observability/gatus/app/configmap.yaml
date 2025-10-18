@@ -76,6 +76,22 @@ data:
             send-on-resolved: true
             failure-threshold: 1
             success-threshold: 1
+      - name: proxmox
+        group: certificates
+        url: https://proxmox.${SECRET_DOMAIN}
+        interval: 12h
+        client:
+          dns-resolver: tcp://10.0.30.1:53
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"
+          - "[CERTIFICATE_EXPIRATION] > 696h"
+        alerts:
+          - type: custom
+            description: "Certificate expires in [CERTIFICATE_EXPIRATION]"
+            send-on-resolved: true
+            failure-threshold: 1
+            success-threshold: 1
     alerting:
       custom:
         url: https://n8n-webhook.${SECRET_DOMAIN}/webhook/gatus
