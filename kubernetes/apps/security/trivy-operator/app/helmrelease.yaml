@@ -47,9 +47,9 @@ spec:
       resources:
         requests:
           cpu: 15m
-          memory: 324M
-        limits:
           memory: 512M
+        limits:
+          memory: 1Gi
     trivyOperator:
       excludeImages: "quay.io/backube/*"
       skipResourceByLabels: "app.kubernetes.io/created-by=volsync"
