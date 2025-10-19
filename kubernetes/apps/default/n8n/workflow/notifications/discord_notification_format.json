@@ -22,7 +22,7 @@
       },
       {
         "name": "Resource",
-        "value": "{{ $json.alert.service_name || $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job_name || $json.labels.daemonset || $json.labels.cluster_name || 'Unknown' }}",
+        "value": "{{ $json.alert.service_name || $json.labels.horizontalpodautoscaler || $json.labels.deployment || $json.labels.statefulset || $json.labels.job_name || $json.labels.daemonset || $json.labels.instance || $json.labels.cluster_name || 'Unknown' }}",
         "inline": true
       },
       {
