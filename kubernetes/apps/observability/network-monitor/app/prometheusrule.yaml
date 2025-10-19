@@ -69,4 +69,4 @@ spec:
             severity: warning
           annotations:
             summary: "Node {{ $labels.instance }} has connectivity issues"
-            description: "Node {{ $labels.instance }} failing multiple connectivity probes"
+            description: "Node {{ $labels.instance }} is currently failing {{ $value }} connectivity probes (threshold: >2). This indicates network connectivity problems from this node."
