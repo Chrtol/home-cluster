@@ -44,8 +44,8 @@ spec:
           replacement: dns
         - sourceLabels: [instance]
           targetLabel: dns_target
-        - targetLabel: instance
-          replacement: "{{ $labels.node }}"
+        - sourceLabels: [node]
+          targetLabel: instance
 ---
 # Monitor HTTP connectivity to critical services
 apiVersion: monitoring.coreos.com/v1
@@ -76,5 +76,5 @@ spec:
           replacement: http
         - sourceLabels: [instance]
           targetLabel: http_target
-        - targetLabel: instance
-          replacement: "{{ $labels.node }}"
+        - sourceLabels: [node]
+          targetLabel: instance
