@@ -33,10 +33,13 @@ spec:
       path: /probe
       params:
         module: [dns]
-        target: 
+        target:
           - google.com
           - plex.${SECRET_DOMAIN}
           - cloudflare.com
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: probe_.*
@@ -69,6 +72,9 @@ spec:
           - https://plex.${SECRET_DOMAIN}
           - https://google.com
           - http://10.0.30.70:32400/web
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: probe_.*
