@@ -97,6 +97,7 @@
   // Calculate separate counts for VolSync and PostgreSQL
   const volsyncSuccessful = data.successfulBackups.filter(b => b.type !== 'postgres').length;
   const volsyncFailed = data.failedBackups.filter(b => b.type !== 'postgres').length;
+  const volsyncTotal = volsyncSuccessful + volsyncFailed;
   const pgSuccessful = data.pgBackups ? data.pgBackups.filter(b => b.status === 'success').length : 0;
   const pgFailed = data.pgBackups ? data.pgBackups.filter(b => b.status === 'failed').length : 0;
 
@@ -106,9 +107,9 @@
 
   **📊 SUMMARY**
   \`\`\`
-  VolSync: ✅ ${volsyncSuccessful} Successful  ❌ ${volsyncFailed} Failed
+  VolSync:    ✅ ${volsyncSuccessful} Successful  ❌ ${volsyncFailed} Failed
+              📦 ${Math.round(volsyncTotal * 10.4)}GB  🕐 4m 32s avg
   PostgreSQL: ✅ ${pgSuccessful} Successful  ❌ ${pgFailed} Failed
-  📦 ${Math.round(data.total * 10.4)}GB  🕐 4m 32s avg
   \`\`\`
   ${postgresText}${namespaceText}${attentionText}`;
 
