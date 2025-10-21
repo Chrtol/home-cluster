@@ -9,4 +9,3 @@ resources:
   - ./scheduledbackup.yaml
   - ./service.yaml
   - ./servicemonitor.yaml
-  - ./prometheusrule.yaml
