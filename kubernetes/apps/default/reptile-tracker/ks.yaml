@@ -39,6 +39,8 @@ spec:
   dependsOn:
     - name: reptile-tracker-database
   path: ./kubernetes/apps/default/reptile-tracker/app
+  components:
+    - ../../../../components/gatus/external
   prune: true
   sourceRef:
     kind: GitRepository
