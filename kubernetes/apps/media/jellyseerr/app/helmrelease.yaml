@@ -54,7 +54,7 @@ spec:
               capabilities: { drop: ["ALL"] }
             resources: # Based on goldilocks
               requests:
-                cpu: 15m
+                cpu: 500m
                 memory: 411M
               limits:
                 memory: 1Gi
