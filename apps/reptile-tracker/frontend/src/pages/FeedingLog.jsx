@@ -485,9 +485,9 @@ export default function FeedingLog() {
         setExistingFeeding(feedingRes.data);
         loadFeedingData(feedingRes.data, foods);
       } else {
-        await axios.post('/api/feedings', payload);
+        const response = await axios.post('/api/feedings', payload);
         setSuccess('Feeding logged successfully!');
-        setTimeout(() => navigate('/'), 1500);
+        setTimeout(() => navigate(`/feed/${response.data.id}`), 1500);
       }
     } catch (err) {
       console.error('Failed to log feeding:', err);
