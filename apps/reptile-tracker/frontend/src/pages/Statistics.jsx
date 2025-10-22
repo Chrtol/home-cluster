@@ -90,24 +90,45 @@ function Statistics() {
     if (!stats) return [];
 
     // Get all unique dates from both datasets
+    // This ensures we include ALL feeding dates, even those before first weight measurement
     const allDates = new Set();
 
+    // Add all weight measurement dates
     stats.weight_data.forEach(item => {
       allDates.add(item.date.split('T')[0]);
     });
 
+    // Add all feeding dates (ensures chart extends back to earliest feeding)
     stats.feeding_data.forEach(item => {
       allDates.add(item.date);
     });
 
-    // Add today's date to extend the chart to present
+    // If we have no data at all, return empty
+    if (allDates.size === 0) return [];
+
+    // Add today's date to extend the chart forward to present
     const today = new Date().toISOString().split('T')[0];
     allDates.add(today);
 
     // Convert to sorted array
-    const sortedDates = Array.from(allDates).sort((a, b) =>
+    let sortedDates = Array.from(allDates).sort((a, b) =>
       new Date(a) - new Date(b)
     );
+
+    // Fill in missing dates between first and last date for smooth line rendering
+    if (sortedDates.length >= 2) {
+      const firstDate = new Date(sortedDates[0]);
+      const lastDate = new Date(sortedDates[sortedDates.length - 1]);
+      const filledDates = new Set(sortedDates);
+
+      for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
+        filledDates.add(d.toISOString().split('T')[0]);
+      }
+
+      sortedDates = Array.from(filledDates).sort((a, b) =>
+        new Date(a) - new Date(b)
+      );
+    }
 
     // Create weight lookup map (actual measurements)
     const weightMap = new Map();
@@ -160,23 +181,23 @@ function Statistics() {
         }
       });
 
-      // Interpolate if we have both before and after
+      // Interpolate if we have both before and after (between measurements)
       if (before && after) {
         const beforeTime = new Date(before.date).getTime();
         const afterTime = new Date(after.date).getTime();
         const ratio = (dateTime - beforeTime) / (afterTime - beforeTime);
         const interpolated = before.weight + (after.weight - before.weight) * ratio;
-        return { weight: parseFloat(interpolated.toFixed(1)), isActual: false };
+        return { weight: parseFloat(interpolated.toFixed(1)), isActual: false, isExtrapolated: false };
       }
 
       // Extrapolate forward if we only have before (extend last known weight as flat line)
       if (before && !after) {
-        return { weight: before.weight, isActual: false };
+        return { weight: before.weight, isActual: false, isExtrapolated: true };
       }
 
       // Extrapolate backward with flat line from first weight (for dates before first measurement)
       if (!before && after) {
-        return { weight: after.weight, isActual: false };
+        return { weight: after.weight, isActual: false, isExtrapolated: true };
       }
 
       return null;
@@ -189,7 +210,8 @@ function Statistics() {
         date,
         weight: weightData?.weight,
         weightActual: weightData?.isActual ? weightData.weight : null, // Only show dots on actual measurements
-        weightInterpolated: weightData?.weight, // Continuous line for all weights
+        weightInterpolated: (weightData && !weightData.isExtrapolated) ? weightData.weight : null, // Solid line for known/interpolated
+        weightExtrapolated: (weightData && weightData.isExtrapolated) ? weightData.weight : null, // Dashed line for extrapolated
         feedings: feedingMap.get(date)
       };
     });
@@ -409,8 +431,16 @@ function Statistics() {
                   See how feeding frequency affects weight over time
                 </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-                Solid line shows weight trend with dots marking actual measurements
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-blue-500"></span> Known weight
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-blue-300 border-t-2 border-dashed border-blue-300"></span> Estimated weight
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 border-2 border-white"></span> Weighed
+                </span>
               </p>
               <ResponsiveContainer width="100%" height={350}>
                 <ComposedChart data={getCombinedData()}>
@@ -450,10 +480,10 @@ function Statistics() {
                   />
                   <Legend />
 
-                  {/* Weight Lines - Actual and Interpolated */}
+                  {/* Weight Lines - Actual, Interpolated, and Extrapolated */}
                   {visibleData.weight && (
                     <>
-                      {/* Continuous weight line (solid blue for actual, dashed lighter for interpolated) */}
+                      {/* Solid line for actual and interpolated weight (between measurements) */}
                       <Line
                         yAxisId="weight"
                         type="monotone"
@@ -464,7 +494,19 @@ function Statistics() {
                         name="Weight"
                         connectNulls
                       />
-                      {/* Actual weight measurement dots (highlight on continuous line) */}
+                      {/* Dashed line for extrapolated weight (before first/after last measurement) */}
+                      <Line
+                        yAxisId="weight"
+                        type="monotone"
+                        dataKey="weightExtrapolated"
+                        stroke="#93C5FD"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        name="Estimated"
+                        connectNulls
+                      />
+                      {/* Actual weight measurement dots (highlight on lines) */}
                       <Line
                         yAxisId="weight"
                         type="monotone"
