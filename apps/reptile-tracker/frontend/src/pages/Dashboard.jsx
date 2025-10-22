@@ -350,6 +350,7 @@ export default function Dashboard() {
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
+                    connectNulls={true}
                   />
                 ))}
               </LineChart>
@@ -392,7 +393,7 @@ export default function Dashboard() {
 
                           <div className="flex flex-wrap items-center gap-2 text-xs">
                             {/* Last fed info */}
-                            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
                               <Utensils size={11} className="flex-shrink-0" />
                               {reptile.last_feeding ? (
                                 <span title="Days since last feeding">
@@ -416,7 +417,7 @@ export default function Dashboard() {
                             </div>
 
                             {/* Last shed info */}
-                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                               <Activity size={11} className="flex-shrink-0" />
                               {healthData[reptile.id] ? (
                                 <span title="Days since last shed">

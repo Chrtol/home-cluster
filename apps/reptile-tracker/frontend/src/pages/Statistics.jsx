@@ -183,7 +183,7 @@ function Statistics() {
         date,
         weight: weightData?.weight,
         weightActual: weightData?.isActual ? weightData.weight : null,
-        weightInterpolated: weightData?.weight, // Show all weights (actual and interpolated) for continuous line
+        weightInterpolated: !weightData?.isActual ? weightData?.weight : null, // Only show interpolated when NOT actual
         feedings: feedingMap.get(date)
       };
     });
