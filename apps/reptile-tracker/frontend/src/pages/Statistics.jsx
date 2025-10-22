@@ -163,16 +163,12 @@ function Statistics() {
         return { weight: parseFloat(interpolated.toFixed(1)), isActual: false };
       }
 
-      // Extrapolate forward if we only have before
+      // Extrapolate forward if we only have before (extend last known weight)
       if (before && !after) {
         return { weight: before.weight, isActual: false };
       }
 
-      // Extrapolate backward if we only have after
-      if (!before && after) {
-        return { weight: after.weight, isActual: false };
-      }
-
+      // Don't extrapolate backward - no data before first measurement
       return null;
     };
 
@@ -182,8 +178,8 @@ function Statistics() {
       return {
         date,
         weight: weightData?.weight,
-        weightActual: weightData?.isActual ? weightData.weight : null,
-        weightInterpolated: !weightData?.isActual ? weightData?.weight : null, // Only show interpolated when NOT actual
+        weightActual: weightData?.isActual ? weightData.weight : null, // Only show dots on actual measurements
+        weightInterpolated: weightData?.weight, // Continuous line for all weights
         feedings: feedingMap.get(date)
       };
     });
@@ -381,35 +377,30 @@ function Statistics() {
           {/* Combined Weight & Feeding Chart */}
           {(visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
             <div className="card">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
+              <div className="mb-2">
+                <div className="flex items-center justify-between mb-1">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Weight & Feeding Correlation
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    See how feeding frequency affects weight over time
-                  </p>
+                  {getAvailableFoods().length > 0 && (
+                    <select
+                      value={selectedFood}
+                      onChange={(e) => setSelectedFood(e.target.value)}
+                      className="input py-1 px-2 text-sm ml-4 max-w-xs flex-shrink-0"
+                    >
+                      <option value="all">All Feedings</option>
+                      {getAvailableFoods().map(food => (
+                        <option key={food} value={food}>{food}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-                {getAvailableFoods().length > 0 && (
-                  <select
-                    value={selectedFood}
-                    onChange={(e) => setSelectedFood(e.target.value)}
-                    className="input py-1 px-2 text-sm ml-4"
-                  >
-                    <option value="all">All Feedings</option>
-                    {getAvailableFoods().map(food => (
-                      <option key={food} value={food}>{food}</option>
-                    ))}
-                  </select>
-                )}
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  See how feeding frequency affects weight over time
+                </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 flex items-center gap-4">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 bg-blue-500"></span> Actual measurements
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 bg-blue-300 border-t-2 border-dashed border-blue-300"></span> Interpolated
-                </span>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
+                Solid line shows weight trend with dots marking actual measurements
               </p>
               <ResponsiveContainer width="100%" height={350}>
                 <ComposedChart data={getCombinedData()}>
@@ -452,29 +443,28 @@ function Statistics() {
                   {/* Weight Lines - Actual and Interpolated */}
                   {visibleData.weight && (
                     <>
-                      {/* Interpolated weight (dashed, lighter) */}
+                      {/* Continuous weight line (solid blue for actual, dashed lighter for interpolated) */}
                       <Line
                         yAxisId="weight"
                         type="monotone"
                         dataKey="weightInterpolated"
-                        stroke="#93C5FD"
+                        stroke="#3B82F6"
                         strokeWidth={2}
-                        strokeDasharray="5 5"
                         dot={false}
-                        name="Weight (interpolated)"
+                        name="Weight"
                         connectNulls
                       />
-                      {/* Actual weight measurements (solid, darker, with dots) */}
+                      {/* Actual weight measurement dots (highlight on continuous line) */}
                       <Line
                         yAxisId="weight"
                         type="monotone"
                         dataKey="weightActual"
-                        stroke="#3B82F6"
-                        strokeWidth={3}
+                        stroke="transparent"
+                        strokeWidth={0}
                         dot={{ fill: '#3B82F6', r: 5, strokeWidth: 2, stroke: '#fff' }}
                         activeDot={{ r: 7 }}
-                        name="Weight (actual)"
-                        connectNulls
+                        name="Actual measurements"
+                        connectNulls={false}
                       />
                     </>
                   )}
