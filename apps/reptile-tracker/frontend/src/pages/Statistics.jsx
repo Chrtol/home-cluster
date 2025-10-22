@@ -100,6 +100,10 @@ function Statistics() {
       allDates.add(item.date);
     });
 
+    // Add today's date to extend the chart to present
+    const today = new Date().toISOString().split('T')[0];
+    allDates.add(today);
+
     // Convert to sorted array
     const sortedDates = Array.from(allDates).sort((a, b) =>
       new Date(a) - new Date(b)
@@ -128,28 +132,30 @@ function Statistics() {
       });
     }
 
+    // Get all weight measurement dates sorted
+    const weightDates = Array.from(weightMap.keys()).sort((a, b) =>
+      new Date(a) - new Date(b)
+    );
+
     // Linear interpolation for weight
     const interpolateWeight = (date) => {
       if (weightMap.has(date)) {
         return { weight: weightMap.get(date), isActual: true };
       }
 
-      // Find surrounding actual measurements
+      // Find surrounding actual measurements from weight dates only
       const dateTime = new Date(date).getTime();
       let before = null, after = null;
 
-      sortedDates.forEach(d => {
-        const w = weightMap.get(d);
-        if (w !== undefined) {
-          const dTime = new Date(d).getTime();
-          if (dTime < dateTime) {
-            if (!before || new Date(d) > new Date(before.date)) {
-              before = { date: d, weight: w };
-            }
-          } else if (dTime > dateTime) {
-            if (!after || new Date(d) < new Date(after.date)) {
-              after = { date: d, weight: w };
-            }
+      weightDates.forEach(d => {
+        const dTime = new Date(d).getTime();
+        if (dTime < dateTime) {
+          if (!before || new Date(d) > new Date(before.date)) {
+            before = { date: d, weight: weightMap.get(d) };
+          }
+        } else if (dTime > dateTime) {
+          if (!after || new Date(d) < new Date(after.date)) {
+            after = { date: d, weight: weightMap.get(d) };
           }
         }
       });
@@ -163,12 +169,16 @@ function Statistics() {
         return { weight: parseFloat(interpolated.toFixed(1)), isActual: false };
       }
 
-      // Extrapolate forward if we only have before (extend last known weight)
+      // Extrapolate forward if we only have before (extend last known weight as flat line)
       if (before && !after) {
         return { weight: before.weight, isActual: false };
       }
 
-      // Don't extrapolate backward - no data before first measurement
+      // Extrapolate backward with flat line from first weight (for dates before first measurement)
+      if (!before && after) {
+        return { weight: after.weight, isActual: false };
+      }
+
       return null;
     };
 
