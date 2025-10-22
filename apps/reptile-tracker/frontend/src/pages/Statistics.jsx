@@ -203,8 +203,8 @@ function Statistics() {
       return null;
     };
 
-    // Build final dataset
-    return sortedDates.map(date => {
+    // Build final dataset with proper line connections
+    const dataset = sortedDates.map(date => {
       const weightData = interpolateWeight(date);
       return {
         date,
@@ -212,9 +212,32 @@ function Statistics() {
         weightActual: weightData?.isActual ? weightData.weight : null, // Only show dots on actual measurements
         weightInterpolated: (weightData && !weightData.isExtrapolated) ? weightData.weight : null, // Solid line for known/interpolated
         weightExtrapolated: (weightData && weightData.isExtrapolated) ? weightData.weight : null, // Dashed line for extrapolated
-        feedings: feedingMap.get(date)
+        feedings: feedingMap.get(date),
+        isActual: weightData?.isActual || false,
+        isExtrapolated: weightData?.isExtrapolated || false
       };
     });
+
+    // Ensure dashed line connects to solid line at transition points
+    // Find the last actual measurement date to connect extrapolated line
+    const lastWeightIndex = dataset.findIndex((d, i) =>
+      d.isActual && (!dataset[i + 1] || dataset[i + 1].isExtrapolated)
+    );
+    if (lastWeightIndex >= 0) {
+      // Add the last measurement point to extrapolated data for connection
+      dataset[lastWeightIndex].weightExtrapolated = dataset[lastWeightIndex].weight;
+    }
+
+    // Find the first actual measurement date to connect backward extrapolated line
+    const firstWeightIndex = dataset.findIndex((d, i) =>
+      d.isActual && i > 0 && dataset[i - 1].isExtrapolated
+    );
+    if (firstWeightIndex >= 0) {
+      // Add the first measurement point to extrapolated data for connection
+      dataset[firstWeightIndex].weightExtrapolated = dataset[firstWeightIndex].weight;
+    }
+
+    return dataset;
   };
 
   if (loading && !stats) {
