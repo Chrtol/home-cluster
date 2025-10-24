@@ -344,6 +344,7 @@ export default function Dashboard() {
 
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
           return;
+        }
 
         // Extrapolation only happens outside the measurement range
         if (before && !after) {
