@@ -102,6 +102,25 @@ function Statistics() {
     return chart ? chart.visible : true; // Default to visible if not found
   };
 
+  // Helper function to get chart size class
+  const getChartSizeClass = (chartId) => {
+    const chart = statisticsCharts.find(c => c.id === chartId);
+    if (!chart || !chart.size) return 'col-span-1 sm:col-span-4';
+
+    switch (chart.size) {
+      case 'xs':
+        return 'col-span-1'; // 1/4 width on desktop
+      case 'small':
+        return 'col-span-1 sm:col-span-2'; // 1/2 width
+      case 'medium':
+        return 'col-span-1 sm:col-span-3'; // 3/4 width
+      case 'large':
+        return 'col-span-1 sm:col-span-4'; // Full width
+      default:
+        return 'col-span-1 sm:col-span-4';
+    }
+  };
+
   // Merge weight and feeding data for combined chart with interpolation
   const getCombinedData = () => {
     if (!stats) return [];
@@ -372,10 +391,10 @@ function Statistics() {
       </div>
 
       {stats && (
-        <>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {/* Summary Cards */}
           {isChartVisible('summary_cards') && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`${getChartSizeClass('summary_cards')} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`}>
             {/* Weight Summary */}
             <div className="card">
               <div className="flex items-center justify-between mb-2">
@@ -451,7 +470,7 @@ function Statistics() {
 
           {/* Combined Weight & Feeding Chart */}
           {isChartVisible('weight_feeding') && (visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
-            <div className="card">
+            <div className={`${getChartSizeClass('weight_feeding')} card`}>
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -582,7 +601,7 @@ function Statistics() {
 
           {/* Feeding Frequency Calendar Heatmap */}
           {isChartVisible('feeding_heatmap') && visibleData.feeding && stats.feeding_data.length > 0 && (
-            <div className="card" style={{ maxWidth: '420px' }}>
+            <div className={`${getChartSizeClass('feeding_heatmap')} card`} style={{ maxWidth: '420px' }}>
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Daily feeding activity over the past {timeRange} days
@@ -678,7 +697,7 @@ function Statistics() {
               </p>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
