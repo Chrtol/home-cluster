@@ -269,6 +269,24 @@ export default function Dashboard() {
       dates.push(format(new Date(d), 'MMM d, yyyy'));
     }
 
+    // Calculate linear regression for each reptile (best-fit line through all measurements)
+    const regressionData = {};
+    Object.values(byReptile).forEach(reptile => {
+      if (reptile.data.length >= 2) {
+        // Calculate best-fit line: y = mx + b
+        const n = reptile.data.length;
+        const sumX = reptile.data.reduce((sum, d) => sum + d.dateTime, 0);
+        const sumY = reptile.data.reduce((sum, d) => sum + d.weight, 0);
+        const sumXY = reptile.data.reduce((sum, d) => sum + d.dateTime * d.weight, 0);
+        const sumX2 = reptile.data.reduce((sum, d) => sum + d.dateTime * d.dateTime, 0);
+
+        const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+
+        regressionData[reptile.name] = { slope, intercept };
+      }
+    });
+
     // Build initial dataset with interpolated values per reptile
     const chartData = dates.map(date => {
       const dataPoint = { date };
@@ -284,7 +302,7 @@ export default function Dashboard() {
           return;
         }
 
-        // Find surrounding measurements
+        // Find surrounding measurements to determine if we're between them
         let before = null, after = null;
         reptile.data.forEach(measurement => {
           if (measurement.dateTime < dateTime) {
@@ -298,11 +316,10 @@ export default function Dashboard() {
           }
         });
 
-        // Between measurements - fill in daily values with linear interpolation
-        if (before && after) {
-          // Calculate linear interpolation between measurements
-          const ratio = (dateTime - before.dateTime) / (after.dateTime - before.dateTime);
-          const interpolated = before.weight + (after.weight - before.weight) * ratio;
+        // Between measurements - use linear regression for true linear interpolation
+        if (before && after && regressionData[reptile.name]) {
+          const { slope, intercept } = regressionData[reptile.name];
+          const interpolated = slope * dateTime + intercept;
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
           return;
         }

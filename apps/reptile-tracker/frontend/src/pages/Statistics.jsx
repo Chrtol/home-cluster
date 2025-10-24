@@ -216,6 +216,25 @@ function Statistics() {
       new Date(a) - new Date(b)
     );
 
+    // Calculate linear regression for true linear interpolation
+    let regressionSlope = null;
+    let regressionIntercept = null;
+    if (interpolationMode === 'linear' && weightDates.length >= 2) {
+      const n = weightDates.length;
+      const measurements = weightDates.map(d => ({
+        time: new Date(d).getTime(),
+        weight: weightMap.get(d)
+      }));
+
+      const sumX = measurements.reduce((sum, m) => sum + m.time, 0);
+      const sumY = measurements.reduce((sum, m) => sum + m.weight, 0);
+      const sumXY = measurements.reduce((sum, m) => sum + m.time * m.weight, 0);
+      const sumX2 = measurements.reduce((sum, m) => sum + m.time * m.time, 0);
+
+      regressionSlope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      regressionIntercept = (sumY - regressionSlope * sumX) / n;
+    }
+
     // Weight interpolation based on selected mode
     const interpolateWeight = (date) => {
       if (weightMap.has(date)) {
@@ -262,12 +281,9 @@ function Statistics() {
       }
 
       // Linear interpolation (default)
-      // Between measurements - fill in daily values with linear interpolation
-      if (before && after) {
-        const beforeTime = new Date(before.date).getTime();
-        const afterTime = new Date(after.date).getTime();
-        const ratio = (dateTime - beforeTime) / (afterTime - beforeTime);
-        const interpolated = before.weight + (after.weight - before.weight) * ratio;
+      // Between measurements - use linear regression for true linear interpolation
+      if (before && after && regressionSlope !== null) {
+        const interpolated = regressionSlope * dateTime + regressionIntercept;
         return { weight: parseFloat(interpolated.toFixed(1)), isActual: false, isExtrapolated: false };
       }
 
