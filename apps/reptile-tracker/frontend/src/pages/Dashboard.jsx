@@ -283,6 +283,12 @@ export default function Dashboard() {
         const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
         const intercept = (sumY - slope * sumX) / n;
 
+        console.log(`[Dashboard] ${reptile.name} regression:`, {
+          slope: slope * 86400000, // Convert to per-day
+          intercept,
+          dailyChange: slope * 86400000
+        });
+
         regressionData[reptile.name] = { slope, intercept };
       }
     });
@@ -320,6 +326,18 @@ export default function Dashboard() {
         if (before && after && regressionData[reptile.name]) {
           const { slope, intercept } = regressionData[reptile.name];
           const interpolated = slope * dateTime + intercept;
+
+          // Debug first few dates
+          if (date === 'Oct 4, 2024' || date === 'Oct 5, 2024') {
+            console.log(`[Dashboard] ${reptile.name} on ${date}:`, {
+              dateTime,
+              slope,
+              intercept,
+              calculation: `${slope} * ${dateTime} + ${intercept}`,
+              interpolated
+            });
+          }
+
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
           return;
         }
