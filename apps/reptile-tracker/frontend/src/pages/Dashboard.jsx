@@ -452,12 +452,12 @@ export default function Dashboard() {
         const getLineProps = () => {
           switch (interpolationMode) {
             case 'step':
-              return { type: 'stepAfter', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 }, connectNulls: true };
+              return { type: 'stepAfter', strokeWidth: 2, dot: false, activeDot: { r: 5 }, connectNulls: true };
             case 'none':
               return { type: 'monotone', strokeWidth: 0, dot: { r: 4 }, activeDot: { r: 6 }, connectNulls: false };
             case 'linear':
             default:
-              return { type: 'monotone', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 }, connectNulls: true };
+              return { type: 'monotone', strokeWidth: 2, dot: false, activeDot: { r: 5 }, connectNulls: true };
           }
         };
 
@@ -473,7 +473,13 @@ export default function Dashboard() {
               <ResponsiveContainer>
                 <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                  <XAxis dataKey="date" stroke="#9ca3af" tick={{ fontSize: 11 }} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#9ca3af"
+                    tick={{ fontSize: 11 }}
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                  />
                   <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
                   <Tooltip contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }} labelStyle={{ color: '#f3f4f6' }} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} iconSize={10} />
