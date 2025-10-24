@@ -205,7 +205,7 @@ export default function Dashboard() {
     return differenceInDays(new Date(), new Date(date)) <= 30;
   }).length;
 
-  // Prepare weight chart data with interpolation - similar to Statistics page logic
+  // Prepare weight chart data with interpolation - using Statistics page logic
   const prepareWeightChartData = () => {
     if (!weightData || weightData.length === 0) return { chartData: [], reptileColors: {}, reptileNames: [] };
 
@@ -221,12 +221,16 @@ export default function Dashboard() {
           data: []
         };
       }
-      byReptile[log.reptile_id].data.push(log);
+      byReptile[log.reptile_id].data.push({
+        date: format(new Date(log.measured_at), 'MMM d, yyyy'),
+        dateTime: new Date(log.measured_at).getTime(),
+        weight: log.weight_grams
+      });
     });
 
     // Sort each reptile's data by date
     Object.values(byReptile).forEach(reptile => {
-      reptile.data.sort((a, b) => new Date(a.measured_at) - new Date(b.measured_at));
+      reptile.data.sort((a, b) => a.dateTime - b.dateTime);
     });
 
     // For 'none' mode, only show actual measurements
@@ -237,12 +241,10 @@ export default function Dashboard() {
 
       const chartData = allDates.map(date => {
         const dataPoint = { date };
-        Object.entries(byReptile).forEach(([reptileId, reptile]) => {
-          const logForDate = reptile.data.find(
-            log => format(new Date(log.measured_at), 'MMM d, yyyy') === date
-          );
+        Object.values(byReptile).forEach(reptile => {
+          const logForDate = reptile.data.find(d => d.date === date);
           if (logForDate) {
-            dataPoint[reptile.name] = logForDate.weight_grams;
+            dataPoint[reptile.name] = logForDate.weight;
           }
         });
         return dataPoint;
@@ -257,7 +259,7 @@ export default function Dashboard() {
       return { chartData, reptileColors, reptileNames: Object.values(byReptile).map(r => r.name) };
     }
 
-    // For interpolation modes, generate daily dates (like Statistics page)
+    // For interpolation modes, generate daily dates between min and max (like Statistics page)
     const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
     const minDate = new Date(Math.min(...allMeasurementDates));
     const maxDate = new Date(Math.max(...allMeasurementDates));
@@ -267,69 +269,93 @@ export default function Dashboard() {
       dates.push(format(new Date(d), 'MMM d, yyyy'));
     }
 
-    // For each reptile, create data keys for actual, interpolated, and extrapolated
-    // This allows us to style them differently (like Statistics page)
+    // Build initial dataset with interpolated values per reptile
     const chartData = dates.map(date => {
       const dataPoint = { date };
+      const dateTime = new Date(date).getTime();
 
-      Object.entries(byReptile).forEach(([reptileId, reptile]) => {
-        const dateStr = format(new Date(date), 'MMM d, yyyy');
-
-        // Check for actual measurement
-        const actualLog = reptile.data.find(log => format(new Date(log.measured_at), 'MMM d, yyyy') === dateStr);
-        if (actualLog) {
-          dataPoint[`${reptile.name}_actual`] = actualLog.weight_grams;
-          dataPoint[`${reptile.name}_interpolated`] = actualLog.weight_grams;
+      Object.values(byReptile).forEach(reptile => {
+        // Check for actual measurement on this date
+        const actualMeasurement = reptile.data.find(d => d.date === date);
+        if (actualMeasurement) {
+          dataPoint[`${reptile.name}_actual`] = actualMeasurement.weight;
+          dataPoint[`${reptile.name}_interpolated`] = actualMeasurement.weight;
+          dataPoint[`${reptile.name}_isActual`] = true;
           return;
         }
 
         // Find surrounding measurements
-        const dateTime = new Date(date).getTime();
         let before = null, after = null;
-
-        reptile.data.forEach(log => {
-          const logTime = new Date(log.measured_at).getTime();
-          if (logTime < dateTime) {
-            if (!before || logTime > new Date(before.measured_at).getTime()) {
-              before = log;
+        reptile.data.forEach(measurement => {
+          if (measurement.dateTime < dateTime) {
+            if (!before || measurement.dateTime > before.dateTime) {
+              before = measurement;
             }
-          } else if (logTime > dateTime) {
-            if (!after || logTime < new Date(after.measured_at).getTime()) {
-              after = log;
+          } else if (measurement.dateTime > dateTime) {
+            if (!after || measurement.dateTime < after.dateTime) {
+              after = measurement;
             }
           }
         });
 
-        // Step mode
+        // Step mode - use last known weight
         if (interpolationMode === 'step') {
           if (before && after) {
-            dataPoint[`${reptile.name}_interpolated`] = before.weight_grams;
+            dataPoint[`${reptile.name}_interpolated`] = before.weight;
           } else if (before && !after) {
-            dataPoint[`${reptile.name}_extrapolated`] = before.weight_grams;
+            dataPoint[`${reptile.name}_extrapolated`] = before.weight;
+            dataPoint[`${reptile.name}_isExtrapolated`] = true;
           } else if (!before && after) {
-            dataPoint[`${reptile.name}_extrapolated`] = after.weight_grams;
+            dataPoint[`${reptile.name}_extrapolated`] = after.weight;
+            dataPoint[`${reptile.name}_isExtrapolated`] = true;
           }
           return;
         }
 
-        // Linear mode
+        // Linear mode - interpolate between measurements
         if (before && after) {
-          // Interpolate
-          const beforeTime = new Date(before.measured_at).getTime();
-          const afterTime = new Date(after.measured_at).getTime();
-          const ratio = (dateTime - beforeTime) / (afterTime - beforeTime);
-          const interpolated = before.weight_grams + (after.weight_grams - before.weight_grams) * ratio;
+          // Interpolate between two measurements
+          const ratio = (dateTime - before.dateTime) / (after.dateTime - before.dateTime);
+          const interpolated = before.weight + (after.weight - before.weight) * ratio;
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
         } else if (before && !after) {
-          // Extrapolate forward
-          dataPoint[`${reptile.name}_extrapolated`] = before.weight_grams;
+          // Extrapolate forward (flat line from last measurement)
+          dataPoint[`${reptile.name}_extrapolated`] = before.weight;
+          dataPoint[`${reptile.name}_isExtrapolated`] = true;
         } else if (!before && after) {
-          // Extrapolate backward
-          dataPoint[`${reptile.name}_extrapolated`] = after.weight_grams;
+          // Extrapolate backward (flat line from first measurement)
+          dataPoint[`${reptile.name}_extrapolated`] = after.weight;
+          dataPoint[`${reptile.name}_isExtrapolated`] = true;
         }
       });
 
       return dataPoint;
+    });
+
+    // Add connection points for each reptile (like Statistics page lines 286-303)
+    // This ensures the dashed extrapolated line connects to the solid interpolated line
+    Object.values(byReptile).forEach(reptile => {
+      // Find the last actual measurement where extrapolation starts
+      const lastActualIndex = chartData.findIndex((d, i) =>
+        d[`${reptile.name}_isActual`] &&
+        i < chartData.length - 1 &&
+        chartData[i + 1][`${reptile.name}_isExtrapolated`]
+      );
+      if (lastActualIndex >= 0) {
+        // Add the last measurement point to extrapolated data for connection
+        chartData[lastActualIndex][`${reptile.name}_extrapolated`] = chartData[lastActualIndex][`${reptile.name}_interpolated`];
+      }
+
+      // Find the first actual measurement where backward extrapolation ends
+      const firstActualIndex = chartData.findIndex((d, i) =>
+        d[`${reptile.name}_isActual`] &&
+        i > 0 &&
+        chartData[i - 1][`${reptile.name}_isExtrapolated`]
+      );
+      if (firstActualIndex >= 0) {
+        // Add the first measurement point to extrapolated data for connection
+        chartData[firstActualIndex][`${reptile.name}_extrapolated`] = chartData[firstActualIndex][`${reptile.name}_interpolated`];
+      }
     });
 
     // Generate colors
