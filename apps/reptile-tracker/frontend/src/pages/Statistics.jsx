@@ -262,7 +262,7 @@ function Statistics() {
       }
 
       // Linear interpolation (default)
-      // Between measurements - use solid line with linear interpolation
+      // Between measurements - fill in daily values with linear interpolation
       if (before && after) {
         const beforeTime = new Date(before.date).getTime();
         const afterTime = new Date(after.date).getTime();
@@ -635,7 +635,7 @@ function Statistics() {
                         strokeWidth={2}
                         dot={false}
                         name="Weight"
-                        connectNulls
+                        isAnimationActive={false}
                       />
                       {/* Dashed line for extrapolated weight (smooth curves for estimates) */}
                       <Line
