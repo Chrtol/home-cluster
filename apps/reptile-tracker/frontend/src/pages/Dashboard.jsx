@@ -260,148 +260,25 @@ export default function Dashboard() {
       return { chartData, reptileColors, reptileNames: Object.values(byReptile).map(r => r.name) };
     }
 
-    // For interpolation modes, generate daily dates between min and max (like Statistics page)
-    const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
-    const minDate = new Date(Math.min(...allMeasurementDates));
-    const maxDate = new Date(Math.max(...allMeasurementDates));
+    // Get all unique dates from measurements (only actual measurement dates)
+    const allDates = [...new Set(weightData.map(log => format(new Date(log.measured_at), 'MMM d, yyyy')))].sort(
+      (a, b) => new Date(a) - new Date(b)
+    );
 
-    const dates = [];
-    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
-      dates.push(format(new Date(d), 'MMM d, yyyy'));
-    }
-
-    // Calculate linear regression for each reptile (best-fit line through all measurements)
-    const regressionData = {};
-    Object.values(byReptile).forEach(reptile => {
-      if (reptile.data.length >= 2) {
-        // Normalize to midnight of first measurement date to avoid time-of-day issues
-        const firstDate = new Date(reptile.data[0].date); // Use formatted date, not timestamp
-        firstDate.setHours(0, 0, 0, 0); // Set to midnight
-        const firstTime = firstDate.getTime();
-
-        const normalizedData = reptile.data.map(d => {
-          const measurementDate = new Date(d.date);
-          measurementDate.setHours(0, 0, 0, 0);
-          return {
-            x: (measurementDate.getTime() - firstTime) / 86400000, // Days since first date at midnight
-            y: d.weight
-          };
-        });
-
-        // Calculate best-fit line: y = mx + b
-        const n = normalizedData.length;
-        const sumX = normalizedData.reduce((sum, d) => sum + d.x, 0);
-        const sumY = normalizedData.reduce((sum, d) => sum + d.y, 0);
-        const sumXY = normalizedData.reduce((sum, d) => sum + d.x * d.y, 0);
-        const sumX2 = normalizedData.reduce((sum, d) => sum + d.x * d.x, 0);
-
-        const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-        const intercept = (sumY - slope * sumX) / n;
-
-
-        regressionData[reptile.name] = { slope, intercept, firstTime };
-      }
-    });
-
-    // Build initial dataset with interpolated values per reptile
-    const chartData = dates.map(date => {
+    // Build chart data with only actual measurements
+    const chartData = allDates.map(date => {
       const dataPoint = { date };
-      const dateTime = new Date(date).getTime();
 
       Object.values(byReptile).forEach(reptile => {
-        // Check for actual measurement on this date
-        const actualMeasurement = reptile.data.find(d => d.date === date);
-        if (actualMeasurement) {
-          dataPoint[`${reptile.name}_actual`] = actualMeasurement.weight;
-          dataPoint[`${reptile.name}_interpolated`] = actualMeasurement.weight;
-          dataPoint[`${reptile.name}_isActual`] = true;
-          return;
-        }
-
-        // Find surrounding measurements to determine if we're between them
-        let before = null, after = null;
-        reptile.data.forEach(measurement => {
-          if (measurement.dateTime < dateTime) {
-            if (!before || measurement.dateTime > before.dateTime) {
-              before = measurement;
-            }
-          } else if (measurement.dateTime > dateTime) {
-            if (!after || measurement.dateTime < after.dateTime) {
-              after = measurement;
-            }
-          }
-        });
-
-        // Between measurements - use linear regression for true linear interpolation
-        if (before && after && regressionData[reptile.name]) {
-          const { slope, intercept, firstTime } = regressionData[reptile.name];
-          // Use midnight of current date to match regression calculation
-          const currentDate = new Date(date);
-          currentDate.setHours(0, 0, 0, 0);
-          const daysSinceFirst = (currentDate.getTime() - firstTime) / 86400000;
-          const interpolated = slope * daysSinceFirst + intercept;
-
-
-          dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
-          return;
-        }
-
-        // Extrapolation only happens outside the measurement range
-        if (before && !after) {
-          // After last measurement - extrapolate into future with trend (dashed line)
-          if (reptile.data.length >= 2) {
-            const lastIdx = reptile.data.length - 1;
-            const secondLastIdx = lastIdx - 1;
-            const lastMeasurement = reptile.data[lastIdx];
-            const secondLastMeasurement = reptile.data[secondLastIdx];
-
-            // Calculate linear trend from last 2 measurements
-            const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
-                         (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
-            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurement.dateTime);
-
-            dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
-            dataPoint[`${reptile.name}_isExtrapolated`] = true;
-          } else {
-            // If only one measurement, use flat line
-            dataPoint[`${reptile.name}_extrapolated`] = before.weight;
-            dataPoint[`${reptile.name}_isExtrapolated`] = true;
-          }
-        } else if (!before && after) {
-          // Before first measurement - extrapolate into past with flat line (dashed line)
-          dataPoint[`${reptile.name}_extrapolated`] = after.weight;
-          dataPoint[`${reptile.name}_isExtrapolated`] = true;
+        const measurement = reptile.data.find(d => d.date === date);
+        if (measurement) {
+          dataPoint[`${reptile.name}`] = measurement.weight;
         }
       });
 
       return dataPoint;
     });
 
-    // Add connection points for each reptile (like Statistics page lines 286-303)
-    // This ensures the dashed extrapolated line connects to the solid interpolated line
-    Object.values(byReptile).forEach(reptile => {
-      // Find the last actual measurement where extrapolation starts
-      const lastActualIndex = chartData.findIndex((d, i) =>
-        d[`${reptile.name}_isActual`] &&
-        i < chartData.length - 1 &&
-        chartData[i + 1][`${reptile.name}_isExtrapolated`]
-      );
-      if (lastActualIndex >= 0) {
-        // Add the last measurement point to extrapolated data for connection
-        chartData[lastActualIndex][`${reptile.name}_extrapolated`] = chartData[lastActualIndex][`${reptile.name}_interpolated`];
-      }
-
-      // Find the first actual measurement where backward extrapolation ends
-      const firstActualIndex = chartData.findIndex((d, i) =>
-        d[`${reptile.name}_isActual`] &&
-        i > 0 &&
-        chartData[i - 1][`${reptile.name}_isExtrapolated`]
-      );
-      if (firstActualIndex >= 0) {
-        // Add the first measurement point to extrapolated data for connection
-        chartData[firstActualIndex][`${reptile.name}_extrapolated`] = chartData[firstActualIndex][`${reptile.name}_interpolated`];
-      }
-    });
 
     // Generate colors
     const colors = ['#16a34a', '#2563eb', '#dc2626', '#9333ea', '#ea580c', '#0891b2'];
@@ -569,76 +446,19 @@ export default function Dashboard() {
                     }}
                   />
 
-                  {interpolationMode === 'none' ? (
-                    // None mode: just show dots for actual measurements
-                    reptileNames && reptileNames.map(name => (
-                      <Line
-                        key={name}
-                        type="monotone"
-                        dataKey={name}
-                        stroke={reptileColors[name]}
-                        strokeWidth={0}
-                        dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
-                        activeDot={{ r: 6 }}
-                        connectNulls={false}
-                      />
-                    ))
-                  ) : (
-                    <>
-                      {/* Linear/Step mode: three lines per reptile */}
-                      {reptileNames && reptileNames.flatMap(name => [
-                        // Interpolated solid line (straight lines between actual measurements)
-                        <Line
-                          key={`${name}_interpolated`}
-                          type="monotone"
-                          dataKey={`${name}_interpolated`}
-                          stroke={reptileColors[name]}
-                          strokeWidth={2}
-                          dot={false}
-                          name={name}
-                          isAnimationActive={false}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />,
-                        // Extrapolated dashed line (smooth curves for estimates)
-                        <Line
-                          key={`${name}_extrapolated`}
-                          type="monotone"
-                          dataKey={`${name}_extrapolated`}
-                          stroke={reptileColors[name]}
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={false}
-                          name={`${name}_extrapolated`}
-                          connectNulls
-                        />,
-                        // Actual measurement dots
-                        <Line
-                          key={`${name}_actual`}
-                          type="linear"
-                          dataKey={`${name}_actual`}
-                          stroke="transparent"
-                          strokeWidth={0}
-                          dot={{ fill: reptileColors[name], r: 4, strokeWidth: 2, stroke: '#fff' }}
-                          activeDot={{ r: 6 }}
-                          name={`${name}_actual`}
-                          connectNulls={false}
-                        />
-                      ])}
-                      {/* Dummy line for "Estimated" legend item */}
-                      <Line
-                        key="estimated"
-                        type="monotone"
-                        dataKey="__estimated__"
-                        stroke="#6b7280"
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                        dot={false}
-                        name="Estimated"
-                        connectNulls={false}
-                      />
-                    </>
-                  )}
+                  {reptileNames && reptileNames.map(name => (
+                    <Line
+                      key={name}
+                      type="linear"
+                      dataKey={name}
+                      stroke={reptileColors[name]}
+                      strokeWidth={2}
+                      dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
+                      activeDot={{ r: 6 }}
+                      connectNulls={false}
+                      name={name}
+                    />
+                  ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>
