@@ -626,10 +626,10 @@ function Statistics() {
                   {/* Weight Lines - Actual, Interpolated, and Extrapolated */}
                   {visibleData.weight && (
                     <>
-                      {/* Solid line for actual and interpolated weight (between measurements) */}
+                      {/* Solid line for actual and interpolated weight (straight lines between measurements) */}
                       <Line
                         yAxisId="weight"
-                        type="monotone"
+                        type="linear"
                         dataKey="weightInterpolated"
                         stroke="#3B82F6"
                         strokeWidth={2}
@@ -637,7 +637,7 @@ function Statistics() {
                         name="Weight"
                         connectNulls
                       />
-                      {/* Dashed line for extrapolated weight (before first/after last measurement) */}
+                      {/* Dashed line for extrapolated weight (smooth curves for estimates) */}
                       <Line
                         yAxisId="weight"
                         type="monotone"
@@ -652,7 +652,7 @@ function Statistics() {
                       {/* Actual weight measurement dots (highlight on lines) */}
                       <Line
                         yAxisId="weight"
-                        type="monotone"
+                        type="linear"
                         dataKey="weightActual"
                         stroke="transparent"
                         strokeWidth={0}

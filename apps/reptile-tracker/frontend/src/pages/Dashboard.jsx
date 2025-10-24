@@ -561,10 +561,10 @@ export default function Dashboard() {
                     <>
                       {/* Linear/Step mode: three lines per reptile */}
                       {reptileNames && reptileNames.flatMap(name => [
-                        // Interpolated/actual solid line
+                        // Interpolated solid line (straight lines between actual measurements)
                         <Line
                           key={`${name}_interpolated`}
-                          type={lineType}
+                          type="linear"
                           dataKey={`${name}_interpolated`}
                           stroke={reptileColors[name]}
                           strokeWidth={2}
@@ -572,10 +572,10 @@ export default function Dashboard() {
                           name={name}
                           connectNulls
                         />,
-                        // Extrapolated dashed line (same color as reptile)
+                        // Extrapolated dashed line (smooth curves for estimates)
                         <Line
                           key={`${name}_extrapolated`}
-                          type={lineType}
+                          type="monotone"
                           dataKey={`${name}_extrapolated`}
                           stroke={reptileColors[name]}
                           strokeWidth={2}
@@ -587,7 +587,7 @@ export default function Dashboard() {
                         // Actual measurement dots
                         <Line
                           key={`${name}_actual`}
-                          type={lineType}
+                          type="linear"
                           dataKey={`${name}_actual`}
                           stroke="transparent"
                           strokeWidth={0}
@@ -600,7 +600,7 @@ export default function Dashboard() {
                       {/* Dummy line for "Estimated" legend item */}
                       <Line
                         key="estimated"
-                        type={lineType}
+                        type="monotone"
                         dataKey="__estimated__"
                         stroke="#6b7280"
                         strokeWidth={2}
