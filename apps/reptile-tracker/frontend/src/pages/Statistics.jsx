@@ -661,10 +661,10 @@ function Statistics() {
                   {/* Weight Lines - Actual, Interpolated, and Extrapolated */}
                   {visibleData.weight && (
                     <>
-                      {/* Solid line for actual and interpolated weight (straight lines between measurements) */}
+                      {/* Solid line for actual and interpolated weight (smooth curve for linear data) */}
                       <Line
                         yAxisId="weight"
-                        type="linear"
+                        type="monotone"
                         dataKey="weightInterpolated"
                         stroke="#3B82F6"
                         strokeWidth={2}

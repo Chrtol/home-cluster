@@ -212,7 +212,6 @@ export default function Dashboard() {
     const weightCard = dashboardCards.find(c => c.id === 'weight_chart');
     const interpolationMode = weightCard?.interpolationMode || 'linear';
 
-    console.log('[Dashboard] prepareWeightChartData - interpolationMode:', interpolationMode);
 
     // Group by reptile
     const byReptile = {};
@@ -299,12 +298,6 @@ export default function Dashboard() {
         const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
         const intercept = (sumY - slope * sumX) / n;
 
-        console.log(`[Dashboard] ${reptile.name} regression:`, {
-          slope, // grams per day
-          intercept, // weight at day 0
-          firstTime,
-          firstWeight: reptile.data[0].weight
-        });
 
         regressionData[reptile.name] = { slope, intercept, firstTime };
       }
@@ -348,28 +341,9 @@ export default function Dashboard() {
           const daysSinceFirst = (currentDate.getTime() - firstTime) / 86400000;
           const interpolated = slope * daysSinceFirst + intercept;
 
-          // Debug all interpolated dates for Spyro
-          if (reptile.name === 'Spyro') {
-            console.log(`[Dashboard] ${reptile.name} on ${date} (day ${daysSinceFirst}):`,
-              parseFloat(interpolated.toFixed(1))
-            );
-          }
 
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
           return;
-        } else if (before && after && reptile.name === 'Spyro') {
-          const daysSinceFirst = (dateTime - reptile.data[0].dateTime) / 86400000;
-          if (daysSinceFirst >= 1 && daysSinceFirst <= 2) {
-            console.log(`[Dashboard] ${reptile.name} on ${date} - NOT using regression:`, {
-              hasBefore: !!before,
-              hasAfter: !!after,
-              hasRegressionData: !!regressionData[reptile.name],
-              interpolationMode,
-              beforeWeight: before?.weight,
-              afterWeight: after?.weight
-            });
-          }
-        }
 
         // Extrapolation only happens outside the measurement range
         if (before && !after) {
@@ -615,13 +589,15 @@ export default function Dashboard() {
                         // Interpolated solid line (straight lines between actual measurements)
                         <Line
                           key={`${name}_interpolated`}
-                          type="linear"
+                          type="monotone"
                           dataKey={`${name}_interpolated`}
                           stroke={reptileColors[name]}
                           strokeWidth={2}
                           dot={false}
                           name={name}
                           isAnimationActive={false}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         />,
                         // Extrapolated dashed line (smooth curves for estimates)
                         <Line
