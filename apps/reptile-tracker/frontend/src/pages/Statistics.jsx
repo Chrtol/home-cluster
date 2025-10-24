@@ -636,8 +636,8 @@ function Statistics() {
           )}
 
           {/* Misting Frequency Chart */}
-          {visibleData.misting && stats.misting_data.length > 0 && (
-            <div className="card">
+          {isChartVisible('misting_frequency') && visibleData.misting && stats.misting_data.length > 0 && (
+            <div className={`${getChartSizeClass('misting_frequency')} card`}>
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Misting Frequency</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={stats.misting_data}>
@@ -670,37 +670,62 @@ function Statistics() {
           )}
 
           {/* Health Events Timeline */}
-          {visibleData.health && stats.health_data.length > 0 && (
-            <div className="card">
+          {isChartVisible('health_events') && visibleData.health && stats.health_data.length > 0 && (
+            <div className={`${getChartSizeClass('health_events')} card`}>
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Health Events Timeline</h2>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {stats.health_data.map((event, index) => (
-                  <div key={index} className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex-shrink-0">
-                      <div className="w-2 h-2 mt-2 rounded-full bg-red-400"></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900 dark:text-white capitalize">
-                              {event.type.replace('_', ' ')}
-                            </span>
-                            {event.title && (
-                              <span className="text-sm text-gray-500 dark:text-gray-400">- {event.title}</span>
+                {stats.health_data.map((event, index) => {
+                  // Determine icon and color based on event type
+                  const getEventStyle = (type) => {
+                    switch (type) {
+                      case 'weight':
+                        return { icon: Scale, color: 'bg-blue-400', label: 'Weight Measurement' };
+                      case 'shed':
+                        return { icon: Activity, color: 'bg-green-400', label: 'Shed' };
+                      case 'vet_visit':
+                        return { icon: Heart, color: 'bg-red-400', label: 'Vet Visit' };
+                      case 'illness':
+                        return { icon: Heart, color: 'bg-orange-400', label: 'Illness' };
+                      case 'injury':
+                        return { icon: Heart, color: 'bg-red-500', label: 'Injury' };
+                      default:
+                        return { icon: Heart, color: 'bg-purple-400', label: type.replace('_', ' ') };
+                    }
+                  };
+
+                  const style = getEventStyle(event.type);
+                  const EventIcon = style.icon;
+
+                  return (
+                    <div key={index} className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex-shrink-0">
+                        <div className={`w-8 h-8 rounded-full ${style.color} flex items-center justify-center`}>
+                          <EventIcon size={16} className="text-white" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 dark:text-white capitalize">
+                                {style.label}
+                              </span>
+                              {event.title && (
+                                <span className="text-sm text-gray-500 dark:text-gray-400">- {event.title}</span>
+                              )}
+                            </div>
+                            {event.description && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
                             )}
                           </div>
-                          {event.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
-                          )}
+                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
+                            {new Date(event.date).toLocaleDateString()}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
-                          {new Date(event.date).toLocaleDateString()}
-                        </span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
