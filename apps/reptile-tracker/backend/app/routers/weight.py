@@ -33,7 +33,7 @@ async def get_dashboard_weights(
         .join(Reptile, WeightLog.reptile_id == Reptile.id)
         .where(WeightLog.reptile_id.in_(reptile_ids))
         .order_by(WeightLog.measured_at.desc())
-        .limit(100)  # Reasonable limit for dashboard
+        .limit(1000)  # Increased limit to show more historical data for chart interpolation
     )
 
     # Transform results to include reptile name
