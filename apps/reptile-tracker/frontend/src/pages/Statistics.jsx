@@ -366,7 +366,7 @@ function Statistics() {
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  <Droplet size={16} className="inline mr-1" />
+                  <Droplets size={16} className="inline mr-1" />
                   Misting
                 </button>
                 <button

@@ -499,46 +499,58 @@ export default function Dashboard() {
                       />
                     ))
                   ) : (
-                    // Linear/Step mode: three lines per reptile (actual dots, interpolated line, extrapolated dashed line)
-                    reptileNames && reptileNames.flatMap(name => [
-                      // Interpolated/actual solid line
+                    <>
+                      {/* Linear/Step mode: three lines per reptile */}
+                      {reptileNames && reptileNames.flatMap(name => [
+                        // Interpolated/actual solid line (shows in legend with reptile name)
+                        <Line
+                          key={`${name}_interpolated`}
+                          type={lineType}
+                          dataKey={`${name}_interpolated`}
+                          stroke={reptileColors[name]}
+                          strokeWidth={2}
+                          dot={false}
+                          name={name}
+                          connectNulls
+                        />,
+                        // Extrapolated dashed line (hidden from legend)
+                        <Line
+                          key={`${name}_extrapolated`}
+                          type={lineType}
+                          dataKey={`${name}_extrapolated`}
+                          stroke={reptileColors[name]}
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                          connectNulls
+                          hide
+                        />,
+                        // Actual measurement dots (hidden from legend)
+                        <Line
+                          key={`${name}_actual`}
+                          type={lineType}
+                          dataKey={`${name}_actual`}
+                          stroke="transparent"
+                          strokeWidth={0}
+                          dot={{ fill: reptileColors[name], r: 4, strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 6 }}
+                          connectNulls={false}
+                          hide
+                        />
+                      ])}
+                      {/* Single "Estimated" legend entry with neutral gray dashed line */}
                       <Line
-                        key={`${name}_interpolated`}
+                        key="estimated"
                         type={lineType}
-                        dataKey={`${name}_interpolated`}
-                        stroke={reptileColors[name]}
-                        strokeWidth={2}
-                        dot={false}
-                        name={name}
-                        connectNulls
-                      />,
-                      // Extrapolated dashed line
-                      <Line
-                        key={`${name}_extrapolated`}
-                        type={lineType}
-                        dataKey={`${name}_extrapolated`}
-                        stroke={reptileColors[name]}
+                        dataKey="__estimated__"
+                        stroke="#6b7280"
                         strokeWidth={2}
                         strokeDasharray="5 5"
                         dot={false}
-                        name={`${name} (estimated)`}
-                        connectNulls
-                        legendType="line"
-                      />,
-                      // Actual measurement dots
-                      <Line
-                        key={`${name}_actual`}
-                        type={lineType}
-                        dataKey={`${name}_actual`}
-                        stroke="transparent"
-                        strokeWidth={0}
-                        dot={{ fill: reptileColors[name], r: 4, strokeWidth: 2, stroke: '#fff' }}
-                        activeDot={{ r: 6 }}
-                        name={`${name} (actual)`}
+                        name="Estimated"
                         connectNulls={false}
-                        legendType="circle"
                       />
-                    ])
+                    </>
                   )}
                 </LineChart>
               </ResponsiveContainer>
