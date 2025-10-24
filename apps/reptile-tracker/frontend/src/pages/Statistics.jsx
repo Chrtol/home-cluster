@@ -3,7 +3,7 @@ import { LineChart, Line, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianG
 import { TrendingUp, TrendingDown, Minus, Calendar, Droplet, Heart, Scale } from 'lucide-react';
 import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
-import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings } from '../utils/displaySettings';
+import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
 
 function Statistics() {
   const [reptiles, setReptiles] = useState([]);
@@ -22,12 +22,12 @@ function Statistics() {
   const [weightInterpolationMode, setWeightInterpolationMode] = useState('linear');
   const [chartSettings, setChartSettings] = useState(null);
 
-  // Load display settings on mount
+  // Load display settings when selectedReptile changes
   useEffect(() => {
-    setStatisticsCharts(getStatisticsChartSettings());
+    setStatisticsCharts(getStatisticsChartSettings(selectedReptile));
     setWeightInterpolationMode(getWeightInterpolationMode());
     setChartSettings(getChartSettings());
-  }, []);
+  }, [selectedReptile]);
 
   useEffect(() => {
     fetchReptiles();

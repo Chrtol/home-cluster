@@ -16,7 +16,9 @@ import {
   resetChartSettings,
   exportAllDisplaySettings,
   importDisplaySettings,
-  resetAllDisplaySettings
+  resetAllDisplaySettings,
+  hasCustomStatisticsSettings,
+  copyGlobalSettingsToReptile
 } from '../utils/displaySettings';
 
 export default function Settings() {
@@ -209,13 +211,32 @@ function DisplayTab() {
   const [chartSettings, setChartSettings] = useState(null);
   const [success, setSuccess] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
+  const [reptiles, setReptiles] = useState([]);
+  const [selectedReptileId, setSelectedReptileId] = useState(null); // null = global settings
 
   useEffect(() => {
     // Load all display settings from localStorage
     setDashboardCards(getDashboardCardSettings());
-    setStatisticsCharts(getStatisticsChartSettings());
+    setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
     setChartSettings(getChartSettings());
+
+    // Fetch reptiles for per-reptile settings
+    fetchReptiles();
   }, []);
+
+  useEffect(() => {
+    // Reload statistics charts when selected reptile changes
+    setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
+  }, [selectedReptileId]);
+
+  const fetchReptiles = async () => {
+    try {
+      const res = await axios.get('/api/reptiles');
+      setReptiles(res.data);
+    } catch (e) {
+      console.error('Failed to fetch reptiles', e);
+    }
+  };
 
   const handleDashboardCardToggle = (cardId) => {
     const updated = dashboardCards.map(card =>
@@ -249,7 +270,7 @@ function DisplayTab() {
       chart.id === chartId ? { ...chart, visible: !chart.visible } : chart
     );
     setStatisticsCharts(updated);
-    saveStatisticsChartSettings(updated);
+    saveStatisticsChartSettings(updated, selectedReptileId);
     showSuccess();
   };
 
@@ -258,7 +279,7 @@ function DisplayTab() {
       chart.id === chartId ? { ...chart, size: newSize } : chart
     );
     setStatisticsCharts(updated);
-    saveStatisticsChartSettings(updated);
+    saveStatisticsChartSettings(updated, selectedReptileId);
     showSuccess();
   };
 
@@ -267,7 +288,7 @@ function DisplayTab() {
       chart.id === chartId ? { ...chart, interpolationMode: newMode } : chart
     );
     setStatisticsCharts(updated);
-    saveStatisticsChartSettings(updated);
+    saveStatisticsChartSettings(updated, selectedReptileId);
     showSuccess();
   };
 
@@ -293,7 +314,7 @@ function DisplayTab() {
     // Update order property
     const reorderedCharts = newCharts.map((chart, index) => ({ ...chart, order: index }));
     setStatisticsCharts(reorderedCharts);
-    saveStatisticsChartSettings(reorderedCharts);
+    saveStatisticsChartSettings(reorderedCharts, selectedReptileId);
     showSuccess();
   };
 
@@ -312,10 +333,29 @@ function DisplayTab() {
   };
 
   const handleResetStatistics = () => {
-    if (!confirm('Reset statistics layout to default? This cannot be undone.')) return;
-    const defaults = resetStatisticsChartSettings();
+    const message = selectedReptileId
+      ? 'Reset this reptile\'s statistics layout to default? This will remove custom settings for this reptile.'
+      : 'Reset global statistics layout to default? This cannot be undone.';
+    if (!confirm(message)) return;
+    const defaults = resetStatisticsChartSettings(selectedReptileId);
     setStatisticsCharts(defaults);
     showSuccess('Statistics layout reset to defaults');
+  };
+
+  const handleCopyFromGlobal = () => {
+    if (!selectedReptileId) return;
+    if (!confirm('Copy global settings to this reptile? This will overwrite any custom settings for this reptile.')) return;
+    copyGlobalSettingsToReptile(selectedReptileId);
+    setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
+    showSuccess('Global settings copied to this reptile');
+  };
+
+  const handleUseGlobal = () => {
+    if (!selectedReptileId) return;
+    if (!confirm('Remove custom settings for this reptile and use global settings instead?')) return;
+    resetStatisticsChartSettings(selectedReptileId);
+    setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
+    showSuccess('Now using global settings for this reptile');
   };
 
   const handleResetAll = () => {
@@ -561,11 +601,66 @@ function DisplayTab() {
             Statistics Layout
           </h2>
           <button onClick={handleResetStatistics} className="btn-secondary text-sm">
-            Reset Statistics
+            {selectedReptileId ? 'Reset to Default' : 'Reset Statistics'}
           </button>
         </div>
+
+        {/* Reptile Selector */}
+        <div className="mb-4 space-y-3">
+          <div className="flex gap-3 items-center">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              Configure layout for:
+            </label>
+            <select
+              value={selectedReptileId || ''}
+              onChange={(e) => setSelectedReptileId(e.target.value ? parseInt(e.target.value) : null)}
+              className="input flex-1"
+            >
+              <option value="">All Reptiles (Global)</option>
+              {reptiles.map(reptile => (
+                <option key={reptile.id} value={reptile.id}>
+                  {reptile.name}
+                  {hasCustomStatisticsSettings(reptile.id) ? ' (Custom)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Per-Reptile Settings Info */}
+          {selectedReptileId && (
+            <div className="flex gap-2">
+              {hasCustomStatisticsSettings(selectedReptileId) ? (
+                <div className="flex-1 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Custom layout active</strong> for this reptile. Changes only affect this reptile's statistics page.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Currently using <strong>global layout</strong>. Make changes to create a custom layout for this reptile.
+                  </p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                {hasCustomStatisticsSettings(selectedReptileId) ? (
+                  <button onClick={handleUseGlobal} className="btn-secondary text-sm whitespace-nowrap">
+                    Use Global
+                  </button>
+                ) : (
+                  <button onClick={handleCopyFromGlobal} className="btn-secondary text-sm whitespace-nowrap">
+                    Copy from Global
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Show/hide charts, drag to reorder, and adjust chart sizes on the Statistics page.
+          {selectedReptileId
+            ? 'Customize the statistics layout for this specific reptile.'
+            : 'Configure the default statistics layout for all reptiles (unless they have custom settings).'}
         </p>
         <div className="space-y-2">
           {statisticsCharts.map((chart, index) => (
