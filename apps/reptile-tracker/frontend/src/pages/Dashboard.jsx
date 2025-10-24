@@ -212,6 +212,8 @@ export default function Dashboard() {
     const weightCard = dashboardCards.find(c => c.id === 'weight_chart');
     const interpolationMode = weightCard?.interpolationMode || 'linear';
 
+    console.log('[Dashboard] prepareWeightChartData - interpolationMode:', interpolationMode);
+
     // Group by reptile
     const byReptile = {};
     weightData.forEach(log => {
@@ -336,20 +338,31 @@ export default function Dashboard() {
           const daysSinceFirst = (dateTime - firstTime) / 86400000;
           const interpolated = slope * daysSinceFirst + intercept;
 
-          // Debug first few dates
-          if (date === 'Oct 4, 2024' || date === 'Oct 5, 2024') {
-            console.log(`[Dashboard] ${reptile.name} on ${date}:`, {
-              date,
-              daysSinceFirst,
+          // Debug first interpolated date we encounter
+          if (reptile.name === 'Spyro' && daysSinceFirst >= 1 && daysSinceFirst <= 2) {
+            console.log(`[Dashboard] ${reptile.name} on ${date} (day ${daysSinceFirst}):`, {
               slope,
               intercept,
-              calculation: `${slope} * ${daysSinceFirst} + ${intercept}`,
-              interpolated
+              calculation: `${slope} * ${daysSinceFirst.toFixed(2)} + ${intercept}`,
+              interpolated,
+              rounded: parseFloat(interpolated.toFixed(1))
             });
           }
 
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
           return;
+        } else if (before && after && reptile.name === 'Spyro') {
+          const daysSinceFirst = (dateTime - reptile.data[0].dateTime) / 86400000;
+          if (daysSinceFirst >= 1 && daysSinceFirst <= 2) {
+            console.log(`[Dashboard] ${reptile.name} on ${date} - NOT using regression:`, {
+              hasBefore: !!before,
+              hasAfter: !!after,
+              hasRegressionData: !!regressionData[reptile.name],
+              interpolationMode,
+              beforeWeight: before?.weight,
+              afterWeight: after?.weight
+            });
+          }
         }
 
         // Extrapolation only happens outside the measurement range
