@@ -265,8 +265,6 @@ export default function Dashboard() {
       (a, b) => new Date(a) - new Date(b)
     );
 
-    console.log('[Dashboard] All weight measurement dates:', allDates);
-    console.log('[Dashboard] Total weight logs loaded:', weightData.length);
 
     // Build chart data with only actual measurements
     const chartData = allDates.map(date => {
@@ -281,6 +279,9 @@ export default function Dashboard() {
 
       return dataPoint;
     });
+
+    console.log('[Dashboard] Chart data:', chartData);
+    console.log('[Dashboard] Spyro data by date:', chartData.map(d => ({ date: d.date, weight: d.Spyro })));
 
 
     // Generate colors
