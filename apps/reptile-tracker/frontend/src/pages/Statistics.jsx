@@ -3,6 +3,7 @@ import { LineChart, Line, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianG
 import { TrendingUp, TrendingDown, Minus, Calendar, Droplet, Heart, Scale } from 'lucide-react';
 import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
+import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings } from '../utils/displaySettings';
 
 function Statistics() {
   const [reptiles, setReptiles] = useState([]);
@@ -17,6 +18,16 @@ function Statistics() {
     misting: true,
     health: true
   });
+  const [statisticsCharts, setStatisticsCharts] = useState([]);
+  const [weightInterpolationMode, setWeightInterpolationMode] = useState('linear');
+  const [chartSettings, setChartSettings] = useState(null);
+
+  // Load display settings on mount
+  useEffect(() => {
+    setStatisticsCharts(getStatisticsChartSettings());
+    setWeightInterpolationMode(getWeightInterpolationMode());
+    setChartSettings(getChartSettings());
+  }, []);
 
   useEffect(() => {
     fetchReptiles();
@@ -83,6 +94,12 @@ function Statistics() {
       Object.keys(item.foods).forEach(foodName => foodSet.add(foodName));
     });
     return Array.from(foodSet).sort();
+  };
+
+  // Helper function to check if a chart is visible
+  const isChartVisible = (chartId) => {
+    const chart = statisticsCharts.find(c => c.id === chartId);
+    return chart ? chart.visible : true; // Default to visible if not found
   };
 
   // Merge weight and feeding data for combined chart with interpolation
@@ -356,7 +373,8 @@ function Statistics() {
       {stats && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {isChartVisible('summary_cards') && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Weight Summary */}
             <div className="card">
               <div className="flex items-center justify-between mb-2">
@@ -428,9 +446,10 @@ function Statistics() {
               </p>
             </div>
           </div>
+          )}
 
           {/* Combined Weight & Feeding Chart */}
-          {(visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
+          {isChartVisible('weight_feeding') && (visibleData.weight || visibleData.feeding) && getCombinedData().length > 0 && (
             <div className="card">
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
@@ -561,7 +580,7 @@ function Statistics() {
           )}
 
           {/* Feeding Frequency Calendar Heatmap */}
-          {visibleData.feeding && stats.feeding_data.length > 0 && (
+          {isChartVisible('feeding_heatmap') && visibleData.feeding && stats.feeding_data.length > 0 && (
             <div className="card" style={{ maxWidth: '420px' }}>
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
