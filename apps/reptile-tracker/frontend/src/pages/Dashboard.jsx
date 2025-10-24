@@ -348,15 +348,11 @@ export default function Dashboard() {
           const daysSinceFirst = (currentDate.getTime() - firstTime) / 86400000;
           const interpolated = slope * daysSinceFirst + intercept;
 
-          // Debug first interpolated date we encounter
-          if (reptile.name === 'Spyro' && daysSinceFirst >= 1 && daysSinceFirst <= 2) {
-            console.log(`[Dashboard] ${reptile.name} on ${date} (day ${daysSinceFirst}):`, {
-              slope,
-              intercept,
-              calculation: `${slope} * ${daysSinceFirst.toFixed(2)} + ${intercept}`,
-              interpolated,
-              rounded: parseFloat(interpolated.toFixed(1))
-            });
+          // Debug all interpolated dates for Spyro
+          if (reptile.name === 'Spyro') {
+            console.log(`[Dashboard] ${reptile.name} on ${date} (day ${daysSinceFirst}):`,
+              parseFloat(interpolated.toFixed(1))
+            );
           }
 
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
