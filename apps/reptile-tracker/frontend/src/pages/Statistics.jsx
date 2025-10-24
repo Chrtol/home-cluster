@@ -234,19 +234,23 @@ function Statistics() {
 
       // Handle interpolation based on mode
       if (interpolationMode === 'step') {
-        // Step: use last known weight (before value)
-        if (before) {
-          return { weight: before.weight, isActual: false, isExtrapolated: !after };
+        // Step: use last known weight
+        if (before && after) {
+          // Between measurements - use solid line with last known value
+          return { weight: before.weight, isActual: false, isExtrapolated: false };
         }
-        // If no before value, use after value (for dates before first measurement)
-        if (after) {
+        // Before first or after last measurement - use dashed line
+        if (before && !after) {
+          return { weight: before.weight, isActual: false, isExtrapolated: true };
+        }
+        if (!before && after) {
           return { weight: after.weight, isActual: false, isExtrapolated: true };
         }
         return null;
       }
 
       // Linear interpolation (default)
-      // Interpolate if we have both before and after (between measurements)
+      // Between measurements - use solid line with linear interpolation
       if (before && after) {
         const beforeTime = new Date(before.date).getTime();
         const afterTime = new Date(after.date).getTime();
@@ -255,12 +259,28 @@ function Statistics() {
         return { weight: parseFloat(interpolated.toFixed(1)), isActual: false, isExtrapolated: false };
       }
 
-      // Extrapolate forward if we only have before (extend last known weight as flat line)
+      // After last measurement - extrapolate into the future with trend (dashed line)
       if (before && !after) {
+        // Calculate trend from last 2 measurements if available
+        if (weightDates.length >= 2) {
+          const lastIdx = weightDates.length - 1;
+          const secondLastIdx = lastIdx - 1;
+          const lastDate = new Date(weightDates[lastIdx]).getTime();
+          const secondLastDate = new Date(weightDates[secondLastIdx]).getTime();
+          const lastWeight = weightMap.get(weightDates[lastIdx]);
+          const secondLastWeight = weightMap.get(weightDates[secondLastIdx]);
+
+          // Calculate linear trend
+          const slope = (lastWeight - secondLastWeight) / (lastDate - secondLastDate);
+          const extrapolated = lastWeight + slope * (dateTime - lastDate);
+
+          return { weight: parseFloat(extrapolated.toFixed(1)), isActual: false, isExtrapolated: true };
+        }
+        // If only one measurement, use flat line
         return { weight: before.weight, isActual: false, isExtrapolated: true };
       }
 
-      // Extrapolate backward with flat line from first weight (for dates before first measurement)
+      // Before first measurement - extrapolate into the past with flat line (dashed line)
       if (!before && after) {
         return { weight: after.weight, isActual: false, isExtrapolated: true };
       }

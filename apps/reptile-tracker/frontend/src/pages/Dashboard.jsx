@@ -301,29 +301,48 @@ export default function Dashboard() {
         // Step mode - use last known weight
         if (interpolationMode === 'step') {
           if (before && after) {
+            // Between measurements - solid line with last known value
             dataPoint[`${reptile.name}_interpolated`] = before.weight;
           } else if (before && !after) {
+            // After last measurement - dashed line
             dataPoint[`${reptile.name}_extrapolated`] = before.weight;
             dataPoint[`${reptile.name}_isExtrapolated`] = true;
           } else if (!before && after) {
+            // Before first measurement - dashed line
             dataPoint[`${reptile.name}_extrapolated`] = after.weight;
             dataPoint[`${reptile.name}_isExtrapolated`] = true;
           }
           return;
         }
 
-        // Linear mode - interpolate between measurements
+        // Linear mode
         if (before && after) {
-          // Interpolate between two measurements
+          // Between measurements - solid line with linear interpolation
           const ratio = (dateTime - before.dateTime) / (after.dateTime - before.dateTime);
           const interpolated = before.weight + (after.weight - before.weight) * ratio;
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
         } else if (before && !after) {
-          // Extrapolate forward (flat line from last measurement)
-          dataPoint[`${reptile.name}_extrapolated`] = before.weight;
-          dataPoint[`${reptile.name}_isExtrapolated`] = true;
+          // After last measurement - extrapolate into future with trend (dashed line)
+          if (reptile.data.length >= 2) {
+            const lastIdx = reptile.data.length - 1;
+            const secondLastIdx = lastIdx - 1;
+            const lastMeasurement = reptile.data[lastIdx];
+            const secondLastMeasurement = reptile.data[secondLastIdx];
+
+            // Calculate linear trend from last 2 measurements
+            const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
+                         (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
+            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurement.dateTime);
+
+            dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
+            dataPoint[`${reptile.name}_isExtrapolated`] = true;
+          } else {
+            // If only one measurement, use flat line
+            dataPoint[`${reptile.name}_extrapolated`] = before.weight;
+            dataPoint[`${reptile.name}_isExtrapolated`] = true;
+          }
         } else if (!before && after) {
-          // Extrapolate backward (flat line from first measurement)
+          // Before first measurement - extrapolate into past with flat line (dashed line)
           dataPoint[`${reptile.name}_extrapolated`] = after.weight;
           dataPoint[`${reptile.name}_isExtrapolated`] = true;
         }
