@@ -125,6 +125,10 @@ function Statistics() {
   const getCombinedData = () => {
     if (!stats) return [];
 
+    // Get interpolation mode for this chart
+    const weightFeedingChart = statisticsCharts.find(c => c.id === 'weight_feeding');
+    const interpolationMode = weightFeedingChart?.interpolationMode || 'linear';
+
     // Get all unique dates from both datasets
     // This ensures we include ALL feeding dates, even those before first weight measurement
     const allDates = new Set();
@@ -194,10 +198,15 @@ function Statistics() {
       new Date(a) - new Date(b)
     );
 
-    // Linear interpolation for weight
+    // Weight interpolation based on selected mode
     const interpolateWeight = (date) => {
       if (weightMap.has(date)) {
         return { weight: weightMap.get(date), isActual: true };
+      }
+
+      // If mode is 'none', only show actual measurements
+      if (interpolationMode === 'none') {
+        return null;
       }
 
       // Find surrounding actual measurements from weight dates only
@@ -217,6 +226,20 @@ function Statistics() {
         }
       });
 
+      // Handle interpolation based on mode
+      if (interpolationMode === 'step') {
+        // Step: use last known weight (before value)
+        if (before) {
+          return { weight: before.weight, isActual: false, isExtrapolated: !after };
+        }
+        // If no before value, use after value (for dates before first measurement)
+        if (after) {
+          return { weight: after.weight, isActual: false, isExtrapolated: true };
+        }
+        return null;
+      }
+
+      // Linear interpolation (default)
       // Interpolate if we have both before and after (between measurements)
       if (before && after) {
         const beforeTime = new Date(before.date).getTime();
