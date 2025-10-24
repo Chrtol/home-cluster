@@ -265,6 +265,9 @@ export default function Dashboard() {
       (a, b) => new Date(a) - new Date(b)
     );
 
+    console.log('[Dashboard] All weight measurement dates:', allDates);
+    console.log('[Dashboard] Total weight logs loaded:', weightData.length);
+
     // Build chart data with only actual measurements
     const chartData = allDates.map(date => {
       const dataPoint = { date };
