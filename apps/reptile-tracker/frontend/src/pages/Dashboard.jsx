@@ -273,23 +273,31 @@ export default function Dashboard() {
     const regressionData = {};
     Object.values(byReptile).forEach(reptile => {
       if (reptile.data.length >= 2) {
+        // Normalize timestamps to avoid precision issues with large numbers
+        const firstTime = reptile.data[0].dateTime;
+        const normalizedData = reptile.data.map(d => ({
+          x: (d.dateTime - firstTime) / 86400000, // Days since first measurement
+          y: d.weight
+        }));
+
         // Calculate best-fit line: y = mx + b
-        const n = reptile.data.length;
-        const sumX = reptile.data.reduce((sum, d) => sum + d.dateTime, 0);
-        const sumY = reptile.data.reduce((sum, d) => sum + d.weight, 0);
-        const sumXY = reptile.data.reduce((sum, d) => sum + d.dateTime * d.weight, 0);
-        const sumX2 = reptile.data.reduce((sum, d) => sum + d.dateTime * d.dateTime, 0);
+        const n = normalizedData.length;
+        const sumX = normalizedData.reduce((sum, d) => sum + d.x, 0);
+        const sumY = normalizedData.reduce((sum, d) => sum + d.y, 0);
+        const sumXY = normalizedData.reduce((sum, d) => sum + d.x * d.y, 0);
+        const sumX2 = normalizedData.reduce((sum, d) => sum + d.x * d.x, 0);
 
         const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
         const intercept = (sumY - slope * sumX) / n;
 
         console.log(`[Dashboard] ${reptile.name} regression:`, {
-          slope: slope * 86400000, // Convert to per-day
-          intercept,
-          dailyChange: slope * 86400000
+          slope, // grams per day
+          intercept, // weight at day 0
+          firstTime,
+          firstWeight: reptile.data[0].weight
         });
 
-        regressionData[reptile.name] = { slope, intercept };
+        regressionData[reptile.name] = { slope, intercept, firstTime };
       }
     });
 
@@ -324,16 +332,18 @@ export default function Dashboard() {
 
         // Between measurements - use linear regression for true linear interpolation
         if (before && after && regressionData[reptile.name]) {
-          const { slope, intercept } = regressionData[reptile.name];
-          const interpolated = slope * dateTime + intercept;
+          const { slope, intercept, firstTime } = regressionData[reptile.name];
+          const daysSinceFirst = (dateTime - firstTime) / 86400000;
+          const interpolated = slope * daysSinceFirst + intercept;
 
           // Debug first few dates
           if (date === 'Oct 4, 2024' || date === 'Oct 5, 2024') {
             console.log(`[Dashboard] ${reptile.name} on ${date}:`, {
-              dateTime,
+              date,
+              daysSinceFirst,
               slope,
               intercept,
-              calculation: `${slope} * ${dateTime} + ${intercept}`,
+              calculation: `${slope} * ${daysSinceFirst} + ${intercept}`,
               interpolated
             });
           }

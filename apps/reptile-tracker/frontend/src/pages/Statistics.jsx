@@ -219,6 +219,7 @@ function Statistics() {
     // Calculate linear regression for true linear interpolation
     let regressionSlope = null;
     let regressionIntercept = null;
+    let regressionFirstTime = null;
     if (interpolationMode === 'linear' && weightDates.length >= 2) {
       const n = weightDates.length;
       const measurements = weightDates.map(d => ({
@@ -226,10 +227,17 @@ function Statistics() {
         weight: weightMap.get(d)
       }));
 
-      const sumX = measurements.reduce((sum, m) => sum + m.time, 0);
-      const sumY = measurements.reduce((sum, m) => sum + m.weight, 0);
-      const sumXY = measurements.reduce((sum, m) => sum + m.time * m.weight, 0);
-      const sumX2 = measurements.reduce((sum, m) => sum + m.time * m.time, 0);
+      // Normalize timestamps to avoid precision issues
+      regressionFirstTime = measurements[0].time;
+      const normalizedMeasurements = measurements.map(m => ({
+        x: (m.time - regressionFirstTime) / 86400000, // Days since first
+        y: m.weight
+      }));
+
+      const sumX = normalizedMeasurements.reduce((sum, m) => sum + m.x, 0);
+      const sumY = normalizedMeasurements.reduce((sum, m) => sum + m.y, 0);
+      const sumXY = normalizedMeasurements.reduce((sum, m) => sum + m.x * m.y, 0);
+      const sumX2 = normalizedMeasurements.reduce((sum, m) => sum + m.x * m.x, 0);
 
       regressionSlope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
       regressionIntercept = (sumY - regressionSlope * sumX) / n;
@@ -282,8 +290,9 @@ function Statistics() {
 
       // Linear interpolation (default)
       // Between measurements - use linear regression for true linear interpolation
-      if (before && after && regressionSlope !== null) {
-        const interpolated = regressionSlope * dateTime + regressionIntercept;
+      if (before && after && regressionSlope !== null && regressionFirstTime !== null) {
+        const daysSinceFirst = (dateTime - regressionFirstTime) / 86400000;
+        const interpolated = regressionSlope * daysSinceFirst + regressionIntercept;
         return { weight: parseFloat(interpolated.toFixed(1)), isActual: false, isExtrapolated: false };
       }
 
