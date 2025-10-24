@@ -480,7 +480,8 @@ export default function Dashboard() {
         const weightCard = dashboardCards.find(c => c.id === 'weight_chart');
         const interpolationMode = weightCard?.interpolationMode || 'linear';
 
-        const lineType = interpolationMode === 'step' ? 'stepAfter' : 'monotone';
+        // Always use monotone for smooth lines - interpolation mode only affects data calculation
+        const lineType = 'monotone';
 
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
