@@ -270,7 +270,7 @@ export default function Dashboard() {
       allDates.push(format(new Date(d), 'MMM d, yyyy'));
     }
 
-    // Build chart data with actual measurements and extrapolation
+    // Build chart data with actual measurements and interpolation/extrapolation
     const chartData = allDates.map(date => {
       const dataPoint = { date };
       const dateTime = new Date(date).getTime();
@@ -284,15 +284,53 @@ export default function Dashboard() {
           return;
         }
 
-        // Find surrounding measurements for extrapolation
+        // Find surrounding measurements
         const firstMeasurement = reptile.data[0];
         const lastMeasurement = reptile.data[reptile.data.length - 1];
 
-        // Before first measurement or after last measurement - extrapolate with flat line
+        let before = null, after = null;
+        reptile.data.forEach(m => {
+          if (m.dateTime < dateTime && (!before || m.dateTime > before.dateTime)) {
+            before = m;
+          }
+          if (m.dateTime > dateTime && (!after || m.dateTime < after.dateTime)) {
+            after = m;
+          }
+        });
+
+        // Between measurements - don't fill in values, let chart draw straight lines
+        // (The chart will connect the actual measurement dots with straight lines)
+        if (before && after) {
+          return;
+        }
+
+        // Before first or after last measurement - extrapolate based on mode
         if (dateTime < firstMeasurement.dateTime) {
-          dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
+          // Extrapolate into the past
+          if (interpolationMode === 'linear' && reptile.data.length >= 2) {
+            // Linear: use trend from first 2 measurements
+            const secondMeasurement = reptile.data[1];
+            const slope = (secondMeasurement.weight - firstMeasurement.weight) /
+                         (secondMeasurement.dateTime - firstMeasurement.dateTime);
+            const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurement.dateTime);
+            dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
+          } else {
+            // Step: flat line
+            dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
+          }
         } else if (dateTime > lastMeasurement.dateTime) {
-          dataPoint[`${reptile.name}_extrapolated`] = lastMeasurement.weight;
+          // Extrapolate into the future
+          if (interpolationMode === 'linear' && reptile.data.length >= 2) {
+            // Linear: use trend from last 2 measurements
+            const secondLastMeasurement = reptile.data[reptile.data.length - 2];
+            const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
+                         (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
+            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurement.dateTime);
+            dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
+          } else {
+            // Step: flat line
+            dataPoint[`${reptile.name}_extrapolated`] = lastMeasurement.weight;
+          }
         }
       });
 
