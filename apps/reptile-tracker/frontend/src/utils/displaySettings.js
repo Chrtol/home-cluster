@@ -92,8 +92,20 @@ const DEFAULT_STATISTICS_CHARTS = [
   { id: 'health_events', label: 'Health Events Timeline', visible: true, order: 4, size: 'medium' },
 ];
 
-export function getStatisticsChartSettings() {
-  const stored = localStorage.getItem('statistics_charts');
+/**
+ * Get statistics chart settings for a specific reptile, or global settings if no reptile specified
+ * @param {number|null} reptileId - Optional reptile ID for per-reptile settings
+ * @returns {Array} Chart settings
+ */
+export function getStatisticsChartSettings(reptileId = null) {
+  const key = reptileId ? `statistics_charts_reptile_${reptileId}` : 'statistics_charts';
+  const stored = localStorage.getItem(key);
+
+  // If no per-reptile setting exists, fall back to global settings
+  if (!stored && reptileId) {
+    return getStatisticsChartSettings(null); // Get global settings
+  }
+
   if (!stored) return DEFAULT_STATISTICS_CHARTS;
 
   try {
@@ -123,13 +135,60 @@ export function getStatisticsChartSettings() {
   }
 }
 
-export function saveStatisticsChartSettings(charts) {
-  localStorage.setItem('statistics_charts', JSON.stringify(charts));
+/**
+ * Save statistics chart settings for a specific reptile or globally
+ * @param {Array} charts - Chart settings to save
+ * @param {number|null} reptileId - Optional reptile ID for per-reptile settings
+ */
+export function saveStatisticsChartSettings(charts, reptileId = null) {
+  const key = reptileId ? `statistics_charts_reptile_${reptileId}` : 'statistics_charts';
+  localStorage.setItem(key, JSON.stringify(charts));
 }
 
-export function resetStatisticsChartSettings() {
-  localStorage.removeItem('statistics_charts');
+/**
+ * Reset statistics chart settings for a specific reptile or globally
+ * @param {number|null} reptileId - Optional reptile ID for per-reptile settings
+ * @returns {Array} Default chart settings
+ */
+export function resetStatisticsChartSettings(reptileId = null) {
+  const key = reptileId ? `statistics_charts_reptile_${reptileId}` : 'statistics_charts';
+  localStorage.removeItem(key);
   return DEFAULT_STATISTICS_CHARTS;
+}
+
+/**
+ * Check if a reptile has custom statistics settings
+ * @param {number} reptileId - Reptile ID to check
+ * @returns {boolean} True if custom settings exist
+ */
+export function hasCustomStatisticsSettings(reptileId) {
+  const key = `statistics_charts_reptile_${reptileId}`;
+  return localStorage.getItem(key) !== null;
+}
+
+/**
+ * Copy global settings to a specific reptile
+ * @param {number} reptileId - Reptile ID to copy settings to
+ */
+export function copyGlobalSettingsToReptile(reptileId) {
+  const globalSettings = getStatisticsChartSettings(null);
+  saveStatisticsChartSettings(globalSettings, reptileId);
+}
+
+/**
+ * Get all reptile IDs that have custom statistics settings
+ * @returns {Array<number>} Array of reptile IDs with custom settings
+ */
+export function getReptileIdsWithCustomSettings() {
+  const ids = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('statistics_charts_reptile_')) {
+      const id = parseInt(key.replace('statistics_charts_reptile_', ''));
+      if (!isNaN(id)) ids.push(id);
+    }
+  }
+  return ids;
 }
 
 // ============================================================================
