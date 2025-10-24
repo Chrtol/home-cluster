@@ -1,10 +1,26 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
+import {
+  getDashboardCardSettings,
+  saveDashboardCardSettings,
+  resetDashboardCardSettings,
+  getStatisticsChartSettings,
+  saveStatisticsChartSettings,
+  resetStatisticsChartSettings,
+  getWeightInterpolationMode,
+  saveWeightInterpolationMode,
+  getChartSettings,
+  saveChartSettings,
+  resetChartSettings,
+  exportAllDisplaySettings,
+  importDisplaySettings,
+  resetAllDisplaySettings
+} from '../utils/displaySettings';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('preferences'); // preferences, household
+  const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, household
 
   return (
     <div>
@@ -12,21 +28,32 @@ export default function Settings() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-        <nav className="flex gap-4">
+        <nav className="flex gap-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm ${
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
               activeTab === 'preferences'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
             <SettingsIcon size={18} />
-            Preferences
+            Date & Time
+          </button>
+          <button
+            onClick={() => setActiveTab('display')}
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'display'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <Layout size={18} />
+            Display
           </button>
           <button
             onClick={() => setActiveTab('household')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm ${
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
               activeTab === 'household'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -40,6 +67,7 @@ export default function Settings() {
 
       {/* Tab Content */}
       {activeTab === 'preferences' && <PreferencesTab />}
+      {activeTab === 'display' && <DisplayTab />}
       {activeTab === 'household' && <HouseholdSection />}
     </div>
   );
@@ -173,6 +201,425 @@ function PreferencesTab() {
   );
 }
 
+
+// DISPLAY TAB COMPONENT
+function DisplayTab() {
+  const [dashboardCards, setDashboardCards] = useState([]);
+  const [statisticsCharts, setStatisticsCharts] = useState([]);
+  const [weightInterpolationMode, setWeightInterpolationMode] = useState('linear');
+  const [chartSettings, setChartSettings] = useState(null);
+  const [success, setSuccess] = useState('');
+  const [draggedItem, setDraggedItem] = useState(null);
+
+  useEffect(() => {
+    // Load all display settings from localStorage
+    setDashboardCards(getDashboardCardSettings());
+    setStatisticsCharts(getStatisticsChartSettings());
+    setWeightInterpolationMode(getWeightInterpolationMode());
+    setChartSettings(getChartSettings());
+  }, []);
+
+  const handleDashboardCardToggle = (cardId) => {
+    const updated = dashboardCards.map(card =>
+      card.id === cardId ? { ...card, visible: !card.visible } : card
+    );
+    setDashboardCards(updated);
+    saveDashboardCardSettings(updated);
+    showSuccess();
+  };
+
+  const handleStatisticsChartToggle = (chartId) => {
+    const updated = statisticsCharts.map(chart =>
+      chart.id === chartId ? { ...chart, visible: !chart.visible } : chart
+    );
+    setStatisticsCharts(updated);
+    saveStatisticsChartSettings(updated);
+    showSuccess();
+  };
+
+  const handleDashboardCardReorder = (dragIndex, hoverIndex) => {
+    const draggedCard = dashboardCards[dragIndex];
+    const newCards = [...dashboardCards];
+    newCards.splice(dragIndex, 1);
+    newCards.splice(hoverIndex, 0, draggedCard);
+
+    // Update order property
+    const reorderedCards = newCards.map((card, index) => ({ ...card, order: index }));
+    setDashboardCards(reorderedCards);
+    saveDashboardCardSettings(reorderedCards);
+    showSuccess();
+  };
+
+  const handleStatisticsChartReorder = (dragIndex, hoverIndex) => {
+    const draggedChart = statisticsCharts[dragIndex];
+    const newCharts = [...statisticsCharts];
+    newCharts.splice(dragIndex, 1);
+    newCharts.splice(hoverIndex, 0, draggedChart);
+
+    // Update order property
+    const reorderedCharts = newCharts.map((chart, index) => ({ ...chart, order: index }));
+    setStatisticsCharts(reorderedCharts);
+    saveStatisticsChartSettings(reorderedCharts);
+    showSuccess();
+  };
+
+  const handleWeightInterpolationChange = (mode) => {
+    setWeightInterpolationMode(mode);
+    saveWeightInterpolationMode(mode);
+    showSuccess();
+  };
+
+  const handleChartSettingChange = (key, value) => {
+    const updated = { ...chartSettings, [key]: value };
+    setChartSettings(updated);
+    saveChartSettings(updated);
+    showSuccess();
+  };
+
+  const handleResetDashboard = () => {
+    if (!confirm('Reset dashboard layout to default? This cannot be undone.')) return;
+    const defaults = resetDashboardCardSettings();
+    setDashboardCards(defaults);
+    showSuccess('Dashboard layout reset to defaults');
+  };
+
+  const handleResetStatistics = () => {
+    if (!confirm('Reset statistics layout to default? This cannot be undone.')) return;
+    const defaults = resetStatisticsChartSettings();
+    setStatisticsCharts(defaults);
+    showSuccess('Statistics layout reset to defaults');
+  };
+
+  const handleResetAll = () => {
+    if (!confirm('Reset ALL display settings to defaults? This cannot be undone.')) return;
+    resetAllDisplaySettings();
+    setDashboardCards(getDashboardCardSettings());
+    setStatisticsCharts(getStatisticsChartSettings());
+    setWeightInterpolationMode(getWeightInterpolationMode());
+    setChartSettings(getChartSettings());
+    showSuccess('All display settings reset to defaults');
+  };
+
+  const handleExportSettings = () => {
+    const settings = exportAllDisplaySettings();
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reptile-tracker-display-settings-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSuccess('Settings exported successfully');
+  };
+
+  const handleImportSettings = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result);
+        const success = importDisplaySettings(data, false); // Replace, not merge
+        if (success) {
+          // Reload settings
+          setDashboardCards(getDashboardCardSettings());
+          setStatisticsCharts(getStatisticsChartSettings());
+          setWeightInterpolationMode(getWeightInterpolationMode());
+          setChartSettings(getChartSettings());
+          showSuccess('Settings imported successfully');
+        } else {
+          alert('Failed to import settings. Please check the file format.');
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        alert('Failed to import settings. Invalid file format.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset file input
+  };
+
+  const showSuccess = (message = 'Settings saved successfully!') => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  // Simple drag and drop handlers (no external library needed)
+  const handleDragStart = (e, index, type) => {
+    setDraggedItem({ index, type });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index, type) => {
+    e.preventDefault();
+    if (!draggedItem || draggedItem.type !== type) return;
+
+    if (draggedItem.index !== index) {
+      if (type === 'dashboard') {
+        handleDashboardCardReorder(draggedItem.index, index);
+        setDraggedItem({ index, type });
+      } else if (type === 'statistics') {
+        handleStatisticsChartReorder(draggedItem.index, index);
+        setDraggedItem({ index, type });
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+  };
+
+  if (!chartSettings) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {success && (
+        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
+          {success}
+        </div>
+      )}
+
+      {/* Export/Import Controls */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+          <Download size={20} />
+          Export & Import Settings
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Export your display customization settings to share across devices or as a backup.
+        </p>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={handleExportSettings} className="btn-primary flex items-center gap-2">
+            <Download size={18} />
+            Export Display Settings
+          </button>
+          <label className="btn-secondary flex items-center gap-2 cursor-pointer">
+            <Upload size={18} />
+            Import Display Settings
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImportSettings}
+              className="hidden"
+            />
+          </label>
+          <button onClick={handleResetAll} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">
+            <RotateCcw size={18} />
+            Reset All to Defaults
+          </button>
+        </div>
+      </div>
+
+      {/* Dashboard Customization */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Layout size={20} />
+            Dashboard Layout
+          </h2>
+          <button onClick={handleResetDashboard} className="btn-secondary text-sm">
+            Reset Dashboard
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Show/hide cards and drag to reorder them on the Dashboard page.
+        </p>
+        <div className="space-y-2">
+          {dashboardCards.map((card, index) => (
+            <div
+              key={card.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index, 'dashboard')}
+              onDragOver={(e) => handleDragOver(e, index, 'dashboard')}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-move ${
+                card.visible
+                  ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+              } ${draggedItem?.index === index && draggedItem?.type === 'dashboard' ? 'opacity-50' : ''}`}
+            >
+              <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
+              <button
+                onClick={() => handleDashboardCardToggle(card.id)}
+                className="flex-1 text-left flex items-center gap-2"
+              >
+                {card.visible ? <Eye size={18} className="text-blue-600 dark:text-blue-400" /> : <EyeOff size={18} className="text-gray-400" />}
+                <span className={`font-medium ${card.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {card.label}
+                </span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Statistics Customization */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Layout size={20} />
+            Statistics Layout
+          </h2>
+          <button onClick={handleResetStatistics} className="btn-secondary text-sm">
+            Reset Statistics
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Show/hide charts and drag to reorder them on the Statistics page.
+        </p>
+        <div className="space-y-2">
+          {statisticsCharts.map((chart, index) => (
+            <div
+              key={chart.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index, 'statistics')}
+              onDragOver={(e) => handleDragOver(e, index, 'statistics')}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-move ${
+                chart.visible
+                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+              } ${draggedItem?.index === index && draggedItem?.type === 'statistics' ? 'opacity-50' : ''}`}
+            >
+              <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
+              <button
+                onClick={() => handleStatisticsChartToggle(chart.id)}
+                className="flex-1 text-left flex items-center gap-2"
+              >
+                {chart.visible ? <Eye size={18} className="text-green-600 dark:text-green-400" /> : <EyeOff size={18} className="text-gray-400" />}
+                <span className={`font-medium ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {chart.label}
+                </span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Weight Interpolation Settings */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Weight Interpolation</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Choose how weight data is displayed between measurements.
+        </p>
+        <div className="space-y-3">
+          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+            weightInterpolationMode === 'linear'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-200 dark:border-gray-700'
+          }`}>
+            <input
+              type="radio"
+              name="interpolation"
+              value="linear"
+              checked={weightInterpolationMode === 'linear'}
+              onChange={(e) => handleWeightInterpolationChange(e.target.value)}
+              className="w-4 h-4"
+            />
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">Linear Interpolation</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Draw straight lines between measurements (default)</div>
+            </div>
+          </label>
+          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+            weightInterpolationMode === 'step'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-200 dark:border-gray-700'
+          }`}>
+            <input
+              type="radio"
+              name="interpolation"
+              value="step"
+              checked={weightInterpolationMode === 'step'}
+              onChange={(e) => handleWeightInterpolationChange(e.target.value)}
+              className="w-4 h-4"
+            />
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">Step Interpolation</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Horizontal lines from last known weight</div>
+            </div>
+          </label>
+          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+            weightInterpolationMode === 'none'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-200 dark:border-gray-700'
+          }`}>
+            <input
+              type="radio"
+              name="interpolation"
+              value="none"
+              checked={weightInterpolationMode === 'none'}
+              onChange={(e) => handleWeightInterpolationChange(e.target.value)}
+              className="w-4 h-4"
+            />
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">No Interpolation</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Show only actual measurement dots</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Chart Settings */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Chart Appearance</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Customize how charts are displayed across the app.
+        </p>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={chartSettings.showGrid}
+              onChange={(e) => handleChartSettingChange('showGrid', e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="text-gray-900 dark:text-white">Show grid lines</span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={chartSettings.showLegend}
+              onChange={(e) => handleChartSettingChange('showLegend', e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="text-gray-900 dark:text-white">Show legend</span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={chartSettings.showAxisLabels}
+              onChange={(e) => handleChartSettingChange('showAxisLabels', e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="text-gray-900 dark:text-white">Show axis labels</span>
+          </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+              Chart Height: {chartSettings.chartHeight}px
+            </label>
+            <input
+              type="range"
+              min="200"
+              max="600"
+              step="50"
+              value={chartSettings.chartHeight}
+              onChange={(e) => handleChartSettingChange('chartHeight', parseInt(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span>200px</span>
+              <span>600px</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function HouseholdSection() {
   const [households, setHouseholds] = useState([]);

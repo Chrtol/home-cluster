@@ -5,6 +5,7 @@ import { formatDistanceToNow, differenceInDays, format } from 'date-fns';
 import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { getDashboardCardSettings, getChartSettings } from '../utils/displaySettings';
 
 export default function Dashboard() {
   const [recentFeedings, setRecentFeedings] = useState([]);
@@ -14,6 +15,14 @@ export default function Dashboard() {
   const [mistingData, setMistingData] = useState({});
   const [healthData, setHealthData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [dashboardCards, setDashboardCards] = useState([]);
+  const [chartSettings, setChartSettings] = useState(null);
+
+  // Load display settings on mount
+  useEffect(() => {
+    setDashboardCards(getDashboardCardSettings());
+    setChartSettings(getChartSettings());
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -247,6 +256,68 @@ export default function Dashboard() {
 
   const { chartData, reptileColors, reptileNames } = prepareWeightChartData();
 
+  // Helper function to check if a card is visible
+  const isCardVisible = (cardId) => {
+    const card = dashboardCards.find(c => c.id === cardId);
+    return card ? card.visible : true; // Default to visible if not found
+  };
+
+  // Define all card components
+  const cardComponents = {
+    need_feeding: (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        <div className="flex items-center gap-2">
+          <div className={`p-2 rounded-lg ${reptilesNeedingFeeding > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+            <AlertCircle size={18} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Need Feeding</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{reptilesNeedingFeeding}</p>
+          </div>
+        </div>
+      </div>
+    ),
+    fed_this_week: (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+            <Utensils size={18} className="text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Fed This Week</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{feedingsThisWeek}</p>
+          </div>
+        </div>
+      </div>
+    ),
+    misted_today: (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <Droplets size={18} className="text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Misted Today</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{mistedToday}</p>
+          </div>
+        </div>
+      </div>
+    ),
+    shed_this_month: (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+            <Activity size={18} className="text-green-600 dark:text-green-400" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Shed This Month</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{shedThisMonth}</p>
+          </div>
+        </div>
+      </div>
+    )
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
@@ -256,59 +327,22 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-2">
-            <div className={`p-2 rounded-lg ${reptilesNeedingFeeding > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-              <AlertCircle size={18} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Need Feeding</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{reptilesNeedingFeeding}</p>
-            </div>
-          </div>
+      {/* Summary Cards - Render visible cards in user's preferred order */}
+      {dashboardCards.filter(card => ['need_feeding', 'fed_this_week', 'misted_today', 'shed_this_month'].includes(card.id) && card.visible).length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {dashboardCards
+            .filter(card => ['need_feeding', 'fed_this_week', 'misted_today', 'shed_this_month'].includes(card.id) && card.visible)
+            .map(card => (
+              <div key={card.id}>
+                {cardComponents[card.id]}
+              </div>
+            ))
+          }
         </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-              <Utensils size={18} className="text-primary-600 dark:text-primary-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Fed This Week</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{feedingsThisWeek}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Droplets size={18} className="text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Misted Today</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{mistedToday}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <Activity size={18} className="text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Shed This Month</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{shedThisMonth}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Weight Tracking Chart */}
-      {chartData.length > 0 && (
+      {isCardVisible('weight_chart') && chartData.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <Scale size={18} className="text-gray-700 dark:text-gray-300" />
@@ -361,8 +395,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Reptile Summary */}
-        <div className="md:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+        {isCardVisible('reptile_cards') && (
+          <div className="md:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
             <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Your Reptiles</h2>
             <div className="space-y-1.5 max-h-96 overflow-y-auto">
               {reptiles.length > 0 ? (
@@ -458,9 +493,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Recent Feedings */}
-        <div className="md:col-span-2">
+        {isCardVisible('recent_activity') && (
+          <div className={`${isCardVisible('reptile_cards') ? 'md:col-span-2' : 'md:col-span-3'}`}>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
             <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Recent Activity</h2>
             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -557,6 +594,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
