@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Calendar, Droplet, Heart, Scale } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Calendar, Droplets, Heart, Scale, Utensils } from 'lucide-react';
 import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
@@ -100,6 +100,12 @@ function Statistics() {
   const isChartVisible = (chartId) => {
     const chart = statisticsCharts.find(c => c.id === chartId);
     return chart ? chart.visible : true; // Default to visible if not found
+  };
+
+  // Helper function to check if a summary card is visible
+  const isSummaryCardVisible = (cardId) => {
+    const card = statisticsCharts.find(c => c.id === cardId);
+    return card ? card.visible : true; // Default to visible if not found
   };
 
   // Helper function to get chart size class
@@ -419,75 +425,83 @@ function Statistics() {
           {isChartVisible('summary_cards') && (
             <div className={`${getChartSizeClass('summary_cards')} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`}>
             {/* Weight Summary */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Scale size={20} className="text-blue-500" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Weight</h3>
+            {isSummaryCardVisible('summary_weight') && (
+              <div className="card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Scale size={20} className="text-purple-600 dark:text-purple-400" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Weight</h3>
+                  </div>
+                  {getWeightTrendIcon()}
                 </div>
-                {getWeightTrendIcon()}
-              </div>
-              {stats.summary.current_weight ? (
-                <>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {stats.summary.current_weight}g
-                  </p>
-                  {stats.summary.weight_change && (
-                    <p className={`text-sm ${getWeightTrendColor()}`}>
-                      {stats.summary.weight_change > 0 ? '+' : ''}
-                      {stats.summary.weight_change.toFixed(1)}g ({stats.summary.weight_change_percent?.toFixed(1)}%)
+                {stats.summary.current_weight ? (
+                  <>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.summary.current_weight}g
                     </p>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {stats.summary.weight_logs_count} measurements
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No weight data</p>
-              )}
-            </div>
+                    {stats.summary.weight_change && (
+                      <p className={`text-sm ${getWeightTrendColor()}`}>
+                        {stats.summary.weight_change > 0 ? '+' : ''}
+                        {stats.summary.weight_change.toFixed(1)}g ({stats.summary.weight_change_percent?.toFixed(1)}%)
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {stats.summary.weight_logs_count} measurements
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No weight data</p>
+                )}
+              </div>
+            )}
 
             {/* Feeding Summary */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar size={20} className="text-green-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Feedings</h3>
+            {isSummaryCardVisible('summary_feeding') && (
+              <div className="card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Utensils size={20} className="text-primary-600 dark:text-primary-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Feedings</h3>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.summary.total_feedings}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {(stats.summary.total_feedings / (timeRange / 7)).toFixed(1)} per week avg
+                </p>
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.summary.total_feedings}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {(stats.summary.total_feedings / (timeRange / 7)).toFixed(1)} per week avg
-              </p>
-            </div>
+            )}
 
             {/* Misting Summary */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-2">
-                <Droplet size={20} className="text-blue-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Misting</h3>
+            {isSummaryCardVisible('summary_misting') && (
+              <div className="card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Droplets size={20} className="text-blue-600 dark:text-blue-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Misting</h3>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.summary.total_mistings}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {(stats.summary.total_mistings / (timeRange / 7)).toFixed(1)} per week avg
+                </p>
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.summary.total_mistings}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {(stats.summary.total_mistings / (timeRange / 7)).toFixed(1)} per week avg
-              </p>
-            </div>
+            )}
 
             {/* Health Events Summary */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-2">
-                <Heart size={20} className="text-red-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Health Events</h3>
+            {isSummaryCardVisible('summary_health') && (
+              <div className="card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart size={20} className="text-red-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Health Events</h3>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.summary.total_health_events}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Logs recorded
+                </p>
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.summary.total_health_events}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Logs recorded
-              </p>
-            </div>
+            )}
           </div>
           )}
 

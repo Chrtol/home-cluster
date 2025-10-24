@@ -600,21 +600,12 @@ function DisplayTab() {
             <Layout size={20} />
             Statistics Layout
           </h2>
-          <button onClick={handleResetStatistics} className="btn-secondary text-sm">
-            {selectedReptileId ? 'Reset to Default' : 'Reset Statistics'}
-          </button>
-        </div>
-
-        {/* Reptile Selector */}
-        <div className="mb-4 space-y-3">
-          <div className="flex gap-3 items-center">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-              Configure layout for:
-            </label>
+          <div className="flex items-center gap-3">
             <select
               value={selectedReptileId || ''}
               onChange={(e) => setSelectedReptileId(e.target.value ? parseInt(e.target.value) : null)}
-              className="input flex-1"
+              className="input text-sm py-1 px-2 min-w-[200px]"
+              title="Select reptile to customize"
             >
               <option value="">All Reptiles (Global)</option>
               {reptiles.map(reptile => (
@@ -624,38 +615,43 @@ function DisplayTab() {
                 </option>
               ))}
             </select>
+            {/* Divider */}
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <button onClick={handleResetStatistics} className="btn-secondary text-sm whitespace-nowrap">
+              {selectedReptileId ? 'Reset to Default' : 'Reset Statistics'}
+            </button>
           </div>
+        </div>
 
-          {/* Per-Reptile Settings Info */}
-          {selectedReptileId && (
+        {/* Per-Reptile Settings Info */}
+        {selectedReptileId && (
+          <div className="mb-4 flex gap-2">
+            {hasCustomStatisticsSettings(selectedReptileId) ? (
+              <div className="flex-1 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-900 dark:text-blue-100">
+                  <strong>Custom layout active</strong> for this reptile. Changes only affect this reptile's statistics page.
+                </p>
+              </div>
+            ) : (
+              <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Currently using <strong>global layout</strong>. Make changes to create a custom layout for this reptile.
+                </p>
+              </div>
+            )}
             <div className="flex gap-2">
               {hasCustomStatisticsSettings(selectedReptileId) ? (
-                <div className="flex-1 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <p className="text-sm text-blue-900 dark:text-blue-100">
-                    <strong>Custom layout active</strong> for this reptile. Changes only affect this reptile's statistics page.
-                  </p>
-                </div>
+                <button onClick={handleUseGlobal} className="btn-secondary text-sm whitespace-nowrap">
+                  Use Global
+                </button>
               ) : (
-                <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Currently using <strong>global layout</strong>. Make changes to create a custom layout for this reptile.
-                  </p>
-                </div>
+                <button onClick={handleCopyFromGlobal} className="btn-secondary text-sm whitespace-nowrap">
+                  Copy from Global
+                </button>
               )}
-              <div className="flex gap-2">
-                {hasCustomStatisticsSettings(selectedReptileId) ? (
-                  <button onClick={handleUseGlobal} className="btn-secondary text-sm whitespace-nowrap">
-                    Use Global
-                  </button>
-                ) : (
-                  <button onClick={handleCopyFromGlobal} className="btn-secondary text-sm whitespace-nowrap">
-                    Copy from Global
-                  </button>
-                )}
-              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           {selectedReptileId
@@ -663,102 +659,115 @@ function DisplayTab() {
             : 'Configure the default statistics layout for all reptiles (unless they have custom settings).'}
         </p>
         <div className="space-y-2">
-          {statisticsCharts.map((chart, index) => (
-            <div
-              key={chart.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index, 'statistics')}
-              onDragOver={(e) => handleDragOver(e, index, 'statistics')}
-              onDragEnd={handleDragEnd}
-              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-move ${
-                chart.visible
-                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
-              } ${draggedItem?.index === index && draggedItem?.type === 'statistics' ? 'opacity-50' : ''}`}
-            >
-              <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
-              <button
-                onClick={() => handleStatisticsChartToggle(chart.id)}
-                className="flex items-center gap-2"
+          {statisticsCharts.map((chart, index) => {
+            // Check if this is a summary card child and if its parent is visible
+            const isChild = chart.parentId !== undefined;
+            const parentChart = isChild ? statisticsCharts.find(c => c.id === chart.parentId) : null;
+            const showChild = !isChild || (parentChart && parentChart.visible);
+
+            if (!showChild) return null;
+
+            return (
+              <div
+                key={chart.id}
+                draggable={!isChild}
+                onDragStart={(e) => !isChild && handleDragStart(e, index, 'statistics')}
+                onDragOver={(e) => !isChild && handleDragOver(e, index, 'statistics')}
+                onDragEnd={!isChild ? handleDragEnd : undefined}
+                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                  !isChild ? 'cursor-move' : ''
+                } ${
+                  chart.visible
+                    ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+                } ${draggedItem?.index === index && draggedItem?.type === 'statistics' && !isChild ? 'opacity-50' : ''} ${
+                  isChild ? 'ml-8' : ''
+                }`}
               >
-                {chart.visible ? <Eye size={18} className="text-green-600 dark:text-green-400" /> : <EyeOff size={18} className="text-gray-400" />}
-              </button>
-              <div className="flex-1">
-                <span className={`font-medium ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                  {chart.label}
-                </span>
-              </div>
-              {chart.visible && (
-                <div className="flex gap-2 items-center">
-                  {/* Interpolation dropdown for weight charts */}
-                  {chart.interpolationMode !== undefined && (
-                    <>
-                      <select
-                        value={chart.interpolationMode || 'linear'}
-                        onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="input py-1 px-2 text-xs min-w-[100px]"
-                        title="Weight interpolation mode"
-                      >
-                        <option value="linear">Linear</option>
-                        <option value="step">Step</option>
-                        <option value="none">Dots Only</option>
-                      </select>
-                      {/* Divider */}
-                      <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-                    </>
-                  )}
-                  {/* Size buttons */}
-                  <div className="flex gap-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'xs'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
-                        chart.size === 'xs'
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Extra Small (1/4 width)"
-                    >
-                      XS
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'small'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
-                        chart.size === 'small'
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Small (1/2 width)"
-                    >
-                      S
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'medium'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
-                        chart.size === 'medium'
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Medium (3/4 width)"
-                    >
-                      M
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'large'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
-                        chart.size === 'large'
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Large (Full width)"
-                    >
-                      L
-                    </button>
-                  </div>
+                {!isChild && <GripVertical size={20} className="text-gray-400 flex-shrink-0" />}
+                <button
+                  onClick={() => handleStatisticsChartToggle(chart.id)}
+                  className="flex items-center gap-2"
+                >
+                  {chart.visible ? <Eye size={18} className="text-green-600 dark:text-green-400" /> : <EyeOff size={18} className="text-gray-400" />}
+                </button>
+                <div className="flex-1">
+                  <span className={`${isChild ? 'text-sm' : 'font-medium'} ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {chart.label}
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
+                {chart.visible && !isChild && (
+                  <div className="flex gap-2 items-center">
+                    {/* Interpolation dropdown for weight charts */}
+                    {chart.interpolationMode !== undefined && (
+                      <>
+                        <select
+                          value={chart.interpolationMode || 'linear'}
+                          onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="input py-1 px-2 text-xs min-w-[100px]"
+                          title="Weight interpolation mode"
+                        >
+                          <option value="linear">Linear</option>
+                          <option value="step">Step</option>
+                          <option value="none">Dots Only</option>
+                        </select>
+                        {/* Divider */}
+                        <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                      </>
+                    )}
+                    {/* Size buttons - only show for non-child items */}
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'xs'); }}
+                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                          chart.size === 'xs'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                        title="Extra Small (1/4 width)"
+                      >
+                        XS
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'small'); }}
+                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                          chart.size === 'small'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                        title="Small (1/2 width)"
+                      >
+                        S
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'medium'); }}
+                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                          chart.size === 'medium'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                        title="Medium (3/4 width)"
+                      >
+                        M
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'large'); }}
+                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                          chart.size === 'large'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                        title="Large (Full width)"
+                      >
+                        L
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
