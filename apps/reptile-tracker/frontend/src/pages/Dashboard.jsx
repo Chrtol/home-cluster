@@ -275,12 +275,19 @@ export default function Dashboard() {
     const regressionData = {};
     Object.values(byReptile).forEach(reptile => {
       if (reptile.data.length >= 2) {
-        // Normalize timestamps to avoid precision issues with large numbers
-        const firstTime = reptile.data[0].dateTime;
-        const normalizedData = reptile.data.map(d => ({
-          x: (d.dateTime - firstTime) / 86400000, // Days since first measurement
-          y: d.weight
-        }));
+        // Normalize to midnight of first measurement date to avoid time-of-day issues
+        const firstDate = new Date(reptile.data[0].date); // Use formatted date, not timestamp
+        firstDate.setHours(0, 0, 0, 0); // Set to midnight
+        const firstTime = firstDate.getTime();
+
+        const normalizedData = reptile.data.map(d => {
+          const measurementDate = new Date(d.date);
+          measurementDate.setHours(0, 0, 0, 0);
+          return {
+            x: (measurementDate.getTime() - firstTime) / 86400000, // Days since first date at midnight
+            y: d.weight
+          };
+        });
 
         // Calculate best-fit line: y = mx + b
         const n = normalizedData.length;
@@ -335,7 +342,10 @@ export default function Dashboard() {
         // Between measurements - use linear regression for true linear interpolation
         if (before && after && regressionData[reptile.name]) {
           const { slope, intercept, firstTime } = regressionData[reptile.name];
-          const daysSinceFirst = (dateTime - firstTime) / 86400000;
+          // Use midnight of current date to match regression calculation
+          const currentDate = new Date(date);
+          currentDate.setHours(0, 0, 0, 0);
+          const daysSinceFirst = (currentDate.getTime() - firstTime) / 86400000;
           const interpolated = slope * daysSinceFirst + intercept;
 
           // Debug first interpolated date we encounter

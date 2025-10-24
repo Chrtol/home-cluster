@@ -227,12 +227,19 @@ function Statistics() {
         weight: weightMap.get(d)
       }));
 
-      // Normalize timestamps to avoid precision issues
-      regressionFirstTime = measurements[0].time;
-      const normalizedMeasurements = measurements.map(m => ({
-        x: (m.time - regressionFirstTime) / 86400000, // Days since first
-        y: m.weight
-      }));
+      // Normalize to midnight of first measurement to avoid time-of-day issues
+      const firstDate = new Date(weightDates[0]);
+      firstDate.setHours(0, 0, 0, 0);
+      regressionFirstTime = firstDate.getTime();
+
+      const normalizedMeasurements = measurements.map(m => {
+        const measurementDate = new Date(m.time);
+        measurementDate.setHours(0, 0, 0, 0);
+        return {
+          x: (measurementDate.getTime() - regressionFirstTime) / 86400000, // Days since first date at midnight
+          y: m.weight
+        };
+      });
 
       const sumX = normalizedMeasurements.reduce((sum, m) => sum + m.x, 0);
       const sumY = normalizedMeasurements.reduce((sum, m) => sum + m.y, 0);
@@ -291,7 +298,10 @@ function Statistics() {
       // Linear interpolation (default)
       // Between measurements - use linear regression for true linear interpolation
       if (before && after && regressionSlope !== null && regressionFirstTime !== null) {
-        const daysSinceFirst = (dateTime - regressionFirstTime) / 86400000;
+        // Use midnight of current date to match regression calculation
+        const currentDate = new Date(date);
+        currentDate.setHours(0, 0, 0, 0);
+        const daysSinceFirst = (currentDate.getTime() - regressionFirstTime) / 86400000;
         const interpolated = regressionSlope * daysSinceFirst + regressionIntercept;
         return { weight: parseFloat(interpolated.toFixed(1)), isActual: false, isExtrapolated: false };
       }
