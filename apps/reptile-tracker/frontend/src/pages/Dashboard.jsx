@@ -482,7 +482,46 @@ export default function Dashboard() {
                   />
                   <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
                   <Tooltip contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }} labelStyle={{ color: '#f3f4f6' }} />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} iconSize={10} />
+                  <Legend
+                    wrapperStyle={{ fontSize: '12px' }}
+                    iconSize={10}
+                    content={(props) => {
+                      const { payload } = props;
+                      if (!payload || payload.length === 0) return null;
+
+                      // Filter to only show reptile names (interpolated lines) and the estimated line
+                      const reptileItems = payload.filter(item =>
+                        reptileNames.includes(item.value) || item.value === 'Estimated'
+                      );
+
+                      const reptiles = reptileItems.filter(item => reptileNames.includes(item.value));
+                      const estimated = reptileItems.find(item => item.value === 'Estimated');
+
+                      return (
+                        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '12px', fontSize: '12px' }}>
+                          {reptiles.map((entry, index) => (
+                            <div key={`legend-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <svg width="14" height="14" style={{ display: 'inline-block' }}>
+                                <line x1="0" y1="7" x2="14" y2="7" stroke={entry.color} strokeWidth="2" />
+                              </svg>
+                              <span style={{ color: '#6b7280' }}>{entry.value}</span>
+                            </div>
+                          ))}
+                          {estimated && (
+                            <>
+                              <div style={{ width: '1px', height: '14px', backgroundColor: '#d1d5db', margin: '0 4px' }} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <svg width="14" height="14" style={{ display: 'inline-block' }}>
+                                  <line x1="0" y1="7" x2="14" y2="7" stroke="#6b7280" strokeWidth="2" strokeDasharray="3 3" />
+                                </svg>
+                                <span style={{ color: '#6b7280' }}>Estimated</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
 
                   {interpolationMode === 'none' ? (
                     // None mode: just show dots for actual measurements
@@ -502,7 +541,7 @@ export default function Dashboard() {
                     <>
                       {/* Linear/Step mode: three lines per reptile */}
                       {reptileNames && reptileNames.flatMap(name => [
-                        // Interpolated/actual solid line (shows in legend with reptile name)
+                        // Interpolated/actual solid line
                         <Line
                           key={`${name}_interpolated`}
                           type={lineType}
@@ -513,7 +552,7 @@ export default function Dashboard() {
                           name={name}
                           connectNulls
                         />,
-                        // Extrapolated dashed line (hidden from legend)
+                        // Extrapolated dashed line (same color as reptile)
                         <Line
                           key={`${name}_extrapolated`}
                           type={lineType}
@@ -522,10 +561,10 @@ export default function Dashboard() {
                           strokeWidth={2}
                           strokeDasharray="5 5"
                           dot={false}
+                          name={`${name}_extrapolated`}
                           connectNulls
-                          hide
                         />,
-                        // Actual measurement dots (hidden from legend)
+                        // Actual measurement dots
                         <Line
                           key={`${name}_actual`}
                           type={lineType}
@@ -534,11 +573,11 @@ export default function Dashboard() {
                           strokeWidth={0}
                           dot={{ fill: reptileColors[name], r: 4, strokeWidth: 2, stroke: '#fff' }}
                           activeDot={{ r: 6 }}
+                          name={`${name}_actual`}
                           connectNulls={false}
-                          hide
                         />
                       ])}
-                      {/* Single "Estimated" legend entry with neutral gray dashed line */}
+                      {/* Dummy line for "Estimated" legend item */}
                       <Line
                         key="estimated"
                         type={lineType}
