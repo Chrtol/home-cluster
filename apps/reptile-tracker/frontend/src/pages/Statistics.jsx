@@ -563,7 +563,19 @@ function Statistics() {
                     }}
                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ paddingTop: '10px' }} />
+
+                  {/* Feeding Bars - Placed first to appear first in legend */}
+                  {visibleData.feeding && (
+                    <Bar
+                      yAxisId="feedings"
+                      dataKey="feedings"
+                      fill="#10B981"
+                      name={selectedFood === 'all' ? 'Feedings' : `${selectedFood} (quantity)`}
+                      radius={[8, 8, 0, 0]}
+                      opacity={0.7}
+                    />
+                  )}
 
                   {/* Weight Lines - Actual, Interpolated, and Extrapolated */}
                   {visibleData.weight && (
@@ -604,18 +616,6 @@ function Statistics() {
                         connectNulls={false}
                       />
                     </>
-                  )}
-
-                  {/* Feeding Bars */}
-                  {visibleData.feeding && (
-                    <Bar
-                      yAxisId="feedings"
-                      dataKey="feedings"
-                      fill="#10B981"
-                      name={selectedFood === 'all' ? 'Feedings' : `${selectedFood} (quantity)`}
-                      radius={[8, 8, 0, 0]}
-                      opacity={0.7}
-                    />
                   )}
                 </ComposedChart>
               </ResponsiveContainer>
@@ -673,23 +673,23 @@ function Statistics() {
           {isChartVisible('health_events') && visibleData.health && stats.health_data.length > 0 && (
             <div className={`${getChartSizeClass('health_events')} card`}>
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Health Events Timeline</h2>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto">
                 {stats.health_data.map((event, index) => {
                   // Determine icon and color based on event type
                   const getEventStyle = (type) => {
                     switch (type) {
                       case 'weight':
-                        return { icon: Scale, color: 'bg-blue-400', label: 'Weight Measurement' };
+                        return { icon: Scale, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label: 'Weight Measurement' };
                       case 'shed':
-                        return { icon: Activity, color: 'bg-green-400', label: 'Shed' };
+                        return { icon: Activity, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', label: 'Shed' };
                       case 'vet_visit':
-                        return { icon: Heart, color: 'bg-red-400', label: 'Vet Visit' };
+                        return { icon: Heart, color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', label: 'Vet Visit' };
                       case 'illness':
-                        return { icon: Heart, color: 'bg-orange-400', label: 'Illness' };
+                        return { icon: Heart, color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', label: 'Illness' };
                       case 'injury':
-                        return { icon: Heart, color: 'bg-red-500', label: 'Injury' };
+                        return { icon: Heart, color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', label: 'Injury' };
                       default:
-                        return { icon: Heart, color: 'bg-purple-400', label: type.replace('_', ' ') };
+                        return { icon: Heart, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', label: type.replace('_', ' ') };
                     }
                   };
 
@@ -697,31 +697,27 @@ function Statistics() {
                   const EventIcon = style.icon;
 
                   return (
-                    <div key={index} className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex-shrink-0">
-                        <div className={`w-8 h-8 rounded-full ${style.color} flex items-center justify-center`}>
-                          <EventIcon size={16} className="text-white" />
+                    <div key={index} className="p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className={`flex-shrink-0 p-2 rounded-lg ${style.bgColor}`}>
+                          <EventIcon size={18} className={`${style.color}`} />
                         </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900 dark:text-white capitalize">
-                                {style.label}
-                              </span>
-                              {event.title && (
-                                <span className="text-sm text-gray-500 dark:text-gray-400">- {event.title}</span>
-                              )}
-                            </div>
-                            {event.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-medium text-sm text-gray-900 dark:text-white capitalize">
+                              {style.label}
+                            </span>
+                            {event.title && (
+                              <span className="text-sm text-gray-600 dark:text-gray-400">{event.title}</span>
                             )}
                           </div>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
-                            {new Date(event.date).toLocaleDateString()}
-                          </span>
+                          {event.description && (
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 italic">"{event.description}"</p>
+                          )}
                         </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">
+                          {new Date(event.date).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   );

@@ -87,9 +87,9 @@ export function resetDashboardCardSettings() {
 const DEFAULT_STATISTICS_CHARTS = [
   { id: 'summary_cards', label: 'Summary Cards', visible: true, order: 0, size: 'large' },
   { id: 'weight_feeding', label: 'Weight & Feeding Correlation', visible: true, order: 1, size: 'large', interpolationMode: 'linear' },
-  { id: 'feeding_heatmap', label: 'Feeding Frequency Heatmap', visible: true, order: 2, size: 'small' },
+  { id: 'feeding_heatmap', label: 'Feeding Activity Calendar', visible: true, order: 2, size: 'xs' },
   { id: 'misting_frequency', label: 'Misting Frequency', visible: true, order: 3, size: 'medium' },
-  { id: 'health_events', label: 'Health Events Timeline', visible: true, order: 4, size: 'large' },
+  { id: 'health_events', label: 'Health Events Timeline', visible: true, order: 4, size: 'medium' },
 ];
 
 export function getStatisticsChartSettings() {
