@@ -9,16 +9,22 @@
 
 /**
  * Default dashboard card configuration
- * Each card has: id, label, visible (default visibility), order (default position)
+ * Each card has:
+ *   - id: unique identifier
+ *   - label: display name
+ *   - visible: default visibility
+ *   - order: default position
+ *   - size: 'small' (1/3), 'medium' (2/3), 'large' (full-width)
+ *   - type: 'summary' (small stat cards) or 'content' (larger content cards)
  */
 const DEFAULT_DASHBOARD_CARDS = [
-  { id: 'need_feeding', label: 'Need Feeding', visible: true, order: 0 },
-  { id: 'fed_this_week', label: 'Fed This Week', visible: true, order: 1 },
-  { id: 'misted_today', label: 'Misted Today', visible: true, order: 2 },
-  { id: 'shed_this_month', label: 'Shed This Month', visible: true, order: 3 },
-  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 4 },
-  { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 5 },
-  { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 6 },
+  { id: 'need_feeding', label: 'Need Feeding', visible: true, order: 0, size: 'small', type: 'summary' },
+  { id: 'fed_this_week', label: 'Fed This Week', visible: true, order: 1, size: 'small', type: 'summary' },
+  { id: 'misted_today', label: 'Misted Today', visible: true, order: 2, size: 'small', type: 'summary' },
+  { id: 'shed_this_month', label: 'Shed This Month', visible: true, order: 3, size: 'small', type: 'summary' },
+  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 4, size: 'large', type: 'content' },
+  { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 5, size: 'small', type: 'content' },
+  { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 6, size: 'medium', type: 'content' },
 ];
 
 export function getDashboardCardSettings() {
@@ -34,6 +40,13 @@ export function getDashboardCardSettings() {
     DEFAULT_DASHBOARD_CARDS.forEach(defaultCard => {
       if (!storedIds.has(defaultCard.id)) {
         merged.push(defaultCard);
+      } else {
+        // Ensure stored cards have size and type properties
+        const storedCard = merged.find(c => c.id === defaultCard.id);
+        if (storedCard && !storedCard.size) {
+          storedCard.size = defaultCard.size;
+          storedCard.type = defaultCard.type;
+        }
       }
     });
 
