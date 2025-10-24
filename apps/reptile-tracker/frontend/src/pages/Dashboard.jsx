@@ -341,7 +341,28 @@ export default function Dashboard() {
           </div>
         );
       case 'weight_chart':
-        return chartData.length > 0 ? (
+        if (chartData.length === 0) return null;
+
+        // Get interpolation mode for this card
+        const weightCard = dashboardCards.find(c => c.id === 'weight_chart');
+        const interpolationMode = weightCard?.interpolationMode || 'linear';
+
+        // Determine line type and stroke properties based on interpolation mode
+        const getLineProps = () => {
+          switch (interpolationMode) {
+            case 'step':
+              return { type: 'stepAfter', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 } };
+            case 'none':
+              return { type: 'monotone', strokeWidth: 0, dot: { r: 4 }, activeDot: { r: 6 } };
+            case 'linear':
+            default:
+              return { type: 'monotone', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 } };
+          }
+        };
+
+        const lineProps = getLineProps();
+
+        return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
             <div className="flex items-center gap-2 mb-3">
               <Scale size={18} className="text-gray-700 dark:text-gray-300" />
@@ -356,13 +377,19 @@ export default function Dashboard() {
                   <Tooltip contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }} labelStyle={{ color: '#f3f4f6' }} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} iconSize={10} />
                   {reptileNames && reptileNames.map(name => (
-                    <Line key={name} type="monotone" dataKey={name} stroke={reptileColors[name]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={true} />
+                    <Line
+                      key={name}
+                      {...lineProps}
+                      dataKey={name}
+                      stroke={reptileColors[name]}
+                      connectNulls={true}
+                    />
                   ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
-        ) : null;
+        );
       case 'reptile_cards':
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">

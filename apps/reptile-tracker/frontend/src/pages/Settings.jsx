@@ -481,6 +481,24 @@ function DisplayTab() {
               </div>
               {card.visible && (
                 <div className="flex gap-2 items-center">
+                  {/* Interpolation dropdown for weight charts */}
+                  {card.interpolationMode !== undefined && (
+                    <>
+                      <select
+                        value={card.interpolationMode || 'linear'}
+                        onChange={(e) => { e.stopPropagation(); handleDashboardCardInterpolationChange(card.id, e.target.value); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="input py-1 px-2 text-xs min-w-[100px]"
+                        title="Weight interpolation mode"
+                      >
+                        <option value="linear">Linear</option>
+                        <option value="step">Step</option>
+                        <option value="none">Dots Only</option>
+                      </select>
+                      {/* Divider */}
+                      <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                    </>
+                  )}
                   {/* Size buttons */}
                   <div className="flex gap-1">
                     <button
@@ -528,20 +546,6 @@ function DisplayTab() {
                       L
                     </button>
                   </div>
-                  {/* Interpolation dropdown for weight charts */}
-                  {card.interpolationMode !== undefined && (
-                    <select
-                      value={card.interpolationMode || 'linear'}
-                      onChange={(e) => { e.stopPropagation(); handleDashboardCardInterpolationChange(card.id, e.target.value); }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="input py-1 px-2 text-xs min-w-[100px]"
-                      title="Weight interpolation mode"
-                    >
-                      <option value="linear">Linear</option>
-                      <option value="step">Step</option>
-                      <option value="none">Dots Only</option>
-                    </select>
-                  )}
                 </div>
               )}
             </div>
@@ -591,6 +595,24 @@ function DisplayTab() {
               </div>
               {chart.visible && (
                 <div className="flex gap-2 items-center">
+                  {/* Interpolation dropdown for weight charts */}
+                  {chart.interpolationMode !== undefined && (
+                    <>
+                      <select
+                        value={chart.interpolationMode || 'linear'}
+                        onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="input py-1 px-2 text-xs min-w-[100px]"
+                        title="Weight interpolation mode"
+                      >
+                        <option value="linear">Linear</option>
+                        <option value="step">Step</option>
+                        <option value="none">Dots Only</option>
+                      </select>
+                      {/* Divider */}
+                      <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                    </>
+                  )}
                   {/* Size buttons */}
                   <div className="flex gap-1">
                     <button
@@ -638,20 +660,6 @@ function DisplayTab() {
                       L
                     </button>
                   </div>
-                  {/* Interpolation dropdown for weight charts */}
-                  {chart.interpolationMode !== undefined && (
-                    <select
-                      value={chart.interpolationMode || 'linear'}
-                      onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="input py-1 px-2 text-xs min-w-[100px]"
-                      title="Weight interpolation mode"
-                    >
-                      <option value="linear">Linear</option>
-                      <option value="step">Step</option>
-                      <option value="none">Dots Only</option>
-                    </select>
-                  )}
                 </div>
               )}
             </div>
