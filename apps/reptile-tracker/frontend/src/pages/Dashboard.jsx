@@ -298,30 +298,17 @@ export default function Dashboard() {
           }
         });
 
-        // Step mode - use last known weight
-        if (interpolationMode === 'step') {
-          if (before && after) {
-            // Between measurements - solid line with last known value
-            dataPoint[`${reptile.name}_interpolated`] = before.weight;
-          } else if (before && !after) {
-            // After last measurement - dashed line
-            dataPoint[`${reptile.name}_extrapolated`] = before.weight;
-            dataPoint[`${reptile.name}_isExtrapolated`] = true;
-          } else if (!before && after) {
-            // Before first measurement - dashed line
-            dataPoint[`${reptile.name}_extrapolated`] = after.weight;
-            dataPoint[`${reptile.name}_isExtrapolated`] = true;
-          }
-          return;
-        }
-
-        // Linear mode
+        // Between measurements - fill in daily values with linear interpolation
         if (before && after) {
-          // Between measurements - solid line with linear interpolation
+          // Calculate linear interpolation between measurements
           const ratio = (dateTime - before.dateTime) / (after.dateTime - before.dateTime);
           const interpolated = before.weight + (after.weight - before.weight) * ratio;
           dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
-        } else if (before && !after) {
+          return;
+        }
+
+        // Extrapolation only happens outside the measurement range
+        if (before && !after) {
           // After last measurement - extrapolate into future with trend (dashed line)
           if (reptile.data.length >= 2) {
             const lastIdx = reptile.data.length - 1;
@@ -570,7 +557,7 @@ export default function Dashboard() {
                           strokeWidth={2}
                           dot={false}
                           name={name}
-                          connectNulls
+                          isAnimationActive={false}
                         />,
                         // Extrapolated dashed line (smooth curves for estimates)
                         <Line
