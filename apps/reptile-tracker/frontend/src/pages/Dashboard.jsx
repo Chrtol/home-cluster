@@ -259,17 +259,19 @@ export default function Dashboard() {
     }
 
     // For 'linear' and 'step' modes, create dates spanning from first to last measurement
+    // Same logic as Statistics page - includes extrapolation for single measurements
     const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
     const minDate = new Date(Math.min(...allMeasurementDates));
     const maxDate = new Date(Math.max(...allMeasurementDates));
 
-    // Generate daily dates between min and max
+    // Generate daily dates between min and max (like Statistics page)
     const dates = [];
     for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
       dates.push(format(new Date(d), 'MMM d, yyyy'));
     }
 
     // Helper function to interpolate weight for a reptile on a given date
+    // Same logic as Statistics page interpolateWeight function
     const interpolateWeight = (reptile, date) => {
       const dateStr = format(new Date(date), 'MMM d, yyyy');
 
@@ -296,14 +298,20 @@ export default function Dashboard() {
         }
       });
 
-      // Step mode: use last known weight
+      // Step mode: use last known weight (same as Statistics)
       if (interpolationMode === 'step') {
-        if (before) return before.weight_grams;
-        if (after) return after.weight_grams;
+        if (before) {
+          return before.weight_grams;
+        }
+        // If no before value, use after value (for dates before first measurement)
+        if (after) {
+          return after.weight_grams;
+        }
         return null;
       }
 
-      // Linear mode: interpolate between measurements
+      // Linear mode (default) - same as Statistics page
+      // Interpolate if we have both before and after (between measurements)
       if (before && after) {
         const beforeTime = new Date(before.measured_at).getTime();
         const afterTime = new Date(after.measured_at).getTime();
@@ -312,9 +320,15 @@ export default function Dashboard() {
         return parseFloat(interpolated.toFixed(1));
       }
 
-      // Extend with flat line if only before or after exists
-      if (before) return before.weight_grams;
-      if (after) return after.weight_grams;
+      // Extrapolate forward if we only have before (extend last known weight as flat line)
+      if (before && !after) {
+        return before.weight_grams;
+      }
+
+      // Extrapolate backward with flat line from first weight (for dates before first measurement)
+      if (!before && after) {
+        return after.weight_grams;
+      }
 
       return null;
     };

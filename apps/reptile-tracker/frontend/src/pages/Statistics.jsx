@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Calendar, Droplets, Heart, Scale, Utensils } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Calendar, Droplets, Heart, Scale, Utensils, Activity } from 'lucide-react';
 import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
