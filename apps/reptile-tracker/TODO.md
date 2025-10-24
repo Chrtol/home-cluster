@@ -103,6 +103,14 @@
   - Click-to-expand modal for day details ✅
   - Legend inline with view switcher ✅
 
+- [x] **Calendar filtering by activity category** - ✅ COMPLETED (2025-01-22)
+  - Filter buttons for Feeding, Misting, Health, and Supplement activities
+  - Placed between title and action buttons for vertical space savings
+  - Category state persisted in localStorage
+  - All categories visible by default
+  - Visual indicators showing active/inactive filters
+  - Compact layout matching reptile filters design
+
 - [x] **Schedule time windows** - ✅ COMPLETED (2025-01-16)
   - Backend: Added `earliest_time`, `latest_time`, `time_window_enabled`, `reminder_minutes_before` to Schedule model
   - Backend: Created `schedule_completions` table to track individual occurrences
@@ -335,6 +343,37 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### January 2025 - Statistics Page Enhancements & Bug Fixes (2025-01-22)
+- [x] **Dashboard weight graph improvements** - ✅ COMPLETED
+  - Added connectNulls prop to connect weight lines across date gaps
+  - Fixed color consistency between "Your Reptiles" and "Recent Activity"
+  - Weight lines now continuous even with missing data points
+
+- [x] **Statistics page weight visualization overhaul** - ✅ COMPLETED
+  - Fixed layout issues with dropdown menu taking full width
+  - Implemented proper weight interpolation between measurements (linear)
+  - Added forward extrapolation (flat line from last known weight to today)
+  - Added backward extrapolation (flat line from first known weight to earlier feedings)
+  - Visual distinction between known and estimated weight:
+    - Solid blue line for actual and interpolated weight (between measurements)
+    - Dashed light blue line for extrapolated weight (before first/after last measurement)
+    - Large blue dots highlighting actual measurement points
+  - User-friendly legend: "Known weight", "Estimated weight", "Weighed"
+  - Chart extends to today's date regardless of last measurement
+  - Smooth line connections at all transition points (solid-to-dashed boundaries)
+  - Shows feedings even before first weight measurement
+
+- [x] **Feeding log redirect fix** - ✅ COMPLETED
+  - Feeding creation now redirects to read-only view (/feed/{id})
+  - Previously redirected to home page
+  - Matches behavior of weight logging
+
+- [x] **Calendar category filtering** - ✅ COMPLETED
+  - Added filter buttons for Feeding, Misting, Health, Supplement
+  - Compact layout for vertical space savings
+  - Filter state persisted in localStorage
+  - All categories shown by default
 
 ### January 2025 - Supplement Rotation System & Calendar Improvements
 - [x] **Schedule-based supplement rotation triggers** - ✅ COMPLETED (2025-01-16)
