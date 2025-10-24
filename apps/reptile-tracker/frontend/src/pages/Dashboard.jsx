@@ -268,12 +268,14 @@ export default function Dashboard() {
     if (!card || !card.size) return 'col-span-1';
 
     switch (card.size) {
+      case 'xs':
+        return 'col-span-1'; // 1/4 width on desktop (in 4-column grid)
       case 'small':
-        return 'col-span-1'; // 1/3 width on desktop
+        return 'col-span-1 sm:col-span-2'; // 1/3 width (spans 2 cols in 4-col grid, but takes only 1 in smaller grids)
       case 'medium':
-        return 'col-span-2'; // 2/3 width on desktop
+        return 'col-span-1 sm:col-span-3'; // 2/3 width (spans 3 cols in 4-col grid)
       case 'large':
-        return 'col-span-3'; // Full width
+        return 'col-span-1 sm:col-span-4'; // Full width (spans all 4 cols)
       default:
         return 'col-span-1';
     }
@@ -494,7 +496,7 @@ export default function Dashboard() {
       </div>
 
       {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
         {dashboardCards
           .filter(card => card.visible)
           .map(card => {

@@ -206,7 +206,6 @@ function PreferencesTab() {
 function DisplayTab() {
   const [dashboardCards, setDashboardCards] = useState([]);
   const [statisticsCharts, setStatisticsCharts] = useState([]);
-  const [weightInterpolationMode, setWeightInterpolationMode] = useState('linear');
   const [chartSettings, setChartSettings] = useState(null);
   const [success, setSuccess] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
@@ -215,7 +214,6 @@ function DisplayTab() {
     // Load all display settings from localStorage
     setDashboardCards(getDashboardCardSettings());
     setStatisticsCharts(getStatisticsChartSettings());
-    setWeightInterpolationMode(getWeightInterpolationMode());
     setChartSettings(getChartSettings());
   }, []);
 
@@ -237,9 +235,36 @@ function DisplayTab() {
     showSuccess();
   };
 
+  const handleDashboardCardInterpolationChange = (cardId, newMode) => {
+    const updated = dashboardCards.map(card =>
+      card.id === cardId ? { ...card, interpolationMode: newMode } : card
+    );
+    setDashboardCards(updated);
+    saveDashboardCardSettings(updated);
+    showSuccess();
+  };
+
   const handleStatisticsChartToggle = (chartId) => {
     const updated = statisticsCharts.map(chart =>
       chart.id === chartId ? { ...chart, visible: !chart.visible } : chart
+    );
+    setStatisticsCharts(updated);
+    saveStatisticsChartSettings(updated);
+    showSuccess();
+  };
+
+  const handleStatisticsChartSizeChange = (chartId, newSize) => {
+    const updated = statisticsCharts.map(chart =>
+      chart.id === chartId ? { ...chart, size: newSize } : chart
+    );
+    setStatisticsCharts(updated);
+    saveStatisticsChartSettings(updated);
+    showSuccess();
+  };
+
+  const handleStatisticsChartInterpolationChange = (chartId, newMode) => {
+    const updated = statisticsCharts.map(chart =>
+      chart.id === chartId ? { ...chart, interpolationMode: newMode } : chart
     );
     setStatisticsCharts(updated);
     saveStatisticsChartSettings(updated);
@@ -272,12 +297,6 @@ function DisplayTab() {
     showSuccess();
   };
 
-  const handleWeightInterpolationChange = (mode) => {
-    setWeightInterpolationMode(mode);
-    saveWeightInterpolationMode(mode);
-    showSuccess();
-  };
-
   const handleChartSettingChange = (key, value) => {
     const updated = { ...chartSettings, [key]: value };
     setChartSettings(updated);
@@ -304,7 +323,6 @@ function DisplayTab() {
     resetAllDisplaySettings();
     setDashboardCards(getDashboardCardSettings());
     setStatisticsCharts(getStatisticsChartSettings());
-    setWeightInterpolationMode(getWeightInterpolationMode());
     setChartSettings(getChartSettings());
     showSuccess('All display settings reset to defaults');
   };
@@ -334,7 +352,6 @@ function DisplayTab() {
           // Reload settings
           setDashboardCards(getDashboardCardSettings());
           setStatisticsCharts(getStatisticsChartSettings());
-          setWeightInterpolationMode(getWeightInterpolationMode());
           setChartSettings(getChartSettings());
           showSuccess('Settings imported successfully');
         } else {
@@ -463,40 +480,68 @@ function DisplayTab() {
                 </span>
               </div>
               {card.visible && (
-                <div className="flex gap-1">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'small'); }}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      card.size === 'small'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                    title="Small (1/3 width)"
-                  >
-                    S
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'medium'); }}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      card.size === 'medium'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                    title="Medium (2/3 width)"
-                  >
-                    M
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'large'); }}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      card.size === 'large'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                    title="Large (Full width)"
-                  >
-                    L
-                  </button>
+                <div className="flex gap-2 items-center">
+                  {/* Size buttons */}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'xs'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        card.size === 'xs'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Extra Small (1/4 width)"
+                    >
+                      XS
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'small'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        card.size === 'small'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Small (1/2 width)"
+                    >
+                      S
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'medium'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        card.size === 'medium'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Medium (3/4 width)"
+                    >
+                      M
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'large'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        card.size === 'large'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Large (Full width)"
+                    >
+                      L
+                    </button>
+                  </div>
+                  {/* Interpolation dropdown for weight charts */}
+                  {card.interpolationMode !== undefined && (
+                    <select
+                      value={card.interpolationMode || 'linear'}
+                      onChange={(e) => { e.stopPropagation(); handleDashboardCardInterpolationChange(card.id, e.target.value); }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="input py-1 px-2 text-xs min-w-[100px]"
+                      title="Weight interpolation mode"
+                    >
+                      <option value="linear">Linear</option>
+                      <option value="step">Step</option>
+                      <option value="none">Dots Only</option>
+                    </select>
+                  )}
                 </div>
               )}
             </div>
@@ -516,7 +561,7 @@ function DisplayTab() {
           </button>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Show/hide charts and drag to reorder them on the Statistics page.
+          Show/hide charts, drag to reorder, and adjust chart sizes on the Statistics page.
         </p>
         <div className="space-y-2">
           {statisticsCharts.map((chart, index) => (
@@ -535,79 +580,82 @@ function DisplayTab() {
               <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
               <button
                 onClick={() => handleStatisticsChartToggle(chart.id)}
-                className="flex-1 text-left flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 {chart.visible ? <Eye size={18} className="text-green-600 dark:text-green-400" /> : <EyeOff size={18} className="text-gray-400" />}
+              </button>
+              <div className="flex-1">
                 <span className={`font-medium ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                   {chart.label}
                 </span>
-              </button>
+              </div>
+              {chart.visible && (
+                <div className="flex gap-2 items-center">
+                  {/* Size buttons */}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'xs'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        chart.size === 'xs'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Extra Small (1/4 width)"
+                    >
+                      XS
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'small'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        chart.size === 'small'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Small (1/2 width)"
+                    >
+                      S
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'medium'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        chart.size === 'medium'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Medium (3/4 width)"
+                    >
+                      M
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'large'); }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        chart.size === 'large'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title="Large (Full width)"
+                    >
+                      L
+                    </button>
+                  </div>
+                  {/* Interpolation dropdown for weight charts */}
+                  {chart.interpolationMode !== undefined && (
+                    <select
+                      value={chart.interpolationMode || 'linear'}
+                      onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="input py-1 px-2 text-xs min-w-[100px]"
+                      title="Weight interpolation mode"
+                    >
+                      <option value="linear">Linear</option>
+                      <option value="step">Step</option>
+                      <option value="none">Dots Only</option>
+                    </select>
+                  )}
+                </div>
+              )}
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Weight Interpolation Settings */}
-      <div className="card">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Weight Interpolation</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Choose how weight data is displayed between measurements.
-        </p>
-        <div className="space-y-3">
-          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
-            weightInterpolationMode === 'linear'
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : 'border-gray-200 dark:border-gray-700'
-          }`}>
-            <input
-              type="radio"
-              name="interpolation"
-              value="linear"
-              checked={weightInterpolationMode === 'linear'}
-              onChange={(e) => handleWeightInterpolationChange(e.target.value)}
-              className="w-4 h-4"
-            />
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">Linear Interpolation</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Draw straight lines between measurements (default)</div>
-            </div>
-          </label>
-          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
-            weightInterpolationMode === 'step'
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : 'border-gray-200 dark:border-gray-700'
-          }`}>
-            <input
-              type="radio"
-              name="interpolation"
-              value="step"
-              checked={weightInterpolationMode === 'step'}
-              onChange={(e) => handleWeightInterpolationChange(e.target.value)}
-              className="w-4 h-4"
-            />
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">Step Interpolation</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Horizontal lines from last known weight</div>
-            </div>
-          </label>
-          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
-            weightInterpolationMode === 'none'
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : 'border-gray-200 dark:border-gray-700'
-          }`}>
-            <input
-              type="radio"
-              name="interpolation"
-              value="none"
-              checked={weightInterpolationMode === 'none'}
-              onChange={(e) => handleWeightInterpolationChange(e.target.value)}
-              className="w-4 h-4"
-            />
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">No Interpolation</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Show only actual measurement dots</div>
-            </div>
-          </label>
         </div>
       </div>
 

@@ -14,15 +14,16 @@
  *   - label: display name
  *   - visible: default visibility
  *   - order: default position
- *   - size: 'small' (1/3), 'medium' (2/3), 'large' (full-width)
+ *   - size: 'xs' (1/4), 'small' (1/3), 'medium' (2/3), 'large' (full-width)
  *   - type: 'summary' (small stat cards) or 'content' (larger content cards)
+ *   - interpolationMode: 'linear' | 'step' | 'none' (only for weight-related charts)
  */
 const DEFAULT_DASHBOARD_CARDS = [
-  { id: 'need_feeding', label: 'Need Feeding', visible: true, order: 0, size: 'small', type: 'summary' },
-  { id: 'fed_this_week', label: 'Fed This Week', visible: true, order: 1, size: 'small', type: 'summary' },
-  { id: 'misted_today', label: 'Misted Today', visible: true, order: 2, size: 'small', type: 'summary' },
-  { id: 'shed_this_month', label: 'Shed This Month', visible: true, order: 3, size: 'small', type: 'summary' },
-  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 4, size: 'large', type: 'content' },
+  { id: 'need_feeding', label: 'Need Feeding', visible: true, order: 0, size: 'xs', type: 'summary' },
+  { id: 'fed_this_week', label: 'Fed This Week', visible: true, order: 1, size: 'xs', type: 'summary' },
+  { id: 'misted_today', label: 'Misted Today', visible: true, order: 2, size: 'xs', type: 'summary' },
+  { id: 'shed_this_month', label: 'Shed This Month', visible: true, order: 3, size: 'xs', type: 'summary' },
+  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 4, size: 'large', type: 'content', interpolationMode: 'linear' },
   { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 5, size: 'small', type: 'content' },
   { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 6, size: 'medium', type: 'content' },
 ];
@@ -41,11 +42,14 @@ export function getDashboardCardSettings() {
       if (!storedIds.has(defaultCard.id)) {
         merged.push(defaultCard);
       } else {
-        // Ensure stored cards have size and type properties
+        // Ensure stored cards have size, type, and interpolationMode properties
         const storedCard = merged.find(c => c.id === defaultCard.id);
-        if (storedCard && !storedCard.size) {
-          storedCard.size = defaultCard.size;
-          storedCard.type = defaultCard.type;
+        if (storedCard) {
+          if (!storedCard.size) storedCard.size = defaultCard.size;
+          if (!storedCard.type) storedCard.type = defaultCard.type;
+          if (!storedCard.interpolationMode && defaultCard.interpolationMode) {
+            storedCard.interpolationMode = defaultCard.interpolationMode;
+          }
         }
       }
     });
@@ -72,11 +76,18 @@ export function resetDashboardCardSettings() {
 
 /**
  * Default statistics chart configuration
+ * Each chart has:
+ *   - id: unique identifier
+ *   - label: display name
+ *   - visible: default visibility
+ *   - order: default position
+ *   - size: 'xs' (1/4), 'small' (1/2), 'medium' (3/4), 'large' (full-width)
+ *   - interpolationMode: 'linear' | 'step' | 'none' (only for weight-related charts)
  */
 const DEFAULT_STATISTICS_CHARTS = [
-  { id: 'summary_cards', label: 'Summary Cards', visible: true, order: 0 },
-  { id: 'weight_feeding', label: 'Weight & Feeding Correlation', visible: true, order: 1 },
-  { id: 'feeding_heatmap', label: 'Feeding Frequency Heatmap', visible: true, order: 2 },
+  { id: 'summary_cards', label: 'Summary Cards', visible: true, order: 0, size: 'large' },
+  { id: 'weight_feeding', label: 'Weight & Feeding Correlation', visible: true, order: 1, size: 'large', interpolationMode: 'linear' },
+  { id: 'feeding_heatmap', label: 'Feeding Frequency Heatmap', visible: true, order: 2, size: 'small' },
 ];
 
 export function getStatisticsChartSettings() {
@@ -91,6 +102,15 @@ export function getStatisticsChartSettings() {
     DEFAULT_STATISTICS_CHARTS.forEach(defaultChart => {
       if (!storedIds.has(defaultChart.id)) {
         merged.push(defaultChart);
+      } else {
+        // Ensure stored charts have size and interpolationMode properties
+        const storedChart = merged.find(c => c.id === defaultChart.id);
+        if (storedChart) {
+          if (!storedChart.size) storedChart.size = defaultChart.size;
+          if (!storedChart.interpolationMode && defaultChart.interpolationMode) {
+            storedChart.interpolationMode = defaultChart.interpolationMode;
+          }
+        }
       }
     });
 
