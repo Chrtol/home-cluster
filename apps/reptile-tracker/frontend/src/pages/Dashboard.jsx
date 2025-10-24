@@ -260,20 +260,39 @@ export default function Dashboard() {
       return { chartData, reptileColors, reptileNames: Object.values(byReptile).map(r => r.name) };
     }
 
-    // Get all unique dates from measurements (only actual measurement dates)
-    const allDates = [...new Set(weightData.map(log => format(new Date(log.measured_at), 'MMM d, yyyy')))].sort(
-      (a, b) => new Date(a) - new Date(b)
-    );
+    // Get all unique dates from measurements and generate daily dates for extrapolation
+    const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
+    const minDate = new Date(Math.min(...allMeasurementDates));
+    const maxDate = new Date(Math.max(...allMeasurementDates));
 
+    const allDates = [];
+    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+      allDates.push(format(new Date(d), 'MMM d, yyyy'));
+    }
 
-    // Build chart data with only actual measurements
+    // Build chart data with actual measurements and extrapolation
     const chartData = allDates.map(date => {
       const dataPoint = { date };
+      const dateTime = new Date(date).getTime();
 
       Object.values(byReptile).forEach(reptile => {
+        // Check for actual measurement on this date
         const measurement = reptile.data.find(d => d.date === date);
         if (measurement) {
           dataPoint[`${reptile.name}`] = measurement.weight;
+          dataPoint[`${reptile.name}_actual`] = measurement.weight;
+          return;
+        }
+
+        // Find surrounding measurements for extrapolation
+        const firstMeasurement = reptile.data[0];
+        const lastMeasurement = reptile.data[reptile.data.length - 1];
+
+        // Before first measurement or after last measurement - extrapolate with flat line
+        if (dateTime < firstMeasurement.dateTime) {
+          dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
+        } else if (dateTime > lastMeasurement.dateTime) {
+          dataPoint[`${reptile.name}_extrapolated`] = lastMeasurement.weight;
         }
       });
 
@@ -448,19 +467,41 @@ export default function Dashboard() {
                     }}
                   />
 
-                  {reptileNames && reptileNames.map(name => (
+                  {reptileNames && reptileNames.flatMap(name => [
+                    // Solid line for actual measurements
                     <Line
                       key={name}
                       type="linear"
                       dataKey={name}
                       stroke={reptileColors[name]}
                       strokeWidth={2}
-                      dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
-                      activeDot={{ r: 6 }}
+                      dot={false}
                       connectNulls={true}
                       name={name}
+                    />,
+                    // Dashed line for extrapolated estimates
+                    <Line
+                      key={`${name}_extrapolated`}
+                      type="linear"
+                      dataKey={`${name}_extrapolated`}
+                      stroke={reptileColors[name]}
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      connectNulls={true}
+                    />,
+                    // Dots for actual measurements
+                    <Line
+                      key={`${name}_actual`}
+                      type="linear"
+                      dataKey={`${name}_actual`}
+                      stroke="transparent"
+                      strokeWidth={0}
+                      dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
+                      activeDot={{ r: 6 }}
+                      connectNulls={false}
                     />
-                  ))}
+                  ])}
                 </LineChart>
               </ResponsiveContainer>
             </div>
