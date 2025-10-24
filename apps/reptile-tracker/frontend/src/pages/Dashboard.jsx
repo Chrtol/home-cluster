@@ -205,9 +205,13 @@ export default function Dashboard() {
     return differenceInDays(new Date(), new Date(date)) <= 30;
   }).length;
 
-  // Prepare weight chart data
+  // Prepare weight chart data with interpolation support
   const prepareWeightChartData = () => {
     if (!weightData || weightData.length === 0) return { chartData: [], reptileColors: {} };
+
+    // Get interpolation mode from settings
+    const weightCard = dashboardCards.find(c => c.id === 'weight_chart');
+    const interpolationMode = weightCard?.interpolationMode || 'linear';
 
     // Group by reptile
     const byReptile = {};
@@ -226,19 +230,102 @@ export default function Dashboard() {
       reptile.data.sort((a, b) => new Date(a.measured_at) - new Date(b.measured_at));
     });
 
-    // Create chart data with all dates
-    const allDates = [...new Set(weightData.map(log => format(new Date(log.measured_at), 'MMM d, yyyy')))].sort(
-      (a, b) => new Date(a) - new Date(b)
-    );
+    // For 'none' mode, only show actual measurement dates
+    if (interpolationMode === 'none') {
+      const allDates = [...new Set(weightData.map(log => format(new Date(log.measured_at), 'MMM d, yyyy')))].sort(
+        (a, b) => new Date(a) - new Date(b)
+      );
 
-    const chartData = allDates.map(date => {
+      const chartData = allDates.map(date => {
+        const dataPoint = { date };
+        Object.entries(byReptile).forEach(([reptileId, reptile]) => {
+          const logForDate = reptile.data.find(
+            log => format(new Date(log.measured_at), 'MMM d, yyyy') === date
+          );
+          if (logForDate) {
+            dataPoint[reptile.name] = logForDate.weight_grams;
+          }
+        });
+        return dataPoint;
+      });
+
+      const colors = ['#16a34a', '#2563eb', '#dc2626', '#9333ea', '#ea580c', '#0891b2'];
+      const reptileColors = {};
+      Object.values(byReptile).forEach((reptile, index) => {
+        reptileColors[reptile.name] = colors[index % colors.length];
+      });
+
+      return { chartData, reptileColors, reptileNames: Object.values(byReptile).map(r => r.name) };
+    }
+
+    // For 'linear' and 'step' modes, create dates spanning from first to last measurement
+    const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
+    const minDate = new Date(Math.min(...allMeasurementDates));
+    const maxDate = new Date(Math.max(...allMeasurementDates));
+
+    // Generate daily dates between min and max
+    const dates = [];
+    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+      dates.push(format(new Date(d), 'MMM d, yyyy'));
+    }
+
+    // Helper function to interpolate weight for a reptile on a given date
+    const interpolateWeight = (reptile, date) => {
+      const dateStr = format(new Date(date), 'MMM d, yyyy');
+
+      // Check if we have an actual measurement on this date
+      const actualLog = reptile.data.find(log => format(new Date(log.measured_at), 'MMM d, yyyy') === dateStr);
+      if (actualLog) {
+        return actualLog.weight_grams;
+      }
+
+      // Find surrounding measurements
+      const dateTime = new Date(date).getTime();
+      let before = null, after = null;
+
+      reptile.data.forEach(log => {
+        const logTime = new Date(log.measured_at).getTime();
+        if (logTime < dateTime) {
+          if (!before || logTime > new Date(before.measured_at).getTime()) {
+            before = log;
+          }
+        } else if (logTime > dateTime) {
+          if (!after || logTime < new Date(after.measured_at).getTime()) {
+            after = log;
+          }
+        }
+      });
+
+      // Step mode: use last known weight
+      if (interpolationMode === 'step') {
+        if (before) return before.weight_grams;
+        if (after) return after.weight_grams;
+        return null;
+      }
+
+      // Linear mode: interpolate between measurements
+      if (before && after) {
+        const beforeTime = new Date(before.measured_at).getTime();
+        const afterTime = new Date(after.measured_at).getTime();
+        const ratio = (dateTime - beforeTime) / (afterTime - beforeTime);
+        const interpolated = before.weight_grams + (after.weight_grams - before.weight_grams) * ratio;
+        return parseFloat(interpolated.toFixed(1));
+      }
+
+      // Extend with flat line if only before or after exists
+      if (before) return before.weight_grams;
+      if (after) return after.weight_grams;
+
+      return null;
+    };
+
+    // Build chart data with interpolation
+    const chartData = dates.map(date => {
       const dataPoint = { date };
       Object.entries(byReptile).forEach(([reptileId, reptile]) => {
-        const logForDate = reptile.data.find(
-          log => format(new Date(log.measured_at), 'MMM d, yyyy') === date
-        );
-        if (logForDate) {
-          dataPoint[reptile.name] = logForDate.weight_grams;
+        const weight = interpolateWeight(reptile, date);
+        if (weight !== null) {
+          dataPoint[reptile.name] = weight;
         }
       });
       return dataPoint;
@@ -343,7 +430,7 @@ export default function Dashboard() {
       case 'weight_chart':
         if (chartData.length === 0) return null;
 
-        // Get interpolation mode for this card
+        // Get interpolation mode for this card (already used in prepareWeightChartData)
         const weightCard = dashboardCards.find(c => c.id === 'weight_chart');
         const interpolationMode = weightCard?.interpolationMode || 'linear';
 
@@ -351,12 +438,12 @@ export default function Dashboard() {
         const getLineProps = () => {
           switch (interpolationMode) {
             case 'step':
-              return { type: 'stepAfter', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 } };
+              return { type: 'stepAfter', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 }, connectNulls: true };
             case 'none':
-              return { type: 'monotone', strokeWidth: 0, dot: { r: 4 }, activeDot: { r: 6 } };
+              return { type: 'monotone', strokeWidth: 0, dot: { r: 4 }, activeDot: { r: 6 }, connectNulls: false };
             case 'linear':
             default:
-              return { type: 'monotone', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 } };
+              return { type: 'monotone', strokeWidth: 2, dot: { r: 3 }, activeDot: { r: 5 }, connectNulls: true };
           }
         };
 
@@ -382,7 +469,6 @@ export default function Dashboard() {
                       {...lineProps}
                       dataKey={name}
                       stroke={reptileColors[name]}
-                      connectNulls={true}
                     />
                   ))}
                 </LineChart>
