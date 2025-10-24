@@ -294,7 +294,7 @@ async def get_comprehensive_stats(
         for row in misting_by_day
     ]
 
-    # Health events - all health records in period
+    # Health events - all health records in period (excluding weight which is shown separately)
     result = await db.execute(
         select(HealthRecord)
         .where(
@@ -304,20 +304,35 @@ async def get_comprehensive_stats(
         .order_by(HealthRecord.date)
     )
     health_records = result.scalars().all()
-    health_data = [
-        {
+
+    # Combine health records and weight logs into unified health_data
+    health_data = []
+
+    # Add health records (shed, vet_visit, illness, etc.)
+    for record in health_records:
+        health_data.append({
             "date": record.date.isoformat(),
             "type": record.record_type,
             "title": record.title,
             "description": record.description
-        }
-        for record in health_records
-    ]
+        })
+
+    # Add weight measurements as health events
+    for log in weight_logs:
+        health_data.append({
+            "date": log.measured_at.isoformat(),
+            "type": "weight",
+            "title": f"{float(log.weight_grams)}g",
+            "description": log.notes if log.notes else None
+        })
+
+    # Sort all health events by date
+    health_data.sort(key=lambda x: x["date"], reverse=True)
 
     # Summary statistics
     total_feedings = len(feeding_by_day)
     total_mistings = len(misting_by_day)
-    total_health_events = len(health_records)
+    total_health_events = len(health_data)  # Includes both health records and weight measurements
 
     # Weight change
     weight_change = None
