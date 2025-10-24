@@ -22,11 +22,23 @@ function Statistics() {
   const [weightInterpolationMode, setWeightInterpolationMode] = useState('linear');
   const [chartSettings, setChartSettings] = useState(null);
 
-  // Load display settings when selectedReptile changes
+  // Load display settings when selectedReptile changes or component mounts
   useEffect(() => {
     setStatisticsCharts(getStatisticsChartSettings(selectedReptile));
     setWeightInterpolationMode(getWeightInterpolationMode());
     setChartSettings(getChartSettings());
+  }, [selectedReptile]);
+
+  // Reload settings when page becomes visible (to pick up changes from Settings page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setStatisticsCharts(getStatisticsChartSettings(selectedReptile));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [selectedReptile]);
 
   useEffect(() => {
