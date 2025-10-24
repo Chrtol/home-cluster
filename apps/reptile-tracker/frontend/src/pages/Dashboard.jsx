@@ -280,8 +280,6 @@ export default function Dashboard() {
       return dataPoint;
     });
 
-    console.log('[Dashboard] Chart data:', chartData);
-    console.log('[Dashboard] Spyro data by date:', chartData.map(d => ({ date: d.date, weight: d.Spyro })));
 
 
     // Generate colors
@@ -459,7 +457,7 @@ export default function Dashboard() {
                       strokeWidth={2}
                       dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
                       activeDot={{ r: 6 }}
-                      connectNulls={false}
+                      connectNulls={true}
                       name={name}
                     />
                   ))}
