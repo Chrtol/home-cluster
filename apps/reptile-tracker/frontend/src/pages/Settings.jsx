@@ -228,6 +228,15 @@ function DisplayTab() {
     showSuccess();
   };
 
+  const handleDashboardCardSizeChange = (cardId, newSize) => {
+    const updated = dashboardCards.map(card =>
+      card.id === cardId ? { ...card, size: newSize } : card
+    );
+    setDashboardCards(updated);
+    saveDashboardCardSettings(updated);
+    showSuccess();
+  };
+
   const handleStatisticsChartToggle = (chartId) => {
     const updated = statisticsCharts.map(chart =>
       chart.id === chartId ? { ...chart, visible: !chart.visible } : chart
@@ -425,7 +434,7 @@ function DisplayTab() {
           </button>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Show/hide cards and drag to reorder them on the Dashboard page.
+          Show/hide cards, drag to reorder, and adjust card sizes on the Dashboard page.
         </p>
         <div className="space-y-2">
           {dashboardCards.map((card, index) => (
@@ -444,13 +453,52 @@ function DisplayTab() {
               <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
               <button
                 onClick={() => handleDashboardCardToggle(card.id)}
-                className="flex-1 text-left flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 {card.visible ? <Eye size={18} className="text-blue-600 dark:text-blue-400" /> : <EyeOff size={18} className="text-gray-400" />}
+              </button>
+              <div className="flex-1">
                 <span className={`font-medium ${card.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                   {card.label}
                 </span>
-              </button>
+              </div>
+              {card.visible && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'small'); }}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      card.size === 'small'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                    title="Small (1/3 width)"
+                  >
+                    S
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'medium'); }}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      card.size === 'medium'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                    title="Medium (2/3 width)"
+                  >
+                    M
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'large'); }}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      card.size === 'large'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                    title="Large (Full width)"
+                  >
+                    L
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

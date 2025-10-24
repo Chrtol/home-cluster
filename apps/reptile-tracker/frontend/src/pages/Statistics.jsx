@@ -360,6 +360,7 @@ function Statistics() {
               onChange={(e) => setTimeRange(parseInt(e.target.value))}
               className="input min-w-[140px]"
             >
+              <option value={7}>7 days</option>
               <option value={30}>30 days</option>
               <option value={90}>90 days</option>
               <option value={180}>6 months</option>

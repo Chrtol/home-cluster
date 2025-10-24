@@ -262,216 +262,140 @@ export default function Dashboard() {
     return card ? card.visible : true; // Default to visible if not found
   };
 
-  // Define all card components
-  const cardComponents = {
-    need_feeding: (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-        <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-lg ${reptilesNeedingFeeding > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-            <AlertCircle size={18} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Need Feeding</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{reptilesNeedingFeeding}</p>
-          </div>
-        </div>
-      </div>
-    ),
-    fed_this_week: (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-            <Utensils size={18} className="text-primary-600 dark:text-primary-400" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Fed This Week</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{feedingsThisWeek}</p>
-          </div>
-        </div>
-      </div>
-    ),
-    misted_today: (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Droplets size={18} className="text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Misted Today</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{mistedToday}</p>
-          </div>
-        </div>
-      </div>
-    ),
-    shed_this_month: (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <Activity size={18} className="text-green-600 dark:text-green-400" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Shed This Month</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{shedThisMonth}</p>
-          </div>
-        </div>
-      </div>
-    )
+  // Helper function to get card size class
+  const getCardSizeClass = (cardId) => {
+    const card = dashboardCards.find(c => c.id === cardId);
+    if (!card || !card.size) return 'col-span-1';
+
+    switch (card.size) {
+      case 'small':
+        return 'col-span-1'; // 1/3 width on desktop
+      case 'medium':
+        return 'col-span-2'; // 2/3 width on desktop
+      case 'large':
+        return 'col-span-3'; // Full width
+      default:
+        return 'col-span-1';
+    }
   };
 
-  return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <Link to="/feed" className="btn-primary flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center">
-          <Utensils size={18} className="sm:w-5 sm:h-5" /> Log Feeding
-        </Link>
-      </div>
-
-      {/* Summary Cards - Render visible cards in user's preferred order */}
-      {dashboardCards.filter(card => ['need_feeding', 'fed_this_week', 'misted_today', 'shed_this_month'].includes(card.id) && card.visible).length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {dashboardCards
-            .filter(card => ['need_feeding', 'fed_this_week', 'misted_today', 'shed_this_month'].includes(card.id) && card.visible)
-            .map(card => (
-              <div key={card.id}>
-                {cardComponents[card.id]}
+  // Define all card rendering functions
+  const renderCard = (cardId) => {
+    switch (cardId) {
+      case 'need_feeding':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center gap-2">
+              <div className={`p-2 rounded-lg ${reptilesNeedingFeeding > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+                <AlertCircle size={18} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
               </div>
-            ))
-          }
-        </div>
-      )}
-
-      {/* Weight Tracking Chart */}
-      {isCardVisible('weight_chart') && chartData.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Scale size={18} className="text-gray-700 dark:text-gray-300" />
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Weight Tracking</h2>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Need Feeding</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{reptilesNeedingFeeding}</p>
+              </div>
+            </div>
           </div>
-          <div style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer>
-              <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                <XAxis
-                  dataKey="date"
-                  stroke="#9ca3af"
-                  tick={{ fontSize: 11 }}
-                />
-                <YAxis
-                  stroke="#9ca3af"
-                  tick={{ fontSize: 11 }}
-                  label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgb(31, 41, 55)',
-                    border: '1px solid rgb(75, 85, 99)',
-                    borderRadius: '0.5rem',
-                    fontSize: '12px'
-                  }}
-                  labelStyle={{ color: '#f3f4f6' }}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: '12px' }}
-                  iconSize={10}
-                />
-                {reptileNames && reptileNames.map(name => (
-                  <Line
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    stroke={reptileColors[name]}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                    connectNulls={true}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
+        );
+      case 'fed_this_week':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+                <Utensils size={18} className="text-primary-600 dark:text-primary-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Fed This Week</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{feedingsThisWeek}</p>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Reptile Summary */}
-        {isCardVisible('reptile_cards') && (
-          <div className="md:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+        );
+      case 'misted_today':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Droplets size={18} className="text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Misted Today</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{mistedToday}</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'shed_this_month':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <Activity size={18} className="text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Shed This Month</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{shedThisMonth}</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'weight_chart':
+        return chartData.length > 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center gap-2 mb-3">
+              <Scale size={18} className="text-gray-700 dark:text-gray-300" />
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Weight Tracking</h2>
+            </div>
+            <div style={{ width: '100%', height: 200 }}>
+              <ResponsiveContainer>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                  <XAxis dataKey="date" stroke="#9ca3af" tick={{ fontSize: 11 }} />
+                  <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }} labelStyle={{ color: '#f3f4f6' }} />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} iconSize={10} />
+                  {reptileNames && reptileNames.map(name => (
+                    <Line key={name} type="monotone" dataKey={name} stroke={reptileColors[name]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={true} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : null;
+      case 'reptile_cards':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
             <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Your Reptiles</h2>
             <div className="space-y-1.5 max-h-96 overflow-y-auto">
               {reptiles.length > 0 ? (
                 reptiles.map(reptile => {
                   const feedingStatus = getFeedingStatus(reptile);
-                  const daysSinceFeeding = reptile.last_feeding
-                    ? differenceInDays(new Date(), new Date(reptile.last_feeding))
-                    : null;
-                  const daysSinceMisting = mistingData[reptile.id]
-                    ? differenceInDays(new Date(), new Date(mistingData[reptile.id]))
-                    : null;
-                  const daysSinceShed = healthData[reptile.id]
-                    ? differenceInDays(new Date(), new Date(healthData[reptile.id]))
-                    : null;
+                  const daysSinceFeeding = reptile.last_feeding ? differenceInDays(new Date(), new Date(reptile.last_feeding)) : null;
+                  const daysSinceMisting = mistingData[reptile.id] ? differenceInDays(new Date(), new Date(mistingData[reptile.id])) : null;
+                  const daysSinceShed = healthData[reptile.id] ? differenceInDays(new Date(), new Date(healthData[reptile.id])) : null;
 
                   return (
-                    <Link
-                      to={`/reptiles/${reptile.id}`}
-                      key={reptile.id}
-                      className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700"
-                    >
+                    <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{reptile.name}</span>
                             <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{reptile.species}</span>
                           </div>
-
                           <div className="flex flex-wrap items-center gap-2 text-xs">
-                            {/* Last fed info */}
                             <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
                               <Utensils size={11} className="flex-shrink-0" />
-                              {reptile.last_feeding ? (
-                                <span title="Days since last feeding">
-                                  {daysSinceFeeding === 0 ? 'Today' : `${daysSinceFeeding}d`}
-                                </span>
-                              ) : (
-                                <span>-</span>
-                              )}
+                              {reptile.last_feeding ? <span title="Days since last feeding">{daysSinceFeeding === 0 ? 'Today' : `${daysSinceFeeding}d`}</span> : <span>-</span>}
                             </div>
-
-                            {/* Last misted info */}
                             <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                               <Droplets size={11} className="flex-shrink-0" />
-                              {mistingData[reptile.id] ? (
-                                <span title="Days since last misting">
-                                  {daysSinceMisting === 0 ? 'Today' : `${daysSinceMisting}d`}
-                                </span>
-                              ) : (
-                                <span>-</span>
-                              )}
+                              {mistingData[reptile.id] ? <span title="Days since last misting">{daysSinceMisting === 0 ? 'Today' : `${daysSinceMisting}d`}</span> : <span>-</span>}
                             </div>
-
-                            {/* Last shed info */}
                             <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                               <Activity size={11} className="flex-shrink-0" />
-                              {healthData[reptile.id] ? (
-                                <span title="Days since last shed">
-                                  {daysSinceShed === 0 ? 'Today' : `${daysSinceShed}d`}
-                                </span>
-                              ) : (
-                                <span>-</span>
-                              )}
+                              {healthData[reptile.id] ? <span title="Days since last shed">{daysSinceShed === 0 ? 'Today' : `${daysSinceShed}d`}</span> : <span>-</span>}
                             </div>
-
-                            {/* Feeding status - only show if schedule is enabled */}
                             {feedingStatus && (
-                              <div className={`flex items-center gap-1 ${
-                                feedingStatus.color === 'red' ? 'text-red-600 dark:text-red-400 font-medium' :
-                                feedingStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' :
-                                feedingStatus.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
-                                feedingStatus.color === 'green' ? 'text-green-600 dark:text-green-400' :
-                                'text-gray-500 dark:text-gray-400'
-                              }`}>
+                              <div className={`flex items-center gap-1 ${feedingStatus.color === 'red' ? 'text-red-600 dark:text-red-400 font-medium' : feedingStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' : feedingStatus.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' : feedingStatus.color === 'green' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                 <feedingStatus.icon size={11} className="flex-shrink-0" />
                                 <span className="truncate">{feedingStatus.text}</span>
                               </div>
@@ -485,47 +409,29 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-4">
                   <p className="text-gray-500 dark:text-gray-400 mb-3">No reptiles added yet.</p>
-                  <Link to="/reptiles/new" className="text-primary-600 dark:text-primary-400 hover:underline text-sm">
-                    Add your first reptile
-                  </Link>
+                  <Link to="/reptiles/new" className="text-primary-600 dark:text-primary-400 hover:underline text-sm">Add your first reptile</Link>
                 </div>
               )}
             </div>
           </div>
-        </div>
-        )}
-
-        {/* Recent Feedings */}
-        {isCardVisible('recent_activity') && (
-          <div className={`${isCardVisible('reptile_cards') ? 'md:col-span-2' : 'md:col-span-3'}`}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        );
+      case 'recent_activity':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
             <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Recent Activity</h2>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {recentActivity.length > 0 ? (
                 recentActivity.map(activity => {
                   const Icon = activity.icon;
-                  const colorClasses = {
-                    primary: 'text-primary-600 dark:text-primary-400',
-                    blue: 'text-blue-600 dark:text-blue-400',
-                    purple: 'text-purple-600 dark:text-purple-400',
-                    green: 'text-green-600 dark:text-green-400'
-                  };
-
-                  let summary = '';
-                  let prominentValue = null; // For highlighting numbers
-                  let details = '';
-                  let detailLink = '';
-
+                  const colorClasses = { primary: 'text-primary-600 dark:text-primary-400', blue: 'text-blue-600 dark:text-blue-400', purple: 'text-purple-600 dark:text-purple-400', green: 'text-green-600 dark:text-green-400' };
+                  let summary = '', prominentValue = null, details = '', detailLink = '';
                   switch (activity.type) {
                     case 'feeding':
                       const foodItems = activity.data.foods || [];
                       const totalItems = foodItems.reduce((sum, f) => sum + (f.quantity || 1), 0);
                       prominentValue = totalItems > 0 ? `${totalItems}` : null;
-
                       const foodNames = foodItems.map(f => f.food?.name || f.name).filter(Boolean).join(', ');
-                      const supplements = activity.data.supplements && activity.data.supplements.length > 0
-                        ? ` + ${activity.data.supplements.map(s => s.name).join(', ')}`
-                        : '';
+                      const supplements = activity.data.supplements && activity.data.supplements.length > 0 ? ` + ${activity.data.supplements.map(s => s.name).join(', ')}` : '';
                       summary = (foodNames || 'Food items') + supplements;
                       details = activity.data.notes || '';
                       detailLink = `/feed/${activity.data.id}`;
@@ -547,39 +453,18 @@ export default function Dashboard() {
                       detailLink = `/health-log/health/${activity.data.id}`;
                       break;
                   }
-
                   return (
-                    <Link
-                      key={activity.id}
-                      to={detailLink}
-                      className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
-                    >
+                    <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
                       <div className="flex items-start gap-3">
                         <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
-                        <div className="flex-shrink-0 w-12 text-center">
-                          {prominentValue && (
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">
-                              {prominentValue}
-                            </span>
-                          )}
-                        </div>
+                        <div className="flex-shrink-0 w-12 text-center">{prominentValue && <span className="text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>}</div>
                         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
-                          <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">
-                            {activity.reptile ? activity.reptile.name : '(deleted reptile)'}
-                          </p>
+                          <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
                           <div className="min-w-0">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                              {summary}
-                            </p>
-                            {details && (
-                              <p className="text-xs text-gray-500 dark:text-gray-500 truncate italic mt-0.5">
-                                "{details}"
-                              </p>
-                            )}
+                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{summary}</p>
+                            {details && <p className="text-xs text-gray-500 dark:text-gray-500 truncate italic mt-0.5">"{details}"</p>}
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap sm:text-right">
-                            {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
-                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap sm:text-right">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
                         </div>
                       </div>
                     </Link>
@@ -593,8 +478,36 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-        </div>
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <Link to="/feed" className="btn-primary flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center">
+          <Utensils size={18} className="sm:w-5 sm:h-5" /> Log Feeding
+        </Link>
+      </div>
+
+      {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {dashboardCards
+          .filter(card => card.visible)
+          .map(card => {
+            const content = renderCard(card.id);
+            if (!content) return null;
+
+            return (
+              <div key={card.id} className={`${getCardSizeClass(card.id)}`}>
+                {content}
+              </div>
+            );
+          })
+        }
       </div>
     </div>
   );
