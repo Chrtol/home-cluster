@@ -1,35 +1,24 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const [darkMode, setDarkMode] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [trackMenuOpen, setTrackMenuOpen] = useState(false)
   const [schedulesMenuOpen, setSchedulesMenuOpen] = useState(false)
 
-  // Load dark mode preference (defaults to true/dark)
+  // Load dark mode preference on mount (defaults to true/dark)
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode')
     const isDark = savedMode === null ? true : savedMode === 'true'
-    setDarkMode(isDark)
     if (isDark) {
-      document.documentElement.classList.add('dark')
-    }
-  }, [])
-
-  const toggleDarkMode = () => {
-    const newMode = !darkMode
-    setDarkMode(newMode)
-    localStorage.setItem('darkMode', newMode.toString())
-    if (newMode) {
       document.documentElement.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
     }
-  }
+  }, [])
 
   const handleLogout = () => {
     onLogout()
@@ -229,13 +218,6 @@ export default function Layout({ user, onLogout }) {
                 </div>
               </div>
               <button
-                onClick={toggleDarkMode}
-                className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                <span className="font-medium">{darkMode ? 'Light' : 'Dark'} Mode</span>
-              </button>
-              <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
@@ -254,20 +236,12 @@ export default function Layout({ user, onLogout }) {
             <span className="text-2xl">🦎</span>
             <span className="font-bold text-gray-900 dark:text-white">Reptile Tracker</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
 

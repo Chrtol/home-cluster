@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import {
   getDashboardCardSettings,
@@ -40,7 +40,7 @@ export default function Settings() {
             }`}
           >
             <SettingsIcon size={18} />
-            Date & Time
+            Preferences
           </button>
           <button
             onClick={() => setActiveTab('display')}
@@ -81,6 +81,7 @@ function PreferencesTab() {
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
   const [timezone, setTimezone] = useState('');
   const [firstDayOfWeek, setFirstDayOfWeek] = useState('sunday');
+  const [darkMode, setDarkMode] = useState(true);
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
@@ -89,13 +90,28 @@ function PreferencesTab() {
     setDateFormat(getUserDateFormat());
     setTimezone(getUserTimezone());
     setFirstDayOfWeek(localStorage.getItem('firstDayOfWeek') || 'sunday');
+    const savedMode = localStorage.getItem('darkMode');
+    const isDark = savedMode === null ? true : savedMode === 'true';
+    setDarkMode(isDark);
   }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('darkMode', newMode.toString());
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   const handleSave = () => {
     localStorage.setItem('timeFormat', timeFormat);
     localStorage.setItem('dateFormat', dateFormat);
     localStorage.setItem('timezone', timezone);
     localStorage.setItem('firstDayOfWeek', firstDayOfWeek);
+    localStorage.setItem('darkMode', darkMode.toString());
 
     setSuccess('Settings saved successfully!');
     setTimeout(() => setSuccess(''), 3000);
@@ -115,9 +131,36 @@ function PreferencesTab() {
 
       <div className="card space-y-6">
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Date & Time Preferences</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">General Preferences</h2>
 
           <div className="space-y-4">
+            {/* Theme Toggle */}
+            <div>
+              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Theme</label>
+              <button
+                onClick={toggleDarkMode}
+                className="flex items-center gap-3 px-4 py-3 w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                {darkMode ? (
+                  <>
+                    <Moon size={20} className="text-blue-500" />
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-gray-900 dark:text-white">Dark Mode</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Currently using dark theme</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Sun size={20} className="text-yellow-500" />
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-gray-900 dark:text-white">Light Mode</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Currently using light theme</div>
+                    </div>
+                  </>
+                )}
+              </button>
+            </div>
+
             {/* Time Format */}
             <div>
               <label className="block font-medium mb-2 text-gray-900 dark:text-white">Time Format</label>
