@@ -34,10 +34,10 @@ spec:
             key: api-token
     extraArgs:
       - --cloudflare-dns-records-per-page=1000
-      - --cloudflare-proxied=false  # KEY: Always grey cloud for VPS!
+      - --cloudflare-proxied=false
       - --events
       - --ignore-ingress-tls-spec
-      - --ingress-class=vps  # Only watch "vps" ingress class
+      - --ingress-class=vps
       - --txt-prefix=k8s-vps.
       - --txt-owner-id=vps
       - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
