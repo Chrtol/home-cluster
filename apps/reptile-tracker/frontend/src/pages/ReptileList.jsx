@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Eye, EyeOff } from 'lucide-react';
+import { Plus, Eye, EyeOff, Home } from 'lucide-react';
 
 export default function ReptileList() {
   const [reptiles, setReptiles] = useState([]);
@@ -103,6 +103,7 @@ export default function ReptileList() {
               }`}
             >
               {hiddenHouseholds.has(household.id) ? <EyeOff size={16} /> : <Eye size={16} />}
+              {household.id !== 'no_household' && <Home size={16} />}
               {household.name} ({household.reptiles.length})
             </button>
           ))}
@@ -125,6 +126,7 @@ export default function ReptileList() {
                 {/* Household Header */}
                 <div className="mb-4">
                   <h2 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    {household.id !== 'no_household' && <Home size={24} className="text-blue-500" />}
                     {household.name}
                     <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                       ({household.reptiles.length} {household.reptiles.length === 1 ? 'reptile' : 'reptiles'})
