@@ -36,9 +36,10 @@ spec:
               OPNSENSE_EXPORTER_INSTANCE_LABEL: "gw"
               OPNSENSE_EXPORTER_OPS_INSECURE: true
               OPNSENSE_EXPORTER_OPS_PROTOCOL: https
+              TZ: ${SECRET_TIMEZONE}
             envFrom: &envFrom
               - secretRef:
-                  name: opnsense-exporter
+                  name: opnsense-exporter-secret
             probes:
               liveness:
                 enabled: true
@@ -61,7 +62,7 @@ spec:
           schedule: "@daily"
           failedJobsHistory: 1
           successfulJobsHistory: 0
-          timeZone: "America/Los_Angeles"
+          timeZone: ${SECRET_TIMEZONE}
         containers:
           app:
             image:
@@ -80,7 +81,7 @@ spec:
                 $(OPNSENSE_EXPORTER_OPS_API_KEY):$(OPNSENSE_EXPORTER_OPS_API_SECRET)
               - "--data"
               - "{}"
-              - https://opnsense.home.arpa/api/core/firmware/status
+              - https://opnsense.${SECRET_DOMAIN}/api/core/firmware/status
             envFrom: *envFrom
             resources: *resources
             securityContext: *securityContext
