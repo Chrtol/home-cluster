@@ -19,6 +19,8 @@ import HealthLog from './pages/HealthLog';
 import MistingLog from './pages/MistingLog';
 import FoodManagement from './pages/FoodManagement';
 import ScheduleForm from './pages/ScheduleForm';
+import ScheduleTemplates from './pages/ScheduleTemplates';
+import ScheduleTemplateForm from './pages/ScheduleTemplateForm';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -164,6 +166,9 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/schedule-create" element={<ScheduleForm />} />
             <Route path="/schedule-edit/:id" element={<ScheduleForm />} />
+            <Route path="/schedule-templates" element={<ScheduleTemplates />} />
+            <Route path="/schedule-templates/new" element={<ScheduleTemplateForm />} />
+            <Route path="/schedule-templates/edit/:id" element={<ScheduleTemplateForm />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/health-log" element={<HealthLog />} />
             <Route path="/health-log/:reptileId" element={<HealthLog />} />

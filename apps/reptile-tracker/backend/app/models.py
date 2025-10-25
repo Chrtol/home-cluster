@@ -480,3 +480,82 @@ class Invitation(Base):
 
     household = relationship("Household", backref="invitations")
     creator = relationship("User")
+
+
+class ScheduleTemplate(Base):
+    """Reusable schedule templates that can be applied to reptiles"""
+    __tablename__ = "schedule_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Species and age targeting
+    species = Column(String, nullable=True, index=True)  # null = applies to all species
+    age_category = Column(String, nullable=True, index=True)  # "hatchling", "juvenile", "adult", "senior", null = all ages
+
+    # Template metadata
+    is_default = Column(Boolean, default=False, nullable=False)  # Protected default templates
+    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    source_template_id = Column(Integer, ForeignKey("schedule_templates.id", ondelete="SET NULL"), nullable=True)  # Track duplications
+
+    # Schedule configuration (similar to Schedule model)
+    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
+    schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly"
+    food_category = Column(String, nullable=True)
+    time_slot = Column(String, nullable=True)
+    health_category = Column(String, nullable=True)
+
+    # Rule parameters
+    frequency_days = Column(Integer, nullable=True)
+    days_of_week = Column(String, nullable=True)
+    day_of_month = Column(Integer, nullable=True)
+
+    # Time window settings
+    earliest_time = Column(Time, nullable=True)
+    latest_time = Column(Time, nullable=True)
+    time_window_enabled = Column(Boolean, default=False, nullable=False)
+    reminder_minutes_before = Column(Integer, nullable=True)
+
+    # Supplement reference (optional)
+    supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="SET NULL"), nullable=True)
+
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    created_by = relationship("User")
+    source_template = relationship("ScheduleTemplate", remote_side=[id], backref="duplicates")
+    supplement = relationship("Supplement")
+
+
+class CareGuideline(Base):
+    """Species-specific care recommendations and guidelines"""
+    __tablename__ = "care_guidelines"
+
+    id = Column(Integer, primary_key=True, index=True)
+    species = Column(String, nullable=False, index=True)
+    age_category = Column(String, nullable=True, index=True)  # "hatchling", "juvenile", "adult", "senior", null = general
+
+    # Guideline content
+    guideline_type = Column(String, nullable=False, index=True)  # "feeding", "supplements", "environment", "handling", "general"
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+
+    # Structured recommendations (JSON)
+    recommendations = Column(JSON, nullable=True)  # Structured data for automated suggestions
+
+    # Source attribution
+    source_name = Column(String, nullable=True)  # e.g., "ReptiFiles", "Morphmarket Care Guides"
+    source_url = Column(String, nullable=True)
+
+    # User contributions
+    is_default = Column(Boolean, default=False, nullable=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    created_by = relationship("User")

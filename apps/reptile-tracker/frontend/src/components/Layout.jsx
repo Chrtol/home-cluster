@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
@@ -40,6 +40,7 @@ export default function Layout({ user, onLogout }) {
     { path: '/reptiles', icon: List, label: 'Reptiles' },
     { path: '/foods', icon: Utensils, label: 'Foods' },
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
+    { path: '/schedule-templates', icon: BookTemplate, label: 'Templates' },
     { path: '/stats', icon: BarChart3, label: 'Statistics' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ]
