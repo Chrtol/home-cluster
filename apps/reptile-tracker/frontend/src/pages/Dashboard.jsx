@@ -263,10 +263,22 @@ export default function Dashboard() {
     // Get all unique dates from measurements and generate daily dates for extrapolation
     const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
     const minDate = new Date(Math.min(...allMeasurementDates));
-    const maxDate = new Date(Math.max(...allMeasurementDates));
+
+    // Extend to today's date for extrapolation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const maxMeasurementDate = new Date(Math.max(...allMeasurementDates));
+    const maxDate = new Date(Math.max(maxMeasurementDate.getTime(), today.getTime()));
+
+    // Add 1 day padding before first measurement and after last date
+    const startDate = new Date(minDate);
+    startDate.setDate(startDate.getDate() - 1);
+
+    const endDate = new Date(maxDate);
+    endDate.setDate(endDate.getDate() + 1);
 
     const allDates = [];
-    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       allDates.push(format(new Date(d), 'MMM d, yyyy'));
     }
 
@@ -288,19 +300,9 @@ export default function Dashboard() {
         const firstMeasurement = reptile.data[0];
         const lastMeasurement = reptile.data[reptile.data.length - 1];
 
-        let before = null, after = null;
-        reptile.data.forEach(m => {
-          if (m.dateTime < dateTime && (!before || m.dateTime > before.dateTime)) {
-            before = m;
-          }
-          if (m.dateTime > dateTime && (!after || m.dateTime < after.dateTime)) {
-            after = m;
-          }
-        });
-
         // Between measurements - don't fill in values, let chart draw straight lines
         // (The chart will connect the actual measurement dots with straight lines)
-        if (before && after) {
+        if (dateTime > firstMeasurement.dateTime && dateTime < lastMeasurement.dateTime) {
           return;
         }
 
@@ -453,7 +455,7 @@ export default function Dashboard() {
             </div>
             <div style={{ width: '100%', height: 200 }}>
               <ResponsiveContainer>
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                   <XAxis
                     dataKey="date"
@@ -461,6 +463,7 @@ export default function Dashboard() {
                     tick={{ fontSize: 11 }}
                     interval="preserveStartEnd"
                     minTickGap={50}
+                    padding={{ left: 10, right: 10 }}
                   />
                   <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
                   <Tooltip contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }} labelStyle={{ color: '#f3f4f6' }} />
