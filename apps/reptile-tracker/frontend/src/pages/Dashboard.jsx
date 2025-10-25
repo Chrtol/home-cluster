@@ -288,20 +288,21 @@ export default function Dashboard() {
       const dateTime = new Date(date).getTime();
 
       Object.values(byReptile).forEach(reptile => {
-        // Check for actual measurement on this date
-        const measurement = reptile.data.find(d => d.date === date);
-        if (measurement) {
-          dataPoint[`${reptile.name}`] = measurement.weight;
-          dataPoint[`${reptile.name}_actual`] = measurement.weight;
-          return;
-        }
-
         // Find surrounding measurements
         const firstMeasurement = reptile.data[0];
         const lastMeasurement = reptile.data[reptile.data.length - 1];
 
+        // Check for actual measurement on this date
+        const measurement = reptile.data.find(d => d.date === date);
+        if (measurement) {
+          // Only set actual dot and interpolated line (for connecting measurements)
+          dataPoint[`${reptile.name}_actual`] = measurement.weight;
+          dataPoint[`${reptile.name}_interpolated`] = measurement.weight;
+          return;
+        }
+
         // Between measurements - don't fill in values, let chart draw straight lines
-        // (The chart will connect the actual measurement dots with straight lines)
+        // (The chart will connect the measurement points via interpolated line)
         if (dateTime > firstMeasurement.dateTime && dateTime < lastMeasurement.dateTime) {
           return;
         }
@@ -509,11 +510,11 @@ export default function Dashboard() {
                   />
 
                   {reptileNames && reptileNames.flatMap(name => [
-                    // Solid line for actual measurements
+                    // Solid line connecting actual measurements
                     <Line
-                      key={name}
+                      key={`${name}_interpolated`}
                       type="linear"
-                      dataKey={name}
+                      dataKey={`${name}_interpolated`}
                       stroke={reptileColors[name]}
                       strokeWidth={2}
                       dot={false}
@@ -530,6 +531,7 @@ export default function Dashboard() {
                       strokeDasharray="5 5"
                       dot={false}
                       connectNulls={true}
+                      name={`${name} (estimated)`}
                     />,
                     // Dots for actual measurements
                     <Line
@@ -541,6 +543,7 @@ export default function Dashboard() {
                       dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
                       activeDot={{ r: 6 }}
                       connectNulls={false}
+                      name={name}
                     />
                   ])}
                 </LineChart>
