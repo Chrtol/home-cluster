@@ -480,17 +480,19 @@ export default function Dashboard() {
                       const { payload } = props;
                       if (!payload || payload.length === 0) return null;
 
-                      // Filter to only show reptile names (interpolated lines) and the estimated line
+                      // Filter to only show reptile names (not the _extrapolated or _actual variants)
                       const reptileItems = payload.filter(item =>
-                        reptileNames.includes(item.value) || item.value === 'Estimated'
+                        reptileNames.includes(item.value)
                       );
 
-                      const reptiles = reptileItems.filter(item => reptileNames.includes(item.value));
-                      const estimated = reptileItems.find(item => item.value === 'Estimated');
+                      // Check if any extrapolated lines exist
+                      const hasExtrapolated = payload.some(item =>
+                        item.value && item.value.includes('(estimated)')
+                      );
 
                       return (
                         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '12px', fontSize: '12px' }}>
-                          {reptiles.map((entry, index) => (
+                          {reptileItems.map((entry, index) => (
                             <div key={`legend-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <svg width="14" height="14" style={{ display: 'inline-block' }}>
                                 <line x1="0" y1="7" x2="14" y2="7" stroke={entry.color} strokeWidth="2" />
@@ -498,7 +500,7 @@ export default function Dashboard() {
                               <span style={{ color: '#6b7280' }}>{entry.value}</span>
                             </div>
                           ))}
-                          {estimated && (
+                          {hasExtrapolated && (
                             <>
                               <div style={{ width: '1px', height: '14px', backgroundColor: '#d1d5db', margin: '0 4px' }} />
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -537,6 +539,7 @@ export default function Dashboard() {
                       dot={false}
                       connectNulls={false}
                       name={`${name} (estimated)`}
+                      legendType="none"
                     />,
                     // Dots for actual measurements
                     <Line
@@ -548,7 +551,7 @@ export default function Dashboard() {
                       dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
                       activeDot={{ r: 6 }}
                       connectNulls={false}
-                      name={name}
+                      legendType="none"
                     />
                   ])}
                 </LineChart>
