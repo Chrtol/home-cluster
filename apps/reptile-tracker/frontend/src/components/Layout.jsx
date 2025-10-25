@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Moon, Sun, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Layout({ user, onLogout }) {
@@ -47,7 +47,7 @@ export default function Layout({ user, onLogout }) {
   const schedulesItems = [
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
     { path: '/schedule-templates', icon: BookTemplate, label: 'Schedule Templates' },
-    { path: '/reptiles', icon: List, label: 'Supplement Rotations', description: 'Manage per reptile' },
+    { path: '/supplement-rotations', icon: RefreshCw, label: 'Supplement Rotations' },
   ]
 
   const NavLink = ({ item, onClick }) => {
