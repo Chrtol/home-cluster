@@ -38,6 +38,74 @@ guidelines_router = APIRouter(prefix="/api/care-guidelines", tags=["care-guideli
 # SCHEDULE TEMPLATES ENDPOINTS
 # ============================================================================
 
+@router.get("/export", response_model=ScheduleTemplateExport)
+async def export_schedule_templates(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export all user's schedule templates as JSON."""
+    query = select(ScheduleTemplate).where(
+        ScheduleTemplate.created_by_user_id == user.id
+    ).order_by(ScheduleTemplate.name)
+
+    result = await db.execute(query)
+    templates = result.scalars().all()
+
+    return ScheduleTemplateExport(
+        version="1.0",
+        exported_at=datetime.now(timezone.utc),
+        templates=templates
+    )
+
+
+@router.post("/import", response_model=dict)
+async def import_schedule_templates(
+    data: ScheduleTemplateExport,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Import schedule templates from JSON export.
+    Creates new templates owned by the current user.
+    """
+    imported_count = 0
+
+    for template_data in data.templates:
+        # Create new template (strip ID to create new records)
+        new_template = ScheduleTemplate(
+            name=template_data.name,
+            description=template_data.description,
+            species=template_data.species,
+            age_category=template_data.age_category,
+            schedule_type=template_data.schedule_type,
+            schedule_rule=template_data.schedule_rule,
+            food_category=template_data.food_category,
+            time_slot=template_data.time_slot,
+            health_category=template_data.health_category,
+            frequency_days=template_data.frequency_days,
+            days_of_week=template_data.days_of_week,
+            day_of_month=template_data.day_of_month,
+            earliest_time=template_data.earliest_time,
+            latest_time=template_data.latest_time,
+            time_window_enabled=template_data.time_window_enabled,
+            reminder_minutes_before=template_data.reminder_minutes_before,
+            supplement_id=template_data.supplement_id,
+            notes=template_data.notes,
+            is_default=False,
+            created_by_user_id=user.id,
+        )
+
+        db.add(new_template)
+        imported_count += 1
+
+    await db.commit()
+
+    return {
+        "message": f"Successfully imported {imported_count} schedule templates",
+        "count": imported_count
+    }
+
+
 @router.get("", response_model=List[ScheduleTemplateWithDetails])
 async def list_schedule_templates(
     species: Optional[str] = None,
@@ -308,74 +376,6 @@ async def apply_template_to_reptile(
         "schedule_id": new_schedule.id,
         "template_id": template_id,
         "reptile_id": reptile_id,
-    }
-
-
-@router.get("/export", response_model=ScheduleTemplateExport)
-async def export_schedule_templates(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Export all user's schedule templates as JSON."""
-    query = select(ScheduleTemplate).where(
-        ScheduleTemplate.created_by_user_id == user.id
-    ).order_by(ScheduleTemplate.name)
-
-    result = await db.execute(query)
-    templates = result.scalars().all()
-
-    return ScheduleTemplateExport(
-        version="1.0",
-        exported_at=datetime.now(timezone.utc),
-        templates=templates
-    )
-
-
-@router.post("/import", response_model=dict)
-async def import_schedule_templates(
-    data: ScheduleTemplateExport,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Import schedule templates from JSON export.
-    Creates new templates owned by the current user.
-    """
-    imported_count = 0
-
-    for template_data in data.templates:
-        # Create new template (strip ID to create new records)
-        new_template = ScheduleTemplate(
-            name=template_data.name,
-            description=template_data.description,
-            species=template_data.species,
-            age_category=template_data.age_category,
-            schedule_type=template_data.schedule_type,
-            schedule_rule=template_data.schedule_rule,
-            food_category=template_data.food_category,
-            time_slot=template_data.time_slot,
-            health_category=template_data.health_category,
-            frequency_days=template_data.frequency_days,
-            days_of_week=template_data.days_of_week,
-            day_of_month=template_data.day_of_month,
-            earliest_time=template_data.earliest_time,
-            latest_time=template_data.latest_time,
-            time_window_enabled=template_data.time_window_enabled,
-            reminder_minutes_before=template_data.reminder_minutes_before,
-            supplement_id=template_data.supplement_id,
-            notes=template_data.notes,
-            is_default=False,
-            created_by_user_id=user.id,
-        )
-
-        db.add(new_template)
-        imported_count += 1
-
-    await db.commit()
-
-    return {
-        "message": f"Successfully imported {imported_count} schedule templates",
-        "count": imported_count
     }
 
 
