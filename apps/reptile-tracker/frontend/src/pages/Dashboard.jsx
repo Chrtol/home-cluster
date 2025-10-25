@@ -295,9 +295,14 @@ export default function Dashboard() {
         // Check for actual measurement on this date
         const measurement = reptile.data.find(d => d.date === date);
         if (measurement) {
-          // Only set actual dot and interpolated line (for connecting measurements)
+          // Set actual dot and interpolated line (for connecting measurements)
           dataPoint[`${reptile.name}_actual`] = measurement.weight;
           dataPoint[`${reptile.name}_interpolated`] = measurement.weight;
+
+          // Also set extrapolated value if this is the first or last measurement (to connect the dashed line)
+          if (measurement.dateTime === firstMeasurement.dateTime || measurement.dateTime === lastMeasurement.dateTime) {
+            dataPoint[`${reptile.name}_extrapolated`] = measurement.weight;
+          }
           return;
         }
 
@@ -308,8 +313,8 @@ export default function Dashboard() {
         }
 
         // Before first or after last measurement - extrapolate based on mode
-        if (dateTime <= firstMeasurement.dateTime) {
-          // Extrapolate into the past (including first measurement to connect line)
+        if (dateTime < firstMeasurement.dateTime) {
+          // Extrapolate into the past
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from first 2 measurements
             const secondMeasurement = reptile.data[1];
@@ -321,8 +326,8 @@ export default function Dashboard() {
             // Step: flat line
             dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
           }
-        } else if (dateTime >= lastMeasurement.dateTime) {
-          // Extrapolate into the future (including last measurement to connect line)
+        } else if (dateTime > lastMeasurement.dateTime) {
+          // Extrapolate into the future
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from last 2 measurements
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
