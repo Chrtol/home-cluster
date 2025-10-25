@@ -47,6 +47,7 @@ export default function Layout({ user, onLogout }) {
   const schedulesItems = [
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
     { path: '/schedule-templates', icon: BookTemplate, label: 'Schedule Templates' },
+    { path: '/reptiles', icon: List, label: 'Supplement Rotations', description: 'Manage per reptile' },
   ]
 
   const NavLink = ({ item, onClick }) => {
@@ -165,7 +166,12 @@ export default function Layout({ user, onLogout }) {
                   }`}
                 >
                   <Icon size={18} />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{item.label}</div>
+                    {item.description && (
+                      <div className="text-xs text-gray-500 dark:text-gray-500">{item.description}</div>
+                    )}
+                  </div>
                 </Link>
               )
             })}
