@@ -725,15 +725,15 @@ function Calendar() {
       // Outlined/lighter colors for scheduled events
       switch (type) {
         case "feeding":
-          return "bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800";
+          return "bg-primary-900/20 text-primary-300 dark:bg-primary-900/30 dark:text-primary-300 border border-primary-700 dark:border-primary-700";
         case "misting":
-          return "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800";
+          return "bg-blue-900/20 text-blue-300 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-700 dark:border-blue-700";
         case "weighing":
-          return "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-200 dark:border-purple-800";
+          return "bg-purple-900/20 text-purple-300 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-700 dark:border-purple-700";
         case "supplement":
-          return "bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800";
+          return "bg-green-900/20 text-green-300 dark:bg-green-900/30 dark:text-green-300 border border-green-700 dark:border-green-700";
         default:
-          return "bg-gray-50 text-gray-700 dark:bg-gray-900/50 dark:text-gray-400 border border-gray-200 dark:border-gray-700";
+          return "bg-gray-900/20 text-gray-300 dark:bg-gray-900/30 dark:text-gray-300 border border-gray-700 dark:border-gray-700";
       }
     }
   };
@@ -1180,13 +1180,13 @@ function Calendar() {
             {/* Scheduled */}
             <div className="flex items-center gap-1.5">
               <span className="text-gray-500 dark:text-gray-400">Scheduled:</span>
-              <div className="px-2 py-0.5 rounded bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+              <div className="px-2 py-0.5 rounded bg-primary-900/20 text-primary-300 dark:bg-primary-900/30 dark:text-primary-300 border border-primary-700 dark:border-primary-700">
                 Feed
               </div>
-              <div className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+              <div className="px-2 py-0.5 rounded bg-blue-900/20 text-blue-300 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-700 dark:border-blue-700">
                 Mist
               </div>
-              <div className="px-2 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400 border border-green-200 dark:border-green-800">
+              <div className="px-2 py-0.5 rounded bg-green-900/20 text-green-300 dark:bg-green-900/30 dark:text-green-300 border border-green-700 dark:border-green-700">
                 Supp
               </div>
             </div>
