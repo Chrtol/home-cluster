@@ -8,6 +8,7 @@ export default function Layout({ user, onLogout }) {
   const [darkMode, setDarkMode] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [trackMenuOpen, setTrackMenuOpen] = useState(false)
+  const [schedulesMenuOpen, setSchedulesMenuOpen] = useState(false)
 
   // Load dark mode preference (defaults to true/dark)
   useEffect(() => {
@@ -39,10 +40,13 @@ export default function Layout({ user, onLogout }) {
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/reptiles', icon: List, label: 'Reptiles' },
     { path: '/foods', icon: Utensils, label: 'Foods' },
-    { path: '/calendar', icon: Calendar, label: 'Calendar' },
-    { path: '/schedule-templates', icon: BookTemplate, label: 'Templates' },
     { path: '/stats', icon: BarChart3, label: 'Statistics' },
     { path: '/settings', icon: Settings, label: 'Settings' },
+  ]
+
+  const schedulesItems = [
+    { path: '/calendar', icon: Calendar, label: 'Calendar' },
+    { path: '/schedule-templates', icon: BookTemplate, label: 'Schedule Templates' },
   ]
 
   const NavLink = ({ item, onClick }) => {
@@ -124,6 +128,53 @@ export default function Layout({ user, onLogout }) {
     )
   }
 
+  const SchedulesMenu = ({ onClose }) => {
+    const isSchedulesActive = schedulesItems.some(item => location.pathname.startsWith(item.path))
+
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => setSchedulesMenuOpen(!schedulesMenuOpen)}
+          className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
+            isSchedulesActive
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Calendar size={20} />
+            <span className="font-medium">Schedules</span>
+          </div>
+          <ChevronDown size={18} className={`transform transition-transform ${schedulesMenuOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {schedulesMenuOpen && (
+          <div className="ml-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-1">
+            {schedulesItems.map(item => {
+              const Icon = item.icon
+              const isActive = location.pathname === item.path
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Desktop Sidebar */}
@@ -148,6 +199,9 @@ export default function Layout({ user, onLogout }) {
             {navItems.map(item => (
               <NavLink key={item.path} item={item} />
             ))}
+
+            {/* Schedules Collapsible Menu */}
+            <SchedulesMenu />
           </nav>
 
           {/* User Section */}
@@ -239,6 +293,9 @@ export default function Layout({ user, onLogout }) {
                 {navItems.map(item => (
                   <NavLink key={item.path} item={item} onClick={() => setSidebarOpen(false)} />
                 ))}
+
+                {/* Schedules Collapsible Menu */}
+                <SchedulesMenu onClose={() => setSidebarOpen(false)} />
               </nav>
               <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
                 <button
