@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/networking.k8s.io/ingressclass_v1.json
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: vps
+  annotations:
+    # This tells external-dns to handle ingresses with this class
+    external-dns.alpha.kubernetes.io/ingress-class: vps
+spec:
+  controller: k8s.io/vps-nginx
