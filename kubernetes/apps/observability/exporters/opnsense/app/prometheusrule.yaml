@@ -1,0 +1,218 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: opnsense-exporter-rules
+  labels:
+    prometheus: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    - name: opnsense-network
+      interval: 1m
+      rules:
+        # Firewall State Table Saturation
+        - alert: OPNsenseStateTableNearFull
+          expr: |
+            (opnsense_pf_state_count / opnsense_pf_state_limit) * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "OPNsense state table is {{ $value | humanizePercentage }} full"
+            description: >
+              The firewall state table on {{ $labels.instance }} is {{ $value | humanizePercentage }} full.
+              This may cause connection issues for Plex and other services.
+
+        - alert: OPNsenseStateTableFull
+          expr: |
+            (opnsense_pf_state_count / opnsense_pf_state_limit) * 100 > 95
+          for: 2m
+          labels:
+            severity: critical
+            category: network
+          annotations:
+            summary: "OPNsense state table is {{ $value | humanizePercentage }} full"
+            description: >
+              The firewall state table on {{ $labels.instance }} is critically full at {{ $value | humanizePercentage }}.
+              New connections will be dropped, affecting Plex streaming and other services.
+
+        # Interface Errors
+        - alert: OPNsenseHighInterfaceErrors
+          expr: |
+            rate(opnsense_interface_errors_total[5m]) > 10
+          for: 10m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "High error rate on {{ $labels.interface }}"
+            description: >
+              Interface {{ $labels.interface }} on {{ $labels.instance }} is experiencing {{ $value | humanize }} errors/sec.
+              This may cause packet loss affecting Plex streaming quality.
+
+        # Packet Loss
+        - alert: OPNsenseHighPacketLoss
+          expr: |
+            rate(opnsense_interface_discards_total[5m]) > 5
+          for: 10m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "High packet loss on {{ $labels.interface }}"
+            description: >
+              Interface {{ $labels.interface }} is dropping {{ $value | humanize }} packets/sec.
+              This will cause stuttering and buffering in Plex streams.
+
+        # Gateway Issues
+        - alert: OPNsenseGatewayDown
+          expr: |
+            opnsense_gateway_status == 0
+          for: 2m
+          labels:
+            severity: critical
+            category: network
+          annotations:
+            summary: "Gateway {{ $labels.gateway }} is down"
+            description: >
+              Gateway {{ $labels.gateway }} on {{ $labels.instance }} is not responding.
+              This will affect external Plex access.
+
+        - alert: OPNsenseGatewayHighLatency
+          expr: |
+            opnsense_gateway_delay_seconds > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "High latency on gateway {{ $labels.gateway }}"
+            description: >
+              Gateway {{ $labels.gateway }} has {{ $value | humanizeDuration }} latency.
+              This may cause slow Plex response times and buffering.
+
+        - alert: OPNsenseGatewayPacketLoss
+          expr: |
+            opnsense_gateway_loss_percent > 5
+          for: 5m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "Packet loss on gateway {{ $labels.gateway }}"
+            description: >
+              Gateway {{ $labels.gateway }} is experiencing {{ $value }}% packet loss.
+              Plex users will experience buffering and connection drops.
+
+    - name: opnsense-firewall
+      interval: 1m
+      rules:
+        # Firewall Blocking Plex Traffic
+        - alert: OPNsenseBlockingPlexTraffic
+          expr: |
+            increase(opnsense_pf_blocked_total{destination="10.0.30.70"}[5m]) > 10
+          for: 5m
+          labels:
+            severity: warning
+            category: firewall
+            service: plex
+          annotations:
+            summary: "Firewall blocking traffic to Plex ({{ $value }} blocks in 5min)"
+            description: >
+              OPNsense has blocked {{ $value }} packets destined for Plex (10.0.30.70) in the last 5 minutes.
+              Check firewall rules if users report connection issues.
+
+        # High Block Rate (General)
+        - alert: OPNsenseHighBlockRate
+          expr: |
+            rate(opnsense_pf_blocked_total[5m]) > 100
+          for: 10m
+          labels:
+            severity: info
+            category: firewall
+          annotations:
+            summary: "High firewall block rate ({{ $value | humanize }} blocks/sec)"
+            description: >
+              OPNsense is blocking {{ $value | humanize }} packets/sec from {{ $labels.source }}.
+              This may indicate a DDoS attempt or misconfigured rules.
+
+    - name: opnsense-performance
+      interval: 1m
+      rules:
+        # High CPU Usage
+        - alert: OPNsenseHighCPU
+          expr: |
+            avg(opnsense_system_cpu_usage_percent) > 80
+          for: 15m
+          labels:
+            severity: warning
+            category: performance
+          annotations:
+            summary: "OPNsense CPU usage is high ({{ $value | humanizePercentage }})"
+            description: >
+              OPNsense CPU usage is at {{ $value | humanizePercentage }}.
+              This may cause packet processing delays affecting Plex streaming.
+
+        # High Memory Usage
+        - alert: OPNsenseHighMemory
+          expr: |
+            (opnsense_system_memory_used_bytes / opnsense_system_memory_total_bytes) * 100 > 90
+          for: 15m
+          labels:
+            severity: warning
+            category: performance
+          annotations:
+            summary: "OPNsense memory usage is high ({{ $value | humanizePercentage }})"
+            description: >
+              OPNsense memory usage is at {{ $value | humanizePercentage }}.
+              This may cause performance degradation.
+
+        # Interface Bandwidth Saturation
+        - alert: OPNsenseInterfaceSaturated
+          expr: |
+            (rate(opnsense_interface_bytes_total[5m]) * 8) / opnsense_interface_speed_bits > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            category: performance
+          annotations:
+            summary: "Interface {{ $labels.interface }} is {{ $value | humanizePercentage }} saturated"
+            description: >
+              Network interface {{ $labels.interface }} is {{ $value | humanizePercentage }} saturated.
+              This will cause buffering and slow Plex streams.
+
+    - name: opnsense-dhcp
+      interval: 5m
+      rules:
+        # DHCP Pool Exhaustion
+        - alert: OPNsenseDHCPPoolLow
+          expr: |
+            (opnsense_dhcp_leases_active / opnsense_dhcp_pool_size) * 100 > 80
+          for: 30m
+          labels:
+            severity: warning
+            category: dhcp
+          annotations:
+            summary: "DHCP pool {{ $labels.pool }} is {{ $value | humanizePercentage }} full"
+            description: >
+              DHCP pool {{ $labels.pool }} is {{ $value | humanizePercentage }} full.
+              New devices may fail to get IP addresses.
+
+    - name: opnsense-vpn
+      interval: 1m
+      rules:
+        # VPN Tunnel Down (if you use VPN)
+        - alert: OPNsenseVPNTunnelDown
+          expr: |
+            opnsense_vpn_status == 0
+          for: 5m
+          labels:
+            severity: warning
+            category: vpn
+          annotations:
+            summary: "VPN tunnel {{ $labels.tunnel }} is down"
+            description: >
+              VPN tunnel {{ $labels.tunnel }} has been down for 5 minutes.

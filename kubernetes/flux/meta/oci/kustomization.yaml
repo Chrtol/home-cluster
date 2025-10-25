@@ -13,3 +13,4 @@ resources:
   - ./loki.yaml
   - ./promtail.yaml
   - ./mariadb.yaml
+  - ./opnsense-exporter.yaml
