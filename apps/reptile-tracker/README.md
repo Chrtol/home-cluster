@@ -6,17 +6,23 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 
 ### Core Functionality
 - 🦎 **Multi-Reptile Management**: Track multiple reptiles with individual profiles
+- 🏠 **Household Organization**: Group reptiles by household with filtering
+- 👁️ **Hide/Archive Reptiles**: Non-destructive hiding of inactive reptiles
 - 🍽️ **Feeding Log**: Easy-to-use interface with +/- buttons for quick counting
-- 📊 **Weight Tracking**: Monitor weight trends with graphical visualization
+- 📊 **Weight Tracking**: Monitor weight trends with graphical visualization and interpolation
 - 🏥 **Health Records**: Track vet visits, medication, and observations
-- 📅 **Feeding Schedule**: Customizable reminders and calendar views
+- 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
+- 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods
 - 🔔 **Notifications**: Webhook support for Discord/Pushover notifications
-- 📈 **Statistics**: Daily/weekly summaries and per-reptile analytics
+- 📈 **Statistics**: Comprehensive analytics with customizable charts and layouts
+- ⚙️ **Display Customization**: Drag-and-drop card management and chart settings
 
-### Access Control
-- **Owner**: Full access to reptile management and settings
-- **Feeder**: Can log feedings, view history, and add weight logs
-- **Viewer**: Read-only access to feeding logs
+### Multi-User & Household System
+- **Households**: Organize reptiles into households with shared access
+- **Household Roles**: Owner, Admin, Manager, Caretaker, Viewer
+- **Invitations**: Invite users to join your household
+- **Per-Reptile Access**: Grant specific users direct access to individual reptiles
+- **Access Levels**: Hierarchical permissions (Owner > Admin > Manager > Caretaker > Viewer)
 
 ### Authentication
 - OIDC integration with Authentik
@@ -208,13 +214,26 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `POST /auth/logout` - Logout
 
 ### Reptiles
-- `GET /api/reptiles` - List all reptiles
-- `POST /api/reptiles` - Create reptile
+- `GET /api/reptiles` - List all reptiles (with household info, filters inactive by default)
+  - Query param: `include_inactive=true` to show hidden reptiles
+- `POST /api/reptiles` - Create reptile (auto-assigned to user's household)
 - `GET /api/reptiles/{id}` - Get reptile details
-- `PATCH /api/reptiles/{id}` - Update reptile
+- `PUT /api/reptiles/{id}` - Update reptile (including `is_active` for hiding)
 - `DELETE /api/reptiles/{id}` - Delete reptile
 - `POST /api/reptiles/{id}/grant-access` - Grant user access
 - `DELETE /api/reptiles/{id}/revoke-access/{user_id}` - Revoke access
+
+### Households
+- `GET /api/households` - List user's households
+- `POST /api/households` - Create household
+- `GET /api/households/{id}` - Get household details
+- `PUT /api/households/{id}` - Update household
+- `DELETE /api/households/{id}` - Delete household
+- `POST /api/households/{id}/invite` - Create invitation
+- `GET /api/households/invitation/{code}` - Get invitation details
+- `POST /api/households/accept-invitation` - Accept invitation
+- `PUT /api/households/{id}/members/{user_id}` - Update member role
+- `DELETE /api/households/{id}/members/{user_id}` - Remove member
 
 ### Feedings
 - `GET /api/feedings` - List feedings
@@ -240,6 +259,31 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `PATCH /api/health/{id}` - Update health record
 - `DELETE /api/health/{id}` - Delete health record
 
+### Schedules
+- `GET /api/schedules/reptile/{reptile_id}` - List schedules for a reptile
+- `POST /api/schedules` - Create schedule
+- `GET /api/schedules/{id}` - Get schedule details
+- `PUT /api/schedules/{id}` - Update schedule
+- `DELETE /api/schedules/{id}` - Delete schedule
+- `GET /api/schedules/completions/date-range` - Get completions for date range
+- `POST /api/schedules/completions/{completion_id}/complete` - Mark completion as complete
+- `POST /api/schedules/completions/{completion_id}/skip` - Skip a scheduled occurrence
+
+### Supplement Rotations
+- `GET /api/rotations/reptile/{reptile_id}` - List rotations for a reptile
+- `POST /api/rotations` - Create rotation
+- `GET /api/rotations/{id}` - Get rotation details
+- `PUT /api/rotations/{id}` - Update rotation
+- `DELETE /api/rotations/{id}` - Delete rotation
+- `POST /api/rotations/{id}/advance` - Manually advance rotation
+
+### Misting Logs
+- `GET /api/misting/reptile/{id}` - List misting logs
+- `POST /api/misting` - Log misting
+- `GET /api/misting/{id}` - Get misting details
+- `PUT /api/misting/{id}` - Update misting log
+- `DELETE /api/misting/{id}` - Delete misting log
+
 ### Statistics
 - `GET /api/stats/daily-summary` - Daily feeding summary
 - `GET /api/stats/weekly-summary` - Weekly feeding summary
@@ -247,21 +291,119 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 
 ## Frontend Status
 
-### ✅ Implemented Components
-1. **Dashboard**: Overview with recent feedings and reptile list
-2. **ReptileList**: Grid view with edit/delete functionality
-3. **ReptileDetail**: Tabbed view (feedings, weight, health) with WeightChart
-4. **ReptileForm**: Create/edit forms with date_of_birth and notes
-5. **FeedingLog**: Complete feeding interface with +/- counter and salad picker
-6. **Layout**: Modern sidebar navigation with dark mode toggle
-7. **WeightChart**: Line chart using Recharts for weight trends
-8. **Dark Mode**: Full support with localStorage persistence
+### ✅ Implemented Features
 
-### ❌ To Be Implemented
-1. **Calendar**: Calendar view of feeding schedule (using react-calendar)
-2. **Statistics**: Dedicated analytics and reports page
-3. **Notifications**: Webhook settings and configuration
-4. **PWA**: Service worker and offline support
+**Pages & Views:**
+1. **Onboarding Wizard**: First-time user experience
+   - Two-option interface: Join household or Create new household
+   - Household code validation for joining
+   - Mandatory before accessing main app
+   - Automatic redirect to dashboard after completion
+2. **Dashboard**: Overview with customizable cards (recent activity, weight chart, summary stats)
+   - Drag-and-drop card reordering
+   - Show/hide individual cards
+   - Resize cards (XS/S/M/L)
+   - Multi-reptile weight chart with interpolation and extrapolation
+3. **ReptileList**: Grouped by household with filter toggles and hide/unhide functionality
+   - Visual household sections with headers
+   - Filter toggles to show/hide households (Eye/EyeOff icons)
+   - Alphabetical sorting with "No Household" last
+4. **ReptileDetail**: Comprehensive view with all reptile data
+   - Feeding history with edit/delete
+   - Weight tracking with inline chart
+   - Health records with categories
+   - Misting logs
+   - Schedule management with completion tracking
+   - Supplement rotation configuration
+   - Hide/Unhide toggle button
+5. **ReptileForm**: Create/edit forms with full reptile information
+6. **FeedingLog**: Multi-reptile feeding interface
+   - +/- counter for quick food quantity entry
+   - Salad component picker with counts
+   - Supplement tracking with rotation integration
+   - Multi-reptile batch feeding
+7. **Statistics**: Advanced analytics dashboard
+   - Weight & feeding correlation chart with interpolation modes
+   - Feeding activity heatmap (calendar-style)
+   - Misting frequency tracking
+   - Health events timeline
+   - Summary cards (weight change, feeding count, etc.)
+   - Customizable chart layouts (drag-and-drop)
+   - Per-reptile custom layouts
+   - Time range selector (7d, 30d, 90d, 180d, 365d, 730d)
+   - Data type toggles (Weight, Feeding, Misting, Health)
+   - Food filtering
+8. **Calendar**: Schedule view with comprehensive filtering
+   - Category filtering (Feeding, Misting, Weight, Health, Supplement)
+   - Reptile filtering
+   - Completion status indicators
+   - Quick completion actions
+9. **Settings**: Multi-tab configuration
+   - Display: Card/chart management, interpolation modes, chart appearance
+   - Date & Time: Format preferences, timezone, first day of week
+   - Household: Member management, invitations, role assignment
+10. **Health Logging**: Multiple log types with unified interface
+   - Weight logs with read-only view
+   - Feeding logs with food details
+   - Misting logs with time-of-day tracking
+   - Health events with categories and notes
+   - Redirect to read-only view after creation
+
+**Core Features:**
+- **Household System**:
+  - Multi-household support per user
+  - Invitations with expiration and usage limits
+  - Role-based access (Owner, Admin, Manager, Caretaker, Viewer)
+  - Per-reptile direct access grants
+  - Automatic household assignment for new reptiles
+- **Schedules**:
+  - Multiple schedule types (feeding, misting, weighing, supplement)
+  - Schedule rules: every X days, days of week, monthly, dependent
+  - Time windows with earliest/latest times
+  - Reminders (minutes before scheduled time)
+  - Completion tracking with status (pending, completed, missed, skipped)
+  - Parent-child dependent schedules
+  - Supplement rotation integration
+- **Supplement Rotations**:
+  - Rotation types: sequential, alternating, scheduled
+  - Foods/supplements can be in multiple rotations
+  - Trigger modes: manual, schedule-based, feeding-based
+  - Exclusive mode (only rotate items, don't add others)
+  - Rotation state tracking per reptile
+- **Weight Interpolation**:
+  - Linear interpolation between measurements
+  - Step interpolation (flat line from last known)
+  - None mode (dots only)
+  - Forward/backward extrapolation with visual distinction
+  - Per-chart interpolation mode settings
+- **Display Customization**:
+  - Drag-and-drop card management (Dashboard & Statistics)
+  - Show/hide individual cards/charts
+  - Resize (XS/S/M/L sizes)
+  - Chart appearance settings (grid, legend, axis labels, height)
+  - Per-reptile custom layouts
+  - Export/import settings as JSON
+  - Reset functionality
+- **Activity Tracking**:
+  - Comprehensive activity log with all actions
+  - User attribution for multi-user households
+  - Filtered views by reptile
+  - Recent activity on Dashboard
+- **Food Management**:
+  - Food categories (Insects, Salad, Fruit, Prepared, Frozen)
+  - Insect sizes (Small, Medium, Large)
+  - Animal sizes (Pinkie, Fuzzy, Hopper, Small, Medium, Large)
+  - Nutritional data tracking
+  - Custom food creation
+- **Dark Mode**: Full theme support with localStorage persistence
+- **Mobile-First**: Responsive design optimized for one-handed feeding
+- **Archive/Hide**: Non-destructive hiding of inactive reptiles
+
+### 🚧 In Progress / Planned
+1. **PWA**: Service worker and offline support
+2. **Care Recommendations**: Species-based feeding and supplement guidelines
+3. **Advanced Analytics**: Health trends, multi-reptile comparisons, cost analysis
+4. **Export**: Chart image export (PNG/SVG/PDF)
 
 ### Mobile-First Design
 - ✅ Responsive layout using Tailwind CSS
