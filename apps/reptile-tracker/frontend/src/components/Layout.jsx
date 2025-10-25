@@ -202,9 +202,9 @@ export default function Layout({ user, onLogout }) {
           {/* User Section */}
           <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
             <div className="p-4 space-y-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 flex-shrink-0 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+              <div className="flex items-center gap-3 px-4 py-2 min-w-0">
+                <div className="w-5 h-5 flex-shrink-0 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                  <span className="text-xs font-medium text-primary-700 dark:text-primary-300">
                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </div>
