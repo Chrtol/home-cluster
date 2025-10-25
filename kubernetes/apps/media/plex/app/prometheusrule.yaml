@@ -88,10 +88,10 @@ spec:
             summary: "Elevated 4xx error rate for Plex"
             description: "Plex ingress is returning {{ $value | humanizePercentage }} 4xx errors. Check authentication or client requests."
 
-        # Plex Pod Health
+        # Plex Pod Health (only monitor the main Plex deployment, not CronJobs)
         - alert: PlexPodRestarting
           expr: |
-            rate(kube_pod_container_status_restarts_total{namespace="media",pod=~"plex-.*"}[15m]) > 0
+            rate(kube_pod_container_status_restarts_total{namespace="media",label_app_kubernetes_io_name="plex"}[15m]) > 0
           for: 5m
           labels:
             severity: warning
@@ -102,7 +102,7 @@ spec:
 
         - alert: PlexPodNotReady
           expr: |
-            kube_pod_status_ready{namespace="media",pod=~"plex-.*",condition="true"} == 0
+            kube_pod_status_ready{namespace="media",label_app_kubernetes_io_name="plex",condition="true"} == 0
           for: 5m
           labels:
             severity: critical
@@ -111,13 +111,13 @@ spec:
             summary: "Plex pod is not ready"
             description: "Plex pod {{ $labels.pod }} is not in ready state. Service may be unavailable."
 
-        # Plex Performance
+        # Plex Performance (only monitor the main Plex deployment)
         - alert: PlexHighMemoryUsage
           expr: |
             (
-              container_memory_working_set_bytes{namespace="media",pod=~"plex-.*",container="plex"}
+              container_memory_working_set_bytes{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
               /
-              container_spec_memory_limit_bytes{namespace="media",pod=~"plex-.*",container="plex"}
+              container_spec_memory_limit_bytes{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
             ) > 0.9
           for: 10m
           labels:
@@ -130,10 +130,10 @@ spec:
         - alert: PlexHighCPUUsage
           expr: |
             (
-              rate(container_cpu_usage_seconds_total{namespace="media",pod=~"plex-.*",container="plex"}[5m])
+              rate(container_cpu_usage_seconds_total{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}[5m])
               /
-              container_spec_cpu_quota{namespace="media",pod=~"plex-.*",container="plex"}
-              * container_spec_cpu_period{namespace="media",pod=~"plex-.*",container="plex"}
+              container_spec_cpu_quota{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
+              * container_spec_cpu_period{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
             ) > 0.9
           for: 15m
           labels:
