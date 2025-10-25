@@ -1048,7 +1048,7 @@ function Calendar() {
                           {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                             <div className="flex gap-1.5 flex-wrap">
                               {event.suggested_supplements.map((supp, suppIdx) => (
-                                <span key={suppIdx} className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700">
+                                <span key={suppIdx} className="text-xs px-2.5 py-1 rounded-full font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                                   + {supp.name}
                                 </span>
                               ))}
@@ -1283,7 +1283,7 @@ function Calendar() {
                                 {displayName}
                                 {detail && <span className="opacity-75">{detail}</span>}
                                 {supplements.length > 0 && (
-                                  <span className="ml-1 text-green-600 dark:text-green-400 font-medium">
+                                  <span className="ml-1 text-amber-700 dark:text-amber-300 font-medium">
                                     +{supplements.map(s => s.name).join(' +')}
                                   </span>
                                 )}

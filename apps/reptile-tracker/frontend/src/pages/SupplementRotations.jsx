@@ -120,23 +120,23 @@ function SupplementRotations() {
             return (
               <div
                 key={reptile.id}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+                className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"
               >
                 {/* Reptile Header - Clickable to expand/collapse */}
                 <button
                   onClick={() => toggleReptile(reptile.id)}
-                  className="w-full bg-gray-50 dark:bg-gray-750 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full bg-gray-750 px-6 py-4 border-b border-gray-700 flex items-center justify-between hover:bg-gray-700 transition-colors"
                 >
                   <div className="text-left">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-gray-100 flex items-center gap-2">
                       {reptile.name}
                       {!isExpanded && (
-                        <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                        <span className="text-sm font-normal text-gray-400">
                           Click to manage rotations
                         </span>
                       )}
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-400">
                       {reptile.species}
                     </p>
                   </div>
@@ -155,7 +155,7 @@ function SupplementRotations() {
                     <FeedingRotationManager
                       reptileId={reptile.id}
                       reptileName={reptile.name}
-                      autoShowPreview={true}
+                      autoShowPreview={false}
                     />
                   </div>
                 )}
