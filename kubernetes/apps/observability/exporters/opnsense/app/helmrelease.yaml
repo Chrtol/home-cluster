@@ -33,9 +33,8 @@ spec:
               - --exporter.instance-label=gw
               - --web.listen-address=:8080
             env:
-              OPNSENSE_EXPORTER_INSTANCE_LABEL: "gw"
-              OPNSENSE_EXPORTER_OPS_INSECURE: true
-              OPNSENSE_EXPORTER_OPS_PROTOCOL: https
+              OPNSENSE_EXPORTER_PROTOCOL: "https"
+              OPNSENSE_EXPORTER_INSECURE: "true"
               TZ: ${SECRET_TIMEZONE}
             envFrom: &envFrom
               - secretRef:
