@@ -157,6 +157,9 @@ class Reptile(Base):
     reminder_enabled = Column(Boolean, default=False)
     reminder_hours_before = Column(Integer, default=2)
 
+    # Active/inactive status (for hiding reptiles without deleting them)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+
     # Household relation
     household_id = Column(Integer, ForeignKey("households.id", ondelete="SET NULL"), nullable=True)
 

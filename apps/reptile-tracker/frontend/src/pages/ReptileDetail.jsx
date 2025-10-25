@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 
@@ -76,14 +76,30 @@ export default function ReptileDetail() {
     fetchData();
   }, [id]);
 
+  const handleToggleActive = async () => {
+    const newActiveState = !reptile.is_active;
+    const action = newActiveState ? 'unhide' : 'hide';
+
+    if (window.confirm(`Are you sure you want to ${action} this reptile? ${newActiveState ? 'It will appear in all views again.' : 'It will be hidden from most views.'}`)) {
+      try {
+        await axios.put(`/api/reptiles/${id}`, { is_active: newActiveState });
+        setReptile({ ...reptile, is_active: newActiveState });
+      } catch (error) {
+        console.error(`Error ${action}ing reptile:`, error);
+        alert(`Failed to ${action} reptile. You may not have permission.`);
+      }
+    }
+  };
+
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this reptile?')) {
+    if (window.confirm('Are you sure you want to delete this reptile? This action cannot be undone!')) {
       axios.delete(`/api/reptiles/${id}`)
         .then(() => {
           navigate('/reptiles');
         })
         .catch(error => {
           console.error('Error deleting reptile:', error);
+          alert('Failed to delete reptile. You may not have permission.');
         });
     }
   };
@@ -326,6 +342,26 @@ export default function ReptileDetail() {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
           <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
+          <button
+            onClick={handleToggleActive}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+              reptile.is_active
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            {reptile.is_active ? (
+              <>
+                <EyeOff size={18} />
+                Hide
+              </>
+            ) : (
+              <>
+                <Eye size={18} />
+                Unhide
+              </>
+            )}
+          </button>
           <button onClick={handleDelete} className="btn-danger text-sm sm:text-base">Delete</button>
         </div>
       </div>

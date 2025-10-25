@@ -361,6 +361,32 @@
   - Multi-reptile support with proper color coding
   - Respects interpolation mode setting (linear/step) for extrapolation only
 
+### January 2025 - Reptile List Household Grouping & Filtering (2025-01-25)
+- [x] **Household-based reptile organization** - ✅ COMPLETED
+  - Backend: Added `ReptileWithHousehold` schema with household information
+  - Backend: Updated GET /api/reptiles endpoint to load household relationship
+  - Frontend: Group reptiles by household on Reptiles page
+  - Frontend: Visual household sections with headers and reptile counts
+  - Frontend: Filter toggles to show/hide specific households
+  - Frontend: Eye/EyeOff icons to indicate visibility state
+  - Frontend: Gradient dividers for visual separation
+  - Backend: Uses existing household backref relationship from Household model
+  - Sorts households alphabetically with "No Household" last
+  - Only shows filter buttons when multiple households exist
+
+- [x] **Hide/Archive reptile feature** - ✅ COMPLETED
+  - Database: Added `is_active` boolean field to reptiles table (migration 0020)
+  - Backend: Updated Reptile model with `is_active` field (default True, indexed)
+  - Backend: Updated schemas to include `is_active` in ReptileBase and ReptileUpdate
+  - Backend: GET /api/reptiles filters inactive reptiles by default
+  - Backend: Added `include_inactive` query parameter to show all reptiles
+  - Frontend: Hide/Unhide button in ReptileDetail page
+  - Frontend: Visual state indication (Eye icon = hidden, EyeOff = visible)
+  - Frontend: Confirmation dialog when hiding/unhiding
+  - Hidden reptiles excluded from: Reptiles list, Dashboard, Calendar, Statistics
+  - Can still access hidden reptiles via direct URL
+  - Non-destructive alternative to deletion for inactive pets
+
 ### January 2025 - Statistics Settings & Customization (2025-01-25)
 - [x] **Phase 1.5 - Statistics Settings & Customization** - ✅ COMPLETED
   - Full implementation in Settings > Display tab

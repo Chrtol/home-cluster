@@ -35,6 +35,7 @@ class ReptileBase(BaseModel):
     feeding_frequency_days: Optional[int] = None
     reminder_enabled: bool = False
     reminder_hours_before: int = 2
+    is_active: bool = True
 
 
 class ReptileCreate(ReptileBase):
@@ -51,6 +52,7 @@ class ReptileUpdate(BaseModel):
     feeding_frequency_days: Optional[int] = None
     reminder_enabled: Optional[bool] = None
     reminder_hours_before: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 class Reptile(ReptileBase):
@@ -65,6 +67,23 @@ class Reptile(ReptileBase):
 class ReptileWithAccess(Reptile):
     access_level: AccessLevel
     last_feeding: Optional[datetime] = None
+
+
+class HouseholdBasic(BaseModel):
+    """Basic household info for reptile listings"""
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
+class ReptileWithHousehold(Reptile):
+    """Reptile with household information"""
+    household: Optional[HouseholdBasic] = None
+
+    class Config:
+        from_attributes = True
 
 
 # Food schemas
