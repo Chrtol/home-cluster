@@ -302,7 +302,7 @@ export default function Dashboard() {
         }
 
         // Between measurements - don't fill in values, let chart draw straight lines
-        // (The chart will connect the measurement points via interpolated line)
+        // (The chart will connect the actual measurement dots with straight lines)
         if (dateTime > firstMeasurement.dateTime && dateTime < lastMeasurement.dateTime) {
           return;
         }
@@ -530,7 +530,7 @@ export default function Dashboard() {
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       dot={false}
-                      connectNulls={true}
+                      connectNulls={false}
                       name={`${name} (estimated)`}
                     />,
                     // Dots for actual measurements
