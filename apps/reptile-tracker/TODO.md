@@ -318,6 +318,14 @@
 
 ## 🐛 Bug Fixes & Technical Debt
 
+### Active Bugs
+- [ ] **Weight log read-only view shows "Unknown reptile"**
+  - Issue: When viewing a weight record in read-only mode (/health-log/weight/{id}), it shows "Unknown" for the reptile name
+  - Works correctly in edit mode and activity log
+  - Root cause: Backend GET /api/weight/{id} uses WeightLogSchema response model instead of WeightLogWithReptile
+  - Backend already loads reptile relationship with selectinload(WeightLog.reptile) at line 80
+  - Fix: Change response_model from WeightLogSchema to WeightLogWithReptile at line 69 in backend/app/routers/weight.py
+
 ### Architecture Questions
 - [ ] **Review container architecture**
   - Why are there two separate containers?
@@ -343,6 +351,22 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### October 2025 - Dashboard Weight Chart Improvements (2025-10-25)
+- [x] **Dashboard weight chart complete overhaul** - ✅ COMPLETED
+  - Fixed date range to extend through current date with proper padding
+  - Added 1-day padding before first measurement for better Y-axis spacing
+  - Increased right margin to 30px and added XAxis padding for better date visibility
+  - Fixed overlapping interpolated lines by using separate data keys (_interpolated vs _extrapolated)
+  - Solid lines now connect actual measurement points cleanly
+  - Dashed extrapolated lines only appear before first and after last measurements
+  - Fixed gaps between extrapolated lines and measurement dots
+  - Set extrapolated values on first/last measurement dates for seamless connection
+  - Added user-friendly tooltip names (e.g., "Spyro (estimated)" instead of "spyro_extrapolated")
+  - Fixed legend to show each reptile name only once with clean "Estimated" indicator
+  - Used legendType="none" to prevent duplicate legend entries
+  - Multi-reptile support with proper color coding
+  - Respects interpolation mode setting (linear/step) for extrapolation only
 
 ### January 2025 - Statistics Page Enhancements & Bug Fixes (2025-01-22)
 - [x] **Dashboard weight graph improvements** - ✅ COMPLETED
