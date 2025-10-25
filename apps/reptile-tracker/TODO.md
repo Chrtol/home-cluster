@@ -332,10 +332,16 @@
   - Should they be consolidated into one?
   - Document reasoning or refactor
 
-- [ ] **Review Kubernetes setup**
+- [x] **Review Kubernetes setup** - ✅ SIMPLIFIED (2025-10-25)
   - Why 2 kustomizations (db + app)?
   - Using cloudnative-pg17 cluster - is separate DB kustomization needed?
   - Simplify if possible
+  - **Resolution:** Merged database and app kustomizations into single kustomization
+    - Moved database externalsecret into app directory
+    - Deleted separate database kustomization and directory
+    - Single kustomization now handles both externalsecret and helmrelease
+    - Dependencies (cloudnative-pg-cluster-v17, authentik) moved to single kustomization
+    - Cleaner structure with one kustomization instead of two
 
 ### Code Quality
 - [ ] **Error boundaries** (React)
