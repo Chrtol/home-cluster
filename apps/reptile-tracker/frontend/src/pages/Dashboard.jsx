@@ -308,8 +308,8 @@ export default function Dashboard() {
         }
 
         // Before first or after last measurement - extrapolate based on mode
-        if (dateTime < firstMeasurement.dateTime) {
-          // Extrapolate into the past
+        if (dateTime <= firstMeasurement.dateTime) {
+          // Extrapolate into the past (including first measurement to connect line)
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from first 2 measurements
             const secondMeasurement = reptile.data[1];
@@ -321,8 +321,8 @@ export default function Dashboard() {
             // Step: flat line
             dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
           }
-        } else if (dateTime > lastMeasurement.dateTime) {
-          // Extrapolate into the future
+        } else if (dateTime >= lastMeasurement.dateTime) {
+          // Extrapolate into the future (including last measurement to connect line)
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from last 2 measurements
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
