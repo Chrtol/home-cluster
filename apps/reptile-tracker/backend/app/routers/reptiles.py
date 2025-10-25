@@ -2,16 +2,18 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, insert, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from datetime import datetime
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, Reptile, AccessLevel, reptile_access, household_members, Feeding
+from app.models import User, Reptile, AccessLevel, reptile_access, household_members, Feeding, Household
 from app.permissions import check_reptile_access, get_user_reptiles, is_owner
 from app.schemas import (
     Reptile as ReptileSchema,
     ReptileCreate,
     ReptileUpdate,
     ReptileWithAccess,
+    ReptileWithHousehold,
     GrantAccess,
 )
 
@@ -34,31 +36,38 @@ async def list_species(
     return species_list
 
 
-@router.get("", response_model=List[ReptileWithAccess])
+@router.get("", response_model=List[ReptileWithHousehold])
 async def list_reptiles(
+    include_inactive: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all reptiles the current user has access to"""
+    """List all reptiles the current user has access to with household information
+
+    By default, only active reptiles are returned. Set include_inactive=true to see all reptiles.
+    """
     reptiles_with_access = await get_user_reptiles(db, current_user)
 
     response_data = []
     for item in reptiles_with_access:
         reptile = item["reptile"]
-        # Get last feeding for this reptile
-        last_feeding_result = await db.execute(
-            select(Feeding.fed_at)
-            .where(Feeding.reptile_id == reptile.id)
-            .order_by(Feeding.fed_at.desc())
-            .limit(1)
-        )
-        last_feeding = last_feeding_result.scalar_one_or_none()
+
+        # Filter inactive reptiles unless explicitly requested
+        if not include_inactive and not reptile.is_active:
+            continue
+
+        # Load household relationship if not already loaded
+        if reptile.household_id and not hasattr(reptile, 'household'):
+            household_result = await db.execute(
+                select(Household).where(Household.id == reptile.household_id)
+            )
+            household = household_result.scalar_one_or_none()
+            reptile.household = household
 
         response_data.append(
-            ReptileWithAccess(
+            ReptileWithHousehold(
                 **reptile.__dict__,
-                access_level=item["access_level"],
-                last_feeding=last_feeding,
+                household=reptile.household if hasattr(reptile, 'household') else None,
             )
         )
 
