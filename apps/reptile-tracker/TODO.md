@@ -319,12 +319,12 @@
 ## 🐛 Bug Fixes & Technical Debt
 
 ### Active Bugs
-- [ ] **Weight log read-only view shows "Unknown reptile"**
+- [x] **Weight log read-only view shows "Unknown reptile"** - ✅ FIXED (2025-10-25)
   - Issue: When viewing a weight record in read-only mode (/health-log/weight/{id}), it shows "Unknown" for the reptile name
   - Works correctly in edit mode and activity log
   - Root cause: Backend GET /api/weight/{id} uses WeightLogSchema response model instead of WeightLogWithReptile
   - Backend already loads reptile relationship with selectinload(WeightLog.reptile) at line 80
-  - Fix: Change response_model from WeightLogSchema to WeightLogWithReptile at line 69 in backend/app/routers/weight.py
+  - Fix: Changed response_model from WeightLogSchema to WeightLogWithReptile at line 69 in backend/app/routers/weight.py
 
 ### Architecture Questions
 - [ ] **Review container architecture**
