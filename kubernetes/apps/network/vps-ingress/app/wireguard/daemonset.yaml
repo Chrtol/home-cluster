@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: wireguard-vps
+  namespace: network
+spec:
+  selector:
+    matchLabels:
+      app: wireguard-vps
+  template:
+    metadata:
+      labels:
+        app: wireguard-vps
+    spec:
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      containers:
+        - name: wireguard
+          image: ghcr.io/linuxserver/wireguard:latest
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN", "SYS_MODULE"]
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: ${SECRET_TIMEZONE}
+          volumeMounts:
+            - name: config
+              mountPath: /config/wg_confs
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: wireguard-vps-secret
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+            type: Directory

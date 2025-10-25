@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns-vps
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: external-dns
+      version: 1.19.0
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    fullnameOverride: external-dns-vps
+    priorityClassName: network-critical
+    provider: cloudflare
+    env:
+      - name: CF_API_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: external-dns-secret
+            key: api-token
+    extraArgs:
+      - --cloudflare-dns-records-per-page=1000
+      - --cloudflare-proxied=false  # KEY: Always grey cloud for VPS!
+      - --events
+      - --ignore-ingress-tls-spec
+      - --ingress-class=vps  # Only watch "vps" ingress class
+      - --txt-prefix=k8s-vps.
+      - --txt-owner-id=vps
+      - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
+    policy: sync
+    sources: ["ingress"]
+    domainFilters: ["${SECRET_DOMAIN}"]
+    # NOTE: Ingresses using className: vps should include this annotation:
+    # external-dns.alpha.kubernetes.io/target: "${VPS_PUBLIC_IP}"
+    serviceMonitor:
+      enabled: true
+    podAnnotations:
+      secret.reloader.stakater.com/reload: external-dns-secret
