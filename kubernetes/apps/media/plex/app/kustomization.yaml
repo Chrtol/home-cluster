@@ -7,6 +7,7 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./replicationsource.yaml
+  - ./prometheusrule.yaml
 # configMapGenerator:
 #   - name: plex-loki-rules
 #     files:
