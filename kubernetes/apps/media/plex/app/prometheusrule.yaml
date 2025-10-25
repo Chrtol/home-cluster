@@ -1,0 +1,161 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: plex-alerts
+spec:
+  groups:
+    - name: plex.external-access
+      interval: 1m
+      rules:
+        # Cloudflare Tunnel Health
+        - alert: PlexCloudflaredTunnelDown
+          expr: |
+            cloudflared_tunnel_ha_connections{namespace="network"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            category: plex-access
+          annotations:
+            summary: "Cloudflare Tunnel is down - external Plex access unavailable"
+            description: "The Cloudflare tunnel has 0 active HA connections. External users cannot access Plex.\n  Current connections: {{ $value }}"
+
+        - alert: PlexCloudflaredHighErrorRate
+          expr: |
+            rate(cloudflared_tunnel_request_errors{namespace="network"}[5m]) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            category: plex-access
+          annotations:
+            summary: "High error rate in Cloudflare Tunnel"
+            description: "Cloudflare tunnel is experiencing {{ $value | humanizePercentage }} error rate. Plex users may experience connection issues."
+
+        - alert: PlexCloudflaredTunnelDegraded
+          expr: |
+            cloudflared_tunnel_ha_connections{namespace="network"} < 4
+          for: 10m
+          labels:
+            severity: warning
+            category: plex-access
+          annotations:
+            summary: "Cloudflare Tunnel has reduced redundancy"
+            description: "Cloudflare tunnel has {{ $value }} HA connections (expected 4). Tunnel resilience is degraded."
+
+        # Nginx Ingress Health
+        - alert: PlexIngressHighErrorRate
+          expr: |
+            (
+              sum(rate(nginx_ingress_controller_requests{exported_namespace="media",ingress=~"plex.*",status=~"5.."}[5m]))
+              /
+              sum(rate(nginx_ingress_controller_requests{exported_namespace="media",ingress=~"plex.*"}[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            category: plex-access
+          annotations:
+            summary: "High 5xx error rate for Plex ingress"
+            description: "Plex ingress is returning {{ $value | humanizePercentage }} 5xx errors. Users may see 'something went wrong' errors."
+
+        - alert: PlexIngressHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(nginx_ingress_controller_request_duration_seconds_bucket{exported_namespace="media",ingress=~"plex.*"}[5m]))
+              by (le)
+            ) > 10
+          for: 10m
+          labels:
+            severity: warning
+            category: plex-performance
+          annotations:
+            summary: "High latency for Plex ingress requests"
+            description: "P95 latency for Plex ingress is {{ $value }}s (threshold: 10s). Users may experience slow loading."
+
+        - alert: PlexIngress4xxErrors
+          expr: |
+            (
+              sum(rate(nginx_ingress_controller_requests{exported_namespace="media",ingress=~"plex.*",status=~"4.."}[5m]))
+              /
+              sum(rate(nginx_ingress_controller_requests{exported_namespace="media",ingress=~"plex.*"}[5m]))
+            ) > 0.1
+          for: 15m
+          labels:
+            severity: info
+            category: plex-access
+          annotations:
+            summary: "Elevated 4xx error rate for Plex"
+            description: "Plex ingress is returning {{ $value | humanizePercentage }} 4xx errors. Check authentication or client requests."
+
+        # Plex Pod Health
+        - alert: PlexPodRestarting
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="media",pod=~"plex-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            category: plex-stability
+          annotations:
+            summary: "Plex pod is restarting"
+            description: "Plex pod {{ $labels.pod }} is restarting frequently. This causes service interruptions."
+
+        - alert: PlexPodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="media",pod=~"plex-.*",condition="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            category: plex-stability
+          annotations:
+            summary: "Plex pod is not ready"
+            description: "Plex pod {{ $labels.pod }} is not in ready state. Service may be unavailable."
+
+        # Plex Performance
+        - alert: PlexHighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{namespace="media",pod=~"plex-.*",container="plex"}
+              /
+              container_spec_memory_limit_bytes{namespace="media",pod=~"plex-.*",container="plex"}
+            ) > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            category: plex-performance
+          annotations:
+            summary: "Plex is using high memory"
+            description: "Plex is using {{ $value | humanizePercentage }} of its memory limit. Pod may be OOMKilled."
+
+        - alert: PlexHighCPUUsage
+          expr: |
+            (
+              rate(container_cpu_usage_seconds_total{namespace="media",pod=~"plex-.*",container="plex"}[5m])
+              /
+              container_spec_cpu_quota{namespace="media",pod=~"plex-.*",container="plex"}
+              * container_spec_cpu_period{namespace="media",pod=~"plex-.*",container="plex"}
+            ) > 0.9
+          for: 15m
+          labels:
+            severity: info
+            category: plex-performance
+          annotations:
+            summary: "Plex is experiencing high CPU usage"
+            description: "Plex CPU usage is at {{ $value | humanizePercentage }}. Heavy transcoding may be occurring."
+
+    - name: plex.network
+      interval: 1m
+      rules:
+        # OPNsense Firewall (for local network users)
+        - alert: OPNsenseBlockingPlexTrafficLocal
+          expr: |
+            rate(opnsense_firewall_in_ipv4_block_packets{opnsense_instance="gw"}[5m]) > 10
+            and
+            opnsense_arp_table_entries{ip="10.0.30.70",opnsense_instance="gw"} == 1
+          for: 5m
+          labels:
+            severity: info
+            category: plex-network
+          annotations:
+            summary: "Firewall blocking packets on Plex network segment"
+            description: "OPNsense is blocking packets on the server network. Local Plex access may be affected.\n  Block rate: {{ $value }} packets/s"
