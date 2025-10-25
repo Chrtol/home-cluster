@@ -57,7 +57,8 @@ async def list_reptiles(
             continue
 
         # Load household relationship if not already loaded
-        if reptile.household_id and not hasattr(reptile, 'household'):
+        # Use __dict__ to avoid triggering lazy load via hasattr
+        if reptile.household_id and 'household' not in reptile.__dict__:
             household_result = await db.execute(
                 select(Household).where(Household.id == reptile.household_id)
             )
