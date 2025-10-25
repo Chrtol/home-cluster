@@ -547,3 +547,129 @@ class FeedingRotation(FeedingRotationBase):
 class FeedingRotationWithDetails(FeedingRotation):
     """Feeding rotation with supplement details"""
     supplement: Optional[Supplement] = None
+
+
+# Schedule Template schemas
+class ScheduleTemplateBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    species: Optional[str] = None  # null = applies to all species
+    age_category: Optional[str] = None  # "hatchling", "juvenile", "adult", "senior", null = all ages
+
+    # Schedule configuration
+    schedule_type: str  # "feeding", "misting", "weighing", "supplement"
+    schedule_rule: str  # "every_x_days", "days_of_week", "monthly"
+    food_category: Optional[str] = None
+    time_slot: Optional[str] = None
+    health_category: Optional[str] = None
+
+    # Rule parameters
+    frequency_days: Optional[int] = None
+    days_of_week: Optional[str] = None
+    day_of_month: Optional[int] = None
+
+    # Time window settings
+    earliest_time: Optional[time] = None
+    latest_time: Optional[time] = None
+    time_window_enabled: bool = False
+    reminder_minutes_before: Optional[int] = None
+
+    # Supplement reference (optional)
+    supplement_id: Optional[int] = None
+
+    notes: Optional[str] = None
+
+
+class ScheduleTemplateCreate(ScheduleTemplateBase):
+    pass
+
+
+class ScheduleTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    species: Optional[str] = None
+    age_category: Optional[str] = None
+    schedule_type: Optional[str] = None
+    schedule_rule: Optional[str] = None
+    food_category: Optional[str] = None
+    time_slot: Optional[str] = None
+    health_category: Optional[str] = None
+    frequency_days: Optional[int] = None
+    days_of_week: Optional[str] = None
+    day_of_month: Optional[int] = None
+    earliest_time: Optional[time] = None
+    latest_time: Optional[time] = None
+    time_window_enabled: Optional[bool] = None
+    reminder_minutes_before: Optional[int] = None
+    supplement_id: Optional[int] = None
+    notes: Optional[str] = None
+
+
+class ScheduleTemplate(ScheduleTemplateBase):
+    id: int
+    is_default: bool
+    created_by_user_id: Optional[int] = None
+    source_template_id: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ScheduleTemplateWithDetails(ScheduleTemplate):
+    """Schedule template with supplement details"""
+    supplement: Optional[Supplement] = None
+
+
+# Care Guideline schemas
+class CareGuidelineBase(BaseModel):
+    species: str
+    age_category: Optional[str] = None  # "hatchling", "juvenile", "adult", "senior", null = general
+    guideline_type: str  # "feeding", "supplements", "environment", "handling", "general"
+    title: str
+    content: str
+    recommendations: Optional[dict] = None  # Structured data for automated suggestions
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+
+
+class CareGuidelineCreate(CareGuidelineBase):
+    pass
+
+
+class CareGuidelineUpdate(BaseModel):
+    species: Optional[str] = None
+    age_category: Optional[str] = None
+    guideline_type: Optional[str] = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    recommendations: Optional[dict] = None
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+
+
+class CareGuideline(CareGuidelineBase):
+    id: int
+    is_default: bool
+    created_by_user_id: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Import/Export schemas
+class ScheduleTemplateExport(BaseModel):
+    """Export format for schedule templates"""
+    version: str = "1.0"
+    exported_at: datetime
+    templates: List[ScheduleTemplate]
+
+
+class CareGuidelineExport(BaseModel):
+    """Export format for care guidelines"""
+    version: str = "1.0"
+    exported_at: datetime
+    guidelines: List[CareGuideline]
