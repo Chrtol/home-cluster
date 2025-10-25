@@ -31,7 +31,7 @@ spec:
               pullPolicy: IfNotPresent
             envFrom:
               - secretRef:
-                  name: reptile-tracker-database-secret
+                  name: reptile-tracker-secret
 
         containers:
           backend:
@@ -43,7 +43,7 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: reptile-tracker-database-secret
+                    name: reptile-tracker-secret
                     key: DATABASE_URL
               SECRET_KEY:
                 valueFrom:
