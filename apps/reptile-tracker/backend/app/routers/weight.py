@@ -66,7 +66,7 @@ async def list_weight_logs(
     )
     return result.scalars().all()
 
-@router.get("/{log_id}", response_model=WeightLogSchema)
+@router.get("/{log_id}", response_model=WeightLogWithReptile)
 async def get_weight_log(
     log_id: int,
     current_user: User = Depends(get_current_user),
