@@ -36,7 +36,7 @@ export default function Dashboard() {
         setReptiles(reptilesRes.data);
         setWeightData(weightRes.data);
 
-        // Fetch misting and health data for each reptile
+        // Fetch misting and health data for each reptile (single fetch, used for both stats and activity)
         const mistingPromises = reptilesRes.data.map(r =>
           axios.get(`/api/misting/reptile/${r.id}`).catch(() => ({ data: [] }))
         );
@@ -70,7 +70,7 @@ export default function Dashboard() {
         });
         setHealthData(healthMap);
 
-        // Fetch recent activity from all sources
+        // Build recent activity from already-fetched data
         const allActivity = [];
 
         // Add feedings
@@ -86,22 +86,23 @@ export default function Dashboard() {
           });
         });
 
-        // Fetch and add recent mistings
-        const recentMistingsPromises = reptilesRes.data.map(r =>
-          axios.get(`/api/misting/reptile/${r.id}`).then(res =>
-            res.data.slice(0, 5).map(m => ({
+        // Add recent mistings from already-fetched data
+        reptilesRes.data.forEach((reptile, index) => {
+          const logs = mistingResults[index].data;
+          logs.slice(0, 5).forEach(m => {
+            allActivity.push({
               type: 'misting',
               id: `misting-${m.id}`,
               timestamp: new Date(m.misted_at),
-              reptile: { id: r.id, name: r.name },
+              reptile: { id: reptile.id, name: reptile.name },
               data: m,
               icon: Droplets,
               color: 'blue'
-            }))
-          ).catch(() => [])
-        );
+            });
+          });
+        });
 
-        // Fetch and add recent weight logs
+        // Add recent weight logs
         const recentWeightLogs = weightRes.data.slice(0, 10).map(w => ({
           type: 'weight',
           id: `weight-${w.id}`,
@@ -113,28 +114,21 @@ export default function Dashboard() {
         }));
         allActivity.push(...recentWeightLogs);
 
-        // Fetch and add recent health logs
-        const recentHealthPromises = reptilesRes.data.map(r =>
-          axios.get(`/api/health/reptile/${r.id}`).then(res =>
-            res.data.slice(0, 5).map(h => ({
+        // Add recent health logs from already-fetched data
+        reptilesRes.data.forEach((reptile, index) => {
+          const records = healthResults[index].data;
+          records.slice(0, 5).forEach(h => {
+            allActivity.push({
               type: 'health',
               id: `health-${h.id}`,
               timestamp: new Date(h.date),
-              reptile: { id: r.id, name: r.name },
+              reptile: { id: reptile.id, name: reptile.name },
               data: h,
               icon: Activity,
               color: 'green'
-            }))
-          ).catch(() => [])
-        );
-
-        const [mistingActivities, healthActivities] = await Promise.all([
-          Promise.all(recentMistingsPromises),
-          Promise.all(recentHealthPromises)
-        ]);
-
-        mistingActivities.forEach(arr => allActivity.push(...arr));
-        healthActivities.forEach(arr => allActivity.push(...arr));
+            });
+          });
+        });
 
         // Sort by timestamp and take top 10
         allActivity.sort((a, b) => b.timestamp - a.timestamp);
