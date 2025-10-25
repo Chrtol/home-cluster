@@ -3,13 +3,13 @@ import axios from 'axios';
 import { Plus, Edit, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDayNames, getDayNumbers } from '../utils/dateFormatting';
 
-export default function FeedingRotationManager({ reptileId, reptileName }) {
+export default function FeedingRotationManager({ reptileId, reptileName, autoShowPreview = false }) {
   const [rotations, setRotations] = useState([]);
   const [supplements, setSupplements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingRotation, setEditingRotation] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(autoShowPreview);
   const [preview, setPreview] = useState([]);
 
   // Form state
@@ -32,6 +32,13 @@ export default function FeedingRotationManager({ reptileId, reptileName }) {
   useEffect(() => {
     fetchData();
   }, [reptileId]);
+
+  // Auto-fetch preview when autoShowPreview is enabled and rotations are loaded
+  useEffect(() => {
+    if (autoShowPreview && !loading && rotations.length >= 0) {
+      fetchPreview();
+    }
+  }, [autoShowPreview, loading]);
 
   const fetchData = async () => {
     try {
