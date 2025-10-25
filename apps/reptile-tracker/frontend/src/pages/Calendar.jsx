@@ -63,20 +63,34 @@ function Calendar() {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      const allSchedules = [];
-      const allRotations = [];
-      for (const reptile of reptiles) {
-        const response = await axios.get(`/api/schedules/reptile/${reptile.id}`);
-        allSchedules.push(...response.data.map(s => ({ ...s, reptile_name: reptile.name })));
 
-        // Fetch feeding rotations for this reptile
-        try {
-          const rotationsResponse = await axios.get(`/api/feeding-rotations/reptile/${reptile.id}`);
-          allRotations.push(...rotationsResponse.data.map(r => ({ ...r, reptile_name: reptile.name })));
-        } catch (rotError) {
-          console.error(`Error fetching rotations for ${reptile.name}:`, rotError);
-        }
-      }
+      // Fetch schedules and rotations in parallel
+      const schedulePromises = reptiles.map(reptile =>
+        axios.get(`/api/schedules/reptile/${reptile.id}`)
+          .then(res => res.data.map(s => ({ ...s, reptile_name: reptile.name })))
+          .catch(err => {
+            console.error(`Error fetching schedules for ${reptile.name}:`, err);
+            return [];
+          })
+      );
+
+      const rotationPromises = reptiles.map(reptile =>
+        axios.get(`/api/feeding-rotations/reptile/${reptile.id}`)
+          .then(res => res.data.map(r => ({ ...r, reptile_name: reptile.name })))
+          .catch(err => {
+            console.error(`Error fetching rotations for ${reptile.name}:`, err);
+            return [];
+          })
+      );
+
+      const [scheduleResults, rotationResults] = await Promise.all([
+        Promise.all(schedulePromises),
+        Promise.all(rotationPromises)
+      ]);
+
+      const allSchedules = scheduleResults.flat();
+      const allRotations = rotationResults.flat();
+
       setSchedules(allSchedules);
       setFeedingRotations(allRotations);
       calculateEvents(allSchedules, allRotations);
@@ -92,37 +106,49 @@ function Calendar() {
       const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-      const allFeedings = [];
-      const allMistings = [];
-
-      for (const reptile of reptiles) {
-        // Fetch feedings for the current month using query parameters
-        const feedingResponse = await axios.get(`/api/feedings`, {
+      // Fetch feedings and mistings in parallel
+      const feedingPromises = reptiles.map(reptile =>
+        axios.get(`/api/feedings`, {
           params: {
             reptile_id: reptile.id,
             start_date: monthStart.toISOString(),
             end_date: monthEnd.toISOString(),
             limit: 1000
           }
-        });
-        const monthFeedings = feedingResponse.data.map(f => ({
-          ...f,
-          reptile_name: reptile.name,
-          type: "feeding"
-        }));
-        allFeedings.push(...monthFeedings);
+        })
+          .then(res => res.data.map(f => ({
+            ...f,
+            reptile_name: reptile.name,
+            type: "feeding"
+          })))
+          .catch(err => {
+            console.error(`Error fetching feedings for ${reptile.name}:`, err);
+            return [];
+          })
+      );
 
-        // Fetch mistings for the current month
-        const mistingResponse = await axios.get(`/api/misting/reptile/${reptile.id}`);
-        const monthMistings = mistingResponse.data.filter(m => {
-          const mistDate = new Date(m.misted_at);
-          return mistDate >= monthStart && mistDate <= monthEnd;
-        }).map(m => ({ ...m, reptile_name: reptile.name, type: "misting" }));
-        allMistings.push(...monthMistings);
-      }
+      const mistingPromises = reptiles.map(reptile =>
+        axios.get(`/api/misting/reptile/${reptile.id}`)
+          .then(res => res.data
+            .filter(m => {
+              const mistDate = new Date(m.misted_at);
+              return mistDate >= monthStart && mistDate <= monthEnd;
+            })
+            .map(m => ({ ...m, reptile_name: reptile.name, type: "misting" }))
+          )
+          .catch(err => {
+            console.error(`Error fetching mistings for ${reptile.name}:`, err);
+            return [];
+          })
+      );
 
-      setFeedings(allFeedings);
-      setMistings(allMistings);
+      const [feedingResults, mistingResults] = await Promise.all([
+        Promise.all(feedingPromises),
+        Promise.all(mistingPromises)
+      ]);
+
+      setFeedings(feedingResults.flat());
+      setMistings(mistingResults.flat());
     } catch (error) {
       console.error("Error fetching past data:", error);
     }
