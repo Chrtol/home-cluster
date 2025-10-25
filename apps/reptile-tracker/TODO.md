@@ -1,8 +1,8 @@
 # Reptile Tracker - Todo List
 
 ## 🚀 NEXT UP - Tier 1 Priorities
-1. **Statistics Page Phase 1** - Weight charts & feeding frequency (see [📊 Statistics & Analytics](#-statistics--analytics))
-2. **Care Schedules & Recommendations** - Species-based guidelines (see recommendations below)
+1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
+2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines (see [Feature Recommendations](#-feature-assessment--recommendations))
 
 ---
 
@@ -164,46 +164,33 @@
   - Summary cards: weight change, feeding count, misting count, health events
   - Chart library: Recharts
 
-- [ ] **Phase 1.5 - Statistics Settings & Customization** (1 week)
-  - **Settings Page Integration:**
-    - Add new "Statistics" tab to Settings page (alongside Date & Time, Household)
-    - Save preferences in localStorage (per user)
-    - Live preview of changes where applicable
-  - **Card Management (Drag & Drop Layout):**
-    - Drag and drop to reorder cards/charts
-    - Show/hide individual cards (checkboxes in settings)
-    - Resize cards (small, medium, large, full-width)
-    - Reset to default layout button
-    - Saved layout persisted in localStorage
-    - Visual "Edit Layout" mode toggle
-  - **Weight interpolation settings:**
-    - Toggle interpolation on/off
-    - Interpolation modes dropdown: Linear (current), Step (horizontal line from last known), None (dots only)
-    - Visual styling options for each mode
-    - Preview chart showing the difference between modes
-  - **Chart customization:**
-    - Toggle chart elements (grid, legend, axis labels)
-    - Color scheme preferences (per user or per reptile)
-    - Chart height adjustment slider
-  - **Data filtering:**
-    - Filter by specific food types in feeding chart
-    - Filter health events by type
-    - Date range presets (custom, last week, month, quarter, year, all time)
-  - **Display preferences:**
-    - Weight units (grams, ounces, pounds)
-    - Date format in tooltips (respect user settings)
-    - Show/hide trend lines and moving averages
-    - Heatmap intensity adjustment (color scale customization)
-  - **Export settings:**
-    - Image export format (PNG, SVG, PDF)
-    - Include/exclude specific data series
-    - Resolution and size options
-  - **Implementation:**
-    - Frontend: New StatisticsSettings component in Settings page
-    - Frontend: Utility functions in utils/statisticsSettings.js
-    - Frontend: Consider react-grid-layout or react-beautiful-dnd for drag & drop
-    - Statistics page reads from localStorage on load
-    - Default values for all settings
+- [x] **Phase 1.5 - Statistics Settings & Customization** - ✅ COMPLETED
+  - Full implementation in Settings > Display tab (Settings.jsx)
+  - Settings stored in localStorage via utils/displaySettings.js
+  - Statistics page automatically loads and applies settings
+
+  **Implemented Features:**
+  - ✅ Display tab in Settings page with comprehensive customization
+  - ✅ Dashboard card management: show/hide, drag-to-reorder, resize (XS/S/M/L)
+  - ✅ Statistics chart management: show/hide, drag-to-reorder, resize (XS/S/M/L)
+  - ✅ Weight interpolation modes: Linear, Step, None (dots only) - per chart
+  - ✅ Chart appearance settings: grid, legend, axis labels, height slider
+  - ✅ Per-reptile custom statistics layouts (with global fallback)
+  - ✅ Export/import all display settings as JSON
+  - ✅ Reset functionality: individual sections or all settings
+  - ✅ Settings persistence in localStorage
+  - ✅ Native drag-and-drop (no external library needed)
+  - ✅ Live preview: Statistics page updates when settings change
+  - ✅ Food filtering in statistics (dropdown in weight/feeding chart)
+  - ✅ Data type toggles (Weight, Feeding, Misting, Health) in Statistics page
+  - ✅ Time range selector (7d, 30d, 90d, 180d, 365d, 730d) in Statistics page
+
+  **Not Implemented (deferred to future phases):**
+  - Weight units conversion (currently grams only)
+  - Trend lines and moving averages
+  - Heatmap intensity customization
+  - Chart image export (PNG/SVG/PDF)
+  - Color scheme customization
 
 - [ ] **Phase 2 - Health Analytics** (1-2 weeks)
   - Shed frequency tracking (bar chart)
@@ -373,6 +360,33 @@
   - Used legendType="none" to prevent duplicate legend entries
   - Multi-reptile support with proper color coding
   - Respects interpolation mode setting (linear/step) for extrapolation only
+
+### January 2025 - Statistics Settings & Customization (2025-01-25)
+- [x] **Phase 1.5 - Statistics Settings & Customization** - ✅ COMPLETED
+  - Full implementation in Settings > Display tab
+  - Settings stored in localStorage via utils/displaySettings.js
+  - Statistics page automatically loads and applies settings
+  - **Implemented Features:**
+    - Display tab in Settings page with comprehensive customization UI
+    - Dashboard card management: show/hide, drag-to-reorder, resize (XS/S/M/L)
+    - Statistics chart management: show/hide, drag-to-reorder, resize (XS/S/M/L)
+    - Weight interpolation modes: Linear, Step, None (dots only) - configurable per chart
+    - Chart appearance settings: grid, legend, axis labels, height slider (200-600px)
+    - Per-reptile custom statistics layouts with global fallback
+    - Export/import all display settings as JSON file
+    - Reset functionality for individual sections or all settings
+    - Settings persistence in localStorage (per-user, per-browser)
+    - Native drag-and-drop implementation (no external library)
+    - Live preview: Statistics page updates when returning from Settings
+    - Food filtering in statistics (dropdown in weight/feeding correlation chart)
+    - Data type toggles (Weight, Feeding, Misting, Health) in Statistics header
+    - Time range selector (7d, 30d, 90d, 180d, 365d, 730d) in Statistics page
+  - **Not Implemented (deferred to future phases):**
+    - Weight units conversion (currently grams only)
+    - Trend lines and moving averages
+    - Heatmap intensity customization
+    - Chart image export (PNG/SVG/PDF)
+    - Color scheme customization per user/reptile
 
 ### January 2025 - Statistics Page Enhancements & Bug Fixes (2025-01-22)
 - [x] **Dashboard weight graph improvements** - ✅ COMPLETED
