@@ -525,9 +525,9 @@ class ScheduleTemplate(Base):
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    created_by = relationship("User")
-    source_template = relationship("ScheduleTemplate", remote_side=[id], backref="duplicates")
-    supplement = relationship("Supplement")
+    created_by = relationship("User", lazy="select")
+    source_template = relationship("ScheduleTemplate", remote_side=[id], foreign_keys=[source_template_id], lazy="select")
+    supplement = relationship("Supplement", lazy="select")
 
 
 class CareGuideline(Base):
@@ -558,4 +558,4 @@ class CareGuideline(Base):
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    created_by = relationship("User")
+    created_by = relationship("User", lazy="select")
