@@ -58,17 +58,23 @@ async def list_reptiles(
 
         # Load household relationship if not already loaded
         # Use __dict__ to avoid triggering lazy load via hasattr
-        if reptile.household_id and 'household' not in reptile.__dict__:
-            household_result = await db.execute(
-                select(Household).where(Household.id == reptile.household_id)
-            )
-            household = household_result.scalar_one_or_none()
-            reptile.household = household
+        household = None
+        if reptile.household_id:
+            if 'household' in reptile.__dict__:
+                household = reptile.__dict__['household']
+            else:
+                household_result = await db.execute(
+                    select(Household).where(Household.id == reptile.household_id)
+                )
+                household = household_result.scalar_one_or_none()
+
+        # Build dict without SQLAlchemy internal attributes
+        reptile_dict = {k: v for k, v in reptile.__dict__.items() if not k.startswith('_')}
 
         response_data.append(
             ReptileWithHousehold(
-                **reptile.__dict__,
-                household=reptile.household if hasattr(reptile, 'household') else None,
+                **reptile_dict,
+                household=household,
             )
         )
 
