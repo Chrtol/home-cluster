@@ -90,7 +90,8 @@ spec:
           # Extended timeouts for Plex streaming
           nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
           nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-          external-dns.alpha.kubernetes.io/target: "${VPS_PUBLIC_IP}"
+          # Exclude from regular external-dns (DNS managed by DNSEndpoint + external-dns-vps)
+          external-dns.alpha.kubernetes.io/exclude: "true"
         hosts:
           - host: &host plex.${SECRET_DOMAIN}
             paths:
