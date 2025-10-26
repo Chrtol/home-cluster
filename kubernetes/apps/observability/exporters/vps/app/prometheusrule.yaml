@@ -1,0 +1,96 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vps-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: vps-health
+      interval: 1m
+      rules:
+        - alert: VPSDown
+          expr: up{job="vps-node-exporter"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            category: vps
+          annotations:
+            summary: VPS is down or unreachable
+            description: The VPS at 10.100.0.1 has been unreachable for 5 minutes. All external services are likely down.
+
+        - alert: VPSHighCPU
+          expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{job="vps-node-exporter",mode="idle"}[5m])) * 100) > 80
+          for: 10m
+          labels:
+            severity: warning
+            category: vps
+          annotations:
+            summary: VPS CPU usage is high
+            description: VPS CPU usage is {{ $value | humanizePercentage }}. This may affect service performance.
+
+        - alert: VPSHighMemory
+          expr: (1 - (node_memory_MemAvailable_bytes{job="vps-node-exporter"} / node_memory_MemTotal_bytes{job="vps-node-exporter"})) * 100 > 85
+          for: 10m
+          labels:
+            severity: warning
+            category: vps
+          annotations:
+            summary: VPS memory usage is high
+            description: VPS memory usage is {{ $value | humanizePercentage }}.
+
+        - alert: VPSDiskSpaceLow
+          expr: (1 - (node_filesystem_avail_bytes{job="vps-node-exporter",mountpoint="/"} / node_filesystem_size_bytes{job="vps-node-exporter",mountpoint="/"})) * 100 > 85
+          for: 10m
+          labels:
+            severity: warning
+            category: vps
+          annotations:
+            summary: VPS disk space is low
+            description: VPS disk usage is {{ $value | humanizePercentage }} on root filesystem.
+
+        - alert: VPSHighNetworkTraffic
+          expr: rate(node_network_transmit_bytes_total{job="vps-node-exporter",device!~"lo|veth.*|docker.*|virbr.*|wg.*"}[5m]) > 100000000
+          for: 15m
+          labels:
+            severity: info
+            category: vps
+          annotations:
+            summary: VPS network traffic is high
+            description: VPS is transmitting {{ $value | humanize }}B/s. Approaching bandwidth limits.
+
+    - name: vps-ssl
+      interval: 6h
+      rules:
+        - alert: VPSSSLCertExpiringSoon
+          expr: (ssl_certificate_expiry_seconds{job="blackbox-exporter",target=~"https://.*\\.${SECRET_DOMAIN}"} < 86400 * 14)
+          for: 1h
+          labels:
+            severity: warning
+            category: vps
+          annotations:
+            summary: VPS SSL certificate expiring soon
+            description: SSL certificate for {{ $labels.target }} expires in {{ $value | humanizeDuration }}.
+
+        - alert: VPSSSLCertExpired
+          expr: ssl_certificate_expiry_seconds{job="blackbox-exporter",target=~"https://.*\\.${SECRET_DOMAIN}"} < 0
+          for: 1h
+          labels:
+            severity: critical
+            category: vps
+          annotations:
+            summary: VPS SSL certificate expired
+            description: SSL certificate for {{ $labels.target }} has expired!
+
+    - name: vps-wireguard
+      interval: 1m
+      rules:
+        - alert: VPSWireGuardTunnelDown
+          expr: rate(wireguard_sent_bytes_total{job="wireguard-exporter"}[5m]) == 0 and rate(wireguard_received_bytes_total{job="wireguard-exporter"}[5m]) == 0
+          for: 5m
+          labels:
+            severity: critical
+            category: vps
+          annotations:
+            summary: VPS WireGuard tunnel appears down
+            description: No traffic detected on WireGuard tunnel for 5 minutes. VPS routing may be broken.
