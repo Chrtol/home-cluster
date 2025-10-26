@@ -40,12 +40,12 @@ spec:
       - --ignore-ingress-tls-spec
       - --ingress-class=external
       - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
+      - --target=${VPS_PUBLIC_IP}
     policy: sync
     sources: ["crd", "ingress"]
     txtPrefix: k8s.
     txtOwnerId: default
     domainFilters: ["${SECRET_DOMAIN}"]
-    defaultTargets: ["${VPS_PUBLIC_IP}"]
     serviceMonitor:
       enabled: true
     podAnnotations:
