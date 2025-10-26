@@ -39,7 +39,7 @@ spec:
       - --events
       - --ignore-ingress-tls-spec
       - --ingress-class=vps
-      - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
+      - --annotation-filter=vps-ingress.home-cluster/exclude notin (true)
     policy: sync
     sources: ["crd", "ingress"]
     txtPrefix: k8s-vps.
