@@ -8,6 +8,7 @@ resources:
   - ./helmrelease.yaml
   - ./replicationsource.yaml
   - ./prometheusrule.yaml
+  - ./vps-dnsendpoint.yaml
 # configMapGenerator:
 #   - name: plex-loki-rules
 #     files:
