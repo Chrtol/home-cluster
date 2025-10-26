@@ -34,15 +34,14 @@ spec:
             key: api-token
     extraArgs:
       - --cloudflare-dns-records-per-page=1000
-      - --cloudflare-proxied=false
       - --events
       - --ignore-ingress-tls-spec
       - --ingress-class=vps
-      - --txt-prefix=k8s-vps.
-      - --txt-owner-id=vps
       - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
     policy: sync
     sources: ["ingress"]
+    txtPrefix: k8s-vps.
+    txtOwnerId: vps
     domainFilters: ["${SECRET_DOMAIN}"]
     # NOTE: Ingresses using className: vps should include this annotation:
     # external-dns.alpha.kubernetes.io/target: "${VPS_PUBLIC_IP}"
