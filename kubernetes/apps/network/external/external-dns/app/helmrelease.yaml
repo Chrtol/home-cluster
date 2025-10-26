@@ -34,7 +34,6 @@ spec:
             key: api-token
     extraArgs:
       - --cloudflare-dns-records-per-page=1000
-      - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
       - --events
@@ -46,7 +45,7 @@ spec:
     txtPrefix: k8s.
     txtOwnerId: default
     domainFilters: ["${SECRET_DOMAIN}"]
-    excludeDomains: ["plex.${SECRET_DOMAIN}"]
+    defaultTargets: ["${VPS_PUBLIC_IP}"]
     serviceMonitor:
       enabled: true
     podAnnotations:
