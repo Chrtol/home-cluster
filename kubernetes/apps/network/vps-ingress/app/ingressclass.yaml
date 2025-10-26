@@ -5,7 +5,8 @@ kind: IngressClass
 metadata:
   name: vps
   annotations:
-    # This tells external-dns to handle ingresses with this class
+    # VPS ingresses are served by the external nginx-ingress controller
+    # but DNS is managed by external-dns-vps (not external-dns)
     external-dns.alpha.kubernetes.io/ingress-class: vps
 spec:
-  controller: k8s.io/vps-nginx
+  controller: k8s.io/external
