@@ -5,6 +5,8 @@ kind: DNSEndpoint
 metadata:
   name: plex-vps
   namespace: media
+  annotations:
+    external-dns.alpha.kubernetes.io/exclude: "true"
 spec:
   endpoints:
     - dnsName: plex.${SECRET_DOMAIN}
