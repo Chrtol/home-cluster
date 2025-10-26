@@ -41,7 +41,7 @@ spec:
       - --ingress-class=vps
       - --annotation-filter=vps-ingress.home-cluster/exclude notin (true)
     policy: sync
-    sources: ["crd", "ingress"]
+    sources: ["crd"]
     txtPrefix: k8s-vps.
     txtOwnerId: vps
     domainFilters: ["${SECRET_DOMAIN}"]
