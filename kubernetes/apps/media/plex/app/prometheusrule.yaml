@@ -9,41 +9,11 @@ spec:
     - name: plex.external-access
       interval: 1m
       rules:
-        # Cloudflare Tunnel Health
-        - alert: PlexCloudflaredTunnelDown
-          expr: |
-            cloudflared_tunnel_ha_connections{namespace="network"} == 0
-          for: 5m
-          labels:
-            severity: critical
-            category: plex-access
-          annotations:
-            summary: "Cloudflare Tunnel is down - external Plex access unavailable"
-            description: "The Cloudflare tunnel has 0 active HA connections. External users cannot access Plex.\n  Current connections: {{ $value }}"
+        # NOTE: External traffic now routes through VPS, not home nginx-ingress
+        # These metrics show internal cluster traffic only
+        # VPS-level monitoring is in observability/exporters/vps/app/prometheusrule.yaml
 
-        - alert: PlexCloudflaredHighErrorRate
-          expr: |
-            rate(cloudflared_tunnel_request_errors{namespace="network"}[5m]) > 0.1
-          for: 10m
-          labels:
-            severity: warning
-            category: plex-access
-          annotations:
-            summary: "High error rate in Cloudflare Tunnel"
-            description: "Cloudflare tunnel is experiencing {{ $value | humanizePercentage }} error rate. Plex users may experience connection issues."
-
-        - alert: PlexCloudflaredTunnelDegraded
-          expr: |
-            cloudflared_tunnel_ha_connections{namespace="network"} < 4
-          for: 10m
-          labels:
-            severity: warning
-            category: plex-access
-          annotations:
-            summary: "Cloudflare Tunnel has reduced redundancy"
-            description: "Cloudflare tunnel has {{ $value }} HA connections (expected 4). Tunnel resilience is degraded."
-
-        # Nginx Ingress Health
+        # Nginx Ingress Health (Internal traffic)
         - alert: PlexIngressHighErrorRate
           expr: |
             (
