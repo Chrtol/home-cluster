@@ -22,6 +22,15 @@ spec:
             privileged: true
             capabilities:
               add: ["NET_ADMIN", "SYS_MODULE"]
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    sleep 5
+                    ip neigh add 10.0.30.60 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true
           env:
             - name: PUID
               value: "1000"
