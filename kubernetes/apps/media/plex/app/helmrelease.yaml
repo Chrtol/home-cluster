@@ -84,24 +84,8 @@ spec:
             port: 32400
     ingress:
       app:
-        enabled: true
-        className: vps
-        annotations:
-          # Extended timeouts for Plex streaming
-          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-          # Exclude from regular external-dns (DNS managed by DNSEndpoint + external-dns-vps)
-          external-dns.alpha.kubernetes.io/exclude: "true"
-        hosts:
-          - host: &host plex.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *host
+        enabled: false
+        # Disabled - using standalone ingress.yaml for VPS routing
     persistence:
       config:
         existingClaim: plex
