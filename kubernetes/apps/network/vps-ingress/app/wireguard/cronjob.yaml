@@ -1,0 +1,31 @@
+---
+# Periodically send traffic through WireGuard tunnel to update VPS endpoint
+# when home IP changes (replacement for PersistentKeepalive)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: wireguard-endpoint-refresh
+  namespace: network
+spec:
+  # Run every 5 minutes
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          hostNetwork: true
+          containers:
+            - name: ping
+              image: nicolaka/netshoot:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  # Send 3 pings through the WireGuard tunnel to VPS
+                  # This updates the VPS with our current IP endpoint
+                  # Multiple pings ensure at least one gets through
+                  ping -c 3 -W 2 10.100.0.1
+                  echo "Endpoint refresh completed at $(date)"
