@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/externaldns.k8s.io/dnsendpoint_v1alpha1.json
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: plex-vps
+  namespace: media
+spec:
+  endpoints:
+    - dnsName: plex.${SECRET_DOMAIN}
+      recordType: A
+      targets:
+        - ${VPS_PUBLIC_IP}
+      providerSpecific:
+        - name: cloudflare-proxied
+          value: "false"
