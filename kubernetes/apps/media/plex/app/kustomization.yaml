@@ -9,6 +9,7 @@ resources:
   - ./replicationsource.yaml
   - ./prometheusrule.yaml
   - ./vps-dnsendpoint.yaml
+  - ./ingress.yaml
 # configMapGenerator:
 #   - name: plex-loki-rules
 #     files:
