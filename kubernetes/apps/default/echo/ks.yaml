@@ -11,6 +11,9 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   path: ./kubernetes/apps/default/echo/app
+  dependsOn:
+    - name: vps-ingress
+      namespace: network
   components:
     - ../../../../components/gatus/external
   postBuild:
