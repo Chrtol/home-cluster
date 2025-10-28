@@ -101,6 +101,15 @@
   const pgSuccessful = data.pgBackups ? data.pgBackups.filter(b => b.status === 'success').length : 0;
   const pgFailed = data.pgBackups ? data.pgBackups.filter(b => b.status === 'failed').length : 0;
 
+  // Format duration from seconds to readable format
+  function formatDuration(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${minutes}m ${secs}s`;
+  }
+
+  const avgDuration = data.averageDurationSeconds ? formatDuration(data.averageDurationSeconds) : 'N/A';
+
   // Main description
   const progressBar = createProgressBar(data.successRate);
   const description = `${progressBar} ${data.successRate}% Success Rate
@@ -108,7 +117,7 @@
   **📊 SUMMARY**
   \`\`\`
   VolSync:    ✅ ${volsyncSuccessful} Successful  ❌ ${volsyncFailed} Failed
-              📦 ${Math.round(volsyncTotal * 10.4)}GB  🕐 4m 32s avg
+              🕐 ${avgDuration} avg
   PostgreSQL: ✅ ${pgSuccessful} Successful  ❌ ${pgFailed} Failed
   \`\`\`
   ${postgresText}${namespaceText}${attentionText}`;
