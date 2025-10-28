@@ -73,7 +73,7 @@ spec:
             args:
               - >-
                 curl --fail --silent --show-error --location --insecure --request POST
-                --user "${OPNSENSE_EXPORTER_OPS_API_KEY}:${OPNSENSE_EXPORTER_OPS_API_SECRET}"
+                --user "$OPNSENSE_EXPORTER_OPS_API_KEY:$OPNSENSE_EXPORTER_OPS_API_SECRET"
                 --data "{}"
                 "https://opnsense.${SECRET_DOMAIN}/api/core/firmware/status"
             envFrom: *envFrom
