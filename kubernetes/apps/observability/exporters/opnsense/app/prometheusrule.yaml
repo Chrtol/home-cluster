@@ -216,3 +216,52 @@ spec:
             summary: "VPN tunnel {{ $labels.tunnel }} is down"
             description: >
               VPN tunnel {{ $labels.tunnel }} has been down for 5 minutes.
+
+    - name: opnsense-firmware
+      interval: 5m
+      rules:
+        # Firmware Updates Available
+        - alert: OPNsenseFirmwareUpdatesAvailable
+          expr: |
+            opnsense_firmware_upgrade_packages > 0
+          for: 24h
+          labels:
+            severity: info
+            category: firmware
+          annotations:
+            summary: "OPNsense has {{ $value }} package updates available"
+            description: >
+              OPNsense has {{ $value }} packages that can be upgraded.
+              Consider applying updates during your next maintenance window.
+              Last check: {{ $labels.last_check }}
+
+        # System Needs Reboot
+        - alert: OPNsenseNeedsReboot
+          expr: |
+            opnsense_firmware_needs_reboot == 1
+          for: 1h
+          labels:
+            severity: warning
+            category: firmware
+          annotations:
+            summary: "OPNsense needs to be rebooted"
+            description: >
+              OPNsense has pending changes that require a reboot to take effect.
+              This is typically due to kernel or core system updates.
+              Schedule a maintenance window to reboot the firewall.
+
+        # Firmware Check Failing
+        - alert: OPNsenseFirmwareCheckFailing
+          expr: |
+            rate(opnsense_exporter_endpoint_errors_total{endpoint="api/core/firmware/status"}[1h]) > 0
+          for: 2h
+          labels:
+            severity: warning
+            category: firmware
+          annotations:
+            summary: "OPNsense firmware status check is failing"
+            description: >
+              The firmware status endpoint has been failing for the past 2 hours.
+              This may indicate API permission issues or connectivity problems.
+              Check the opnsense-exporter logs and verify API credentials have
+              the "System: Firmware" permission enabled.
