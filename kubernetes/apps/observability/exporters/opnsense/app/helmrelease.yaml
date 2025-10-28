@@ -67,20 +67,15 @@ spec:
             image:
               repository: docker.io/alpine/curl
               tag: 8.14.1@sha256:e37808e50268ff935a924086856c22477e9754bcd90da9bc5bf131ac9612356a
+            command:
+              - /bin/sh
+              - -c
             args:
-              - "--fail"
-              - "--silent"
-              - "--show-error"
-              - "--location"
-              - "--insecure"
-              - "--request"
-              - POST
-              - "--user"
               - >-
-                $(OPNSENSE_EXPORTER_OPS_API_KEY):$(OPNSENSE_EXPORTER_OPS_API_SECRET)
-              - "--data"
-              - "{}"
-              - https://opnsense.${SECRET_DOMAIN}/api/core/firmware/status
+                curl --fail --silent --show-error --location --insecure --request POST
+                --user "${OPNSENSE_EXPORTER_OPS_API_KEY}:${OPNSENSE_EXPORTER_OPS_API_SECRET}"
+                --data "{}"
+                "https://opnsense.${SECRET_DOMAIN}/api/core/firmware/status"
             envFrom: *envFrom
             resources: *resources
             securityContext: *securityContext
