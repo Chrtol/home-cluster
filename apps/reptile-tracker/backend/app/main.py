@@ -16,20 +16,9 @@ from app.seed_data import seed_database
 # - M-2: Rate limiting on all endpoints
 # - I-3: Security logging
 
-
-class HealthCheckFilter(logging.Filter):
-    """Filter out successful health check requests from logs"""
-    def filter(self, record: logging.LogRecord) -> bool:
-        # Only filter uvicorn.access logs
-        if record.name != "uvicorn.access":
-            return True
-        # Filter out successful health checks (200 OK)
-        message = record.getMessage()
-        return not ('"GET /health HTTP' in message and '200 OK' in message)
-
-
 # Configure logging - note: uvicorn logging is configured via logging_config.json
 # passed to uvicorn via --log-config flag
+# Health check filter is defined in app.logging_filters
 logger = logging.getLogger(__name__)
 
 app = FastAPI(

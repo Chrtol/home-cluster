@@ -3,7 +3,7 @@
   "disable_existing_loggers": false,
   "filters": {
     "health_check_filter": {
-      "()": "app.main.HealthCheckFilter"
+      "()": "app.logging_filters.HealthCheckFilter"
     }
   },
   "formatters": {
