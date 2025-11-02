@@ -58,7 +58,7 @@ async def create_health_record(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new health record"""
-    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.OWNER)
+    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.MANAGER)
     new_record = HealthRecord(
         **record.model_dump(exclude={"date"}),
         date=record.date or datetime.now(timezone.utc)
@@ -83,7 +83,7 @@ async def update_health_record(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Health record not found"
         )
-    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.OWNER)
+    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.MANAGER)
 
     update_data = record_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -107,7 +107,7 @@ async def delete_health_record(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Health record not found"
         )
-    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.OWNER)
+    await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.MANAGER)
     await db.execute(delete(HealthRecord).where(HealthRecord.id == record_id))
     await db.commit()
     return None

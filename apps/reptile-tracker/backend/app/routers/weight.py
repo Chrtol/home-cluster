@@ -148,7 +148,7 @@ async def delete_weight_log(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Weight log not found"
         )
-    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.OWNER)
+    await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.MANAGER)
     await db.execute(delete(WeightLog).where(WeightLog.id == log_id))
     await db.commit()
     return None

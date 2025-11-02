@@ -164,3 +164,39 @@ async def is_owner(db: AsyncSession, user: User, reptile_id: int) -> bool:
             return True
 
     return False
+
+
+async def is_manager_or_above(db: AsyncSession, user: User, reptile_id: int) -> bool:
+    """Check if user has manager, owner, or admin access to reptile (via direct access or household)"""
+
+    # Check direct access first
+    access_result = await db.execute(
+        select(reptile_access.c.access_level).where(
+            reptile_access.c.user_id == user.id,
+            reptile_access.c.reptile_id == reptile_id,
+        )
+    )
+    access_level = access_result.scalar_one_or_none()
+
+    if access_level in (AccessLevel.OWNER, AccessLevel.ADMIN, AccessLevel.MANAGER):
+        return True
+
+    # Check household membership
+    reptile_result = await db.execute(
+        select(Reptile.household_id).where(Reptile.id == reptile_id)
+    )
+    household_id = reptile_result.scalar_one_or_none()
+
+    if household_id:
+        household_result = await db.execute(
+            select(household_members.c.access_level).where(
+                household_members.c.user_id == user.id,
+                household_members.c.household_id == household_id,
+            )
+        )
+        household_access_level = household_result.scalar_one_or_none()
+
+        if household_access_level in (AccessLevel.OWNER, AccessLevel.ADMIN, AccessLevel.MANAGER):
+            return True
+
+    return False

@@ -500,14 +500,14 @@ async def update_feeding(
             detail="Feeding not found",
         )
 
-    # Check if user is either the feeder or has owner access to reptile
-    from app.permissions import is_owner
-    is_reptile_owner = await is_owner(db, current_user, feeding.reptile_id)
+    # Check if user is either the feeder or has manager/owner access to reptile
+    from app.permissions import is_manager_or_above
+    is_reptile_manager = await is_manager_or_above(db, current_user, feeding.reptile_id)
 
-    if feeding.user_id != current_user.id and not is_reptile_owner:
+    if feeding.user_id != current_user.id and not is_reptile_manager:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only edit your own feedings unless you're the reptile owner",
+            detail="You can only edit your own feedings unless you're a reptile manager or owner",
         )
 
     # Update basic fields
@@ -672,14 +672,14 @@ async def delete_feeding(
             detail="Feeding not found",
         )
 
-    # Check if user is either the feeder or has owner access to reptile
-    from app.permissions import is_owner
-    is_reptile_owner = await is_owner(db, current_user, feeding.reptile_id)
+    # Check if user is either the feeder or has manager/owner access to reptile
+    from app.permissions import is_manager_or_above
+    is_reptile_manager = await is_manager_or_above(db, current_user, feeding.reptile_id)
 
-    if feeding.user_id != current_user.id and not is_reptile_owner:
+    if feeding.user_id != current_user.id and not is_reptile_manager:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only delete your own feedings unless you're the reptile owner",
+            detail="You can only delete your own feedings unless you're a reptile manager or owner",
         )
 
     await db.execute(delete(Feeding).where(Feeding.id == feeding_id))
