@@ -470,22 +470,28 @@ export default function Dashboard() {
                     contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }}
                     labelStyle={{ color: '#f3f4f6' }}
                     formatter={(value, name, props) => {
-                      // If this is an _actual data point, don't show the extrapolated/interpolated versions
+                      const payload = props.payload;
+
+                      // If this is an _actual data point, show only this
                       if (name.includes('_actual')) {
                         const baseName = name.replace('_actual', '');
                         return [value, baseName];
                       }
 
-                      // If showing extrapolated data, add (estimated) label
+                      // For extrapolated data, check if there's an actual point at this location
+                      // (this happens at first/last measurements where we connect the dashed line)
                       if (name.includes('_extrapolated')) {
                         const baseName = name.replace('_extrapolated', '');
+                        // If there's an actual measurement at this point, don't show extrapolated
+                        if (payload && payload[`${baseName}_actual`] !== undefined) {
+                          return null;
+                        }
                         return [value, `${baseName} (estimated)`];
                       }
 
                       // For interpolated lines, check if there's an actual point at this location
                       if (name.includes('_interpolated')) {
                         const baseName = name.replace('_interpolated', '');
-                        const payload = props.payload;
                         // If there's an actual measurement at this point, don't show interpolated
                         if (payload && payload[`${baseName}_actual`] !== undefined) {
                           return null;

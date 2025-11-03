@@ -87,10 +87,18 @@ export async function duplicateScheduleTemplate(templateId) {
 
 /**
  * Apply a schedule template to a specific reptile
+ * @param {number} templateId - The template to apply
+ * @param {number} reptileId - The reptile to apply the template to
+ * @param {number|null} parentScheduleId - Optional parent schedule ID for grouped templates
  */
-export async function applyTemplateToReptile(templateId, reptileId) {
+export async function applyTemplateToReptile(templateId, reptileId, parentScheduleId = null) {
+  const params = new URLSearchParams();
+  if (parentScheduleId !== null) {
+    params.append('parent_schedule_id', parentScheduleId);
+  }
+
   const response = await axios.post(
-    `${API_BASE_URL}/api/schedule-templates/${templateId}/apply/${reptileId}`,
+    `${API_BASE_URL}/api/schedule-templates/${templateId}/apply/${reptileId}${params.toString() ? '?' + params.toString() : ''}`,
     {},
     { withCredentials: true }
   );
