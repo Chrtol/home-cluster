@@ -40,6 +40,7 @@ function ScheduleTemplates() {
   // Apply template modal
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedReptile, setSelectedReptile] = useState('');
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState(new Set());
 
   // Import modal
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -117,51 +118,85 @@ function ScheduleTemplates() {
     setFilteredTemplates(filtered);
   }
 
-  // Group templates by extracting common prefix (source + species + age)
+  // Super-grouping: Group ALL templates by source only
   function groupTemplates(templates) {
-    const groups = {};
+    const sourceGroups = {};
     const ungrouped = [];
 
     templates.forEach(template => {
-      // Extract group key: "Source - Species Age" or "Source - Species" or just keep individual
       const nameParts = template.name.split(' - ');
 
-      // Templates like "ReptiFiles - Juvenile Bearded Dragon Daily Feeding" have 2 parts
-      if (nameParts.length >= 2 && template.species && template.age_category) {
-        // e.g., "ReptiFiles - Juvenile Bearded Dragon Daily Feeding"
-        // Group key: "ReptiFiles - Juvenile Bearded Dragon" or "ReptiFiles - Adult Bearded Dragon"
-        const source = nameParts[0];
-        const speciesAge = `${template.age_category.charAt(0).toUpperCase() + template.age_category.slice(1)} ${template.species}`;
-        const groupKey = `${source} - ${speciesAge}`;
+      // Extract source if template follows "Source - ..." pattern
+      if (nameParts.length >= 2) {
+        const source = nameParts[0].trim();
 
-        if (!groups[groupKey]) {
-          groups[groupKey] = {
-            groupName: groupKey,
+        if (!sourceGroups[source]) {
+          sourceGroups[source] = {
+            source: source,
+            groupName: source,
             templates: [],
-            species: template.species,
-            age_category: template.age_category,
+            species: new Set(),
+            ageCategories: new Set(),
+            scheduleTypes: new Set(),
             is_default: template.is_default,
           };
         }
-        groups[groupKey].templates.push(template);
+
+        sourceGroups[source].templates.push(template);
+        if (template.species) sourceGroups[source].species.add(template.species);
+        if (template.age_category) sourceGroups[source].ageCategories.add(template.age_category);
+        if (template.schedule_type) sourceGroups[source].scheduleTypes.add(template.schedule_type);
       } else {
-        // Keep individual templates ungrouped (general schedules, etc.)
+        // Templates without a source prefix remain ungrouped
         ungrouped.push({ templates: [template], groupName: null });
       }
     });
 
-    // Only create groups if there are 2+ templates
-    const finalGroups = [];
-    Object.values(groups).forEach(group => {
+    // Convert sets to arrays and sort templates within each group
+    const finalGroups = Object.values(sourceGroups).map(group => {
+      // Sort templates by: species -> age_category -> schedule_type
+      group.templates.sort((a, b) => {
+        // Sort by species first (null species go last)
+        if (a.species && !b.species) return -1;
+        if (!a.species && b.species) return 1;
+        if (a.species && b.species && a.species !== b.species) {
+          return a.species.localeCompare(b.species);
+        }
+
+        // Then by age category (null age goes last)
+        if (a.age_category && !b.age_category) return -1;
+        if (!a.age_category && b.age_category) return 1;
+        if (a.age_category && b.age_category && a.age_category !== b.age_category) {
+          return a.age_category.localeCompare(b.age_category);
+        }
+
+        // Finally by schedule type
+        if (a.schedule_type !== b.schedule_type) {
+          return a.schedule_type.localeCompare(b.schedule_type);
+        }
+
+        return 0;
+      });
+
+      return {
+        ...group,
+        species: Array.from(group.species),
+        ageCategories: Array.from(group.ageCategories),
+        scheduleTypes: Array.from(group.scheduleTypes),
+      };
+    });
+
+    // Only create groups if there are 2+ templates from same source
+    const validGroups = [];
+    finalGroups.forEach(group => {
       if (group.templates.length >= 2) {
-        finalGroups.push(group);
+        validGroups.push(group);
       } else {
-        // If only one template in group, keep it ungrouped
         ungrouped.push({ templates: group.templates, groupName: null });
       }
     });
 
-    return [...finalGroups, ...ungrouped];
+    return [...validGroups, ...ungrouped];
   }
 
   function toggleSpeciesFilter(species) {
@@ -235,7 +270,27 @@ function ScheduleTemplates() {
   function openApplyModal() {
     setViewModalOpen(false);
     setSelectedReptile('');
+
+    // Initialize all templates as selected
+    if (selectedTemplate.groupName && selectedTemplate.templates) {
+      setSelectedTemplateIds(new Set(selectedTemplate.templates.map(t => t.id)));
+    } else if (selectedTemplate.id) {
+      setSelectedTemplateIds(new Set([selectedTemplate.id]));
+    }
+
     setApplyModalOpen(true);
+  }
+
+  function toggleTemplateSelection(templateId) {
+    setSelectedTemplateIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(templateId)) {
+        newSet.delete(templateId);
+      } else {
+        newSet.add(templateId);
+      }
+      return newSet;
+    });
   }
 
   async function handleApplyTemplate() {
@@ -244,32 +299,49 @@ function ScheduleTemplates() {
       return;
     }
 
+    if (selectedTemplateIds.size === 0) {
+      alert('Please select at least one schedule to create');
+      return;
+    }
+
     try {
-      // Check if this is a grouped template
+      // Get list of templates to apply based on selected IDs
+      let templatesToApply = [];
+
       if (selectedTemplate.groupName && selectedTemplate.templates) {
-        // Apply grouped template - create parent-child relationships
-        let parentScheduleId = null;
-
-        for (let i = 0; i < selectedTemplate.templates.length; i++) {
-          const template = selectedTemplate.templates[i];
-          const response = await api.applyTemplateToReptile(
-            template.id,
-            selectedReptile,
-            parentScheduleId
-          );
-
-          // First template becomes the parent
-          if (i === 0) {
-            parentScheduleId = response.schedule_id;
-          }
-        }
-
-        alert(`Complete care schedule created successfully! (${selectedTemplate.templates.length} schedules)`);
+        // Grouped template: filter to only selected templates
+        templatesToApply = selectedTemplate.templates.filter(t => selectedTemplateIds.has(t.id));
       } else {
-        // Apply single template
-        await api.applyTemplateToReptile(selectedTemplate.id, selectedReptile);
-        alert('Schedule created successfully!');
+        // Single template
+        templatesToApply = [selectedTemplate];
       }
+
+      if (templatesToApply.length === 0) {
+        alert('No schedules selected');
+        return;
+      }
+
+      // Create parent-child relationships for multiple schedules
+      let parentScheduleId = null;
+
+      for (let i = 0; i < templatesToApply.length; i++) {
+        const template = templatesToApply[i];
+        const response = await api.applyTemplateToReptile(
+          template.id,
+          selectedReptile,
+          parentScheduleId
+        );
+
+        // First template becomes the parent
+        if (i === 0) {
+          parentScheduleId = response.schedule_id;
+        }
+      }
+
+      const message = templatesToApply.length > 1
+        ? `Successfully created ${templatesToApply.length} schedules!`
+        : 'Schedule created successfully!';
+      alert(message);
 
       setApplyModalOpen(false);
       navigate('/calendar');
@@ -309,6 +381,59 @@ function ScheduleTemplates() {
     // Convert HH:MM:SS to HH:MM
     const parts = timeString.split(':');
     return `${parts[0]}:${parts[1]}`;
+  }
+
+  // Generate 2-week preview for grouped templates
+  function generateTwoWeekPreview(templates) {
+    const preview = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Generate 14 days
+    for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + dayOffset);
+
+      const daySchedules = [];
+
+      // Check each template to see if it occurs on this day
+      templates.forEach(template => {
+        let occurs = false;
+
+        if (template.schedule_rule === 'every_x_days') {
+          // For "every X days", check if dayOffset is divisible by frequency
+          if (dayOffset % (template.frequency_days || 1) === 0) {
+            occurs = true;
+          }
+        } else if (template.schedule_rule === 'days_of_week' && template.days_of_week) {
+          // For specific days of week
+          const targetDays = template.days_of_week.split(',').map(d => parseInt(d));
+          if (targetDays.includes(date.getDay())) {
+            occurs = true;
+          }
+        } else if (template.schedule_rule === 'monthly' && template.day_of_month) {
+          // For monthly schedules
+          if (date.getDate() === template.day_of_month) {
+            occurs = true;
+          }
+        }
+
+        if (occurs) {
+          daySchedules.push(template);
+        }
+      });
+
+      // Only include days that have at least one schedule
+      if (daySchedules.length > 0) {
+        preview.push({
+          date: date,
+          dateStr: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          schedules: daySchedules,
+        });
+      }
+    }
+
+    return preview;
   }
 
   function getTypeColor(type) {
@@ -480,54 +605,74 @@ function ScheduleTemplates() {
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
             >
               {group.groupName ? (
-                /* Grouped Template Card */
+                /* Super-Group Template Card - Source Level */
                 <>
                   {/* Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                         {group.groupName}
                         {group.is_default && (
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded">
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded">
                             Default
                           </span>
                         )}
                       </h3>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        {group.species && (
-                          <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                            {group.species}
-                          </span>
-                        )}
-                        {group.age_category && (
-                          <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                            {group.age_category}
-                          </span>
-                        )}
-                        <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
-                          {group.templates.length} schedules
+                      <div className="flex flex-wrap gap-2 text-xs mb-3">
+                        <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-medium">
+                          {group.templates.length} Templates
                         </span>
+                        {group.species.length > 0 && (
+                          <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                            {group.species.length} Species
+                          </span>
+                        )}
+                        {group.scheduleTypes.length > 0 && (
+                          <span className="px-2 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                            {group.scheduleTypes.join(', ')}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* List of schedules in group */}
-                  <div className="space-y-2 mb-4">
-                    {group.templates.map((template, idx) => (
-                      <div key={template.id} className="flex items-start gap-2 text-sm">
-                        <span className={`px-2 py-0.5 rounded text-xs ${getTypeColor(template.schedule_type)}`}>
-                          {template.schedule_type}
-                        </span>
-                        <div className="flex-1">
-                          <div className="text-gray-900 dark:text-gray-100">{template.name.split(' - ').pop()}</div>
-                          {template.time_window_enabled && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatTime(template.earliest_time)} - {formatTime(template.latest_time)}
-                            </div>
-                          )}
-                        </div>
+                  {/* Summary of covered species */}
+                  {group.species.length > 0 && (
+                    <div className="mb-4">
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Covers:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {group.species.map((species, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            {species}
+                          </span>
+                        ))}
+                        {group.ageCategories.map((age, idx) => (
+                          <span key={`age-${idx}`} className="px-2 py-0.5 rounded text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                            {age}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sample templates preview (first 3) */}
+                  <div className="space-y-1 mb-4">
+                    {group.templates.slice(0, 3).map((template, idx) => (
+                      <div key={template.id} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                        <span className={`w-2 h-2 rounded-full ${
+                          template.schedule_type === 'feeding' ? 'bg-orange-500' :
+                          template.schedule_type === 'supplement' ? 'bg-green-500' :
+                          template.schedule_type === 'misting' ? 'bg-blue-500' :
+                          template.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
+                        }`}></span>
+                        <span className="truncate">{template.name.split(' - ').slice(1).join(' - ')}</span>
                       </div>
                     ))}
+                    {group.templates.length > 3 && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 italic pl-4">
+                        +{group.templates.length - 3} more...
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -540,7 +685,7 @@ function ScheduleTemplates() {
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors font-medium"
                     >
                       <Eye size={16} />
-                      View Complete Schedule
+                      View & Customize
                     </button>
                   </div>
                 </>
@@ -746,56 +891,77 @@ function ScheduleTemplates() {
                     </div>
                   </div>
 
-                  {/* Right Column - Combined Preview */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 h-fit sticky top-6">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg">
+                  {/* Right Column - 2-Week Calendar Preview */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg sticky top-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 pb-2">
                       <Calendar size={20} />
-                      Weekly Overview
+                      2-Week Schedule Preview
                     </h3>
 
-                    <div className="space-y-3">
-                      <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Schedule Breakdown</div>
-                        <div className="space-y-1">
-                          {selectedTemplate.templates.map((template, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-xs">
-                              <div className={`w-2 h-2 rounded-full ${
-                                template.schedule_type === 'feeding' ? 'bg-green-500' :
-                                template.schedule_type === 'supplement' ? 'bg-yellow-500' :
-                                template.schedule_type === 'misting' ? 'bg-blue-500' :
-                                template.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
-                              }`}></div>
-                              <span className="text-gray-700 dark:text-gray-300">{template.schedule_type}: {formatScheduleRule(template)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                    <div className="space-y-2">
+                      {(() => {
+                        const preview = generateTwoWeekPreview(selectedTemplate.templates);
 
-                      <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 italic leading-relaxed">
-                          When applied to a reptile, all {selectedTemplate.templates.length} schedules will be created as a coordinated care plan. The calendar will show them as a single grouped event for easy management.
+                        if (preview.length === 0) {
+                          return (
+                            <div className="text-center py-8">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                No scheduled activities in the next 2 weeks
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return preview.slice(0, 10).map((day, idx) => (
+                          <div key={idx} className="bg-white/70 dark:bg-gray-800/70 rounded-lg border border-blue-200/50 dark:border-blue-700/50 overflow-hidden">
+                            <div className="bg-white/90 dark:bg-gray-800/90 px-3 py-2 border-b border-blue-200/50 dark:border-blue-700/50">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {day.dateStr}
+                              </span>
+                            </div>
+                            <div className="p-3 space-y-2">
+                              {day.schedules.map((schedule, schedIdx) => (
+                                <div key={schedIdx} className="flex items-start gap-2">
+                                  <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                                    schedule.schedule_type === 'feeding' ? 'bg-orange-500' :
+                                    schedule.schedule_type === 'supplement' ? 'bg-green-500' :
+                                    schedule.schedule_type === 'misting' ? 'bg-blue-500' :
+                                    schedule.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
+                                  }`}></div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(schedule.schedule_type)}`}>
+                                        {schedule.schedule_type}
+                                      </span>
+                                      {schedule.time_window_enabled && (
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                                          {formatTime(schedule.earliest_time)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {schedule.food_category && (
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                        {schedule.food_category}
+                                      </div>
+                                    )}
+                                    {schedule.name && (
+                                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 truncate">
+                                        {schedule.name.split(' - ').pop()}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+
+                      {generateTwoWeekPreview(selectedTemplate.templates).length > 10 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 italic">
+                          Showing first 10 days with activities...
                         </p>
-                      </div>
-
-                      {/* Example Week View */}
-                      <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Complete care includes:</div>
-                        <div className="space-y-2">
-                          {selectedTemplate.templates.map((template, idx) => (
-                            <div key={idx} className="flex items-start gap-2 text-xs">
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1"></div>
-                              <div className="flex-1">
-                                <span className="font-medium text-gray-700 dark:text-gray-300">{template.schedule_type}</span>
-                                {template.time_window_enabled && (
-                                  <span className="text-gray-500 dark:text-gray-400 ml-1">
-                                    @ {formatTime(template.earliest_time)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1052,7 +1218,7 @@ function ScheduleTemplates() {
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {selectedTemplate?.groupName ? 'Apply Complete Care Template' : 'Apply Template to Reptile'}
+                {selectedTemplate?.groupName ? 'Customize & Apply Schedules' : 'Apply Template to Reptile'}
               </h2>
               <button
                 onClick={() => setApplyModalOpen(false)}
@@ -1063,23 +1229,68 @@ function ScheduleTemplates() {
             </div>
 
             {selectedTemplate?.groupName ? (
-              /* Grouped Template Info */
+              /* Grouped Template - Checkboxes for Selection */
               <div className="mb-4">
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  Creating complete care schedule: <strong>{selectedTemplate.groupName}</strong>
-                </p>
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    This will create {selectedTemplate.templates.length} coordinated schedules:
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Select schedules to create from <strong>{selectedTemplate.groupName}</strong>:
                   </p>
-                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                    {selectedTemplate.templates.map((template, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                        <span>{template.schedule_type}: {template.name.split(' - ').pop()}</span>
-                      </li>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedTemplateIds(new Set(selectedTemplate.templates.map(t => t.id)))}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setSelectedTemplateIds(new Set())}
+                      className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-h-60 overflow-y-auto">
+                  <div className="space-y-2">
+                    {selectedTemplate.templates.map((template) => (
+                      <label
+                        key={template.id}
+                        className="flex items-start gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedTemplateIds.has(template.id)}
+                          onChange={() => toggleTemplateSelection(template.id)}
+                          className="mt-1 w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(template.schedule_type)}`}>
+                              {template.schedule_type}
+                            </span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                              {template.name.split(' - ').slice(1).join(' - ')}
+                            </span>
+                          </div>
+                          {template.time_window_enabled && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {formatTime(template.earliest_time)} - {formatTime(template.latest_time)}
+                            </div>
+                          )}
+                          {template.food_category && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {template.food_category}
+                            </div>
+                          )}
+                        </div>
+                      </label>
                     ))}
-                  </ul>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {selectedTemplateIds.size} of {selectedTemplate.templates.length} schedules selected
                 </div>
               </div>
             ) : (
@@ -1110,9 +1321,12 @@ function ScheduleTemplates() {
             <div className="flex gap-3">
               <button
                 onClick={handleApplyTemplate}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                disabled={selectedTemplateIds.size === 0}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                {selectedTemplate?.groupName ? 'Create Complete Schedule' : 'Create Schedule'}
+                {selectedTemplate?.groupName
+                  ? `Create ${selectedTemplateIds.size} Schedule${selectedTemplateIds.size !== 1 ? 's' : ''}`
+                  : 'Create Schedule'}
               </button>
               <button
                 onClick={() => setApplyModalOpen(false)}
