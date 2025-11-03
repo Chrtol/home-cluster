@@ -499,6 +499,10 @@ class ScheduleTemplate(Base):
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     source_template_id = Column(Integer, ForeignKey("schedule_templates.id", ondelete="SET NULL"), nullable=True)  # Track duplications
 
+    # Source attribution
+    source_name = Column(String, nullable=True)  # e.g., "ReptiFiles", "The Bio Dude"
+    source_url = Column(String, nullable=True)  # Link to original care guide
+
     # Schedule configuration (similar to Schedule model)
     schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
     schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly"

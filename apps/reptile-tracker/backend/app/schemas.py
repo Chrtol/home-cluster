@@ -577,6 +577,10 @@ class ScheduleTemplateBase(BaseModel):
     # Supplement reference (optional)
     supplement_id: Optional[int] = None
 
+    # Source attribution
+    source_name: Optional[str] = None  # e.g., "ReptiFiles", "The Bio Dude"
+    source_url: Optional[str] = None  # Link to original care guide
+
     notes: Optional[str] = None
 
 
@@ -602,6 +606,8 @@ class ScheduleTemplateUpdate(BaseModel):
     time_window_enabled: Optional[bool] = None
     reminder_minutes_before: Optional[int] = None
     supplement_id: Optional[int] = None
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
     notes: Optional[str] = None
 
 

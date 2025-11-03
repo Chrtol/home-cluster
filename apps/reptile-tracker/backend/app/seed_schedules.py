@@ -32,6 +32,8 @@ async def seed_schedule_templates(db: AsyncSession):
             latest_time=time(12, 0),
             time_window_enabled=True,
             notes="Feed after basking for 1-2 hours. Offer as many insects as they can eat in 10-15 minutes.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -45,6 +47,8 @@ async def seed_schedule_templates(db: AsyncSession):
             food_category="salad",
             time_slot="afternoon",
             notes="Offer fresh greens daily. Common choices: collard greens, mustard greens, turnip greens.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -61,6 +65,8 @@ async def seed_schedule_templates(db: AsyncSession):
             latest_time=time(12, 0),
             time_window_enabled=True,
             notes="Adults need fewer insects to prevent obesity. 10-15 insects per feeding.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -73,6 +79,8 @@ async def seed_schedule_templates(db: AsyncSession):
             frequency_days=1,
             food_category="salad",
             notes="Adults should eat 80% vegetables, 20% insects. Offer salad daily.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
 
@@ -91,6 +99,8 @@ async def seed_schedule_templates(db: AsyncSession):
             latest_time=time(21, 0),
             time_window_enabled=True,
             notes="Feed in evening as leopard geckos are nocturnal. Offer 5-8 appropriately sized insects daily.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -107,6 +117,8 @@ async def seed_schedule_templates(db: AsyncSession):
             latest_time=time(21, 0),
             time_window_enabled=True,
             notes="Feed in evening as leopard geckos are nocturnal. Offer 5-8 appropriately sized insects.",
+            source_name="The Bio Dude",
+            source_url="https://www.thebiodude.com/blogs/reptile-care-guides",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -123,6 +135,8 @@ async def seed_schedule_templates(db: AsyncSession):
             latest_time=time(21, 0),
             time_window_enabled=True,
             notes="Adults should eat 6-8 insects every other day. Adjust based on body condition.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
         ),
 
@@ -138,6 +152,8 @@ async def seed_schedule_templates(db: AsyncSession):
             food_category="prepared",
             time_slot="evening",
             notes="Offer fresh CGD every evening. Remove uneaten food after 24 hours.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -151,6 +167,8 @@ async def seed_schedule_templates(db: AsyncSession):
             food_category="insects",
             time_slot="evening",
             notes="Optional treat feeding. 2-3 appropriately sized insects.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
         ),
 
@@ -166,6 +184,8 @@ async def seed_schedule_templates(db: AsyncSession):
             food_category="frozen_animal",
             time_slot="evening",
             notes="Feed appropriately sized prey (10-15% of body weight). Frozen/thawed recommended.",
+            source_name="Reptile Magazine",
+            source_url="https://reptilemag.com/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -178,6 +198,8 @@ async def seed_schedule_templates(db: AsyncSession):
             frequency_days=10,
             food_category="frozen_animal",
             notes="Feed every 10-14 days. Prey should be same width as widest part of snake.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/ball-python-care/",
             is_default=True,
         ),
 
@@ -192,6 +214,8 @@ async def seed_schedule_templates(db: AsyncSession):
             frequency_days=5,
             food_category="frozen_animal",
             notes="Feed every 5-7 days. Appropriately sized prey (slightly larger than snake's widest point).",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/corn-snake-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -204,6 +228,8 @@ async def seed_schedule_templates(db: AsyncSession):
             frequency_days=7,
             food_category="frozen_animal",
             notes="Feed every 7-10 days. Adult mice or small rats depending on size.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/corn-snake-care/",
             is_default=True,
         ),
 
@@ -218,6 +244,8 @@ async def seed_schedule_templates(db: AsyncSession):
             frequency_days=2,
             food_category="salad",
             notes="Omnivorous diet: 50% vegetables, 40% protein, 10% fruit. Rotate food types.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/blue-tongue-skink-care/",
             is_default=True,
         ),
 
@@ -231,6 +259,8 @@ async def seed_schedule_templates(db: AsyncSession):
             schedule_rule="days_of_week",
             days_of_week="2,5",  # Tuesday and Friday
             notes="For reptiles with UVB lighting. Dust insects before feeding.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/blue-tongue-skink-care/",
             is_default=True,
         ),
         ScheduleTemplate(
@@ -242,6 +272,8 @@ async def seed_schedule_templates(db: AsyncSession):
             schedule_rule="days_of_week",
             days_of_week="6",  # Saturday
             notes="Use a quality reptile multivitamin. Dust insects lightly.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/blue-tongue-skink-care/",
             is_default=True,
         ),
 
@@ -355,6 +387,8 @@ async def seed_care_guidelines(db: AsyncSession):
             },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
         CareGuideline(
@@ -389,6 +423,8 @@ async def seed_care_guidelines(db: AsyncSession):
                 "insects_per_feeding": "10-15",
                 "supplements": ["Calcium with D3 (2-3x/week)", "Multivitamin (1-2x/week)"]
             },
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
@@ -432,6 +468,8 @@ async def seed_care_guidelines(db: AsyncSession):
             },
             source_name="The Bio Dude",
             source_url="https://www.thebiodude.com/blogs/bio-activity-with-your-pets/leopard-gecko-care-guide",
+            source_name="The Bio Dude",
+            source_url="https://www.thebiodude.com/blogs/reptile-care-guides",
             is_default=True,
         ),
         CareGuideline(
@@ -464,6 +502,8 @@ async def seed_care_guidelines(db: AsyncSession):
                 "feeding_time": "evening",
                 "supplements": ["Calcium with D3 (every feeding)", "Multivitamin (weekly)"]
             },
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
@@ -503,6 +543,8 @@ async def seed_care_guidelines(db: AsyncSession):
                 "insects_per_feeding": "2-3 (optional)",
                 "supplements": ["Not needed with complete CGD"]
             },
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
@@ -545,6 +587,8 @@ async def seed_care_guidelines(db: AsyncSession):
             },
             source_name="Reptile Magazine",
             source_url="https://reptilesmagazine.com/ball-python-care-sheet/",
+            source_name="Reptile Magazine",
+            source_url="https://reptilemag.com/",
             is_default=True,
         ),
         CareGuideline(
@@ -579,6 +623,8 @@ async def seed_care_guidelines(db: AsyncSession):
                 "prey_type": "frozen/thawed rats",
                 "supplements": ["None needed"]
             },
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/ball-python-care/",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/ball-python-care/",
             is_default=True,
@@ -625,6 +671,8 @@ async def seed_care_guidelines(db: AsyncSession):
             },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/reptile-supplements/",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/",
             is_default=True,
         ),
     ]
