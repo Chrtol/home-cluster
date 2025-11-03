@@ -48,6 +48,7 @@ function FoodsTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingFood, setEditingFood] = useState(null);
+  const [viewingFood, setViewingFood] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
 
   const [formData, setFormData] = useState({
@@ -220,7 +221,11 @@ function FoodsTab() {
                 </tr>
               ) : (
                 filteredFoods.map(food => (
-                  <tr key={food.id}>
+                  <tr
+                    key={food.id}
+                    onClick={() => setViewingFood(food)}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {food.name}
                     </td>
@@ -228,7 +233,7 @@ function FoodsTab() {
                       {food.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {food.insect_size || '-'}
+                      {food.insect_size || food.animal_size || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {food.is_default ? (
@@ -243,13 +248,13 @@ function FoodsTab() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
-                        onClick={() => handleEdit(food)}
+                        onClick={(e) => { e.stopPropagation(); handleEdit(food); }}
                         className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 mr-4"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(food)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(food); }}
                         className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                       >
                         <Trash2 size={16} />
@@ -358,6 +363,190 @@ function FoodsTab() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Food Read-Only View Modal */}
+      {viewingFood && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {viewingFood.name}
+                </h2>
+                <button
+                  onClick={() => setViewingFood(null)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Category & Size Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Category</p>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                      {viewingFood.category.replace('_', ' ')}
+                    </p>
+                  </div>
+                  {(viewingFood.insect_size || viewingFood.animal_size) && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Size</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                        {viewingFood.insect_size || viewingFood.animal_size?.replace('_', ' ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Type Badge */}
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Type</p>
+                  {viewingFood.is_default ? (
+                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      Default Food
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                      Custom Food
+                    </span>
+                  )}
+                </div>
+
+                {/* Nutritional Information */}
+                {viewingFood.nutritional_data && Object.keys(viewingFood.nutritional_data).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nutritional Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {viewingFood.nutritional_data.protein_percent && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Protein</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.protein_percent}%
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.fat_percent && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Fat</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.fat_percent}%
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.calcium_mg_per_100g && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Calcium</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.calcium_mg_per_100g} mg/100g
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.phosphorus_mg_per_100g && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Phosphorus</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.phosphorus_mg_per_100g} mg/100g
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.calcium_phosphorus_ratio && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Ca:P Ratio</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.calcium_phosphorus_ratio}
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.vitamin_a_iu && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin A</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.vitamin_a_iu} IU
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.vitamin_c_mg && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin C</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.vitamin_c_mg} mg
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.vitamin_d3_iu && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin D3</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.vitamin_d3_iu} IU
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.vitamin_k_mcg && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin K</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.vitamin_k_mcg} mcg
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.moisture_percent && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Moisture</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.moisture_percent}%
+                          </p>
+                        </div>
+                      )}
+                      {viewingFood.nutritional_data.weight_grams && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Weight</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            {viewingFood.nutritional_data.weight_grams}g
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {viewingFood.nutritional_data?.note && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Notes</h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {viewingFood.nutritional_data.note}
+                    </p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => {
+                      setViewingFood(null);
+                      handleEdit(viewingFood);
+                    }}
+                    className="flex-1 btn-primary flex items-center justify-center gap-2"
+                  >
+                    <Edit2 size={18} /> Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setViewingFood(null);
+                      handleDelete(viewingFood);
+                    }}
+                    className="flex-1 btn-secondary text-red-600 dark:text-red-400 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} /> Delete
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
