@@ -69,7 +69,7 @@ def upgrade():
     op.create_table(
         'care_guidelines',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('species', sa.String(), nullable=False),
+        sa.Column('species', sa.String(), nullable=True),  # null = general guidelines for all species
         sa.Column('age_category', sa.String(), nullable=True),  # "hatchling", "juvenile", "adult", "senior", null = general
 
         # Guideline content

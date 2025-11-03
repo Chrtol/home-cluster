@@ -13,6 +13,7 @@ import {
   Clock,
   Calendar,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import * as api from '../utils/scheduleTemplateApi';
 import axios from 'axios';
@@ -679,6 +680,21 @@ function ScheduleTemplates() {
                     )}
                   </div>
 
+                  {/* Source link */}
+                  {group.templates[0]?.source_url && (
+                    <div className="mb-4">
+                      <a
+                        href={group.templates[0].source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink size={12} />
+                        {group.templates[0].source_name || 'View Source'}
+                      </a>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <button
@@ -758,6 +774,21 @@ function ScheduleTemplates() {
                             </div>
                           )}
                         </div>
+
+                        {/* Source link */}
+                        {template.source_url && (
+                          <div className="mb-3">
+                            <a
+                              href={template.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                              <ExternalLink size={12} />
+                              {template.source_name || 'View Source'}
+                            </a>
+                          </div>
+                        )}
 
                         {/* Actions - Only View button */}
                         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
