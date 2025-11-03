@@ -42,13 +42,13 @@ async def cleanup_duplicates():
             'Tropical Species',
             'Juvenile Weekly Weighing (General)',
             'Adult Monthly Weighing (General)',
+            'Juvenile',  # For weighing templates like "Juvenile - Weekly Weighing"
+            'Adult',     # For weighing templates like "Adult - Monthly Weighing"
+            'Calcium with D3',  # General supplement schedules
+            'Multivitamin',     # General supplement schedules
         ]
 
         for template in templates:
-            # Skip default templates - never delete these
-            if template.is_default:
-                continue
-
             # Extract source from name
             parts = template.name.split(' - ')
             if len(parts) >= 2:
@@ -56,10 +56,11 @@ async def cleanup_duplicates():
 
                 # Check for problematic sources
                 if source not in approved_sources:
-                    # Flag potential duplicates like "Juvenile bearded dragon"
-                    if any(keyword in source.lower() for keyword in ['juvenile', 'adult', 'hatchling', 'bearded', 'leopard', 'gecko', 'dragon']):
+                    # Flag potential duplicates like "Juvenile bearded dragon", "Juvenile leopard gecko"
+                    # These are suspicious because the source contains species/age info that should be in separate fields
+                    if any(keyword in source.lower() for keyword in ['juvenile', 'adult', 'hatchling', 'bearded', 'leopard', 'gecko', 'dragon', 'python', 'snake', 'skink']):
                         templates_to_delete.append(template)
-                        print(f"⚠️  Found suspicious template (looks like duplicate):")
+                        print(f"⚠️  Found suspicious template (source contains species/age info):")
                         print(f"    ID: {template.id}, Name: '{template.name}'")
                         print(f"    Source: '{source}', Species: {template.species}, Default: {template.is_default}")
                         print()
@@ -74,19 +75,56 @@ async def cleanup_duplicates():
         for name, temps in name_counts.items():
             if len(temps) > 1:
                 print(f"⚠️  Found {len(temps)} templates with same name: '{name}'")
-                # Keep the default one, delete non-default duplicates
-                for t in temps:
+                # Sort by created_at to keep the oldest one
+                temps_sorted = sorted(temps, key=lambda t: t.created_at or '9999-12-31')
+                for i, t in enumerate(temps_sorted):
                     print(f"    ID: {t.id}, Default: {t.is_default}, Created: {t.created_at}")
-                    if not t.is_default and t not in templates_to_delete:
+                    # Keep the first one (oldest), delete the rest
+                    if i > 0 and t not in templates_to_delete:
                         templates_to_delete.append(t)
+                        print(f"    ⚠️  Marking for deletion (duplicate)")
                 print()
 
-        # 3. Find very similar templates (same source, species, age, type)
+        # 3. Find semantic duplicate weighing templates
+        # e.g., "Juvenile Weekly Weighing (General)" vs "Juvenile - Weekly Weighing"
+        weighing_templates = [t for t in templates if t.schedule_type == 'weighing']
+        weighing_groups = {}
+
+        for template in weighing_templates:
+            key = (
+                template.age_category,
+                template.frequency_days,
+                template.days_of_week,
+                template.schedule_rule,
+            )
+
+            if key not in weighing_groups:
+                weighing_groups[key] = []
+            weighing_groups[key].append(template)
+
+        for key, temps in weighing_groups.items():
+            if len(temps) > 1:
+                age_cat, freq_days, days_of_week, rule = key
+                print(f"⚠️  Found {len(temps)} similar weighing templates:")
+                print(f"    Age: {age_cat}, Frequency: {freq_days} days, Rule: {rule}")
+
+                # Prefer templates with proper source naming (e.g., "Juvenile - Weekly Weighing")
+                temps_sorted = sorted(temps, key=lambda t: (
+                    not t.name.startswith('Juvenile - ') and not t.name.startswith('Adult - '),  # Prefer "Juvenile - " format
+                    t.created_at or '9999-12-31'
+                ))
+
+                for i, t in enumerate(temps_sorted):
+                    print(f"    ID: {t.id}, Name: '{t.name}', Default: {t.is_default}")
+                    # Keep the first one, delete the rest
+                    if i > 0 and t not in templates_to_delete:
+                        templates_to_delete.append(t)
+                        print(f"    ⚠️  Marking for deletion (duplicate weighing template)")
+                print()
+
+        # 4. Find very similar templates (same source, species, age, type)
         seen_combinations = {}
         for template in templates:
-            if template.is_default:
-                continue
-
             parts = template.name.split(' - ')
             source = parts[0].strip() if len(parts) >= 2 else 'Unknown'
 
@@ -102,10 +140,11 @@ async def cleanup_duplicates():
 
             if key in seen_combinations:
                 print(f"⚠️  Found similar template (possible duplicate):")
-                print(f"    Existing: '{seen_combinations[key].name}' (ID: {seen_combinations[key].id})")
-                print(f"    Duplicate: '{template.name}' (ID: {template.id})")
+                print(f"    Existing: '{seen_combinations[key].name}' (ID: {seen_combinations[key].id}, Default: {seen_combinations[key].is_default})")
+                print(f"    Duplicate: '{template.name}' (ID: {template.id}, Default: {template.is_default})")
                 if template not in templates_to_delete:
                     templates_to_delete.append(template)
+                    print(f"    ⚠️  Marking for deletion (similar template)")
                 print()
             else:
                 seen_combinations[key] = template

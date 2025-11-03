@@ -14,6 +14,8 @@ import {
   Calendar,
   X,
   ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import * as api from '../utils/scheduleTemplateApi';
 import axios from 'axios';
@@ -42,6 +44,8 @@ function ScheduleTemplates() {
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedReptile, setSelectedReptile] = useState('');
   const [selectedTemplateIds, setSelectedTemplateIds] = useState(new Set());
+  const [expandedTemplates, setExpandedTemplates] = useState(new Set());
+  const [templateEdits, setTemplateEdits] = useState({});
 
   // Import modal
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -122,19 +126,64 @@ function ScheduleTemplates() {
   // Super-grouping: Group templates by source + species
   function groupTemplates(templates) {
     const sourceGroups = {};
+    const generalTemplates = [];
     const ungrouped = [];
 
+    // First pass: Group species-specific templates and collect general templates
     templates.forEach(template => {
       const nameParts = template.name.split(' - ');
 
       // Extract source if template follows "Source - ..." pattern
       if (nameParts.length >= 2) {
         const source = nameParts[0].trim();
-        const species = template.species || 'General';
 
-        // Create composite key: "Source - Species"
-        const groupKey = `${source} - ${species}`;
+        if (template.species) {
+          // Species-specific template
+          const groupKey = `${source} - ${template.species}`;
 
+          if (!sourceGroups[groupKey]) {
+            sourceGroups[groupKey] = {
+              source: source,
+              groupName: groupKey,
+              templates: [],
+              species: new Set(),
+              ageCategories: new Set(),
+              scheduleTypes: new Set(),
+              is_default: template.is_default,
+            };
+          }
+
+          sourceGroups[groupKey].templates.push(template);
+          sourceGroups[groupKey].species.add(template.species);
+          if (template.age_category) sourceGroups[groupKey].ageCategories.add(template.age_category);
+          if (template.schedule_type) sourceGroups[groupKey].scheduleTypes.add(template.schedule_type);
+        } else {
+          // General template (species=None) - save for second pass
+          generalTemplates.push({ template, source });
+        }
+      } else {
+        // Templates without a source prefix remain ungrouped
+        ungrouped.push({ templates: [template], groupName: null });
+      }
+    });
+
+    // Second pass: Add general templates to all matching species groups
+    generalTemplates.forEach(({ template, source }) => {
+      let addedToAnyGroup = false;
+
+      // Find all groups with the same source
+      Object.keys(sourceGroups).forEach(groupKey => {
+        if (sourceGroups[groupKey].source === source) {
+          sourceGroups[groupKey].templates.push(template);
+          if (template.age_category) sourceGroups[groupKey].ageCategories.add(template.age_category);
+          if (template.schedule_type) sourceGroups[groupKey].scheduleTypes.add(template.schedule_type);
+          addedToAnyGroup = true;
+        }
+      });
+
+      // If no species groups exist for this source, create a general group
+      if (!addedToAnyGroup) {
+        const groupKey = `${source} - General`;
         if (!sourceGroups[groupKey]) {
           sourceGroups[groupKey] = {
             source: source,
@@ -146,22 +195,17 @@ function ScheduleTemplates() {
             is_default: template.is_default,
           };
         }
-
         sourceGroups[groupKey].templates.push(template);
-        if (template.species) sourceGroups[groupKey].species.add(template.species);
         if (template.age_category) sourceGroups[groupKey].ageCategories.add(template.age_category);
         if (template.schedule_type) sourceGroups[groupKey].scheduleTypes.add(template.schedule_type);
-      } else {
-        // Templates without a source prefix remain ungrouped
-        ungrouped.push({ templates: [template], groupName: null });
       }
     });
 
     // Convert sets to arrays and sort templates within each group
     const finalGroups = Object.values(sourceGroups).map(group => {
-      // Sort templates by: species -> age_category -> schedule_type
+      // Sort templates by: species presence -> age_category -> schedule_type
       group.templates.sort((a, b) => {
-        // Sort by species first (null species go last)
+        // Sort by species presence (species-specific before general)
         if (a.species && !b.species) return -1;
         if (!a.species && b.species) return 1;
         if (a.species && b.species && a.species !== b.species) {
@@ -283,6 +327,10 @@ function ScheduleTemplates() {
       setSelectedTemplateIds(new Set([selectedTemplate.id]));
     }
 
+    // Reset editing state
+    setExpandedTemplates(new Set());
+    setTemplateEdits({});
+
     setApplyModalOpen(true);
   }
 
@@ -296,6 +344,28 @@ function ScheduleTemplates() {
       }
       return newSet;
     });
+  }
+
+  function toggleTemplateExpansion(templateId) {
+    setExpandedTemplates(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(templateId)) {
+        newSet.delete(templateId);
+      } else {
+        newSet.add(templateId);
+      }
+      return newSet;
+    });
+  }
+
+  function updateTemplateEdit(templateId, field, value) {
+    setTemplateEdits(prev => ({
+      ...prev,
+      [templateId]: {
+        ...(prev[templateId] || {}),
+        [field]: value
+      }
+    }));
   }
 
   async function handleApplyTemplate() {
@@ -331,15 +401,49 @@ function ScheduleTemplates() {
 
       for (let i = 0; i < templatesToApply.length; i++) {
         const template = templatesToApply[i];
-        const response = await api.applyTemplateToReptile(
-          template.id,
-          selectedReptile,
-          parentScheduleId
-        );
+        const edits = templateEdits[template.id] || {};
+        const hasEdits = Object.keys(edits).length > 0;
+
+        let response;
+
+        if (hasEdits) {
+          // If there are edits, create schedule directly with custom data
+          const scheduleData = {
+            reptile_id: parseInt(selectedReptile),
+            schedule_name: template.name,
+            schedule_type: template.schedule_type,
+            schedule_rule: template.schedule_rule,
+            enabled: true,
+            frequency_days: edits.frequency_days ?? template.frequency_days,
+            days_of_week: template.days_of_week,
+            day_of_month: template.day_of_month,
+            food_category: edits.food_category ?? template.food_category,
+            time_slot: template.time_slot,
+            health_category: template.health_category,
+            supplement: template.supplement,
+            time_window_enabled: edits.time_window_enabled ?? template.time_window_enabled,
+            earliest_time: edits.earliest_time ?? template.earliest_time,
+            latest_time: edits.latest_time ?? template.latest_time,
+            reminder_minutes_before: template.reminder_minutes_before,
+            notes: edits.notes ?? template.notes,
+            parent_schedule_id: parentScheduleId,
+          };
+
+          response = await axios.post(`${API_BASE_URL}/api/schedules`, scheduleData, {
+            withCredentials: true
+          });
+        } else {
+          // No edits, use the template application API
+          response = await api.applyTemplateToReptile(
+            template.id,
+            selectedReptile,
+            parentScheduleId
+          );
+        }
 
         // First template becomes the parent
         if (i === 0) {
-          parentScheduleId = response.schedule_id;
+          parentScheduleId = response.data?.id || response.schedule_id;
         }
       }
 
@@ -1008,7 +1112,7 @@ function ScheduleTemplates() {
                       onClick={openApplyModal}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
-                      Use Complete Care Template
+                      Customize & Apply Template
                     </button>
                   </div>
                 </div>
@@ -1211,7 +1315,7 @@ function ScheduleTemplates() {
                       onClick={openApplyModal}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
-                      Use Template
+                      Customize & Apply
                     </button>
 
                     <button
@@ -1286,41 +1390,150 @@ function ScheduleTemplates() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-h-60 overflow-y-auto">
+                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-h-96 overflow-y-auto">
                   <div className="space-y-2">
-                    {selectedTemplate.templates.map((template) => (
-                      <label
-                        key={template.id}
-                        className="flex items-start gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedTemplateIds.has(template.id)}
-                          onChange={() => toggleTemplateSelection(template.id)}
-                          className="mt-1 w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(template.schedule_type)}`}>
-                              {template.schedule_type}
-                            </span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
-                              {template.name.split(' - ').slice(1).join(' - ')}
-                            </span>
-                          </div>
-                          {template.time_window_enabled && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {formatTime(template.earliest_time)} - {formatTime(template.latest_time)}
+                    {selectedTemplate.templates.map((template) => {
+                      const isExpanded = expandedTemplates.has(template.id);
+                      const edits = templateEdits[template.id] || {};
+                      const displayData = { ...template, ...edits };
+
+                      return (
+                        <div
+                          key={template.id}
+                          className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+                        >
+                          {/* Header row with checkbox and expand button */}
+                          <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800">
+                            <input
+                              type="checkbox"
+                              checked={selectedTemplateIds.has(template.id)}
+                              onChange={() => toggleTemplateSelection(template.id)}
+                              className="mt-1 w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(template.schedule_type)}`}>
+                                  {template.schedule_type}
+                                </span>
+                                <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                                  {template.name.split(' - ').slice(1).join(' - ')}
+                                </span>
+                              </div>
+                              {!isExpanded && (
+                                <>
+                                  {displayData.time_window_enabled && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {formatTime(displayData.earliest_time)} - {formatTime(displayData.latest_time)}
+                                    </div>
+                                  )}
+                                  {displayData.food_category && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      {displayData.food_category}
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
-                          )}
-                          {template.food_category && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {template.food_category}
+                            <button
+                              type="button"
+                              onClick={() => toggleTemplateExpansion(template.id)}
+                              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1"
+                              title="Edit schedule details"
+                            >
+                              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                            </button>
+                          </div>
+
+                          {/* Expandable editing section */}
+                          {isExpanded && (
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                              {/* Time Window */}
+                              <div>
+                                <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={displayData.time_window_enabled ?? false}
+                                    onChange={(e) => updateTemplateEdit(template.id, 'time_window_enabled', e.target.checked)}
+                                    className="w-3 h-3 text-green-600 rounded"
+                                  />
+                                  Time Window
+                                </label>
+                                {displayData.time_window_enabled && (
+                                  <div className="grid grid-cols-2 gap-2 mt-1">
+                                    <input
+                                      type="time"
+                                      value={displayData.earliest_time || ''}
+                                      onChange={(e) => updateTemplateEdit(template.id, 'earliest_time', e.target.value)}
+                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                      placeholder="Earliest"
+                                    />
+                                    <input
+                                      type="time"
+                                      value={displayData.latest_time || ''}
+                                      onChange={(e) => updateTemplateEdit(template.id, 'latest_time', e.target.value)}
+                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                      placeholder="Latest"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Food Category (for feeding schedules) */}
+                              {template.schedule_type === 'feeding' && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Food Category
+                                  </label>
+                                  <select
+                                    value={displayData.food_category || ''}
+                                    onChange={(e) => updateTemplateEdit(template.id, 'food_category', e.target.value)}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  >
+                                    <option value="">Select category...</option>
+                                    <option value="insects">Insects</option>
+                                    <option value="salad">Salad</option>
+                                    <option value="frozen">Frozen</option>
+                                    <option value="prepared">Prepared</option>
+                                    <option value="mixed">Mixed</option>
+                                    <option value="other">Other</option>
+                                  </select>
+                                </div>
+                              )}
+
+                              {/* Notes */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Notes
+                                </label>
+                                <textarea
+                                  value={displayData.notes || ''}
+                                  onChange={(e) => updateTemplateEdit(template.id, 'notes', e.target.value)}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  rows="2"
+                                  placeholder="Add any custom notes..."
+                                />
+                              </div>
+
+                              {/* Frequency (for every_x_days schedules) */}
+                              {template.schedule_rule === 'every_x_days' && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Frequency (days)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={displayData.frequency_days || ''}
+                                    onChange={(e) => updateTemplateEdit(template.id, 'frequency_days', parseInt(e.target.value))}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  />
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      </label>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
