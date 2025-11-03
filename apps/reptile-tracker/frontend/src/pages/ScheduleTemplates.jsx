@@ -118,7 +118,7 @@ function ScheduleTemplates() {
     setFilteredTemplates(filtered);
   }
 
-  // Super-grouping: Group ALL templates by source only
+  // Super-grouping: Group templates by source + species
   function groupTemplates(templates) {
     const sourceGroups = {};
     const ungrouped = [];
@@ -129,11 +129,15 @@ function ScheduleTemplates() {
       // Extract source if template follows "Source - ..." pattern
       if (nameParts.length >= 2) {
         const source = nameParts[0].trim();
+        const species = template.species || 'General';
 
-        if (!sourceGroups[source]) {
-          sourceGroups[source] = {
+        // Create composite key: "Source - Species"
+        const groupKey = `${source} - ${species}`;
+
+        if (!sourceGroups[groupKey]) {
+          sourceGroups[groupKey] = {
             source: source,
-            groupName: source,
+            groupName: groupKey,
             templates: [],
             species: new Set(),
             ageCategories: new Set(),
@@ -142,10 +146,10 @@ function ScheduleTemplates() {
           };
         }
 
-        sourceGroups[source].templates.push(template);
-        if (template.species) sourceGroups[source].species.add(template.species);
-        if (template.age_category) sourceGroups[source].ageCategories.add(template.age_category);
-        if (template.schedule_type) sourceGroups[source].scheduleTypes.add(template.schedule_type);
+        sourceGroups[groupKey].templates.push(template);
+        if (template.species) sourceGroups[groupKey].species.add(template.species);
+        if (template.age_category) sourceGroups[groupKey].ageCategories.add(template.age_category);
+        if (template.schedule_type) sourceGroups[groupKey].scheduleTypes.add(template.schedule_type);
       } else {
         // Templates without a source prefix remain ungrouped
         ungrouped.push({ templates: [template], groupName: null });
