@@ -466,7 +466,36 @@ export default function Dashboard() {
                     padding={{ left: 10, right: 10 }}
                   />
                   <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
-                  <Tooltip contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }} labelStyle={{ color: '#f3f4f6' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }}
+                    labelStyle={{ color: '#f3f4f6' }}
+                    formatter={(value, name, props) => {
+                      // If this is an _actual data point, don't show the extrapolated/interpolated versions
+                      if (name.includes('_actual')) {
+                        const baseName = name.replace('_actual', '');
+                        return [value, baseName];
+                      }
+
+                      // If showing extrapolated data, add (estimated) label
+                      if (name.includes('_extrapolated')) {
+                        const baseName = name.replace('_extrapolated', '');
+                        return [value, `${baseName} (estimated)`];
+                      }
+
+                      // For interpolated lines, check if there's an actual point at this location
+                      if (name.includes('_interpolated')) {
+                        const baseName = name.replace('_interpolated', '');
+                        const payload = props.payload;
+                        // If there's an actual measurement at this point, don't show interpolated
+                        if (payload && payload[`${baseName}_actual`] !== undefined) {
+                          return null;
+                        }
+                        return [value, baseName];
+                      }
+
+                      return [value, name];
+                    }}
+                  />
                   <Legend
                     wrapperStyle={{ fontSize: '12px' }}
                     iconSize={10}
@@ -510,44 +539,52 @@ export default function Dashboard() {
                     }}
                   />
 
-                  {reptileNames && reptileNames.flatMap(name => [
-                    // Solid line connecting actual measurements
-                    <Line
-                      key={`${name}_interpolated`}
-                      type="linear"
-                      dataKey={`${name}_interpolated`}
-                      stroke={reptileColors[name]}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls={true}
-                      name={name}
-                    />,
-                    // Dashed line for extrapolated estimates
-                    <Line
-                      key={`${name}_extrapolated`}
-                      type="linear"
-                      dataKey={`${name}_extrapolated`}
-                      stroke={reptileColors[name]}
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={false}
-                      connectNulls={false}
-                      name={`${name} (estimated)`}
-                      legendType="none"
-                    />,
-                    // Dots for actual measurements
-                    <Line
-                      key={`${name}_actual`}
-                      type="linear"
-                      dataKey={`${name}_actual`}
-                      stroke="transparent"
-                      strokeWidth={0}
-                      dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
-                      activeDot={{ r: 6 }}
-                      connectNulls={false}
-                      legendType="none"
-                    />
-                  ])}
+                  {/* Render in order: extrapolated (lowest z-index), interpolated, then dots (highest z-index) */}
+                  {reptileNames && [
+                    // First: Dashed lines for extrapolated estimates (lowest z-index)
+                    ...reptileNames.map(name => (
+                      <Line
+                        key={`${name}_extrapolated`}
+                        type="linear"
+                        dataKey={`${name}_extrapolated`}
+                        stroke={reptileColors[name]}
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        connectNulls={false}
+                        name={`${name}_extrapolated`}
+                        legendType="none"
+                      />
+                    )),
+                    // Second: Solid lines connecting actual measurements
+                    ...reptileNames.map(name => (
+                      <Line
+                        key={`${name}_interpolated`}
+                        type="linear"
+                        dataKey={`${name}_interpolated`}
+                        stroke={reptileColors[name]}
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls={true}
+                        name={name}
+                      />
+                    )),
+                    // Third: Dots for actual measurements (highest z-index)
+                    ...reptileNames.map(name => (
+                      <Line
+                        key={`${name}_actual`}
+                        type="linear"
+                        dataKey={`${name}_actual`}
+                        stroke="transparent"
+                        strokeWidth={0}
+                        dot={{ r: 4, strokeWidth: 2, stroke: '#fff', fill: reptileColors[name] }}
+                        activeDot={{ r: 6 }}
+                        connectNulls={false}
+                        name={`${name}_actual`}
+                        legendType="none"
+                      />
+                    ))
+                  ]}
                 </LineChart>
               </ResponsiveContainer>
             </div>
