@@ -8,7 +8,7 @@ import {
   Copy,
   Edit,
   Trash2,
-  CheckCircle,
+  Eye,
   Settings,
   Clock,
   Calendar,
@@ -22,19 +22,23 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 function ScheduleTemplates() {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
+  const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [reptiles, setReptiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter state
-  const [speciesFilter, setSpeciesFilter] = useState('');
+  // Filter state - species is now an array for multi-select
+  const [speciesFilter, setSpeciesFilter] = useState([]);
   const [ageCategoryFilter, setAgeCategoryFilter] = useState('');
   const [scheduleTypeFilter, setScheduleTypeFilter] = useState('');
   const [includeDefaults, setIncludeDefaults] = useState(true);
 
+  // View template modal
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
   // Apply template modal
   const [applyModalOpen, setApplyModalOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedReptile, setSelectedReptile] = useState('');
 
   // Import modal
@@ -42,18 +46,26 @@ function ScheduleTemplates() {
 
   useEffect(() => {
     loadData();
-  }, [speciesFilter, ageCategoryFilter, scheduleTypeFilter, includeDefaults]);
+  }, []);
+
+  useEffect(() => {
+    // Initialize species filter with household species
+    if (reptiles.length > 0 && speciesFilter.length === 0) {
+      const householdSpecies = [...new Set(reptiles.map(r => r.species))];
+      setSpeciesFilter(householdSpecies);
+    }
+  }, [reptiles]);
+
+  useEffect(() => {
+    // Client-side filtering
+    filterTemplates();
+  }, [templates, speciesFilter, ageCategoryFilter, scheduleTypeFilter, includeDefaults]);
 
   async function loadData() {
     try {
       setLoading(true);
       const [templatesData, reptilesData] = await Promise.all([
-        api.listScheduleTemplates({
-          species: speciesFilter || undefined,
-          age_category: ageCategoryFilter || undefined,
-          schedule_type: scheduleTypeFilter || undefined,
-          include_defaults: includeDefaults,
-        }),
+        api.listScheduleTemplates({}),
         axios.get(`${API_BASE_URL}/api/reptiles`, { withCredentials: true }),
       ]);
 
@@ -65,6 +77,46 @@ function ScheduleTemplates() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function filterTemplates() {
+    let filtered = [...templates];
+
+    // Filter by species (multi-select)
+    if (speciesFilter.length > 0) {
+      filtered = filtered.filter(t =>
+        !t.species || speciesFilter.includes(t.species)
+      );
+    }
+
+    // Filter by age category
+    if (ageCategoryFilter) {
+      filtered = filtered.filter(t =>
+        !t.age_category || t.age_category === ageCategoryFilter
+      );
+    }
+
+    // Filter by schedule type
+    if (scheduleTypeFilter) {
+      filtered = filtered.filter(t => t.schedule_type === scheduleTypeFilter);
+    }
+
+    // Filter by defaults
+    if (!includeDefaults) {
+      filtered = filtered.filter(t => !t.is_default);
+    }
+
+    setFilteredTemplates(filtered);
+  }
+
+  function toggleSpeciesFilter(species) {
+    setSpeciesFilter(prev => {
+      if (prev.includes(species)) {
+        return prev.filter(s => s !== species);
+      } else {
+        return [...prev, species];
+      }
+    });
   }
 
   async function handleExport() {
@@ -99,6 +151,7 @@ function ScheduleTemplates() {
       const newTemplate = await api.duplicateScheduleTemplate(templateId);
       alert('Template duplicated successfully! You can now customize it.');
       loadData();
+      setViewModalOpen(false);
     } catch (error) {
       console.error('Error duplicating template:', error);
       alert('Failed to duplicate template');
@@ -112,14 +165,20 @@ function ScheduleTemplates() {
       await api.deleteScheduleTemplate(templateId);
       alert('Template deleted successfully');
       loadData();
+      setViewModalOpen(false);
     } catch (error) {
       console.error('Error deleting template:', error);
       alert(error.response?.data?.detail || 'Failed to delete template');
     }
   }
 
-  function openApplyModal(template) {
+  function openViewModal(template) {
     setSelectedTemplate(template);
+    setViewModalOpen(true);
+  }
+
+  function openApplyModal() {
+    setViewModalOpen(false);
     setSelectedReptile('');
     setApplyModalOpen(true);
   }
@@ -158,6 +217,13 @@ function ScheduleTemplates() {
     }
   }
 
+  function formatTime(timeString) {
+    if (!timeString) return '';
+    // Convert HH:MM:SS to HH:MM
+    const parts = timeString.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+
   function getTypeColor(type) {
     const colors = {
       feeding: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
@@ -168,8 +234,8 @@ function ScheduleTemplates() {
     return colors[type] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   }
 
-  // Get unique species and age categories from templates
-  const uniqueSpecies = [...new Set(templates.map(t => t.species).filter(Boolean))];
+  // Get unique species and age categories from all templates
+  const allSpecies = [...new Set(templates.map(t => t.species).filter(Boolean))];
   const uniqueAgeCategories = [...new Set(templates.map(t => t.age_category).filter(Boolean))];
 
   return (
@@ -199,7 +265,7 @@ function ScheduleTemplates() {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
           <Filter size={20} />
-          Filters
+          Filters {speciesFilter.length > 0 && `(${speciesFilter.length})`}
         </button>
 
         <button
@@ -223,20 +289,33 @@ function ScheduleTemplates() {
       {showFilters && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Species
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Species (Multi-Select)
               </label>
-              <select
-                value={speciesFilter}
-                onChange={(e) => setSpeciesFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              >
-                <option value="">All Species</option>
-                {uniqueSpecies.map(species => (
-                  <option key={species} value={species}>{species}</option>
+              <div className="flex flex-wrap gap-2">
+                {allSpecies.map(species => (
+                  <button
+                    key={species}
+                    onClick={() => toggleSpeciesFilter(species)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      speciesFilter.includes(species)
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {species}
+                  </button>
                 ))}
-              </select>
+                {speciesFilter.length > 0 && (
+                  <button
+                    onClick={() => setSpeciesFilter([])}
+                    className="px-3 py-1 rounded-lg text-sm font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>
@@ -272,20 +351,19 @@ function ScheduleTemplates() {
                 <option value="supplement">Supplement</option>
               </select>
             </div>
+          </div>
 
-            <div className="flex items-end">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={includeDefaults}
-                  onChange={(e) => setIncludeDefaults(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Include Defaults
-                </span>
-              </label>
-            </div>
+          <div className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="includeDefaults"
+              checked={includeDefaults}
+              onChange={(e) => setIncludeDefaults(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded"
+            />
+            <label htmlFor="includeDefaults" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Include Default Templates
+            </label>
           </div>
         </div>
       )}
@@ -295,7 +373,7 @@ function ScheduleTemplates() {
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
         </div>
-      ) : templates.length === 0 ? (
+      ) : filteredTemplates.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 dark:text-gray-400 mb-4">No schedule templates found</p>
@@ -309,7 +387,7 @@ function ScheduleTemplates() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {templates.map(template => (
+          {filteredTemplates.map(template => (
             <div
               key={template.id}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
@@ -361,7 +439,7 @@ function ScheduleTemplates() {
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <Clock size={16} />
                     <span>
-                      {template.earliest_time} - {template.latest_time}
+                      {formatTime(template.earliest_time)} - {formatTime(template.latest_time)}
                     </span>
                   </div>
                 )}
@@ -373,46 +451,158 @@ function ScheduleTemplates() {
                 )}
               </div>
 
-              {/* Actions */}
+              {/* Actions - Only View button */}
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <button
-                  onClick={() => openApplyModal(template)}
+                  onClick={() => openViewModal(template)}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors font-medium"
                 >
-                  <CheckCircle size={16} />
-                  Use
+                  <Eye size={16} />
+                  View
                 </button>
-
-                <button
-                  onClick={() => handleDuplicate(template.id)}
-                  className="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 px-3 py-2 rounded-lg transition-colors"
-                  title="Duplicate & Customize"
-                >
-                  <Copy size={16} />
-                </button>
-
-                {!template.is_default && (
-                  <>
-                    <button
-                      onClick={() => navigate(`/schedule-templates/edit/${template.id}`)}
-                      className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit size={16} />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(template.id, template.name)}
-                      className="bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* View Template Modal */}
+      {viewModalOpen && selectedTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {selectedTemplate.name}
+              </h2>
+              <button
+                onClick={() => setViewModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {selectedTemplate.is_default && (
+              <span className="inline-block text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded mb-4">
+                Default Template
+              </span>
+            )}
+
+            {/* Template Details */}
+            <div className="space-y-4 mb-6">
+              {/* Description */}
+              {selectedTemplate.description && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Description</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{selectedTemplate.description}</p>
+                </div>
+              )}
+
+              {/* Type and Category Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Schedule Type</h3>
+                  <span className={`inline-block px-3 py-1 rounded ${getTypeColor(selectedTemplate.schedule_type)}`}>
+                    {selectedTemplate.schedule_type}
+                  </span>
+                </div>
+
+                {selectedTemplate.species && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Species</h3>
+                    <span className="inline-block px-3 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                      {selectedTemplate.species}
+                    </span>
+                  </div>
+                )}
+
+                {selectedTemplate.age_category && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Age Category</h3>
+                    <span className="inline-block px-3 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                      {selectedTemplate.age_category}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Schedule Rule */}
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Schedule</h3>
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <Calendar size={16} />
+                  <span>{formatScheduleRule(selectedTemplate)}</span>
+                </div>
+              </div>
+
+              {/* Time Window */}
+              {selectedTemplate.time_window_enabled && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Time Window</h3>
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Clock size={16} />
+                    <span>
+                      {formatTime(selectedTemplate.earliest_time)} - {formatTime(selectedTemplate.latest_time)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Food Category */}
+              {selectedTemplate.food_category && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Food Category</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{selectedTemplate.food_category}</p>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedTemplate.notes && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Notes</h3>
+                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{selectedTemplate.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={openApplyModal}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Use Template
+              </button>
+
+              <button
+                onClick={() => handleDuplicate(selectedTemplate.id)}
+                className="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <Copy size={16} />
+                Duplicate
+              </button>
+
+              {!selectedTemplate.is_default && (
+                <>
+                  <button
+                    onClick={() => navigate(`/schedule-templates/edit/${selectedTemplate.id}`)}
+                    className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Edit size={16} />
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(selectedTemplate.id, selectedTemplate.name)}
+                    className="bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
