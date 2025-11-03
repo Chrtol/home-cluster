@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""
+Cleanup script to remove duplicate schedule templates from the database.
+This script will identify and remove non-default templates that appear to be duplicates.
+"""
+
+import asyncio
+import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select, delete
+from app.models import ScheduleTemplate
+
+
+async def cleanup_duplicates():
+    """Remove duplicate schedule templates"""
+
+    # Get database URL from environment or use default
+    database_url = os.getenv('DATABASE_URL', 'postgresql+asyncpg://postgres:postgres@localhost:5432/reptile_tracker')
+
+    # Create async engine
+    engine = create_async_engine(database_url, echo=False)
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with async_session() as session:
+        # Get all templates
+        result = await session.execute(select(ScheduleTemplate).order_by(ScheduleTemplate.name))
+        templates = result.scalars().all()
+
+        print(f"\n{'='*80}")
+        print(f"Total templates in database: {len(templates)}")
+        print(f"{'='*80}\n")
+
+        # Templates to delete (identified duplicates and problematic sources)
+        templates_to_delete = []
+
+        # 1. Find templates with problematic sources (not in approved list)
+        approved_sources = [
+            'ReptiFiles',
+            'The Bio Dude',
+            'Reptile Magazine',
+            'Tropical Species',
+            'Juvenile Weekly Weighing (General)',
+            'Adult Monthly Weighing (General)',
+        ]
+
+        for template in templates:
+            # Skip default templates - never delete these
+            if template.is_default:
+                continue
+
+            # Extract source from name
+            parts = template.name.split(' - ')
+            if len(parts) >= 2:
+                source = parts[0].strip()
+
+                # Check for problematic sources
+                if source not in approved_sources:
+                    # Flag potential duplicates like "Juvenile bearded dragon"
+                    if any(keyword in source.lower() for keyword in ['juvenile', 'adult', 'hatchling', 'bearded', 'leopard', 'gecko', 'dragon']):
+                        templates_to_delete.append(template)
+                        print(f"⚠️  Found suspicious template (looks like duplicate):")
+                        print(f"    ID: {template.id}, Name: '{template.name}'")
+                        print(f"    Source: '{source}', Species: {template.species}, Default: {template.is_default}")
+                        print()
+
+        # 2. Find exact duplicate names
+        name_counts = {}
+        for template in templates:
+            if template.name not in name_counts:
+                name_counts[template.name] = []
+            name_counts[template.name].append(template)
+
+        for name, temps in name_counts.items():
+            if len(temps) > 1:
+                print(f"⚠️  Found {len(temps)} templates with same name: '{name}'")
+                # Keep the default one, delete non-default duplicates
+                for t in temps:
+                    print(f"    ID: {t.id}, Default: {t.is_default}, Created: {t.created_at}")
+                    if not t.is_default and t not in templates_to_delete:
+                        templates_to_delete.append(t)
+                print()
+
+        # 3. Find very similar templates (same source, species, age, type)
+        seen_combinations = {}
+        for template in templates:
+            if template.is_default:
+                continue
+
+            parts = template.name.split(' - ')
+            source = parts[0].strip() if len(parts) >= 2 else 'Unknown'
+
+            key = (
+                source,
+                template.species,
+                template.age_category,
+                template.schedule_type,
+                template.schedule_rule,
+                template.frequency_days,
+                template.days_of_week,
+            )
+
+            if key in seen_combinations:
+                print(f"⚠️  Found similar template (possible duplicate):")
+                print(f"    Existing: '{seen_combinations[key].name}' (ID: {seen_combinations[key].id})")
+                print(f"    Duplicate: '{template.name}' (ID: {template.id})")
+                if template not in templates_to_delete:
+                    templates_to_delete.append(template)
+                print()
+            else:
+                seen_combinations[key] = template
+
+        # Summary
+        print(f"\n{'='*80}")
+        print(f"SUMMARY")
+        print(f"{'='*80}\n")
+        print(f"Found {len(templates_to_delete)} templates to delete:")
+        for t in templates_to_delete:
+            print(f"  - ID {t.id}: {t.name}")
+
+        if templates_to_delete:
+            print(f"\n⚠️  This will DELETE {len(templates_to_delete)} templates!")
+            print("Run this script with CONFIRM=yes to proceed with deletion:")
+            print(f"  CONFIRM=yes python3 cleanup_duplicate_templates.py")
+
+            # Check if user confirmed
+            if os.getenv('CONFIRM') == 'yes':
+                print("\n🗑️  Deleting templates...")
+                for template in templates_to_delete:
+                    print(f"  Deleting: {template.name} (ID: {template.id})")
+                    await session.delete(template)
+
+                await session.commit()
+                print(f"\n✅ Successfully deleted {len(templates_to_delete)} duplicate templates!")
+            else:
+                print("\n❌ Deletion cancelled. No templates were deleted.")
+        else:
+            print("\n✅ No duplicate templates found!")
+
+        await engine.dispose()
+
+
+if __name__ == "__main__":
+    asyncio.run(cleanup_duplicates())

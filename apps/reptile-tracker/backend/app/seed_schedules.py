@@ -78,6 +78,22 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== LEOPARD GECKO SCHEDULES ==========
         ScheduleTemplate(
+            name="ReptiFiles - Juvenile Leopard Gecko Daily Feeding",
+            description="Daily insects for growing juvenile leopard geckos (0-12 months)",
+            species="Leopard Gecko",
+            age_category="juvenile",
+            schedule_type="feeding",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            food_category="insects",
+            time_slot="evening",
+            earliest_time=time(18, 0),
+            latest_time=time(21, 0),
+            time_window_enabled=True,
+            notes="Feed in evening as leopard geckos are nocturnal. Offer 5-8 appropriately sized insects daily.",
+            is_default=True,
+        ),
+        ScheduleTemplate(
             name="The Bio Dude - Juvenile Leopard Gecko Daily Feeding",
             description="Daily insects for growing juvenile leopard geckos (0-12 months)",
             species="Leopard Gecko",
