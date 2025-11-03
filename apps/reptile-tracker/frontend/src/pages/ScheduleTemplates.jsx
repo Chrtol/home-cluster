@@ -49,12 +49,19 @@ function ScheduleTemplates() {
   }, []);
 
   useEffect(() => {
-    // Initialize species filter with household species
-    if (reptiles.length > 0 && speciesFilter.length === 0) {
-      const householdSpecies = [...new Set(reptiles.map(r => r.species))];
-      setSpeciesFilter(householdSpecies);
+    // Initialize species filter with household species (matched to template species for case consistency)
+    if (templates.length > 0 && reptiles.length > 0 && speciesFilter.length === 0) {
+      const householdSpecies = [...new Set(reptiles.map(r => r.species.toLowerCase()))];
+      const allTemplateSpecies = [...new Set(templates.map(t => t.species).filter(Boolean))];
+
+      // Find template species that match household species (case-insensitive)
+      const matchedSpecies = allTemplateSpecies.filter(templateSpecies =>
+        householdSpecies.includes(templateSpecies.toLowerCase())
+      );
+
+      setSpeciesFilter(matchedSpecies);
     }
-  }, [reptiles]);
+  }, [templates, reptiles]);
 
   useEffect(() => {
     // Client-side filtering
@@ -82,10 +89,11 @@ function ScheduleTemplates() {
   function filterTemplates() {
     let filtered = [...templates];
 
-    // Filter by species (multi-select)
+    // Filter by species (multi-select) - case-insensitive
     if (speciesFilter.length > 0) {
+      const lowerCaseFilters = speciesFilter.map(s => s.toLowerCase());
       filtered = filtered.filter(t =>
-        !t.species || speciesFilter.includes(t.species)
+        !t.species || lowerCaseFilters.includes(t.species.toLowerCase())
       );
     }
 
@@ -118,13 +126,12 @@ function ScheduleTemplates() {
       // Extract group key: "Source - Species Age" or "Source - Species" or just keep individual
       const nameParts = template.name.split(' - ');
 
-      if (nameParts.length >= 3 && template.species) {
+      // Templates like "ReptiFiles - Juvenile Bearded Dragon Daily Feeding" have 2 parts
+      if (nameParts.length >= 2 && template.species && template.age_category) {
         // e.g., "ReptiFiles - Juvenile Bearded Dragon Daily Feeding"
         // Group key: "ReptiFiles - Juvenile Bearded Dragon" or "ReptiFiles - Adult Bearded Dragon"
         const source = nameParts[0];
-        const speciesAge = template.age_category
-          ? `${template.age_category.charAt(0).toUpperCase() + template.age_category.slice(1)} ${template.species}`
-          : template.species;
+        const speciesAge = `${template.age_category.charAt(0).toUpperCase() + template.age_category.slice(1)} ${template.species}`;
         const groupKey = `${source} - ${speciesAge}`;
 
         if (!groups[groupKey]) {
@@ -275,15 +282,23 @@ function ScheduleTemplates() {
   function formatScheduleRule(template) {
     switch (template.schedule_rule) {
       case 'every_x_days':
+        if (template.frequency_days === 1) {
+          return 'Daily';
+        }
         return `Every ${template.frequency_days} days`;
       case 'days_of_week':
         const days = template.days_of_week?.split(',').map(d => {
-          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
           return dayNames[parseInt(d)];
         }).join(', ');
-        return days || 'Days of week';
+        if (!days) return 'Days of week';
+        // If only one day, say "Weekly on [Day]"
+        if (days.split(', ').length === 1) {
+          return `Weekly on ${days}`;
+        }
+        return days;
       case 'monthly':
-        return `Monthly (day ${template.day_of_month})`;
+        return `Monthly on day ${template.day_of_month}`;
       default:
         return template.schedule_rule;
     }
@@ -934,17 +949,53 @@ function ScheduleTemplates() {
 
                       {/* Example Preview Days */}
                       <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Example Schedule:</div>
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Upcoming Occurrences:</div>
                         <div className="space-y-2">
-                          {['Today', 'Tomorrow', 'In 2 days'].slice(0, selectedTemplate.schedule_rule === 'every_x_days' && selectedTemplate.frequency_days > 1 ? 2 : 3).map((day, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-sm">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                              <span className="text-gray-700 dark:text-gray-300">{day}</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {selectedTemplate.time_window_enabled ? formatTime(selectedTemplate.earliest_time) : 'All day'}
-                              </span>
-                            </div>
-                          ))}
+                          {(() => {
+                            const today = new Date();
+                            const upcomingDates = [];
+
+                            if (selectedTemplate.schedule_rule === 'every_x_days') {
+                              // Show next 3 occurrences for "every X days"
+                              for (let i = 0; i < 3; i++) {
+                                const date = new Date(today);
+                                date.setDate(date.getDate() + (i * (selectedTemplate.frequency_days || 1)));
+                                upcomingDates.push(date);
+                              }
+                            } else if (selectedTemplate.schedule_rule === 'days_of_week' && selectedTemplate.days_of_week) {
+                              // Show next 3 matching days of week
+                              const targetDays = selectedTemplate.days_of_week.split(',').map(d => parseInt(d));
+                              let checkDate = new Date(today);
+                              while (upcomingDates.length < 3) {
+                                if (targetDays.includes(checkDate.getDay())) {
+                                  upcomingDates.push(new Date(checkDate));
+                                }
+                                checkDate.setDate(checkDate.getDate() + 1);
+                              }
+                            } else if (selectedTemplate.schedule_rule === 'monthly' && selectedTemplate.day_of_month) {
+                              // Show next 3 months
+                              for (let i = 0; i < 3; i++) {
+                                const date = new Date(today.getFullYear(), today.getMonth() + i, selectedTemplate.day_of_month);
+                                if (date >= today) upcomingDates.push(date);
+                              }
+                            }
+
+                            return upcomingDates.slice(0, 3).map((date, idx) => {
+                              const isToday = date.toDateString() === today.toDateString();
+                              const isTomorrow = date.toDateString() === new Date(today.getTime() + 86400000).toDateString();
+                              const dayStr = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                              return (
+                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                  <span className="text-gray-700 dark:text-gray-300">{dayStr}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {selectedTemplate.time_window_enabled ? formatTime(selectedTemplate.earliest_time) : 'All day'}
+                                  </span>
+                                </div>
+                              );
+                            });
+                          })()}
                           <div className="text-xs text-gray-500 dark:text-gray-400 italic">and continues...</div>
                         </div>
                       </div>
