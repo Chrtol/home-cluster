@@ -19,7 +19,7 @@ async def seed_schedule_templates(db: AsyncSession):
     templates = [
         # ========== BEARDED DRAGON SCHEDULES ==========
         ScheduleTemplate(
-            name="Juvenile Bearded Dragon - Daily Feeding",
+            name="ReptiFiles - Juvenile Bearded Dragon Daily Feeding",
             description="Daily insects for growing juvenile bearded dragons (3-12 months)",
             species="Bearded Dragon",
             age_category="juvenile",
@@ -35,7 +35,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Juvenile Bearded Dragon - Daily Salad",
+            name="ReptiFiles - Juvenile Bearded Dragon Daily Salad",
             description="Fresh vegetables daily for juvenile bearded dragons",
             species="Bearded Dragon",
             age_category="juvenile",
@@ -48,7 +48,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult Bearded Dragon - Insects (Every Other Day)",
+            name="ReptiFiles - Adult Bearded Dragon Insects (Every Other Day)",
             description="Insects every other day for adult bearded dragons (12+ months)",
             species="Bearded Dragon",
             age_category="adult",
@@ -64,7 +64,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult Bearded Dragon - Daily Salad",
+            name="ReptiFiles - Adult Bearded Dragon Daily Salad",
             description="Fresh vegetables daily for adult bearded dragons",
             species="Bearded Dragon",
             age_category="adult",
@@ -78,7 +78,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== LEOPARD GECKO SCHEDULES ==========
         ScheduleTemplate(
-            name="Juvenile Leopard Gecko - Daily Feeding",
+            name="The Bio Dude - Juvenile Leopard Gecko Daily Feeding",
             description="Daily insects for growing juvenile leopard geckos (0-12 months)",
             species="Leopard Gecko",
             age_category="juvenile",
@@ -94,7 +94,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult Leopard Gecko - Every Other Day Feeding",
+            name="ReptiFiles - Adult Leopard Gecko Every Other Day Feeding",
             description="Insects every other day for adult leopard geckos (12+ months)",
             species="Leopard Gecko",
             age_category="adult",
@@ -112,7 +112,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== CRESTED GECKO SCHEDULES ==========
         ScheduleTemplate(
-            name="Crested Gecko - Daily CGD Feeding",
+            name="ReptiFiles - Crested Gecko Daily CGD Feeding",
             description="Daily crested gecko diet (powder food)",
             species="Crested Gecko",
             age_category=None,  # All ages
@@ -125,7 +125,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Crested Gecko - Weekly Live Insects",
+            name="ReptiFiles - Crested Gecko Weekly Live Insects",
             description="Live insects once or twice per week as enrichment",
             species="Crested Gecko",
             age_category=None,
@@ -140,7 +140,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== BALL PYTHON SCHEDULES ==========
         ScheduleTemplate(
-            name="Juvenile Ball Python - Weekly Feeding",
+            name="Reptile Magazine - Juvenile Ball Python Weekly Feeding",
             description="Weekly rodent feeding for juvenile ball pythons (0-2 years)",
             species="Ball Python",
             age_category="juvenile",
@@ -153,7 +153,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult Ball Python - Bi-Weekly Feeding",
+            name="ReptiFiles - Adult Ball Python Bi-Weekly Feeding",
             description="Every 10-14 days for adult ball pythons (2+ years)",
             species="Ball Python",
             age_category="adult",
@@ -167,7 +167,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== CORN SNAKE SCHEDULES ==========
         ScheduleTemplate(
-            name="Juvenile Corn Snake - Weekly Feeding",
+            name="ReptiFiles - Juvenile Corn Snake Weekly Feeding",
             description="Weekly feeding for juvenile corn snakes (0-2 years)",
             species="Corn Snake",
             age_category="juvenile",
@@ -179,7 +179,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult Corn Snake - Weekly Feeding",
+            name="ReptiFiles - Adult Corn Snake Weekly Feeding",
             description="Weekly feeding for adult corn snakes (2+ years)",
             species="Corn Snake",
             age_category="adult",
@@ -193,7 +193,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== BLUE TONGUE SKINK SCHEDULES ==========
         ScheduleTemplate(
-            name="Blue Tongue Skink - Every Other Day Feeding",
+            name="ReptiFiles - Blue Tongue Skink Every Other Day Feeding",
             description="Varied diet every other day for blue tongue skinks",
             species="Blue Tongue Skink",
             age_category=None,
@@ -207,7 +207,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== GENERAL SUPPLEMENT SCHEDULES ==========
         ScheduleTemplate(
-            name="Calcium with D3 - Twice Weekly",
+            name="ReptiFiles - Calcium with D3 Twice Weekly",
             description="Standard calcium with D3 supplementation schedule",
             species=None,  # All species
             age_category=None,
@@ -218,7 +218,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Multivitamin - Weekly",
+            name="ReptiFiles - Multivitamin Weekly",
             description="Weekly multivitamin supplementation",
             species=None,
             age_category=None,
@@ -231,7 +231,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== WEIGHING SCHEDULES ==========
         ScheduleTemplate(
-            name="Juvenile - Weekly Weighing",
+            name="Juvenile Weekly Weighing (General)",
             description="Weekly weight checks for growing juveniles",
             species=None,
             age_category="juvenile",
@@ -243,7 +243,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult - Monthly Weighing",
+            name="Adult Monthly Weighing (General)",
             description="Monthly weight checks for adult reptiles",
             species=None,
             age_category="adult",
@@ -257,7 +257,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== MISTING SCHEDULES ==========
         ScheduleTemplate(
-            name="Tropical Species - Twice Daily Misting",
+            name="Tropical Species Morning Misting",
             description="Morning and evening misting for tropical species",
             species="Crested Gecko",
             age_category=None,
@@ -272,7 +272,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Tropical Species - Evening Misting",
+            name="Tropical Species Evening Misting",
             description="Evening misting for tropical species",
             species="Crested Gecko",
             age_category=None,
