@@ -784,21 +784,6 @@ function ScheduleTemplates() {
                     )}
                   </div>
 
-                  {/* Source link */}
-                  {group.templates[0]?.source_url && (
-                    <div className="mb-4">
-                      <a
-                        href={group.templates[0].source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                      >
-                        <ExternalLink size={12} />
-                        {group.templates[0].source_name || 'View Source'}
-                      </a>
-                    </div>
-                  )}
-
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <button
@@ -879,21 +864,6 @@ function ScheduleTemplates() {
                           )}
                         </div>
 
-                        {/* Source link */}
-                        {template.source_url && (
-                          <div className="mb-3">
-                            <a
-                              href={template.source_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                            >
-                              <ExternalLink size={12} />
-                              {template.source_name || 'View Source'}
-                            </a>
-                          </div>
-                        )}
-
                         {/* Actions - Only View button */}
                         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                           <button
@@ -928,7 +898,7 @@ function ScheduleTemplates() {
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {selectedTemplate.groupName}
                     </h2>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {selectedTemplate.is_default && (
                         <span className="inline-block text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded">
                           Default Template
@@ -937,6 +907,17 @@ function ScheduleTemplates() {
                       <span className="inline-block text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-2 py-1 rounded">
                         {selectedTemplate.templates.length} Schedules
                       </span>
+                      {selectedTemplate.templates[0]?.source_url && (
+                        <a
+                          href={selectedTemplate.templates[0].source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink size={12} />
+                          {selectedTemplate.templates[0].source_name || 'View Source'}
+                        </a>
+                      )}
                     </div>
                   </div>
                   <button
@@ -1126,11 +1107,24 @@ function ScheduleTemplates() {
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {selectedTemplate.name}
                     </h2>
-                    {selectedTemplate.is_default && (
-                      <span className="inline-block text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded mt-1">
-                        Default Template
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {selectedTemplate.is_default && (
+                        <span className="inline-block text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded">
+                          Default Template
+                        </span>
+                      )}
+                      {selectedTemplate.source_url && (
+                        <a
+                          href={selectedTemplate.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink size={12} />
+                          {selectedTemplate.source_name || 'View Source'}
+                        </a>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => setViewModalOpen(false)}
