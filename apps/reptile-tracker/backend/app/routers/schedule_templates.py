@@ -322,12 +322,18 @@ async def duplicate_schedule_template(
 async def apply_template_to_reptile(
     template_id: int,
     reptile_id: int,
+    parent_schedule_id: Optional[int] = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Apply a schedule template to a specific reptile.
     Creates a new Schedule instance from the template.
+
+    Args:
+        template_id: The template to apply
+        reptile_id: The reptile to apply the template to
+        parent_schedule_id: Optional parent schedule ID for grouped templates
     """
     # Get template
     query = select(ScheduleTemplate).where(ScheduleTemplate.id == template_id)
@@ -345,6 +351,17 @@ async def apply_template_to_reptile(
     access_level = await check_reptile_access(db, reptile_id, user.id)
     if access_level is None or access_level.value < AccessLevel.CARETAKER.value:
         raise HTTPException(status_code=403, detail="Insufficient permissions for this reptile")
+
+    # If parent_schedule_id provided, verify it exists and belongs to same reptile
+    if parent_schedule_id is not None:
+        parent_query = select(Schedule).where(Schedule.id == parent_schedule_id)
+        parent_result = await db.execute(parent_query)
+        parent_schedule = parent_result.scalar_one_or_none()
+
+        if not parent_schedule:
+            raise HTTPException(status_code=404, detail="Parent schedule not found")
+        if parent_schedule.reptile_id != reptile_id:
+            raise HTTPException(status_code=400, detail="Parent schedule must belong to same reptile")
 
     # Create schedule from template
     new_schedule = Schedule(
@@ -365,6 +382,7 @@ async def apply_template_to_reptile(
         supplement_id=template.supplement_id,
         notes=template.notes,
         enabled=True,
+        parent_schedule_id=parent_schedule_id,  # Set parent relationship
     )
 
     db.add(new_schedule)
@@ -376,6 +394,7 @@ async def apply_template_to_reptile(
         "schedule_id": new_schedule.id,
         "template_id": template_id,
         "reptile_id": reptile_id,
+        "parent_schedule_id": parent_schedule_id,
     }
 
 
