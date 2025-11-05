@@ -39,7 +39,7 @@ export default function Dashboard() {
 
         // Fetch feeding, misting and health data for each reptile (single fetch, used for both stats and activity)
         const feedingPromises = reptilesRes.data.map(r =>
-          axios.get(`/api/feedings/reptile/${r.id}`).catch(() => ({ data: [] }))
+          axios.get(`/api/feedings?reptile_id=${r.id}&limit=1`).catch(() => ({ data: [] }))
         );
         const mistingPromises = reptilesRes.data.map(r =>
           axios.get(`/api/misting/reptile/${r.id}`).catch(() => ({ data: [] }))
@@ -372,6 +372,18 @@ export default function Dashboard() {
   };
 
   const { chartData, reptileColors, reptileNames } = prepareWeightChartData();
+
+  // Debug: Log chart data to console
+  if (chartData && chartData.length > 0) {
+    console.log('Weight chart - Total data points:', chartData.length);
+    console.log('Weight chart - First 3 data points:', chartData.slice(0, 3));
+    console.log('Weight chart - Last 3 data points:', chartData.slice(-3));
+    console.log('Reptile names:', reptileNames);
+
+    // Check if there are any actual values
+    const samplePoint = chartData[Math.floor(chartData.length / 2)];
+    console.log('Sample data point from middle:', samplePoint);
+  }
 
   // Helper function to check if a card is visible
   const isCardVisible = (cardId) => {
