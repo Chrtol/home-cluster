@@ -491,9 +491,9 @@ export default function Dashboard() {
             const secondMeasurement = reptile.data[1];
             const slope = (secondMeasurement.weight - firstMeasurement.weight) /
                          (secondMeasurement.dateTime - firstMeasurement.dateTime);
-            // Project from midnight of first measurement to chart date
-            const daysSinceFirstMeasurement = (dateTime - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
-            const extrapolated = firstMeasurement.weight + slope * daysSinceFirstMeasurement * (24 * 60 * 60 * 1000);
+            // Project from actual first measurement timestamp to chart date
+            const millisecondsSinceFirstMeasurement = dateTime - firstMeasurement.dateTime;
+            const extrapolated = firstMeasurement.weight + slope * millisecondsSinceFirstMeasurement;
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
@@ -507,28 +507,9 @@ export default function Dashboard() {
             const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
                          (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
 
-            // Debug logging
-            if (date === 'Nov 5, 2025') {
-              console.log('DEBUG extrapolation for', reptile.name, ':', {
-                lastWeight: lastMeasurement.weight,
-                secondLastWeight: secondLastMeasurement.weight,
-                lastDate: new Date(lastMeasurement.dateTime).toISOString(),
-                secondLastDate: new Date(secondLastMeasurement.dateTime).toISOString(),
-                slope: slope,
-                slopeGramsPerDay: slope * 24 * 60 * 60 * 1000,
-                dateTime: new Date(dateTime).toISOString(),
-                lastMeasurementMidnight: new Date(lastMeasurementMidnight.getTime()).toISOString(),
-                daysSince: (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000)
-              });
-            }
-
-            // Project from midnight of last measurement to chart date
-            const daysSinceLastMeasurement = (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
-            const extrapolated = lastMeasurement.weight + slope * daysSinceLastMeasurement * (24 * 60 * 60 * 1000);
-
-            if (date === 'Nov 5, 2025') {
-              console.log('Extrapolated value:', extrapolated);
-            }
+            // Project from actual last measurement timestamp to chart date
+            const millisecondsSinceLastMeasurement = dateTime - lastMeasurement.dateTime;
+            const extrapolated = lastMeasurement.weight + slope * millisecondsSinceLastMeasurement;
 
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
