@@ -247,11 +247,9 @@ export default function Dashboard() {
           data: []
         };
       }
-      const measurementDate = new Date(log.measured_at);
-      measurementDate.setHours(0, 0, 0, 0); // Normalize to midnight for consistent date comparison
       byReptile[log.reptile_id].data.push({
-        date: format(measurementDate, 'MMM d, yyyy'),
-        dateTime: measurementDate.getTime(),
+        date: format(new Date(log.measured_at), 'MMM d, yyyy'),
+        dateTime: new Date(log.measured_at).getTime(),
         weight: log.weight_grams
       });
     });
@@ -488,25 +486,17 @@ export default function Dashboard() {
             </div>
             <div style={{ width: '100%', height: 200 }}>
               <ResponsiveContainer>
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 35, bottom: 25 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                   <XAxis
                     dataKey="date"
                     stroke="#9ca3af"
-                    tickFormatter={(value) => {
-                      // Show only month and day for better readability
-                      const parts = value.split(',');
-                      return parts[0]; // "Oct 19" instead of "Oct 19, 2025"
-                    }}
+                    tick={{ fontSize: 11 }}
                     interval="preserveStartEnd"
-                    minTickGap={30}
+                    minTickGap={50}
                     padding={{ left: 10, right: 10 }}
                   />
-                  <YAxis
-                    stroke="#9ca3af"
-                    tickFormatter={(value) => Math.round(value)}
-                    label={{ value: 'grams', angle: -90, position: 'insideLeft', fill: '#9ca3af' }}
-                  />
+                  <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }}
                     labelStyle={{ color: '#f3f4f6' }}
