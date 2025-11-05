@@ -349,10 +349,11 @@ export default function Dashboard() {
         if (dateTime < firstMeasurementMidnight.getTime()) {
           // Extrapolate into the past
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
-            // Linear: use trend from first 2 measurements
+            // Linear: use trend from first 2 measurements (use actual times for slope)
             const secondMeasurement = reptile.data[1];
             const slope = (secondMeasurement.weight - firstMeasurement.weight) /
                          (secondMeasurement.dateTime - firstMeasurement.dateTime);
+            // Use midnight-normalized time as reference for extrapolation
             const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurementMidnight.getTime());
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
@@ -362,10 +363,11 @@ export default function Dashboard() {
         } else if (dateTime > lastMeasurementMidnight.getTime()) {
           // Extrapolate into the future
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
-            // Linear: use trend from last 2 measurements
+            // Linear: use trend from last 2 measurements (use actual times for slope)
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
             const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
                          (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
+            // Use midnight-normalized time as reference for extrapolation
             const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurementMidnight.getTime());
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
