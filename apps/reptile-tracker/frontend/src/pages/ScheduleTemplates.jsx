@@ -440,6 +440,40 @@ function ScheduleTemplates() {
     updateTemplateEdit(templateId, 'days_of_week', days.sort((a, b) => a - b).join(','));
   }
 
+  // Calculate age category from date of birth
+  function calculateAgeCategory(dateOfBirth) {
+    if (!dateOfBirth) return null;
+
+    const birthDate = new Date(dateOfBirth);
+    const now = new Date();
+    const ageInMonths = (now - birthDate) / (1000 * 60 * 60 * 24 * 30.44); // Average days per month
+
+    // General age thresholds (can vary by species)
+    if (ageInMonths < 6) return 'hatchling';
+    if (ageInMonths < 18) return 'juvenile';
+    return 'adult';
+  }
+
+  // Auto-fill age category when reptile is selected
+  useEffect(() => {
+    if (selectedReptile && selectedTemplate?.groupName && !selectedAgeCategory) {
+      const reptile = reptiles.find(r => r.id === parseInt(selectedReptile));
+      if (reptile?.date_of_birth) {
+        const calculatedAge = calculateAgeCategory(reptile.date_of_birth);
+        if (calculatedAge) {
+          setSelectedAgeCategory(calculatedAge);
+          // Also filter templates based on calculated age
+          if (selectedTemplate.templates) {
+            const filtered = selectedTemplate.templates.filter(t =>
+              !t.age_category || t.age_category === calculatedAge
+            );
+            setSelectedTemplateIds(new Set(filtered.map(t => t.id)));
+          }
+        }
+      }
+    }
+  }, [selectedReptile, selectedTemplate, reptiles]);
+
   async function handleApplyTemplate() {
     if (!selectedReptile) {
       alert('Please select a reptile');
