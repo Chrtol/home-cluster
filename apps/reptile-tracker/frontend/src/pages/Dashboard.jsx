@@ -330,7 +330,8 @@ export default function Dashboard() {
           dataPoint[`${reptile.name}_actual`] = measurement.weight;
           dataPoint[`${reptile.name}_interpolated`] = measurement.weight;
 
-          // Also set extrapolated value if this is the first or last measurement (to connect the dashed line)
+          // Set extrapolated value at first/last measurement to connect dashed line
+          // (tooltip formatter will hide it to prevent duplicates)
           if (date === firstMeasurement.date || date === lastMeasurement.date) {
             dataPoint[`${reptile.name}_extrapolated`] = measurement.weight;
           }
@@ -349,12 +350,13 @@ export default function Dashboard() {
         if (dateTime < firstMeasurementMidnight.getTime()) {
           // Extrapolate into the past
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
-            // Linear: use trend from first 2 measurements (use actual times for slope)
+            // Linear: use trend from first 2 measurements
             const secondMeasurement = reptile.data[1];
             const slope = (secondMeasurement.weight - firstMeasurement.weight) /
                          (secondMeasurement.dateTime - firstMeasurement.dateTime);
-            // Use midnight-normalized time as reference for extrapolation
-            const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurementMidnight.getTime());
+            // Project from midnight of first measurement to chart date
+            const daysSinceFirstMeasurement = (dateTime - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+            const extrapolated = firstMeasurement.weight + slope * daysSinceFirstMeasurement * (24 * 60 * 60 * 1000);
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
@@ -363,12 +365,13 @@ export default function Dashboard() {
         } else if (dateTime > lastMeasurementMidnight.getTime()) {
           // Extrapolate into the future
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
-            // Linear: use trend from last 2 measurements (use actual times for slope)
+            // Linear: use trend from last 2 measurements
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
             const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
                          (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
-            // Use midnight-normalized time as reference for extrapolation
-            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurementMidnight.getTime());
+            // Project from midnight of last measurement to chart date
+            const daysSinceLastMeasurement = (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+            const extrapolated = lastMeasurement.weight + slope * daysSinceLastMeasurement * (24 * 60 * 60 * 1000);
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
