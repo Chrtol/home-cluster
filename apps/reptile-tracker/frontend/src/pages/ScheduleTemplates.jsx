@@ -18,6 +18,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import * as api from '../utils/scheduleTemplateApi';
+import { getDayNames, getDayNumbers } from '../utils/dateFormatting';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -47,6 +48,10 @@ function ScheduleTemplates() {
   const [selectedTemplateIds, setSelectedTemplateIds] = useState(new Set());
   const [expandedTemplates, setExpandedTemplates] = useState(new Set());
   const [templateEdits, setTemplateEdits] = useState({});
+  const [customSchedules, setCustomSchedules] = useState([]);
+  const [showAddCustomSchedule, setShowAddCustomSchedule] = useState(false);
+  const [supplements, setSupplements] = useState([]);
+  const [existingSchedules, setExistingSchedules] = useState([]);
 
   // Import modal
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -335,7 +340,7 @@ function ScheduleTemplates() {
     setViewModalOpen(true);
   }
 
-  function openApplyModal() {
+  async function openApplyModal() {
     setViewModalOpen(false);
     setSelectedReptile('');
     setSelectedAgeCategory('');
@@ -350,9 +355,34 @@ function ScheduleTemplates() {
     // Reset editing state
     setExpandedTemplates(new Set());
     setTemplateEdits({});
+    setCustomSchedules([]);
+    setShowAddCustomSchedule(false);
+
+    // Fetch supplements for supplement schedules
+    try {
+      const supplementsResponse = await axios.get(`${API_BASE_URL}/api/supplements`, { withCredentials: true });
+      setSupplements(supplementsResponse.data);
+    } catch (error) {
+      console.error('Error fetching supplements:', error);
+    }
 
     setApplyModalOpen(true);
   }
+
+  // Fetch existing schedules when reptile is selected (for dependent schedules)
+  useEffect(() => {
+    if (selectedReptile && applyModalOpen) {
+      axios.get(`${API_BASE_URL}/api/schedules/reptile/${selectedReptile}`, { withCredentials: true })
+        .then(response => {
+          // Filter out dependent schedules (can't depend on a dependent schedule)
+          const validParentSchedules = response.data.filter(s => s.schedule_rule !== "dependent");
+          setExistingSchedules(validParentSchedules);
+        })
+        .catch(error => {
+          console.error('Error fetching schedules:', error);
+        });
+    }
+  }, [selectedReptile, applyModalOpen]);
 
   function toggleTemplateSelection(templateId) {
     setSelectedTemplateIds(prev => {
@@ -388,6 +418,28 @@ function ScheduleTemplates() {
     }));
   }
 
+  function toggleTemplateDay(templateId, day, currentDaysOfWeek) {
+    // Parse current days (from template or edits)
+    let days = [];
+    if (currentDaysOfWeek) {
+      if (typeof currentDaysOfWeek === 'string') {
+        days = currentDaysOfWeek.split(',').map(Number);
+      } else if (Array.isArray(currentDaysOfWeek)) {
+        days = [...currentDaysOfWeek];
+      }
+    }
+
+    // Toggle the day
+    if (days.includes(day)) {
+      days = days.filter(d => d !== day);
+    } else {
+      days = [...days, day];
+    }
+
+    // Update the edit with comma-separated string
+    updateTemplateEdit(templateId, 'days_of_week', days.sort((a, b) => a - b).join(','));
+  }
+
   async function handleApplyTemplate() {
     if (!selectedReptile) {
       alert('Please select a reptile');
@@ -399,8 +451,8 @@ function ScheduleTemplates() {
       return;
     }
 
-    if (selectedTemplateIds.size === 0) {
-      alert('Please select at least one schedule to create');
+    if (selectedTemplateIds.size === 0 && customSchedules.length === 0) {
+      alert('Please select at least one schedule to create or add a custom schedule');
       return;
     }
 
@@ -411,19 +463,17 @@ function ScheduleTemplates() {
       if (selectedTemplate.groupName && selectedTemplate.templates) {
         // Grouped template: filter to only selected templates
         templatesToApply = selectedTemplate.templates.filter(t => selectedTemplateIds.has(t.id));
-      } else {
+      } else if (selectedTemplate.id) {
         // Single template
         templatesToApply = [selectedTemplate];
       }
 
-      if (templatesToApply.length === 0) {
-        alert('No schedules selected');
-        return;
-      }
-
-      // Create parent-child relationships for multiple schedules
+      // Track created schedule IDs (map template IDs to created schedule IDs)
+      const createdScheduleIds = {};
       let parentScheduleId = null;
+      let totalCreated = 0;
 
+      // Step 1: Create all template schedules
       for (let i = 0; i < templatesToApply.length; i++) {
         const template = templatesToApply[i];
         const edits = templateEdits[template.id] || {};
@@ -435,17 +485,17 @@ function ScheduleTemplates() {
           // If there are edits, create schedule directly with custom data
           const scheduleData = {
             reptile_id: parseInt(selectedReptile),
-            schedule_name: template.name,
+            name: template.name,
             schedule_type: template.schedule_type,
-            schedule_rule: template.schedule_rule,
+            schedule_rule: edits.schedule_rule ?? template.schedule_rule,
             enabled: true,
             frequency_days: edits.frequency_days ?? template.frequency_days,
-            days_of_week: template.days_of_week,
+            days_of_week: edits.days_of_week ?? template.days_of_week,
             day_of_month: template.day_of_month,
             food_category: edits.food_category ?? template.food_category,
             time_slot: template.time_slot,
             health_category: template.health_category,
-            supplement: template.supplement,
+            supplement_id: template.supplement_id,
             time_window_enabled: edits.time_window_enabled ?? template.time_window_enabled,
             earliest_time: edits.earliest_time ?? template.earliest_time,
             latest_time: edits.latest_time ?? template.latest_time,
@@ -466,14 +516,65 @@ function ScheduleTemplates() {
           );
         }
 
+        // Track the created schedule ID
+        const createdId = response.data?.id || response.schedule_id;
+        createdScheduleIds[`template-${template.id}`] = createdId;
+
         // First template becomes the parent
         if (i === 0) {
-          parentScheduleId = response.data?.id || response.schedule_id;
+          parentScheduleId = createdId;
         }
+
+        totalCreated++;
       }
 
-      const message = templatesToApply.length > 1
-        ? `Successfully created ${templatesToApply.length} schedules!`
+      // Step 2: Create all custom schedules
+      for (const customSchedule of customSchedules) {
+        // Resolve parent_schedule_id if it references a template
+        let resolvedParentId = customSchedule.parent_schedule_id;
+        if (typeof resolvedParentId === 'string' && resolvedParentId.startsWith('template-')) {
+          resolvedParentId = createdScheduleIds[resolvedParentId] || null;
+        }
+
+        const scheduleData = {
+          reptile_id: parseInt(selectedReptile),
+          name: customSchedule.name || null,
+          schedule_type: customSchedule.schedule_type,
+          schedule_rule: customSchedule.schedule_rule,
+          enabled: true,
+          notes: customSchedule.notes || null,
+        };
+
+        // Add rule-specific fields
+        if (customSchedule.schedule_rule === 'every_x_days') {
+          scheduleData.frequency_days = customSchedule.frequency_days;
+        } else if (customSchedule.schedule_rule === 'days_of_week') {
+          scheduleData.days_of_week = customSchedule.days_of_week;
+        } else if (customSchedule.schedule_rule === 'dependent') {
+          scheduleData.parent_schedule_id = resolvedParentId;
+          scheduleData.dependent_rule = customSchedule.dependent_rule;
+
+          if (customSchedule.dependent_rule === 'every_nth') {
+            scheduleData.dependent_frequency = customSchedule.dependent_frequency;
+          } else if (customSchedule.dependent_rule === 'specific_days') {
+            scheduleData.dependent_days = customSchedule.dependent_days;
+          }
+        }
+
+        // Add supplement for supplement schedules
+        if (customSchedule.schedule_type === 'supplement' && customSchedule.supplement_id) {
+          scheduleData.supplement_id = customSchedule.supplement_id;
+        }
+
+        await axios.post(`${API_BASE_URL}/api/schedules`, scheduleData, {
+          withCredentials: true
+        });
+
+        totalCreated++;
+      }
+
+      const message = totalCreated > 1
+        ? `Successfully created ${totalCreated} schedules!`
         : 'Schedule created successfully!';
       alert(message);
 
@@ -481,7 +582,7 @@ function ScheduleTemplates() {
       navigate('/calendar');
     } catch (error) {
       console.error('Error applying template:', error);
-      alert(error.response?.data?.detail || 'Failed to apply template');
+      alert(error.response?.data?.detail || 'Failed to create schedules');
     }
   }
 
@@ -1373,7 +1474,7 @@ function ScheduleTemplates() {
       {/* Apply Template Modal */}
       {applyModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {selectedTemplate?.groupName ? 'Customize & Apply Schedules' : 'Apply Template to Reptile'}
@@ -1550,6 +1651,54 @@ function ScheduleTemplates() {
                                   />
                                 </div>
                               )}
+
+                              {/* Days of Week (for days_of_week schedules) */}
+                              {template.schedule_rule === 'days_of_week' && (() => {
+                                const dayNumbers = getDayNumbers();
+                                const dayNames = getDayNames();
+                                const weekDays = dayNumbers.map((dayNum, index) => ({
+                                  value: dayNum,
+                                  label: dayNames[index]
+                                }));
+
+                                // Parse current days
+                                let currentDays = [];
+                                const daysValue = displayData.days_of_week;
+                                if (daysValue) {
+                                  if (typeof daysValue === 'string') {
+                                    currentDays = daysValue.split(',').map(Number);
+                                  } else if (Array.isArray(daysValue)) {
+                                    currentDays = daysValue;
+                                  }
+                                }
+
+                                return (
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                      Specific Days
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                      {weekDays.map((day) => (
+                                        <button
+                                          key={day.value}
+                                          type="button"
+                                          onClick={() => toggleTemplateDay(template.id, day.value, displayData.days_of_week)}
+                                          className={`px-2 py-1.5 rounded text-xs font-medium border transition-all ${
+                                            currentDays.includes(day.value)
+                                              ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                              : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                                          }`}
+                                        >
+                                          {day.label.slice(0, 3)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      Choose which days this schedule should occur
+                                    </p>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           )}
                         </div>
@@ -1559,7 +1708,8 @@ function ScheduleTemplates() {
                 </div>
 
                 <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  {selectedTemplateIds.size} of {selectedTemplate.templates.length} schedules selected
+                  {selectedTemplateIds.size} of {selectedTemplate.templates.length} template schedules selected
+                  {customSchedules.length > 0 && `, ${customSchedules.length} custom schedule${customSchedules.length !== 1 ? 's' : ''} added`}
                 </div>
               </div>
             ) : (
@@ -1567,6 +1717,335 @@ function ScheduleTemplates() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Creating schedule from: <strong>{selectedTemplate?.name}</strong>
               </p>
+            )}
+
+            {/* Add Custom Schedule Section */}
+            {selectedTemplate?.groupName && (
+              <div className="mb-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCustomSchedule(!showAddCustomSchedule)}
+                  className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-3"
+                >
+                  <Plus size={16} />
+                  Add Custom Schedule (e.g., Calcium on Every Feeding)
+                </button>
+
+                {showAddCustomSchedule && (
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      Create additional schedules that aren't in the templates. Great for dependent schedules like "Calcium on every feeding" or "Multivitamin twice a week."
+                    </p>
+
+                    {customSchedules.map((schedule, index) => (
+                      <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            Custom Schedule #{index + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setCustomSchedules(customSchedules.filter((_, i) => i !== index))}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Schedule Type */}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                            <select
+                              value={schedule.schedule_type}
+                              onChange={(e) => {
+                                const newSchedules = [...customSchedules];
+                                newSchedules[index] = { ...schedule, schedule_type: e.target.value };
+                                setCustomSchedules(newSchedules);
+                              }}
+                              className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            >
+                              <option value="supplement">Supplement</option>
+                              <option value="feeding">Feeding</option>
+                              <option value="misting">Misting</option>
+                              <option value="weighing">Health</option>
+                            </select>
+                          </div>
+
+                          {/* Supplement Selection (for supplement schedules) */}
+                          {schedule.schedule_type === 'supplement' && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Supplement</label>
+                              <select
+                                value={schedule.supplement_id || ''}
+                                onChange={(e) => {
+                                  const newSchedules = [...customSchedules];
+                                  newSchedules[index] = { ...schedule, supplement_id: e.target.value ? parseInt(e.target.value) : null };
+                                  setCustomSchedules(newSchedules);
+                                }}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              >
+                                <option value="">Select...</option>
+                                {supplements.map(sup => (
+                                  <option key={sup.id} value={sup.id}>{sup.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Schedule Rule */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">When</label>
+                          <select
+                            value={schedule.schedule_rule}
+                            onChange={(e) => {
+                              const newSchedules = [...customSchedules];
+                              newSchedules[index] = { ...schedule, schedule_rule: e.target.value };
+                              setCustomSchedules(newSchedules);
+                            }}
+                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          >
+                            <option value="dependent">Dependent on Another Schedule</option>
+                            <option value="days_of_week">Specific Days of Week</option>
+                            <option value="every_x_days">Every X Days</option>
+                          </select>
+                        </div>
+
+                        {/* Dependent Schedule Options */}
+                        {schedule.schedule_rule === 'dependent' && (
+                          <>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Trigger On</label>
+                              <select
+                                value={schedule.parent_schedule_id || ''}
+                                onChange={(e) => {
+                                  const newSchedules = [...customSchedules];
+                                  newSchedules[index] = { ...schedule, parent_schedule_id: e.target.value ? parseInt(e.target.value) : null };
+                                  setCustomSchedules(newSchedules);
+                                }}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              >
+                                <option value="">Select parent schedule...</option>
+                                <optgroup label="From Templates">
+                                  {selectedTemplate.templates
+                                    .filter(t => selectedTemplateIds.has(t.id) && t.schedule_type === 'feeding')
+                                    .map(t => (
+                                      <option key={`template-${t.id}`} value={`template-${t.id}`}>
+                                        {t.name.split(' - ').slice(1).join(' - ')}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                                {existingSchedules.length > 0 && (
+                                  <optgroup label="Existing Schedules">
+                                    {existingSchedules.map(s => (
+                                      <option key={s.id} value={s.id}>
+                                        {s.name || s.schedule_type}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency</label>
+                              <select
+                                value={schedule.dependent_rule}
+                                onChange={(e) => {
+                                  const newSchedules = [...customSchedules];
+                                  newSchedules[index] = { ...schedule, dependent_rule: e.target.value };
+                                  setCustomSchedules(newSchedules);
+                                }}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              >
+                                <option value="every_occurrence">Every Time</option>
+                                <option value="every_nth">Every Nth Time</option>
+                                <option value="specific_days">Specific Days Only</option>
+                                <option value="once_per_day">Once Per Day</option>
+                              </select>
+                            </div>
+
+                            {schedule.dependent_rule === 'every_nth' && (
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Every Nth Occurrence</label>
+                                <input
+                                  type="number"
+                                  min="2"
+                                  value={schedule.dependent_frequency || 2}
+                                  onChange={(e) => {
+                                    const newSchedules = [...customSchedules];
+                                    newSchedules[index] = { ...schedule, dependent_frequency: parseInt(e.target.value) };
+                                    setCustomSchedules(newSchedules);
+                                  }}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  placeholder="e.g., 2"
+                                />
+                              </div>
+                            )}
+
+                            {schedule.dependent_rule === 'specific_days' && (() => {
+                              const dayNumbers = getDayNumbers();
+                              const dayNames = getDayNames();
+                              const weekDays = dayNumbers.map((dayNum, index) => ({
+                                value: dayNum,
+                                label: dayNames[index]
+                              }));
+
+                              // Parse current days
+                              let currentDays = [];
+                              if (schedule.dependent_days) {
+                                if (typeof schedule.dependent_days === 'string') {
+                                  currentDays = schedule.dependent_days.split(',').map(Number);
+                                } else if (Array.isArray(schedule.dependent_days)) {
+                                  currentDays = schedule.dependent_days;
+                                }
+                              }
+
+                              return (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Days</label>
+                                  <div className="grid grid-cols-3 gap-1">
+                                    {weekDays.map((day) => (
+                                      <button
+                                        key={day.value}
+                                        type="button"
+                                        onClick={() => {
+                                          const newSchedules = [...customSchedules];
+                                          let days = [...currentDays];
+                                          if (days.includes(day.value)) {
+                                            days = days.filter(d => d !== day.value);
+                                          } else {
+                                            days = [...days, day.value];
+                                          }
+                                          newSchedules[index] = { ...schedule, dependent_days: days.sort((a, b) => a - b).join(',') };
+                                          setCustomSchedules(newSchedules);
+                                        }}
+                                        className={`px-1.5 py-1 rounded text-xs font-medium border transition-all ${
+                                          currentDays.includes(day.value)
+                                            ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                                        }`}
+                                      >
+                                        {day.label.slice(0, 3)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </>
+                        )}
+
+                        {/* Days of Week (when rule is days_of_week) */}
+                        {schedule.schedule_rule === 'days_of_week' && (() => {
+                          const dayNumbers = getDayNumbers();
+                          const dayNames = getDayNames();
+                          const weekDays = dayNumbers.map((dayNum, index) => ({
+                            value: dayNum,
+                            label: dayNames[index]
+                          }));
+
+                          let currentDays = [];
+                          if (schedule.days_of_week) {
+                            if (typeof schedule.days_of_week === 'string') {
+                              currentDays = schedule.days_of_week.split(',').map(Number);
+                            } else if (Array.isArray(schedule.days_of_week)) {
+                              currentDays = schedule.days_of_week;
+                            }
+                          }
+
+                          return (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Days</label>
+                              <div className="grid grid-cols-3 gap-1">
+                                {weekDays.map((day) => (
+                                  <button
+                                    key={day.value}
+                                    type="button"
+                                    onClick={() => {
+                                      const newSchedules = [...customSchedules];
+                                      let days = [...currentDays];
+                                      if (days.includes(day.value)) {
+                                        days = days.filter(d => d !== day.value);
+                                      } else {
+                                        days = [...days, day.value];
+                                      }
+                                      newSchedules[index] = { ...schedule, days_of_week: days.sort((a, b) => a - b).join(',') };
+                                      setCustomSchedules(newSchedules);
+                                    }}
+                                    className={`px-1.5 py-1 rounded text-xs font-medium border transition-all ${
+                                      currentDays.includes(day.value)
+                                        ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                        : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                                    }`}
+                                  >
+                                    {day.label.slice(0, 3)}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Every X Days */}
+                        {schedule.schedule_rule === 'every_x_days' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency (days)</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={schedule.frequency_days || 1}
+                              onChange={(e) => {
+                                const newSchedules = [...customSchedules];
+                                newSchedules[index] = { ...schedule, frequency_days: parseInt(e.target.value) };
+                                setCustomSchedules(newSchedules);
+                              }}
+                              className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              placeholder="e.g., 3"
+                            />
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (Optional)</label>
+                          <textarea
+                            value={schedule.notes || ''}
+                            onChange={(e) => {
+                              const newSchedules = [...customSchedules];
+                              newSchedules[index] = { ...schedule, notes: e.target.value };
+                              setCustomSchedules(newSchedules);
+                            }}
+                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            rows="2"
+                            placeholder="Add custom notes..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomSchedules([...customSchedules, {
+                          schedule_type: 'supplement',
+                          schedule_rule: 'dependent',
+                          dependent_rule: 'every_occurrence',
+                          parent_schedule_id: null,
+                          supplement_id: null,
+                          name: '',
+                          notes: ''
+                        }]);
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus size={16} />
+                      Add Another Schedule
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="mb-4">
@@ -1620,11 +2099,14 @@ function ScheduleTemplates() {
             <div className="flex gap-3">
               <button
                 onClick={handleApplyTemplate}
-                disabled={selectedTemplateIds.size === 0}
+                disabled={selectedTemplateIds.size === 0 && customSchedules.length === 0}
                 className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 {selectedTemplate?.groupName
-                  ? `Create ${selectedTemplateIds.size} Schedule${selectedTemplateIds.size !== 1 ? 's' : ''}`
+                  ? (() => {
+                      const totalCount = selectedTemplateIds.size + customSchedules.length;
+                      return `Create ${totalCount} Schedule${totalCount !== 1 ? 's' : ''}`;
+                    })()
                   : 'Create Schedule'}
               </button>
               <button
