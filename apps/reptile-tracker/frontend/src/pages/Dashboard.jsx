@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]); // Combined activity feed
   const [reptiles, setReptiles] = useState([]);
   const [weightData, setWeightData] = useState([]);
+  const [feedingData, setFeedingData] = useState({});
   const [mistingData, setMistingData] = useState({});
   const [healthData, setHealthData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,10 @@ export default function Dashboard() {
         setReptiles(reptilesRes.data);
         setWeightData(weightRes.data);
 
-        // Fetch misting and health data for each reptile (single fetch, used for both stats and activity)
+        // Fetch feeding, misting and health data for each reptile (single fetch, used for both stats and activity)
+        const feedingPromises = reptilesRes.data.map(r =>
+          axios.get(`/api/feedings/reptile/${r.id}`).catch(() => ({ data: [] }))
+        );
         const mistingPromises = reptilesRes.data.map(r =>
           axios.get(`/api/misting/reptile/${r.id}`).catch(() => ({ data: [] }))
         );
@@ -44,10 +48,21 @@ export default function Dashboard() {
           axios.get(`/api/health/reptile/${r.id}`).catch(() => ({ data: [] }))
         );
 
-        const [mistingResults, healthResults] = await Promise.all([
+        const [feedingResults, mistingResults, healthResults] = await Promise.all([
+          Promise.all(feedingPromises),
           Promise.all(mistingPromises),
           Promise.all(healthPromises)
         ]);
+
+        // Process feeding data - get last feeding for each reptile
+        const feedingMap = {};
+        reptilesRes.data.forEach((reptile, index) => {
+          const logs = feedingResults[index].data;
+          if (logs && logs.length > 0) {
+            feedingMap[reptile.id] = logs[0].fed_at; // Already sorted by fed_at desc
+          }
+        });
+        setFeedingData(feedingMap);
 
         // Process misting data - get last misting for each reptile
         const mistingMap = {};
@@ -143,17 +158,20 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const getFeedingStatus = (reptile) => {
+  const getFeedingStatus = (reptile, lastFeedingDate = null) => {
     // Don't show schedule status if feeding schedule not enabled
     if (!reptile.feeding_schedule_enabled || !reptile.feeding_frequency_days) {
       return null; // No status to display
     }
 
-    if (!reptile.last_feeding) {
+    // Use provided lastFeedingDate or fall back to reptile.last_feeding (for backward compatibility)
+    const lastFeeding = lastFeedingDate || reptile.last_feeding;
+
+    if (!lastFeeding) {
       return { status: 'never_fed', color: 'yellow', icon: AlertCircle, text: 'Never fed' };
     }
 
-    const daysSinceFeeding = differenceInDays(new Date(), new Date(reptile.last_feeding));
+    const daysSinceFeeding = differenceInDays(new Date(), new Date(lastFeeding));
     const daysUntilDue = reptile.feeding_frequency_days - daysSinceFeeding;
 
     if (daysUntilDue < 0) {
@@ -183,7 +201,7 @@ export default function Dashboard() {
 
   // Calculate dashboard stats
   const reptilesNeedingFeeding = reptiles.filter(r => {
-    const status = getFeedingStatus(r);
+    const status = getFeedingStatus(r, feedingData[r.id]);
     return status && (status.status === 'overdue' || status.status === 'due_today');
   }).length;
 
@@ -603,8 +621,8 @@ export default function Dashboard() {
             <div className="space-y-1.5 max-h-96 overflow-y-auto">
               {reptiles.length > 0 ? (
                 reptiles.map(reptile => {
-                  const feedingStatus = getFeedingStatus(reptile);
-                  const daysSinceFeeding = reptile.last_feeding ? differenceInDays(new Date(), new Date(reptile.last_feeding)) : null;
+                  const feedingStatus = getFeedingStatus(reptile, feedingData[reptile.id]);
+                  const daysSinceFeeding = feedingData[reptile.id] ? differenceInDays(new Date(), new Date(feedingData[reptile.id])) : null;
                   const daysSinceMisting = mistingData[reptile.id] ? differenceInDays(new Date(), new Date(mistingData[reptile.id])) : null;
                   const daysSinceShed = healthData[reptile.id] ? differenceInDays(new Date(), new Date(healthData[reptile.id])) : null;
 
@@ -619,7 +637,7 @@ export default function Dashboard() {
                           <div className="flex flex-wrap items-center gap-2 text-xs">
                             <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
                               <Utensils size={11} className="flex-shrink-0" />
-                              {reptile.last_feeding ? <span title="Days since last feeding">{daysSinceFeeding === 0 ? 'Today' : `${daysSinceFeeding}d`}</span> : <span>-</span>}
+                              {feedingData[reptile.id] ? <span title="Days since last feeding">{daysSinceFeeding === 0 ? 'Today' : `${daysSinceFeeding}d`}</span> : <span>-</span>}
                             </div>
                             <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                               <Droplets size={11} className="flex-shrink-0" />
