@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { formatDistanceToNow, differenceInDays, format } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity } from 'lucide-react';
-import { formatDateTime } from '../utils/dateFormatting';
+import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter } from 'lucide-react';
+import { formatDateTime, formatTime, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings } from '../utils/displaySettings';
 
@@ -19,6 +19,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [dashboardCards, setDashboardCards] = useState([]);
   const [chartSettings, setChartSettings] = useState(null);
+
+  // Weekly calendar state
+  const [schedules, setSchedules] = useState([]);
+  const [weeklyEvents, setWeeklyEvents] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [calendarReptileFilter, setCalendarReptileFilter] = useState(new Set());
+  const [showReptileFilter, setShowReptileFilter] = useState(false);
 
   // Load display settings on mount
   useEffect(() => {
@@ -170,6 +177,136 @@ export default function Dashboard() {
     };
     fetchData();
   }, []);
+
+  // Initialize reptile filter when reptiles are loaded
+  useEffect(() => {
+    if (reptiles.length > 0 && calendarReptileFilter.size === 0) {
+      setCalendarReptileFilter(new Set(reptiles.map(r => r.id)));
+    }
+  }, [reptiles]);
+
+  // Fetch schedules for weekly calendar
+  useEffect(() => {
+    if (reptiles.length > 0) {
+      fetchSchedules();
+    }
+  }, [reptiles]);
+
+  const fetchSchedules = async () => {
+    try {
+      const schedulePromises = reptiles.map(reptile =>
+        axios.get(`/api/schedules/reptile/${reptile.id}`)
+          .then(res => res.data.map(s => ({ ...s, reptile_name: reptile.name })))
+          .catch(() => [])
+      );
+
+      const scheduleResults = await Promise.all(schedulePromises);
+      const allSchedules = scheduleResults.flat();
+      setSchedules(allSchedules);
+      calculateWeeklyEvents(allSchedules);
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+    }
+  };
+
+  const calculateWeeklyEvents = (scheduleList) => {
+    const calculatedEvents = [];
+    const today = new Date();
+    const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
+
+    // Get start of week
+    const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+    const weekEnd = addDays(weekStart, 6);
+
+    const baseSchedules = scheduleList.filter(s => s.schedule_rule !== "dependent");
+
+    baseSchedules.forEach(schedule => {
+      if (!schedule.enabled) return;
+
+      if (schedule.schedule_rule === "every_x_days") {
+        const frequency = schedule.frequency_days;
+        let currentDay = new Date(weekStart);
+
+        while (currentDay <= weekEnd) {
+          calculatedEvents.push({
+            date: new Date(currentDay),
+            schedule_id: schedule.id,
+            schedule_type: schedule.schedule_type,
+            schedule_rule: schedule.schedule_rule,
+            reptile_name: schedule.reptile_name,
+            reptile_id: schedule.reptile_id,
+            name: schedule.name,
+            food_category: schedule.food_category,
+            time_slot: schedule.time_slot,
+            time_window_enabled: schedule.time_window_enabled,
+            earliest_time: schedule.earliest_time,
+            latest_time: schedule.latest_time,
+            notes: schedule.notes,
+          });
+          currentDay.setDate(currentDay.getDate() + frequency);
+        }
+      } else if (schedule.schedule_rule === "days_of_week") {
+        const days = schedule.days_of_week.split(",").map(d => parseInt(d));
+        let currentDay = new Date(weekStart);
+
+        while (currentDay <= weekEnd) {
+          if (days.includes(currentDay.getDay())) {
+            calculatedEvents.push({
+              date: new Date(currentDay),
+              schedule_id: schedule.id,
+              schedule_type: schedule.schedule_type,
+              schedule_rule: schedule.schedule_rule,
+              reptile_name: schedule.reptile_name,
+              reptile_id: schedule.reptile_id,
+              name: schedule.name,
+              food_category: schedule.food_category,
+              time_slot: schedule.time_slot,
+              time_window_enabled: schedule.time_window_enabled,
+              earliest_time: schedule.earliest_time,
+              latest_time: schedule.latest_time,
+              notes: schedule.notes,
+            });
+          }
+          currentDay.setDate(currentDay.getDate() + 1);
+        }
+      }
+    });
+
+    setWeeklyEvents(calculatedEvents);
+  };
+
+  const getEventsForDate = (date) => {
+    if (!date) return [];
+
+    return weeklyEvents.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.toDateString() === date.toDateString() &&
+             calendarReptileFilter.has(event.reptile_id);
+    });
+  };
+
+  const getScheduleTypeIcon = (type) => {
+    switch(type) {
+      case 'feeding':
+        return { Icon: Utensils, color: 'orange' };
+      case 'misting':
+        return { Icon: Droplets, color: 'blue' };
+      case 'weighing':
+        return { Icon: Scale, color: 'purple' };
+      default:
+        return { Icon: Calendar, color: 'gray' };
+    }
+  };
+
+  const getIconColorClasses = (color) => {
+    const colorMap = {
+      'orange': 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400',
+      'blue': 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+      'purple': 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+      'gray': 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
+    };
+    return colorMap[color] || colorMap['gray'];
+  };
 
   const getFeedingStatus = (reptile, lastFeedingDate = null) => {
     // Don't show schedule status if feeding schedule not enabled
@@ -502,6 +639,102 @@ export default function Dashboard() {
             </div>
           </div>
         );
+      case 'weekly_calendar': {
+        const today = new Date();
+        const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
+        const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+        const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Weekly Calendar</h2>
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowReptileFilter(!showReptileFilter)}
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title="Filter reptiles"
+                >
+                  <Filter size={16} className="text-gray-600 dark:text-gray-400" />
+                </button>
+                {showReptileFilter && (
+                  <div className="absolute right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+                    {reptiles.map(reptile => (
+                      <label key={reptile.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={calendarReptileFilter.has(reptile.id)}
+                          onChange={(e) => {
+                            const newFilter = new Set(calendarReptileFilter);
+                            if (e.target.checked) {
+                              newFilter.add(reptile.id);
+                            } else {
+                              newFilter.delete(reptile.id);
+                            }
+                            setCalendarReptileFilter(newFilter);
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm text-gray-900 dark:text-white">{reptile.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {weekDays.map((day, index) => {
+                const dayEvents = getEventsForDate(day);
+                const isToday = day.toDateString() === today.toDateString();
+
+                return (
+                  <div
+                    key={index}
+                    className={`border border-gray-200 dark:border-gray-700 rounded p-2 min-h-[120px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                      isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''
+                    }`}
+                    onClick={() => setSelectedDate(day)}
+                  >
+                    <div className="text-center mb-2">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {format(day, 'EEE')}
+                      </div>
+                      <div className={`text-lg font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                        {format(day, 'd')}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      {dayEvents.slice(0, 3).map((event, idx) => {
+                        const { Icon, color } = getScheduleTypeIcon(event.schedule_type);
+                        return (
+                          <div
+                            key={idx}
+                            className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 flex items-center gap-1"
+                            title={event.name || event.reptile_name}
+                          >
+                            <Icon size={10} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                            <span className="truncate text-gray-700 dark:text-gray-300">{event.reptile_name}</span>
+                          </div>
+                        );
+                      })}
+                      {dayEvents.length > 3 && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                          +{dayEvents.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
       case 'weight_chart':
         if (chartData.length === 0) return null;
 
@@ -794,6 +1027,111 @@ export default function Dashboard() {
       <div className="mb-4">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
       </div>
+
+      {/* Day Events Modal */}
+      {selectedDate && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedDate(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {selectedDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+              </h2>
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <ChevronUp size={24} />
+              </button>
+            </div>
+
+            <div className="px-6 py-4">
+              {getEventsForDate(selectedDate).length === 0 ? (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                  No events scheduled for this day
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {getEventsForDate(selectedDate).map((event, idx) => {
+                    const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                    const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
+
+                    return (
+                      <div
+                        key={idx}
+                        className="px-4 py-3 rounded-lg border-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
+                            <TypeIcon size={20} />
+                          </div>
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className="font-semibold text-gray-900 dark:text-white">
+                              {displayName}
+                            </div>
+                          </div>
+                          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            {event.schedule_type}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-x-6 gap-y-2 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Reptile</span>
+                            <span className="text-gray-900 dark:text-white font-medium">{event.reptile_name}</span>
+                          </div>
+
+                          {event.schedule_rule && (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Frequency</span>
+                              <span className="text-gray-900 dark:text-white">{event.schedule_rule.replace(/_/g, ' ')}</span>
+                            </div>
+                          )}
+
+                          {event.food_category && (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Food</span>
+                              <span className="text-gray-900 dark:text-white">{event.food_category}</span>
+                            </div>
+                          )}
+
+                          {event.time_window_enabled && event.earliest_time && event.latest_time ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                <Clock size={12} />
+                                Time Window
+                              </span>
+                              <span className="text-gray-900 dark:text-white font-medium whitespace-nowrap">
+                                {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
+                              </span>
+                            </div>
+                          ) : event.time_slot ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
+                              <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {event.notes && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Notes:</span> {event.notes}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
