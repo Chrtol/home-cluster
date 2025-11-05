@@ -457,7 +457,7 @@ export default function Dashboard() {
         const firstMeasurement = reptile.data[0];
         const lastMeasurement = reptile.data[reptile.data.length - 1];
 
-        // Normalize measurement times to midnight for comparison
+        // Normalize measurement times to midnight for all calculations
         const firstMeasurementMidnight = new Date(firstMeasurement.dateTime);
         firstMeasurementMidnight.setHours(0, 0, 0, 0);
         const lastMeasurementMidnight = new Date(lastMeasurement.dateTime);
@@ -480,23 +480,24 @@ export default function Dashboard() {
 
         // Between measurements - don't fill in values, let chart draw straight lines
         // (The chart will connect the actual measurement dots with straight lines)
-        // Use normalized midnight times for comparison
         if (dateTime > firstMeasurementMidnight.getTime() && dateTime < lastMeasurementMidnight.getTime()) {
           return;
         }
 
         // Before first or after last measurement - extrapolate based on mode
-        // Use normalized midnight times for comparison
         if (dateTime < firstMeasurementMidnight.getTime()) {
           // Extrapolate into the past
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
-            // Linear: use trend from first 2 measurements
+            // Linear: use trend from first 2 measurements (using midnight-normalized times)
             const secondMeasurement = reptile.data[1];
-            const slope = (secondMeasurement.weight - firstMeasurement.weight) /
-                         (secondMeasurement.dateTime - firstMeasurement.dateTime);
-            // Project from actual first measurement timestamp to chart date
-            const millisecondsSinceFirstMeasurement = dateTime - firstMeasurement.dateTime;
-            const extrapolated = firstMeasurement.weight + slope * millisecondsSinceFirstMeasurement;
+            const secondMeasurementMidnight = new Date(secondMeasurement.dateTime);
+            secondMeasurementMidnight.setHours(0, 0, 0, 0);
+
+            const daysBetweenMeasurements = (secondMeasurementMidnight.getTime() - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+            const gramsPerDay = (secondMeasurement.weight - firstMeasurement.weight) / daysBetweenMeasurements;
+
+            const daysFromFirst = (dateTime - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+            const extrapolated = firstMeasurement.weight + gramsPerDay * daysFromFirst;
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
@@ -505,14 +506,27 @@ export default function Dashboard() {
         } else if (dateTime > lastMeasurementMidnight.getTime()) {
           // Extrapolate into the future
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
-            // Linear: use trend from last 2 measurements
+            // Linear: use trend from last 2 measurements (using midnight-normalized times)
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
-            const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
-                         (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
+            const secondLastMeasurementMidnight = new Date(secondLastMeasurement.dateTime);
+            secondLastMeasurementMidnight.setHours(0, 0, 0, 0);
 
-            // Project from actual last measurement timestamp to chart date
-            const millisecondsSinceLastMeasurement = dateTime - lastMeasurement.dateTime;
-            const extrapolated = lastMeasurement.weight + slope * millisecondsSinceLastMeasurement;
+            const daysBetweenMeasurements = (lastMeasurementMidnight.getTime() - secondLastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+            const gramsPerDay = (lastMeasurement.weight - secondLastMeasurement.weight) / daysBetweenMeasurements;
+
+            const daysFromLast = (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+            const extrapolated = lastMeasurement.weight + gramsPerDay * daysFromLast;
+
+            // Debug logging
+            if (date === format(new Date(), 'MMM d, yyyy')) {
+              console.log(`[${reptile.name}] Extrapolation Debug for ${date}:`);
+              console.log(`  Last measurement: ${lastMeasurement.date} = ${lastMeasurement.weight}g`);
+              console.log(`  Second last: ${secondLastMeasurement.date} = ${secondLastMeasurement.weight}g`);
+              console.log(`  Days between measurements: ${daysBetweenMeasurements}`);
+              console.log(`  Grams per day: ${gramsPerDay}`);
+              console.log(`  Days from last: ${daysFromLast}`);
+              console.log(`  Calculation: ${lastMeasurement.weight} + (${gramsPerDay} × ${daysFromLast}) = ${extrapolated}`);
+            }
 
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
@@ -695,14 +709,40 @@ export default function Dashboard() {
                     <div className="space-y-1 overflow-y-auto flex-1 min-h-0">
                       {dayEvents.map((event, idx) => {
                         const { Icon, color } = getScheduleTypeIcon(event.schedule_type);
+
+                        // Separate food category and time window
+                        const foodCategory = event.schedule_type === 'feeding' && event.food_category ? event.food_category : null;
+                        let timeText = null;
+                        if (event.time_window_enabled && event.earliest_time && event.latest_time) {
+                          timeText = `${formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - ${formatTime(new Date(`2000-01-01T${event.latest_time}`))}`;
+                        } else if (event.time_slot) {
+                          timeText = event.time_slot;
+                        }
+
                         return (
                           <div
                             key={idx}
-                            className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 flex items-center gap-1"
+                            className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
                             title={event.name || event.reptile_name}
                           >
-                            <Icon size={10} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
-                            <span className="truncate text-gray-700 dark:text-gray-300">{event.reptile_name}</span>
+                            <div className="flex items-center justify-between gap-1">
+                              <div className="flex items-center gap-1 min-w-0 flex-1">
+                                <Icon size={10} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                                <span className="truncate text-gray-700 dark:text-gray-300">
+                                  {event.reptile_name}
+                                </span>
+                              </div>
+                              {foodCategory && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
+                                  {foodCategory}
+                                </span>
+                              )}
+                            </div>
+                            {timeText && (
+                              <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate ml-3.5">
+                                {timeText}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
