@@ -353,7 +353,7 @@ export default function Dashboard() {
             const secondMeasurement = reptile.data[1];
             const slope = (secondMeasurement.weight - firstMeasurement.weight) /
                          (secondMeasurement.dateTime - firstMeasurement.dateTime);
-            const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurement.dateTime);
+            const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurementMidnight.getTime());
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
@@ -366,7 +366,7 @@ export default function Dashboard() {
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
             const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
                          (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
-            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurement.dateTime);
+            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurementMidnight.getTime());
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
