@@ -493,7 +493,6 @@ export default function Dashboard() {
                   <XAxis
                     dataKey="date"
                     stroke="#9ca3af"
-                    tick={{ fontSize: 11, fill: '#9ca3af' }}
                     tickFormatter={(value) => {
                       // Show only month and day for better readability
                       const parts = value.split(',');
@@ -505,10 +504,8 @@ export default function Dashboard() {
                   />
                   <YAxis
                     stroke="#9ca3af"
-                    tick={{ fontSize: 11, fill: '#9ca3af' }}
-                    width={60}
                     tickFormatter={(value) => Math.round(value)}
-                    label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }}
+                    label={{ value: 'grams', angle: -90, position: 'insideLeft', fill: '#9ca3af' }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }}
