@@ -234,9 +234,11 @@ export default function Dashboard() {
           data: []
         };
       }
+      const measurementDate = new Date(log.measured_at);
+      measurementDate.setHours(0, 0, 0, 0); // Normalize to midnight for consistent date comparison
       byReptile[log.reptile_id].data.push({
-        date: format(new Date(log.measured_at), 'MMM d, yyyy'),
-        dateTime: new Date(log.measured_at).getTime(),
+        date: format(measurementDate, 'MMM d, yyyy'),
+        dateTime: measurementDate.getTime(),
         weight: log.weight_grams
       });
     });

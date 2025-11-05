@@ -49,6 +49,19 @@ async def cleanup_duplicates():
         for template in templates:
             # Extract source from name
             parts = template.name.split(' - ')
+
+            # Check for templates that start with approved source but missing dash
+            # e.g., "Tropical Species Evening Misting" should be "Tropical Species - Evening Misting"
+            if len(parts) < 2:
+                for approved_source in approved_sources:
+                    if template.name.startswith(approved_source + ' ') and approved_source in ['Tropical Species', 'The Bio Dude', 'Reptile Magazine']:
+                        templates_to_delete.append(template)
+                        print(f"⚠️  Found template with missing dash after source:")
+                        print(f"    ID: {template.id}, Name: '{template.name}'")
+                        print(f"    Should be: '{approved_source} - {template.name[len(approved_source)+1:]}'")
+                        print()
+                        break
+
             if len(parts) >= 2:
                 source = parts[0].strip()
 
