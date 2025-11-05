@@ -351,11 +351,9 @@ export default function Dashboard() {
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from first 2 measurements
             const secondMeasurement = reptile.data[1];
-            const secondMeasurementMidnight = new Date(secondMeasurement.dateTime);
-            secondMeasurementMidnight.setHours(0, 0, 0, 0);
             const slope = (secondMeasurement.weight - firstMeasurement.weight) /
-                         (secondMeasurementMidnight.getTime() - firstMeasurementMidnight.getTime());
-            const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurementMidnight.getTime());
+                         (secondMeasurement.dateTime - firstMeasurement.dateTime);
+            const extrapolated = firstMeasurement.weight + slope * (dateTime - firstMeasurement.dateTime);
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
@@ -366,11 +364,9 @@ export default function Dashboard() {
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from last 2 measurements
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
-            const secondLastMeasurementMidnight = new Date(secondLastMeasurement.dateTime);
-            secondLastMeasurementMidnight.setHours(0, 0, 0, 0);
             const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
-                         (lastMeasurementMidnight.getTime() - secondLastMeasurementMidnight.getTime());
-            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurementMidnight.getTime());
+                         (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
+            const extrapolated = lastMeasurement.weight + slope * (dateTime - lastMeasurement.dateTime);
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
