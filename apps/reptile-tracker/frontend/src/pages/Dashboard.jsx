@@ -425,11 +425,13 @@ export default function Dashboard() {
     // Get all unique dates from measurements and generate daily dates for extrapolation
     const allMeasurementDates = weightData.map(log => new Date(log.measured_at).getTime());
     const minDate = new Date(Math.min(...allMeasurementDates));
+    minDate.setHours(0, 0, 0, 0);
 
     // Extend to today's date for extrapolation
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const maxMeasurementDate = new Date(Math.max(...allMeasurementDates));
+    maxMeasurementDate.setHours(0, 0, 0, 0);
     const maxDate = new Date(Math.max(maxMeasurementDate.getTime(), today.getTime()));
 
     // Add 1 day padding before first measurement and after last date
@@ -439,15 +441,16 @@ export default function Dashboard() {
     const endDate = new Date(maxDate);
     endDate.setDate(endDate.getDate() + 1);
 
-    const allDates = [];
+    // Build array of midnight timestamps for each day
+    const allDateTimestamps = [];
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      allDates.push(format(new Date(d), 'MMM d, yyyy'));
+      allDateTimestamps.push(new Date(d).getTime());
     }
 
     // Build chart data with actual measurements and interpolation/extrapolation
-    const chartData = allDates.map(date => {
+    const chartData = allDateTimestamps.map(dateTime => {
+      const date = format(new Date(dateTime), 'MMM d, yyyy');
       const dataPoint = { date };
-      const dateTime = new Date(date).getTime();
 
       Object.values(byReptile).forEach(reptile => {
         // Find surrounding measurements
@@ -675,12 +678,12 @@ export default function Dashboard() {
                 return (
                   <div
                     key={index}
-                    className={`border border-gray-200 dark:border-gray-700 rounded p-2 min-h-[120px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                    className={`border border-gray-200 dark:border-gray-700 rounded p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col ${
                       isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''
                     }`}
                     onClick={() => setSelectedDate(day)}
                   >
-                    <div className="text-center mb-2">
+                    <div className="text-center mb-2 flex-shrink-0">
                       <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
                         {format(day, 'EEE')}
                       </div>
@@ -689,8 +692,8 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      {dayEvents.slice(0, 3).map((event, idx) => {
+                    <div className="space-y-1 overflow-y-auto flex-1 min-h-0">
+                      {dayEvents.map((event, idx) => {
                         const { Icon, color } = getScheduleTypeIcon(event.schedule_type);
                         return (
                           <div
@@ -703,11 +706,6 @@ export default function Dashboard() {
                           </div>
                         );
                       })}
-                      {dayEvents.length > 3 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                          +{dayEvents.length - 3} more
-                        </div>
-                      )}
                     </div>
                   </div>
                 );
