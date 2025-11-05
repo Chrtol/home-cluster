@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]); // Combined activity feed
   const [reptiles, setReptiles] = useState([]);
   const [weightData, setWeightData] = useState([]);
+  const [weighingData, setWeighingData] = useState({}); // Last weighing per reptile
   const [feedingData, setFeedingData] = useState({});
   const [mistingData, setMistingData] = useState({});
   const [healthData, setHealthData] = useState({});
@@ -84,6 +85,18 @@ export default function Dashboard() {
           }
         });
         setHealthData(healthMap);
+
+        // Process weighing data - get last weighing for each reptile from weightData
+        const weighingMap = {};
+        reptilesRes.data.forEach((reptile) => {
+          const reptileWeights = weightRes.data
+            .filter(w => w.reptile_id === reptile.id)
+            .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at));
+          if (reptileWeights.length > 0) {
+            weighingMap[reptile.id] = reptileWeights[0].measured_at;
+          }
+        });
+        setWeighingData(weighingMap);
 
         // Build recent activity from already-fetched data
         const allActivity = [];
@@ -371,19 +384,7 @@ export default function Dashboard() {
     return { chartData, reptileColors, reptileNames: Object.values(byReptile).map(r => r.name) };
   };
 
-  const { chartData, reptileColors, reptileNames } = prepareWeightChartData();
-
-  // Debug: Log chart data to console
-  if (chartData && chartData.length > 0) {
-    console.log('Weight chart - Total data points:', chartData.length);
-    console.log('Weight chart - First 3 data points:', chartData.slice(0, 3));
-    console.log('Weight chart - Last 3 data points:', chartData.slice(-3));
-    console.log('Reptile names:', reptileNames);
-
-    // Check if there are any actual values
-    const samplePoint = chartData[Math.floor(chartData.length / 2)];
-    console.log('Sample data point from middle:', samplePoint);
-  }
+  const { chartData, reptileColors, reptileNames} = prepareWeightChartData();
 
   // Helper function to check if a card is visible
   const isCardVisible = (cardId) => {
@@ -487,17 +488,22 @@ export default function Dashboard() {
             </div>
             <div style={{ width: '100%', height: 200 }}>
               <ResponsiveContainer>
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                   <XAxis
                     dataKey="date"
                     stroke="#9ca3af"
                     tick={{ fontSize: 11 }}
+                    tickFormatter={(value) => {
+                      // Show only month and day for better readability
+                      const parts = value.split(',');
+                      return parts[0]; // "Oct 19" instead of "Oct 19, 2025"
+                    }}
                     interval="preserveStartEnd"
-                    minTickGap={50}
+                    minTickGap={30}
                     padding={{ left: 10, right: 10 }}
                   />
-                  <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
+                  <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} width={45} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }}
                     labelStyle={{ color: '#f3f4f6' }}
@@ -638,6 +644,7 @@ export default function Dashboard() {
                   const feedingStatus = getFeedingStatus(reptile, feedingData[reptile.id]);
                   const daysSinceFeeding = feedingData[reptile.id] ? differenceInDays(new Date(), new Date(feedingData[reptile.id])) : null;
                   const daysSinceMisting = mistingData[reptile.id] ? differenceInDays(new Date(), new Date(mistingData[reptile.id])) : null;
+                  const daysSinceWeighing = weighingData[reptile.id] ? differenceInDays(new Date(), new Date(weighingData[reptile.id])) : null;
                   const daysSinceShed = healthData[reptile.id] ? differenceInDays(new Date(), new Date(healthData[reptile.id])) : null;
 
                   return (
@@ -656,6 +663,10 @@ export default function Dashboard() {
                             <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                               <Droplets size={11} className="flex-shrink-0" />
                               {mistingData[reptile.id] ? <span title="Days since last misting">{daysSinceMisting === 0 ? 'Today' : `${daysSinceMisting}d`}</span> : <span>-</span>}
+                            </div>
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                              <Scale size={11} className="flex-shrink-0" />
+                              {weighingData[reptile.id] ? <span title="Days since last weighing">{daysSinceWeighing === 0 ? 'Today' : `${daysSinceWeighing}d`}</span> : <span>-</span>}
                             </div>
                             <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                               <Activity size={11} className="flex-shrink-0" />

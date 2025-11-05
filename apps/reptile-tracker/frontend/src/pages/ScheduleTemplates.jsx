@@ -1095,8 +1095,34 @@ function ScheduleTemplates() {
                   </button>
                 </div>
 
-                {/* Two Column Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                {/* Age Category Selection Overlay - Required */}
+                {selectedTemplate.ageCategories && selectedTemplate.ageCategories.length > 0 && !viewModalAgeCategory && (
+                  <div className="flex items-center justify-center min-h-[400px] p-12 bg-gray-50 dark:bg-gray-900/30">
+                    <div className="max-w-md w-full text-center">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                        Select Age Category
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        This template has schedules for different age groups. Please select the age category for your reptile to see relevant care schedules.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {selectedTemplate.ageCategories.map(age => (
+                          <button
+                            key={age}
+                            onClick={() => setViewModalAgeCategory(age)}
+                            className="w-full px-6 py-4 rounded-lg text-lg font-medium transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            {age.charAt(0).toUpperCase() + age.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Two Column Layout - Only show when age is selected or no age categories */}
+                {(!selectedTemplate.ageCategories || selectedTemplate.ageCategories.length === 0 || viewModalAgeCategory) && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
                   {/* Left Column - All Schedules in Group */}
                   <div className="space-y-4">
                     <div>
@@ -1255,30 +1281,6 @@ function ScheduleTemplates() {
                   </div>
                 </div>
 
-                {/* Age Category Selection */}
-                {selectedTemplate.ageCategories && selectedTemplate.ageCategories.length > 0 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Filter by Age Category (Optional)
-                    </label>
-                    <select
-                      value={viewModalAgeCategory}
-                      onChange={(e) => setViewModalAgeCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    >
-                      <option value="">All Ages (Show all schedules)</option>
-                      {selectedTemplate.ageCategories.map(age => (
-                        <option key={age} value={age}>
-                          {age.charAt(0).toUpperCase() + age.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Select an age to preview only relevant schedules. This will also pre-fill the age in the next step.
-                    </p>
-                  </div>
-                )}
-
                 {/* Action Buttons */}
                 <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
                   <div className="flex flex-wrap gap-3">
@@ -1290,6 +1292,7 @@ function ScheduleTemplates() {
                     </button>
                   </div>
                 </div>
+                )}
               </>
             ) : (
               /* SINGLE TEMPLATE VIEW - Original Structure */
