@@ -488,7 +488,7 @@ export default function Dashboard() {
             </div>
             <div style={{ width: '100%', height: 200 }}>
               <ResponsiveContainer>
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                   <XAxis
                     dataKey="date"
@@ -503,7 +503,7 @@ export default function Dashboard() {
                     minTickGap={30}
                     padding={{ left: 10, right: 10 }}
                   />
-                  <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} width={45} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
+                  <YAxis stroke="#9ca3af" tick={{ fontSize: 11, fill: '#9ca3af' }} width={50} label={{ value: 'grams', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9ca3af' } }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'rgb(31, 41, 55)', border: '1px solid rgb(75, 85, 99)', borderRadius: '0.5rem', fontSize: '12px' }}
                     labelStyle={{ color: '#f3f4f6' }}
