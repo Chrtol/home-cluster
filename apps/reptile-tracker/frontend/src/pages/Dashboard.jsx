@@ -369,9 +369,30 @@ export default function Dashboard() {
             const secondLastMeasurement = reptile.data[reptile.data.length - 2];
             const slope = (lastMeasurement.weight - secondLastMeasurement.weight) /
                          (lastMeasurement.dateTime - secondLastMeasurement.dateTime);
+
+            // Debug logging
+            if (date === 'Nov 5, 2025') {
+              console.log('DEBUG extrapolation for', reptile.name, ':', {
+                lastWeight: lastMeasurement.weight,
+                secondLastWeight: secondLastMeasurement.weight,
+                lastDate: new Date(lastMeasurement.dateTime).toISOString(),
+                secondLastDate: new Date(secondLastMeasurement.dateTime).toISOString(),
+                slope: slope,
+                slopeGramsPerDay: slope * 24 * 60 * 60 * 1000,
+                dateTime: new Date(dateTime).toISOString(),
+                lastMeasurementMidnight: new Date(lastMeasurementMidnight.getTime()).toISOString(),
+                daysSince: (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000)
+              });
+            }
+
             // Project from midnight of last measurement to chart date
             const daysSinceLastMeasurement = (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
             const extrapolated = lastMeasurement.weight + slope * daysSinceLastMeasurement * (24 * 60 * 60 * 1000);
+
+            if (date === 'Nov 5, 2025') {
+              console.log('Extrapolated value:', extrapolated);
+            }
+
             dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
