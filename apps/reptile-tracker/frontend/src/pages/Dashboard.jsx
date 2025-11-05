@@ -331,7 +331,7 @@ export default function Dashboard() {
           dataPoint[`${reptile.name}_interpolated`] = measurement.weight;
 
           // Also set extrapolated value if this is the first or last measurement (to connect the dashed line)
-          if (measurement.dateTime === firstMeasurement.dateTime || measurement.dateTime === lastMeasurement.dateTime) {
+          if (date === firstMeasurement.date || date === lastMeasurement.date) {
             dataPoint[`${reptile.name}_extrapolated`] = measurement.weight;
           }
           return;
