@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Plus } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import DateInput from '../components/DateInput';
 
@@ -260,6 +260,9 @@ export default function HealthLog() {
             View {logType === 'weight' ? 'Weight' : 'Health'} Log
           </h1>
           <div className="flex gap-2">
+            <button onClick={() => navigate('/health-log')} className="btn-primary flex items-center gap-2">
+              <Plus size={18} /> Log New
+            </button>
             <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
               <Edit2 size={18} /> Edit
             </button>
@@ -283,7 +286,7 @@ export default function HealthLog() {
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
             <p className="text-lg font-medium text-gray-900 dark:text-white">
-              {existingLog.reptile?.name || 'Unknown'}
+              {reptiles.find(r => r.id === existingLog.reptile_id)?.name || existingLog.reptile?.name || 'Unknown'}
             </p>
           </div>
 

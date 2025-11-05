@@ -510,6 +510,9 @@ export default function FeedingLog() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">View Feeding</h1>
           <div className="flex gap-2">
+            <button onClick={() => navigate('/feed')} className="btn-primary flex items-center gap-2">
+              <Plus size={18} /> Log New Feeding
+            </button>
             <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
               <Edit2 size={18} /> Edit
             </button>
@@ -533,7 +536,7 @@ export default function FeedingLog() {
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
             <p className="text-lg font-medium text-gray-900 dark:text-white">
-              {existingFeeding.reptile?.name || 'Unknown'}
+              {reptiles.find(r => r.id === existingFeeding.reptile_id)?.name || existingFeeding.reptile?.name || 'Unknown'}
             </p>
           </div>
 
