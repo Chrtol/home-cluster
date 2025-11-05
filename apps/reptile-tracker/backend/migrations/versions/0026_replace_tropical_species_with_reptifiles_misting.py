@@ -18,14 +18,14 @@ depends_on = None
 def upgrade():
     # Delete old Tropical Species misting templates
     op.execute("""
-        DELETE FROM schedule_template
+        DELETE FROM schedule_templates
         WHERE name IN ('Tropical Species Morning Misting', 'Tropical Species Evening Misting')
         AND is_default = true
     """)
 
     # Insert new ReptiFiles misting templates
     op.execute("""
-        INSERT INTO schedule_template (
+        INSERT INTO schedule_templates (
             name, description, species, age_category, schedule_type, schedule_rule,
             frequency_days, time_slot, earliest_time, latest_time, time_window_enabled,
             notes, is_default
@@ -66,14 +66,14 @@ def upgrade():
 def downgrade():
     # Delete ReptiFiles templates
     op.execute("""
-        DELETE FROM schedule_template
+        DELETE FROM schedule_templates
         WHERE name IN ('ReptiFiles - Evening Misting', 'ReptiFiles - Morning Misting (Optional)')
         AND is_default = true
     """)
 
     # Restore old Tropical Species templates
     op.execute("""
-        INSERT INTO schedule_template (
+        INSERT INTO schedule_templates (
             name, description, species, age_category, schedule_type, schedule_rule,
             frequency_days, time_slot, earliest_time, latest_time, time_window_enabled,
             notes, is_default
