@@ -317,6 +317,12 @@ export default function Dashboard() {
         const firstMeasurement = reptile.data[0];
         const lastMeasurement = reptile.data[reptile.data.length - 1];
 
+        // Normalize measurement times to midnight for comparison
+        const firstMeasurementMidnight = new Date(firstMeasurement.dateTime);
+        firstMeasurementMidnight.setHours(0, 0, 0, 0);
+        const lastMeasurementMidnight = new Date(lastMeasurement.dateTime);
+        lastMeasurementMidnight.setHours(0, 0, 0, 0);
+
         // Check for actual measurement on this date
         const measurement = reptile.data.find(d => d.date === date);
         if (measurement) {
@@ -333,12 +339,14 @@ export default function Dashboard() {
 
         // Between measurements - don't fill in values, let chart draw straight lines
         // (The chart will connect the actual measurement dots with straight lines)
-        if (dateTime > firstMeasurement.dateTime && dateTime < lastMeasurement.dateTime) {
+        // Use normalized midnight times for comparison
+        if (dateTime > firstMeasurementMidnight.getTime() && dateTime < lastMeasurementMidnight.getTime()) {
           return;
         }
 
         // Before first or after last measurement - extrapolate based on mode
-        if (dateTime < firstMeasurement.dateTime) {
+        // Use normalized midnight times for comparison
+        if (dateTime < firstMeasurementMidnight.getTime()) {
           // Extrapolate into the past
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from first 2 measurements
@@ -351,7 +359,7 @@ export default function Dashboard() {
             // Step: flat line
             dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
           }
-        } else if (dateTime > lastMeasurement.dateTime) {
+        } else if (dateTime > lastMeasurementMidnight.getTime()) {
           // Extrapolate into the future
           if (interpolationMode === 'linear' && reptile.data.length >= 2) {
             // Linear: use trend from last 2 measurements
@@ -657,7 +665,7 @@ export default function Dashboard() {
                               <Droplets size={11} className="flex-shrink-0" />
                               {mistingData[reptile.id] ? <span title="Days since last misting">{daysSinceMisting === 0 ? 'Today' : `${daysSinceMisting}d`}</span> : <span>-</span>}
                             </div>
-                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                               <Scale size={11} className="flex-shrink-0" />
                               {weighingData[reptile.id] ? <span title="Days since last weighing">{daysSinceWeighing === 0 ? 'Today' : `${daysSinceWeighing}d`}</span> : <span>-</span>}
                             </div>
