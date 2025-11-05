@@ -44,8 +44,6 @@ async def cleanup_duplicates():
             'Adult Monthly Weighing (General)',
             'Juvenile',  # For weighing templates like "Juvenile - Weekly Weighing"
             'Adult',     # For weighing templates like "Adult - Monthly Weighing"
-            'Calcium with D3',  # General supplement schedules
-            'Multivitamin',     # General supplement schedules
         ]
 
         for template in templates:
@@ -63,6 +61,14 @@ async def cleanup_duplicates():
                         print(f"⚠️  Found suspicious template (source contains species/age info):")
                         print(f"    ID: {template.id}, Name: '{template.name}'")
                         print(f"    Source: '{source}', Species: {template.species}, Default: {template.is_default}")
+                        print()
+
+                    # Flag supplement templates with incorrect naming (should be "ReptiFiles - ..." not "Calcium with D3 - ...")
+                    elif template.schedule_type == 'supplement':
+                        templates_to_delete.append(template)
+                        print(f"⚠️  Found supplement template with incorrect naming:")
+                        print(f"    ID: {template.id}, Name: '{template.name}'")
+                        print(f"    Source: '{source}', Should be prefixed with 'ReptiFiles' or other proper source")
                         print()
 
         # 2. Find exact duplicate names
