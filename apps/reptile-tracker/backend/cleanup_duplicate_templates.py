@@ -136,6 +136,8 @@ async def cleanup_duplicates():
                 template.schedule_rule,
                 template.frequency_days,
                 template.days_of_week,
+                template.food_category,  # Include food category to distinguish feeding vs salad
+                template.time_slot,      # Include time slot to distinguish morning vs evening misting
             )
 
             if key in seen_combinations:
