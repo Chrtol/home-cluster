@@ -1122,6 +1122,7 @@ function ScheduleTemplates() {
 
                 {/* Two Column Layout - Only show when age is selected or no age categories */}
                 {(!selectedTemplate.ageCategories || selectedTemplate.ageCategories.length === 0 || viewModalAgeCategory) && (
+                  <>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
                   {/* Left Column - All Schedules in Group */}
                   <div className="space-y-4">
@@ -1292,6 +1293,7 @@ function ScheduleTemplates() {
                     </button>
                   </div>
                 </div>
+                </>
                 )}
               </>
             ) : (
