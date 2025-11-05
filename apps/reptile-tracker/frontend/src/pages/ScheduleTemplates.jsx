@@ -40,6 +40,7 @@ function ScheduleTemplates() {
   // View template modal
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [viewModalAgeCategory, setViewModalAgeCategory] = useState('');
 
   // Apply template modal
   const [applyModalOpen, setApplyModalOpen] = useState(false);
@@ -337,19 +338,21 @@ function ScheduleTemplates() {
 
   function openViewModal(template) {
     setSelectedTemplate(template);
+    // If single template with age_category, pre-fill it. Otherwise reset.
+    setViewModalAgeCategory(template.age_category || '');
     setViewModalOpen(true);
   }
 
   async function openApplyModal() {
     setViewModalOpen(false);
     setSelectedReptile('');
-    // Auto-populate age from page-level filter
-    setSelectedAgeCategory(ageCategoryFilter);
+    // Auto-populate age from view modal selection
+    setSelectedAgeCategory(viewModalAgeCategory);
 
     // Initialize all templates as selected, filtered by age if applicable
     if (selectedTemplate.groupName && selectedTemplate.templates) {
-      const templatesToSelect = ageCategoryFilter
-        ? selectedTemplate.templates.filter(t => !t.age_category || t.age_category === ageCategoryFilter)
+      const templatesToSelect = viewModalAgeCategory
+        ? selectedTemplate.templates.filter(t => !t.age_category || t.age_category === viewModalAgeCategory)
         : selectedTemplate.templates;
       setSelectedTemplateIds(new Set(templatesToSelect.map(t => t.id)));
     } else if (selectedTemplate.id) {
@@ -770,69 +773,10 @@ function ScheduleTemplates() {
         </button>
       </div>
 
-      {/* Age Category Filter - Prominent */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Age Category
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setAgeCategoryFilter('')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              ageCategoryFilter === ''
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            All Ages
-          </button>
-          <button
-            onClick={() => setAgeCategoryFilter('hatchling')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              ageCategoryFilter === 'hatchling'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            Hatchling
-          </button>
-          <button
-            onClick={() => setAgeCategoryFilter('juvenile')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              ageCategoryFilter === 'juvenile'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            Juvenile
-          </button>
-          <button
-            onClick={() => setAgeCategoryFilter('adult')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              ageCategoryFilter === 'adult'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            Adult
-          </button>
-          <button
-            onClick={() => setAgeCategoryFilter('senior')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              ageCategoryFilter === 'senior'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            Senior
-          </button>
-        </div>
-      </div>
-
       {/* Filters Panel */}
       {showFilters && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Species (Multi-Select)
@@ -860,6 +804,23 @@ function ScheduleTemplates() {
                   </button>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Age Category
+              </label>
+              <select
+                value={ageCategoryFilter}
+                onChange={(e) => setAgeCategoryFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="">All Ages</option>
+                <option value="hatchling">Hatchling</option>
+                <option value="juvenile">Juvenile</option>
+                <option value="adult">Adult</option>
+                <option value="senior">Senior</option>
+              </select>
             </div>
 
             <div>
@@ -1150,7 +1111,9 @@ function ScheduleTemplates() {
 
                     {/* List all schedules in the group */}
                     <div className="space-y-3">
-                      {selectedTemplate.templates.map((template, idx) => (
+                      {selectedTemplate.templates
+                        .filter(t => !viewModalAgeCategory || !t.age_category || t.age_category === viewModalAgeCategory)
+                        .map((template, idx) => (
                         <div key={template.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
@@ -1291,6 +1254,30 @@ function ScheduleTemplates() {
                     </div>
                   </div>
                 </div>
+
+                {/* Age Category Selection */}
+                {selectedTemplate.ageCategories && selectedTemplate.ageCategories.length > 0 && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Filter by Age Category (Optional)
+                    </label>
+                    <select
+                      value={viewModalAgeCategory}
+                      onChange={(e) => setViewModalAgeCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="">All Ages (Show all schedules)</option>
+                      {selectedTemplate.ageCategories.map(age => (
+                        <option key={age} value={age}>
+                          {age.charAt(0).toUpperCase() + age.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Select an age to preview only relevant schedules. This will also pre-fill the age in the next step.
+                    </p>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
@@ -1507,6 +1494,18 @@ function ScheduleTemplates() {
                     </div>
                   </div>
                 </div>
+
+                {/* Age Category Selection - Only show if template has age */}
+                {selectedTemplate.age_category && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      This template is for: <span className="font-semibold">{selectedTemplate.age_category.charAt(0).toUpperCase() + selectedTemplate.age_category.slice(1)}</span> reptiles
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      The age category will be pre-filled when you apply this template.
+                    </p>
+                  </div>
+                )}
 
                 {/* Action Buttons - Full Width at Bottom */}
                 <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
