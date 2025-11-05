@@ -43,6 +43,7 @@ function ScheduleTemplates() {
   // Apply template modal
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedReptile, setSelectedReptile] = useState('');
+  const [selectedAgeCategory, setSelectedAgeCategory] = useState('');
   const [selectedTemplateIds, setSelectedTemplateIds] = useState(new Set());
   const [expandedTemplates, setExpandedTemplates] = useState(new Set());
   const [templateEdits, setTemplateEdits] = useState({});
@@ -167,23 +168,41 @@ function ScheduleTemplates() {
       }
     });
 
-    // Second pass: Add general templates to all matching species groups
+    // Second pass: Add general templates to matching species groups
     generalTemplates.forEach(({ template, source }) => {
       let addedToAnyGroup = false;
 
-      // Find all groups with the same source
-      Object.keys(sourceGroups).forEach(groupKey => {
-        if (sourceGroups[groupKey].source === source) {
-          sourceGroups[groupKey].templates.push(template);
-          if (template.age_category) sourceGroups[groupKey].ageCategories.add(template.age_category);
-          if (template.schedule_type) sourceGroups[groupKey].scheduleTypes.add(template.schedule_type);
-          addedToAnyGroup = true;
-        }
-      });
+      if (template.age_category) {
+        // Age-based general template (e.g., "Juvenile - Weekly Weighing")
+        // Add to ALL species groups that have this age category
+        Object.keys(sourceGroups).forEach(groupKey => {
+          const group = sourceGroups[groupKey];
+          // Add if the group has templates with this age category
+          if (group.templates.some(t => t.age_category === template.age_category)) {
+            group.templates.push(template);
+            group.ageCategories.add(template.age_category);
+            if (template.schedule_type) group.scheduleTypes.add(template.schedule_type);
+            addedToAnyGroup = true;
+          }
+        });
+      } else {
+        // General template with no age (e.g., supplements)
+        // Add to all groups with the same source
+        Object.keys(sourceGroups).forEach(groupKey => {
+          if (sourceGroups[groupKey].source === source) {
+            sourceGroups[groupKey].templates.push(template);
+            if (template.schedule_type) sourceGroups[groupKey].scheduleTypes.add(template.schedule_type);
+            addedToAnyGroup = true;
+          }
+        });
+      }
 
-      // If no species groups exist for this source, create a general group
+      // If no species groups exist, create a general group
       if (!addedToAnyGroup) {
-        const groupKey = `${source} - General`;
+        const groupKey = template.age_category
+          ? `${source} - ${template.age_category}`
+          : `${source} - General`;
+
         if (!sourceGroups[groupKey]) {
           sourceGroups[groupKey] = {
             source: source,
@@ -319,6 +338,7 @@ function ScheduleTemplates() {
   function openApplyModal() {
     setViewModalOpen(false);
     setSelectedReptile('');
+    setSelectedAgeCategory('');
 
     // Initialize all templates as selected
     if (selectedTemplate.groupName && selectedTemplate.templates) {
@@ -371,6 +391,11 @@ function ScheduleTemplates() {
   async function handleApplyTemplate() {
     if (!selectedReptile) {
       alert('Please select a reptile');
+      return;
+    }
+
+    if (!selectedAgeCategory && selectedTemplate?.groupName) {
+      alert('Please select an age category for your reptile');
       return;
     }
 
@@ -1386,7 +1411,9 @@ function ScheduleTemplates() {
 
                 <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-h-96 overflow-y-auto">
                   <div className="space-y-2">
-                    {selectedTemplate.templates.map((template) => {
+                    {selectedTemplate.templates
+                      .filter(template => !selectedAgeCategory || !template.age_category || template.age_category === selectedAgeCategory)
+                      .map((template) => {
                       const isExpanded = expandedTemplates.has(template.id);
                       const edits = templateEdits[template.id] || {};
                       const displayData = { ...template, ...edits };
@@ -1542,7 +1569,7 @@ function ScheduleTemplates() {
               </p>
             )}
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Reptile
               </label>
@@ -1559,6 +1586,36 @@ function ScheduleTemplates() {
                 ))}
               </select>
             </div>
+
+            {selectedTemplate?.groupName && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Age Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedAgeCategory}
+                  onChange={(e) => {
+                    setSelectedAgeCategory(e.target.value);
+                    // Filter templates when age changes
+                    if (e.target.value && selectedTemplate.templates) {
+                      const filtered = selectedTemplate.templates.filter(t =>
+                        !t.age_category || t.age_category === e.target.value
+                      );
+                      setSelectedTemplateIds(new Set(filtered.map(t => t.id)));
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">Select age...</option>
+                  <option value="hatchling">Hatchling</option>
+                  <option value="juvenile">Juvenile</option>
+                  <option value="adult">Adult</option>
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  This will filter schedules to match your reptile's age
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button
