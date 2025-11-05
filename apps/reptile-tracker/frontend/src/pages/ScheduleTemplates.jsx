@@ -1653,6 +1653,20 @@ function ScheduleTemplates() {
                           {/* Expandable editing section */}
                           {isExpanded && (
                             <div className="p-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                              {/* Schedule Name */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Schedule Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={displayData.name || template.name}
+                                  onChange={(e) => updateTemplateEdit(template.id, 'name', e.target.value)}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  placeholder="Schedule name..."
+                                />
+                              </div>
+
                               {/* Time Window */}
                               <div>
                                 <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1720,8 +1734,25 @@ function ScheduleTemplates() {
                                 />
                               </div>
 
+                              {/* Schedule Rule (only show for non-dependent schedules) */}
+                              {(template.schedule_rule === 'every_x_days' || template.schedule_rule === 'days_of_week') && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Schedule Rule
+                                  </label>
+                                  <select
+                                    value={displayData.schedule_rule || template.schedule_rule}
+                                    onChange={(e) => updateTemplateEdit(template.id, 'schedule_rule', e.target.value)}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  >
+                                    <option value="every_x_days">Every X Days</option>
+                                    <option value="days_of_week">Specific Days of Week</option>
+                                  </select>
+                                </div>
+                              )}
+
                               {/* Frequency (for every_x_days schedules) */}
-                              {template.schedule_rule === 'every_x_days' && (
+                              {(displayData.schedule_rule || template.schedule_rule) === 'every_x_days' && (
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Frequency (days)
@@ -1737,7 +1768,7 @@ function ScheduleTemplates() {
                               )}
 
                               {/* Days of Week (for days_of_week schedules) */}
-                              {template.schedule_rule === 'days_of_week' && (() => {
+                              {(displayData.schedule_rule || template.schedule_rule) === 'days_of_week' && (() => {
                                 const dayNumbers = getDayNumbers();
                                 const dayNames = getDayNames();
                                 const weekDays = dayNumbers.map((dayNum, index) => ({
@@ -1834,6 +1865,22 @@ function ScheduleTemplates() {
                           >
                             <X size={16} />
                           </button>
+                        </div>
+
+                        {/* Schedule Name */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Schedule Name</label>
+                          <input
+                            type="text"
+                            value={schedule.name || ''}
+                            onChange={(e) => {
+                              const newSchedules = [...customSchedules];
+                              newSchedules[index] = { ...schedule, name: e.target.value };
+                              setCustomSchedules(newSchedules);
+                            }}
+                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            placeholder="e.g., Calcium on Every Feeding"
+                          />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
