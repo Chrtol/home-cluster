@@ -18,9 +18,45 @@ async def seed_schedule_templates(db: AsyncSession):
 
     templates = [
         # ========== BEARDED DRAGON SCHEDULES ==========
+        # Hatchling feeding (0-3 months)
         ScheduleTemplate(
-            name="ReptiFiles - Juvenile Bearded Dragon Daily Feeding",
-            description="Daily insects for growing juvenile bearded dragons (3-12 months)",
+            name="ReptiFiles - Hatchling Bearded Dragon Daily Insects",
+            description="Daily unlimited insects for hatchling bearded dragons (0-3 months)",
+            species="Bearded Dragon",
+            age_category="hatchling",
+            schedule_type="feeding",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            food_category="insects",
+            time_slot="morning",
+            earliest_time=time(9, 0),
+            latest_time=time(12, 0),
+            time_window_enabled=True,
+            notes="Insects 1x/day, as many as the dragon will eat. Insects should be no bigger than the space between the dragon's eyes.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Hatchling Bearded Dragon Daily Vegetables",
+            description="Daily vegetables for hatchling bearded dragons (0-3 months)",
+            species="Bearded Dragon",
+            age_category="hatchling",
+            schedule_type="feeding",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            food_category="salad",
+            time_slot="afternoon",
+            notes="Vegetables daily, as much as the dragon will eat. Best choices: collard greens, mustard greens, turnip greens.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+
+        # Juvenile feeding (<12" / 25cm long)
+        ScheduleTemplate(
+            name="ReptiFiles - Juvenile Bearded Dragon Daily Insects",
+            description="Daily insects for juvenile bearded dragons (<12 inches)",
             species="Bearded Dragon",
             age_category="juvenile",
             schedule_type="feeding",
@@ -31,14 +67,14 @@ async def seed_schedule_templates(db: AsyncSession):
             earliest_time=time(9, 0),
             latest_time=time(12, 0),
             time_window_enabled=True,
-            notes="Feed after basking for 1-2 hours. Offer as many insects as they can eat in 10-15 minutes.",
+            notes="5-6 head-sized insects daily. Insects should be no bigger than the space between the dragon's eyes.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
         ScheduleTemplate(
-            name="ReptiFiles - Juvenile Bearded Dragon Daily Salad",
-            description="Fresh vegetables daily for juvenile bearded dragons",
+            name="ReptiFiles - Juvenile Bearded Dragon Daily Vegetables",
+            description="Daily vegetables for juvenile bearded dragons (<12 inches)",
             species="Bearded Dragon",
             age_category="juvenile",
             schedule_type="feeding",
@@ -46,39 +82,190 @@ async def seed_schedule_templates(db: AsyncSession):
             frequency_days=1,
             food_category="salad",
             time_slot="afternoon",
-            notes="Offer fresh greens daily. Common choices: collard greens, mustard greens, turnip greens.",
+            notes="Vegetables daily (3x larger than insect volume). Best choices: collard greens, mustard greens, turnip greens.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
+
+        # Adult/Subadult feeding (>12" / 25cm long)
         ScheduleTemplate(
-            name="ReptiFiles - Adult Bearded Dragon Insects (Every Other Day)",
-            description="Insects every other day for adult bearded dragons (12+ months)",
+            name="ReptiFiles - Adult Bearded Dragon Insects",
+            description="Insects 2x per week for adult bearded dragons (>12 inches)",
             species="Bearded Dragon",
             age_category="adult",
             schedule_type="feeding",
-            schedule_rule="every_x_days",
-            frequency_days=2,
+            schedule_rule="days_of_week",
+            days_of_week="2,5",  # Tuesday and Friday
             food_category="insects",
             time_slot="morning",
             earliest_time=time(9, 0),
             latest_time=time(12, 0),
             time_window_enabled=True,
-            notes="Adults need fewer insects to prevent obesity. 10-15 insects per feeding.",
+            notes="3-4 head-sized insects 2x/week. Insects should be no bigger than the space between the dragon's eyes.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
         ),
         ScheduleTemplate(
-            name="ReptiFiles - Adult Bearded Dragon Daily Salad",
-            description="Fresh vegetables daily for adult bearded dragons",
+            name="ReptiFiles - Adult Bearded Dragon Vegetables",
+            description="Vegetables 3x per week for adult bearded dragons (>12 inches)",
             species="Bearded Dragon",
             age_category="adult",
             schedule_type="feeding",
+            schedule_rule="days_of_week",
+            days_of_week="1,3,5",  # Monday, Wednesday, Friday
+            food_category="salad",
+            notes="Vegetables 3x/week (one portion = size of dragon's head). Best choices: collard greens, mustard greens, turnip greens.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+
+        # Bearded dragon supplements
+        # Note: Bearded dragons require UVB lighting, so calcium without D3 is appropriate
+        ScheduleTemplate(
+            name="ReptiFiles - Hatchling Bearded Dragon Calcium",
+            description="Daily calcium powder for all hatchling bearded dragon foods",
+            species="Bearded Dragon",
+            age_category="hatchling",
+            schedule_type="supplement",
             schedule_rule="every_x_days",
             frequency_days=1,
+            uvb_lighting=True,
+            notes="Calcium powder on all insects and salads. Bearded dragons require UVB lighting.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Hatchling Bearded Dragon Multivitamin",
+            description="Multivitamin powder 2x per week for hatchling bearded dragons",
+            species="Bearded Dragon",
+            age_category="hatchling",
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="2,5",  # Tuesday and Friday
+            uvb_lighting=None,
+            notes="Multivitamin powder on salads 2x/week.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Juvenile Bearded Dragon Calcium",
+            description="Daily calcium powder for all juvenile bearded dragon foods",
+            species="Bearded Dragon",
+            age_category="juvenile",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="Calcium powder on all insects and salads. Bearded dragons require UVB lighting.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Juvenile Bearded Dragon Multivitamin",
+            description="Multivitamin powder 2x per week for juvenile bearded dragons",
+            species="Bearded Dragon",
+            age_category="juvenile",
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="2,5",  # Tuesday and Friday
+            uvb_lighting=None,
+            notes="Multivitamin powder on salads 2x/week.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Bearded Dragon Calcium",
+            description="Daily calcium powder for all adult bearded dragon foods",
+            species="Bearded Dragon",
+            age_category="adult",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="Calcium powder on all insects and salads. Bearded dragons require UVB lighting.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Bearded Dragon Multivitamin",
+            description="Multivitamin powder 1x per week for adult bearded dragons",
+            species="Bearded Dragon",
+            age_category="adult",
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="6",  # Saturday
+            uvb_lighting=None,
+            notes="Multivitamin powder on salads 1x/week.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+
+        # Gravid (pregnant) female bearded dragons
+        ScheduleTemplate(
+            name="ReptiFiles - Gravid Female Bearded Dragon Insects",
+            description="Insects 2x per week for gravid female bearded dragons",
+            species="Bearded Dragon",
+            age_category="gravid",
+            schedule_type="feeding",
+            schedule_rule="days_of_week",
+            days_of_week="2,5",  # Tuesday and Friday
+            food_category="insects",
+            time_slot="morning",
+            earliest_time=time(9, 0),
+            latest_time=time(12, 0),
+            time_window_enabled=True,
+            notes="4-5 head-sized insects 2x/week. Gravid females need extra calcium for egg development.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Gravid Female Bearded Dragon Vegetables",
+            description="Vegetables 3x per week for gravid female bearded dragons",
+            species="Bearded Dragon",
+            age_category="gravid",
+            schedule_type="feeding",
+            schedule_rule="days_of_week",
+            days_of_week="1,3,5",  # Monday, Wednesday, Friday
             food_category="salad",
-            notes="Adults should eat 80% vegetables, 20% insects. Offer salad daily.",
+            notes="Vegetables 3x/week (one portion = size of dragon's head). Focus on calcium-rich greens.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Gravid Female Bearded Dragon Calcium",
+            description="Daily calcium powder for gravid female bearded dragons",
+            species="Bearded Dragon",
+            age_category="gravid",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="Calcium powder on all insects and salads. Critical for egg development and preventing calcium depletion.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Gravid Female Bearded Dragon Multivitamin",
+            description="Multivitamin powder 2x per week for gravid female bearded dragons",
+            species="Bearded Dragon",
+            age_category="gravid",
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="2,5",  # Tuesday and Friday
+            uvb_lighting=None,
+            notes="Multivitamin powder on salads 2x/week. Increased vitamin needs during egg production.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
@@ -380,81 +567,6 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
 
-        # ========== GENERAL SUPPLEMENT SCHEDULES ==========
-        # With UVB lighting
-        ScheduleTemplate(
-            name="ReptiFiles - Calcium with D3 (With UVB)",
-            description="Calcium with D3 supplementation for reptiles with UVB lighting",
-            species=None,  # All species
-            age_category=None,
-            schedule_type="supplement",
-            schedule_rule="days_of_week",
-            days_of_week="2,5",  # Tuesday and Friday
-            uvb_lighting=True,
-            notes="For reptiles WITH UVB lighting. Dust insects before feeding 2-3x per week.",
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/",
-            is_default=True,
-        ),
-        ScheduleTemplate(
-            name="ReptiFiles - Calcium without D3 (With UVB)",
-            description="Daily calcium without D3 for reptiles with UVB lighting",
-            species=None,
-            age_category=None,
-            schedule_type="supplement",
-            schedule_rule="every_x_days",
-            frequency_days=1,
-            uvb_lighting=True,
-            notes="For reptiles WITH UVB lighting. Dust insects daily. The reptile synthesizes D3 from UVB exposure.",
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/",
-            is_default=True,
-        ),
-        ScheduleTemplate(
-            name="ReptiFiles - Multivitamin Weekly (With UVB)",
-            description="Weekly multivitamin supplementation for reptiles with UVB",
-            species=None,
-            age_category=None,
-            schedule_type="supplement",
-            schedule_rule="days_of_week",
-            days_of_week="6",  # Saturday
-            uvb_lighting=True,
-            notes="For reptiles WITH UVB lighting. Use a quality reptile multivitamin. Dust insects lightly.",
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/",
-            is_default=True,
-        ),
-
-        # Without UVB lighting
-        ScheduleTemplate(
-            name="ReptiFiles - Calcium with D3 (No UVB)",
-            description="Calcium with D3 supplementation for reptiles without UVB lighting",
-            species=None,
-            age_category=None,
-            schedule_type="supplement",
-            schedule_rule="every_x_days",
-            frequency_days=1,
-            uvb_lighting=False,
-            notes="For reptiles WITHOUT UVB lighting. Dust insects at every feeding. D3 supplementation is critical without UVB.",
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/",
-            is_default=True,
-        ),
-        ScheduleTemplate(
-            name="ReptiFiles - Multivitamin Weekly (No UVB)",
-            description="Weekly multivitamin supplementation for reptiles without UVB",
-            species=None,
-            age_category=None,
-            schedule_type="supplement",
-            schedule_rule="days_of_week",
-            days_of_week="6",  # Saturday
-            uvb_lighting=False,
-            notes="For reptiles WITHOUT UVB lighting. Use a quality reptile multivitamin. Dust insects lightly.",
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/",
-            is_default=True,
-        ),
-
         # ========== WEIGHING SCHEDULES ==========
         ScheduleTemplate(
             name="Juvenile Weekly Weighing (General)",
@@ -535,36 +647,64 @@ async def seed_care_guidelines(db: AsyncSession):
         # ========== BEARDED DRAGON CARE ==========
         CareGuideline(
             species="Bearded Dragon",
-            age_category="juvenile",
+            age_category="hatchling",
             guideline_type="feeding",
-            title="Juvenile Bearded Dragon Feeding Guidelines",
-            content="""Juvenile bearded dragons (0-12 months) require daily feeding of both insects and vegetables:
+            title="Hatchling Bearded Dragon Feeding Guidelines (0-3 months)",
+            content="""Hatchling bearded dragons (0-3 months) require unlimited daily feeding:
 
 **Insects (Daily):**
-- Offer 2-3 times per day
-- Feed as many appropriately sized insects as they can eat in 10-15 minutes
-- Insects should be no larger than the space between the dragon's eyes
+- Insects 1x/day, as many as the dragon will eat
+- Insects should be no bigger than the space between the dragon's eyes
 - Best choices: dubia roaches, crickets, black soldier fly larvae
 
 **Vegetables (Daily):**
-- Fresh salad should be available daily
+- Fresh vegetables daily, as much as the dragon will eat
 - Best choices: collard greens, mustard greens, turnip greens, dandelion greens
-- Avoid: iceberg lettuce, spinach (in excess)
 - Chop finely for easier eating
 
 **Supplementation:**
-- Calcium without D3: Daily on insects
-- Calcium with D3: 2-3 times per week
-- Multivitamin: 1-2 times per week""",
+- Calcium powder on all insects and salads
+- Multivitamin powder on salads 2x/week
+- Bearded dragons require UVB lighting""",
             recommendations={
-                "feeding_frequency": "daily",
-                "insect_percentage": 80,
-                "vegetable_percentage": 20,
-                "insects_per_feeding": "10-15 minutes worth",
-                "supplements": ["Calcium without D3 (daily)", "Calcium with D3 (2-3x/week)", "Multivitamin (1-2x/week)"]
+                "feeding_frequency": "Insects 1x/day unlimited, vegetables daily unlimited",
+                "age_range": "0-3 months",
+                "insects": ["dubia roaches", "crickets", "black soldier fly larvae"],
+                "vegetables": ["collard greens", "mustard greens", "turnip greens"],
+                "supplements": ["Calcium (daily on all foods)", "Multivitamin (2x/week on salads)"]
             },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        CareGuideline(
+            species="Bearded Dragon",
+            age_category="juvenile",
+            guideline_type="feeding",
+            title="Juvenile Bearded Dragon Feeding Guidelines (<12 inches)",
+            content="""Juvenile bearded dragons (<12" / 25cm long) require daily feeding:
+
+**Insects (Daily):**
+- 5-6 head-sized insects daily
+- Insects should be no bigger than the space between the dragon's eyes
+- Best choices: dubia roaches, crickets, black soldier fly larvae
+
+**Vegetables (Daily):**
+- Fresh vegetables daily (3x larger than insect volume)
+- Best choices: collard greens, mustard greens, turnip greens, dandelion greens
+- Chop into bite-sized pieces
+
+**Supplementation:**
+- Calcium powder on all insects and salads
+- Multivitamin powder on salads 2x/week
+- Bearded dragons require UVB lighting""",
+            recommendations={
+                "feeding_frequency": "5-6 insects daily, vegetables daily (3x larger)",
+                "age_range": "<12 inches / 25cm",
+                "insects": ["dubia roaches", "crickets", "black soldier fly larvae"],
+                "vegetables": ["collard greens", "mustard greens", "turnip greens"],
+                "supplements": ["Calcium (daily on all foods)", "Multivitamin (2x/week on salads)"]
+            },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
@@ -573,36 +713,76 @@ async def seed_care_guidelines(db: AsyncSession):
             species="Bearded Dragon",
             age_category="adult",
             guideline_type="feeding",
-            title="Adult Bearded Dragon Feeding Guidelines",
-            content="""Adult bearded dragons (12+ months) require a diet higher in vegetables:
-
-**Diet Ratio:**
-- 80% vegetables, 20% insects
-- This prevents obesity which is common in adult bearded dragons
+            title="Adult Bearded Dragon Feeding Guidelines (>12 inches)",
+            content="""Adult and subadult bearded dragons (>12" / 25cm long) require less frequent feeding:
 
 **Insects:**
-- Feed every other day or 3-4 times per week
-- 10-15 appropriately sized insects per feeding
+- 3-4 head-sized insects 2x/week
+- Insects should be no bigger than the space between the dragon's eyes
 - Variety is important: dubia roaches, crickets, superworms, hornworms
 
-**Vegetables (Daily):**
-- Fresh salad daily
+**Vegetables:**
+- Vegetables 3x/week (one portion = size of dragon's head)
 - Staples: collard greens, mustard greens, turnip greens, endive, escarole
 - Occasional additions: bell peppers, squash, carrots (shredded)
-- Fruits: Occasional treats only (too much sugar)
 
 **Supplementation:**
-- Calcium with D3: 2-3 times per week
-- Multivitamin: 1-2 times per week""",
+- Calcium powder on all insects and salads
+- Multivitamin powder on salads 1x/week
+- Bearded dragons require UVB lighting
+
+**Body Condition:**
+- Monitor weight and body condition regularly
+- Adjust feeding frequency if dragon becomes overweight or underweight""",
             recommendations={
-                "feeding_frequency": "insects every 2 days, salad daily",
-                "insect_percentage": 20,
-                "vegetable_percentage": 80,
-                "insects_per_feeding": "10-15",
-                "supplements": ["Calcium with D3 (2-3x/week)", "Multivitamin (1-2x/week)"]
+                "feeding_frequency": "Insects 2x/week, vegetables 3x/week",
+                "age_range": ">12 inches / 25cm",
+                "insects_per_feeding": "3-4 head-sized",
+                "vegetable_portion": "Size of dragon's head",
+                "insects": ["dubia roaches", "crickets", "superworms", "hornworms"],
+                "vegetables": ["collard greens", "mustard greens", "turnip greens", "endive", "escarole"],
+                "supplements": ["Calcium (daily on all foods)", "Multivitamin (1x/week on salads)"]
             },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
+            is_default=True,
+        ),
+        CareGuideline(
+            species="Bearded Dragon",
+            age_category="gravid",
+            guideline_type="feeding",
+            title="Gravid Female Bearded Dragon Feeding Guidelines",
+            content="""Gravid (pregnant) female bearded dragons require increased nutrition for egg development:
+
+**Insects:**
+- 4-5 head-sized insects 2x/week
+- Insects should be no bigger than the space between the dragon's eyes
+- Focus on nutrient-rich feeders: dubia roaches, black soldier fly larvae
+
+**Vegetables:**
+- Vegetables 3x/week (one portion = size of dragon's head)
+- Focus on calcium-rich greens: collard greens, mustard greens, turnip greens, dandelion greens
+- These provide essential nutrients for egg shell formation
+
+**Supplementation:**
+- Calcium powder on ALL insects and salads (daily)
+- Multivitamin powder on salads 2x/week
+- Calcium is critical during egg production to prevent metabolic bone disease
+
+**Important Notes:**
+- Monitor body condition closely during gravidity
+- Ensure proper UVB lighting for vitamin D3 synthesis
+- Provide a lay box when gravid
+- Watch for signs of egg binding (lethargy, straining, loss of appetite)""",
+            recommendations={
+                "feeding_frequency": "Insects 2x/week, vegetables 3x/week",
+                "insects_per_feeding": "4-5 head-sized",
+                "vegetable_portion": "Size of dragon's head",
+                "insects": ["dubia roaches", "black soldier fly larvae", "crickets"],
+                "vegetables": ["collard greens", "mustard greens", "turnip greens", "dandelion greens"],
+                "supplements": ["Calcium (daily on all foods)", "Multivitamin (2x/week on salads)"],
+                "special_care": ["Monitor for egg binding", "Provide lay box", "Extra calcium critical"]
+            },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/bearded-dragon-care/",
             is_default=True,
@@ -806,8 +986,6 @@ async def seed_care_guidelines(db: AsyncSession):
             },
             source_name="Reptile Magazine",
             source_url="https://reptilesmagazine.com/ball-python-care-sheet/",
-            source_name="Reptile Magazine",
-            source_url="https://reptilemag.com/",
             is_default=True,
         ),
         CareGuideline(
@@ -842,8 +1020,6 @@ async def seed_care_guidelines(db: AsyncSession):
                 "prey_type": "frozen/thawed rats",
                 "supplements": ["None needed"]
             },
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/ball-python-care/",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/ball-python-care/",
             is_default=True,
@@ -890,8 +1066,6 @@ async def seed_care_guidelines(db: AsyncSession):
             },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/reptile-supplements/",
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/",
             is_default=True,
         ),
     ]
