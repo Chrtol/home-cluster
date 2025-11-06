@@ -54,6 +54,7 @@ class ReptileUpdate(BaseModel):
     reminder_enabled: Optional[bool] = None
     reminder_hours_before: Optional[int] = None
     is_active: Optional[bool] = None
+    has_uvb: Optional[bool] = None
 
 
 class Reptile(ReptileBase):
