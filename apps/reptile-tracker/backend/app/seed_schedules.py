@@ -569,7 +569,7 @@ async def seed_schedule_templates(db: AsyncSession):
 
         # ========== WEIGHING SCHEDULES ==========
         ScheduleTemplate(
-            name="Juvenile Weekly Weighing (General)",
+            name="Juvenile - Weekly Weighing",
             description="Weekly weight checks for growing juveniles",
             species=None,
             age_category="juvenile",
@@ -581,7 +581,7 @@ async def seed_schedule_templates(db: AsyncSession):
             is_default=True,
         ),
         ScheduleTemplate(
-            name="Adult Monthly Weighing (General)",
+            name="Adult - Monthly Weighing",
             description="Monthly weight checks for adult reptiles",
             species=None,
             age_category="adult",

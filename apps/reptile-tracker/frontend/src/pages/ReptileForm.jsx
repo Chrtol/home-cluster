@@ -12,6 +12,7 @@ export default function ReptileForm() {
     const [species, setSpecies] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [notes, setNotes] = useState('');
+    const [hasUvb, setHasUvb] = useState('');
     const [error, setError] = useState('');
     const [speciesList, setSpeciesList] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -35,6 +36,7 @@ export default function ReptileForm() {
                     setSpecies(res.data.species);
                     setDateOfBirth(res.data.date_of_birth ? res.data.date_of_birth.split('T')[0] : '');
                     setNotes(res.data.notes || '');
+                    setHasUvb(res.data.has_uvb === null ? '' : res.data.has_uvb ? 'yes' : 'no');
                 })
                 .catch(err => {
                     console.error("Failed to fetch reptile for editing:", err);
@@ -49,7 +51,8 @@ export default function ReptileForm() {
             name,
             species,
             date_of_birth: dateOfBirth || null,
-            notes: notes || null
+            notes: notes || null,
+            has_uvb: hasUvb === '' ? null : hasUvb === 'yes'
         };
 
         try {
@@ -159,6 +162,24 @@ export default function ReptileForm() {
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Any additional information about your reptile..."
                     />
+                </div>
+                <div>
+                    <label htmlFor="hasUvb" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        UVB Lighting <span className="text-xs text-gray-500 dark:text-gray-400">(optional)</span>
+                    </label>
+                    <select
+                        id="hasUvb"
+                        value={hasUvb}
+                        onChange={(e) => setHasUvb(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                        <option value="">Not specified</option>
+                        <option value="yes">Yes - Has UVB lighting</option>
+                        <option value="no">No - No UVB lighting</option>
+                    </select>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        This helps select appropriate supplement schedules (calcium with/without D3)
+                    </p>
                 </div>
                 <button type="submit" className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium">
                     {isEditing ? 'Save Changes' : 'Create Reptile'}
