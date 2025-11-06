@@ -1198,11 +1198,14 @@ function ScheduleTemplates() {
                           }}
                           className="px-4 py-2 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
                         >
-                          {reptiles.map(reptile => (
-                            <option key={reptile.id} value={reptile.id}>
-                              {reptile.name} ({reptile.species})
-                            </option>
-                          ))}
+                          {reptiles.map(reptile => {
+                            const isMatchingSpecies = selectedTemplate?.species && reptile.species.toLowerCase() === selectedTemplate.species.toLowerCase();
+                            return (
+                              <option key={reptile.id} value={reptile.id}>
+                                {isMatchingSpecies ? '✓ ' : ''}{reptile.name} ({reptile.species})
+                              </option>
+                            );
+                          })}
                         </select>
                       ) : (
                         // Manual selection display
@@ -1264,36 +1267,46 @@ function ScheduleTemplates() {
                           </p>
                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
                             {reptiles.length > 0 ? (
-                              reptiles.map(reptile => (
-                                <button
-                                  key={reptile.id}
-                                  onClick={() => {
-                                    setViewModalReptile(reptile.id);
-                                    // Use stored age_category or calculate from date_of_birth
-                                    const ageCategory = reptile.age_category || (reptile.date_of_birth ? calculateAgeCategory(reptile.date_of_birth, reptile.species) : null);
-                                    if (ageCategory) {
-                                      setViewModalAgeCategory(ageCategory);
-                                    }
-                                  }}
-                                  className="w-full px-4 py-3 rounded-lg text-left transition-colors bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-600"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                                        {reptile.name}
+                              reptiles.map(reptile => {
+                                const isMatchingSpecies = selectedTemplate?.species && reptile.species.toLowerCase() === selectedTemplate.species.toLowerCase();
+                                return (
+                                  <button
+                                    key={reptile.id}
+                                    onClick={() => {
+                                      setViewModalReptile(reptile.id);
+                                      // Use stored age_category or calculate from date_of_birth
+                                      const ageCategory = reptile.age_category || (reptile.date_of_birth ? calculateAgeCategory(reptile.date_of_birth, reptile.species) : null);
+                                      if (ageCategory) {
+                                        setViewModalAgeCategory(ageCategory);
+                                      }
+                                    }}
+                                    className={`w-full px-4 py-3 rounded-lg text-left transition-colors ${
+                                      isMatchingSpecies
+                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                                        : 'bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-600'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                                          {reptile.name}
+                                          {isMatchingSpecies && (
+                                            <span className="ml-2 text-blue-600 dark:text-blue-400 text-xs">✓ Match</span>
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                                          {reptile.species}
+                                        </div>
                                       </div>
-                                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                                        {reptile.species}
-                                      </div>
+                                      {reptile.has_uvb !== null && reptile.has_uvb !== undefined && (
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${reptile.has_uvb ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                                          {reptile.has_uvb ? 'UVB' : 'No UVB'}
+                                        </span>
+                                      )}
                                     </div>
-                                    {reptile.has_uvb !== null && reptile.has_uvb !== undefined && (
-                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${reptile.has_uvb ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'}`}>
-                                        {reptile.has_uvb ? 'UVB' : 'No UVB'}
-                                      </span>
-                                    )}
-                                  </div>
-                                </button>
-                              ))
+                                  </button>
+                                );
+                              })
                             ) : (
                               <div className="text-center py-4">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
