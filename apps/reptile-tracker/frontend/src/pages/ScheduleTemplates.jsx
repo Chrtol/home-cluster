@@ -489,7 +489,7 @@ function ScheduleTemplates() {
 
     // Only require age category if there are multiple age options
     if (!selectedAgeCategory && selectedTemplate?.groupName && selectedTemplate?.ageCategories?.length > 1) {
-      alert('Please select an age category for your reptile');
+      alert('Please select a life stage for your reptile');
       return;
     }
 
@@ -814,7 +814,7 @@ function ScheduleTemplates() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Age Category
+                Life Stage
               </label>
               <select
                 value={ageCategoryFilter}
@@ -1101,15 +1101,15 @@ function ScheduleTemplates() {
                   </button>
                 </div>
 
-                {/* Age Category Selection Overlay - Required */}
+                {/* Life Stage Selection Overlay - Required */}
                 {selectedTemplate.ageCategories && selectedTemplate.ageCategories.length > 0 && !viewModalAgeCategory && (
                   <div className="flex items-center justify-center min-h-[400px] p-12 bg-gray-50 dark:bg-gray-900/30">
                     <div className="max-w-md w-full text-center">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                        Select Age Category
+                        Select Life Stage
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                        This template has schedules for different age groups. Please select the age category for your reptile to see relevant care schedules.
+                        This template has schedules for different life stages. Please select the life stage for your reptile to see relevant care schedules.
                       </p>
                       <div className="flex flex-col gap-3">
                         {selectedTemplate.ageCategories.map(age => (
@@ -1204,7 +1204,7 @@ function ScheduleTemplates() {
                       )}
                       {selectedTemplate.age_category && (
                         <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 text-sm">Age Category</h3>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 text-sm">Life Stage</h3>
                           <span className="inline-block px-3 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-sm">
                             {selectedTemplate.age_category}
                           </span>
@@ -1370,7 +1370,7 @@ function ScheduleTemplates() {
 
                       {selectedTemplate.age_category && (
                         <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Age Category</h3>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Life Stage</h3>
                           <span className="inline-block px-3 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                             {selectedTemplate.age_category}
                           </span>
@@ -1506,14 +1506,14 @@ function ScheduleTemplates() {
                   </div>
                 </div>
 
-                {/* Age Category Selection - Only show if template has age */}
+                {/* Life Stage Selection - Only show if template has age */}
                 {selectedTemplate.age_category && (
                   <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       This template is for: <span className="font-semibold">{selectedTemplate.age_category.charAt(0).toUpperCase() + selectedTemplate.age_category.slice(1)}</span> reptiles
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      The age category will be pre-filled when you apply this template.
+                      The life stage will be pre-filled when you apply this template.
                     </p>
                   </div>
                 )}
@@ -2206,7 +2206,7 @@ function ScheduleTemplates() {
             {selectedTemplate?.groupName && selectedTemplate?.ageCategories?.length > 1 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Age Category <span className="text-red-500">*</span>
+                  Life Stage <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedAgeCategory}
