@@ -503,15 +503,14 @@ function ScheduleTemplates() {
       const ageCategory = reptile?.age_category || (reptile?.date_of_birth ? calculateAgeCategory(reptile.date_of_birth, reptile.species) : null);
       if (ageCategory) {
         setSelectedAgeCategory(ageCategory);
-          // Also filter templates based on age and UVB lighting
-          if (selectedTemplate.templates) {
-            const filtered = selectedTemplate.templates.filter(t => {
-              const ageMatch = !t.age_category || t.age_category === ageCategory;
-              const uvbMatch = shouldIncludeTemplate(t, reptile.has_uvb);
-              return ageMatch && uvbMatch;
-            });
-            setSelectedTemplateIds(new Set(filtered.map(t => t.id)));
-          }
+        // Also filter templates based on age and UVB lighting
+        if (selectedTemplate.templates) {
+          const filtered = selectedTemplate.templates.filter(t => {
+            const ageMatch = !t.age_category || t.age_category === ageCategory;
+            const uvbMatch = shouldIncludeTemplate(t, reptile.has_uvb);
+            return ageMatch && uvbMatch;
+          });
+          setSelectedTemplateIds(new Set(filtered.map(t => t.id)));
         }
       }
     }
