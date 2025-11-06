@@ -42,6 +42,7 @@ function ScheduleTemplates() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [viewModalAgeCategory, setViewModalAgeCategory] = useState('');
   const [viewModalReptile, setViewModalReptile] = useState('');
+  const [viewModalManualUvb, setViewModalManualUvb] = useState(null); // null, true, or false for manual selection
 
   // Apply template modal
   const [applyModalOpen, setApplyModalOpen] = useState(false);
@@ -342,6 +343,7 @@ function ScheduleTemplates() {
     // If single template with age_category, pre-fill it. Otherwise reset.
     setViewModalAgeCategory(template.age_category || '');
     setViewModalReptile(''); // Reset reptile selection
+    setViewModalManualUvb(null); // Reset manual UVB selection
     setViewModalOpen(true);
   }
 
@@ -349,6 +351,7 @@ function ScheduleTemplates() {
     setViewModalOpen(false);
     setViewModalReptile('');
     setViewModalAgeCategory('');
+    setViewModalManualUvb(null);
     setSelectedTemplate(null);
   }
 
@@ -709,10 +712,10 @@ function ScheduleTemplates() {
       // Filter by age category
       const ageMatch = !viewModalAgeCategory || !t.age_category || t.age_category === viewModalAgeCategory;
 
-      // Filter by UVB if reptile is selected
+      // Filter by UVB (reptile selection takes priority, then manual selection)
       const uvbMatch = selectedReptileData
         ? shouldIncludeTemplate(t, selectedReptileData.has_uvb)
-        : true;
+        : shouldIncludeTemplate(t, viewModalManualUvb);
 
       return ageMatch && uvbMatch;
     });
@@ -1152,7 +1155,7 @@ function ScheduleTemplates() {
                 </div>
 
                 {/* Dropdown to change reptile/context after initial selection */}
-                {(viewModalReptile || viewModalAgeCategory) && (
+                {(viewModalReptile || viewModalAgeCategory || viewModalManualUvb !== null) && (
                   <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-4 flex-wrap">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1185,15 +1188,32 @@ function ScheduleTemplates() {
                       ) : (
                         // Manual selection display
                         <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-sm font-medium">
-                            {viewModalAgeCategory ? `${viewModalAgeCategory.charAt(0).toUpperCase() + viewModalAgeCategory.slice(1)}` : 'All Ages'}
-                          </span>
+                          {viewModalAgeCategory && (
+                            <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-sm font-medium">
+                              {viewModalAgeCategory.charAt(0).toUpperCase() + viewModalAgeCategory.slice(1)}
+                            </span>
+                          )}
+                          {viewModalManualUvb !== null && (
+                            <span className={`px-3 py-1 rounded text-sm font-medium ${
+                              viewModalManualUvb
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                            }`}>
+                              {viewModalManualUvb ? 'Has UVB' : 'No UVB'}
+                            </span>
+                          )}
+                          {!viewModalAgeCategory && viewModalManualUvb === null && (
+                            <span className="px-3 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium">
+                              All Templates
+                            </span>
+                          )}
                         </div>
                       )}
                       <button
                         onClick={() => {
                           setViewModalReptile('');
                           setViewModalAgeCategory('');
+                          setViewModalManualUvb(null);
                         }}
                         className="ml-auto text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                       >
@@ -1204,7 +1224,7 @@ function ScheduleTemplates() {
                 )}
 
                 {/* Reptile/Context Selection Overlay - Required for grouped templates */}
-                {!viewModalReptile && !viewModalAgeCategory && (
+                {!viewModalReptile && !viewModalAgeCategory && viewModalManualUvb === null && (
                   <div className="flex items-center justify-center min-h-[400px] p-12 bg-gray-50 dark:bg-gray-900/30">
                     <div className="max-w-2xl w-full">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3 text-center">
@@ -1282,6 +1302,45 @@ function ScheduleTemplates() {
                             Choose life stage and UVB setup to browse templates.
                           </p>
 
+                          {/* UVB Setup Selection */}
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              UVB Setup (optional)
+                            </label>
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => setViewModalManualUvb(true)}
+                                className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  viewModalManualUvb === true
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                }`}
+                              >
+                                Has UVB Lighting
+                              </button>
+                              <button
+                                onClick={() => setViewModalManualUvb(false)}
+                                className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  viewModalManualUvb === false
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                }`}
+                              >
+                                No UVB Lighting
+                              </button>
+                              <button
+                                onClick={() => setViewModalManualUvb(null)}
+                                className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  viewModalManualUvb === null
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                }`}
+                              >
+                                Show All Supplements
+                              </button>
+                            </div>
+                          </div>
+
                           {/* Life Stage Selection */}
                           {selectedTemplate.ageCategories && selectedTemplate.ageCategories.length > 0 && (
                             <div className="mb-4">
@@ -1309,8 +1368,8 @@ function ScheduleTemplates() {
                   </div>
                 )}
 
-                {/* Two Column Layout - Only show when reptile/age is selected or no age categories */}
-                {(!selectedTemplate.ageCategories || selectedTemplate.ageCategories.length === 0 || viewModalAgeCategory || viewModalReptile) && (
+                {/* Two Column Layout - Only show when reptile/age/uvb is selected or no age categories */}
+                {(!selectedTemplate.ageCategories || selectedTemplate.ageCategories.length === 0 || viewModalAgeCategory || viewModalReptile || viewModalManualUvb !== null) && (
                   <>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
                   {/* Left Column - All Schedules in Group */}
