@@ -369,7 +369,18 @@ export default function ReptileDetail() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">Details</h2>
         <p className="text-gray-900 dark:text-white"><strong>Date of Birth:</strong> {reptile.date_of_birth ? formatDate(reptile.date_of_birth) : 'N/A'}</p>
-        <p className="text-gray-900 dark:text-white"><strong>Notes:</strong> {reptile.notes || 'None'}</p>
+        {reptile.length && (
+          <p className="text-gray-900 dark:text-white"><strong>Length:</strong> {reptile.length} cm</p>
+        )}
+        {reptile.age_category && (
+          <p className="text-gray-900 dark:text-white"><strong>Age Category:</strong> {reptile.age_category.charAt(0).toUpperCase() + reptile.age_category.slice(1)}</p>
+        )}
+        {reptile.has_uvb !== null && (
+          <p className="text-gray-900 dark:text-white"><strong>UVB Lighting:</strong> {reptile.has_uvb ? 'Yes' : 'No'}</p>
+        )}
+        {reptile.notes && (
+          <p className="text-gray-900 dark:text-white"><strong>Notes:</strong> {reptile.notes}</p>
+        )}
       </div>
 
       <div className="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto">
