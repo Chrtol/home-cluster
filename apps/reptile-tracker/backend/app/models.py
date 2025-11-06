@@ -163,6 +163,12 @@ class Reptile(Base):
     # UVB lighting setup (for schedule recommendations)
     has_uvb = Column(Boolean, nullable=True)  # null = not specified, True = has UVB, False = no UVB
 
+    # Length tracking (for species that determine age category by size)
+    length = Column(Integer, nullable=True)  # Length in centimeters
+
+    # Age category (can be set automatically or manually)
+    age_category = Column(String, nullable=True)  # hatchling, juvenile, adult, gravid
+
     # Household relation
     household_id = Column(Integer, ForeignKey("households.id", ondelete="SET NULL"), nullable=True)
 

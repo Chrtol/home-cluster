@@ -37,6 +37,8 @@ class ReptileBase(BaseModel):
     reminder_hours_before: int = 2
     is_active: bool = True
     has_uvb: Optional[bool] = None  # UVB lighting setup
+    length: Optional[int] = None  # Length in centimeters
+    age_category: Optional[str] = None  # hatchling, juvenile, adult, gravid
 
 
 class ReptileCreate(ReptileBase):
@@ -55,6 +57,8 @@ class ReptileUpdate(BaseModel):
     reminder_hours_before: Optional[int] = None
     is_active: Optional[bool] = None
     has_uvb: Optional[bool] = None
+    length: Optional[int] = None
+    age_category: Optional[str] = None
 
 
 class Reptile(ReptileBase):

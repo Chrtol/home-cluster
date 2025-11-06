@@ -460,14 +460,36 @@ function ScheduleTemplates() {
   }
 
   // Calculate age category from date of birth
-  function calculateAgeCategory(dateOfBirth) {
+  function calculateAgeCategory(dateOfBirth, species) {
     if (!dateOfBirth) return null;
 
     const birthDate = new Date(dateOfBirth);
     const now = new Date();
     const ageInMonths = (now - birthDate) / (1000 * 60 * 60 * 24 * 30.44); // Average days per month
 
-    // General age thresholds (can vary by species)
+    // Species-specific age thresholds based on care guidelines
+    const speciesLower = species?.toLowerCase() || '';
+
+    // Leopard Gecko and Crested Gecko: adult at 12 months
+    if (speciesLower.includes('leopard gecko') || speciesLower.includes('crested gecko')) {
+      if (ageInMonths < 12) return 'juvenile';
+      return 'adult';
+    }
+
+    // Bearded Dragon: hatchling (0-3 months), juvenile (3-12 months), adult (12+ months)
+    if (speciesLower.includes('bearded dragon')) {
+      if (ageInMonths < 3) return 'hatchling';
+      if (ageInMonths < 12) return 'juvenile';
+      return 'adult';
+    }
+
+    // Ball Python: juvenile (0-2 years), adult (2+ years)
+    if (speciesLower.includes('ball python') || speciesLower.includes('python')) {
+      if (ageInMonths < 24) return 'juvenile';
+      return 'adult';
+    }
+
+    // Generic thresholds for other species
     if (ageInMonths < 6) return 'hatchling';
     if (ageInMonths < 18) return 'juvenile';
     return 'adult';
@@ -477,14 +499,14 @@ function ScheduleTemplates() {
   useEffect(() => {
     if (selectedReptile && selectedTemplate?.groupName && !selectedAgeCategory) {
       const reptile = reptiles.find(r => r.id === parseInt(selectedReptile));
-      if (reptile?.date_of_birth) {
-        const calculatedAge = calculateAgeCategory(reptile.date_of_birth);
-        if (calculatedAge) {
-          setSelectedAgeCategory(calculatedAge);
-          // Also filter templates based on calculated age and UVB lighting
+      // Use stored age_category if available, otherwise calculate from date_of_birth
+      const ageCategory = reptile?.age_category || (reptile?.date_of_birth ? calculateAgeCategory(reptile.date_of_birth, reptile.species) : null);
+      if (ageCategory) {
+        setSelectedAgeCategory(ageCategory);
+          // Also filter templates based on age and UVB lighting
           if (selectedTemplate.templates) {
             const filtered = selectedTemplate.templates.filter(t => {
-              const ageMatch = !t.age_category || t.age_category === calculatedAge;
+              const ageMatch = !t.age_category || t.age_category === ageCategory;
               const uvbMatch = shouldIncludeTemplate(t, reptile.has_uvb);
               return ageMatch && uvbMatch;
             });
@@ -1168,13 +1190,11 @@ function ScheduleTemplates() {
                           onChange={(e) => {
                             const newReptileId = parseInt(e.target.value);
                             setViewModalReptile(newReptileId);
-                            // Auto-calculate and update age category
+                            // Use stored age_category or calculate from date_of_birth
                             const reptile = reptiles.find(r => r.id === newReptileId);
-                            if (reptile?.date_of_birth) {
-                              const calculatedAge = calculateAgeCategory(reptile.date_of_birth);
-                              if (calculatedAge) {
-                                setViewModalAgeCategory(calculatedAge);
-                              }
+                            const ageCategory = reptile?.age_category || (reptile?.date_of_birth ? calculateAgeCategory(reptile.date_of_birth, reptile.species) : null);
+                            if (ageCategory) {
+                              setViewModalAgeCategory(ageCategory);
                             }
                           }}
                           className="px-4 py-2 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
@@ -1250,12 +1270,10 @@ function ScheduleTemplates() {
                                   key={reptile.id}
                                   onClick={() => {
                                     setViewModalReptile(reptile.id);
-                                    // Auto-calculate and set age category
-                                    if (reptile.date_of_birth) {
-                                      const calculatedAge = calculateAgeCategory(reptile.date_of_birth);
-                                      if (calculatedAge) {
-                                        setViewModalAgeCategory(calculatedAge);
-                                      }
+                                    // Use stored age_category or calculate from date_of_birth
+                                    const ageCategory = reptile.age_category || (reptile.date_of_birth ? calculateAgeCategory(reptile.date_of_birth, reptile.species) : null);
+                                    if (ageCategory) {
+                                      setViewModalAgeCategory(ageCategory);
                                     }
                                   }}
                                   className="w-full px-4 py-3 rounded-lg text-left transition-colors bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-600"
