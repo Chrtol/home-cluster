@@ -8,6 +8,7 @@ export default function Layout({ user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [trackMenuOpen, setTrackMenuOpen] = useState(false)
   const [schedulesMenuOpen, setSchedulesMenuOpen] = useState(false)
+  const [mobileSchedulesMenuOpen, setMobileSchedulesMenuOpen] = useState(false)
 
   // Load dark mode preference on mount (defaults to true/dark)
   useEffect(() => {
@@ -26,10 +27,10 @@ export default function Layout({ user, onLogout }) {
   }
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/reptiles', icon: List, label: 'Reptiles' },
-    { path: '/foods', icon: Utensils, label: 'Foods' },
-    { path: '/stats', icon: BarChart3, label: 'Statistics' },
+    { path: '/', icon: Home, label: 'Dashboard', showOnMobile: true },
+    { path: '/reptiles', icon: List, label: 'Reptiles', showOnMobile: true },
+    { path: '/foods', icon: Utensils, label: 'Foods', showOnMobile: false },
+    { path: '/stats', icon: BarChart3, label: 'Statistics', showOnMobile: true },
   ]
 
   const schedulesItems = [
@@ -323,25 +324,31 @@ export default function Layout({ user, onLogout }) {
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pb-safe">
         <div className="flex items-center justify-around relative">
-          {/* Left nav items */}
-          {navItems.slice(0, 2).map(item => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex flex-col items-center px-3 py-2 min-w-0 flex-1 ${
-                  isActive
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <Icon size={24} />
-                <span className="text-xs mt-1 truncate">{item.label}</span>
-              </Link>
-            )
-          })}
+          {/* Dashboard */}
+          <Link
+            to="/"
+            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+              location.pathname === '/'
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <Home size={22} />
+            <span className="text-xs mt-1 truncate">Dashboard</span>
+          </Link>
+
+          {/* Schedules (expandable) */}
+          <button
+            onClick={() => setMobileSchedulesMenuOpen(!mobileSchedulesMenuOpen)}
+            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+              schedulesItems.some(item => location.pathname === item.path)
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <Calendar size={22} />
+            <span className="text-xs mt-1 truncate">Schedules</span>
+          </button>
 
           {/* Center Track Button */}
           <button
@@ -351,26 +358,58 @@ export default function Layout({ user, onLogout }) {
             <Plus size={28} strokeWidth={3} />
           </button>
 
-          {/* Right nav items */}
-          {navItems.slice(2, 4).map(item => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex flex-col items-center px-3 py-2 min-w-0 flex-1 ${
-                  isActive
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <Icon size={24} />
-                <span className="text-xs mt-1 truncate">{item.label}</span>
-              </Link>
-            )
-          })}
+          {/* Reptiles */}
+          <Link
+            to="/reptiles"
+            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+              location.pathname === '/reptiles'
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <List size={22} />
+            <span className="text-xs mt-1 truncate">Reptiles</span>
+          </Link>
+
+          {/* Statistics */}
+          <Link
+            to="/stats"
+            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+              location.pathname === '/stats'
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <BarChart3 size={22} />
+            <span className="text-xs mt-1 truncate">Statistics</span>
+          </Link>
         </div>
+
+        {/* Mobile Schedules Menu Popup */}
+        {mobileSchedulesMenuOpen && (
+          <>
+            <div className="fixed inset-0 bg-black/20" onClick={() => setMobileSchedulesMenuOpen(false)} style={{ bottom: '64px' }}></div>
+            <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              {schedulesItems.map(item => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileSchedulesMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                  >
+                    <Icon size={24} className="text-primary-600 dark:text-primary-400" />
+                    <div className="text-left flex-1">
+                      <div className="font-semibold text-gray-900 dark:text-white">{item.label}</div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </>
+        )}
+
 
         {/* Mobile Track Menu Popup */}
         {trackMenuOpen && (

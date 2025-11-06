@@ -478,9 +478,60 @@ export default function Dashboard() {
           return;
         }
 
-        // Between measurements - don't fill in values, let chart draw straight lines
-        // (The chart will connect the actual measurement dots with straight lines)
+        // Between measurements - interpolate linearly
         if (dateTime > firstMeasurementMidnight.getTime() && dateTime < lastMeasurementMidnight.getTime()) {
+          if (interpolationMode === 'linear') {
+            // Find the two surrounding measurements
+            let beforeMeasurement = null;
+            let afterMeasurement = null;
+
+            for (let i = 0; i < reptile.data.length - 1; i++) {
+              const currentMidnight = new Date(reptile.data[i].dateTime);
+              currentMidnight.setHours(0, 0, 0, 0);
+              const nextMidnight = new Date(reptile.data[i + 1].dateTime);
+              nextMidnight.setHours(0, 0, 0, 0);
+
+              if (dateTime > currentMidnight.getTime() && dateTime < nextMidnight.getTime()) {
+                beforeMeasurement = reptile.data[i];
+                afterMeasurement = reptile.data[i + 1];
+                break;
+              }
+            }
+
+            if (beforeMeasurement && afterMeasurement) {
+              const beforeMidnight = new Date(beforeMeasurement.dateTime);
+              beforeMidnight.setHours(0, 0, 0, 0);
+              const afterMidnight = new Date(afterMeasurement.dateTime);
+              afterMidnight.setHours(0, 0, 0, 0);
+
+              const totalDays = (afterMidnight.getTime() - beforeMidnight.getTime()) / (24 * 60 * 60 * 1000);
+
+              // Prevent division by zero
+              if (totalDays > 0) {
+                const daysFromBefore = (dateTime - beforeMidnight.getTime()) / (24 * 60 * 60 * 1000);
+                const ratio = daysFromBefore / totalDays;
+
+                const interpolated = beforeMeasurement.weight + (afterMeasurement.weight - beforeMeasurement.weight) * ratio;
+                if (isFinite(interpolated)) {
+                  dataPoint[`${reptile.name}_interpolated`] = parseFloat(interpolated.toFixed(1));
+                }
+              }
+            }
+          } else if (interpolationMode === 'step') {
+            // Step mode: use the weight from the most recent measurement before this date
+            let lastBeforeMeasurement = null;
+            for (let i = reptile.data.length - 1; i >= 0; i--) {
+              const measurementMidnight = new Date(reptile.data[i].dateTime);
+              measurementMidnight.setHours(0, 0, 0, 0);
+              if (measurementMidnight.getTime() < dateTime) {
+                lastBeforeMeasurement = reptile.data[i];
+                break;
+              }
+            }
+            if (lastBeforeMeasurement) {
+              dataPoint[`${reptile.name}_interpolated`] = lastBeforeMeasurement.weight;
+            }
+          }
           return;
         }
 
@@ -494,11 +545,21 @@ export default function Dashboard() {
             secondMeasurementMidnight.setHours(0, 0, 0, 0);
 
             const daysBetweenMeasurements = (secondMeasurementMidnight.getTime() - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
-            const gramsPerDay = (secondMeasurement.weight - firstMeasurement.weight) / daysBetweenMeasurements;
 
-            const daysFromFirst = (dateTime - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
-            const extrapolated = firstMeasurement.weight + gramsPerDay * daysFromFirst;
-            dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
+            // If measurements are on the same day, use flat line instead
+            if (daysBetweenMeasurements === 0 || !isFinite(daysBetweenMeasurements)) {
+              dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
+            } else {
+              const gramsPerDay = (secondMeasurement.weight - firstMeasurement.weight) / daysBetweenMeasurements;
+              const daysFromFirst = (dateTime - firstMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+              const extrapolated = firstMeasurement.weight + gramsPerDay * daysFromFirst;
+
+              if (isFinite(extrapolated)) {
+                dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
+              } else {
+                dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
+              }
+            }
           } else {
             // Step: flat line
             dataPoint[`${reptile.name}_extrapolated`] = firstMeasurement.weight;
@@ -512,23 +573,22 @@ export default function Dashboard() {
             secondLastMeasurementMidnight.setHours(0, 0, 0, 0);
 
             const daysBetweenMeasurements = (lastMeasurementMidnight.getTime() - secondLastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
-            const gramsPerDay = (lastMeasurement.weight - secondLastMeasurement.weight) / daysBetweenMeasurements;
 
-            const daysFromLast = (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
-            const extrapolated = lastMeasurement.weight + gramsPerDay * daysFromLast;
+            // If measurements are on the same day (daysBetweenMeasurements = 0), use flat line instead
+            if (daysBetweenMeasurements === 0 || !isFinite(daysBetweenMeasurements)) {
+              dataPoint[`${reptile.name}_extrapolated`] = lastMeasurement.weight;
+            } else {
+              const gramsPerDay = (lastMeasurement.weight - secondLastMeasurement.weight) / daysBetweenMeasurements;
+              const daysFromLast = (dateTime - lastMeasurementMidnight.getTime()) / (24 * 60 * 60 * 1000);
+              const extrapolated = lastMeasurement.weight + gramsPerDay * daysFromLast;
 
-            // Debug logging
-            if (date === format(new Date(), 'MMM d, yyyy')) {
-              console.log(`[${reptile.name}] Extrapolation Debug for ${date}:`);
-              console.log(`  Last measurement: ${lastMeasurement.date} = ${lastMeasurement.weight}g`);
-              console.log(`  Second last: ${secondLastMeasurement.date} = ${secondLastMeasurement.weight}g`);
-              console.log(`  Days between measurements: ${daysBetweenMeasurements}`);
-              console.log(`  Grams per day: ${gramsPerDay}`);
-              console.log(`  Days from last: ${daysFromLast}`);
-              console.log(`  Calculation: ${lastMeasurement.weight} + (${gramsPerDay} × ${daysFromLast}) = ${extrapolated}`);
+              // Only set extrapolated value if it's a valid number
+              if (isFinite(extrapolated)) {
+                dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
+              } else {
+                dataPoint[`${reptile.name}_extrapolated`] = lastMeasurement.weight;
+              }
             }
-
-            dataPoint[`${reptile.name}_extrapolated`] = parseFloat(extrapolated.toFixed(1));
           } else {
             // Step: flat line
             dataPoint[`${reptile.name}_extrapolated`] = lastMeasurement.weight;
@@ -1099,40 +1159,40 @@ export default function Dashboard() {
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-x-6 gap-y-2 text-sm">
-                          <div className="flex flex-col">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                          <div className="flex flex-col min-w-0">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Reptile</span>
-                            <span className="text-gray-900 dark:text-white font-medium">{event.reptile_name}</span>
+                            <span className="text-gray-900 dark:text-white font-medium truncate">{event.reptile_name}</span>
                           </div>
 
                           {event.schedule_rule && (
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Frequency</span>
-                              <span className="text-gray-900 dark:text-white">{event.schedule_rule.replace(/_/g, ' ')}</span>
+                              <span className="text-gray-900 dark:text-white truncate">{event.schedule_rule.replace(/_/g, ' ')}</span>
                             </div>
                           )}
 
                           {event.food_category && (
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Food</span>
-                              <span className="text-gray-900 dark:text-white">{event.food_category}</span>
+                              <span className="text-gray-900 dark:text-white truncate">{event.food_category}</span>
                             </div>
                           )}
 
                           {event.time_window_enabled && event.earliest_time && event.latest_time ? (
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
                               </span>
-                              <span className="text-gray-900 dark:text-white font-medium whitespace-nowrap">
+                              <span className="text-gray-900 dark:text-white font-medium break-words">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
                               </span>
                             </div>
                           ) : event.time_slot ? (
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
-                              <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
+                              <span className="text-gray-900 dark:text-white truncate">{event.time_slot}</span>
                             </div>
                           ) : null}
                         </div>
