@@ -1155,7 +1155,7 @@ function ScheduleTemplates() {
                 </div>
 
                 {/* Dropdown to change reptile/context after initial selection */}
-                {(viewModalReptile || viewModalAgeCategory || viewModalManualUvb !== null) && (
+                {(viewModalReptile || (viewModalAgeCategory && viewModalManualUvb !== null)) && (
                   <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-4 flex-wrap">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1224,7 +1224,7 @@ function ScheduleTemplates() {
                 )}
 
                 {/* Reptile/Context Selection Overlay - Required for grouped templates */}
-                {!viewModalReptile && !viewModalAgeCategory && viewModalManualUvb === null && (
+                {!viewModalReptile && !(viewModalAgeCategory && viewModalManualUvb !== null) && (
                   <div className="flex items-center justify-center min-h-[400px] p-12 bg-gray-50 dark:bg-gray-900/30">
                     <div className="max-w-2xl w-full">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3 text-center">
@@ -1369,7 +1369,7 @@ function ScheduleTemplates() {
                 )}
 
                 {/* Two Column Layout - Only show when reptile/age/uvb is selected or no age categories */}
-                {(!selectedTemplate.ageCategories || selectedTemplate.ageCategories.length === 0 || viewModalAgeCategory || viewModalReptile || viewModalManualUvb !== null) && (
+                {(!selectedTemplate.ageCategories || selectedTemplate.ageCategories.length === 0 || viewModalReptile || (viewModalAgeCategory && viewModalManualUvb !== null)) && (
                   <>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
                   {/* Left Column - All Schedules in Group */}
