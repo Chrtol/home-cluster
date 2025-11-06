@@ -66,7 +66,7 @@ function ScheduleTemplates() {
   useEffect(() => {
     // Initialize species filter with household species (matched to template species for case consistency)
     if (templates.length > 0 && reptiles.length > 0 && speciesFilter.length === 0) {
-      const householdSpecies = [...new Set(reptiles.map(r => r.species.toLowerCase()))];
+      const householdSpecies = [...new Set(reptiles.filter(r => r.species).map(r => r.species.toLowerCase()))];
       const allTemplateSpecies = [...new Set(templates.map(t => t.species).filter(Boolean))];
 
       // Find template species that match household species (case-insensitive)
