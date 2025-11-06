@@ -87,7 +87,7 @@ async def seed_schedule_templates(db: AsyncSession):
         # ========== LEOPARD GECKO SCHEDULES ==========
         ScheduleTemplate(
             name="ReptiFiles - Juvenile Leopard Gecko Daily Feeding",
-            description="Daily insects for growing juvenile leopard geckos (0-12 months)",
+            description="Daily insects for growing juvenile leopard geckos",
             species="Leopard Gecko",
             age_category="juvenile",
             schedule_type="feeding",
@@ -98,43 +98,111 @@ async def seed_schedule_templates(db: AsyncSession):
             earliest_time=time(18, 0),
             latest_time=time(21, 0),
             time_window_enabled=True,
-            notes="Feed in evening as leopard geckos are nocturnal. Offer 5-8 appropriately sized insects daily.",
+            notes="Feed daily. Offer 2 appropriately-sized bugs per 1 inch of gecko length, or as much as they can eat in 15 minutes.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
         ),
         ScheduleTemplate(
-            name="The Bio Dude - Juvenile Leopard Gecko Daily Feeding",
-            description="Daily insects for growing juvenile leopard geckos (0-12 months)",
-            species="Leopard Gecko",
-            age_category="juvenile",
-            schedule_type="feeding",
-            schedule_rule="every_x_days",
-            frequency_days=1,
-            food_category="insects",
-            time_slot="evening",
-            earliest_time=time(18, 0),
-            latest_time=time(21, 0),
-            time_window_enabled=True,
-            notes="Feed in evening as leopard geckos are nocturnal. Offer 5-8 appropriately sized insects.",
-            source_name="The Bio Dude",
-            source_url="https://www.thebiodude.com/blogs/reptile-care-guides",
-            is_default=True,
-        ),
-        ScheduleTemplate(
-            name="ReptiFiles - Adult Leopard Gecko Every Other Day Feeding",
-            description="Insects every other day for adult leopard geckos (12+ months)",
+            name="ReptiFiles - Adult Leopard Gecko Feeding",
+            description="Insects every 2-3 days for adult leopard geckos (12+ months)",
             species="Leopard Gecko",
             age_category="adult",
             schedule_type="feeding",
             schedule_rule="every_x_days",
-            frequency_days=2,
+            frequency_days=3,
             food_category="insects",
             time_slot="evening",
             earliest_time=time(18, 0),
             latest_time=time(21, 0),
             time_window_enabled=True,
-            notes="Adults should eat 6-8 insects every other day. Adjust based on body condition.",
+            notes="Young adults: every 2-3 days. Adults whose tail is fatter than their neck can be fed every 5 days. Offer 2 bugs per inch of length or 15 minutes worth.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
+            is_default=True,
+        ),
+
+        # Leopard gecko supplements
+        ScheduleTemplate(
+            name="ReptiFiles - Juvenile Leopard Gecko Calcium (With UVB)",
+            description="Calcium powder for all juvenile leopard gecko feedings (with UVB)",
+            species="Leopard Gecko",
+            age_category="juvenile",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="Dust all insects with calcium powder. With UVB lighting, the gecko synthesizes vitamin D3 naturally.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Juvenile Leopard Gecko Calcium (No UVB)",
+            description="Calcium with D3 for all juvenile leopard gecko feedings (no UVB)",
+            species="Leopard Gecko",
+            age_category="juvenile",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=False,
+            notes="Dust all insects with calcium powder including vitamin D3. D3 supplementation is critical without UVB lighting.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Juvenile Leopard Gecko Multivitamin",
+            description="Weekly multivitamin for juvenile leopard geckos",
+            species="Leopard Gecko",
+            age_category="juvenile",
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="6",  # Saturday
+            uvb_lighting=None,  # Applies regardless of UVB
+            notes="Dust insects with multivitamin once per week. If using Repashy CalciumPlus, no additional multivitamin is necessary.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Leopard Gecko Calcium (With UVB)",
+            description="Calcium powder for all adult leopard gecko feedings (with UVB)",
+            species="Leopard Gecko",
+            age_category="adult",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="Dust all insects with calcium powder. With UVB lighting, the gecko synthesizes vitamin D3 naturally.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Leopard Gecko Calcium (No UVB)",
+            description="Calcium with D3 for all adult leopard gecko feedings (no UVB)",
+            species="Leopard Gecko",
+            age_category="adult",
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=False,
+            notes="Dust all insects with calcium powder including vitamin D3. D3 supplementation is critical without UVB lighting.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Leopard Gecko Multivitamin",
+            description="Bi-weekly multivitamin for adult leopard geckos",
+            species="Leopard Gecko",
+            age_category="adult",
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="6",  # Every other Saturday (user will need to adjust)
+            uvb_lighting=None,  # Applies regardless of UVB
+            notes="Dust insects with multivitamin once every other week. If using Repashy CalciumPlus, no additional multivitamin is necessary.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
@@ -181,7 +249,7 @@ async def seed_schedule_templates(db: AsyncSession):
             age_category="adult",
             schedule_type="feeding",
             schedule_rule="every_x_days",
-            frequency_days=2,
+            frequency_days=3,
             food_category="prepared",
             time_slot="evening",
             notes="Mix the powdered diet with water to a ketchup or smoothie consistency. Adults can eat every 2-3 days.",
@@ -200,6 +268,36 @@ async def seed_schedule_templates(db: AsyncSession):
             food_category="insects",
             time_slot="evening",
             notes="Optional: Offer appropriately sized insects 0-1 times per week. Not required for adults.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
+            is_default=True,
+        ),
+
+        # Crested gecko supplements (CGD contains vitamins, only calcium needed for insects)
+        ScheduleTemplate(
+            name="ReptiFiles - Crested Gecko Calcium (With UVB)",
+            description="Calcium without D3 for crested gecko insects (with UVB)",
+            species="Crested Gecko",
+            age_category=None,
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="For crested geckos WITH UVB. Dust insects with calcium without D3. No multivitamin needed - CGD contains all vitamins.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Crested Gecko Calcium (No UVB)",
+            description="Calcium with D3 for crested gecko insects (no UVB)",
+            species="Crested Gecko",
+            age_category=None,
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=False,
+            notes="For crested geckos WITHOUT UVB. Dust insects with calcium WITH D3. No multivitamin needed - CGD contains all vitamins.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
@@ -516,40 +614,35 @@ async def seed_care_guidelines(db: AsyncSession):
             age_category="juvenile",
             guideline_type="feeding",
             title="Juvenile Leopard Gecko Feeding Guidelines",
-            content="""Juvenile leopard geckos (0-12 months) are in rapid growth and require frequent feeding:
+            content="""Juvenile leopard geckos require daily feeding for proper growth:
 
 **Feeding Schedule:**
 - Daily feeding
-- Offer 5-8 appropriately sized insects
+- Offer 2 appropriately-sized bugs per 1 inch of gecko length, OR as much as they can eat in 15 minutes
 - Feed in the evening (leopard geckos are nocturnal)
 
 **Best Feeder Insects:**
 - Crickets
 - Dubia roaches
-- Mealworms (occasional)
+- Mealworms
 - Small hornworms (treats)
 
-**Insect Sizing:**
-- No larger than the space between the gecko's eyes
-- Smaller is safer than too large
-
 **Supplementation:**
-- Calcium with D3: Every feeding (dust insects)
-- Multivitamin: Once per week
+- All insect feeders should be dusted with calcium powder
+- WITH UVB: Use calcium without D3. Multivitamin 1x per week
+- WITHOUT UVB: Use calcium WITH D3. Multivitamin 1x per week
+- If using Repashy CalciumPlus, no additional multivitamin is necessary
 
 **Water:**
-- Fresh water in shallow dish daily
-- Mist occasionally for humidity""",
+- Fresh water in shallow dish daily""",
             recommendations={
                 "feeding_frequency": "daily",
-                "insects_per_feeding": "5-8",
+                "amount": "2 bugs per inch of length OR 15 minutes worth",
                 "feeding_time": "evening",
-                "supplements": ["Calcium with D3 (every feeding)", "Multivitamin (weekly)"]
+                "supplements": ["Calcium (every feeding)", "Multivitamin (weekly)"]
             },
-            source_name="The Bio Dude",
-            source_url="https://www.thebiodude.com/blogs/bio-activity-with-your-pets/leopard-gecko-care-guide",
-            source_name="The Bio Dude",
-            source_url="https://www.thebiodude.com/blogs/reptile-care-guides",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
         ),
         CareGuideline(
@@ -557,33 +650,34 @@ async def seed_care_guidelines(db: AsyncSession):
             age_category="adult",
             guideline_type="feeding",
             title="Adult Leopard Gecko Feeding Guidelines",
-            content="""Adult leopard geckos (12+ months) require less frequent feeding:
+            content="""Adult leopard geckos require less frequent feeding:
 
 **Feeding Schedule:**
-- Every other day, or 3-4 times per week
-- 6-8 appropriately sized insects per feeding
-- Feed in the evening
+- Juveniles: Daily
+- Young adults: Every other day / every 3 days
+- Adults whose tail is fatter than their neck: Every 5 days
+- Offer 2 appropriately-sized bugs per 1 inch of gecko length, OR as much as they can eat in 15 minutes
 
 **Best Feeder Insects:**
 - Variety is key: crickets, dubia roaches, mealworms, superworms
 - Occasional treats: hornworms, waxworms (high fat)
 
 **Supplementation:**
-- Calcium with D3: Every feeding (dust insects)
-- Multivitamin: Once per week
+- All insect feeders should be dusted with calcium powder
+- WITH UVB: Use calcium without D3. Multivitamin 1x every other week
+- WITHOUT UVB: Use calcium WITH D3. Multivitamin 1x every other week
+- If using Repashy CalciumPlus, no additional multivitamin is necessary
 
 **Body Condition:**
 - Monitor tail thickness - should be plump but not bulbous
 - Avoid overfeeding as obesity is common in adults
 - Adjust feeding frequency based on body condition""",
             recommendations={
-                "feeding_frequency": "every other day",
-                "insects_per_feeding": "6-8",
+                "feeding_frequency": "every 2-3 days (young adults) to every 5 days (mature adults)",
+                "amount": "2 bugs per inch of length OR 15 minutes worth",
                 "feeding_time": "evening",
-                "supplements": ["Calcium with D3 (every feeding)", "Multivitamin (weekly)"]
+                "supplements": ["Calcium (every feeding)", "Multivitamin (bi-weekly)"]
             },
-            source_name="ReptiFiles",
-            source_url="https://reptifiles.com/leopard-gecko-care/",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/leopard-gecko-care/",
             is_default=True,
@@ -619,8 +713,9 @@ async def seed_care_guidelines(db: AsyncSession):
 - Dust with calcium (CGD already contains vitamins)
 
 **Supplementation:**
-- Not needed if feeding complete CGD diet
-- If feeding insects regularly, use calcium without D3""",
+- Not needed if feeding complete CGD diet (CGD contains all vitamins)
+- If feeding insects: use calcium WITHOUT D3 if you have UVB lighting, or calcium WITH D3 if no UVB
+- No multivitamin needed - CGD provides complete nutrition""",
             recommendations={
                 "feeding_frequency": "CGD daily, insects 1-2x/week",
                 "primary_diet": "Commercial CGD",
@@ -660,8 +755,9 @@ async def seed_care_guidelines(db: AsyncSession):
 - Dust with calcium if offering insects
 
 **Supplementation:**
-- Not needed if feeding complete CGD diet
-- If feeding insects regularly, use calcium without D3""",
+- Not needed if feeding complete CGD diet (CGD contains all vitamins)
+- If feeding insects: use calcium WITHOUT D3 if you have UVB lighting, or calcium WITH D3 if no UVB
+- No multivitamin needed - CGD provides complete nutrition""",
             recommendations={
                 "feeding_frequency": "CGD every 2-3 days, insects 0-1x/week (optional)",
                 "primary_diet": "Commercial CGD",
