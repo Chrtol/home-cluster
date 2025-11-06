@@ -160,6 +160,9 @@ class Reptile(Base):
     # Active/inactive status (for hiding reptiles without deleting them)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
+    # UVB lighting setup (for schedule recommendations)
+    has_uvb = Column(Boolean, nullable=True)  # null = not specified, True = has UVB, False = no UVB
+
     # Household relation
     household_id = Column(Integer, ForeignKey("households.id", ondelete="SET NULL"), nullable=True)
 
@@ -493,6 +496,7 @@ class ScheduleTemplate(Base):
     # Species and age targeting
     species = Column(String, nullable=True, index=True)  # null = applies to all species
     age_category = Column(String, nullable=True, index=True)  # "hatchling", "juvenile", "adult", "senior", null = all ages
+    uvb_lighting = Column(Boolean, nullable=True, index=True)  # null = doesn't matter, True = requires UVB, False = no UVB needed
 
     # Template metadata
     is_default = Column(Boolean, default=False, nullable=False)  # Protected default templates
