@@ -19,7 +19,7 @@ def upgrade():
     # Delete old Tropical Species misting templates
     op.execute("""
         DELETE FROM schedule_templates
-        WHERE name IN ('Tropical Species Morning Misting', 'Tropical Species Evening Misting')
+        WHERE name IN ('Tropical Species - Twice Daily Misting', 'Tropical Species - Evening Misting')
         AND is_default = true
     """)
 
@@ -28,7 +28,7 @@ def upgrade():
         INSERT INTO schedule_templates (
             name, description, species, age_category, schedule_type, schedule_rule,
             frequency_days, time_slot, earliest_time, latest_time, time_window_enabled,
-            notes, is_default
+            notes, is_default, source_name, source_url
         ) VALUES
         (
             'ReptiFiles - Evening Misting',
@@ -43,7 +43,9 @@ def upgrade():
             '21:00:00',
             true,
             'Mist at least once in the evening. Your gecko will drink the droplets off the terrarium walls and decorations.',
-            true
+            true,
+            'ReptiFiles',
+            'https://reptifiles.com/crested-gecko-care/'
         ),
         (
             'ReptiFiles - Morning Misting (Optional)',
@@ -58,7 +60,9 @@ def upgrade():
             '10:00:00',
             true,
             'Mist again in the morning if needed, depending on how well your terrarium holds humidity.',
-            true
+            true,
+            'ReptiFiles',
+            'https://reptifiles.com/crested-gecko-care/'
         )
     """)
 
@@ -79,7 +83,7 @@ def downgrade():
             notes, is_default
         ) VALUES
         (
-            'Tropical Species Morning Misting',
+            'Tropical Species - Twice Daily Misting',
             'Morning and evening misting for tropical species',
             'Crested Gecko',
             NULL,
@@ -94,7 +98,7 @@ def downgrade():
             true
         ),
         (
-            'Tropical Species Evening Misting',
+            'Tropical Species - Evening Misting',
             'Evening misting for tropical species',
             'Crested Gecko',
             NULL,
