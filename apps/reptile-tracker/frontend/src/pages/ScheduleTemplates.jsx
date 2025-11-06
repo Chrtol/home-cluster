@@ -487,9 +487,15 @@ function ScheduleTemplates() {
       return;
     }
 
-    if (!selectedAgeCategory && selectedTemplate?.groupName) {
+    // Only require age category if there are multiple age options
+    if (!selectedAgeCategory && selectedTemplate?.groupName && selectedTemplate?.ageCategories?.length > 1) {
       alert('Please select an age category for your reptile');
       return;
+    }
+
+    // Auto-select age category if there's only one option
+    if (!selectedAgeCategory && selectedTemplate?.groupName && selectedTemplate?.ageCategories?.length === 1) {
+      setSelectedAgeCategory(selectedTemplate.ageCategories[0]);
     }
 
     if (selectedTemplateIds.size === 0 && customSchedules.length === 0) {
@@ -2197,7 +2203,7 @@ function ScheduleTemplates() {
               </select>
             </div>
 
-            {selectedTemplate?.groupName && (
+            {selectedTemplate?.groupName && selectedTemplate?.ageCategories?.length > 1 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Age Category <span className="text-red-500">*</span>
@@ -2217,9 +2223,11 @@ function ScheduleTemplates() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select age...</option>
-                  <option value="hatchling">Hatchling</option>
-                  <option value="juvenile">Juvenile</option>
-                  <option value="adult">Adult</option>
+                  {selectedTemplate.ageCategories.map(age => (
+                    <option key={age} value={age}>
+                      {age.charAt(0).toUpperCase() + age.slice(1)}
+                    </option>
+                  ))}
                 </select>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   This will filter schedules to match your reptile's age

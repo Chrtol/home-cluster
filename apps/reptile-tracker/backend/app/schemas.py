@@ -36,6 +36,7 @@ class ReptileBase(BaseModel):
     reminder_enabled: bool = False
     reminder_hours_before: int = 2
     is_active: bool = True
+    has_uvb: Optional[bool] = None  # UVB lighting setup
 
 
 class ReptileCreate(ReptileBase):
@@ -555,6 +556,7 @@ class ScheduleTemplateBase(BaseModel):
     description: Optional[str] = None
     species: Optional[str] = None  # null = applies to all species
     age_category: Optional[str] = None  # "hatchling", "juvenile", "adult", "senior", null = all ages
+    uvb_lighting: Optional[bool] = None  # null = doesn't matter, True = requires UVB, False = no UVB needed
 
     # Schedule configuration
     schedule_type: str  # "feeding", "misting", "weighing", "supplement"

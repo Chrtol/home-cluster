@@ -141,32 +141,65 @@ async def seed_schedule_templates(db: AsyncSession):
         ),
 
         # ========== CRESTED GECKO SCHEDULES ==========
+        # Juvenile schedules (0-12 months)
         ScheduleTemplate(
-            name="ReptiFiles - Crested Gecko Daily CGD Feeding",
-            description="Daily crested gecko diet (powder food)",
+            name="ReptiFiles - Juvenile Crested Gecko Daily CGD",
+            description="Daily crested gecko diet for juveniles (0-12 months)",
             species="Crested Gecko",
-            age_category=None,  # All ages
+            age_category="juvenile",
             schedule_type="feeding",
             schedule_rule="every_x_days",
             frequency_days=1,
             food_category="prepared",
             time_slot="evening",
-            notes="Offer fresh CGD every evening. Remove uneaten food after 24 hours.",
+            notes="Mix the powdered diet with water to a ketchup or smoothie consistency. Offer fresh CGD daily for growing juveniles.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
         ),
         ScheduleTemplate(
-            name="ReptiFiles - Crested Gecko Weekly Live Insects",
-            description="Live insects once or twice per week as enrichment",
+            name="ReptiFiles - Juvenile Crested Gecko Insects",
+            description="Live insects 1-2x weekly for juvenile crested geckos",
             species="Crested Gecko",
-            age_category=None,
+            age_category="juvenile",
+            schedule_type="feeding",
+            schedule_rule="days_of_week",
+            days_of_week="2,5",  # Tuesday and Friday
+            food_category="insects",
+            time_slot="evening",
+            notes="Offer appropriately sized insects 1-2 times per week as supplemental nutrition for growth.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
+            is_default=True,
+        ),
+
+        # Adult schedules (12+ months)
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Crested Gecko CGD",
+            description="CGD every 2-3 days for adult crested geckos (12+ months)",
+            species="Crested Gecko",
+            age_category="adult",
+            schedule_type="feeding",
+            schedule_rule="every_x_days",
+            frequency_days=2,
+            food_category="prepared",
+            time_slot="evening",
+            notes="Mix the powdered diet with water to a ketchup or smoothie consistency. Adults can eat every 2-3 days.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/crested-gecko-care/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Adult Crested Gecko Insects (Optional)",
+            description="Optional live insects 0-1x weekly for adults",
+            species="Crested Gecko",
+            age_category="adult",
             schedule_type="feeding",
             schedule_rule="days_of_week",
             days_of_week="3",  # Wednesday
             food_category="insects",
             time_slot="evening",
-            notes="Optional treat feeding. 2-3 appropriately sized insects.",
+            notes="Optional: Offer appropriately sized insects 0-1 times per week. Not required for adults.",
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
@@ -250,30 +283,77 @@ async def seed_schedule_templates(db: AsyncSession):
         ),
 
         # ========== GENERAL SUPPLEMENT SCHEDULES ==========
+        # With UVB lighting
         ScheduleTemplate(
-            name="ReptiFiles - Calcium with D3 Twice Weekly",
-            description="Standard calcium with D3 supplementation schedule",
+            name="ReptiFiles - Calcium with D3 (With UVB)",
+            description="Calcium with D3 supplementation for reptiles with UVB lighting",
             species=None,  # All species
             age_category=None,
             schedule_type="supplement",
             schedule_rule="days_of_week",
             days_of_week="2,5",  # Tuesday and Friday
-            notes="For reptiles with UVB lighting. Dust insects before feeding.",
+            uvb_lighting=True,
+            notes="For reptiles WITH UVB lighting. Dust insects before feeding 2-3x per week.",
             source_name="ReptiFiles",
-            source_url="https://reptifiles.com/blue-tongue-skink-care/",
+            source_url="https://reptifiles.com/",
             is_default=True,
         ),
         ScheduleTemplate(
-            name="ReptiFiles - Multivitamin Weekly",
-            description="Weekly multivitamin supplementation",
+            name="ReptiFiles - Calcium without D3 (With UVB)",
+            description="Daily calcium without D3 for reptiles with UVB lighting",
+            species=None,
+            age_category=None,
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=True,
+            notes="For reptiles WITH UVB lighting. Dust insects daily. The reptile synthesizes D3 from UVB exposure.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Multivitamin Weekly (With UVB)",
+            description="Weekly multivitamin supplementation for reptiles with UVB",
             species=None,
             age_category=None,
             schedule_type="supplement",
             schedule_rule="days_of_week",
             days_of_week="6",  # Saturday
-            notes="Use a quality reptile multivitamin. Dust insects lightly.",
+            uvb_lighting=True,
+            notes="For reptiles WITH UVB lighting. Use a quality reptile multivitamin. Dust insects lightly.",
             source_name="ReptiFiles",
-            source_url="https://reptifiles.com/blue-tongue-skink-care/",
+            source_url="https://reptifiles.com/",
+            is_default=True,
+        ),
+
+        # Without UVB lighting
+        ScheduleTemplate(
+            name="ReptiFiles - Calcium with D3 (No UVB)",
+            description="Calcium with D3 supplementation for reptiles without UVB lighting",
+            species=None,
+            age_category=None,
+            schedule_type="supplement",
+            schedule_rule="every_x_days",
+            frequency_days=1,
+            uvb_lighting=False,
+            notes="For reptiles WITHOUT UVB lighting. Dust insects at every feeding. D3 supplementation is critical without UVB.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/",
+            is_default=True,
+        ),
+        ScheduleTemplate(
+            name="ReptiFiles - Multivitamin Weekly (No UVB)",
+            description="Weekly multivitamin supplementation for reptiles without UVB",
+            species=None,
+            age_category=None,
+            schedule_type="supplement",
+            schedule_rule="days_of_week",
+            days_of_week="6",  # Saturday
+            uvb_lighting=False,
+            notes="For reptiles WITHOUT UVB lighting. Use a quality reptile multivitamin. Dust insects lightly.",
+            source_name="ReptiFiles",
+            source_url="https://reptifiles.com/",
             is_default=True,
         ),
 
@@ -512,27 +592,31 @@ async def seed_care_guidelines(db: AsyncSession):
         # ========== CRESTED GECKO CARE ==========
         CareGuideline(
             species="Crested Gecko",
-            age_category=None,
+            age_category="juvenile",
             guideline_type="feeding",
-            title="Crested Gecko Feeding Guidelines",
-            content="""Crested geckos thrive on a diet of commercially prepared crested gecko diet (CGD):
+            title="Juvenile Crested Gecko Feeding Guidelines (0-12 months)",
+            content="""Juvenile crested geckos require daily feeding for proper growth:
 
-**Primary Diet:**
-- Commercial CGD (powder mixed with water)
+**How to Feed:**
+- Mix the powdered diet with water to a ketchup or smoothie consistency
+- Offer in a biodegradable condiment cup
+- Most cresties prefer eating up off the ground, so use a wall-mounted feeding ledge
+
+**Juvenile Feeding Schedule (0-12 months):**
+- CGD: Daily
+- Insects: 1-2x per week
+
+**Crested Gecko Diet (CGD):**
+- Commercial CGD powder mixed with water
 - Offer fresh every evening
 - Remove uneaten food after 24 hours
 - Popular brands: Pangea, Repashy, Lugarti
 
-**Live Insects (Optional):**
-- 1-2 times per week as enrichment
+**Live Insects:**
+- 1-2 times per week for growth
 - Small crickets, dubia roaches, or black soldier fly larvae
-- 2-3 appropriately sized insects
+- Appropriately sized insects
 - Dust with calcium (CGD already contains vitamins)
-
-**Fruits (Occasional):**
-- Small amounts of mashed fruit as treats
-- Banana, mango, papaya, or fig
-- Not necessary if feeding quality CGD
 
 **Supplementation:**
 - Not needed if feeding complete CGD diet
@@ -540,11 +624,50 @@ async def seed_care_guidelines(db: AsyncSession):
             recommendations={
                 "feeding_frequency": "CGD daily, insects 1-2x/week",
                 "primary_diet": "Commercial CGD",
-                "insects_per_feeding": "2-3 (optional)",
+                "age_range": "0-12 months",
                 "supplements": ["Not needed with complete CGD"]
             },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/crested-gecko-care/",
+            is_default=True,
+        ),
+        CareGuideline(
+            species="Crested Gecko",
+            age_category="adult",
+            guideline_type="feeding",
+            title="Adult Crested Gecko Feeding Guidelines (12+ months)",
+            content="""Adult crested geckos require less frequent feeding than juveniles:
+
+**How to Feed:**
+- Mix the powdered diet with water to a ketchup or smoothie consistency
+- Offer in a biodegradable condiment cup
+- Most cresties prefer eating up off the ground, so use a wall-mounted feeding ledge
+
+**Adult Feeding Schedule (12+ months):**
+- CGD: Every 2-3 days
+- Insects: 0-1x per week (optional)
+
+**Crested Gecko Diet (CGD):**
+- Commercial CGD powder mixed with water
+- Offer fresh every 2-3 days
+- Remove uneaten food after 24 hours
+- Popular brands: Pangea, Repashy, Lugarti
+
+**Live Insects (Optional):**
+- 0-1 times per week as optional enrichment
+- Small crickets, dubia roaches, or black soldier fly larvae
+- Not required for adults
+- Dust with calcium if offering insects
+
+**Supplementation:**
+- Not needed if feeding complete CGD diet
+- If feeding insects regularly, use calcium without D3""",
+            recommendations={
+                "feeding_frequency": "CGD every 2-3 days, insects 0-1x/week (optional)",
+                "primary_diet": "Commercial CGD",
+                "age_range": "12+ months",
+                "supplements": ["Not needed with complete CGD"]
+            },
             source_name="ReptiFiles",
             source_url="https://reptifiles.com/crested-gecko-care/",
             is_default=True,
