@@ -1078,7 +1078,12 @@ function ScheduleTemplates() {
                         </span>
                       )}
                       <span className="inline-block text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-2 py-1 rounded">
-                        {selectedTemplate.templates.length} Schedules
+                        {(() => {
+                          const filteredTemplates = viewModalAgeCategory
+                            ? selectedTemplate.templates.filter(t => !t.age_category || t.age_category === viewModalAgeCategory)
+                            : selectedTemplate.templates;
+                          return `${filteredTemplates.length} Schedule${filteredTemplates.length !== 1 ? 's' : ''}`;
+                        })()}
                       </span>
                       {selectedTemplate.templates[0]?.source_url && (
                         <a
@@ -1138,7 +1143,12 @@ function ScheduleTemplates() {
                         Complete Care Schedule
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        This template includes {selectedTemplate.templates.length} coordinated schedules for complete care.
+                        This template includes {(() => {
+                          const filteredTemplates = viewModalAgeCategory
+                            ? selectedTemplate.templates.filter(t => !t.age_category || t.age_category === viewModalAgeCategory)
+                            : selectedTemplate.templates;
+                          return filteredTemplates.length;
+                        })()} coordinated schedules for complete care.
                       </p>
                     </div>
 
@@ -1222,7 +1232,10 @@ function ScheduleTemplates() {
 
                     <div className="space-y-2">
                       {(() => {
-                        const preview = generateTwoWeekPreview(selectedTemplate.templates);
+                        const filteredTemplates = viewModalAgeCategory
+                          ? selectedTemplate.templates.filter(t => !t.age_category || t.age_category === viewModalAgeCategory)
+                          : selectedTemplate.templates;
+                        const preview = generateTwoWeekPreview(filteredTemplates);
 
                         if (preview.length === 0) {
                           return (
@@ -1279,11 +1292,16 @@ function ScheduleTemplates() {
                         ));
                       })()}
 
-                      {generateTwoWeekPreview(selectedTemplate.templates).length > 10 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 italic">
-                          Showing first 10 days with activities...
-                        </p>
-                      )}
+                      {(() => {
+                        const filteredTemplates = viewModalAgeCategory
+                          ? selectedTemplate.templates.filter(t => !t.age_category || t.age_category === viewModalAgeCategory)
+                          : selectedTemplate.templates;
+                        return generateTwoWeekPreview(filteredTemplates).length > 10 && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 italic">
+                            Showing first 10 days with activities...
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1586,7 +1604,12 @@ function ScheduleTemplates() {
                   </p>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setSelectedTemplateIds(new Set(selectedTemplate.templates.map(t => t.id)))}
+                      onClick={() => {
+                        const filteredTemplates = selectedTemplate.templates.filter(t =>
+                          !selectedAgeCategory || !t.age_category || t.age_category === selectedAgeCategory
+                        );
+                        setSelectedTemplateIds(new Set(filteredTemplates.map(t => t.id)));
+                      }}
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       All
@@ -1829,7 +1852,12 @@ function ScheduleTemplates() {
                 </div>
 
                 <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  {selectedTemplateIds.size} of {selectedTemplate.templates.length} template schedules selected
+                  {(() => {
+                    const filteredTemplates = selectedTemplate.templates.filter(t =>
+                      !selectedAgeCategory || !t.age_category || t.age_category === selectedAgeCategory
+                    );
+                    return `${selectedTemplateIds.size} of ${filteredTemplates.length} template schedules selected`;
+                  })()}
                   {customSchedules.length > 0 && `, ${customSchedules.length} custom schedule${customSchedules.length !== 1 ? 's' : ''} added`}
                 </div>
               </div>
