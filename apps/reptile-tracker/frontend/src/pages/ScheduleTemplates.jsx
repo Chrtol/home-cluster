@@ -858,6 +858,17 @@ function ScheduleTemplates() {
     return colors[type] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   }
 
+  function getTypeDisplayName(type) {
+    const displayNames = {
+      feeding: 'feeding',
+      misting: 'misting',
+      weighing: 'weighing',
+      supplement: 'supplement',
+      supplement_rotation: 'supplement rotation',
+    };
+    return displayNames[type] || type;
+  }
+
   // Get unique species and age categories from all templates
   const allSpecies = [...new Set(templates.map(t => t.species).filter(Boolean))];
   const uniqueAgeCategories = [...new Set(templates.map(t => t.age_category).filter(Boolean))];
@@ -1118,7 +1129,7 @@ function ScheduleTemplates() {
                             </h3>
                             <div className="flex flex-wrap gap-2 text-xs">
                               <span className={`px-2 py-0.5 rounded ${getTypeColor(template.schedule_type)}`}>
-                                {template.schedule_type}
+                                {getTypeDisplayName(template.schedule_type)}
                               </span>
                               {template.species && (
                                 <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
@@ -1508,7 +1519,7 @@ function ScheduleTemplates() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className={`px-2 py-0.5 rounded text-xs ${getTypeColor(template.schedule_type)}`}>
-                                  {template.schedule_type}
+                                  {getTypeDisplayName(template.schedule_type)}
                                 </span>
                                 <h4 className="font-medium text-gray-900 dark:text-gray-100">
                                   {template.name.split(' - ').pop()}
@@ -1610,7 +1621,7 @@ function ScheduleTemplates() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(schedule.schedule_type)}`}>
-                                        {schedule.schedule_type}
+                                        {getTypeDisplayName(schedule.schedule_type)}
                                       </span>
                                       {schedule.time_window_enabled && (
                                         <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -1715,7 +1726,7 @@ function ScheduleTemplates() {
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Schedule Type</h3>
                         <span className={`inline-block px-3 py-1 rounded ${getTypeColor(selectedTemplate.schedule_type)}`}>
-                          {selectedTemplate.schedule_type}
+                          {getTypeDisplayName(selectedTemplate.schedule_type)}
                         </span>
                       </div>
 
@@ -2071,7 +2082,7 @@ function ScheduleTemplates() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(template.schedule_type)}`}>
-                                  {template.schedule_type}
+                                  {getTypeDisplayName(template.schedule_type)}
                                 </span>
                                 <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
                                   {template.name.split(' - ').slice(1).join(' - ')}
