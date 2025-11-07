@@ -50,9 +50,10 @@ async def cleanup_duplicates():
             # Extract source from name
             parts = template.name.split(' - ')
 
-            # Check for templates that start with approved source but missing dash
-            # e.g., "Tropical Species Evening Misting" should be "Tropical Species - Evening Misting"
+            # Check for templates without proper source prefix (no dash at all)
             if len(parts) < 2:
+                # Check if it starts with an approved source but is missing dash
+                found_approved = False
                 for approved_source in approved_sources:
                     if template.name.startswith(approved_source + ' ') and approved_source in ['Tropical Species', 'The Bio Dude', 'Reptile Magazine']:
                         templates_to_delete.append(template)
@@ -60,7 +61,17 @@ async def cleanup_duplicates():
                         print(f"    ID: {template.id}, Name: '{template.name}'")
                         print(f"    Should be: '{approved_source} - {template.name[len(approved_source)+1:]}'")
                         print()
+                        found_approved = True
                         break
+
+                # If it doesn't start with approved source at all, it's an old template
+                if not found_approved:
+                    templates_to_delete.append(template)
+                    print(f"⚠️  Found template without proper source prefix:")
+                    print(f"    ID: {template.id}, Name: '{template.name}'")
+                    print(f"    Should have format: 'Source - Template Name'")
+                    print()
+                continue
 
             if len(parts) >= 2:
                 source = parts[0].strip()
