@@ -26,6 +26,8 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [calendarReptileFilter, setCalendarReptileFilter] = useState(new Set());
   const [showReptileFilter, setShowReptileFilter] = useState(false);
+  const [weeklyFeedings, setWeeklyFeedings] = useState([]);
+  const [weeklyMistings, setWeeklyMistings] = useState([]);
 
   // Load display settings on mount
   useEffect(() => {
@@ -189,6 +191,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (reptiles.length > 0) {
       fetchSchedules();
+      fetchWeeklyCompletions();
     }
   }, [reptiles]);
 
@@ -206,6 +209,44 @@ export default function Dashboard() {
       calculateWeeklyEvents(allSchedules);
     } catch (error) {
       console.error("Error fetching schedules:", error);
+    }
+  };
+
+  const fetchWeeklyCompletions = async () => {
+    try {
+      const today = new Date();
+      const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
+      const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+      const weekEnd = addDays(weekStart, 6);
+
+      // Fetch feedings and mistings for the week
+      const feedingPromises = reptiles.map(reptile =>
+        axios.get(`/api/feedings?reptile_id=${reptile.id}`)
+          .then(res => res.data.filter(f => {
+            const feedDate = new Date(f.fed_at);
+            return feedDate >= weekStart && feedDate <= weekEnd;
+          }))
+          .catch(() => [])
+      );
+
+      const mistingPromises = reptiles.map(reptile =>
+        axios.get(`/api/misting/reptile/${reptile.id}`)
+          .then(res => res.data.filter(m => {
+            const mistDate = new Date(m.misted_at);
+            return mistDate >= weekStart && mistDate <= weekEnd;
+          }))
+          .catch(() => [])
+      );
+
+      const [feedingResults, mistingResults] = await Promise.all([
+        Promise.all(feedingPromises),
+        Promise.all(mistingPromises)
+      ]);
+
+      setWeeklyFeedings(feedingResults.flat());
+      setWeeklyMistings(mistingResults.flat());
+    } catch (error) {
+      console.error("Error fetching weekly completions:", error);
     }
   };
 
@@ -278,11 +319,62 @@ export default function Dashboard() {
   const getEventsForDate = (date) => {
     if (!date) return [];
 
-    return weeklyEvents.filter(event => {
+    const scheduledEvents = weeklyEvents.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate.toDateString() === date.toDateString() &&
              calendarReptileFilter.has(event.reptile_id);
+    }).map(event => ({ ...event, is_completed: false }));
+
+    // Get actual completed feedings for this date
+    const actualFeedings = weeklyFeedings.filter(feeding => {
+      const feedDate = new Date(feeding.fed_at);
+      return feedDate.toDateString() === date.toDateString() &&
+             calendarReptileFilter.has(feeding.reptile_id);
     });
+
+    // Get actual completed mistings for this date
+    const actualMistings = weeklyMistings.filter(misting => {
+      const mistDate = new Date(misting.misted_at);
+      return mistDate.toDateString() === date.toDateString() &&
+             calendarReptileFilter.has(misting.reptile_id);
+    });
+
+    // Mark scheduled events as completed when there's a matching actual feeding/misting
+    actualFeedings.forEach(actual => {
+      let actualFoodCategory = null;
+      if (actual.is_salad) {
+        actualFoodCategory = 'salad';
+      } else if (actual.foods && actual.foods.length > 0) {
+        const firstFood = actual.foods[0];
+        actualFoodCategory = firstFood.food_category || 'insects';
+      }
+
+      const matchingSchedule = scheduledEvents.find(event =>
+        event.schedule_type === 'feeding' &&
+        event.reptile_id === actual.reptile_id &&
+        (!event.food_category || event.food_category === actualFoodCategory)
+      );
+
+      if (matchingSchedule) {
+        matchingSchedule.is_completed = true;
+        matchingSchedule.completed_at = actual.fed_at;
+      }
+    });
+
+    actualMistings.forEach(actual => {
+      const matchingSchedule = scheduledEvents.find(event =>
+        event.schedule_type === 'misting' &&
+        event.reptile_id === actual.reptile_id &&
+        !event.is_completed
+      );
+
+      if (matchingSchedule) {
+        matchingSchedule.is_completed = true;
+        matchingSchedule.completed_at = actual.misted_at;
+      }
+    });
+
+    return scheduledEvents;
   };
 
   const getScheduleTypeIcon = (type) => {
@@ -782,11 +874,18 @@ export default function Dashboard() {
                         return (
                           <div
                             key={idx}
-                            className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+                            className={`text-xs px-1.5 py-0.5 rounded bg-white dark:bg-gray-800 border ${
+                              event.is_completed
+                                ? 'border-green-500 dark:border-green-600'
+                                : 'border-gray-200 dark:border-gray-600'
+                            }`}
                             title={event.name || event.reptile_name}
                           >
                             <div className="flex items-center justify-between gap-1">
                               <div className="flex items-center gap-1 min-w-0 flex-1">
+                                {event.is_completed && (
+                                  <span className="text-green-600 dark:text-green-400 text-[10px] font-bold flex-shrink-0">✓</span>
+                                )}
                                 <Icon size={10} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
                                 <span className="truncate text-gray-700 dark:text-gray-300">
                                   {event.reptile_name}
@@ -1143,13 +1242,20 @@ export default function Dashboard() {
                     return (
                       <div
                         key={idx}
-                        className="px-4 py-3 rounded-lg border-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                        className={`px-4 py-3 rounded-lg border-2 ${
+                          event.is_completed
+                            ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
+                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                        }`}
                       >
                         <div className="flex items-center gap-3 mb-3">
                           <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
                             <TypeIcon size={20} />
                           </div>
                           <div className="flex items-center gap-2 flex-1">
+                            {event.is_completed && (
+                              <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                            )}
                             <div className="font-semibold text-gray-900 dark:text-white">
                               {displayName}
                             </div>
