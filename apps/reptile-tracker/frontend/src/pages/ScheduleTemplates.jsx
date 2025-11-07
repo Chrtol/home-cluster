@@ -1210,7 +1210,12 @@ function ScheduleTemplates() {
                           className="px-4 py-2 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
                         >
                           {reptiles.map(reptile => {
-                            const isMatchingSpecies = selectedTemplate?.species && typeof selectedTemplate.species === 'string' && reptile.species && typeof reptile.species === 'string' && reptile.species.toLowerCase() === selectedTemplate.species.toLowerCase();
+                            // Handle both single species (string) and grouped templates (array)
+                            const isMatchingSpecies = selectedTemplate?.species && reptile.species && typeof reptile.species === 'string' && (
+                              Array.isArray(selectedTemplate.species)
+                                ? selectedTemplate.species.some(s => typeof s === 'string' && s.toLowerCase() === reptile.species.toLowerCase())
+                                : typeof selectedTemplate.species === 'string' && reptile.species.toLowerCase() === selectedTemplate.species.toLowerCase()
+                            );
                             return (
                               <option key={reptile.id} value={reptile.id}>
                                 {isMatchingSpecies ? '✓ ' : ''}{reptile.name} ({reptile.species})
@@ -1279,7 +1284,12 @@ function ScheduleTemplates() {
                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
                             {reptiles.length > 0 ? (
                               reptiles.map(reptile => {
-                                const isMatchingSpecies = selectedTemplate?.species && typeof selectedTemplate.species === 'string' && reptile.species && typeof reptile.species === 'string' && reptile.species.toLowerCase() === selectedTemplate.species.toLowerCase();
+                                // Handle both single species (string) and grouped templates (array)
+                                const isMatchingSpecies = selectedTemplate?.species && reptile.species && typeof reptile.species === 'string' && (
+                                  Array.isArray(selectedTemplate.species)
+                                    ? selectedTemplate.species.some(s => typeof s === 'string' && s.toLowerCase() === reptile.species.toLowerCase())
+                                    : typeof selectedTemplate.species === 'string' && reptile.species.toLowerCase() === selectedTemplate.species.toLowerCase()
+                                );
                                 return (
                                   <button
                                     key={reptile.id}
@@ -1369,16 +1379,6 @@ function ScheduleTemplates() {
                               >
                                 No UVB Lighting
                               </button>
-                              <button
-                                onClick={() => setViewModalManualUvb(null)}
-                                className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                  viewModalManualUvb === null
-                                    ? 'bg-purple-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                                }`}
-                              >
-                                Show All Supplements
-                              </button>
                             </div>
                           </div>
 
@@ -1395,7 +1395,11 @@ function ScheduleTemplates() {
                                     onClick={() => {
                                       setViewModalAgeCategory(age);
                                     }}
-                                    className="w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+                                    className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                      viewModalAgeCategory === age
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                    }`}
                                   >
                                     {age.charAt(0).toUpperCase() + age.slice(1)}
                                   </button>
