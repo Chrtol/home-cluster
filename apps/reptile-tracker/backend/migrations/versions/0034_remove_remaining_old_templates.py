@@ -46,7 +46,14 @@ def upgrade():
             'ReptiFiles - Adult Bearded Dragon Calcium',
             'ReptiFiles - Juvenile Bearded Dragon Calcium',
             'ReptiFiles - Hatchling Bearded Dragon Calcium',
-            'ReptiFiles - Gravid Female Bearded Dragon Calcium'
+            'ReptiFiles - Gravid Female Bearded Dragon Calcium',
+
+            -- Old Leopard Gecko templates with outdated naming
+            'ReptiFiles - Adult Leopard Gecko Every Other Day Feeding',
+            'Adult Leopard Gecko Every Other Day Feeding',
+            'Adult Leopard Gecko Feeding',
+            'Juvenile Leopard Gecko Feeding',
+            'Hatchling Leopard Gecko Feeding'
         )
     """)
 
