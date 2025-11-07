@@ -271,6 +271,17 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `POST /api/schedules/completions/{completion_id}/complete` - Mark completion as complete
 - `POST /api/schedules/completions/{completion_id}/skip` - Skip a scheduled occurrence
 
+### Schedule Templates
+- `GET /api/schedule-templates` - List all templates with optional filtering
+- `GET /api/schedule-templates/{id}` - Get template details
+- `POST /api/schedule-templates` - Create new template
+- `PUT /api/schedule-templates/{id}` - Update template
+- `DELETE /api/schedule-templates/{id}` - Delete template
+- `POST /api/schedule-templates/{id}/duplicate` - Duplicate a template
+- `POST /api/schedule-templates/{id}/apply/{reptile_id}` - Apply template to reptile
+- `GET /api/schedule-templates/export` - Export user's templates as JSON
+- `POST /api/schedule-templates/import` - Import templates from JSON
+
 ### Supplement Rotations
 - `GET /api/rotations/reptile/{reptile_id}` - List rotations for a reptile
 - `POST /api/rotations` - Create rotation
@@ -346,11 +357,20 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
    - Reptile filtering
    - Completion status indicators
    - Quick completion actions
-9. **Settings**: Multi-tab configuration
+9. **Schedule Templates**: Browse and apply pre-configured care schedules
+   - ReptiFiles-curated templates for common species
+   - Grouped by species and source with visual organization
+   - Filter by reptile to see matching templates
+   - Apply multiple templates at once to a reptile
+   - Customize parameters before applying (frequency, days, time windows)
+   - Create, edit, duplicate, and delete custom templates
+   - Export/import templates as JSON for sharing
+   - Supplement rotation templates integration
+10. **Settings**: Multi-tab configuration
    - Display: Card/chart management, interpolation modes, chart appearance
    - Date & Time: Format preferences, timezone, first day of week
    - Household: Member management, invitations, role assignment
-10. **Health Logging**: Multiple log types with unified interface
+11. **Health Logging**: Multiple log types with unified interface
    - Weight logs with read-only view
    - Feeding logs with food details
    - Misting logs with time-of-day tracking
