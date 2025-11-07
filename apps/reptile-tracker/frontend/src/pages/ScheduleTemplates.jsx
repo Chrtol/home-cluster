@@ -1356,7 +1356,7 @@ function ScheduleTemplates() {
                           {/* UVB Setup Selection */}
                           <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              UVB Setup (optional)
+                              UVB Setup
                             </label>
                             <div className="space-y-2">
                               <button
@@ -1370,11 +1370,40 @@ function ScheduleTemplates() {
                                 Has UVB Lighting
                               </button>
                               <button
-                                onClick={() => setViewModalManualUvb(false)}
+                                onClick={() => {
+                                  // Check if species requires UVB
+                                  const speciesArray = Array.isArray(selectedTemplate.species)
+                                    ? selectedTemplate.species
+                                    : [selectedTemplate.species];
+                                  const requiresUvb = speciesArray.some(s =>
+                                    typeof s === 'string' && s.toLowerCase().includes('bearded dragon')
+                                  );
+                                  if (!requiresUvb) {
+                                    setViewModalManualUvb(false);
+                                  }
+                                }}
+                                disabled={(() => {
+                                  const speciesArray = Array.isArray(selectedTemplate.species)
+                                    ? selectedTemplate.species
+                                    : [selectedTemplate.species];
+                                  return speciesArray.some(s =>
+                                    typeof s === 'string' && s.toLowerCase().includes('bearded dragon')
+                                  );
+                                })()}
                                 className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                   viewModalManualUvb === false
                                     ? 'bg-purple-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                    : (() => {
+                                        const speciesArray = Array.isArray(selectedTemplate.species)
+                                          ? selectedTemplate.species
+                                          : [selectedTemplate.species];
+                                        const requiresUvb = speciesArray.some(s =>
+                                          typeof s === 'string' && s.toLowerCase().includes('bearded dragon')
+                                        );
+                                        return requiresUvb
+                                          ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20';
+                                      })()
                                 }`}
                               >
                                 No UVB Lighting
