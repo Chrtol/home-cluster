@@ -71,7 +71,7 @@ function ScheduleTemplates() {
 
       // Find template species that match household species (case-insensitive)
       const matchedSpecies = allTemplateSpecies.filter(templateSpecies =>
-        householdSpecies.includes(templateSpecies.toLowerCase())
+        typeof templateSpecies === 'string' && householdSpecies.includes(templateSpecies.toLowerCase())
       );
 
       setSpeciesFilter(matchedSpecies);
