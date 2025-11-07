@@ -95,6 +95,15 @@ async def startup_event():
         await seed_database(session)
     logger.info("Default foods and supplements seeded")
 
+    # Clean up duplicate templates after seeding
+    async with async_session_maker() as session:
+        from app.cleanup_templates import cleanup_duplicate_templates
+        deleted_count = await cleanup_duplicate_templates(session)
+        if deleted_count > 0:
+            logger.info(f"Cleaned up {deleted_count} duplicate templates")
+        else:
+            logger.info("No duplicate templates found")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
