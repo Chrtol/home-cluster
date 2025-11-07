@@ -117,7 +117,7 @@ function ScheduleTemplates() {
 
     // Filter by species (multi-select) - case-insensitive
     if (speciesFilter.length > 0) {
-      const lowerCaseFilters = speciesFilter.map(s => s.toLowerCase());
+      const lowerCaseFilters = speciesFilter.filter(s => typeof s === 'string').map(s => s.toLowerCase());
       filtered = filtered.filter(t =>
         !t.species || (typeof t.species === 'string' && lowerCaseFilters.includes(t.species.toLowerCase()))
       );
