@@ -63,6 +63,12 @@ def upgrade():
             'ReptiFiles - Juvenile Bearded Dragon Daily Feeding',            -- replaced by: Daily Insects
             'ReptiFiles - Juvenile Bearded Dragon Daily Salad',              -- replaced by: Daily Vegetables
 
+            -- Even older templates without ReptiFiles prefix
+            'Juvenile Bearded Dragon Daily Feeding',                         -- replaced by: ReptiFiles - Juvenile Bearded Dragon Daily Insects
+            'Juvenile Bearded Dragon Daily Salad',                           -- replaced by: ReptiFiles - Juvenile Bearded Dragon Daily Vegetables
+            'Adult Bearded Dragon Insects',                                  -- replaced by: ReptiFiles - Adult Bearded Dragon Insects
+            'Adult Bearded Dragon Daily Salad',                              -- replaced by: ReptiFiles - Adult Bearded Dragon Vegetables
+
             -- Old Leopard Gecko templates (replaced by simpler naming)
             'ReptiFiles - Adult Leopard Gecko Every Other Day Feeding',      -- replaced by: Feeding
 
