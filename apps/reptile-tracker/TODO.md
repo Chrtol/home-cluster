@@ -152,6 +152,20 @@
   - Backend: Event calculation based on all rule types ✅
   - Backend: Supplement assignment to schedules ✅
 
+- [x] **Schedule Templates system** - ✅ COMPLETED
+  - Backend: ScheduleTemplate model with species/age filtering
+  - Backend: Full CRUD API at /api/schedule-templates
+  - Backend: Template duplication and application to reptiles
+  - Backend: Export/import templates as JSON
+  - Backend: Seeded ReptiFiles-curated templates for common species
+  - Frontend: Complete ScheduleTemplates.jsx page
+  - Frontend: Browse templates grouped by species and source
+  - Frontend: Filter templates by reptile to show matches
+  - Frontend: Apply multiple templates at once with customization
+  - Frontend: Edit, duplicate, and delete templates
+  - Frontend: Export/import functionality
+  - Frontend: Integration with supplement rotation templates
+
 ## 📊 Statistics & Analytics
 
 ### Statistics Page - 🎯 CRITICAL PRIORITY (Tier 1)
@@ -582,14 +596,6 @@
   - Icon-only buttons with tooltips (Weight, Feeding, Misting, Health)
   - Color-coded active states matching data types
   - Removed separate filter card, all controls now in header
-
-- [x] **Advanced scheduling system** - ✅ COMPLETED
-  - Full support for all schedule rule types (every X days, days of week, monthly, dependent)
-  - Dependent schedule rules: every occurrence, every Nth, specific days, once per day
-  - Schedule types: feeding, misting, weighing, supplement
-  - Complete frontend UI for creating and editing schedules
-  - Calendar event calculation and display
-  - Supplement assignment to schedules
 
 - [x] **Fixed session timeout** - ✅ COMPLETED
   - Updated ACCESS_TOKEN_EXPIRE_MINUTES from 15 to 1440 (24 hours)
