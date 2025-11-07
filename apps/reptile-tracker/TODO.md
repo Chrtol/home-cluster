@@ -445,7 +445,37 @@
   - Filter state persisted in localStorage
   - All categories shown by default
 
-### January 2025 - Supplement Rotation System & Calendar Improvements
+### January 2025 - Supplement Rotation Template System & UI Improvements (2025-01-07)
+- [x] **Supplement rotation templates** - ✅ COMPLETED
+  - Full migration from supplement schedule templates to supplement rotation templates
+  - Backend: New `supplement_rotation_templates` table (migration 0037)
+  - Backend: Deleted old supplement schedule templates from database (migration 0038)
+  - Backend: SupplementRotationTemplate model with species/age/UVB filtering
+  - Backend: API router at `/api/supplement-rotation-templates` with list, filter, match, and apply endpoints
+  - Backend: Seeded 25+ rotation templates for bearded dragons, leopard geckos, crested geckos
+  - Frontend: Integrated rotation templates into ScheduleTemplates page
+  - Frontend: Rotations appear alongside schedule templates in same ReptiFiles groups
+  - Frontend: Apply modal supports both schedules and rotations together
+  - Frontend: Editable rotation parameters (trigger mode, frequency, schedule days)
+  - Frontend: Display "supplement rotation" instead of "supplement_rotation" in UI
+  - Frontend: Auto-fill reptile and life stage in apply modal from view modal selection
+  - Frontend: Enhanced editing - change schedule rule types, edit feeding counts, edit frequency
+  - Exclusive supplement mode (only highest priority applies per feeding)
+  - Calcium powder application to ALL feedings (insects and salads) for bearded dragons
+  - Support for complex patterns (calcium daily, multivitamin weekly, calcium with D3 bi-weekly)
+
+- [x] **Template modal UI improvements** - ✅ COMPLETED (2025-01-07)
+  - Moved Edit and Duplicate buttons to template modal header alongside title
+  - Buttons positioned at same height as template title for better layout
+  - Responsive design: shows icon + text on larger screens, icon-only on mobile
+  - Removed duplicate buttons from bottom of modal
+  - Improved visual hierarchy and space utilization
+
+- [x] **Dashboard recent activity spacing fix** - ✅ COMPLETED (2025-01-07)
+  - Increased prominent value column width from 48px to 64px
+  - Fixed spacing issues with 2-decimal weight values (e.g., "59.43g")
+  - Prevents weight values from running into reptile names
+
 - [x] **Schedule-based supplement rotation triggers** - ✅ COMPLETED (2025-01-16)
   - Two trigger modes: feeding_count (every N feedings) and schedule_based (specific days)
   - Day-of-week rotation support for time-based supplements (e.g., multivitamin 2x/week)

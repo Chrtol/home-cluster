@@ -12,7 +12,7 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 📊 **Weight Tracking**: Monitor weight trends with graphical visualization and interpolation
 - 🏥 **Health Records**: Track vet visits, medication, and observations
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
-- 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods
+- 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
 - 🔔 **Notifications**: Webhook support for Discord/Pushover notifications
 - 📈 **Statistics**: Comprehensive analytics with customizable charts and layouts
 - ⚙️ **Display Customization**: Drag-and-drop card management and chart settings
@@ -58,7 +58,9 @@ apps/reptile-tracker/
 │   │   ├── auth.py         # Authentication
 │   │   ├── permissions.py  # Access control
 │   │   ├── notifications.py # Webhook notifications
-│   │   ├── seed_data.py    # Default foods/supplements
+│   │   ├── seed_data.py    # Database seeding coordinator
+│   │   ├── seed_schedules.py    # Schedule template seeding
+│   │   ├── seed_supplement_rotations.py    # Supplement rotation template seeding
 │   │   ├── database.py     # Database setup
 │   │   ├── config.py       # Configuration
 │   │   └── main.py         # FastAPI app
@@ -277,6 +279,12 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `DELETE /api/rotations/{id}` - Delete rotation
 - `POST /api/rotations/{id}/advance` - Manually advance rotation
 
+### Supplement Rotation Templates
+- `GET /api/supplement-rotation-templates` - List all templates with optional filtering
+- `GET /api/supplement-rotation-templates/{id}` - Get template details
+- `GET /api/supplement-rotation-templates/match/{reptile_id}` - Get templates matching a reptile
+- `POST /api/supplement-rotation-templates/apply` - Apply templates to a reptile
+
 ### Misting Logs
 - `GET /api/misting/reptile/{id}` - List misting logs
 - `POST /api/misting` - Log misting
@@ -370,6 +378,13 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
   - Trigger modes: manual, schedule-based, feeding-based
   - Exclusive mode (only rotate items, don't add others)
   - Rotation state tracking per reptile
+  - **Supplement Rotation Templates**:
+    - Pre-configured templates for common species (bearded dragons, leopard geckos, crested geckos)
+    - Species, age, and UVB lighting filtering
+    - Integration with Schedule Templates page
+    - Browse and apply templates to reptiles with one click
+    - Editable parameters (trigger mode, frequency, days of week)
+    - Supports complex patterns (e.g., calcium daily, multivitamin weekly, calcium with D3 bi-weekly)
 - **Weight Interpolation**:
   - Linear interpolation between measurements
   - Step interpolation (flat line from last known)
