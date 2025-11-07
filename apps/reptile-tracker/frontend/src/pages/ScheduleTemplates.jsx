@@ -86,13 +86,33 @@ function ScheduleTemplates() {
   async function loadData() {
     try {
       setLoading(true);
-      const [templatesData, reptilesData] = await Promise.all([
+      const [templatesData, supplementRotationsData, reptilesData] = await Promise.all([
         api.listScheduleTemplates({}),
+        axios.get(`${API_BASE_URL}/api/supplement-rotation-templates`, { withCredentials: true }),
         axios.get(`${API_BASE_URL}/api/reptiles`, { withCredentials: true }),
       ]);
 
+      // Convert supplement rotation templates to schedule template format for display
+      const rotationsAsTemplates = supplementRotationsData.data.map(rotation => ({
+        ...rotation,
+        name: rotation.name, // Already has proper name from backend
+        schedule_type: 'supplement_rotation', // Mark as rotation
+        schedule_rule: rotation.trigger_mode === 'feeding_count' ? 'feeding_count' : 'days_of_week',
+        frequency_days: rotation.every_n_feedings,
+        days_of_week: rotation.schedule_days_of_week,
+        source_name: rotation.source_name,
+        source_url: rotation.source_url,
+        is_default: rotation.is_default,
+        // Keep rotation-specific fields
+        _isRotation: true,
+        _rotationData: rotation,
+      }));
+
+      // Merge schedule templates and supplement rotations
+      const allTemplates = [...templatesData, ...rotationsAsTemplates];
+
       // Normalize template species to ensure it's always a string
-      const normalizedTemplates = templatesData.map(t => ({
+      const normalizedTemplates = allTemplates.map(t => ({
         ...t,
         species: typeof t.species === 'string' ? t.species : String(t.species || '')
       }));
@@ -132,7 +152,12 @@ function ScheduleTemplates() {
 
     // Filter by schedule type
     if (scheduleTypeFilter) {
-      filtered = filtered.filter(t => t.schedule_type === scheduleTypeFilter);
+      if (scheduleTypeFilter === 'supplement') {
+        // Include both old supplement schedules and new supplement rotations
+        filtered = filtered.filter(t => t.schedule_type === 'supplement' || t.schedule_type === 'supplement_rotation');
+      } else {
+        filtered = filtered.filter(t => t.schedule_type === scheduleTypeFilter);
+      }
     }
 
     // Filter by defaults
@@ -561,14 +586,18 @@ function ScheduleTemplates() {
         templatesToApply = [selectedTemplate];
       }
 
+      // Separate supplement rotations from regular schedules
+      const scheduleTemplates = templatesToApply.filter(t => t.schedule_type !== 'supplement_rotation');
+      const rotationTemplates = templatesToApply.filter(t => t.schedule_type === 'supplement_rotation');
+
       // Track created schedule IDs (map template IDs to created schedule IDs)
       const createdScheduleIds = {};
       let parentScheduleId = null;
       let totalCreated = 0;
 
       // Step 1: Create all template schedules
-      for (let i = 0; i < templatesToApply.length; i++) {
-        const template = templatesToApply[i];
+      for (let i = 0; i < scheduleTemplates.length; i++) {
+        const template = scheduleTemplates[i];
         const edits = templateEdits[template.id] || {};
         const hasEdits = Object.keys(edits).length > 0;
 
@@ -666,8 +695,20 @@ function ScheduleTemplates() {
         totalCreated++;
       }
 
+      // Step 3: Apply supplement rotation templates
+      if (rotationTemplates.length > 0) {
+        const rotationIds = rotationTemplates.map(t => t._rotationData.id);
+        await axios.post(`${API_BASE_URL}/api/supplement-rotation-templates/apply`, {
+          reptile_id: parseInt(selectedReptile),
+          template_ids: rotationIds
+        }, {
+          withCredentials: true
+        });
+        totalCreated += rotationTemplates.length;
+      }
+
       const message = totalCreated > 1
-        ? `Successfully created ${totalCreated} schedules!`
+        ? `Successfully created ${totalCreated} schedules and rotations!`
         : 'Schedule created successfully!';
       alert(message);
 
@@ -714,7 +755,7 @@ function ScheduleTemplates() {
   // Filter templates based on reptile's UVB lighting setup
   function shouldIncludeTemplate(template, reptileHasUvb) {
     // Non-supplement templates are always included
-    if (template.schedule_type !== 'supplement') {
+    if (template.schedule_type !== 'supplement' && template.schedule_type !== 'supplement_rotation') {
       return true;
     }
 
@@ -812,6 +853,7 @@ function ScheduleTemplates() {
       misting: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
       weighing: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
       supplement: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+      supplement_rotation: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
     };
     return colors[type] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   }
@@ -1031,7 +1073,7 @@ function ScheduleTemplates() {
                       <div key={template.id} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <span className={`w-2 h-2 rounded-full ${
                           template.schedule_type === 'feeding' ? 'bg-orange-500' :
-                          template.schedule_type === 'supplement' ? 'bg-green-500' :
+                          template.schedule_type === 'supplement' || template.schedule_type === 'supplement_rotation' ? 'bg-green-500' :
                           template.schedule_type === 'misting' ? 'bg-blue-500' :
                           template.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
                         }`}></span>
@@ -1561,7 +1603,7 @@ function ScheduleTemplates() {
                                 <div key={schedIdx} className="flex items-start gap-2">
                                   <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
                                     schedule.schedule_type === 'feeding' ? 'bg-orange-500' :
-                                    schedule.schedule_type === 'supplement' ? 'bg-green-500' :
+                                    schedule.schedule_type === 'supplement' || schedule.schedule_type === 'supplement_rotation' ? 'bg-green-500' :
                                     schedule.schedule_type === 'misting' ? 'bg-blue-500' :
                                     schedule.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
                                   }`}></div>
