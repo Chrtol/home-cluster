@@ -393,8 +393,8 @@ function ScheduleTemplates() {
 
   async function openApplyModal() {
     setViewModalOpen(false);
-    setSelectedReptile('');
-    // Auto-populate age from view modal selection
+    // Auto-populate reptile and age from view modal selection
+    setSelectedReptile(viewModalReptile || '');
     setSelectedAgeCategory(viewModalAgeCategory);
 
     // Initialize all templates as selected, filtered by age if applicable
@@ -1701,12 +1701,30 @@ function ScheduleTemplates() {
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={closeViewModal}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <X size={24} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate(`/schedule-templates/edit/${selectedTemplate.id}`)}
+                      className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                      title="Edit template"
+                    >
+                      <Edit size={16} />
+                      <span className="hidden sm:inline">Edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDuplicate(selectedTemplate.id)}
+                      className="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                      title="Duplicate template"
+                    >
+                      <Copy size={16} />
+                      <span className="hidden sm:inline">Duplicate</span>
+                    </button>
+                    <button
+                      onClick={closeViewModal}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2"
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Two Column Layout */}
@@ -1897,22 +1915,6 @@ function ScheduleTemplates() {
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       Customize & Apply
-                    </button>
-
-                    <button
-                      onClick={() => handleDuplicate(selectedTemplate.id)}
-                      className="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                    >
-                      <Copy size={16} />
-                      Duplicate
-                    </button>
-
-                    <button
-                      onClick={() => navigate(`/schedule-templates/edit/${selectedTemplate.id}`)}
-                      className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                    >
-                      <Edit size={16} />
-                      Edit
                     </button>
 
                     {!selectedTemplate.is_default && (
@@ -2198,7 +2200,7 @@ function ScheduleTemplates() {
                               </div>
 
                               {/* Schedule Rule (only show for non-dependent schedules) */}
-                              {(template.schedule_rule === 'every_x_days' || template.schedule_rule === 'days_of_week') && (
+                              {(template.schedule_rule === 'every_x_days' || template.schedule_rule === 'days_of_week' || template.schedule_rule === 'feeding_count') && (
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Schedule Rule
@@ -2208,9 +2210,26 @@ function ScheduleTemplates() {
                                     onChange={(e) => updateTemplateEdit(template.id, 'schedule_rule', e.target.value)}
                                     className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                   >
+                                    <option value="feeding_count">Every X Feedings</option>
                                     <option value="every_x_days">Every X Days</option>
                                     <option value="days_of_week">Specific Days of Week</option>
                                   </select>
+                                </div>
+                              )}
+
+                              {/* Feeding Count Frequency (for feeding_count schedules) */}
+                              {(displayData.schedule_rule || template.schedule_rule) === 'feeding_count' && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Every X Feedings
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={displayData.frequency_days || ''}
+                                    onChange={(e) => updateTemplateEdit(template.id, 'frequency_days', parseInt(e.target.value))}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  />
                                 </div>
                               )}
 
