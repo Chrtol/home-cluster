@@ -91,7 +91,13 @@ function ScheduleTemplates() {
         axios.get(`${API_BASE_URL}/api/reptiles`, { withCredentials: true }),
       ]);
 
-      setTemplates(templatesData);
+      // Normalize template species to ensure it's always a string
+      const normalizedTemplates = templatesData.map(t => ({
+        ...t,
+        species: typeof t.species === 'string' ? t.species : String(t.species || '')
+      }));
+      setTemplates(normalizedTemplates);
+
       // Normalize reptile species to ensure it's always a string
       const normalizedReptiles = reptilesData.data.map(r => ({
         ...r,
@@ -113,7 +119,7 @@ function ScheduleTemplates() {
     if (speciesFilter.length > 0) {
       const lowerCaseFilters = speciesFilter.map(s => s.toLowerCase());
       filtered = filtered.filter(t =>
-        !t.species || lowerCaseFilters.includes(t.species.toLowerCase())
+        !t.species || (typeof t.species === 'string' && lowerCaseFilters.includes(t.species.toLowerCase()))
       );
     }
 
