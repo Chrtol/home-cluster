@@ -438,6 +438,64 @@ class FeedingRotation(Base):
     supplement = relationship("Supplement")
 
 
+class SupplementRotationTemplate(Base):
+    """Reusable supplement rotation templates that can be applied to reptiles"""
+    __tablename__ = "supplement_rotation_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Species and age filters (for matching to reptiles)
+    species = Column(String, nullable=True)  # e.g., "Bearded Dragon", null = all species
+    age_category = Column(String, nullable=True)  # hatchling, juvenile, adult, gravid, null = all
+
+    # UVB lighting requirement filter
+    uvb_lighting = Column(Boolean, nullable=True)  # true = requires UVB, false = no UVB, null = either
+
+    # Supplement reference
+    supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="CASCADE"), nullable=False)
+
+    # Trigger mode: how the rotation is triggered
+    trigger_mode = Column(String, nullable=False, default="feeding_count")  # "feeding_count" or "schedule_based"
+
+    # For feeding_count trigger mode
+    every_n_feedings = Column(Integer, nullable=True)
+    counting_mode = Column(String, nullable=True, default="all_feedings")  # "category_only" or "all_feedings"
+
+    # For schedule_based trigger mode
+    schedule_days_of_week = Column(String, nullable=True)  # "0,1,3" for Sun, Mon, Wed
+    schedule_frequency_days = Column(Integer, nullable=True)  # For bi-weekly patterns (e.g., 14)
+
+    # Category filter
+    applies_to_category = Column(String, nullable=True)  # "insects", "salad", "mixed", "all", null = all
+
+    # Application mode
+    application_mode = Column(String, nullable=False, default="any_feeding")  # "any_feeding" or "specific_occurrence"
+
+    # Priority (1 = highest)
+    priority = Column(Integer, nullable=False, default=10)
+
+    # Exclusive mode
+    is_exclusive = Column(Boolean, default=True, nullable=False)
+
+    # Source information
+    source_name = Column(String, nullable=True)  # e.g., "ReptiFiles", "The Bio Dude"
+    source_url = Column(String, nullable=True)
+
+    # Notes
+    notes = Column(Text, nullable=True)
+
+    # Default template flag
+    is_default = Column(Boolean, default=False, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    supplement = relationship("Supplement")
+
+
 class NotificationSettings(Base):
     __tablename__ = "notification_settings"
 

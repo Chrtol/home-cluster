@@ -555,6 +555,68 @@ class FeedingRotationWithDetails(FeedingRotation):
     supplement: Optional[Supplement] = None
 
 
+# Supplement Rotation Template schemas
+class SupplementRotationTemplateBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    species: Optional[str] = None
+    age_category: Optional[str] = None
+    uvb_lighting: Optional[bool] = None
+    supplement_id: int
+    trigger_mode: str = "feeding_count"
+    every_n_feedings: Optional[int] = None
+    counting_mode: Optional[str] = "all_feedings"
+    schedule_days_of_week: Optional[str] = None
+    schedule_frequency_days: Optional[int] = None
+    applies_to_category: Optional[str] = None
+    application_mode: str = "any_feeding"
+    priority: int = 10
+    is_exclusive: bool = True
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class SupplementRotationTemplateCreate(SupplementRotationTemplateBase):
+    pass
+
+
+class SupplementRotationTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    species: Optional[str] = None
+    age_category: Optional[str] = None
+    uvb_lighting: Optional[bool] = None
+    supplement_id: Optional[int] = None
+    trigger_mode: Optional[str] = None
+    every_n_feedings: Optional[int] = None
+    counting_mode: Optional[str] = None
+    schedule_days_of_week: Optional[str] = None
+    schedule_frequency_days: Optional[int] = None
+    applies_to_category: Optional[str] = None
+    application_mode: Optional[str] = None
+    priority: Optional[int] = None
+    is_exclusive: Optional[bool] = None
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class SupplementRotationTemplate(SupplementRotationTemplateBase):
+    id: int
+    is_default: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SupplementRotationTemplateWithDetails(SupplementRotationTemplate):
+    """Supplement rotation template with supplement details"""
+    supplement: Optional[Supplement] = None
+
+
 # Schedule Template schemas
 class ScheduleTemplateBase(BaseModel):
     name: str
