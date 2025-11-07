@@ -772,4 +772,11 @@ async def seed_database(db: AsyncSession):
     except Exception as e:
         print(f"Note: Schedule seeding skipped (tables may not exist yet): {e}")
 
+    # Import and seed supplement rotation templates
+    try:
+        from app.seed_supplement_rotations import seed_supplement_rotation_data
+        await seed_supplement_rotation_data(db)
+    except Exception as e:
+        print(f"Note: Supplement rotation template seeding skipped (tables may not exist yet): {e}")
+
     print("Database seeded successfully!")
