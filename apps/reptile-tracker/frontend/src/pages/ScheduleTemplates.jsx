@@ -92,7 +92,12 @@ function ScheduleTemplates() {
       ]);
 
       setTemplates(templatesData);
-      setReptiles(reptilesData.data);
+      // Normalize reptile species to ensure it's always a string
+      const normalizedReptiles = reptilesData.data.map(r => ({
+        ...r,
+        species: typeof r.species === 'string' ? r.species : String(r.species || '')
+      }));
+      setReptiles(normalizedReptiles);
     } catch (error) {
       console.error('Error loading data:', error);
       alert('Failed to load schedule templates');

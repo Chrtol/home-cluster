@@ -251,7 +251,7 @@ export default function ReptileForm() {
                         placeholder="e.g., 25"
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Track your reptile's length for growth monitoring. For Bearded Dragons, age category is based on size ({`<30cm = juvenile, >30cm = adult`}).
+                        Track your reptile's length for growth monitoring. For Bearded Dragons, age category is based on size ({`<25cm = juvenile, >25cm = adult`}).
                     </p>
                 </div>
 
@@ -288,7 +288,7 @@ export default function ReptileForm() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {ageCategoryAuto
                             ? 'Used to recommend appropriate feeding and supplement schedules. Auto-calculated from date of birth and species (e.g., Leopard Geckos are adult at 12+ months).'
-                            : `Used to recommend appropriate feeding and supplement schedules. Set manually for size-based species like Bearded Dragons (<30cm = juvenile, >30cm = adult).`}
+                            : `Used to recommend appropriate feeding and supplement schedules. Set manually for size-based species like Bearded Dragons (<25cm = juvenile, >25cm = adult).`}
                     </p>
                 </div>
 
