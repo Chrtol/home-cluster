@@ -23,6 +23,15 @@ async def cleanup_duplicate_templates(session: AsyncSession) -> int:
 
     templates_to_delete = []
 
+    # Get valid template names from seed data
+    from app.seed_schedules import seed_schedule_templates
+    import inspect
+    source = inspect.getsource(seed_schedule_templates)
+
+    # Extract all template names from seed script
+    import re
+    valid_template_names = set(re.findall(r'name="([^"]+)"', source))
+
     # Approved sources
     approved_sources = [
         'ReptiFiles',
@@ -36,6 +45,11 @@ async def cleanup_duplicate_templates(session: AsyncSession) -> int:
     ]
 
     for template in templates:
+        # First check: if template name isn't in seed script, it's old/outdated
+        if template.name not in valid_template_names:
+            templates_to_delete.append(template)
+            continue
+
         # Extract source from name
         parts = template.name.split(' - ')
 
