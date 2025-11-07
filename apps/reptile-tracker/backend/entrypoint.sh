@@ -53,12 +53,6 @@ else
   else
     echo "alembic not installed; skipping migrations"
   fi
-
-  # Run cleanup script to remove duplicate templates
-  if [ -f /app/cleanup_duplicate_templates.py ]; then
-    echo "Running duplicate template cleanup..."
-    CONFIRM=yes python /app/cleanup_duplicate_templates.py || true
-  fi
 fi
 
 # Optional debug startup run - when set, run the app's init_db and seed steps
