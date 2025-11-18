@@ -39,6 +39,7 @@ spec:
       - --events
       - --ignore-ingress-tls-spec
       - --ingress-class=external
+      - --gateway-label-filter=dns-provider=external
       - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
       - --default-targets=${VPS_PUBLIC_IP}
       - --force-default-targets

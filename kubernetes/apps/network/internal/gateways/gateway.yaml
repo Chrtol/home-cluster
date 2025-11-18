@@ -4,6 +4,8 @@ kind: Gateway
 metadata:
   name: internal
   namespace: network
+  labels:
+    dns-provider: internal
 spec:
   gatewayClassName: cilium
   listeners:
