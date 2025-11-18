@@ -5,4 +5,3 @@ kind: Kustomization
 resources:
   - ./referencegrant.yaml
   - ./gateway.yaml
-  - ./http-redirect.yaml
