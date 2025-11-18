@@ -82,10 +82,20 @@ spec:
         ports:
           http:
             port: 32400
+    route:
+      server:
+        hostnames: ["plex-local.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
     ingress:
       app:
         enabled: false
-        # Disabled - using standalone ingress.yaml for VPS routing
     persistence:
       config:
         existingClaim: plex
