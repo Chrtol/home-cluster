@@ -43,7 +43,7 @@ spec:
       - --default-targets=${VPS_PUBLIC_IP}
       - --force-default-targets
     policy: sync
-    sources: ["crd", "ingress"]
+    sources: ["crd", "ingress", "gateway-httproute"]
     txtPrefix: k8s.
     txtOwnerId: default
     domainFilters: ["${SECRET_DOMAIN}"]
