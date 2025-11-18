@@ -84,7 +84,7 @@ spec:
             port: 32400
     route:
       server:
-        hostnames: ["plex.${SECRET_DOMAIN}", "plex-local.${SECRET_DOMAIN}"]
+        hostnames: ["plex-local.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
