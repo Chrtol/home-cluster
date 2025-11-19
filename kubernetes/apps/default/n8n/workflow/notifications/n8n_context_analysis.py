@@ -9,6 +9,21 @@ def get_routing_reason(source, severity, namespace, is_night, is_infra, is_media
             return 'Gatus service down during night - mobile alert + logging'
         else:
             return 'Gatus service recovered'
+    elif source == 'proxmox':
+        if severity == 'critical':
+            return 'Proxmox critical issue - infrastructure requires immediate attention'
+        elif is_backup:
+            return 'Proxmox backup notification - data protection update'
+        elif 'storage' in alert_name.lower() or 'disk' in alert_name.lower():
+            return 'Proxmox storage alert - capacity or health concern'
+        elif 'node' in alert_name.lower() or 'cluster' in alert_name.lower():
+            return 'Proxmox node/cluster alert - infrastructure stability'
+        elif 'replication' in alert_name.lower():
+            return 'Proxmox replication alert - data sync concern'
+        elif severity == 'warning':
+            return 'Proxmox warning - admin attention recommended'
+        else:
+            return 'Proxmox notification - informational'
     else:  # Alertmanager
         if severity == 'critical':
             return 'Critical alert - immediate attention required'
@@ -73,71 +88,115 @@ if source == 'gatus':
             routes.append('pushover_gatus')     # Normal mobile notification
     # Service recovered - just log it
 
+elif source == 'proxmox':
+    # Proxmox infrastructure monitoring
+    is_proxmox_backup = 'backup' in alertname.lower() or 'vzdump' in alertname.lower()
+    is_proxmox_storage = 'storage' in alertname.lower() or 'disk' in alertname.lower() or 'space' in alertname.lower()
+    is_proxmox_node = 'node' in alertname.lower() or 'cluster' in alertname.lower() or 'quorum' in alertname.lower()
+    is_proxmox_replication = 'replication' in alertname.lower() or 'sync' in alertname.lower()
+    is_proxmox_update = 'update' in alertname.lower() or 'upgrade' in alertname.lower()
+
+    # Critical Proxmox issues
+    if severity == 'critical':
+        routes.extend(['discord_admin', 'pushover_critical'])
+
+    # Storage issues are important
+    elif is_proxmox_storage and severity == 'warning':
+        routes.append('discord_admin')
+        if not is_night_time:
+            routes.append('pushover_gatus')
+
+    # Node/cluster issues
+    elif is_proxmox_node and severity in ['critical', 'warning']:
+        routes.append('discord_admin')
+        if severity == 'critical':
+            routes.append('pushover_critical')
+
+    # Backup failures during business hours
+    elif is_proxmox_backup and severity in ['critical', 'warning']:
+        routes.append('discord_admin')
+        if severity == 'critical' or (is_business_hours and severity == 'warning'):
+            routes.append('pushover_gatus')
+
+    # Replication issues
+    elif is_proxmox_replication and severity in ['critical', 'warning']:
+        routes.append('discord_admin')
+        if severity == 'critical':
+            routes.append('pushover_critical')
+
+    # Updates/info messages - discord only
+    elif is_proxmox_update or severity == 'info':
+        routes.append('discord_admin')
+
+    # Any other warning
+    elif severity == 'warning':
+        routes.append('discord_admin')
+
 elif source == 'alertmanager':
     # Alert-type based routing (comprehensive)
-    
+
     # Critical alerts always get full attention
     if severity == 'critical':
         routes.extend(['discord_admin', 'pushover_critical'])
-    
+
     # Important alert types that need attention even as warnings
     elif is_disk_space and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if severity == 'critical' or not is_night_time:
             routes.append('pushover_gatus')
-    
+
     elif is_certificate and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if not is_night_time:  # Cert issues during day
             routes.append('pushover_gatus')
-    
+
     elif is_node_issue and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if severity == 'critical':
             routes.append('pushover_critical')
-    
+
     elif is_memory_cpu and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if severity == 'critical':
             routes.append('pushover_critical')
-    
+
     elif is_database_issue and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if severity == 'critical':
             routes.append('pushover_critical')
-    
+
     elif is_security_issue and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         routes.append('pushover_gatus')  # Security always gets mobile notification
-    
+
     # Network issues
     elif is_network and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if severity == 'critical':
             routes.append('pushover_critical')
-    
+
     # Backup issues
     elif is_backup_related and severity in ['critical', 'warning']:
         routes.append('discord_admin')
         if severity == 'critical':
             routes.append('pushover_critical')
-    
+
     # Infrastructure warnings during business hours
     elif is_infrastructure and severity == 'warning' and is_business_hours:
         routes.append('discord_admin')
-    
+
     # Media services during active hours
     elif is_media and not is_night_time and severity != 'info':
         routes.append('discord_admin')
-    
+
     # Night time: warnings go to discord, critical alerts wake you up
     elif is_night_time and severity == 'warning':
         routes.append('discord_admin')
-    
+
     # Business hours: most warnings get discord notification
     elif severity == 'warning' and is_business_hours:
         routes.append('discord_admin')
-    
+
     # Catch-all: any other warning alerts get discord notification
     elif severity == 'warning':
         routes.append('discord_admin')
@@ -169,6 +228,7 @@ routing_context = {
 
 # Create final output with standardized alert data + routing context
 result = {
+    'source': source,  # Pass through the source field
     'labels': alert.get('labels', {}),
     'annotations': alert.get('annotations', {}),
     'status': {'state': alert.get('status', 'unknown')},
