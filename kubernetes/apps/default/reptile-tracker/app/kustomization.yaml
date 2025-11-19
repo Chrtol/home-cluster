@@ -5,3 +5,6 @@ namespace: default
 resources:
   - ./helmrelease.yaml
   - ./externalsecret.yaml
+  - ./imagerepository.yaml
+  - ./imagepolicy.yaml
+  - ./imageupdateautomation.yaml

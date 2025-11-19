@@ -1,0 +1,18 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: reptile-tracker-backend
+  namespace: flux-system
+spec:
+  image: ghcr.io/chrtol/reptile-tracker-backend
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: reptile-tracker-frontend
+  namespace: flux-system
+spec:
+  image: ghcr.io/chrtol/reptile-tracker-frontend
+  interval: 1m
