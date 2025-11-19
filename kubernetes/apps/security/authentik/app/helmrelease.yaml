@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: authentik
-      version: 2025.10.0
+      version: 2025.10.2
       sourceRef:
         kind: HelmRepository
         name: authentik
@@ -40,6 +40,9 @@ spec:
     authentik:
       redis:
           host: dragonfly.database.svc.cluster.local
+      blueprints:
+        - configMapRef:
+            name: authentik-discord-blueprint
     server:
       replicas: 1
       initContainers:
