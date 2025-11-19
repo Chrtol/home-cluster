@@ -6,3 +6,4 @@ resources:
   - ./ingress.yaml
   - ./externalsecret.yaml
   - ./helmrelease.yaml
+  - ./configmap.yaml
