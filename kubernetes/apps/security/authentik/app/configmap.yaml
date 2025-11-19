@@ -25,17 +25,3 @@ data:
         mode: webhook
         webhook_url: !Env DISCORD_WEBHOOK_URL
         send_once: false
-
-    # Update notification rule to use Discord
-    - identifiers:
-        name: default-notify-update-available
-      model: authentik_events.notificationrule
-      state: present
-      attrs:
-        name: Notify about updates
-        group: !KeyOf authentik_core.group
-          by-id: !Find [authentik_core.group, [name, authentik Admins]]
-        transports:
-          - !KeyOf authentik_events.notificationtransport
-            by-id: !Find [authentik_events.notificationtransport, [name, discord-webhook]]
-        severity: notice
