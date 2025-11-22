@@ -101,8 +101,8 @@ spec:
           volumes:
           - name: repository
             nfs:
-              server: 10.0.30.19
-              path: /mnt/naspool/k8s-backup
+              server: nas.${SECRET_DOMAIN}
+              path: /mnt/truenas/cf-nas/backup
           - name: plex-secret
             secret:
               secretName: plex-secret
