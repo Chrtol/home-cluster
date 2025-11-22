@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: restic-unlock
-  namespace: volsync-system
+  namespace: media
 spec:
   schedule: "30 2 * * *"  # Run at 2:30 AM daily, before backups at 3 AM
   concurrencyPolicy: Forbid
