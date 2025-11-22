@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: restic-unlock
-  namespace: media
+  namespace: volsync-system
 spec:
   schedule: "30 2 * * *"  # Run at 2:30 AM daily, before backups at 3 AM
   concurrencyPolicy: Forbid
@@ -26,128 +26,43 @@ spec:
               set -e
               echo "Starting restic unlock for all repositories..."
 
+              # Use shared restic password for all repositories
+              export RESTIC_PASSWORD
+
               # Function to unlock a repository
               unlock_repo() {
                 local repo_path=$1
-                local secret_name=$2
-                local namespace=$3
-
                 echo "Unlocking $repo_path..."
                 export RESTIC_REPOSITORY="/repository$repo_path"
-
-                # Get password from mounted secret
-                if [ -f "/secrets/$secret_name/RESTIC_PASSWORD" ]; then
-                  export RESTIC_PASSWORD=$(cat /secrets/$secret_name/RESTIC_PASSWORD)
-                  restic unlock || echo "Failed to unlock $repo_path (may not be locked)"
-                else
-                  echo "Secret not found for $repo_path, skipping..."
-                fi
+                restic unlock || echo "No lock found or unlock failed for $repo_path"
               }
 
               # Unlock all repositories
-              unlock_repo "/plex" "plex-secret" "media"
-              unlock_repo "/prowlarr" "prowlarr-secret" "media"
-              unlock_repo "/sonarr" "sonarr-secret" "media"
-              unlock_repo "/radarr" "radarr-secret" "media"
-              unlock_repo "/bazarr" "bazarr-secret" "media"
-              unlock_repo "/sabnzbd" "sabnzbd-secret" "media"
-              unlock_repo "/qbittorrent" "qbittorrent-secret" "media"
-              unlock_repo "/qbittorrent-private" "qbittorrent-private-secret" "media"
-              unlock_repo "/jellyseerr" "jellyseerr-secret" "media"
-              unlock_repo "/tautulli" "tautulli-secret" "media"
-              unlock_repo "/wizarr" "wizarr-secret" "media"
-              unlock_repo "/cleanuparr" "cleanuparr-secret" "media"
+              unlock_repo "/plex"
+              unlock_repo "/prowlarr"
+              unlock_repo "/sonarr"
+              unlock_repo "/radarr"
+              unlock_repo "/bazarr"
+              unlock_repo "/sabnzbd"
+              unlock_repo "/qbittorrent"
+              unlock_repo "/qbittorrent-private"
+              unlock_repo "/jellyseerr"
+              unlock_repo "/tautulli"
+              unlock_repo "/wizarr"
+              unlock_repo "/cleanuparr"
 
               echo "Unlock process completed!"
+            env:
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: restic-unlock-secret
+                  key: RESTIC_PASSWORD
             volumeMounts:
             - name: repository
               mountPath: /repository
-            - name: plex-secret
-              mountPath: /secrets/plex-secret
-              readOnly: true
-            - name: prowlarr-secret
-              mountPath: /secrets/prowlarr-secret
-              readOnly: true
-            - name: sonarr-secret
-              mountPath: /secrets/sonarr-secret
-              readOnly: true
-            - name: radarr-secret
-              mountPath: /secrets/radarr-secret
-              readOnly: true
-            - name: bazarr-secret
-              mountPath: /secrets/bazarr-secret
-              readOnly: true
-            - name: sabnzbd-secret
-              mountPath: /secrets/sabnzbd-secret
-              readOnly: true
-            - name: qbittorrent-secret
-              mountPath: /secrets/qbittorrent-secret
-              readOnly: true
-            - name: qbittorrent-private-secret
-              mountPath: /secrets/qbittorrent-private-secret
-              readOnly: true
-            - name: jellyseerr-secret
-              mountPath: /secrets/jellyseerr-secret
-              readOnly: true
-            - name: tautulli-secret
-              mountPath: /secrets/tautulli-secret
-              readOnly: true
-            - name: wizarr-secret
-              mountPath: /secrets/wizarr-secret
-              readOnly: true
-            - name: cleanuparr-secret
-              mountPath: /secrets/cleanuparr-secret
-              readOnly: true
           volumes:
           - name: repository
             nfs:
               server: nas.${SECRET_DOMAIN}
               path: /mnt/truenas/cf-nas/backup
-          - name: plex-secret
-            secret:
-              secretName: plex-secret
-              optional: true
-          - name: prowlarr-secret
-            secret:
-              secretName: prowlarr-secret
-              optional: true
-          - name: sonarr-secret
-            secret:
-              secretName: sonarr-secret
-              optional: true
-          - name: radarr-secret
-            secret:
-              secretName: radarr-secret
-              optional: true
-          - name: bazarr-secret
-            secret:
-              secretName: bazarr-secret
-              optional: true
-          - name: sabnzbd-secret
-            secret:
-              secretName: sabnzbd-secret
-              optional: true
-          - name: qbittorrent-secret
-            secret:
-              secretName: qbittorrent-secret
-              optional: true
-          - name: qbittorrent-private-secret
-            secret:
-              secretName: qbittorrent-private-secret
-              optional: true
-          - name: jellyseerr-secret
-            secret:
-              secretName: jellyseerr-secret
-              optional: true
-          - name: tautulli-secret
-            secret:
-              secretName: tautulli-secret
-              optional: true
-          - name: wizarr-secret
-            secret:
-              secretName: wizarr-secret
-              optional: true
-          - name: cleanuparr-secret
-            secret:
-              secretName: cleanuparr-secret
-              optional: true
