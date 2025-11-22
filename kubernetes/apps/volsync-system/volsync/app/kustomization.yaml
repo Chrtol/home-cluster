@@ -6,4 +6,5 @@ resources:
   - ./helmrelease.yaml
   - ./mutatingadmissionpolicy.yaml
   - ./prometheusrule.yaml
+  - ./restic-unlock-secret.yaml
   - ./restic-unlock-cronjob.yaml
