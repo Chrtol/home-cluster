@@ -7,8 +7,8 @@ metadata:
   name: wireguard-endpoint-refresh
   namespace: network
 spec:
-  # Run every 5 minutes
-  schedule: "*/5 * * * *"
+  # Run every 30 minutes
+  schedule: "*/30 * * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   jobTemplate:
@@ -16,16 +16,15 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          hostNetwork: true
+          hostNetwork: false
           containers:
-            - name: ping
-              image: nicolaka/netshoot:latest
+            - name: keepalive
+              image: curlimages/curl:latest
               command:
                 - /bin/sh
                 - -c
                 - |
-                  # Send 3 pings through the WireGuard tunnel to VPS
+                  # Send lightweight HTTP request through WireGuard tunnel
                   # This updates the VPS with our current IP endpoint
-                  # Multiple pings ensure at least one gets through
-                  ping -c 3 -W 2 10.100.0.1
+                  curl -s --max-time 5 http://10.100.0.1 > /dev/null || true
                   echo "Endpoint refresh completed at $(date)"
