@@ -31,3 +31,4 @@ resources:
   - ./audiobookrequest/ks.yaml
   - ./booklore/ks.yaml
   - ./recommendarr/ks.yaml
+  - ./mydia/ks.yaml
