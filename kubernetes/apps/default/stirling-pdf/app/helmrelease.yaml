@@ -116,3 +116,8 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /pipeline
+      customfiles:
+        enabled: true
+        type: emptyDir
+        globalMounts:
+          - path: /customFiles
