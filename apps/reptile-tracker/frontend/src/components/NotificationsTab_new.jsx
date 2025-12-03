@@ -22,6 +22,7 @@ function NotificationsTab() {
   const [channelType, setChannelType] = useState('discord');
   const [channelUrl, setChannelUrl] = useState('');
   const [channelEnabled, setChannelEnabled] = useState(true);
+  const [householdWide, setHouseholdWide] = useState(false);
   const [testingChannel, setTestingChannel] = useState(false);
 
   // Modal-specific messages (for test notifications)
@@ -100,6 +101,7 @@ function NotificationsTab() {
     setChannelType('discord');
     setChannelUrl('');
     setChannelEnabled(true);
+    setHouseholdWide(false);
     setPushoverApiKey('');
     setPushoverUserKey('');
     setPushoverDevices('');
@@ -118,6 +120,7 @@ function NotificationsTab() {
     setChannelType(channel.webhook_type);
     setChannelUrl(channel.webhook_url || '');
     setChannelEnabled(channel.enabled);
+    setHouseholdWide(channel.household_wide || false);
 
     // Load Pushover config if exists
     if (channel.webhook_type === 'pushover' && channel.config) {
@@ -157,7 +160,8 @@ function NotificationsTab() {
       const payload = {
         name: channelName.trim(),
         webhook_type: channelType,
-        enabled: channelEnabled
+        enabled: channelEnabled,
+        household_wide: householdWide
       };
 
       if (channelType === 'pushover') {
@@ -642,6 +646,26 @@ function NotificationsTab() {
                   Enable this channel
                 </span>
               </label>
+
+              {/* Household-wide toggle */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={householdWide}
+                    onChange={(e) => setHouseholdWide(e.target.checked)}
+                    className="w-4 h-4 text-primary-600 rounded mt-0.5"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                      Household channel
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 block mt-1">
+                      Make this channel available to all household members. When enabled, any household member can select this channel when creating schedules for shared reptiles.
+                    </span>
+                  </div>
+                </label>
+              </div>
 
               {/* Test Button */}
               <div className="pt-2 border-t border-gray-200 dark:border-gray-700">

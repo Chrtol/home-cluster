@@ -225,6 +225,14 @@ def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str
             if time_window:
                 fields.append({"name": "Time Window", "value": time_window, "inline": True})
 
+        # Add food category for feeding schedules
+        if context.get("schedule_type") == "feeding" and context.get("food_category"):
+            fields.append({"name": "Food Type", "value": context["food_category"], "inline": True})
+
+        # Add supplement name for supplement schedules
+        if context.get("schedule_type") == "supplement" and context.get("supplement_name"):
+            fields.append({"name": "Supplement", "value": context["supplement_name"], "inline": True})
+
         if context.get("notes"):
             # Extract notes without the "Notes:" prefix if present
             notes = context["notes"].replace("\nNotes: ", "").strip()
@@ -234,13 +242,23 @@ def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str
         embed["fields"] = fields
 
     elif trigger_type == "overdue_alert":
-        embed["fields"] = [
+        fields = [
             {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
             {"name": "Schedule", "value": context.get("schedule_name", "Unknown"), "inline": True},
             {"name": "Type", "value": context.get("schedule_type", "Unknown").title(), "inline": True},
             {"name": "Missed Date", "value": context.get("missed_date", "Unknown"), "inline": True},
             {"name": "Status", "value": "⚠️ Overdue", "inline": True},
         ]
+
+        # Add food category for feeding schedules
+        if context.get("schedule_type") == "feeding" and context.get("food_category"):
+            fields.append({"name": "Food Type", "value": context["food_category"], "inline": True})
+
+        # Add supplement name for supplement schedules
+        if context.get("schedule_type") == "supplement" and context.get("supplement_name"):
+            fields.append({"name": "Supplement", "value": context["supplement_name"], "inline": True})
+
+        embed["fields"] = fields
 
     elif trigger_type == "feeding_logged":
         embed["fields"] = [

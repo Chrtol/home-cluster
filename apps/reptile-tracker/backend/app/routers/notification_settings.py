@@ -124,10 +124,11 @@ async def test_notification(
 
         sample_context = {
             "reptile_name": "Example Reptile",
-            "schedule_name": "Feeding",
+            "schedule_name": "Morning Feeding",
             "schedule_type": "feeding",
             "emoji": "🍽️",
             "time_window_display": "09:00 - 18:00",
+            "food_category": "Insects/Worms",
             "notes": "This is a test notification sent by " + current_user.name,
             "scheduled_date": datetime.now(timezone.utc).strftime('%Y-%m-%d'),
             "due_date": datetime.now(timezone.utc).strftime('%Y-%m-%d'),

@@ -236,27 +236,39 @@ async def check_schedule_reminders():
 
                     # Send reminder if within the next check interval (5 minutes)
                     if -300 <= time_until_reminder <= 300:  # 5 minute window
-                        # Get reptile and user notification settings
+                        # Get reptile
                         reptile = await db.get(Reptile, schedule.reptile_id)
                         if not reptile:
                             continue
 
-                        # Get all users with access to this reptile
-                        from app.permissions import get_user_reptiles
-                        from app.models import NotificationChannel
+                        # Get schedule's selected notification channels
+                        # Use the relationship to load channels for this schedule
+                        await db.refresh(schedule, ["notification_channels"])
 
-                        # Get all users with notification settings and schedule reminders enabled
-                        notif_result = await db.execute(
-                            select(NotificationSettings, User).join(
-                                User, NotificationSettings.user_id == User.id
-                            ).where(
-                                and_(
-                                    NotificationSettings.notify_schedule_reminders == True
-                                )
-                            )
-                        )
+                        if not schedule.notification_channels:
+                            logger.debug(f"No channels selected for schedule {schedule.id}, skipping")
+                            continue
 
-                        for notif_settings, user in notif_result:
+                        # Send reminder to each selected channel
+                        for channel in schedule.notification_channels:
+                            # Channel must be enabled
+                            if not channel.enabled:
+                                continue
+
+                            # Get the channel owner's notification settings and user
+                            notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
+                            if not notif_settings:
+                                continue
+
+                            # Check if owner has schedule reminders enabled
+                            if not notif_settings.notify_schedule_reminders:
+                                continue
+
+                            # Get the user
+                            user = await db.get(User, notif_settings.user_id)
+                            if not user:
+                                continue
+
                             # Check if user has access to this reptile
                             from app.permissions import check_reptile_access
                             try:
@@ -265,34 +277,22 @@ async def check_schedule_reminders():
                                 # User doesn't have access, skip
                                 continue
 
-                            # Get all enabled channels for this user
-                            channels_result = await db.execute(
-                                select(NotificationChannel).where(
-                                    and_(
-                                        NotificationChannel.notification_settings_id == notif_settings.id,
-                                        NotificationChannel.enabled == True
-                                    )
-                                )
+                            # Send the reminder
+                            await send_schedule_reminder(
+                                db=db,
+                                reptile=reptile,
+                                schedule=schedule,
+                                scheduled_date=next_occurrence_date,
+                                user=user,
+                                webhook_url=channel.webhook_url,
+                                webhook_type=channel.webhook_type,
+                                config=channel.config
                             )
-                            channels = channels_result.scalars().all()
 
-                            # Send reminder to each enabled channel
-                            for channel in channels:
-                                await send_schedule_reminder(
-                                    db=db,
-                                    reptile=reptile,
-                                    schedule=schedule,
-                                    scheduled_date=next_occurrence_date,
-                                    user=user,
-                                    webhook_url=channel.webhook_url,
-                                    webhook_type=channel.webhook_type,
-                                    config=channel.config
-                                )
-
-                                logger.info(
-                                    f"Sent reminder for schedule {schedule.id} ({schedule.schedule_type}) "
-                                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
-                                )
+                            logger.info(
+                                f"Sent reminder for schedule {schedule.id} ({schedule.schedule_type}) "
+                                f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                            )
 
                 except Exception as e:
                     logger.error(f"Error processing schedule {schedule.id}: {e}", exc_info=True)
@@ -348,53 +348,59 @@ async def check_overdue_schedules():
                         if not reptile:
                             continue
 
-                        # Get users with notification settings and overdue alerts enabled
-                        from app.models import NotificationChannel
+                        # Get schedule's selected notification channels
+                        await db.refresh(schedule, ["notification_channels"])
 
-                        notif_result = await db.execute(
-                            select(NotificationSettings, User).join(
-                                User, NotificationSettings.user_id == User.id
-                            ).where(
-                                NotificationSettings.notify_overdue_alerts == True
-                            )
-                        )
+                        if not schedule.notification_channels:
+                            logger.debug(f"No channels selected for schedule {schedule.id}, skipping overdue alert")
+                            # Still mark as MISSED even if no channels
+                            completion.status = CompletionStatus.MISSED
+                            await db.commit()
+                            continue
 
-                        for notif_settings, user in notif_result:
-                            # Check if user has access
+                        # Send overdue alert to each selected channel
+                        for channel in schedule.notification_channels:
+                            # Channel must be enabled
+                            if not channel.enabled:
+                                continue
+
+                            # Get the channel owner's notification settings and user
+                            notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
+                            if not notif_settings:
+                                continue
+
+                            # Check if owner has overdue alerts enabled
+                            if not notif_settings.notify_overdue_alerts:
+                                continue
+
+                            # Get the user
+                            user = await db.get(User, notif_settings.user_id)
+                            if not user:
+                                continue
+
+                            # Check if user has access to this reptile
                             from app.permissions import check_reptile_access
                             try:
                                 await check_reptile_access(db, user, reptile.id)
                             except:
                                 continue
 
-                            # Get all enabled channels for this user
-                            channels_result = await db.execute(
-                                select(NotificationChannel).where(
-                                    and_(
-                                        NotificationChannel.notification_settings_id == notif_settings.id,
-                                        NotificationChannel.enabled == True
-                                    )
-                                )
+                            # Send the overdue alert
+                            await send_overdue_alert(
+                                db=db,
+                                reptile=reptile,
+                                schedule=schedule,
+                                missed_date=yesterday,
+                                user=user,
+                                webhook_url=channel.webhook_url,
+                                webhook_type=channel.webhook_type,
+                                config=channel.config
                             )
-                            channels = channels_result.scalars().all()
 
-                            # Send overdue alert to each enabled channel
-                            for channel in channels:
-                                await send_overdue_alert(
-                                    db=db,
-                                    reptile=reptile,
-                                    schedule=schedule,
-                                    missed_date=yesterday,
-                                    user=user,
-                                    webhook_url=channel.webhook_url,
-                                    webhook_type=channel.webhook_type,
-                                    config=channel.config
-                                )
-
-                                logger.info(
-                                    f"Sent overdue alert for schedule {schedule.id} "
-                                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
-                                )
+                            logger.info(
+                                f"Sent overdue alert for schedule {schedule.id} "
+                                f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                            )
 
                         # Mark as MISSED
                         completion.status = CompletionStatus.MISSED
@@ -448,6 +454,7 @@ async def send_schedule_reminder(
     # Build notes string
     notes = f"\nNotes: {schedule.notes}" if schedule.notes else ""
 
+    # Build context
     context = {
         "reptile_name": reptile.name,
         "schedule_name": schedule_name,
@@ -459,6 +466,25 @@ async def send_schedule_reminder(
         "scheduled_date": scheduled_date.strftime('%Y-%m-%d'),
         "due_date": scheduled_date.strftime('%Y-%m-%d'),
     }
+
+    # Add food category for feeding schedules
+    if schedule.schedule_type == "feeding" and schedule.food_category:
+        food_category_display = {
+            "insects": "Insects/Worms",
+            "salad": "Salad/Vegetables",
+            "frozen": "Frozen Prey (Rodents)",
+            "prepared": "Prepared Diet (CGD, Repashy, etc.)",
+            "mixed": "Mixed (Multiple Types)",
+            "other": "Other"
+        }
+        context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
+
+    # Add supplement info for supplement schedules
+    if schedule.schedule_type == "supplement" and schedule.supplement_id:
+        from app.models import Supplement
+        supplement = await db.get(Supplement, schedule.supplement_id)
+        if supplement:
+            context["supplement_name"] = supplement.name
 
     # Render template or use fallback
     if template:
@@ -507,6 +533,25 @@ async def send_overdue_alert(
         "schedule_type": schedule.schedule_type,
         "missed_date": missed_date.strftime('%Y-%m-%d'),
     }
+
+    # Add food category for feeding schedules
+    if schedule.schedule_type == "feeding" and schedule.food_category:
+        food_category_display = {
+            "insects": "Insects/Worms",
+            "salad": "Salad/Vegetables",
+            "frozen": "Frozen Prey (Rodents)",
+            "prepared": "Prepared Diet (CGD, Repashy, etc.)",
+            "mixed": "Mixed (Multiple Types)",
+            "other": "Other"
+        }
+        context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
+
+    # Add supplement info for supplement schedules
+    if schedule.schedule_type == "supplement" and schedule.supplement_id:
+        from app.models import Supplement
+        supplement = await db.get(Supplement, schedule.supplement_id)
+        if supplement:
+            context["supplement_name"] = supplement.name
 
     # Render template or use fallback
     if template:
