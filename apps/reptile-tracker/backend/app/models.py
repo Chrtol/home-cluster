@@ -505,6 +505,7 @@ class NotificationSettings(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
 
+    # Global notification preferences (kept for backward compatibility during migration)
     webhook_enabled = Column(Boolean, default=False)
     webhook_url = Column(String, nullable=True)
     webhook_type = Column(String, default="discord")  # discord, pushover, generic
@@ -515,6 +516,27 @@ class NotificationSettings(Base):
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    channels = relationship("NotificationChannel", back_populates="settings", cascade="all, delete-orphan")
+
+
+class NotificationChannel(Base):
+    __tablename__ = "notification_channels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    notification_settings_id = Column(Integer, ForeignKey("notification_settings.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    name = Column(String, nullable=False)  # User-friendly name (e.g., "Discord - Main Server")
+    webhook_type = Column(String, nullable=False)  # discord, pushover, generic
+    webhook_url = Column(String, nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    settings = relationship("NotificationSettings", back_populates="channels")
 
 
 # Household and Invitation models

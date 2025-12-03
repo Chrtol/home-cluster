@@ -781,3 +781,32 @@ class NotificationSettingsSchema(NotificationSettingsBase):
 
     class Config:
         from_attributes = True
+
+
+# Notification Channel schemas
+class NotificationChannelBase(BaseModel):
+    name: str
+    webhook_type: str  # discord, pushover, generic
+    webhook_url: str
+    enabled: bool = True
+
+
+class NotificationChannelCreate(NotificationChannelBase):
+    pass
+
+
+class NotificationChannelUpdate(BaseModel):
+    name: Optional[str] = None
+    webhook_type: Optional[str] = None
+    webhook_url: Optional[str] = None
+    enabled: Optional[bool] = None
+
+
+class NotificationChannel(NotificationChannelBase):
+    id: int
+    notification_settings_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

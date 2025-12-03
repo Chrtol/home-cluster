@@ -41,6 +41,7 @@ function ScheduleForm() {
 
   // Notification settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [enabledChannels, setEnabledChannels] = useState([]);
 
   // Time picker state for earliest time
   const [earliestHours, setEarliestHours] = useState(9);
@@ -63,6 +64,7 @@ function ScheduleForm() {
   useEffect(() => {
     fetchReptiles();
     fetchSupplements();
+    fetchEnabledChannels();
     if (isEditing) {
       fetchScheduleData();
     }
@@ -200,6 +202,18 @@ function ScheduleForm() {
       setSchedules(validParentSchedules);
     } catch (error) {
       console.error("Error fetching schedules:", error);
+    }
+  };
+
+  const fetchEnabledChannels = async () => {
+    try {
+      const response = await axios.get("/api/notification-channels/me");
+      // Filter to only show enabled channels
+      const enabled = response.data.filter(channel => channel.enabled);
+      setEnabledChannels(enabled);
+    } catch (error) {
+      console.error("Error fetching notification channels:", error);
+      // Silently fail - channels are optional
     }
   };
 
@@ -824,6 +838,34 @@ function ScheduleForm() {
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-8">
             Receive reminder alerts and overdue warnings according to your notification preferences in Settings
           </p>
+
+          {/* Show enabled notification channels */}
+          {notificationsEnabled && enabledChannels.length > 0 && (
+            <div className="mt-3 ml-8 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+              <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">
+                Notifications will be sent to:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {enabledChannels.map(channel => (
+                  <div
+                    key={channel.id}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-600 rounded text-xs"
+                  >
+                    <span className="font-medium text-gray-900 dark:text-white">{channel.name}</span>
+                    <span className="text-gray-500 dark:text-gray-400">({channel.webhook_type})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {notificationsEnabled && enabledChannels.length === 0 && (
+            <div className="mt-3 ml-8 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+              <p className="text-xs text-amber-900 dark:text-amber-100">
+                No notification channels configured. Go to Settings → Notifications to add channels.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Enabled Toggle */}

@@ -243,12 +243,17 @@ async def check_schedule_reminders():
 
                         # Get all users with access to this reptile
                         from app.permissions import get_user_reptiles
+                        from app.models import NotificationChannel
 
-                        # Get all users with notification settings
+                        # Get all users with notification settings and schedule reminders enabled
                         notif_result = await db.execute(
                             select(NotificationSettings, User).join(
                                 User, NotificationSettings.user_id == User.id
-                            ).where(NotificationSettings.webhook_enabled == True)
+                            ).where(
+                                and_(
+                                    NotificationSettings.notify_schedule_reminders == True
+                                )
+                            )
                         )
 
                         for notif_settings, user in notif_result:
@@ -260,19 +265,31 @@ async def check_schedule_reminders():
                                 # User doesn't have access, skip
                                 continue
 
-                            # Send reminder
-                            await send_schedule_reminder(
-                                reptile=reptile,
-                                schedule=schedule,
-                                scheduled_date=next_occurrence_date,
-                                webhook_url=notif_settings.webhook_url,
-                                webhook_type=notif_settings.webhook_type
+                            # Get all enabled channels for this user
+                            channels_result = await db.execute(
+                                select(NotificationChannel).where(
+                                    and_(
+                                        NotificationChannel.notification_settings_id == notif_settings.id,
+                                        NotificationChannel.enabled == True
+                                    )
+                                )
                             )
+                            channels = channels_result.scalars().all()
 
-                            logger.info(
-                                f"Sent reminder for schedule {schedule.id} ({schedule.schedule_type}) "
-                                f"for reptile {reptile.name} to user {user.email}"
-                            )
+                            # Send reminder to each enabled channel
+                            for channel in channels:
+                                await send_schedule_reminder(
+                                    reptile=reptile,
+                                    schedule=schedule,
+                                    scheduled_date=next_occurrence_date,
+                                    webhook_url=channel.webhook_url,
+                                    webhook_type=channel.webhook_type
+                                )
+
+                                logger.info(
+                                    f"Sent reminder for schedule {schedule.id} ({schedule.schedule_type}) "
+                                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                                )
 
                 except Exception as e:
                     logger.error(f"Error processing schedule {schedule.id}: {e}", exc_info=True)
@@ -329,14 +346,13 @@ async def check_overdue_schedules():
                             continue
 
                         # Get users with notification settings and overdue alerts enabled
+                        from app.models import NotificationChannel
+
                         notif_result = await db.execute(
                             select(NotificationSettings, User).join(
                                 User, NotificationSettings.user_id == User.id
                             ).where(
-                                and_(
-                                    NotificationSettings.webhook_enabled == True,
-                                    NotificationSettings.notify_overdue_alerts == True
-                                )
+                                NotificationSettings.notify_overdue_alerts == True
                             )
                         )
 
@@ -348,19 +364,31 @@ async def check_overdue_schedules():
                             except:
                                 continue
 
-                            # Send overdue alert
-                            await send_overdue_alert(
-                                reptile=reptile,
-                                schedule=schedule,
-                                missed_date=yesterday,
-                                webhook_url=notif_settings.webhook_url,
-                                webhook_type=notif_settings.webhook_type
+                            # Get all enabled channels for this user
+                            channels_result = await db.execute(
+                                select(NotificationChannel).where(
+                                    and_(
+                                        NotificationChannel.notification_settings_id == notif_settings.id,
+                                        NotificationChannel.enabled == True
+                                    )
+                                )
                             )
+                            channels = channels_result.scalars().all()
 
-                            logger.info(
-                                f"Sent overdue alert for schedule {schedule.id} "
-                                f"for reptile {reptile.name} to user {user.email}"
-                            )
+                            # Send overdue alert to each enabled channel
+                            for channel in channels:
+                                await send_overdue_alert(
+                                    reptile=reptile,
+                                    schedule=schedule,
+                                    missed_date=yesterday,
+                                    webhook_url=channel.webhook_url,
+                                    webhook_type=channel.webhook_type
+                                )
+
+                                logger.info(
+                                    f"Sent overdue alert for schedule {schedule.id} "
+                                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                                )
 
                         # Mark as MISSED
                         completion.status = CompletionStatus.MISSED
