@@ -147,6 +147,33 @@ export default function HealthLog() {
     setLogTime(timeString);
   }, [hours, minutes, period, timeFormat]);
 
+  // Reset form when navigating from /health-log/:type/:id to /health-log
+  useEffect(() => {
+    if (!id && mode !== 'create') {
+      // Reset to create mode
+      setMode('create');
+      setExistingLog(null);
+      setError('');
+      setSuccess('');
+
+      // Reset form to defaults
+      setSelectedReptile(reptileId || (reptiles.length > 0 ? reptiles[0].id : ''));
+      setLogType('weight');
+      setLogDate(new Date().toISOString().slice(0, 10));
+      const now = new Date();
+      setHours(now.getHours());
+      setMinutes(now.getMinutes());
+      setPeriod(now.getHours() >= 12 ? 'PM' : 'AM');
+      setNotes('');
+
+      // Reset type-specific fields
+      setWeight('');
+      setRecordType('observation');
+      setTitle('');
+      setConsistency('normal');
+    }
+  }, [id, mode, reptiles, reptileId]);
+
   const handleHoursChange = (value) => {
     const numValue = parseInt(value) || 0;
     if (timeFormat === '12h') {

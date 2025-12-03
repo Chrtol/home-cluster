@@ -118,6 +118,26 @@ export default function MistingLog() {
     setMistingTime(timeString);
   }, [hours, minutes, period, timeFormat]);
 
+  // Reset form when navigating from /misting/:id to /misting
+  useEffect(() => {
+    if (!id && mode !== 'create') {
+      // Reset to create mode
+      setMode('create');
+      setExistingLog(null);
+      setError('');
+      setSuccess('');
+
+      // Reset form to defaults
+      setSelectedReptile(reptileId || (reptiles.length > 0 ? reptiles[0].id : ''));
+      setMistingDate(new Date().toISOString().slice(0, 10));
+      const now = new Date();
+      setHours(now.getHours());
+      setMinutes(now.getMinutes());
+      setPeriod(now.getHours() >= 12 ? 'PM' : 'AM');
+      setNotes('');
+    }
+  }, [id, mode, reptiles, reptileId]);
+
   const handleHoursChange = (value) => {
     const numValue = parseInt(value) || 0;
     if (timeFormat === '12h') {
