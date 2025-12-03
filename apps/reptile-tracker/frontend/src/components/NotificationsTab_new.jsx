@@ -24,6 +24,10 @@ function NotificationsTab() {
   const [channelEnabled, setChannelEnabled] = useState(true);
   const [testingChannel, setTestingChannel] = useState(false);
 
+  // Modal-specific messages (for test notifications)
+  const [modalError, setModalError] = useState('');
+  const [modalSuccess, setModalSuccess] = useState('');
+
   // Pushover config state
   const [pushoverApiKey, setPushoverApiKey] = useState('');
   const [pushoverUserKey, setPushoverUserKey] = useState('');
@@ -103,6 +107,8 @@ function NotificationsTab() {
     setPushoverRetry('30');
     setPushoverExpire('3600');
     setPushoverSound('');
+    setModalError('');
+    setModalSuccess('');
     setShowAddChannel(true);
   };
 
@@ -132,6 +138,8 @@ function NotificationsTab() {
       setPushoverSound('');
     }
 
+    setModalError('');
+    setModalSuccess('');
     setShowAddChannel(true);
   };
 
@@ -242,8 +250,8 @@ function NotificationsTab() {
   const handleTestChannel = async () => {
     try {
       setTestingChannel(true);
-      setError('');
-      setSuccess('');
+      setModalError('');
+      setModalSuccess('');
 
       const payload = {
         webhook_type: channelType
@@ -251,7 +259,7 @@ function NotificationsTab() {
 
       if (channelType === 'pushover') {
         if (!pushoverApiKey.trim() || !pushoverUserKey.trim()) {
-          setError('Pushover requires API Key and User Key to test');
+          setModalError('Pushover requires API Key and User Key to test');
           return;
         }
 
@@ -275,7 +283,7 @@ function NotificationsTab() {
         }
       } else {
         if (!channelUrl.trim()) {
-          setError('Webhook URL is required to test');
+          setModalError('Webhook URL is required to test');
           return;
         }
         payload.webhook_url = channelUrl.trim();
@@ -283,11 +291,11 @@ function NotificationsTab() {
 
       await axios.post('/api/notification-settings/test', payload);
 
-      setSuccess('Test notification sent! Check your notification destination.');
-      setTimeout(() => setSuccess(''), 5000);
+      setModalSuccess('Test notification sent! Check your notification destination.');
+      setTimeout(() => setModalSuccess(''), 5000);
     } catch (err) {
       console.error('Failed to send test notification:', err);
-      setError(err.response?.data?.detail || 'Failed to send test notification');
+      setModalError(err.response?.data?.detail || 'Failed to send test notification');
     } finally {
       setTestingChannel(false);
     }
@@ -654,6 +662,18 @@ function NotificationsTab() {
                     </>
                   )}
                 </button>
+
+                {/* Success/Error messages inside modal */}
+                {modalSuccess && (
+                  <div className="mt-3 p-3 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg text-sm">
+                    {modalSuccess}
+                  </div>
+                )}
+                {modalError && (
+                  <div className="mt-3 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg text-sm">
+                    {modalError}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">
@@ -661,7 +681,11 @@ function NotificationsTab() {
                   {editingChannel ? 'Update' : 'Add'} Channel
                 </button>
                 <button
-                  onClick={() => setShowAddChannel(false)}
+                  onClick={() => {
+                    setShowAddChannel(false);
+                    setModalError('');
+                    setModalSuccess('');
+                  }}
                   className="btn-secondary flex-1"
                 >
                   Cancel
