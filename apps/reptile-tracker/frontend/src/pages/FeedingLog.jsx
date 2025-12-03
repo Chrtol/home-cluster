@@ -510,10 +510,7 @@ export default function FeedingLog() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">View Feeding</h1>
           <div className="flex gap-2">
-            <button onClick={() => navigate('/feed')} className="btn-primary flex items-center gap-2">
-              <Plus size={18} /> Log New Feeding
-            </button>
-            <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
+            <button onClick={() => setMode('edit')} className="btn-primary flex items-center gap-2">
               <Edit2 size={18} /> Edit
             </button>
             <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">

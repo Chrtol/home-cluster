@@ -1,0 +1,118 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import Optional
+from pydantic import BaseModel
+
+from app.database import get_db
+from app.models import NotificationSettings, User
+from app.permissions import get_current_user
+from app.schemas import NotificationSettingsSchema, NotificationSettingsUpdate
+from app.notifications import validate_webhook_url, send_webhook_notification
+
+router = APIRouter(prefix="/api/notification-settings", tags=["notification-settings"])
+
+
+@router.get("/me", response_model=Optional[NotificationSettingsSchema])
+async def get_my_notification_settings(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current user's notification settings"""
+    result = await db.execute(
+        select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
+    )
+    settings = result.scalars().first()
+    return settings
+
+
+@router.post("/me", response_model=NotificationSettingsSchema)
+async def create_or_update_notification_settings(
+    settings_data: NotificationSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create or update current user's notification settings"""
+
+    # Validate webhook URL if enabled
+    if settings_data.webhook_enabled and settings_data.webhook_url:
+        if not validate_webhook_url(settings_data.webhook_url):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid webhook URL. URL must use HTTP/HTTPS and cannot target private networks."
+            )
+
+    # Check if settings already exist
+    result = await db.execute(
+        select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
+    )
+    settings = result.scalars().first()
+
+    if settings:
+        # Update existing settings
+        for key, value in settings_data.model_dump(exclude_unset=True).items():
+            setattr(settings, key, value)
+    else:
+        # Create new settings
+        settings = NotificationSettings(
+            user_id=current_user.id,
+            **settings_data.model_dump(exclude_unset=True)
+        )
+        db.add(settings)
+
+    await db.commit()
+    await db.refresh(settings)
+    return settings
+
+
+@router.delete("/me")
+async def delete_notification_settings(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete current user's notification settings"""
+    result = await db.execute(
+        select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
+    )
+    settings = result.scalars().first()
+
+    if not settings:
+        raise HTTPException(status_code=404, detail="Notification settings not found")
+
+    await db.delete(settings)
+    await db.commit()
+    return {"message": "Notification settings deleted successfully"}
+
+
+class TestNotificationRequest(BaseModel):
+    webhook_url: str
+    webhook_type: str
+
+
+@router.post("/test")
+async def test_notification(
+    test_data: TestNotificationRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Send a test notification to verify webhook configuration"""
+    # Validate webhook URL
+    if not validate_webhook_url(test_data.webhook_url):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid webhook URL. URL must use HTTP/HTTPS and cannot target private networks."
+        )
+
+    # Send test notification
+    try:
+        await send_webhook_notification(
+            webhook_url=test_data.webhook_url,
+            webhook_type=test_data.webhook_type,
+            message=f"Test notification from Reptile Tracker! This notification was sent by {current_user.name} to verify webhook configuration.",
+            title="Test Notification"
+        )
+        return {"message": "Test notification sent successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to send test notification: {str(e)}"
+        )

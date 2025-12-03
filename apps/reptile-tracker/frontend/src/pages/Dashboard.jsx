@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [showReptileFilter, setShowReptileFilter] = useState(false);
   const [weeklyFeedings, setWeeklyFeedings] = useState([]);
   const [weeklyMistings, setWeeklyMistings] = useState([]);
+  const [calendarView, setCalendarView] = useState('week'); // 'day', 'three-day', 'week'
 
   // Load display settings on mount
   useEffect(() => {
@@ -793,50 +794,94 @@ export default function Dashboard() {
         const today = new Date();
         const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
         const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
-        const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+        // Calculate days based on view
+        let daysToShow = 7;
+        if (calendarView === 'day') daysToShow = 1;
+        else if (calendarView === 'three-day') daysToShow = 3;
+
+        const weekDays = Array.from({ length: daysToShow }, (_, i) => addDays(weekStart, i));
 
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">Weekly Calendar</h2>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Schedule Calendar</h2>
               </div>
-              <div className="relative">
-                <button
-                  onClick={() => setShowReptileFilter(!showReptileFilter)}
-                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  title="Filter reptiles"
-                >
-                  <Filter size={16} className="text-gray-600 dark:text-gray-400" />
-                </button>
-                {showReptileFilter && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
-                    {reptiles.map(reptile => (
-                      <label key={reptile.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={calendarReptileFilter.has(reptile.id)}
-                          onChange={(e) => {
-                            const newFilter = new Set(calendarReptileFilter);
-                            if (e.target.checked) {
-                              newFilter.add(reptile.id);
-                            } else {
-                              newFilter.delete(reptile.id);
-                            }
-                            setCalendarReptileFilter(newFilter);
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm text-gray-900 dark:text-white">{reptile.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                {/* View switcher */}
+                <div className="flex rounded border border-gray-200 dark:border-gray-600 overflow-hidden">
+                  <button
+                    onClick={() => setCalendarView('day')}
+                    className={`px-2 py-1 text-xs font-medium transition-colors ${
+                      calendarView === 'day'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    title="1 day view"
+                  >
+                    1d
+                  </button>
+                  <button
+                    onClick={() => setCalendarView('three-day')}
+                    className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                      calendarView === 'three-day'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    title="3 day view"
+                  >
+                    3d
+                  </button>
+                  <button
+                    onClick={() => setCalendarView('week')}
+                    className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                      calendarView === 'week'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    title="Week view"
+                  >
+                    7d
+                  </button>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowReptileFilter(!showReptileFilter)}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    title="Filter reptiles"
+                  >
+                    <Filter size={16} className="text-gray-600 dark:text-gray-400" />
+                  </button>
+                  {showReptileFilter && (
+                    <div className="absolute right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+                      {reptiles.map(reptile => (
+                        <label key={reptile.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={calendarReptileFilter.has(reptile.id)}
+                            onChange={(e) => {
+                              const newFilter = new Set(calendarReptileFilter);
+                              if (e.target.checked) {
+                                newFilter.add(reptile.id);
+                              } else {
+                                newFilter.delete(reptile.id);
+                              }
+                              setCalendarReptileFilter(newFilter);
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm text-gray-900 dark:text-white">{reptile.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className={`grid gap-1 ${calendarView === 'day' ? 'grid-cols-1' : calendarView === 'three-day' ? 'grid-cols-3' : 'grid-cols-7'}`}>
               {weekDays.map((day, index) => {
                 const dayEvents = getEventsForDate(day);
                 const isToday = day.toDateString() === today.toDateString();
@@ -1173,7 +1218,7 @@ export default function Dashboard() {
                     <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
                       <div className="flex items-start gap-3">
                         <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
-                        <div className="flex-shrink-0 w-16 text-center">{prominentValue && <span className="text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>}</div>
+                        <div className="flex-shrink-0 w-24 text-center">{prominentValue && <span className="text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>}</div>
                         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
                           <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
                           <div className="min-w-0">
