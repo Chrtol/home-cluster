@@ -13,7 +13,7 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 🏥 **Health Records**: Track vet visits, medication, and observations
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
-- 🔔 **Notifications**: Webhook support for Discord/Pushover notifications
+- 🔔 **Notifications**: Per-schedule notification channels with webhook support (Discord/Pushover/Generic) and visual calendar indicators
 - 📈 **Statistics**: Comprehensive analytics with customizable charts and layouts
 - ⚙️ **Display Customization**: Drag-and-drop card management and chart settings
 
@@ -448,23 +448,45 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 
 ## Webhook Notifications
 
+### Notification System
+The application supports flexible per-schedule notification channels with the following features:
+
+**Notification Channels:**
+- Create multiple notification channels in Settings (Discord, Pushover, Generic)
+- Personal channels (user-specific) or household-wide channels (shared with all members)
+- Enable/disable channels independently
+- Test notifications with sample data before enabling
+
+**Schedule Integration:**
+- Select specific notification channels when creating or editing schedules
+- Visual bell icon indicators throughout calendar views show which schedules have notifications enabled
+- Automatic schedule reminders based on time windows and reminder settings
+- Overdue alerts when schedules are missed
+
+**Supported Types:**
+
 ### Discord
-Send notifications to Discord channels:
+Send rich embedded notifications to Discord channels:
 ```json
 {
   "webhook_url": "https://discord.com/api/webhooks/...",
   "webhook_type": "discord"
 }
 ```
+Features: Rich embeds with reptile info, schedule details, and color-coded status
 
 ### Pushover
 Send push notifications via Pushover:
 ```json
 {
-  "webhook_url": "https://api.pushover.net/1/messages.json?token=TOKEN&user=USER",
-  "webhook_type": "pushover"
+  "webhook_type": "pushover",
+  "config": {
+    "api_key": "your_api_key",
+    "user_key": "your_user_key"
+  }
 }
 ```
+Features: Mobile push notifications with priority levels
 
 ### Generic Webhook
 Send JSON payloads to any webhook URL:
@@ -474,6 +496,7 @@ Send JSON payloads to any webhook URL:
   "webhook_type": "generic"
 }
 ```
+Features: Flexible JSON payload for custom integrations
 
 ## Contributing
 

@@ -1,12 +1,38 @@
 # Reptile Tracker - Todo List
 
 ## 🚀 NEXT UP - Tier 1 Priorities
-1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
-2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines (see [Feature Recommendations](#-feature-assessment--recommendations))
+1. **Notification Template Customization** - Allow users to customize notification message templates (see [🔔 Notifications & Reminders](#notifications--reminders))
+2. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
+3. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines (see [Feature Recommendations](#-feature-assessment--recommendations))
 
 ---
 
 ## 🎯 High Priority
+
+### 🔔 Notifications & Reminders
+- [x] **Basic notification system** - ✅ COMPLETED (2025-12-04)
+  - Per-schedule notification channel selection
+  - Household-wide and personal channels
+  - Visual bell icons in calendar views showing notification status
+  - Test notification functionality with sample data
+  - Support for Discord, Pushover, and Generic webhooks
+  - Automatic schedule reminders and overdue alerts
+
+- [ ] **Notification template customization** - 🎯 HIGH PRIORITY
+  - Allow users to customize notification message templates
+  - Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes
+  - Different templates for reminders vs overdue alerts
+  - Per-channel template overrides (e.g., shorter messages for Pushover)
+  - Preview functionality before saving
+  - Backend: Add template fields to NotificationSettings model
+  - Frontend: Template editor in Settings > Notifications tab
+
+- [ ] **Advanced notification features**
+  - Quiet hours (don't send notifications during specified time range)
+  - Notification grouping (combine multiple reminders into digest)
+  - Snooze functionality for reminders
+  - Per-reptile notification preferences
+  - Email notifications as alternative to webhooks
 
 ### Authentication & Session Management
 - [x] **Fix session timeout issues** - ✅ COMPLETED - Sessions expire too quickly, shows blank pages instead of redirect
@@ -358,6 +384,37 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
+- [x] **Fixed schedule notification channel errors** - ✅ COMPLETED
+  - Fixed SQLAlchemy MissingGreenlet error when updating schedule notification channels
+  - Issue: Lazy loading during property assignment caused async errors
+  - Solution: Added eager loading with `selectinload()` and `await db.refresh()` before channel assignment
+  - Backend: Updated schedules.py to properly load notification_channels relationship
+
+- [x] **Notification channel household-wide persistence** - ✅ COMPLETED
+  - Fixed issue where household_wide radio button wasn't persisting selection
+  - Added `household_wide` field to `NotificationChannelUpdate` Pydantic schema
+  - Backend: Updated schemas.py to allow updating household_wide status
+
+- [x] **Test notification improvements** - ✅ COMPLETED
+  - Added supplement_name to test notification context
+  - Test notifications now show all data that real notifications include
+  - Provides accurate preview of notification appearance
+
+- [x] **Calendar notification indicators** - ✅ COMPLETED
+  - Added bell icon indicators throughout all calendar views
+  - Visual indicators show which schedules have notifications enabled
+  - Locations: Month view, Week view, 3-day view, Day view, Active Schedules section
+  - Bell icons styled with blue color for consistency
+  - Tooltip text includes notification status in month view
+
+- [x] **Form reset bug fixes** - ✅ COMPLETED
+  - Fixed issue where log forms wouldn't reset when navigating from view to create mode
+  - Issue: React Router doesn't remount component when navigating from `/feed/:id` to `/feed`
+  - Solution: Added useEffect hooks watching `id` parameter to reset form state
+  - Applied to: FeedingLog.jsx, HealthLog.jsx, MistingLog.jsx
+  - Forms now properly clear and reset to defaults when clicking "Log Feeding" while viewing an existing log
 
 ### October 2025 - Dashboard Weight Chart Improvements (2025-10-25)
 - [x] **Dashboard weight chart complete overhaul** - ✅ COMPLETED
@@ -796,16 +853,16 @@ The Reptile Tracker currently provides:
 ### 📋 Recommended Priority Order (UPDATED)
 
 **Tier 1 - CRITICAL (Implement Immediately - Next 2-4 weeks):**
-1. **Statistics Page Phase 1** - Weight charts, feeding frequency heatmaps (uses existing data!)
-2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines with sources
+1. **Notification Template Customization** - Let users customize notification messages for their workflow
+2. **Statistics Page Phase 2** - Health analytics, shed tracking, timeline (extend existing charts)
+3. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines with sources
 
 **Tier 2 - HIGH VALUE (Next 1-2 months):**
-3. **Statistics Page Phase 2** - Health analytics, shed tracking, timeline
-4. **Smart Notifications & Reminders** - Feeding alerts, weight check reminders
+4. **Advanced Notification Features** - Quiet hours, notification grouping, snooze functionality
 5. **Photo Upload & Gallery** - Visual health tracking and progress photos
+6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
 
 **Tier 3 - IMPORTANT (Next 2-3 months):**
-6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
 7. **Complete Backup & Restore System** - Full household export/import for data portability
 8. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
 9. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
