@@ -806,6 +806,7 @@ class NotificationChannelUpdate(BaseModel):
     webhook_url: Optional[str] = None
     config: Optional[dict] = None
     enabled: Optional[bool] = None
+    household_wide: Optional[bool] = None
 
 
 class NotificationChannel(NotificationChannelBase):
