@@ -470,11 +470,6 @@ def start_scheduler():
 
     scheduler.start()
 
-    # Run create_pending_completions immediately on startup
-    logger.info("Running initial schedule completion creation")
-    import asyncio
-    asyncio.create_task(create_pending_completions())
-
     logger.info("Notification scheduler started successfully")
 
 
