@@ -14,3 +14,4 @@ itsdangerous==2.2.0
 python-dateutil==2.9.0
 slowapi==0.1.9
 ipaddress==1.0.23
+APScheduler==3.10.4

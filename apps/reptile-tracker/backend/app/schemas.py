@@ -748,3 +748,26 @@ class CareGuidelineExport(BaseModel):
     version: str = "1.0"
     exported_at: datetime
     guidelines: List[CareGuideline]
+
+
+# Notification Settings schemas
+class NotificationSettingsBase(BaseModel):
+    webhook_enabled: bool = False
+    webhook_url: Optional[str] = None
+    webhook_type: str = "discord"  # discord, pushover, generic
+
+
+class NotificationSettingsUpdate(BaseModel):
+    webhook_enabled: Optional[bool] = None
+    webhook_url: Optional[str] = None
+    webhook_type: Optional[str] = None
+
+
+class NotificationSettingsSchema(NotificationSettingsBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

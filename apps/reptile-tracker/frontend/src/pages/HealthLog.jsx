@@ -260,10 +260,7 @@ export default function HealthLog() {
             View {logType === 'weight' ? 'Weight' : 'Health'} Log
           </h1>
           <div className="flex gap-2">
-            <button onClick={() => navigate('/health-log')} className="btn-primary flex items-center gap-2">
-              <Plus size={18} /> Log New
-            </button>
-            <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
+            <button onClick={() => setMode('edit')} className="btn-primary flex items-center gap-2">
               <Edit2 size={18} /> Edit
             </button>
             <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import {
   getDashboardCardSettings,
@@ -22,7 +22,7 @@ import {
 } from '../utils/displaySettings';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, household
+  const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, notifications, household
 
   return (
     <div>
@@ -54,6 +54,17 @@ export default function Settings() {
             Display
           </button>
           <button
+            onClick={() => setActiveTab('notifications')}
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'notifications'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <Bell size={18} />
+            Notifications
+          </button>
+          <button
             onClick={() => setActiveTab('household')}
             className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
               activeTab === 'household'
@@ -70,6 +81,7 @@ export default function Settings() {
       {/* Tab Content */}
       {activeTab === 'preferences' && <PreferencesTab />}
       {activeTab === 'display' && <DisplayTab />}
+      {activeTab === 'notifications' && <NotificationsTab />}
       {activeTab === 'household' && <HouseholdSection />}
     </div>
   );
@@ -867,6 +879,277 @@ function DisplayTab() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// NOTIFICATIONS TAB COMPONENT
+function NotificationsTab() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookType, setWebhookType] = useState('discord');
+  const [testingWebhook, setTestingWebhook] = useState(false);
+
+  useEffect(() => {
+    loadNotificationSettings();
+  }, []);
+
+  const loadNotificationSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/notification-settings/me');
+      if (response.data) {
+        setWebhookEnabled(response.data.webhook_enabled || false);
+        setWebhookUrl(response.data.webhook_url || '');
+        setWebhookType(response.data.webhook_type || 'discord');
+      }
+    } catch (err) {
+      console.error('Failed to load notification settings:', err);
+      // 404 is expected if settings don't exist yet
+      if (err.response?.status !== 404) {
+        setError('Failed to load notification settings');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+
+      // Validate webhook URL if enabled
+      if (webhookEnabled && !webhookUrl.trim()) {
+        setError('Webhook URL is required when notifications are enabled');
+        return;
+      }
+
+      await axios.post('/api/notification-settings/me', {
+        webhook_enabled: webhookEnabled,
+        webhook_url: webhookUrl.trim(),
+        webhook_type: webhookType
+      });
+
+      setSuccess('Notification settings saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to save notification settings:', err);
+      setError(err.response?.data?.detail || 'Failed to save notification settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTestWebhook = async () => {
+    try {
+      setTestingWebhook(true);
+      setError('');
+      setSuccess('');
+
+      // Send a test notification
+      await axios.post('/api/notification-settings/test', {
+        webhook_url: webhookUrl.trim(),
+        webhook_type: webhookType
+      });
+
+      setSuccess('Test notification sent! Check your webhook destination.');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      console.error('Failed to send test notification:', err);
+      setError(err.response?.data?.detail || 'Failed to send test notification');
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Notification Settings</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          Configure webhook notifications for feeding reminders, schedule alerts, and other important events.
+        </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-green-800 dark:text-green-200 text-sm">{success}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div>
+              <label className="font-medium text-gray-900 dark:text-white">Enable Notifications</label>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Receive notifications via webhook when reptiles need attention
+              </p>
+            </div>
+            <button
+              onClick={() => setWebhookEnabled(!webhookEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                webhookEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  webhookEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {webhookEnabled && (
+            <>
+              {/* Webhook Type */}
+              <div>
+                <label className="block font-medium mb-2 text-gray-900 dark:text-white">
+                  Webhook Type
+                </label>
+                <select
+                  value={webhookType}
+                  onChange={(e) => setWebhookType(e.target.value)}
+                  className="input"
+                >
+                  <option value="discord">Discord</option>
+                  <option value="pushover">Pushover</option>
+                  <option value="generic">Generic Webhook</option>
+                </select>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {webhookType === 'discord' && 'Discord webhook URL from Server Settings > Integrations > Webhooks'}
+                  {webhookType === 'pushover' && 'Pushover API endpoint with your user key and token'}
+                  {webhookType === 'generic' && 'Any HTTP endpoint that accepts POST requests with JSON payload'}
+                </p>
+              </div>
+
+              {/* Webhook URL */}
+              <div>
+                <label htmlFor="webhook-url" className="block font-medium mb-2 text-gray-900 dark:text-white">
+                  Webhook URL
+                </label>
+                <input
+                  id="webhook-url"
+                  type="url"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder={
+                    webhookType === 'discord'
+                      ? 'https://discord.com/api/webhooks/...'
+                      : webhookType === 'pushover'
+                      ? 'https://api.pushover.net/1/messages.json'
+                      : 'https://your-webhook-endpoint.com/...'
+                  }
+                  className="input font-mono text-sm"
+                />
+              </div>
+
+              {/* Instructions based on type */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  {webhookType === 'discord' && 'Discord Setup Instructions'}
+                  {webhookType === 'pushover' && 'Pushover Setup Instructions'}
+                  {webhookType === 'generic' && 'Generic Webhook Information'}
+                </h3>
+                <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                  {webhookType === 'discord' && (
+                    <>
+                      <p>1. Open Discord and go to your server</p>
+                      <p>2. Click Server Settings &gt; Integrations &gt; Webhooks</p>
+                      <p>3. Click "New Webhook" and customize the name/icon</p>
+                      <p>4. Copy the webhook URL and paste it above</p>
+                    </>
+                  )}
+                  {webhookType === 'pushover' && (
+                    <>
+                      <p>1. Sign up at pushover.net and install the mobile app</p>
+                      <p>2. Get your User Key from the Pushover dashboard</p>
+                      <p>3. Create an Application/API Token</p>
+                      <p>4. Use the Pushover API endpoint above with your credentials</p>
+                      <p className="text-xs mt-2 italic">Note: You'll need to include your user key and token in the webhook URL parameters</p>
+                    </>
+                  )}
+                  {webhookType === 'generic' && (
+                    <>
+                      <p>The webhook will receive POST requests with JSON payload:</p>
+                      <pre className="mt-2 p-2 bg-gray-900 dark:bg-gray-950 text-gray-100 rounded text-xs overflow-x-auto">
+{`{
+  "title": "Notification Title",
+  "message": "Notification message",
+  "timestamp": "2025-12-03T10:00:00Z"
+}`}
+                      </pre>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Test Button */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleTestWebhook}
+                  disabled={testingWebhook || !webhookUrl.trim()}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  {testingWebhook ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      Sending Test...
+                    </>
+                  ) : (
+                    <>
+                      <Bell size={16} />
+                      Send Test Notification
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary"
+            >
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Future Features Info */}
+      <div className="card bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-2">Coming Soon</h3>
+        <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+          <li>• Feeding reminder notifications (when reptile is due for feeding)</li>
+          <li>• Schedule deadline alerts (time window reminders)</li>
+          <li>• Weight check reminders (monthly or custom intervals)</li>
+          <li>• Overdue activity warnings (missed feedings, misting, etc.)</li>
+        </ul>
       </div>
     </div>
   );
