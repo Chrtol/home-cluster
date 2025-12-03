@@ -176,11 +176,12 @@ async def check_schedule_reminders():
             now = datetime.now(timezone.utc)
             today = now.date()
 
-            # Get all enabled schedules with reminders configured
+            # Get all enabled schedules with reminders configured AND notifications enabled
             result = await db.execute(
                 select(Schedule).where(
                     and_(
                         Schedule.enabled == True,
+                        Schedule.notifications_enabled == True,
                         Schedule.reminder_minutes_before.isnot(None),
                         Schedule.reminder_minutes_before > 0
                     )
@@ -291,9 +292,14 @@ async def check_overdue_schedules():
             today = now.date()
             yesterday = today - timedelta(days=1)
 
-            # Get all enabled schedules
+            # Get all enabled schedules with notifications enabled
             result = await db.execute(
-                select(Schedule).where(Schedule.enabled == True)
+                select(Schedule).where(
+                    and_(
+                        Schedule.enabled == True,
+                        Schedule.notifications_enabled == True
+                    )
+                )
             )
             schedules = result.scalars().all()
 
@@ -322,11 +328,16 @@ async def check_overdue_schedules():
                         if not reptile:
                             continue
 
-                        # Get users with notification settings
+                        # Get users with notification settings and overdue alerts enabled
                         notif_result = await db.execute(
                             select(NotificationSettings, User).join(
                                 User, NotificationSettings.user_id == User.id
-                            ).where(NotificationSettings.webhook_enabled == True)
+                            ).where(
+                                and_(
+                                    NotificationSettings.webhook_enabled == True,
+                                    NotificationSettings.notify_overdue_alerts == True
+                                )
+                            )
                         )
 
                         for notif_settings, user in notif_result:

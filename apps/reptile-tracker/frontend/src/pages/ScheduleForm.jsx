@@ -39,6 +39,9 @@ function ScheduleForm() {
   const [latestTime, setLatestTime] = useState("");
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState("");
 
+  // Notification settings
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
   // Time picker state for earliest time
   const [earliestHours, setEarliestHours] = useState(9);
   const [earliestMinutes, setEarliestMinutes] = useState(0);
@@ -158,6 +161,7 @@ function ScheduleForm() {
       }
 
       setReminderMinutesBefore(schedule.reminder_minutes_before || "");
+      setNotificationsEnabled(schedule.notifications_enabled !== undefined ? schedule.notifications_enabled : true);
     } catch (error) {
       console.error("Error fetching schedule:", error);
       alert("Failed to load schedule data");
@@ -294,6 +298,9 @@ function ScheduleForm() {
         scheduleData.latest_time = latestTime || null;
         scheduleData.reminder_minutes_before = reminderMinutesBefore ? parseInt(reminderMinutesBefore) : null;
       }
+
+      // Add notification settings
+      scheduleData.notifications_enabled = notificationsEnabled;
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
@@ -798,6 +805,25 @@ function ScheduleForm() {
               </div>
             </div>
           )}
+
+          {/* Notification Settings */}
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notificationsEnabled}
+                onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 dark:text-white">Enable Notifications for This Schedule</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  When enabled, you'll receive notifications for this schedule (reminder alerts and overdue warnings)
+                  according to your notification preferences in Settings.
+                </div>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* Enabled Toggle */}

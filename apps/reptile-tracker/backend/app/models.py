@@ -333,6 +333,9 @@ class Schedule(Base):
     time_window_enabled = Column(Boolean, default=False, nullable=False)
     reminder_minutes_before = Column(Integer, nullable=True)  # For future notifications
 
+    # Notification settings
+    notifications_enabled = Column(Boolean, default=True, nullable=False)  # Per-schedule notification toggle
+
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
 
@@ -505,6 +508,10 @@ class NotificationSettings(Base):
     webhook_enabled = Column(Boolean, default=False)
     webhook_url = Column(String, nullable=True)
     webhook_type = Column(String, default="discord")  # discord, pushover, generic
+
+    # Notification type preferences
+    notify_schedule_reminders = Column(Boolean, default=True, nullable=False)
+    notify_overdue_alerts = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
