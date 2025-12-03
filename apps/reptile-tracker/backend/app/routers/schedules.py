@@ -104,27 +104,33 @@ async def create_schedule(
 
     # Add selected notification channels if any
     if channel_ids:
-        from app.models import NotificationChannel, NotificationSettings
+        from app.models import NotificationChannel
+        from sqlalchemy.orm import selectinload
 
-        # Get all specified channels with their settings in one query
+        # Get all specified channels with their settings loaded
         result = await db.execute(
-            select(NotificationChannel, NotificationSettings)
-            .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
+            select(NotificationChannel)
+            .options(selectinload(NotificationChannel.settings))
             .where(NotificationChannel.id.in_(channel_ids))
         )
-        channel_settings_pairs = result.all()
+        channels = result.scalars().all()
+
+        # Validate we got all requested channels
+        if len(channels) != len(channel_ids):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or more notification channels not found"
+            )
 
         # Validate user has access to each channel (owns it or it's household-wide)
-        valid_channels = []
-        for channel, settings in channel_settings_pairs:
-            if not (settings.user_id == current_user.id or channel.household_wide):
+        for channel in channels:
+            if not (channel.settings.user_id == current_user.id or channel.household_wide):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"You don't have access to channel: {channel.name}"
                 )
-            valid_channels.append(channel)
 
-        new_schedule.notification_channels = valid_channels
+        new_schedule.notification_channels = channels
 
     db.add(new_schedule)
     await db.commit()
@@ -165,28 +171,37 @@ async def update_schedule(
 
     # Update notification channels if specified
     if channel_ids is not None:
-        from app.models import NotificationChannel, NotificationSettings
+        from app.models import NotificationChannel
+        from sqlalchemy.orm import selectinload
+
+        # Load existing channels first to avoid lazy loading during assignment
+        await db.refresh(schedule, ["notification_channels"])
 
         if channel_ids:
-            # Get all specified channels with their settings in one query
+            # Get all specified channels with their settings loaded
             result = await db.execute(
-                select(NotificationChannel, NotificationSettings)
-                .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
+                select(NotificationChannel)
+                .options(selectinload(NotificationChannel.settings))
                 .where(NotificationChannel.id.in_(channel_ids))
             )
-            channel_settings_pairs = result.all()
+            channels = result.scalars().all()
+
+            # Validate we got all requested channels
+            if len(channels) != len(channel_ids):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="One or more notification channels not found"
+                )
 
             # Validate user has access to each channel (owns it or it's household-wide)
-            valid_channels = []
-            for channel, settings in channel_settings_pairs:
-                if not (settings.user_id == current_user.id or channel.household_wide):
+            for channel in channels:
+                if not (channel.settings.user_id == current_user.id or channel.household_wide):
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail=f"You don't have access to channel: {channel.name}"
                     )
-                valid_channels.append(channel)
 
-            schedule.notification_channels = valid_channels
+            schedule.notification_channels = channels
         else:
             # Clear all channels
             schedule.notification_channels = []
