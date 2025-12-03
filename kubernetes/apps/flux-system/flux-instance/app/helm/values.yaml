@@ -14,6 +14,8 @@ instance:
     - image-automation-controller
   sync:
     kind: GitRepository
-    url: "https://github.com/chrtol/home-cluster.git"
+    url: "ssh://git@github.com/chrtol/home-cluster.git"
     ref: "refs/heads/main"
     path: kubernetes/flux/cluster
+    secretRef:
+      name: flux-system
