@@ -8,8 +8,8 @@ spec:
   interval: 1m
   sourceRef:
     kind: GitRepository
-    name: flux-system
-    namespace: flux-system
+    name: home-cluster-write
+    namespace: default
   git:
     checkout:
       ref:
