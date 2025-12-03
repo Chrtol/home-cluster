@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models import NotificationSettings, User
-from app.permissions import get_current_user
+from app.auth import get_current_user
 from app.schemas import NotificationSettingsSchema, NotificationSettingsUpdate
 from app.notifications import validate_webhook_url, send_webhook_notification
 
