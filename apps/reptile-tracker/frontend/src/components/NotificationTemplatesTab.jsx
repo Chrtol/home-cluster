@@ -23,9 +23,7 @@ const NotificationTemplatesTab = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/notification-templates/`, {
-        withCredentials: true
-      });
+      const response = await axios.get('/api/notification-templates/');
       setTemplates(response.data);
       setError('');
     } catch (err) {
@@ -78,16 +76,14 @@ const NotificationTemplatesTab = () => {
       if (editingTemplate) {
         // Update existing
         await axios.patch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/notification-templates/${editingTemplate.id}`,
-          payload,
-          { withCredentials: true }
+          `/api/notification-templates/${editingTemplate.id}`,
+          payload
         );
       } else {
         // Create new
         await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/api/notification-templates/`,
-          payload,
-          { withCredentials: true }
+          '/api/notification-templates/',
+          payload
         );
       }
 
@@ -105,10 +101,7 @@ const NotificationTemplatesTab = () => {
     }
 
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/api/notification-templates/${templateId}`,
-        { withCredentials: true }
-      );
+      await axios.delete(`/api/notification-templates/${templateId}`);
       fetchTemplates();
     } catch (err) {
       console.error('Error deleting template:', err);
@@ -124,9 +117,8 @@ const NotificationTemplatesTab = () => {
 
     try {
       await axios.patch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/notification-templates/${template.id}`,
-        { is_active: !template.is_active },
-        { withCredentials: true }
+        `/api/notification-templates/${template.id}`,
+        { is_active: !template.is_active }
       );
       fetchTemplates();
     } catch (err) {
