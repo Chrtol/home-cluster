@@ -881,7 +881,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className={`grid gap-1 ${calendarView === 'day' ? 'grid-cols-1' : calendarView === 'three-day' ? 'grid-cols-3' : 'grid-cols-7'}`}>
+            <div className={`grid gap-2 ${calendarView === 'day' ? 'grid-cols-1' : calendarView === 'three-day' ? 'grid-cols-3' : 'grid-cols-7'}`}>
               {weekDays.map((day, index) => {
                 const dayEvents = getEventsForDate(day);
                 const isToday = day.toDateString() === today.toDateString();
@@ -889,21 +889,33 @@ export default function Dashboard() {
                 return (
                   <div
                     key={index}
-                    className={`border border-gray-200 dark:border-gray-700 rounded p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col ${
+                    className={`border border-gray-200 dark:border-gray-700 rounded ${calendarView === 'week' ? 'p-2' : 'p-3'} cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col ${
                       isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''
                     }`}
                     onClick={() => setSelectedDate(day)}
                   >
                     <div className="text-center mb-2 flex-shrink-0">
-                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                        {format(day, 'EEE')}
+                      <div className={`${calendarView === 'week' ? 'text-xs' : 'text-sm'} font-medium text-gray-600 dark:text-gray-400`}>
+                        {format(day, calendarView === 'week' ? 'EEE' : 'EEEE, MMM d')}
                       </div>
-                      <div className={`text-lg font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
-                        {format(day, 'd')}
-                      </div>
+                      {calendarView === 'week' && (
+                        <div className={`text-lg font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                          {format(day, 'd')}
+                        </div>
+                      )}
+                      {dayEvents.length > 0 && calendarView !== 'week' && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="space-y-1 overflow-y-auto flex-1 min-h-0">
+                    <div className={`${calendarView === 'week' ? 'space-y-1' : 'space-y-2'} overflow-y-auto flex-1 min-h-0`}>
+                      {dayEvents.length === 0 && calendarView !== 'week' && (
+                        <div className="text-center text-gray-400 dark:text-gray-500 py-4 text-xs">
+                          No events
+                        </div>
+                      )}
                       {dayEvents.map((event, idx) => {
                         const { Icon, color } = getScheduleTypeIcon(event.schedule_type);
 
@@ -916,6 +928,59 @@ export default function Dashboard() {
                           timeText = event.time_slot;
                         }
 
+                        // Enhanced display for day/3-day view
+                        if (calendarView === 'day' || calendarView === 'three-day') {
+                          return (
+                            <div
+                              key={idx}
+                              className={`px-2 py-2 rounded bg-white dark:bg-gray-800 border ${
+                                event.is_completed
+                                  ? 'border-green-500 dark:border-green-600'
+                                  : 'border-gray-200 dark:border-gray-600'
+                              }`}
+                              title={event.name || event.reptile_name}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1">
+                                {event.is_completed && (
+                                  <span className="text-green-600 dark:text-green-400 text-sm font-bold flex-shrink-0">✓</span>
+                                )}
+                                <Icon size={14} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                  {event.reptile_name}
+                                </span>
+                              </div>
+                              <div className="text-xs space-y-0.5 ml-5">
+                                {foodCategory && (
+                                  <div className="text-gray-700 dark:text-gray-300">
+                                    <span className="font-medium">Food:</span> {foodCategory}
+                                  </div>
+                                )}
+                                {timeText && (
+                                  <div className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                    <Clock size={10} />
+                                    {timeText}
+                                  </div>
+                                )}
+                                {event.notes && (
+                                  <div className="text-gray-500 dark:text-gray-400 italic line-clamp-2">
+                                    {event.notes}
+                                  </div>
+                                )}
+                                {event.suggested_supplements && event.suggested_supplements.length > 0 && (
+                                  <div className="flex gap-1 flex-wrap mt-1">
+                                    {event.suggested_supplements.map((supp, suppIdx) => (
+                                      <span key={suppIdx} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200">
+                                        +{supp.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Compact display for week view
                         return (
                           <div
                             key={idx}
