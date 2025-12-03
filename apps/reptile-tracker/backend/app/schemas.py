@@ -812,3 +812,36 @@ class NotificationChannel(NotificationChannelBase):
 
     class Config:
         from_attributes = True
+
+
+# Notification Template schemas
+class NotificationTemplateBase(BaseModel):
+    name: str
+    trigger_type: str  # schedule_reminder, overdue_alert, feeding_logged, custom
+    message_template: str
+    title_template: Optional[str] = None
+    channel_type: Optional[str] = None  # discord, pushover, generic, or null for all
+    is_active: bool = True
+
+
+class NotificationTemplateCreate(NotificationTemplateBase):
+    template_type: str = "custom"  # system templates can only be created via migration
+
+
+class NotificationTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    message_template: Optional[str] = None
+    title_template: Optional[str] = None
+    channel_type: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class NotificationTemplate(NotificationTemplateBase):
+    id: int
+    user_id: Optional[int] = None
+    template_type: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

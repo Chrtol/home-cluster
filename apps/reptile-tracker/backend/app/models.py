@@ -540,6 +540,32 @@ class NotificationChannel(Base):
     settings = relationship("NotificationSettings", back_populates="channels")
 
 
+class NotificationTemplate(Base):
+    __tablename__ = "notification_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)  # NULL for system templates
+
+    name = Column(String, nullable=False)  # User-friendly name
+    template_type = Column(String, nullable=False, default="custom")  # system or custom
+    trigger_type = Column(String, nullable=False)  # schedule_reminder, overdue_alert, feeding_logged, custom
+
+    # Templates with variables like {reptile_name}, {schedule_type}, etc.
+    message_template = Column(Text, nullable=False)
+    title_template = Column(String, nullable=True)
+
+    # Optional: Limit to specific channel type (discord, pushover, generic) or NULL for all
+    channel_type = Column(String, nullable=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", backref="notification_templates")
+
+
 # Household and Invitation models
 household_members = Table(
     "household_members",

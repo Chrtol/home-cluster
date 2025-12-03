@@ -1,11 +1,13 @@
 import httpx
 import logging
 import ipaddress
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timezone, date as py_date
+from typing import Optional, Dict, Any
 from urllib.parse import urlparse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
-from app.models import Reptile, User, Feeding
+from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
 
 # Security fixes:
 # - M-3: SSRF protection by validating webhook URLs
@@ -85,6 +87,91 @@ def validate_webhook_url(url: str) -> bool:
     except Exception as e:
         logger.error(f"Webhook URL validation error: {e}")
         return False
+
+
+async def get_template_for_trigger(
+    db: AsyncSession,
+    trigger_type: str,
+    user_id: Optional[int] = None,
+    channel_type: Optional[str] = None
+) -> Optional[NotificationTemplate]:
+    """
+    Get the best matching template for a trigger type.
+    Prioritizes user templates over system templates.
+
+    Args:
+        db: Database session
+        trigger_type: Type of trigger (schedule_reminder, overdue_alert, etc.)
+        user_id: User ID for custom templates
+        channel_type: Optional channel type filter
+
+    Returns:
+        NotificationTemplate or None if no template found
+    """
+    try:
+        # First try to get user's custom template
+        if user_id:
+            query = select(NotificationTemplate).where(
+                NotificationTemplate.user_id == user_id,
+                NotificationTemplate.trigger_type == trigger_type,
+                NotificationTemplate.is_active == True
+            )
+
+            if channel_type:
+                query = query.where(
+                    (NotificationTemplate.channel_type == channel_type) |
+                    (NotificationTemplate.channel_type.is_(None))
+                )
+
+            result = await db.execute(query)
+            template = result.scalars().first()
+
+            if template:
+                return template
+
+        # Fall back to system template
+        query = select(NotificationTemplate).where(
+            NotificationTemplate.user_id.is_(None),
+            NotificationTemplate.trigger_type == trigger_type,
+            NotificationTemplate.template_type == "system",
+            NotificationTemplate.is_active == True
+        )
+
+        if channel_type:
+            query = query.where(
+                (NotificationTemplate.channel_type == channel_type) |
+                (NotificationTemplate.channel_type.is_(None))
+            )
+
+        result = await db.execute(query)
+        return result.scalars().first()
+
+    except Exception as e:
+        logger.error(f"Error fetching template for trigger {trigger_type}: {e}")
+        return None
+
+
+def render_template(template_string: str, context: Dict[str, Any]) -> str:
+    """
+    Render a template string with context variables.
+
+    Args:
+        template_string: Template with {variable} placeholders
+        context: Dictionary of variables to substitute
+
+    Returns:
+        Rendered string with variables substituted
+    """
+    try:
+        # Simple variable substitution using format_map
+        # Handles missing keys gracefully by leaving them unchanged
+        return template_string.format_map({
+            k: v if v is not None else ""
+            for k, v in context.items()
+        })
+    except Exception as e:
+        logger.error(f"Error rendering template: {e}")
+        return template_string
 
 
 async def send_webhook_notification(
