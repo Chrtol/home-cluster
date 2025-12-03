@@ -117,14 +117,30 @@ async def test_notification(
                 detail="Pushover config must include api_key and user_key"
             )
 
-    # Send test notification
+    # Send test notification with sample data to show what a real notification looks like
     try:
+        # Create sample context that mimics a real schedule reminder
+        from datetime import datetime, timezone
+
+        sample_context = {
+            "reptile_name": "Example Reptile",
+            "schedule_name": "Feeding",
+            "schedule_type": "feeding",
+            "emoji": "🍽️",
+            "time_window_display": "09:00 - 18:00",
+            "notes": "This is a test notification sent by " + current_user.name,
+            "scheduled_date": datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+            "due_date": datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+        }
+
         await send_webhook_notification(
             webhook_url=test_data.webhook_url,
             webhook_type=test_data.webhook_type,
-            message=f"Test notification from Reptile Tracker! This notification was sent by {current_user.name} to verify configuration.",
-            title="Test Notification",
-            config=test_data.config
+            message=f"Test notification from Reptile Tracker! Sent by {current_user.name}.",
+            title="Schedule Reminder - Example Reptile",
+            config=test_data.config,
+            context=sample_context,
+            trigger_type="schedule_reminder"
         )
         return {"message": "Test notification sent successfully"}
     except Exception as e:
