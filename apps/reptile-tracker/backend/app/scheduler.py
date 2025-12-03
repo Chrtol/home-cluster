@@ -440,8 +440,10 @@ async def send_schedule_reminder(
 
     # Build time window string
     time_window = ""
+    time_window_display = ""
     if schedule.time_window_enabled and schedule.earliest_time and schedule.latest_time:
-        time_window = f"\nTime window: {schedule.earliest_time.strftime('%H:%M')} - {schedule.latest_time.strftime('%H:%M')}"
+        time_window_display = f"{schedule.earliest_time.strftime('%H:%M')} - {schedule.latest_time.strftime('%H:%M')}"
+        time_window = f"\nTime window: {time_window_display}"
 
     # Build notes string
     notes = f"\nNotes: {schedule.notes}" if schedule.notes else ""
@@ -452,6 +454,7 @@ async def send_schedule_reminder(
         "schedule_type": schedule.schedule_type,
         "emoji": emoji,
         "time_window": time_window,
+        "time_window_display": time_window_display,
         "notes": notes,
         "scheduled_date": scheduled_date.strftime('%Y-%m-%d'),
         "due_date": scheduled_date.strftime('%Y-%m-%d'),
@@ -471,7 +474,9 @@ async def send_schedule_reminder(
         webhook_type=webhook_type,
         message=message,
         title=title,
-        config=config
+        config=config,
+        context=context,
+        trigger_type="schedule_reminder"
     )
 
 
@@ -517,7 +522,9 @@ async def send_overdue_alert(
         webhook_type=webhook_type,
         message=message,
         title=title,
-        config=config
+        config=config,
+        context=context,
+        trigger_type="overdue_alert"
     )
 
 
