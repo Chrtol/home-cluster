@@ -529,7 +529,8 @@ class NotificationChannel(Base):
 
     name = Column(String, nullable=False)  # User-friendly name (e.g., "Discord - Main Server")
     webhook_type = Column(String, nullable=False)  # discord, pushover, generic
-    webhook_url = Column(String, nullable=False)
+    webhook_url = Column(String, nullable=True)  # For discord/generic webhooks
+    config = Column(JSON, nullable=True)  # For pushover and other configs (api_key, user_key, priority, etc.)
     enabled = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

@@ -787,7 +787,8 @@ class NotificationSettingsSchema(NotificationSettingsBase):
 class NotificationChannelBase(BaseModel):
     name: str
     webhook_type: str  # discord, pushover, generic
-    webhook_url: str
+    webhook_url: Optional[str] = None  # For discord/generic
+    config: Optional[dict] = None  # For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
     enabled: bool = True
 
 
@@ -799,6 +800,7 @@ class NotificationChannelUpdate(BaseModel):
     name: Optional[str] = None
     webhook_type: Optional[str] = None
     webhook_url: Optional[str] = None
+    config: Optional[dict] = None
     enabled: Optional[bool] = None
 
 
