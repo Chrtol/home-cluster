@@ -8,11 +8,11 @@ spec:
   imageRepositoryRef:
     name: reptile-tracker-backend
   policy:
-    alphabetical:
+    numerical:
       order: asc
   filterTags:
-    pattern: '^main-[a-f0-9]+$'
-    extract: '$0'
+    pattern: '^main-([0-9]+)$'
+    extract: '$1'
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
@@ -23,8 +23,8 @@ spec:
   imageRepositoryRef:
     name: reptile-tracker-frontend
   policy:
-    alphabetical:
+    numerical:
       order: asc
   filterTags:
-    pattern: '^main-[a-f0-9]+$'
-    extract: '$0'
+    pattern: '^main-([0-9]+)$'
+    extract: '$1'
