@@ -3,7 +3,7 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: reptile-tracker-backend
-  namespace: flux-system
+  namespace: default
 spec:
   image: ghcr.io/chrtol/reptile-tracker-backend
   interval: 1m
@@ -12,7 +12,7 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: reptile-tracker-frontend
-  namespace: flux-system
+  namespace: default
 spec:
   image: ghcr.io/chrtol/reptile-tracker-frontend
   interval: 1m

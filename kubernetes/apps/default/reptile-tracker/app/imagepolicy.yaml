@@ -3,7 +3,7 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: reptile-tracker-backend
-  namespace: flux-system
+  namespace: default
 spec:
   imageRepositoryRef:
     name: reptile-tracker-backend
@@ -18,7 +18,7 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: reptile-tracker-frontend
-  namespace: flux-system
+  namespace: default
 spec:
   imageRepositoryRef:
     name: reptile-tracker-frontend
