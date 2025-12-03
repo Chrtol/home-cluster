@@ -9,7 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import async_session
+from app.database import async_session_maker
 from app.models import Schedule, ScheduleCompletion, NotificationSettings, User, Reptile, CompletionStatus
 from app.notifications import send_webhook_notification
 
@@ -90,7 +90,7 @@ async def check_schedule_reminders():
     logger.info("Running schedule reminder check")
 
     try:
-        async with async_session() as db:
+        async with async_session_maker() as db:
             now = datetime.now(timezone.utc)
             today = now.date()
 
@@ -204,7 +204,7 @@ async def check_overdue_schedules():
     logger.info("Running overdue schedule check")
 
     try:
-        async with async_session() as db:
+        async with async_session_maker() as db:
             now = datetime.now(timezone.utc)
             today = now.date()
             yesterday = today - timedelta(days=1)
