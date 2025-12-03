@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import NotificationsTab from '../components/NotificationsTab_new';
+import NotificationTemplatesTab from '../components/NotificationTemplatesTab';
 import {
   getDashboardCardSettings,
   saveDashboardCardSettings,
@@ -23,7 +24,7 @@ import {
 } from '../utils/displaySettings';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, notifications, household
+  const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, notifications, templates, household
 
   return (
     <div>
@@ -66,6 +67,17 @@ export default function Settings() {
             Notifications
           </button>
           <button
+            onClick={() => setActiveTab('templates')}
+            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'templates'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <SettingsIcon size={18} />
+            Templates
+          </button>
+          <button
             onClick={() => setActiveTab('household')}
             className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
               activeTab === 'household'
@@ -83,6 +95,7 @@ export default function Settings() {
       {activeTab === 'preferences' && <PreferencesTab />}
       {activeTab === 'display' && <DisplayTab />}
       {activeTab === 'notifications' && <NotificationsTab />}
+      {activeTab === 'templates' && <NotificationTemplatesTab />}
       {activeTab === 'household' && <HouseholdSection />}
     </div>
   );
