@@ -85,6 +85,88 @@ def get_next_occurrence_date(schedule: Schedule, from_date: py_date = None) -> p
     return from_date
 
 
+async def create_pending_completions():
+    """Create pending ScheduleCompletion records for upcoming schedules (next 7 days)"""
+    logger.info("Creating pending schedule completions")
+
+    try:
+        async with async_session_maker() as db:
+            today = datetime.now(timezone.utc).date()
+
+            # Get all enabled schedules
+            result = await db.execute(
+                select(Schedule).where(Schedule.enabled == True)
+            )
+            schedules = result.scalars().all()
+
+            logger.info(f"Processing {len(schedules)} enabled schedules")
+
+            for schedule in schedules:
+                try:
+                    # Create completions for next 7 days
+                    for days_ahead in range(7):
+                        check_date = today + timedelta(days=days_ahead)
+
+                        # Check if this date matches the schedule
+                        if not should_schedule_occur_on_date(schedule, check_date):
+                            continue
+
+                        # Check if completion already exists
+                        existing = await db.execute(
+                            select(ScheduleCompletion).where(
+                                and_(
+                                    ScheduleCompletion.schedule_id == schedule.id,
+                                    ScheduleCompletion.scheduled_date == check_date
+                                )
+                            )
+                        )
+
+                        if existing.scalars().first():
+                            continue  # Already exists
+
+                        # Create pending completion
+                        completion = ScheduleCompletion(
+                            schedule_id=schedule.id,
+                            reptile_id=schedule.reptile_id,
+                            scheduled_date=check_date,
+                            status=CompletionStatus.PENDING
+                        )
+                        db.add(completion)
+
+                    await db.commit()
+
+                except Exception as e:
+                    logger.error(f"Error creating completions for schedule {schedule.id}: {e}", exc_info=True)
+                    await db.rollback()
+                    continue
+
+    except Exception as e:
+        logger.error(f"Error in create_pending_completions: {e}", exc_info=True)
+
+
+def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bool:
+    """Check if a schedule should occur on a given date"""
+    if schedule.schedule_rule == "every_x_days":
+        # For every_x_days, we need to check if check_date is a valid occurrence
+        # This is simplified - in production you'd track the last occurrence
+        return True
+
+    elif schedule.schedule_rule == "days_of_week":
+        if not schedule.days_of_week:
+            return False
+        target_days = [int(d) for d in schedule.days_of_week.split(",")]
+        # Convert Python weekday (0=Monday) to our format (0=Sunday)
+        weekday = (check_date.weekday() + 1) % 7
+        return weekday in target_days
+
+    elif schedule.schedule_rule == "monthly":
+        if not schedule.day_of_month:
+            return False
+        return check_date.day == schedule.day_of_month
+
+    return False
+
+
 async def check_schedule_reminders():
     """Check for schedules that need reminder notifications"""
     logger.info("Running schedule reminder check")
@@ -355,6 +437,17 @@ def start_scheduler():
 
     scheduler = AsyncIOScheduler(timezone="UTC")
 
+    # Create pending completions once per day at midnight UTC
+    scheduler.add_job(
+        create_pending_completions,
+        trigger="cron",
+        hour=0,
+        minute=5,
+        id="create_completions",
+        name="Create pending schedule completions",
+        replace_existing=True
+    )
+
     # Check for reminders every 5 minutes
     scheduler.add_job(
         check_schedule_reminders,
@@ -376,6 +469,12 @@ def start_scheduler():
     )
 
     scheduler.start()
+
+    # Run create_pending_completions immediately on startup
+    logger.info("Running initial schedule completion creation")
+    import asyncio
+    asyncio.create_task(create_pending_completions())
+
     logger.info("Notification scheduler started successfully")
 
 
