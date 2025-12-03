@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_maker
 from app.models import Schedule, ScheduleCompletion, NotificationSettings, User, Reptile, CompletionStatus
-from app.notifications import send_webhook_notification
+from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 
 logger = logging.getLogger(__name__)
 
@@ -279,9 +279,11 @@ async def check_schedule_reminders():
                             # Send reminder to each enabled channel
                             for channel in channels:
                                 await send_schedule_reminder(
+                                    db=db,
                                     reptile=reptile,
                                     schedule=schedule,
                                     scheduled_date=next_occurrence_date,
+                                    user=user,
                                     webhook_url=channel.webhook_url,
                                     webhook_type=channel.webhook_type,
                                     config=channel.config
@@ -379,9 +381,11 @@ async def check_overdue_schedules():
                             # Send overdue alert to each enabled channel
                             for channel in channels:
                                 await send_overdue_alert(
+                                    db=db,
                                     reptile=reptile,
                                     schedule=schedule,
                                     missed_date=yesterday,
+                                    user=user,
                                     webhook_url=channel.webhook_url,
                                     webhook_type=channel.webhook_type,
                                     config=channel.config
@@ -405,14 +409,25 @@ async def check_overdue_schedules():
 
 
 async def send_schedule_reminder(
+    db: AsyncSession,
     reptile: Reptile,
     schedule: Schedule,
     scheduled_date: py_date,
+    user: User,
     webhook_url: str,
     webhook_type: str,
     config: dict = None
 ):
     """Send a schedule reminder notification"""
+    # Get template for this trigger
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type="schedule_reminder",
+        user_id=user.id,
+        channel_type=webhook_type
+    )
+
+    # Build context for template rendering
     schedule_type_emoji = {
         "feeding": "🍽️",
         "misting": "💧",
@@ -421,18 +436,35 @@ async def send_schedule_reminder(
     }
 
     emoji = schedule_type_emoji.get(schedule.schedule_type, "📅")
-
-    # Build message
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
-    message = f"{emoji} **Reminder:** {schedule_name} for **{reptile.name}**"
 
+    # Build time window string
+    time_window = ""
     if schedule.time_window_enabled and schedule.earliest_time and schedule.latest_time:
-        message += f"\nTime window: {schedule.earliest_time.strftime('%H:%M')} - {schedule.latest_time.strftime('%H:%M')}"
+        time_window = f"\nTime window: {schedule.earliest_time.strftime('%H:%M')} - {schedule.latest_time.strftime('%H:%M')}"
 
-    if schedule.notes:
-        message += f"\nNotes: {schedule.notes}"
+    # Build notes string
+    notes = f"\nNotes: {schedule.notes}" if schedule.notes else ""
 
-    title = f"Schedule Reminder - {reptile.name}"
+    context = {
+        "reptile_name": reptile.name,
+        "schedule_name": schedule_name,
+        "schedule_type": schedule.schedule_type,
+        "emoji": emoji,
+        "time_window": time_window,
+        "notes": notes,
+        "scheduled_date": scheduled_date.strftime('%Y-%m-%d'),
+        "due_date": scheduled_date.strftime('%Y-%m-%d'),
+    }
+
+    # Render template or use fallback
+    if template:
+        message = render_template(template.message_template, context)
+        title = render_template(template.title_template, context) if template.title_template else f"Schedule Reminder - {reptile.name}"
+    else:
+        # Fallback to hardcoded message
+        message = f"{emoji} **Reminder:** {schedule_name} for **{reptile.name}**{time_window}{notes}"
+        title = f"Schedule Reminder - {reptile.name}"
 
     await send_webhook_notification(
         webhook_url=webhook_url,
@@ -444,22 +476,41 @@ async def send_schedule_reminder(
 
 
 async def send_overdue_alert(
+    db: AsyncSession,
     reptile: Reptile,
     schedule: Schedule,
     missed_date: py_date,
+    user: User,
     webhook_url: str,
     webhook_type: str,
     config: dict = None
 ):
     """Send an overdue schedule alert"""
-    schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
-
-    message = (
-        f"⚠️ **Overdue Alert:** {schedule_name} for **{reptile.name}** was not completed on "
-        f"{missed_date.strftime('%Y-%m-%d')}"
+    # Get template for this trigger
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type="overdue_alert",
+        user_id=user.id,
+        channel_type=webhook_type
     )
 
-    title = f"Overdue Schedule - {reptile.name}"
+    schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
+
+    context = {
+        "reptile_name": reptile.name,
+        "schedule_name": schedule_name,
+        "schedule_type": schedule.schedule_type,
+        "missed_date": missed_date.strftime('%Y-%m-%d'),
+    }
+
+    # Render template or use fallback
+    if template:
+        message = render_template(template.message_template, context)
+        title = render_template(template.title_template, context) if template.title_template else f"Overdue Schedule - {reptile.name}"
+    else:
+        # Fallback to hardcoded message
+        message = f"⚠️ **Overdue Alert:** {schedule_name} for **{reptile.name}** was not completed on {missed_date.strftime('%Y-%m-%d')}"
+        title = f"Overdue Schedule - {reptile.name}"
 
     await send_webhook_notification(
         webhook_url=webhook_url,
