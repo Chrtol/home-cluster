@@ -5,6 +5,8 @@ namespace: default
 resources:
   - ./helmrelease.yaml
   - ./externalsecret.yaml
+  - ./externalsecret-flux-ssh.yaml
+  - ./gitrepository-write.yaml
   - ./imagerepository.yaml
   - ./imagepolicy.yaml
   - ./imageupdateautomation.yaml
