@@ -310,6 +310,9 @@ class ScheduleBase(BaseModel):
     time_window_enabled: bool = False
     reminder_minutes_before: Optional[int] = None  # For notifications
 
+    # Notification settings
+    notifications_enabled: bool = True  # Per-schedule notification toggle
+
     enabled: bool = True
     notes: Optional[str] = None
 
@@ -340,6 +343,9 @@ class ScheduleUpdate(BaseModel):
     latest_time: Optional[time] = None
     time_window_enabled: Optional[bool] = None
     reminder_minutes_before: Optional[int] = None
+
+    # Notification settings
+    notifications_enabled: Optional[bool] = None
 
     enabled: Optional[bool] = None
     notes: Optional[str] = None
@@ -755,12 +761,16 @@ class NotificationSettingsBase(BaseModel):
     webhook_enabled: bool = False
     webhook_url: Optional[str] = None
     webhook_type: str = "discord"  # discord, pushover, generic
+    notify_schedule_reminders: bool = True
+    notify_overdue_alerts: bool = True
 
 
 class NotificationSettingsUpdate(BaseModel):
     webhook_enabled: Optional[bool] = None
     webhook_url: Optional[str] = None
     webhook_type: Optional[str] = None
+    notify_schedule_reminders: Optional[bool] = None
+    notify_overdue_alerts: Optional[bool] = None
 
 
 class NotificationSettingsSchema(NotificationSettingsBase):

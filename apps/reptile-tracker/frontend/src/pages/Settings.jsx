@@ -894,6 +894,8 @@ function NotificationsTab() {
   const [webhookEnabled, setWebhookEnabled] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookType, setWebhookType] = useState('discord');
+  const [notifyScheduleReminders, setNotifyScheduleReminders] = useState(true);
+  const [notifyOverdueAlerts, setNotifyOverdueAlerts] = useState(true);
   const [testingWebhook, setTestingWebhook] = useState(false);
 
   useEffect(() => {
@@ -908,6 +910,8 @@ function NotificationsTab() {
         setWebhookEnabled(response.data.webhook_enabled || false);
         setWebhookUrl(response.data.webhook_url || '');
         setWebhookType(response.data.webhook_type || 'discord');
+        setNotifyScheduleReminders(response.data.notify_schedule_reminders !== undefined ? response.data.notify_schedule_reminders : true);
+        setNotifyOverdueAlerts(response.data.notify_overdue_alerts !== undefined ? response.data.notify_overdue_alerts : true);
       }
     } catch (err) {
       console.error('Failed to load notification settings:', err);
@@ -935,7 +939,9 @@ function NotificationsTab() {
       await axios.post('/api/notification-settings/me', {
         webhook_enabled: webhookEnabled,
         webhook_url: webhookUrl.trim(),
-        webhook_type: webhookType
+        webhook_type: webhookType,
+        notify_schedule_reminders: notifyScheduleReminders,
+        notify_overdue_alerts: notifyOverdueAlerts
       });
 
       setSuccess('Notification settings saved successfully!');
@@ -983,7 +989,7 @@ function NotificationsTab() {
       <div className="card">
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Notification Settings</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          Configure webhook notifications for feeding reminders, schedule alerts, and other important events.
+          Configure webhook notifications for schedule reminders and overdue alerts. Notifications are sent based on your schedule settings.
         </p>
 
         {error && (
@@ -1023,6 +1029,46 @@ function NotificationsTab() {
 
           {webhookEnabled && (
             <>
+              {/* Notification Types */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                <label className="block font-medium mb-3 text-gray-900 dark:text-white">
+                  Notification Types
+                </label>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Choose which types of notifications you want to receive
+                </p>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notifyScheduleReminders}
+                      onChange={(e) => setNotifyScheduleReminders(e.target.checked)}
+                      className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-white">Schedule Reminders</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Get notified before a schedule's time window closes (configured per schedule)
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notifyOverdueAlerts}
+                      onChange={(e) => setNotifyOverdueAlerts(e.target.checked)}
+                      className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-white">Overdue Alerts</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Get notified when a scheduled activity is missed (checked daily at 1 AM UTC)
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               {/* Webhook Type */}
               <div>
                 <label className="block font-medium mb-2 text-gray-900 dark:text-white">
@@ -1141,15 +1187,35 @@ function NotificationsTab() {
         </div>
       </div>
 
-      {/* Future Features Info */}
-      <div className="card bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
-        <h3 className="font-bold text-gray-900 dark:text-white mb-2">Coming Soon</h3>
-        <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-          <li>• Feeding reminder notifications (when reptile is due for feeding)</li>
-          <li>• Schedule deadline alerts (time window reminders)</li>
-          <li>• Weight check reminders (monthly or custom intervals)</li>
-          <li>• Overdue activity warnings (missed feedings, misting, etc.)</li>
-        </ul>
+      {/* How Notifications Work */}
+      <div className="card bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border-blue-200 dark:border-blue-800">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <Bell size={20} className="text-blue-600 dark:text-blue-400" />
+          Active Notification Features
+        </h3>
+        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+          <div>
+            <div className="font-semibold text-blue-600 dark:text-blue-400 mb-1">Schedule Reminders</div>
+            <p>Get notified before a schedule time window closes. Configure reminder timing when creating or editing a schedule with a time window enabled.</p>
+          </div>
+          <div>
+            <div className="font-semibold text-amber-600 dark:text-amber-400 mb-1">Overdue Alerts</div>
+            <p>Automatically receive alerts for missed schedule completions. Checked daily to ensure you never miss critical care tasks.</p>
+          </div>
+          <div>
+            <div className="font-semibold text-green-600 dark:text-green-400 mb-1">Supported Platforms</div>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li>Discord - Rich embeds with timestamps</li>
+              <li>Pushover - Mobile notifications</li>
+              <li>Generic Webhooks - Any HTTP endpoint</li>
+            </ul>
+          </div>
+          <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+            <p className="text-xs italic text-gray-600 dark:text-gray-400">
+              💡 Tip: Use the "Send Test Notification" button above to verify your webhook is working correctly.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
