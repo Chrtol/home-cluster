@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale, Bell } from "lucide-react";
 import { formatTime, getDayNames, getUserFirstDayOfWeek } from "../utils/dateFormatting";
 
 function Calendar() {
@@ -269,6 +269,7 @@ function Calendar() {
         time_window_enabled: schedule.time_window_enabled,
         earliest_time: schedule.earliest_time,
         latest_time: schedule.latest_time,
+        notifications_enabled: schedule.notifications_enabled,
         notes: schedule.notes,
       };
 
@@ -1033,6 +1034,13 @@ function Calendar() {
                           </span>
                         </div>
                       )}
+
+                      {schedule.notifications_enabled && (
+                        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                          <Bell size={12} />
+                          <span className="font-medium">Notifications enabled</span>
+                        </div>
+                      )}
                     </div>
 
                     {schedule.notes && (
@@ -1157,6 +1165,7 @@ function Calendar() {
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
+                                {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                               </span>
                               <span className="text-gray-900 dark:text-white font-medium whitespace-nowrap">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
@@ -1164,8 +1173,19 @@ function Calendar() {
                             </div>
                           ) : event.time_slot ? (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                Time
+                                {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
+                              </span>
                               <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
+                            </div>
+                          ) : event.notifications_enabled ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                <Bell size={10} className="text-blue-500 dark:text-blue-400" />
+                                Notifications
+                              </span>
+                              <span className="text-blue-600 dark:text-blue-400 text-xs">Enabled</span>
                             </div>
                           ) : null}
 
@@ -1362,16 +1382,20 @@ function Calendar() {
                             const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
                             const supplements = event.suggested_supplements || [];
                             const supplementText = supplements.map(s => s.name).join(', ');
+                            const notificationText = event.notifications_enabled ? ' [Notifications ON]' : '';
 
                             return (
                               <div
                                 key={idx}
-                                className={`text-xs px-2 py-1 rounded truncate ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
-                                title={`${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}`}
+                                className={`text-xs px-2 py-1 rounded truncate flex items-center gap-1 ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
+                                title={`${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}${notificationText}`}
                               >
                                 {event.is_actual && "✓ "}
-                                {displayName}
-                                {detail && <span className="opacity-75">{detail}</span>}
+                                <span className="truncate">
+                                  {displayName}
+                                  {detail && <span className="opacity-75">{detail}</span>}
+                                </span>
+                                {event.notifications_enabled && <Bell size={10} className="flex-shrink-0" />}
                                 {supplements.length > 0 && (
                                   <span className="ml-1 text-amber-700 dark:text-amber-300 font-medium">
                                     +{supplements.map(s => s.name).join(' +')}
@@ -1387,7 +1411,8 @@ function Calendar() {
                                 const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
                                 const supplements = event.suggested_supplements || [];
                                 const supplementText = supplements.map(s => s.name).join(', ');
-                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}`;
+                                const notificationText = event.notifications_enabled ? ' [Notifications ON]' : '';
+                                const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}${notificationText}`;
 
                                 return (
                                   <div
@@ -1408,7 +1433,8 @@ function Calendar() {
                               const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
                               const supplements = event.suggested_supplements || [];
                               const supplementText = supplements.map(s => s.name).join(', ');
-                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}`;
+                              const notificationText = event.notifications_enabled ? ' [Notifications ON]' : '';
+                              const tooltipText = `${event.is_actual ? '✓ ' : ''}${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}${notificationText}`;
 
                               return (
                                 <div
@@ -1480,7 +1506,12 @@ function Calendar() {
                           >
                             {event.is_actual && "✓ "}
                             <div className="truncate">{displayName}</div>
-                            <div className="text-xs opacity-75 truncate capitalize">{event.schedule_type}</div>
+                            <div className="text-xs opacity-75 truncate capitalize flex items-center gap-1">
+                              {event.schedule_type}
+                              {event.notifications_enabled && (
+                                <Bell size={10} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -1549,10 +1580,20 @@ function Calendar() {
                                   <div className="flex items-center gap-1 opacity-90">
                                     <Clock size={10} />
                                     {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
+                                    {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                                   </div>
                                 )}
                                 {event.time_slot && !event.time_window_enabled && (
-                                  <div className="opacity-90">Time: {event.time_slot}</div>
+                                  <div className="flex items-center gap-1 opacity-90">
+                                    <span>Time: {event.time_slot}</span>
+                                    {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
+                                  </div>
+                                )}
+                                {!event.time_window_enabled && !event.time_slot && event.notifications_enabled && (
+                                  <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                    <Bell size={10} />
+                                    <span>Notifications on</span>
+                                  </div>
                                 )}
                                 {(event.completed_time || event.time) && (
                                   <div className="text-green-600 dark:text-green-400 font-medium">
@@ -1661,6 +1702,7 @@ function Calendar() {
                             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
                               <Clock size={12} />
                               Time Window
+                              {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                             </div>
                             <div className="text-sm text-gray-900 dark:text-white font-medium">
                               {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
@@ -1670,8 +1712,21 @@ function Calendar() {
 
                         {event.time_slot && !event.time_window_enabled && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Time Slot</div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                              Time Slot
+                              {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
+                            </div>
                             <div className="text-sm text-gray-900 dark:text-white">{event.time_slot}</div>
+                          </div>
+                        )}
+
+                        {!event.time_window_enabled && !event.time_slot && event.notifications_enabled && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                              <Bell size={12} className="text-blue-500 dark:text-blue-400" />
+                              Notifications
+                            </div>
+                            <div className="text-sm text-blue-600 dark:text-blue-400">Enabled</div>
                           </div>
                         )}
 
