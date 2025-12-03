@@ -257,6 +257,52 @@ export default function FeedingLog() {
     setFedTime(timeString);
   }, [hours, minutes, period, timeFormat]);
 
+  // Reset form when navigating from /feed/:id to /feed
+  useEffect(() => {
+    if (!id && mode !== 'create') {
+      // Reset to create mode
+      setMode('create');
+      setExistingFeeding(null);
+      setError('');
+      setSuccess('');
+
+      // Reset form to defaults
+      setSelectedReptile(reptiles.length > 0 ? reptiles[0].id : '');
+      setFedDate(new Date().toISOString().slice(0, 10));
+      const now = new Date();
+      setHours(now.getHours());
+      setMinutes(now.getMinutes());
+      setPeriod(now.getHours() >= 12 ? 'PM' : 'AM');
+      setNotes('');
+
+      // Reset food types
+      setIncludeInsects(true);
+      setIncludeSalad(false);
+      setIncludePrepared(false);
+
+      // Reset food items
+      const insectFoods = foods.filter(f => f.category === 'insect');
+      if (insectFoods.length > 0) {
+        setInsectItems([{
+          id: Date.now(),
+          food_id: insectFoods[0].id,
+          quantity: 1,
+          supplement_ids: []
+        }]);
+      } else {
+        setInsectItems([]);
+      }
+      setSaladComponents([]);
+      setPreparedItems([]);
+
+      // Reset supplements
+      setSaladSupplements([]);
+      setSelectedSupplements([]);
+      setSuggestedSupplements([]);
+      setShowSuggestion(false);
+    }
+  }, [id, mode, reptiles, foods]);
+
   const handleHoursChange = (value) => {
     const numValue = parseInt(value) || (timeFormat === '12h' ? 12 : 0);
     const maxHours = timeFormat === '12h' ? 12 : 23;
@@ -510,7 +556,7 @@ export default function FeedingLog() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">View Feeding</h1>
           <div className="flex gap-2">
-            <button onClick={() => setMode('edit')} className="btn-primary flex items-center gap-2">
+            <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
               <Edit2 size={18} /> Edit
             </button>
             <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">

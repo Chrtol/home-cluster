@@ -106,28 +106,25 @@ async def create_schedule(
     if channel_ids:
         from app.models import NotificationChannel, NotificationSettings
 
-        # Get all specified channels and validate access
+        # Get all specified channels with their settings in one query
         result = await db.execute(
-            select(NotificationChannel)
+            select(NotificationChannel, NotificationSettings)
             .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
             .where(NotificationChannel.id.in_(channel_ids))
         )
-        channels = result.scalars().all()
+        channel_settings_pairs = result.all()
 
         # Validate user has access to each channel (owns it or it's household-wide)
-        for channel in channels:
-            channel_settings = await db.execute(
-                select(NotificationSettings).where(NotificationSettings.id == channel.notification_settings_id)
-            )
-            settings = channel_settings.scalar_one()
-
+        valid_channels = []
+        for channel, settings in channel_settings_pairs:
             if not (settings.user_id == current_user.id or channel.household_wide):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"You don't have access to channel: {channel.name}"
                 )
+            valid_channels.append(channel)
 
-        new_schedule.notification_channels = channels
+        new_schedule.notification_channels = valid_channels
 
     db.add(new_schedule)
     await db.commit()
@@ -171,28 +168,25 @@ async def update_schedule(
         from app.models import NotificationChannel, NotificationSettings
 
         if channel_ids:
-            # Get all specified channels and validate access
+            # Get all specified channels with their settings in one query
             result = await db.execute(
-                select(NotificationChannel)
+                select(NotificationChannel, NotificationSettings)
                 .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
                 .where(NotificationChannel.id.in_(channel_ids))
             )
-            channels = result.scalars().all()
+            channel_settings_pairs = result.all()
 
             # Validate user has access to each channel (owns it or it's household-wide)
-            for channel in channels:
-                channel_settings = await db.execute(
-                    select(NotificationSettings).where(NotificationSettings.id == channel.notification_settings_id)
-                )
-                settings = channel_settings.scalar_one()
-
+            valid_channels = []
+            for channel, settings in channel_settings_pairs:
                 if not (settings.user_id == current_user.id or channel.household_wide):
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail=f"You don't have access to channel: {channel.name}"
                     )
+                valid_channels.append(channel)
 
-            schedule.notification_channels = channels
+            schedule.notification_channels = valid_channels
         else:
             # Clear all channels
             schedule.notification_channels = []
