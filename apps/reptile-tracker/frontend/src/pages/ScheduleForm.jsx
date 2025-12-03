@@ -805,29 +805,30 @@ function ScheduleForm() {
               </div>
             </div>
           )}
+        </div>
 
-          {/* Notification Settings */}
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notificationsEnabled}
-                onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white">Enable Notifications for This Schedule</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  When enabled, you'll receive notifications for this schedule (reminder alerts and overdue warnings)
-                  according to your notification preferences in Settings.
-                </div>
-              </div>
+        {/* Notification Settings */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="notificationsEnabled"
+              checked={notificationsEnabled}
+              onChange={(e) => setNotificationsEnabled(e.target.checked)}
+              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="notificationsEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+              Enable notifications for this schedule
             </label>
           </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-8">
+            Receive reminder alerts and overdue warnings according to your notification preferences in Settings
+          </p>
         </div>
 
         {/* Enabled Toggle */}
-        <div className="flex items-center gap-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex items-center gap-3">
           <input
             type="checkbox"
             id="enabled"
