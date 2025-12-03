@@ -7,7 +7,17 @@ import { formatTime, getDayNames, getUserFirstDayOfWeek } from "../utils/dateFor
 function Calendar() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState("month"); // "month", "week", "day"
+
+  // Detect if mobile device
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Set initial view based on device - mobile defaults to 3-day
+  const getInitialView = () => {
+    const isMobileDevice = window.innerWidth < 768;
+    return isMobileDevice ? "3-day" : "month";
+  };
+
+  const [view, setView] = useState(getInitialView()); // "month", "week", "3-day", "day"
   const [reptiles, setReptiles] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [feedingRotations, setFeedingRotations] = useState([]); // Feeding rotations for supplement suggestions
@@ -36,6 +46,22 @@ function Calendar() {
       // Default to all categories visible
       setVisibleCategories(new Set(['feeding', 'misting', 'weighing', 'supplement']));
     }
+
+    // Detect mobile and restrict view options
+    const checkMobile = () => {
+      const isMobileDevice = window.innerWidth < 768;
+      setIsMobile(isMobileDevice);
+
+      // If switching to mobile and current view is not allowed, switch to 3-day
+      if (isMobileDevice && view !== "day" && view !== "3-day") {
+        setView("3-day");
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -408,6 +434,17 @@ function Calendar() {
     return days;
   };
 
+  const getDaysInThreeDays = () => {
+    // Show current day + next 2 days (total of 3 days)
+    const days = [];
+    for (let i = 0; i < 3; i++) {
+      const day = new Date(currentDate);
+      day.setDate(currentDate.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  };
+
   const getHoursInDay = () => {
     const hours = [];
     for (let i = 0; i < 24; i++) {
@@ -578,6 +615,11 @@ function Calendar() {
       navigateMonth(direction);
     } else if (view === "week") {
       navigateWeek(direction);
+    } else if (view === "3-day") {
+      // Navigate by 3 days
+      const newDate = new Date(currentDate);
+      newDate.setDate(newDate.getDate() + (direction * 3));
+      setCurrentDate(newDate);
     } else {
       navigateDay(direction);
     }
@@ -590,6 +632,11 @@ function Calendar() {
       const weekDays = getDaysInWeek();
       const start = weekDays[0].toLocaleDateString("default", { month: "short", day: "numeric" });
       const end = weekDays[6].toLocaleDateString("default", { month: "short", day: "numeric", year: "numeric" });
+      return `${start} - ${end}`;
+    } else if (view === "3-day") {
+      const threeDays = getDaysInThreeDays();
+      const start = threeDays[0].toLocaleDateString("default", { month: "short", day: "numeric" });
+      const end = threeDays[2].toLocaleDateString("default", { month: "short", day: "numeric", year: "numeric" });
       return `${start} - ${end}`;
     } else {
       return currentDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -1166,26 +1213,43 @@ function Calendar() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* View Buttons */}
             <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-full sm:w-auto">
+            {/* Month and Week views - hidden on mobile */}
+            {!isMobile && (
+              <>
+                <button
+                  onClick={() => setView("month")}
+                  className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
+                    view === "month"
+                      ? "bg-primary-600 text-white"
+                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  Month
+                </button>
+                <button
+                  onClick={() => setView("week")}
+                  className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                    view === "week"
+                      ? "bg-primary-600 text-white"
+                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  Week
+                </button>
+              </>
+            )}
+            {/* 3-day view - always visible */}
             <button
-              onClick={() => setView("month")}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
-                view === "month"
+              onClick={() => setView("3-day")}
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium ${!isMobile ? 'border-l border-gray-200 dark:border-gray-700' : ''} transition-colors ${
+                view === "3-day"
                   ? "bg-primary-600 text-white"
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}
             >
-              Month
+              3-Day
             </button>
-            <button
-              onClick={() => setView("week")}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
-                view === "week"
-                  ? "bg-primary-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
-            >
-              Week
-            </button>
+            {/* Day view - always visible */}
             <button
               onClick={() => setView("day")}
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
@@ -1428,58 +1492,254 @@ function Calendar() {
           </>
         )}
 
-        {/* Day View */}
-        {view === "day" && (
-          <div className="space-y-2">
-            {getEventsForDate(currentDate).length > 0 ? (
-              <div className="space-y-2">
-                {getEventsForDate(currentDate).map((event, idx) => (
+        {/* 3-Day View - Enhanced with more details */}
+        {view === "3-day" && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {getDaysInThreeDays().map((date, index) => {
+                const dayEvents = getEventsForDate(date);
+                const isToday = date.toDateString() === new Date().toDateString();
+                const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+
+                return (
                   <div
-                    key={idx}
-                    className={`p-4 rounded-lg border ${
-                      event.is_actual
-                        ? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50"
-                        : "border-gray-200 dark:border-gray-700"
-                    }`}
+                    key={index}
+                    className={`
+                      p-4 rounded-lg border transition-all
+                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+                      ${isSelected ? "ring-2 ring-primary-500" : ""}
+                    `}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {event.is_actual && (
-                            <span className="text-green-600 dark:text-green-400">✓</span>
-                          )}
-                          <div className="font-semibold text-gray-900 dark:text-white">
-                            {event.name || event.reptile_name}
+                    <div className="mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                      <div className={`text-lg font-bold ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-900 dark:text-white"}`}>
+                        {date.toLocaleDateString("default", { weekday: "short", month: "short", day: "numeric" })}
+                      </div>
+                      {dayEvents.length > 0 && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+
+                    {dayEvents.length === 0 ? (
+                      <div className="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">
+                        No events
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {dayEvents.map((event, idx) => {
+                          const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
+                          const link = getEventLink(event);
+                          const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
+
+                          const EventContent = (
+                            <div className={`px-3 py-2 rounded-lg ${getScheduleTypeColor(event.schedule_type, event.is_actual || event.is_completed)} cursor-pointer hover:opacity-80 transition-opacity`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                {(event.is_actual || event.is_completed) && (
+                                  <span className="text-green-600 dark:text-green-400 font-bold text-sm">✓</span>
+                                )}
+                                <div className="font-semibold text-sm truncate flex-1">{displayName}</div>
+                              </div>
+
+                              <div className="text-xs space-y-1">
+                                {event.food_category && (
+                                  <div className="text-xs opacity-90">Food: {event.food_category}</div>
+                                )}
+                                {event.time_window_enabled && event.earliest_time && event.latest_time && (
+                                  <div className="flex items-center gap-1 opacity-90">
+                                    <Clock size={10} />
+                                    {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
+                                  </div>
+                                )}
+                                {event.time_slot && !event.time_window_enabled && (
+                                  <div className="opacity-90">Time: {event.time_slot}</div>
+                                )}
+                                {(event.completed_time || event.time) && (
+                                  <div className="text-green-600 dark:text-green-400 font-medium">
+                                    Done: {event.completed_time || event.time}
+                                  </div>
+                                )}
+                                {event.suggested_supplements && event.suggested_supplements.length > 0 && (
+                                  <div className="flex gap-1 flex-wrap mt-1">
+                                    {event.suggested_supplements.map((supp, suppIdx) => (
+                                      <span key={suppIdx} className="text-xs px-1.5 py-0.5 rounded bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200">
+                                        +{supp.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {event.notes && (
+                                  <div className="text-xs opacity-75 mt-1 italic">{event.notes}</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+
+                          return link ? (
+                            <Link key={idx} to={link}>
+                              {EventContent}
+                            </Link>
+                          ) : (
+                            <div key={idx}>{EventContent}</div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Day View - Enhanced with maximum details */}
+        {view === "day" && (
+          <div className="space-y-3">
+            {getEventsForDate(currentDate).length > 0 ? (
+              <div className="space-y-3">
+                {getEventsForDate(currentDate).map((event, idx) => {
+                  const link = getEventLink(event);
+                  const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
+
+                  const EventContent = (
+                    <div
+                      className={`p-5 rounded-lg border-2 ${
+                        event.is_actual || event.is_completed
+                          ? "border-green-500 dark:border-green-600 bg-white dark:bg-gray-800"
+                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+                      } hover:shadow-md transition-all ${link ? 'cursor-pointer' : ''}`}
+                    >
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
+                          <TypeIcon size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {(event.is_actual || event.is_completed) && (
+                              <span className="text-green-600 dark:text-green-400 font-bold text-lg">✓</span>
+                            )}
+                            <div className="font-bold text-lg text-gray-900 dark:text-white">
+                              {event.name || event.reptile_name}
+                            </div>
                           </div>
-                          {event.is_actual && event.time && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {event.time}
-                            </span>
-                          )}
+                          <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                            {event.schedule_type}
+                            {event.is_actual || event.is_completed ? " (Completed)" : " (Scheduled)"}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                          {event.is_actual ? "Completed: " : "Scheduled: "}
+                        <span className={`px-3 py-1.5 text-xs rounded-full font-medium ${getScheduleTypeColor(event.schedule_type, event.is_actual || event.is_completed)}`}>
                           {event.schedule_type}
-                          {event.food_category && ` • ${event.food_category}`}
-                          {event.time_slot && ` • ${event.time_slot}`}
-                        </div>
-                        {!event.name && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {event.reptile_name}
+                        </span>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                        {event.reptile_name && event.name && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Reptile</div>
+                            <div className="text-sm text-gray-900 dark:text-white font-medium">{event.reptile_name}</div>
                           </div>
                         )}
-                        {event.notes && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            {event.notes}
+
+                        {event.food_category && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Food Category</div>
+                            <div className="text-sm text-gray-900 dark:text-white capitalize">{event.food_category}</div>
+                          </div>
+                        )}
+
+                        {event.health_category && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Activity Type</div>
+                            <div className="text-sm text-gray-900 dark:text-white capitalize">{event.health_category.replace('_', ' ')}</div>
+                          </div>
+                        )}
+
+                        {event.time_window_enabled && event.earliest_time && event.latest_time && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                              <Clock size={12} />
+                              Time Window
+                            </div>
+                            <div className="text-sm text-gray-900 dark:text-white font-medium">
+                              {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
+                            </div>
+                          </div>
+                        )}
+
+                        {event.time_slot && !event.time_window_enabled && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Time Slot</div>
+                            <div className="text-sm text-gray-900 dark:text-white">{event.time_slot}</div>
+                          </div>
+                        )}
+
+                        {(event.completed_time || event.time) && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Completed At</div>
+                            <div className="text-sm text-green-600 dark:text-green-400 font-bold">
+                              {event.completed_time || event.time}
+                            </div>
+                          </div>
+                        )}
+
+                        {event.schedule_rule && (
+                          <div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Frequency</div>
+                            <div className="text-sm text-gray-900 dark:text-white capitalize">{event.schedule_rule.replace(/_/g, ' ')}</div>
                           </div>
                         )}
                       </div>
-                      <span className={`px-3 py-1 text-xs rounded-full ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}>
-                        {event.schedule_type}
-                      </span>
+
+                      {/* Supplements */}
+                      {event.suggested_supplements && event.suggested_supplements.length > 0 && (
+                        <div className="mb-3">
+                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Suggested Supplements</div>
+                          <div className="flex gap-2 flex-wrap">
+                            {event.suggested_supplements.map((supp, suppIdx) => (
+                              <span key={suppIdx} className="px-3 py-1.5 text-sm rounded-lg font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                + {supp.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Foods (if available from actual feeding) */}
+                      {event.foods && event.foods.length > 0 && (
+                        <div className="mb-3">
+                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Foods Given</div>
+                          <div className="flex gap-2 flex-wrap">
+                            {event.foods.map((food, foodIdx) => (
+                              <span key={foodIdx} className="px-3 py-1 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                {food.name} {food.quantity && `(${food.quantity})`}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Notes */}
+                      {event.notes && (
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</div>
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {event.notes}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+
+                  return link ? (
+                    <Link key={idx} to={link} className="block">
+                      {EventContent}
+                    </Link>
+                  ) : (
+                    <div key={idx}>{EventContent}</div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center text-gray-500 dark:text-gray-400 py-16">
