@@ -85,8 +85,9 @@ async def delete_notification_settings(
 
 
 class TestNotificationRequest(BaseModel):
-    webhook_url: str
+    webhook_url: Optional[str] = None
     webhook_type: str
+    config: Optional[dict] = None
 
 
 @router.post("/test")
@@ -95,20 +96,35 @@ async def test_notification(
     current_user: User = Depends(get_current_user)
 ):
     """Send a test notification to verify webhook configuration"""
-    # Validate webhook URL
-    if not validate_webhook_url(test_data.webhook_url):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid webhook URL. URL must use HTTP/HTTPS and cannot target private networks."
-        )
+    # Validate webhook URL for discord/generic
+    if test_data.webhook_type in ["discord", "generic"]:
+        if not test_data.webhook_url or not validate_webhook_url(test_data.webhook_url):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid webhook URL. URL must use HTTP/HTTPS and cannot target private networks."
+            )
+
+    # Validate config for pushover
+    if test_data.webhook_type == "pushover":
+        if not test_data.config:
+            raise HTTPException(
+                status_code=400,
+                detail="Pushover requires config with api_key and user_key"
+            )
+        if not test_data.config.get("api_key") or not test_data.config.get("user_key"):
+            raise HTTPException(
+                status_code=400,
+                detail="Pushover config must include api_key and user_key"
+            )
 
     # Send test notification
     try:
         await send_webhook_notification(
             webhook_url=test_data.webhook_url,
             webhook_type=test_data.webhook_type,
-            message=f"Test notification from Reptile Tracker! This notification was sent by {current_user.name} to verify webhook configuration.",
-            title="Test Notification"
+            message=f"Test notification from Reptile Tracker! This notification was sent by {current_user.name} to verify configuration.",
+            title="Test Notification",
+            config=test_data.config
         )
         return {"message": "Test notification sent successfully"}
     except Exception as e:

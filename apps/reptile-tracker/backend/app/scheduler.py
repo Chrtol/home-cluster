@@ -283,7 +283,8 @@ async def check_schedule_reminders():
                                     schedule=schedule,
                                     scheduled_date=next_occurrence_date,
                                     webhook_url=channel.webhook_url,
-                                    webhook_type=channel.webhook_type
+                                    webhook_type=channel.webhook_type,
+                                    config=channel.config
                                 )
 
                                 logger.info(
@@ -382,7 +383,8 @@ async def check_overdue_schedules():
                                     schedule=schedule,
                                     missed_date=yesterday,
                                     webhook_url=channel.webhook_url,
-                                    webhook_type=channel.webhook_type
+                                    webhook_type=channel.webhook_type,
+                                    config=channel.config
                                 )
 
                                 logger.info(
@@ -407,7 +409,8 @@ async def send_schedule_reminder(
     schedule: Schedule,
     scheduled_date: py_date,
     webhook_url: str,
-    webhook_type: str
+    webhook_type: str,
+    config: dict = None
 ):
     """Send a schedule reminder notification"""
     schedule_type_emoji = {
@@ -435,7 +438,8 @@ async def send_schedule_reminder(
         webhook_url=webhook_url,
         webhook_type=webhook_type,
         message=message,
-        title=title
+        title=title,
+        config=config
     )
 
 
@@ -444,7 +448,8 @@ async def send_overdue_alert(
     schedule: Schedule,
     missed_date: py_date,
     webhook_url: str,
-    webhook_type: str
+    webhook_type: str,
+    config: dict = None
 ):
     """Send an overdue schedule alert"""
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
@@ -460,7 +465,8 @@ async def send_overdue_alert(
         webhook_url=webhook_url,
         webhook_type=webhook_type,
         message=message,
-        title=title
+        title=title,
+        config=config
     )
 
 

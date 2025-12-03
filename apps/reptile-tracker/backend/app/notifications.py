@@ -88,21 +88,24 @@ def validate_webhook_url(url: str) -> bool:
 
 
 async def send_webhook_notification(
-    webhook_url: str,
-    webhook_type: str,
-    message: str,
+    webhook_url: Optional[str] = None,
+    webhook_type: str = "generic",
+    message: str = "",
     title: Optional[str] = None,
+    config: Optional[dict] = None,
 ):
     """
-    Send notification via webhook
+    Send notification via webhook or API
     M-3 Fix: Added SSRF protection
     M-4 Fix: Better error handling
-    """
 
-    # M-3 Fix: Validate URL before making request
-    if not validate_webhook_url(webhook_url):
-        logger.error(f"Webhook notification blocked: Invalid or dangerous URL: {webhook_url}")
-        raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
+    Args:
+        webhook_url: For discord/generic webhooks
+        webhook_type: discord, pushover, or generic
+        message: Notification message
+        title: Notification title
+        config: For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
+    """
 
     try:
         # Set strict timeouts to prevent hanging
@@ -110,6 +113,11 @@ async def send_webhook_notification(
 
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
             if webhook_type == "discord":
+                # M-3 Fix: Validate URL before making request
+                if not webhook_url or not validate_webhook_url(webhook_url):
+                    logger.error(f"Discord webhook blocked: Invalid or dangerous URL: {webhook_url}")
+                    raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
+
                 payload = {
                     "content": message,
                     "embeds": [
@@ -123,13 +131,62 @@ async def send_webhook_notification(
                 }
                 response = await client.post(webhook_url, json=payload)
                 response.raise_for_status()
+                logger.info(f"Discord notification sent successfully")
 
             elif webhook_type == "pushover":
-                payload = {"message": message, "title": title or "Reptile Tracker"}
-                response = await client.post(webhook_url, data=payload)
+                # Pushover uses API, not webhooks
+                if not config:
+                    raise ValueError("Pushover requires config with api_key and user_key")
+
+                api_key = config.get("api_key")
+                user_key = config.get("user_key")
+
+                if not api_key or not user_key:
+                    raise ValueError("Pushover requires api_key and user_key in config")
+
+                # Build Pushover payload
+                payload = {
+                    "token": api_key,
+                    "user": user_key,
+                    "message": message,
+                    "title": title or "Reptile Tracker",
+                }
+
+                # Optional fields
+                if config.get("devices"):
+                    payload["device"] = config["devices"]
+
+                # Priority: -2 (silent), -1 (quiet), 0 (normal), 1 (high), 2 (emergency)
+                priority_map = {
+                    "silent": -2,
+                    "quiet": -1,
+                    "normal": 0,
+                    "high": 1,
+                    "emergency": 2
+                }
+                priority = config.get("priority", "normal")
+                payload["priority"] = priority_map.get(priority, 0)
+
+                # Emergency-specific fields
+                if payload["priority"] == 2:
+                    payload["retry"] = config.get("retry", 30)  # Min 30 seconds
+                    payload["expire"] = config.get("expire", 3600)  # Max 86400 seconds
+
+                # Optional sound
+                if config.get("sound"):
+                    payload["sound"] = config["sound"]
+
+                # Send to Pushover API
+                response = await client.post("https://api.pushover.net/1/messages.json", data=payload)
                 response.raise_for_status()
+                logger.info(f"Pushover notification sent successfully")
 
             else:  # generic webhook
+                # M-3 Fix: Validate URL before making request
+                if not webhook_url or not validate_webhook_url(webhook_url):
+                    logger.error(f"Generic webhook blocked: Invalid or dangerous URL: {webhook_url}")
+                    raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
+
                 payload = {
                     "message": message,
                     "title": title or "Reptile Tracker Notification",
@@ -137,14 +194,13 @@ async def send_webhook_notification(
                 }
                 response = await client.post(webhook_url, json=payload)
                 response.raise_for_status()
-
-            logger.info(f"Webhook notification sent successfully to {webhook_url}")
+                logger.info(f"Generic webhook notification sent successfully")
 
     except httpx.TimeoutException:
-        logger.error(f"Webhook notification timeout: {webhook_url}")
+        logger.error(f"Webhook notification timeout")
         # Don't raise - notifications are not critical
     except httpx.HTTPStatusError as e:
-        logger.error(f"Webhook notification failed with HTTP {e.response.status_code}: {webhook_url}")
+        logger.error(f"Webhook notification failed with HTTP {e.response.status_code}")
         # Don't raise - notifications are not critical
     except httpx.RequestError as e:
         logger.error(f"Webhook notification request error: {e}")

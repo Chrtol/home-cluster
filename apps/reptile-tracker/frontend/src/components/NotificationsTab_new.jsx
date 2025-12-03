@@ -22,6 +22,16 @@ function NotificationsTab() {
   const [channelType, setChannelType] = useState('discord');
   const [channelUrl, setChannelUrl] = useState('');
   const [channelEnabled, setChannelEnabled] = useState(true);
+  const [testingChannel, setTestingChannel] = useState(false);
+
+  // Pushover config state
+  const [pushoverApiKey, setPushoverApiKey] = useState('');
+  const [pushoverUserKey, setPushoverUserKey] = useState('');
+  const [pushoverDevices, setPushoverDevices] = useState('');
+  const [pushoverPriority, setPushoverPriority] = useState('normal');
+  const [pushoverRetry, setPushoverRetry] = useState('30');
+  const [pushoverExpire, setPushoverExpire] = useState('3600');
+  const [pushoverSound, setPushoverSound] = useState('');
 
   useEffect(() => {
     loadData();
@@ -86,6 +96,13 @@ function NotificationsTab() {
     setChannelType('discord');
     setChannelUrl('');
     setChannelEnabled(true);
+    setPushoverApiKey('');
+    setPushoverUserKey('');
+    setPushoverDevices('');
+    setPushoverPriority('normal');
+    setPushoverRetry('30');
+    setPushoverExpire('3600');
+    setPushoverSound('');
     setShowAddChannel(true);
   };
 
@@ -93,8 +110,28 @@ function NotificationsTab() {
     setEditingChannel(channel);
     setChannelName(channel.name);
     setChannelType(channel.webhook_type);
-    setChannelUrl(channel.webhook_url);
+    setChannelUrl(channel.webhook_url || '');
     setChannelEnabled(channel.enabled);
+
+    // Load Pushover config if exists
+    if (channel.webhook_type === 'pushover' && channel.config) {
+      setPushoverApiKey(channel.config.api_key || '');
+      setPushoverUserKey(channel.config.user_key || '');
+      setPushoverDevices(channel.config.devices || '');
+      setPushoverPriority(channel.config.priority || 'normal');
+      setPushoverRetry(channel.config.retry?.toString() || '30');
+      setPushoverExpire(channel.config.expire?.toString() || '3600');
+      setPushoverSound(channel.config.sound || '');
+    } else {
+      setPushoverApiKey('');
+      setPushoverUserKey('');
+      setPushoverDevices('');
+      setPushoverPriority('normal');
+      setPushoverRetry('30');
+      setPushoverExpire('3600');
+      setPushoverSound('');
+    }
+
     setShowAddChannel(true);
   };
 
@@ -108,28 +145,58 @@ function NotificationsTab() {
         return;
       }
 
-      if (!channelUrl.trim()) {
-        setError('Webhook URL is required');
-        return;
+      // Build payload based on channel type
+      const payload = {
+        name: channelName.trim(),
+        webhook_type: channelType,
+        enabled: channelEnabled
+      };
+
+      if (channelType === 'pushover') {
+        // Validate Pushover fields
+        if (!pushoverApiKey.trim() || !pushoverUserKey.trim()) {
+          setError('Pushover requires API Key and User Key');
+          return;
+        }
+
+        // Build Pushover config
+        payload.config = {
+          api_key: pushoverApiKey.trim(),
+          user_key: pushoverUserKey.trim(),
+          priority: pushoverPriority
+        };
+
+        if (pushoverDevices.trim()) {
+          payload.config.devices = pushoverDevices.trim();
+        }
+
+        if (pushoverPriority === 'emergency') {
+          payload.config.retry = parseInt(pushoverRetry) || 30;
+          payload.config.expire = parseInt(pushoverExpire) || 3600;
+        }
+
+        if (pushoverSound.trim()) {
+          payload.config.sound = pushoverSound.trim();
+        }
+
+        payload.webhook_url = null; // Pushover doesn't use webhook URLs
+      } else {
+        // Discord and Generic require webhook URL
+        if (!channelUrl.trim()) {
+          setError('Webhook URL is required');
+          return;
+        }
+        payload.webhook_url = channelUrl.trim();
+        payload.config = null;
       }
 
       if (editingChannel) {
         // Update existing channel
-        await axios.patch(`/api/notification-channels/${editingChannel.id}`, {
-          name: channelName.trim(),
-          webhook_type: channelType,
-          webhook_url: channelUrl.trim(),
-          enabled: channelEnabled
-        });
+        await axios.patch(`/api/notification-channels/${editingChannel.id}`, payload);
         setSuccess('Channel updated successfully!');
       } else {
         // Create new channel
-        await axios.post('/api/notification-channels', {
-          name: channelName.trim(),
-          webhook_type: channelType,
-          webhook_url: channelUrl.trim(),
-          enabled: channelEnabled
-        });
+        await axios.post('/api/notification-channels', payload);
         setSuccess('Channel added successfully!');
       }
 
@@ -169,6 +236,60 @@ function NotificationsTab() {
     } catch (err) {
       console.error('Failed to toggle channel:', err);
       setError(err.response?.data?.detail || 'Failed to toggle channel');
+    }
+  };
+
+  const handleTestChannel = async () => {
+    try {
+      setTestingChannel(true);
+      setError('');
+      setSuccess('');
+
+      const payload = {
+        webhook_type: channelType
+      };
+
+      if (channelType === 'pushover') {
+        if (!pushoverApiKey.trim() || !pushoverUserKey.trim()) {
+          setError('Pushover requires API Key and User Key to test');
+          return;
+        }
+
+        payload.config = {
+          api_key: pushoverApiKey.trim(),
+          user_key: pushoverUserKey.trim(),
+          priority: pushoverPriority
+        };
+
+        if (pushoverDevices.trim()) {
+          payload.config.devices = pushoverDevices.trim();
+        }
+
+        if (pushoverPriority === 'emergency') {
+          payload.config.retry = parseInt(pushoverRetry) || 30;
+          payload.config.expire = parseInt(pushoverExpire) || 3600;
+        }
+
+        if (pushoverSound.trim()) {
+          payload.config.sound = pushoverSound.trim();
+        }
+      } else {
+        if (!channelUrl.trim()) {
+          setError('Webhook URL is required to test');
+          return;
+        }
+        payload.webhook_url = channelUrl.trim();
+      }
+
+      await axios.post('/api/notification-settings/test', payload);
+
+      setSuccess('Test notification sent! Check your notification destination.');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      console.error('Failed to send test notification:', err);
+      setError(err.response?.data?.detail || 'Failed to send test notification');
+    } finally {
+      setTestingChannel(false);
     }
   };
 
@@ -322,7 +443,14 @@ function NotificationsTab() {
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
-                  {maskWebhookUrl(channel.webhook_url)}
+                  {channel.webhook_type === 'pushover' ? (
+                    <div>
+                      <div>User: {channel.config?.user_key ? `${channel.config.user_key.substring(0, 8)}...` : 'Not configured'}</div>
+                      <div>Priority: {channel.config?.priority || 'normal'}</div>
+                    </div>
+                  ) : (
+                    maskWebhookUrl(channel.webhook_url)
+                  )}
                 </div>
                 {!channel.enabled && (
                   <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
@@ -372,18 +500,128 @@ function NotificationsTab() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Webhook URL
-                </label>
-                <input
-                  type="url"
-                  value={channelUrl}
-                  onChange={(e) => setChannelUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="input-field"
-                />
-              </div>
+              {/* Conditional fields based on channel type */}
+              {channelType === 'pushover' ? (
+                <>
+                  {/* Pushover Config Fields */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      API Key *
+                    </label>
+                    <input
+                      type="text"
+                      value={pushoverApiKey}
+                      onChange={(e) => setPushoverApiKey(e.target.value)}
+                      placeholder="Your Pushover application API key"
+                      className="input-field font-mono text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      User Key *
+                    </label>
+                    <input
+                      type="text"
+                      value={pushoverUserKey}
+                      onChange={(e) => setPushoverUserKey(e.target.value)}
+                      placeholder="Your Pushover user key"
+                      className="input-field font-mono text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Devices (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={pushoverDevices}
+                      onChange={(e) => setPushoverDevices(e.target.value)}
+                      placeholder="device1,device2 (leave blank for all devices)"
+                      className="input-field text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Priority
+                    </label>
+                    <select
+                      value={pushoverPriority}
+                      onChange={(e) => setPushoverPriority(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="silent">Silent (-2)</option>
+                      <option value="quiet">Quiet (-1)</option>
+                      <option value="normal">Normal (0)</option>
+                      <option value="high">High (1)</option>
+                      <option value="emergency">Emergency (2)</option>
+                    </select>
+                  </div>
+
+                  {pushoverPriority === 'emergency' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Retry (seconds)
+                        </label>
+                        <input
+                          type="number"
+                          value={pushoverRetry}
+                          onChange={(e) => setPushoverRetry(e.target.value)}
+                          min="30"
+                          className="input-field"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 30 seconds</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Expire (seconds)
+                        </label>
+                        <input
+                          type="number"
+                          value={pushoverExpire}
+                          onChange={(e) => setPushoverExpire(e.target.value)}
+                          max="86400"
+                          className="input-field"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Maximum 86400 seconds (24 hours)</p>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Sound (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={pushoverSound}
+                      onChange={(e) => setPushoverSound(e.target.value)}
+                      placeholder="pushover, bike, bugle, etc."
+                      className="input-field text-sm"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Webhook URL for Discord and Generic */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Webhook URL *
+                    </label>
+                    <input
+                      type="url"
+                      value={channelUrl}
+                      onChange={(e) => setChannelUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="input-field font-mono text-sm"
+                    />
+                  </div>
+                </>
+              )}
 
               <label className="flex items-center gap-2">
                 <input
@@ -396,6 +634,27 @@ function NotificationsTab() {
                   Enable this channel
                 </span>
               </label>
+
+              {/* Test Button */}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleTestChannel}
+                  disabled={testingChannel || (channelType === 'pushover' ? (!pushoverApiKey.trim() || !pushoverUserKey.trim()) : !channelUrl.trim())}
+                  className="btn-secondary w-full flex items-center justify-center gap-2"
+                >
+                  {testingChannel ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      Sending Test...
+                    </>
+                  ) : (
+                    <>
+                      <Bell size={16} />
+                      Send Test Notification
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className="flex gap-3">
                 <button onClick={handleSaveChannel} className="btn-primary flex-1">
