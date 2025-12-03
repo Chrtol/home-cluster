@@ -28,6 +28,7 @@ async def list_schedules(
             selectinload(Schedule.supplement),
             selectinload(Schedule.parent_schedule),
             selectinload(Schedule.child_schedules),
+            selectinload(Schedule.notification_channels),
         )
         .order_by(Schedule.created_at.desc())
     )
@@ -48,6 +49,7 @@ async def get_schedule(
             selectinload(Schedule.supplement),
             selectinload(Schedule.parent_schedule),
             selectinload(Schedule.child_schedules),
+            selectinload(Schedule.notification_channels),
         )
     )
     schedule = result.scalar_one_or_none()
@@ -90,14 +92,46 @@ async def create_schedule(
             detail="parent_schedule_id is required for dependent schedule"
         )
 
+    # Extract channel_ids and validate them
+    channel_ids = schedule.channel_ids or []
+    schedule_dict = schedule.model_dump(exclude={'channel_ids'})
+
     new_schedule = Schedule(
-        **schedule.model_dump(),
+        **schedule_dict,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc)
     )
+
+    # Add selected notification channels if any
+    if channel_ids:
+        from app.models import NotificationChannel, NotificationSettings
+
+        # Get all specified channels and validate access
+        result = await db.execute(
+            select(NotificationChannel)
+            .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
+            .where(NotificationChannel.id.in_(channel_ids))
+        )
+        channels = result.scalars().all()
+
+        # Validate user has access to each channel (owns it or it's household-wide)
+        for channel in channels:
+            channel_settings = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.id == channel.notification_settings_id)
+            )
+            settings = channel_settings.scalar_one()
+
+            if not (settings.user_id == current_user.id or channel.household_wide):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"You don't have access to channel: {channel.name}"
+                )
+
+        new_schedule.notification_channels = channels
+
     db.add(new_schedule)
     await db.commit()
-    await db.refresh(new_schedule)
+    await db.refresh(new_schedule, ["notification_channels"])
     return new_schedule
 
 
@@ -125,12 +159,47 @@ async def update_schedule(
     if "reptile_id" in update_data and update_data["reptile_id"] != schedule.reptile_id:
         await check_reptile_access(db, current_user, update_data["reptile_id"], AccessLevel.CARETAKER)
 
+    # Handle channel_ids separately
+    channel_ids = update_data.pop("channel_ids", None)
+
+    # Update other fields
     for field, value in update_data.items():
         setattr(schedule, field, value)
 
+    # Update notification channels if specified
+    if channel_ids is not None:
+        from app.models import NotificationChannel, NotificationSettings
+
+        if channel_ids:
+            # Get all specified channels and validate access
+            result = await db.execute(
+                select(NotificationChannel)
+                .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
+                .where(NotificationChannel.id.in_(channel_ids))
+            )
+            channels = result.scalars().all()
+
+            # Validate user has access to each channel (owns it or it's household-wide)
+            for channel in channels:
+                channel_settings = await db.execute(
+                    select(NotificationSettings).where(NotificationSettings.id == channel.notification_settings_id)
+                )
+                settings = channel_settings.scalar_one()
+
+                if not (settings.user_id == current_user.id or channel.household_wide):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"You don't have access to channel: {channel.name}"
+                    )
+
+            schedule.notification_channels = channels
+        else:
+            # Clear all channels
+            schedule.notification_channels = []
+
     schedule.updated_at = datetime.now(timezone.utc)
     await db.commit()
-    await db.refresh(schedule)
+    await db.refresh(schedule, ["notification_channels"])
     return schedule
 
 

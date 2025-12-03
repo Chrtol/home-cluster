@@ -345,6 +345,7 @@ class Schedule(Base):
     # Relationships
     reptile = relationship("Reptile", back_populates="schedules")
     parent_schedule = relationship("Schedule", remote_side=[id], back_populates="child_schedules")
+    notification_channels = relationship("NotificationChannel", secondary="schedule_notification_channels", backref="schedules")
     child_schedules = relationship("Schedule", back_populates="parent_schedule", cascade="all, delete-orphan")
     supplement = relationship("Supplement")
     completions = relationship("ScheduleCompletion", back_populates="schedule", cascade="all, delete-orphan")
@@ -532,6 +533,7 @@ class NotificationChannel(Base):
     webhook_url = Column(String, nullable=True)  # For discord/generic webhooks
     config = Column(JSON, nullable=True)  # For pushover and other configs (api_key, user_key, priority, etc.)
     enabled = Column(Boolean, default=True, nullable=False)
+    household_wide = Column(Boolean, default=False, nullable=False)  # If true, available to all household members
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -564,6 +566,15 @@ class NotificationTemplate(Base):
 
     # Relationships
     user = relationship("User", backref="notification_templates")
+
+
+# Association table for Schedule <-> NotificationChannel many-to-many relationship
+schedule_notification_channels = Table(
+    "schedule_notification_channels",
+    Base.metadata,
+    Column("schedule_id", Integer, ForeignKey("schedules.id", ondelete="CASCADE"), primary_key=True),
+    Column("channel_id", Integer, ForeignKey("notification_channels.id", ondelete="CASCADE"), primary_key=True),
+)
 
 
 # Household and Invitation models

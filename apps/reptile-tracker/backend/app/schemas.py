@@ -319,6 +319,7 @@ class ScheduleBase(BaseModel):
 
 class ScheduleCreate(ScheduleBase):
     reptile_id: int
+    channel_ids: Optional[List[int]] = []  # List of notification channel IDs to use
 
 
 class ScheduleUpdate(BaseModel):
@@ -346,6 +347,7 @@ class ScheduleUpdate(BaseModel):
 
     # Notification settings
     notifications_enabled: Optional[bool] = None
+    channel_ids: Optional[List[int]] = None  # List of notification channel IDs to use
 
     enabled: Optional[bool] = None
     notes: Optional[str] = None
@@ -356,6 +358,7 @@ class Schedule(ScheduleBase):
     reptile_id: int
     created_at: datetime
     updated_at: datetime
+    notification_channels: List['NotificationChannel'] = []  # Selected channels for this schedule
 
     class Config:
         from_attributes = True
@@ -790,6 +793,7 @@ class NotificationChannelBase(BaseModel):
     webhook_url: Optional[str] = None  # For discord/generic
     config: Optional[dict] = None  # For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
     enabled: bool = True
+    household_wide: bool = False  # If true, available to all household members
 
 
 class NotificationChannelCreate(NotificationChannelBase):

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Save, Clock } from "lucide-react";
+import { ArrowLeft, Save, Clock, Users, User as UserIcon } from "lucide-react";
 import { getUserTimeFormat, getDayNames, getDayNumbers } from "../utils/dateFormatting";
 
 function ScheduleForm() {
@@ -40,8 +40,9 @@ function ScheduleForm() {
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState("");
 
   // Notification settings
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [enabledChannels, setEnabledChannels] = useState([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [availableChannels, setAvailableChannels] = useState([]);
+  const [selectedChannelIds, setSelectedChannelIds] = useState([]);
 
   // Time picker state for earliest time
   const [earliestHours, setEarliestHours] = useState(9);
@@ -64,7 +65,7 @@ function ScheduleForm() {
   useEffect(() => {
     fetchReptiles();
     fetchSupplements();
-    fetchEnabledChannels();
+    fetchAvailableChannels();
     if (isEditing) {
       fetchScheduleData();
     }
@@ -163,7 +164,12 @@ function ScheduleForm() {
       }
 
       setReminderMinutesBefore(schedule.reminder_minutes_before || "");
-      setNotificationsEnabled(schedule.notifications_enabled !== undefined ? schedule.notifications_enabled : true);
+      setNotificationsEnabled(schedule.notifications_enabled !== undefined ? schedule.notifications_enabled : false);
+
+      // Load selected channels
+      if (schedule.notification_channels) {
+        setSelectedChannelIds(schedule.notification_channels.map(ch => ch.id));
+      }
     } catch (error) {
       console.error("Error fetching schedule:", error);
       alert("Failed to load schedule data");
@@ -205,15 +211,23 @@ function ScheduleForm() {
     }
   };
 
-  const fetchEnabledChannels = async () => {
+  const fetchAvailableChannels = async () => {
     try {
       const response = await axios.get("/api/notification-channels/me");
-      // Filter to only show enabled channels
+      // Filter to only show enabled channels (user's own + household-wide)
       const enabled = response.data.filter(channel => channel.enabled);
-      setEnabledChannels(enabled);
+      setAvailableChannels(enabled);
     } catch (error) {
       console.error("Error fetching notification channels:", error);
       // Silently fail - channels are optional
+    }
+  };
+
+  const toggleChannelSelection = (channelId) => {
+    if (selectedChannelIds.includes(channelId)) {
+      setSelectedChannelIds(selectedChannelIds.filter(id => id !== channelId));
+    } else {
+      setSelectedChannelIds([...selectedChannelIds, channelId]);
     }
   };
 
@@ -315,6 +329,7 @@ function ScheduleForm() {
 
       // Add notification settings
       scheduleData.notifications_enabled = notificationsEnabled;
+      scheduleData.channel_ids = selectedChannelIds;
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
@@ -839,27 +854,47 @@ function ScheduleForm() {
             Receive reminder alerts and overdue warnings according to your notification preferences in Settings
           </p>
 
-          {/* Show enabled notification channels */}
-          {notificationsEnabled && enabledChannels.length > 0 && (
+          {/* Channel selection */}
+          {notificationsEnabled && availableChannels.length > 0 && (
             <div className="mt-3 ml-8 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
               <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">
-                Notifications will be sent to:
+                Select notification channels (click to toggle):
               </p>
               <div className="flex flex-wrap gap-2">
-                {enabledChannels.map(channel => (
-                  <div
-                    key={channel.id}
-                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-600 rounded text-xs"
-                  >
-                    <span className="font-medium text-gray-900 dark:text-white">{channel.name}</span>
-                    <span className="text-gray-500 dark:text-gray-400">({channel.webhook_type})</span>
-                  </div>
-                ))}
+                {availableChannels.map(channel => {
+                  const isSelected = selectedChannelIds.includes(channel.id);
+                  return (
+                    <button
+                      key={channel.id}
+                      type="button"
+                      onClick={() => toggleChannelSelection(channel.id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 border-2 rounded-lg text-xs font-medium transition-all ${
+                        isSelected
+                          ? 'bg-primary-100 dark:bg-primary-900/40 border-primary-500 dark:border-primary-500 text-primary-900 dark:text-primary-100'
+                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400 dark:hover:border-primary-600'
+                      }`}
+                    >
+                      {channel.household_wide ? (
+                        <Users size={14} className="flex-shrink-0" />
+                      ) : (
+                        <UserIcon size={14} className="flex-shrink-0" />
+                      )}
+                      <span className="font-semibold">{channel.name}</span>
+                      <span className="text-gray-500 dark:text-gray-400">({channel.webhook_type})</span>
+                    </button>
+                  );
+                })}
               </div>
+              <p className="text-xs text-blue-800 dark:text-blue-200 mt-2">
+                <Users size={12} className="inline mr-1" />
+                = Household channel (shared with all members) •
+                <UserIcon size={12} className="inline mx-1" />
+                = Personal channel
+              </p>
             </div>
           )}
 
-          {notificationsEnabled && enabledChannels.length === 0 && (
+          {notificationsEnabled && availableChannels.length === 0 && (
             <div className="mt-3 ml-8 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
               <p className="text-xs text-amber-900 dark:text-amber-100">
                 No notification channels configured. Go to Settings → Notifications to add channels.
