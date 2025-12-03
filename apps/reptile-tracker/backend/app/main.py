@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Reptile Tracker API",
     description="API for tracking reptile feeding schedules, health, and weight",
-    version="2.0.0",  # Incremented for security updates
+    version="2.0.1",  # Testing CI/CD with timestamp-based image tags
     redirect_slashes=False,  # Disable automatic slash redirects to avoid 307s that break auth cookies
 )
 
