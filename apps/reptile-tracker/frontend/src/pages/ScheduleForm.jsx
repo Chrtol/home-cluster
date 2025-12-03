@@ -871,16 +871,17 @@ function ScheduleForm() {
         {/* Enabled Toggle */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="enabled"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
-            className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-          />
-          <label htmlFor="enabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Enable this schedule
-          </label>
+            <input
+              type="checkbox"
+              id="enabled"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="enabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Enable this schedule
+            </label>
+          </div>
         </div>
 
         {/* Submit Button */}
