@@ -174,12 +174,92 @@ def render_template(template_string: str, context: Dict[str, Any]) -> str:
         return template_string
 
 
+def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str, description: str) -> dict:
+    """
+    Create a rich Discord embed with structured fields.
+
+    Args:
+        context: Context dictionary with notification data
+        trigger_type: Type of trigger (schedule_reminder, overdue_alert, etc.)
+        title: Embed title
+        description: Embed description
+
+    Returns:
+        Discord embed dict with fields
+    """
+    # Color codes
+    color_map = {
+        "schedule_reminder": 3447003,  # Blue
+        "overdue_alert": 15158332,     # Red
+        "feeding_logged": 3066993,     # Green
+    }
+    color = color_map.get(trigger_type, 5814783)  # Default to teal
+
+    embed = {
+        "title": f"{context.get('emoji', '📅')} {title}",
+        "color": color,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "fields": [],
+        "footer": {
+            "text": "Reptile Tracker"
+        }
+    }
+
+    # Build fields based on trigger type
+    if trigger_type == "schedule_reminder":
+        fields = [
+            {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
+            {"name": "Schedule", "value": context.get("schedule_name", "Unknown"), "inline": True},
+            {"name": "Type", "value": context.get("schedule_type", "Unknown").title(), "inline": True},
+        ]
+
+        if context.get("scheduled_date"):
+            fields.append({"name": "Due Date", "value": context["scheduled_date"], "inline": True})
+
+        # Use the clean time_window_display if available, otherwise fall back to time_window
+        if context.get("time_window_display"):
+            fields.append({"name": "Time Window", "value": context["time_window_display"], "inline": True})
+        elif context.get("time_window"):
+            # Extract just the time portion without the newline prefix
+            time_window = context["time_window"].replace("\nTime window: ", "").strip()
+            if time_window:
+                fields.append({"name": "Time Window", "value": time_window, "inline": True})
+
+        if context.get("notes"):
+            # Extract notes without the "Notes:" prefix if present
+            notes = context["notes"].replace("\nNotes: ", "").strip()
+            if notes:
+                fields.append({"name": "Notes", "value": notes, "inline": False})
+
+        embed["fields"] = fields
+
+    elif trigger_type == "overdue_alert":
+        embed["fields"] = [
+            {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
+            {"name": "Schedule", "value": context.get("schedule_name", "Unknown"), "inline": True},
+            {"name": "Type", "value": context.get("schedule_type", "Unknown").title(), "inline": True},
+            {"name": "Missed Date", "value": context.get("missed_date", "Unknown"), "inline": True},
+            {"name": "Status", "value": "⚠️ Overdue", "inline": True},
+        ]
+
+    elif trigger_type == "feeding_logged":
+        embed["fields"] = [
+            {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
+            {"name": "Fed By", "value": context.get("user_name", "Unknown"), "inline": True},
+            {"name": "Food", "value": context.get("food_list", "Not specified"), "inline": False},
+        ]
+
+    return embed
+
+
 async def send_webhook_notification(
     webhook_url: Optional[str] = None,
     webhook_type: str = "generic",
     message: str = "",
     title: Optional[str] = None,
     config: Optional[dict] = None,
+    context: Optional[Dict[str, Any]] = None,
+    trigger_type: Optional[str] = None,
 ):
     """
     Send notification via webhook or API
@@ -192,6 +272,8 @@ async def send_webhook_notification(
         message: Notification message
         title: Notification title
         config: For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
+        context: Optional context dict for rich formatting (Discord embeds with fields)
+        trigger_type: Type of notification (schedule_reminder, overdue_alert, etc.)
     """
 
     try:
@@ -205,16 +287,20 @@ async def send_webhook_notification(
                     logger.error(f"Discord webhook blocked: Invalid or dangerous URL: {webhook_url}")
                     raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
 
+                # Create rich embed with fields if context is provided
+                if context and trigger_type:
+                    embed = _create_discord_embed(context, trigger_type, title or "Notification", message)
+                else:
+                    # Fallback to simple embed
+                    embed = {
+                        "title": title or "Reptile Tracker Notification",
+                        "description": message,
+                        "color": 5814783,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+
                 payload = {
-                    "content": message,
-                    "embeds": [
-                        {
-                            "title": title or "Reptile Tracker Notification",
-                            "description": message,
-                            "color": 5814783,  # Green color
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                        }
-                    ],
+                    "embeds": [embed],
                 }
                 response = await client.post(webhook_url, json=payload)
                 response.raise_for_status()

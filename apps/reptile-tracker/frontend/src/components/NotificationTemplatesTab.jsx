@@ -144,60 +144,60 @@ const NotificationTemplatesTab = () => {
   };
 
   if (loading) {
-    return <div className="p-6 text-center">Loading templates...</div>;
+    return <div className="p-6 text-center text-gray-900 dark:text-white">Loading templates...</div>;
   }
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Notification Templates</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notification Templates</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Customize notification messages with variables. System templates are read-only.
           </p>
         </div>
         <button
           onClick={handleAddTemplate}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
         >
           + Add Custom Template
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-200">
           {error}
         </div>
       )}
 
       {/* System Templates */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-3">System Templates</h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">System Templates</h3>
         <div className="space-y-3">
           {groupedTemplates.system.map(template => (
             <div
               key={template.id}
-              className="p-4 border rounded bg-gray-50"
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-semibold">{template.name}</h4>
-                    <span className="px-2 py-0.5 text-xs bg-gray-200 rounded">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
+                    <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
                       {template.trigger_type.replace('_', ' ')}
                     </span>
                     {template.channel_type && (
-                      <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
+                      <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
                         {template.channel_type}
                       </span>
                     )}
                   </div>
                   <div className="mt-2 text-sm">
-                    <div className="text-gray-600">
-                      <strong>Title:</strong> {template.title_template || 'N/A'}
+                    <div className="text-gray-600 dark:text-gray-400">
+                      <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
                     </div>
-                    <div className="text-gray-600 mt-1">
-                      <strong>Message:</strong> {template.message_template}
+                    <div className="text-gray-600 dark:text-gray-400 mt-1">
+                      <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
                     </div>
                   </div>
                 </div>
@@ -209,59 +209,59 @@ const NotificationTemplatesTab = () => {
 
       {/* Custom Templates */}
       <div>
-        <h3 className="text-lg font-semibold mb-3">Custom Templates</h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Custom Templates</h3>
         {groupedTemplates.custom.length === 0 ? (
-          <p className="text-gray-500 italic">No custom templates yet. Create one to get started!</p>
+          <p className="text-gray-500 dark:text-gray-400 italic">No custom templates yet. Create one to get started!</p>
         ) : (
           <div className="space-y-3">
             {groupedTemplates.custom.map(template => (
               <div
                 key={template.id}
-                className={`p-4 border rounded ${template.is_active ? 'bg-white' : 'bg-gray-50 opacity-60'}`}
+                className={`p-4 border border-gray-200 dark:border-gray-700 rounded ${template.is_active ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900 opacity-60'}`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{template.name}</h4>
-                      <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
+                      <span className="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">
                         {template.trigger_type.replace('_', ' ')}
                       </span>
                       {template.channel_type && (
-                        <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
+                        <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
                           {template.channel_type}
                         </span>
                       )}
                       {!template.is_active && (
-                        <span className="px-2 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                        <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
                           Inactive
                         </span>
                       )}
                     </div>
                     <div className="mt-2 text-sm">
-                      <div className="text-gray-600">
-                        <strong>Title:</strong> {template.title_template || 'N/A'}
+                      <div className="text-gray-600 dark:text-gray-400">
+                        <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
                       </div>
-                      <div className="text-gray-600 mt-1">
-                        <strong>Message:</strong> {template.message_template}
+                      <div className="text-gray-600 dark:text-gray-400 mt-1">
+                        <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => handleToggleActive(template)}
-                      className={`px-3 py-1 text-sm rounded ${template.is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                      className={`px-3 py-1 text-sm rounded ${template.is_active ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'}`}
                     >
                       {template.is_active ? 'Disable' : 'Enable'}
                     </button>
                     <button
                       onClick={() => handleEditTemplate(template)}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteTemplate(template.id)}
-                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800"
                     >
                       Delete
                     </button>
@@ -276,29 +276,29 @@ const NotificationTemplatesTab = () => {
       {/* Template Editor Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               {editingTemplate ? 'Edit Template' : 'Create Template'}
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Template Name</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Template Name</label>
                 <input
                   type="text"
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="My Custom Template"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Trigger Type</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Trigger Type</label>
                 <select
                   value={triggerType}
                   onChange={(e) => setTriggerType(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="schedule_reminder">Schedule Reminder</option>
                   <option value="overdue_alert">Overdue Alert</option>
@@ -308,11 +308,11 @@ const NotificationTemplatesTab = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Channel Type (Optional)</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Channel Type (Optional)</label>
                 <select
                   value={channelType}
                   onChange={(e) => setChannelType(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">All Channels</option>
                   <option value="discord">Discord Only</option>
@@ -322,33 +322,33 @@ const NotificationTemplatesTab = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Title Template</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Title Template</label>
                 <input
                   type="text"
                   value={titleTemplate}
                   onChange={(e) => setTitleTemplate(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Schedule Reminder - {reptile_name}"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Message Template</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Message Template</label>
                 <textarea
                   value={messageTemplate}
                   onChange={(e) => setMessageTemplate(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   rows={4}
                   placeholder="{emoji} Reminder: {schedule_name} for {reptile_name}"
                 />
                 <div className="mt-2">
-                  <p className="text-xs text-gray-600 mb-1">Available variables:</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Available variables:</p>
                   <div className="flex flex-wrap gap-1">
                     {availableVariables[triggerType].map(variable => (
                       <button
                         key={variable}
                         onClick={() => insertVariable(variable)}
-                        className="px-2 py-0.5 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                        className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded"
                       >
                         {variable}
                       </button>
@@ -365,7 +365,7 @@ const NotificationTemplatesTab = () => {
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="mr-2"
                 />
-                <label htmlFor="isActive" className="text-sm font-medium">
+                <label htmlFor="isActive" className="text-sm font-medium text-gray-900 dark:text-gray-200">
                   Active
                 </label>
               </div>
@@ -374,13 +374,13 @@ const NotificationTemplatesTab = () => {
             <div className="mt-6 flex justify-end gap-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveTemplate}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!templateName.trim() || !messageTemplate.trim()}
               >
                 Save Template
