@@ -10,6 +10,7 @@ from app.rate_limit import limiter, rate_limit_exceeded_handler
 from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting, schedules, feeding_rotations, schedule_templates, supplement_rotation_templates
 from app.routers import households, invitations, notification_settings
 from app.seed_data import seed_database
+from app.scheduler import start_scheduler, stop_scheduler
 
 # Security fixes applied:
 # - M-1: CSRF protection via SameSite cookies (configured in auth.py)
@@ -106,11 +107,19 @@ async def startup_event():
         else:
             logger.info("No duplicate templates found")
 
+    # Start notification scheduler
+    start_scheduler()
+    logger.info("Notification scheduler started")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Log shutdown"""
     logger.info("Shutting down Reptile Tracker API")
+
+    # Stop notification scheduler
+    stop_scheduler()
+    logger.info("Notification scheduler stopped")
 
 
 @app.get("/")
