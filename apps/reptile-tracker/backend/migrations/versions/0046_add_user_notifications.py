@@ -40,7 +40,7 @@ def upgrade() -> None:
         'user_notifications',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('notification_type', sa.Enum('schedule_reminder', 'overdue_alert', 'feeding_logged', 'weight_logged', 'health_event', 'system', name='notificationtype'), nullable=False),
+        sa.Column('notification_type', sa.Enum('schedule_reminder', 'overdue_alert', 'feeding_logged', 'weight_logged', 'health_event', 'system', name='notificationtype', create_type=False), nullable=False),
         sa.Column('title', sa.String(), nullable=False),
         sa.Column('message', sa.Text(), nullable=False),
         sa.Column('link', sa.String(), nullable=True),
