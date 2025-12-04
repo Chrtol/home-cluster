@@ -190,7 +190,7 @@ spec:
                     command:
                       - /bin/sh
                       - -c
-                      - "pgrep -f 'celery worker' || exit 1"
+                      - "test -f /proc/1/status && grep -q 'python' /proc/1/cmdline"
                   initialDelaySeconds: 30
                   periodSeconds: 30
                   timeoutSeconds: 5
@@ -203,7 +203,7 @@ spec:
                     command:
                       - /bin/sh
                       - -c
-                      - "pgrep -f 'celery worker' || exit 1"
+                      - "test -f /proc/1/status && grep -q 'python' /proc/1/cmdline"
                   initialDelaySeconds: 10
                   periodSeconds: 10
                   timeoutSeconds: 5
