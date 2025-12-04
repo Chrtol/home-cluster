@@ -402,18 +402,18 @@ function ScheduleForm() {
       if (timeWindowEnabled) {
         scheduleData.earliest_time = earliestTime || null;
         scheduleData.latest_time = latestTime || null;
-
-        // Send reminder_time if enabled (new style)
-        if (reminderEnabled && reminderTime) {
-          scheduleData.reminder_time = reminderTime;
-        } else {
-          scheduleData.reminder_time = null;
-        }
       }
 
       // Add notification settings
       scheduleData.notifications_enabled = notificationsEnabled;
       scheduleData.channel_ids = selectedChannelIds;
+
+      // Send reminder_time if enabled (independent of time window)
+      if (notificationsEnabled && reminderEnabled && reminderTime) {
+        scheduleData.reminder_time = reminderTime;
+      } else {
+        scheduleData.reminder_time = null;
+      }
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
@@ -899,72 +899,6 @@ function ScheduleForm() {
                   </p>
                 </div>
               </div>
-
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <input
-                    type="checkbox"
-                    id="reminderEnabled"
-                    checked={reminderEnabled}
-                    onChange={(e) => setReminderEnabled(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                  />
-                  <label htmlFor="reminderEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Enable Reminder
-                  </label>
-                </div>
-
-                {reminderEnabled && (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Reminder Time
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        value={reminderHours}
-                        onChange={e => handleReminderHoursChange(e.target.value)}
-                        className="input-field w-20 text-center"
-                        min={userTimeFormat === '12h' ? 1 : 0}
-                        max={userTimeFormat === '12h' ? 12 : 23}
-                        required
-                      />
-                      <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
-                      <input
-                        type="number"
-                        value={String(reminderMinutes).padStart(2, '0')}
-                        onChange={e => handleReminderMinutesChange(e.target.value)}
-                        className="input-field w-20 text-center"
-                        min="0"
-                        max="59"
-                        required
-                      />
-                      {userTimeFormat === '12h' && (
-                        <select
-                          value={reminderPeriod}
-                          onChange={e => setReminderPeriod(e.target.value)}
-                          className="input-field w-20"
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Get reminded at this specific time (must be within the time window)
-                    </p>
-
-                    {/* Validation message */}
-                    {!isReminderTimeValid() && (
-                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded">
-                        <p className="text-xs text-red-800 dark:text-red-200">
-                          Reminder time must be between the earliest and latest times
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
             </div>
           )}
         </div>
@@ -1032,6 +966,77 @@ function ScheduleForm() {
               <p className="text-xs text-amber-900 dark:text-amber-100">
                 No notification channels configured. Go to Settings → Notifications to add channels.
               </p>
+            </div>
+          )}
+
+          {/* Reminder Time */}
+          {notificationsEnabled && (
+            <div className="mt-4 ml-8">
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="reminderEnabled"
+                  checked={reminderEnabled}
+                  onChange={(e) => setReminderEnabled(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                />
+                <label htmlFor="reminderEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Set reminder time
+                </label>
+              </div>
+
+              {reminderEnabled && (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Reminder Time
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={reminderHours}
+                      onChange={e => handleReminderHoursChange(e.target.value)}
+                      className="input-field w-20 text-center"
+                      min={userTimeFormat === '12h' ? 1 : 0}
+                      max={userTimeFormat === '12h' ? 12 : 23}
+                      required
+                    />
+                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <input
+                      type="number"
+                      value={String(reminderMinutes).padStart(2, '0')}
+                      onChange={e => handleReminderMinutesChange(e.target.value)}
+                      className="input-field w-20 text-center"
+                      min="0"
+                      max="59"
+                      required
+                    />
+                    {userTimeFormat === '12h' && (
+                      <select
+                        value={reminderPeriod}
+                        onChange={e => setReminderPeriod(e.target.value)}
+                        className="input-field w-20"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {timeWindowEnabled
+                      ? "Get reminded at this specific time (must be within the time window)"
+                      : "Get reminded at this specific time"}
+                  </p>
+
+                  {/* Validation message */}
+                  {!isReminderTimeValid() && (
+                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded">
+                      <p className="text-xs text-red-800 dark:text-red-200">
+                        Reminder time must be between the earliest and latest times
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
