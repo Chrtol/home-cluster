@@ -449,9 +449,11 @@ function ScheduleTemplates() {
   // Fetch available notification channels when modal opens
   useEffect(() => {
     if (applyModalOpen) {
-      axios.get(`${API_BASE_URL}/api/notification-channels`, { withCredentials: true })
+      axios.get("/api/notification-channels/me")
         .then(response => {
-          setAvailableChannels(response.data);
+          // Filter to only show enabled channels
+          const enabled = response.data.filter(channel => channel.enabled);
+          setAvailableChannels(enabled);
         })
         .catch(error => {
           console.error('Error fetching notification channels:', error);
