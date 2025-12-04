@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Bell, Check, CheckCheck, Trash2, Filter } from 'lucide-react';
-import axios from '../services/api';
+import axios from 'axios';
 
 const NotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);

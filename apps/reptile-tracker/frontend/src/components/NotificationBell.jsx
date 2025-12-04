@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
-import axios from '../services/api';
+import axios from 'axios';
 import NotificationDropdown from './NotificationDropdown';
 
 const NotificationBell = () => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Check, CheckCheck, ExternalLink, Bell } from 'lucide-react';
-import axios from '../services/api';
+import axios from 'axios';
 
 const NotificationDropdown = ({ onClose, onNotificationRead }) => {
   const [notifications, setNotifications] = useState([]);
