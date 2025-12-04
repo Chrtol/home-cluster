@@ -34,7 +34,7 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20251204141703 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20251204142612 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             env:
               DATABASE_URL:
