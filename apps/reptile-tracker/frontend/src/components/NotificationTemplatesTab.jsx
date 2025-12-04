@@ -150,10 +150,11 @@ const NotificationTemplatesTab = () => {
   const renderTemplate = (template, text) => {
     const sampleData = getSampleData(template.trigger_type);
 
-    // Replace variables in the template
+    // Replace variables in the template (supports both {var} and {{var}} formats)
     let rendered = text;
     Object.keys(sampleData).forEach((key) => {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+      // Match both single {key} and double {{key}} curly braces
+      const regex = new RegExp(`{{?\\s*${key}\\s*}}?`, 'g');
       rendered = rendered.replace(regex, sampleData[key]);
     });
 
