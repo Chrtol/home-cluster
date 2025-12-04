@@ -10,7 +10,7 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_maker
-from app.models import Schedule, ScheduleCompletion, NotificationSettings, User, Reptile, CompletionStatus
+from app.models import Schedule, ScheduleCompletion, NotificationSettings, User, Reptile, CompletionStatus, UserNotification, NotificationType
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 
 logger = logging.getLogger(__name__)
@@ -414,6 +414,32 @@ async def check_overdue_schedules():
         logger.error(f"Error in check_overdue_schedules: {e}", exc_info=True)
 
 
+async def create_in_app_notification(
+    db: AsyncSession,
+    user: User,
+    notification_type: NotificationType,
+    title: str,
+    message: str,
+    link: str = None,
+    metadata: dict = None
+):
+    """Create an in-app notification for a user"""
+    try:
+        notification = UserNotification(
+            user_id=user.id,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            link=link,
+            metadata=metadata
+        )
+        db.add(notification)
+        await db.commit()
+        logger.info(f"Created in-app notification for user {user.email}: {title}")
+    except Exception as e:
+        logger.error(f"Error creating in-app notification: {e}", exc_info=True)
+
+
 async def send_schedule_reminder(
     db: AsyncSession,
     reptile: Reptile,
@@ -531,6 +557,23 @@ async def send_schedule_reminder(
         trigger_type="schedule_reminder"
     )
 
+    # Create in-app notification
+    await create_in_app_notification(
+        db=db,
+        user=user,
+        notification_type=NotificationType.SCHEDULE_REMINDER,
+        title=title,
+        message=message,
+        link=f"/reptiles/{reptile.id}",
+        metadata={
+            "reptile_id": reptile.id,
+            "reptile_name": reptile.name,
+            "schedule_id": schedule.id,
+            "schedule_name": schedule.name or schedule.schedule_type,
+            "scheduled_date": scheduled_date.isoformat()
+        }
+    )
+
 
 async def send_overdue_alert(
     db: AsyncSession,
@@ -622,6 +665,23 @@ async def send_overdue_alert(
         config=config,
         context=context,
         trigger_type="overdue_alert"
+    )
+
+    # Create in-app notification
+    await create_in_app_notification(
+        db=db,
+        user=user,
+        notification_type=NotificationType.OVERDUE_ALERT,
+        title=title,
+        message=message,
+        link=f"/reptiles/{reptile.id}",
+        metadata={
+            "reptile_id": reptile.id,
+            "reptile_name": reptile.name,
+            "schedule_id": schedule.id,
+            "schedule_name": schedule.name or schedule.schedule_type,
+            "missed_date": missed_date.isoformat()
+        }
     )
 
 

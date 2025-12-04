@@ -75,6 +75,16 @@ class CompletionType(str, PyEnum):
     MANUAL = "manual"  # Manually marked as complete
 
 
+class NotificationType(str, PyEnum):
+    """Type of in-app notification"""
+    SCHEDULE_REMINDER = "schedule_reminder"
+    OVERDUE_ALERT = "overdue_alert"
+    FEEDING_LOGGED = "feeding_logged"
+    WEIGHT_LOGGED = "weight_logged"
+    HEALTH_EVENT = "health_event"
+    SYSTEM = "system"
+
+
 # Association table for reptile access
 reptile_access = Table(
     "reptile_access",
@@ -698,3 +708,30 @@ class CareGuideline(Base):
 
     # Relationships
     created_by = relationship("User", lazy="select")
+
+
+class UserNotification(Base):
+    """In-app notifications for users"""
+    __tablename__ = "user_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Notification content
+    notification_type = Column(Enum(NotificationType), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    link = Column(String, nullable=True)  # Optional link to relevant page (e.g., /reptiles/123)
+
+    # Read status
+    is_read = Column(Boolean, default=False, nullable=False, index=True)
+    read_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Metadata (JSON) - store additional context like reptile_id, schedule_id, etc.
+    metadata = Column(JSON, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Relationships
+    user = relationship("User", lazy="select")

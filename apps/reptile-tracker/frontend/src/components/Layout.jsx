@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import NotificationBell from './NotificationBell'
 
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
@@ -176,13 +177,16 @@ export default function Layout({ user, onLogout }) {
       <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 px-6 py-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="text-3xl">🦎</div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Reptile</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Tracker</p>
-            </div>
-          </Link>
+          <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="text-3xl">🦎</div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Reptile</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Tracker</p>
+              </div>
+            </Link>
+            <NotificationBell />
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -247,12 +251,15 @@ export default function Layout({ user, onLogout }) {
             <span className="text-2xl">🦎</span>
             <span className="font-bold text-gray-900 dark:text-white">Reptile Tracker</span>
           </Link>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
 
