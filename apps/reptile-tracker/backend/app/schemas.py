@@ -308,7 +308,8 @@ class ScheduleBase(BaseModel):
     earliest_time: Optional[time] = None  # Start of valid window (e.g., 10:00 AM - after basking)
     latest_time: Optional[time] = None  # End of valid window (e.g., 8:00 PM - before lights off)
     time_window_enabled: bool = False
-    reminder_minutes_before: Optional[int] = None  # For notifications
+    reminder_minutes_before: Optional[int] = None  # Legacy: minutes before latest_time (deprecated, use reminder_time)
+    reminder_time: Optional[time] = None  # Absolute reminder time (must be within time window, takes precedence over reminder_minutes_before)
 
     # Notification settings
     notifications_enabled: bool = True  # Per-schedule notification toggle
@@ -343,7 +344,8 @@ class ScheduleUpdate(BaseModel):
     earliest_time: Optional[time] = None
     latest_time: Optional[time] = None
     time_window_enabled: Optional[bool] = None
-    reminder_minutes_before: Optional[int] = None
+    reminder_minutes_before: Optional[int] = None  # Legacy: minutes before latest_time (deprecated, use reminder_time)
+    reminder_time: Optional[time] = None  # Absolute reminder time (must be within time window, takes precedence over reminder_minutes_before)
 
     # Notification settings
     notifications_enabled: Optional[bool] = None
@@ -650,7 +652,8 @@ class ScheduleTemplateBase(BaseModel):
     earliest_time: Optional[time] = None
     latest_time: Optional[time] = None
     time_window_enabled: bool = False
-    reminder_minutes_before: Optional[int] = None
+    reminder_minutes_before: Optional[int] = None  # Legacy: minutes before latest_time (deprecated, use reminder_time)
+    reminder_time: Optional[time] = None  # Absolute reminder time (must be within time window, takes precedence over reminder_minutes_before)
 
     # Supplement reference (optional)
     supplement_id: Optional[int] = None
@@ -682,7 +685,8 @@ class ScheduleTemplateUpdate(BaseModel):
     earliest_time: Optional[time] = None
     latest_time: Optional[time] = None
     time_window_enabled: Optional[bool] = None
-    reminder_minutes_before: Optional[int] = None
+    reminder_minutes_before: Optional[int] = None  # Legacy: minutes before latest_time (deprecated, use reminder_time)
+    reminder_time: Optional[time] = None  # Absolute reminder time (must be within time window, takes precedence over reminder_minutes_before)
     supplement_id: Optional[int] = None
     source_name: Optional[str] = None
     source_url: Optional[str] = None
