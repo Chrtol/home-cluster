@@ -525,6 +525,11 @@ class NotificationSettings(Base):
     notify_schedule_reminders = Column(Boolean, default=True, nullable=False)
     notify_overdue_alerts = Column(Boolean, default=True, nullable=False)
 
+    # Quiet hours settings
+    quiet_hours_enabled = Column(Boolean, default=False, nullable=False)
+    quiet_hours_start = Column(Time, nullable=True)  # e.g., 22:00 (10 PM)
+    quiet_hours_end = Column(Time, nullable=True)  # e.g., 08:00 (8 AM)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

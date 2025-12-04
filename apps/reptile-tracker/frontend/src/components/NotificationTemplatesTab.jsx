@@ -7,6 +7,8 @@ const NotificationTemplatesTab = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   // Form state
   const [templateName, setTemplateName] = useState('');
@@ -120,6 +122,49 @@ const NotificationTemplatesTab = () => {
     }
   };
 
+  const getSampleData = (triggerType) => {
+    const baseData = {
+      reptile_name: 'Spyro',
+      schedule_name: 'Daily Feeding',
+      schedule_type: 'feeding',
+      emoji: '🍽️',
+      time_window: '\nTime window: 12:00 - 18:00',
+      time_window_display: '12:00 - 18:00',
+      notes: '\nNotes: Offer crickets dusted with calcium',
+      scheduled_date: '2025-12-04',
+      due_date: '2025-12-04',
+      food_category: 'Insects/Worms',
+      supplement_name: 'Calcium, Multivitamin',
+    };
+
+    if (triggerType === 'overdue_alert') {
+      return {
+        ...baseData,
+        missed_date: '2025-12-03',
+      };
+    }
+
+    return baseData;
+  };
+
+  const renderTemplate = (template, text) => {
+    const sampleData = getSampleData(template.trigger_type);
+
+    // Replace variables in the template
+    let rendered = text;
+    Object.keys(sampleData).forEach((key) => {
+      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+      rendered = rendered.replace(regex, sampleData[key]);
+    });
+
+    return rendered;
+  };
+
+  const handlePreviewTemplate = (template) => {
+    setPreviewTemplate(template);
+    setShowPreview(true);
+  };
+
   const handleToggleActive = async (template) => {
     // Only allow toggling custom templates
     if (template.template_type !== 'custom') {
@@ -227,7 +272,13 @@ const NotificationTemplatesTab = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="ml-4">
+                  <div className="ml-4 flex gap-2">
+                    <button
+                      onClick={() => handlePreviewTemplate(template)}
+                      className="px-3 py-1 text-sm rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800"
+                    >
+                      Preview
+                    </button>
                     <button
                       onClick={() => handleCopyTemplate(template)}
                       disabled={hasCustomVersion}
@@ -288,6 +339,12 @@ const NotificationTemplatesTab = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => handlePreviewTemplate(template)}
+                      className="px-3 py-1 text-sm rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800"
+                    >
+                      Preview
+                    </button>
                     <button
                       onClick={() => handleToggleActive(template)}
                       className={`px-3 py-1 text-sm rounded ${template.is_active ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'}`}
@@ -425,6 +482,71 @@ const NotificationTemplatesTab = () => {
                 disabled={!templateName.trim() || !messageTemplate.trim()}
               >
                 Save Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreview && previewTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+              Template Preview - {previewTemplate.name}
+            </h3>
+
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                This preview shows how your template will look with sample data.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {previewTemplate.title_template && (
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    Title:
+                  </label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
+                    <p className="font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
+                      {renderTemplate(previewTemplate, previewTemplate.title_template)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Message:
+                </label>
+                <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
+                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                    {renderTemplate(previewTemplate, previewTemplate.message_template)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Template Information:
+                </label>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <p><strong>Trigger Type:</strong> {previewTemplate.trigger_type.replace('_', ' ')}</p>
+                  {previewTemplate.channel_type && (
+                    <p><strong>Channel Type:</strong> {previewTemplate.channel_type}</p>
+                  )}
+                  <p><strong>Type:</strong> {previewTemplate.template_type === 'system' ? 'System Template' : 'Custom Template'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="px-4 py-2 bg-gray-600 dark:bg-gray-500 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+              >
+                Close
               </button>
             </div>
           </div>

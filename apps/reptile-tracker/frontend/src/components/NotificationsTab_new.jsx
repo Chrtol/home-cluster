@@ -10,6 +10,9 @@ function NotificationsTab() {
   // Global notification preferences
   const [notifyScheduleReminders, setNotifyScheduleReminders] = useState(true);
   const [notifyOverdueAlerts, setNotifyOverdueAlerts] = useState(true);
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
+  const [quietHoursStart, setQuietHoursStart] = useState('22:00');
+  const [quietHoursEnd, setQuietHoursEnd] = useState('08:00');
   const [savingPreferences, setSavingPreferences] = useState(false);
 
   // Notification channels
@@ -52,6 +55,9 @@ function NotificationsTab() {
         if (settingsRes.data) {
           setNotifyScheduleReminders(settingsRes.data.notify_schedule_reminders !== undefined ? settingsRes.data.notify_schedule_reminders : true);
           setNotifyOverdueAlerts(settingsRes.data.notify_overdue_alerts !== undefined ? settingsRes.data.notify_overdue_alerts : true);
+          setQuietHoursEnabled(settingsRes.data.quiet_hours_enabled || false);
+          setQuietHoursStart(settingsRes.data.quiet_hours_start || '22:00');
+          setQuietHoursEnd(settingsRes.data.quiet_hours_end || '08:00');
         }
       } catch (err) {
         // 404 is okay, means no settings yet
@@ -80,6 +86,9 @@ function NotificationsTab() {
       await axios.post('/api/notification-settings/me', {
         notify_schedule_reminders: notifyScheduleReminders,
         notify_overdue_alerts: notifyOverdueAlerts,
+        quiet_hours_enabled: quietHoursEnabled,
+        quiet_hours_start: quietHoursEnabled ? quietHoursStart : null,
+        quiet_hours_end: quietHoursEnabled ? quietHoursEnd : null,
         webhook_enabled: false, // Legacy field
         webhook_url: '',
         webhook_type: 'discord'
@@ -380,10 +389,64 @@ function NotificationsTab() {
             </div>
           </label>
 
+          {/* Quiet Hours */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <label className="flex items-center gap-3 cursor-pointer mb-4">
+              <input
+                type="checkbox"
+                checked={quietHoursEnabled}
+                onChange={(e) => setQuietHoursEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 dark:text-white">Enable Quiet Hours</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Suppress non-critical notifications during specified hours (critical health alerts will still be sent)
+                </div>
+              </div>
+            </label>
+
+            {quietHoursEnabled && (
+              <div className="ml-7 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Start Time (UTC)
+                    </label>
+                    <input
+                      type="time"
+                      value={quietHoursStart}
+                      onChange={(e) => setQuietHoursStart(e.target.value)}
+                      className="input-field w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      End Time (UTC)
+                    </label>
+                    <input
+                      type="time"
+                      value={quietHoursEnd}
+                      onChange={(e) => setQuietHoursEnd(e.target.value)}
+                      className="input-field w-full"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {quietHoursStart && quietHoursEnd && (
+                    quietHoursStart > quietHoursEnd
+                      ? `Quiet hours from ${quietHoursStart} to ${quietHoursEnd} (overnight)`
+                      : `Quiet hours from ${quietHoursStart} to ${quietHoursEnd}`
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleSavePreferences}
             disabled={savingPreferences}
-            className="btn-primary"
+            className="btn-primary mt-2"
           >
             {savingPreferences ? 'Saving...' : 'Save Preferences'}
           </button>

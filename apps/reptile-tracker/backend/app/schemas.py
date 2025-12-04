@@ -766,6 +766,9 @@ class NotificationSettingsBase(BaseModel):
     webhook_type: str = "discord"  # discord, pushover, generic
     notify_schedule_reminders: bool = True
     notify_overdue_alerts: bool = True
+    quiet_hours_enabled: bool = False
+    quiet_hours_start: Optional[time] = None
+    quiet_hours_end: Optional[time] = None
 
 
 class NotificationSettingsUpdate(BaseModel):
@@ -774,6 +777,9 @@ class NotificationSettingsUpdate(BaseModel):
     webhook_type: Optional[str] = None
     notify_schedule_reminders: Optional[bool] = None
     notify_overdue_alerts: Optional[bool] = None
+    quiet_hours_enabled: Optional[bool] = None
+    quiet_hours_start: Optional[time] = None
+    quiet_hours_end: Optional[time] = None
 
 
 class NotificationSettingsSchema(NotificationSettingsBase):

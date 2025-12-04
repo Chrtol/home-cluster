@@ -27,12 +27,11 @@
   - Frontend: Template editor in Settings > Templates tab with variable insertion
 
 - [ ] **Advanced notification features** - 🎯 HIGH PRIORITY
-  - Quiet hours (don't send notifications during specified time range)
   - Notification grouping (combine multiple reminders into digest)
   - Snooze functionality for reminders
   - Per-reptile notification preferences
   - Email notifications as alternative to webhooks
-  - Template preview with sample data before saving
+  - Notification history for external channels (log sent notifications)
 
 ### Authentication & Session Management
 - [x] **Fix session timeout issues** - ✅ COMPLETED - Sessions expire too quickly, shows blank pages instead of redirect
@@ -386,6 +385,40 @@
 ## ✅ Recently Completed
 
 ### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
+- [x] **Quiet Hours & Critical Notification Override** - ✅ COMPLETED (2025-12-04)
+  - Implemented quiet hours to suppress non-critical notifications during specified time range
+  - Critical notification types (health events, system messages) bypass quiet hours
+  - Features:
+    - Enable/disable quiet hours in Settings > Notifications tab
+    - Set start and end times (UTC) with support for overnight periods (e.g., 22:00-08:00)
+    - Visual helper showing configured quiet hours range
+    - Critical notifications always delivered regardless of quiet hours
+  - Backend:
+    - Migration 0048: Added `quiet_hours_enabled`, `quiet_hours_start`, `quiet_hours_end` to notification_settings
+    - Updated NotificationSettings model and schemas
+    - Implemented `is_within_quiet_hours()` function in scheduler with critical type checking
+    - Added quiet hours checks in `check_schedule_reminders()`, `check_overdue_schedules()`, and `create_in_app_notification()`
+    - Handles overnight quiet hours (span midnight) correctly
+  - Frontend:
+    - Added quiet hours UI section in NotificationsTab_new.jsx
+    - Checkbox to enable/disable quiet hours
+    - Time pickers for start and end times
+    - Displays friendly range text (e.g., "22:00 to 08:00 (overnight)")
+
+- [x] **Template Preview with Sample Data** - ✅ COMPLETED (2025-12-04)
+  - Added preview functionality for notification templates before saving/using
+  - Features:
+    - "Preview" button on all templates (system and custom)
+    - Modal showing rendered template with sample data
+    - Displays both title and message with variable substitution
+    - Shows template metadata (trigger type, channel type, template type)
+    - Sample data matches test notification structure
+  - Implementation:
+    - Added `getSampleData()` function with realistic reptile/schedule data
+    - Added `renderTemplate()` function to replace template variables
+    - Added preview modal UI in NotificationTemplatesTab.jsx
+    - Preview button styled with purple theme for visibility
+
 - [x] **In-app notification centre** - ✅ COMPLETED (2025-12-04)
   - Implemented built-in notification system as a manageable notification channel
   - System-created in-app channel for all users (automatically created, cannot be deleted)
