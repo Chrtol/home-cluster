@@ -452,10 +452,11 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 The application supports flexible per-schedule notification channels with the following features:
 
 **Notification Channels:**
-- Create multiple notification channels in Settings (Discord, Pushover, Generic)
+- Create multiple notification channels in Settings (In-App, Discord, Pushover, Generic)
 - Personal channels (user-specific) or household-wide channels (shared with all members)
 - Enable/disable channels independently
 - Test notifications with sample data before enabling
+- In-App notifications appear in the notification bell icon (system-managed, cannot be deleted)
 
 **Schedule Integration:**
 - Select specific notification channels when creating or editing schedules
@@ -464,6 +465,22 @@ The application supports flexible per-schedule notification channels with the fo
 - Overdue alerts when schedules are missed
 
 **Supported Types:**
+
+### In-App Notifications
+Built-in notification centre accessible via the bell icon in the navigation bar:
+```json
+{
+  "webhook_type": "in_app",
+  "enabled": true
+}
+```
+Features:
+- Unread count badge on bell icon
+- Dropdown notification list with last 10 notifications
+- Mark as read / Mark all as read functionality
+- Full notification history page with filtering
+- Automatically created for all users (system channel, cannot be deleted)
+- Can be disabled but not removed
 
 ### Discord
 Send rich embedded notifications to Discord channels:
