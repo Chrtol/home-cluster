@@ -576,6 +576,9 @@ class NotificationTemplate(Base):
     # Optional: Limit to specific channel type (discord, pushover, generic) or NULL for all
     channel_type = Column(String, nullable=True)
 
+    # Discord-specific configuration (color, fields, footer, etc.)
+    discord_config = Column(JSON, nullable=True)
+
     is_active = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

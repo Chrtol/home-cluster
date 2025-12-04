@@ -667,7 +667,8 @@ async def send_schedule_reminder(
         title=title,
         config=config,
         context=context,
-        trigger_type="schedule_reminder"
+        trigger_type="schedule_reminder",
+        template=template
     )
 
     # Create in-app notification
@@ -777,7 +778,8 @@ async def send_overdue_alert(
         title=title,
         config=config,
         context=context,
-        trigger_type="overdue_alert"
+        trigger_type="overdue_alert",
+        template=template
     )
 
     # Create in-app notification

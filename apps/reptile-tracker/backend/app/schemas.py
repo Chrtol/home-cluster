@@ -842,6 +842,7 @@ class NotificationTemplateBase(BaseModel):
     message_template: str
     title_template: Optional[str] = None
     channel_type: Optional[str] = None  # discord, pushover, generic, or null for all
+    discord_config: Optional[dict] = None  # Discord-specific embed configuration
     is_active: bool = True
 
 
@@ -854,6 +855,7 @@ class NotificationTemplateUpdate(BaseModel):
     message_template: Optional[str] = None
     title_template: Optional[str] = None
     channel_type: Optional[str] = None
+    discord_config: Optional[dict] = None
     is_active: Optional[bool] = None
 
 

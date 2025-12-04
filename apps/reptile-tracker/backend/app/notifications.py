@@ -174,26 +174,46 @@ def render_template(template_string: str, context: Dict[str, Any]) -> str:
         return template_string
 
 
-def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str, description: str) -> dict:
+def _create_discord_embed(
+    context: Dict[str, Any],
+    trigger_type: str,
+    title: str,
+    description: str,
+    template: Optional['NotificationTemplate'] = None
+) -> dict:
     """
     Create a rich Discord embed with structured fields.
 
     Args:
         context: Context dictionary with notification data
         trigger_type: Type of trigger (schedule_reminder, overdue_alert, etc.)
-        title: Embed title
-        description: Embed description
+        title: Embed title (from rendered template or fallback)
+        description: Embed description (from rendered template or fallback)
+        template: Optional NotificationTemplate with discord_config
 
     Returns:
         Discord embed dict with fields
     """
-    # Color codes
+    # Check if template has Discord-specific configuration
+    discord_config = template.discord_config if template else None
+
+    # Color codes (defaults if no template config)
     color_map = {
         "schedule_reminder": 3447003,  # Blue
         "overdue_alert": 15158332,     # Red
         "feeding_logged": 3066993,     # Green
     }
-    color = color_map.get(trigger_type, 5814783)  # Default to teal
+
+    # Use template color if available, otherwise fallback to defaults
+    if discord_config and discord_config.get("color"):
+        color = discord_config["color"]
+    else:
+        color = color_map.get(trigger_type, 5814783)  # Default to teal
+
+    # Use template footer if available
+    footer_text = "Reptile Tracker"
+    if discord_config and discord_config.get("footer_text"):
+        footer_text = discord_config["footer_text"]
 
     embed = {
         "title": title,
@@ -201,89 +221,121 @@ def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "fields": [],
         "footer": {
-            "text": "Reptile Tracker"
+            "text": footer_text
         }
     }
 
-    # Build description and fields based on trigger type
-    if trigger_type == "schedule_reminder":
-        # Create a descriptive message
-        reptile_name = context.get("reptile_name", "Unknown")
-        schedule_name = context.get("schedule_name", "Unknown")
-        schedule_type = context.get("schedule_type", "Unknown").title()
+    # If template has discord_config, use template-driven approach
+    if discord_config:
+        # Use the rendered description from template
+        embed["description"] = description
 
-        desc_parts = [f"It's time for **{reptile_name}**'s {schedule_type.lower()}: **{schedule_name}**"]
-
-        # Add time window to description if available
-        if context.get("time_window_display"):
-            desc_parts.append(f"Complete between **{context['time_window_display']}** for best results.")
-
-        # Add food/supplement info to description
-        if context.get("schedule_type") == "feeding" and context.get("food_category"):
-            food_info = context["food_category"]
-            if context.get("supplement_name"):
-                food_info += f" with {context['supplement_name']}"
-            desc_parts.append(f"\n📋 **Food:** {food_info}")
-        elif context.get("schedule_type") == "supplement" and context.get("supplement_name"):
-            desc_parts.append(f"\n💊 **Supplement:** {context['supplement_name']}")
-
-        embed["description"] = "\n".join(desc_parts)
-
-        # Simplified fields - just the essentials
+        # Build fields based on include_fields configuration
+        include_fields = discord_config.get("include_fields", [])
         fields = []
 
-        if context.get("scheduled_date"):
-            fields.append({"name": "Due Date", "value": context["scheduled_date"], "inline": True})
-
-        fields.append({"name": "Schedule Type", "value": schedule_type, "inline": True})
-
-        if context.get("notes"):
-            notes = context["notes"].replace("\nNotes: ", "").strip()
-            if notes:
-                fields.append({"name": "Notes", "value": notes, "inline": False})
-
-        embed["fields"] = fields
-
-    elif trigger_type == "overdue_alert":
-        # Create a descriptive warning message
-        reptile_name = context.get("reptile_name", "Unknown")
-        schedule_name = context.get("schedule_name", "Unknown")
-        schedule_type = context.get("schedule_type", "Unknown").title()
-        missed_date = context.get("missed_date", "Unknown")
-
-        desc_parts = [f"**{reptile_name}**'s {schedule_type.lower()} schedule was not completed on **{missed_date}**"]
-        desc_parts.append(f"\n⚠️ Schedule: **{schedule_name}**")
-
-        # Add food/supplement info
-        if context.get("schedule_type") == "feeding" and context.get("food_category"):
-            food_info = context["food_category"]
-            if context.get("supplement_name"):
-                food_info += f" with {context['supplement_name']}"
-            desc_parts.append(f"📋 **Food:** {food_info}")
-        elif context.get("schedule_type") == "supplement" and context.get("supplement_name"):
-            desc_parts.append(f"💊 **Supplement:** {context['supplement_name']}")
-
-        embed["description"] = "\n".join(desc_parts)
-
-        # Minimal fields for overdue
-        fields = [
-            {"name": "Status", "value": "⚠️ **Overdue**", "inline": True},
-            {"name": "Schedule Type", "value": schedule_type, "inline": True},
-        ]
+        for field_name in include_fields:
+            if field_name == "scheduled_date" and context.get("scheduled_date"):
+                fields.append({"name": "Due Date", "value": context["scheduled_date"], "inline": True})
+            elif field_name == "schedule_type" and context.get("schedule_type"):
+                fields.append({"name": "Schedule Type", "value": context["schedule_type"].title(), "inline": True})
+            elif field_name == "notes" and context.get("notes"):
+                notes = context["notes"].replace("\nNotes: ", "").strip()
+                if notes:
+                    fields.append({"name": "Notes", "value": notes, "inline": False})
+            elif field_name == "missed_date" and context.get("missed_date"):
+                fields.append({"name": "Missed Date", "value": context["missed_date"], "inline": True})
+            elif field_name == "food_category" and context.get("food_category"):
+                food_info = context["food_category"]
+                if context.get("supplement_name"):
+                    food_info += f" with {context['supplement_name']}"
+                fields.append({"name": "Food", "value": food_info, "inline": True})
+            elif field_name == "time_window" and context.get("time_window_display"):
+                fields.append({"name": "Time Window", "value": context["time_window_display"], "inline": True})
 
         embed["fields"] = fields
 
-    elif trigger_type == "feeding_logged":
-        reptile_name = context.get("reptile_name", "Unknown")
-        user_name = context.get("user_name", "Unknown")
-        food_list = context.get("food_list", "Not specified")
+    # Otherwise, use hardcoded formatting (fallback for backwards compatibility)
+    else:
+        # Build description and fields based on trigger type
+        if trigger_type == "schedule_reminder":
+            # Create a descriptive message
+            reptile_name = context.get("reptile_name", "Unknown")
+            schedule_name = context.get("schedule_name", "Unknown")
+            schedule_type = context.get("schedule_type", "Unknown").title()
 
-        embed["description"] = f"**{reptile_name}** was fed by {user_name}\n\n📋 **Food:** {food_list}"
+            desc_parts = [f"It's time for **{reptile_name}**'s {schedule_type.lower()}: **{schedule_name}**"]
 
-        embed["fields"] = [
-            {"name": "Fed By", "value": user_name, "inline": True},
-            {"name": "Time", "value": "Just now", "inline": True},
-        ]
+            # Add time window to description if available
+            if context.get("time_window_display"):
+                desc_parts.append(f"Complete between **{context['time_window_display']}** for best results.")
+
+            # Add food/supplement info to description
+            if context.get("schedule_type") == "feeding" and context.get("food_category"):
+                food_info = context["food_category"]
+                if context.get("supplement_name"):
+                    food_info += f" with {context['supplement_name']}"
+                desc_parts.append(f"\n📋 **Food:** {food_info}")
+            elif context.get("schedule_type") == "supplement" and context.get("supplement_name"):
+                desc_parts.append(f"\n💊 **Supplement:** {context['supplement_name']}")
+
+            embed["description"] = "\n".join(desc_parts)
+
+            # Simplified fields - just the essentials
+            fields = []
+
+            if context.get("scheduled_date"):
+                fields.append({"name": "Due Date", "value": context["scheduled_date"], "inline": True})
+
+            fields.append({"name": "Schedule Type", "value": schedule_type, "inline": True})
+
+            if context.get("notes"):
+                notes = context["notes"].replace("\nNotes: ", "").strip()
+                if notes:
+                    fields.append({"name": "Notes", "value": notes, "inline": False})
+
+            embed["fields"] = fields
+
+        elif trigger_type == "overdue_alert":
+            # Create a descriptive warning message
+            reptile_name = context.get("reptile_name", "Unknown")
+            schedule_name = context.get("schedule_name", "Unknown")
+            schedule_type = context.get("schedule_type", "Unknown").title()
+            missed_date = context.get("missed_date", "Unknown")
+
+            desc_parts = [f"**{reptile_name}**'s {schedule_type.lower()} schedule was not completed on **{missed_date}**"]
+            desc_parts.append(f"\n⚠️ Schedule: **{schedule_name}**")
+
+            # Add food/supplement info
+            if context.get("schedule_type") == "feeding" and context.get("food_category"):
+                food_info = context["food_category"]
+                if context.get("supplement_name"):
+                    food_info += f" with {context['supplement_name']}"
+                desc_parts.append(f"📋 **Food:** {food_info}")
+            elif context.get("schedule_type") == "supplement" and context.get("supplement_name"):
+                desc_parts.append(f"💊 **Supplement:** {context['supplement_name']}")
+
+            embed["description"] = "\n".join(desc_parts)
+
+            # Minimal fields for overdue
+            fields = [
+                {"name": "Status", "value": "⚠️ **Overdue**", "inline": True},
+                {"name": "Schedule Type", "value": schedule_type, "inline": True},
+            ]
+
+            embed["fields"] = fields
+
+        elif trigger_type == "feeding_logged":
+            reptile_name = context.get("reptile_name", "Unknown")
+            user_name = context.get("user_name", "Unknown")
+            food_list = context.get("food_list", "Not specified")
+
+            embed["description"] = f"**{reptile_name}** was fed by {user_name}\n\n📋 **Food:** {food_list}"
+
+            embed["fields"] = [
+                {"name": "Fed By", "value": user_name, "inline": True},
+                {"name": "Time", "value": "Just now", "inline": True},
+            ]
 
     return embed
 
@@ -296,6 +348,7 @@ async def send_webhook_notification(
     config: Optional[dict] = None,
     context: Optional[Dict[str, Any]] = None,
     trigger_type: Optional[str] = None,
+    template: Optional['NotificationTemplate'] = None,
 ):
     """
     Send notification via webhook or API
@@ -305,11 +358,12 @@ async def send_webhook_notification(
     Args:
         webhook_url: For discord/generic webhooks
         webhook_type: discord, pushover, or generic
-        message: Notification message
-        title: Notification title
+        message: Notification message (rendered from template)
+        title: Notification title (rendered from template)
         config: For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
         context: Optional context dict for rich formatting (Discord embeds with fields)
         trigger_type: Type of notification (schedule_reminder, overdue_alert, etc.)
+        template: Optional NotificationTemplate with discord_config for Discord embeds
     """
 
     try:
@@ -325,7 +379,7 @@ async def send_webhook_notification(
 
                 # Create rich embed with fields if context is provided
                 if context and trigger_type:
-                    embed = _create_discord_embed(context, trigger_type, title or "Notification", message)
+                    embed = _create_discord_embed(context, trigger_type, title or "Notification", message, template)
                 else:
                     # Fallback to simple embed
                     embed = {

@@ -18,6 +18,11 @@ const NotificationTemplatesTab = () => {
   const [channelType, setChannelType] = useState('');
   const [isActive, setIsActive] = useState(true);
 
+  // Discord config state
+  const [discordColor, setDiscordColor] = useState('#2E5BFF'); // Default blue
+  const [discordIncludeFields, setDiscordIncludeFields] = useState(['scheduled_date', 'schedule_type', 'notes']);
+  const [discordFooterText, setDiscordFooterText] = useState('Reptile Tracker');
+
   useEffect(() => {
     fetchTemplates();
   }, []);
@@ -44,6 +49,10 @@ const NotificationTemplatesTab = () => {
     setTitleTemplate('');
     setChannelType('');
     setIsActive(true);
+    // Reset Discord config to defaults
+    setDiscordColor('#2E5BFF');
+    setDiscordIncludeFields(['scheduled_date', 'schedule_type', 'notes']);
+    setDiscordFooterText('Reptile Tracker');
     setShowModal(true);
   };
 
@@ -61,6 +70,22 @@ const NotificationTemplatesTab = () => {
     setTitleTemplate(template.title_template || '');
     setChannelType(template.channel_type || '');
     setIsActive(template.is_active);
+
+    // Load Discord config if present
+    if (template.discord_config) {
+      // Convert integer color to hex
+      const colorInt = template.discord_config.color || 3447003;
+      const colorHex = '#' + colorInt.toString(16).padStart(6, '0');
+      setDiscordColor(colorHex);
+      setDiscordIncludeFields(template.discord_config.include_fields || []);
+      setDiscordFooterText(template.discord_config.footer_text || 'Reptile Tracker');
+    } else {
+      // Reset to defaults
+      setDiscordColor('#2E5BFF');
+      setDiscordIncludeFields(['scheduled_date', 'schedule_type', 'notes']);
+      setDiscordFooterText('Reptile Tracker');
+    }
+
     setShowModal(true);
   };
 
@@ -74,6 +99,19 @@ const NotificationTemplatesTab = () => {
         channel_type: channelType.trim() || null,
         is_active: isActive
       };
+
+      // Add Discord config if channel type is discord or all channels
+      if (channelType === 'discord' || channelType === '') {
+        // Convert hex color to integer
+        const colorInt = parseInt(discordColor.replace('#', ''), 16);
+        payload.discord_config = {
+          color: colorInt,
+          include_fields: discordIncludeFields,
+          footer_text: discordFooterText.trim()
+        };
+      } else {
+        payload.discord_config = null;
+      }
 
       if (editingTemplate) {
         // Update existing
@@ -474,6 +512,74 @@ const NotificationTemplatesTab = () => {
                   Active
                 </label>
               </div>
+
+              {/* Discord Configuration */}
+              {(channelType === 'discord' || channelType === '') && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Discord Embed Settings (Optional)</h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    Customize how this template appears in Discord. The message template will be used as the embed description.
+                  </p>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Embed Color</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={discordColor}
+                          onChange={(e) => setDiscordColor(e.target.value)}
+                          className="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={discordColor}
+                          onChange={(e) => setDiscordColor(e.target.value)}
+                          className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                          placeholder="#2E5BFF"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Include Fields</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['scheduled_date', 'schedule_type', 'notes', 'time_window', 'food_category', 'missed_date'].map(field => (
+                          <label key={field} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <input
+                              type="checkbox"
+                              checked={discordIncludeFields.includes(field)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setDiscordIncludeFields([...discordIncludeFields, field]);
+                                } else {
+                                  setDiscordIncludeFields(discordIncludeFields.filter(f => f !== field));
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <span>{field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Select which fields to display as structured embed fields below the description
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Footer Text</label>
+                      <input
+                        type="text"
+                        value={discordFooterText}
+                        onChange={(e) => setDiscordFooterText(e.target.value)}
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Reptile Tracker"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
