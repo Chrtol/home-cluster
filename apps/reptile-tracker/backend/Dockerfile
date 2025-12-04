@@ -19,6 +19,7 @@ COPY entrypoint.sh ./entrypoint.sh
 COPY debug_startup.py ./debug_startup.py
 COPY logging_config.json ./logging_config.json
 COPY cleanup_duplicate_templates.py ./cleanup_duplicate_templates.py
+COPY celery_worker.py ./celery_worker.py
 RUN chmod +x ./entrypoint.sh
 
 # Create non-root user
