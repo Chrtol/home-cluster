@@ -436,11 +436,13 @@ function Calendar() {
   };
 
   const getDaysInThreeDays = () => {
-    // Show current day + next 2 days (total of 3 days)
+    // Show today + next 2 days (total of 3 days) - always starts from today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day
     const days = [];
     for (let i = 0; i < 3; i++) {
-      const day = new Date(currentDate);
-      day.setDate(currentDate.getDate() + i);
+      const day = new Date(today);
+      day.setDate(today.getDate() + i);
       days.push(day);
     }
     return days;
@@ -617,10 +619,8 @@ function Calendar() {
     } else if (view === "week") {
       navigateWeek(direction);
     } else if (view === "3-day") {
-      // Navigate by 3 days
-      const newDate = new Date(currentDate);
-      newDate.setDate(newDate.getDate() + (direction * 3));
-      setCurrentDate(newDate);
+      // 3-day view always shows today + next 2 days, no navigation needed
+      return;
     } else {
       navigateDay(direction);
     }
