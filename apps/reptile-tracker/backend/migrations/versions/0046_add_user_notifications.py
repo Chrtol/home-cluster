@@ -36,8 +36,9 @@ def upgrade() -> None:
     """)
 
     # Create user_notifications table using raw SQL to avoid enum re-creation
+    # Use CREATE TABLE IF NOT EXISTS for idempotency
     op.execute("""
-        CREATE TABLE user_notifications (
+        CREATE TABLE IF NOT EXISTS user_notifications (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             notification_type notificationtype NOT NULL,
@@ -51,12 +52,12 @@ def upgrade() -> None:
         )
     """)
 
-    # Create indexes
-    op.create_index(op.f('ix_user_notifications_id'), 'user_notifications', ['id'], unique=False)
-    op.create_index(op.f('ix_user_notifications_user_id'), 'user_notifications', ['user_id'], unique=False)
-    op.create_index(op.f('ix_user_notifications_notification_type'), 'user_notifications', ['notification_type'], unique=False)
-    op.create_index(op.f('ix_user_notifications_is_read'), 'user_notifications', ['is_read'], unique=False)
-    op.create_index(op.f('ix_user_notifications_created_at'), 'user_notifications', ['created_at'], unique=False)
+    # Create indexes (IF NOT EXISTS for idempotency)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_user_notifications_id ON user_notifications (id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_user_notifications_user_id ON user_notifications (user_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_user_notifications_notification_type ON user_notifications (notification_type)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_user_notifications_is_read ON user_notifications (is_read)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_user_notifications_created_at ON user_notifications (created_at)")
 
 
 def downgrade() -> None:
