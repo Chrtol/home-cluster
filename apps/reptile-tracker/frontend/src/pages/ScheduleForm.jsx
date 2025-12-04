@@ -48,7 +48,9 @@ function ScheduleForm() {
   const [timeWindowEnabled, setTimeWindowEnabled] = useState(false);
   const [earliestTime, setEarliestTime] = useState("");
   const [latestTime, setLatestTime] = useState("");
-  const [reminderMinutesBefore, setReminderMinutesBefore] = useState("");
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState("");  // Legacy field
+  const [reminderTime, setReminderTime] = useState("");
+  const [reminderEnabled, setReminderEnabled] = useState(false);
 
   // Notification settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -64,6 +66,11 @@ function ScheduleForm() {
   const [latestHours, setLatestHours] = useState(4);
   const [latestMinutes, setLatestMinutes] = useState(0);
   const [latestPeriod, setLatestPeriod] = useState('PM');
+
+  // Time picker state for reminder time
+  const [reminderHours, setReminderHours] = useState(12);
+  const [reminderMinutes, setReminderMinutes] = useState(0);
+  const [reminderPeriod, setReminderPeriod] = useState('PM');
 
   // Build weekDays array respecting first day of week preference
   const dayNumbers = getDayNumbers();
@@ -115,6 +122,25 @@ function ScheduleForm() {
     const timeString = `${String(hour24).padStart(2, '0')}:${String(latestMinutes).padStart(2, '0')}`;
     setLatestTime(timeString);
   }, [latestHours, latestMinutes, latestPeriod, userTimeFormat]);
+
+  // Update reminderTime string when time picker values change
+  useEffect(() => {
+    if (!reminderEnabled) {
+      setReminderTime("");
+      return;
+    }
+
+    let hour24 = reminderHours;
+    if (userTimeFormat === '12h') {
+      if (reminderPeriod === 'PM' && reminderHours !== 12) {
+        hour24 = reminderHours + 12;
+      } else if (reminderPeriod === 'AM' && reminderHours === 12) {
+        hour24 = 0;
+      }
+    }
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(reminderMinutes).padStart(2, '0')}`;
+    setReminderTime(timeString);
+  }, [reminderHours, reminderMinutes, reminderPeriod, reminderEnabled, userTimeFormat]);
 
   const fetchScheduleData = async () => {
     try {
@@ -174,7 +200,26 @@ function ScheduleForm() {
         setLatestTime(schedule.latest_time);
       }
 
-      setReminderMinutesBefore(schedule.reminder_minutes_before || "");
+      // Parse reminder time (new style - takes precedence)
+      if (schedule.reminder_time) {
+        setReminderEnabled(true);
+        const [hours, minutes] = schedule.reminder_time.split(':').map(Number);
+        if (userTimeFormat === '12h') {
+          const period = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = hours % 12 || 12;
+          setReminderHours(displayHours);
+          setReminderPeriod(period);
+        } else {
+          setReminderHours(hours);
+        }
+        setReminderMinutes(minutes);
+        setReminderTime(schedule.reminder_time);
+      } else {
+        setReminderEnabled(false);
+        // Keep legacy field for backward compatibility display
+        setReminderMinutesBefore(schedule.reminder_minutes_before || "");
+      }
+
       setNotificationsEnabled(schedule.notifications_enabled !== undefined ? schedule.notifications_enabled : false);
 
       // Load selected channels
@@ -282,6 +327,28 @@ function ScheduleForm() {
     setLatestMinutes(Math.max(0, Math.min(59, numValue)));
   };
 
+  const handleReminderHoursChange = (value) => {
+    const numValue = parseInt(value) || (userTimeFormat === '12h' ? 12 : 0);
+    const maxHours = userTimeFormat === '12h' ? 12 : 23;
+    const minHours = userTimeFormat === '12h' ? 1 : 0;
+    setReminderHours(Math.max(minHours, Math.min(maxHours, numValue)));
+  };
+
+  const handleReminderMinutesChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    setReminderMinutes(Math.max(0, Math.min(59, numValue)));
+  };
+
+  // Validate that reminder time is within the time window
+  const isReminderTimeValid = () => {
+    if (!reminderEnabled || !timeWindowEnabled || !earliestTime || !latestTime || !reminderTime) {
+      return true; // No validation needed if not all fields are set
+    }
+
+    // Compare times as strings (HH:MM format)
+    return reminderTime >= earliestTime && reminderTime <= latestTime;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -335,7 +402,13 @@ function ScheduleForm() {
       if (timeWindowEnabled) {
         scheduleData.earliest_time = earliestTime || null;
         scheduleData.latest_time = latestTime || null;
-        scheduleData.reminder_minutes_before = reminderMinutesBefore ? parseInt(reminderMinutesBefore) : null;
+
+        // Send reminder_time if enabled (new style)
+        if (reminderEnabled && reminderTime) {
+          scheduleData.reminder_time = reminderTime;
+        } else {
+          scheduleData.reminder_time = null;
+        }
       }
 
       // Add notification settings
@@ -828,20 +901,69 @@ function ScheduleForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Reminder (Minutes Before Latest Time)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={reminderMinutesBefore}
-                  onChange={(e) => setReminderMinutesBefore(e.target.value)}
-                  placeholder="e.g., 30"
-                  className="input-field"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Optional: Get reminded before the time window closes
-                </p>
+                <div className="flex items-center gap-3 mb-3">
+                  <input
+                    type="checkbox"
+                    id="reminderEnabled"
+                    checked={reminderEnabled}
+                    onChange={(e) => setReminderEnabled(e.target.checked)}
+                    className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                  />
+                  <label htmlFor="reminderEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Enable Reminder
+                  </label>
+                </div>
+
+                {reminderEnabled && (
+                  <>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Reminder Time
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={reminderHours}
+                        onChange={e => handleReminderHoursChange(e.target.value)}
+                        className="input-field w-20 text-center"
+                        min={userTimeFormat === '12h' ? 1 : 0}
+                        max={userTimeFormat === '12h' ? 12 : 23}
+                        required
+                      />
+                      <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                      <input
+                        type="number"
+                        value={String(reminderMinutes).padStart(2, '0')}
+                        onChange={e => handleReminderMinutesChange(e.target.value)}
+                        className="input-field w-20 text-center"
+                        min="0"
+                        max="59"
+                        required
+                      />
+                      {userTimeFormat === '12h' && (
+                        <select
+                          value={reminderPeriod}
+                          onChange={e => setReminderPeriod(e.target.value)}
+                          className="input-field w-20"
+                        >
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Get reminded at this specific time (must be within the time window)
+                    </p>
+
+                    {/* Validation message */}
+                    {!isReminderTimeValid() && (
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded">
+                        <p className="text-xs text-red-800 dark:text-red-200">
+                          Reminder time must be between the earliest and latest times
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}

@@ -233,8 +233,15 @@ async def check_schedule_reminders():
                     and_(
                         Schedule.enabled == True,
                         Schedule.notifications_enabled == True,
-                        Schedule.reminder_minutes_before.isnot(None),
-                        Schedule.reminder_minutes_before > 0
+                        or_(
+                            # New style: absolute reminder_time
+                            Schedule.reminder_time.isnot(None),
+                            # Legacy style: reminder_minutes_before
+                            and_(
+                                Schedule.reminder_minutes_before.isnot(None),
+                                Schedule.reminder_minutes_before > 0
+                            )
+                        )
                     )
                 )
             )
@@ -262,25 +269,43 @@ async def check_schedule_reminders():
                     if completion and completion.status == CompletionStatus.COMPLETED_ON_TIME:
                         continue
 
-                    # Calculate reminder time
-                    # If time window is enabled, use earliest_time, otherwise use current time
-                    if schedule.time_window_enabled and schedule.earliest_time:
-                        # Combine next_occurrence_date with earliest_time
-                        scheduled_datetime = datetime.combine(
+                    # Calculate when to send reminder
+                    if schedule.reminder_time:
+                        # New style: Use absolute reminder time
+                        reminder_time = datetime.combine(
                             next_occurrence_date,
-                            schedule.earliest_time,
-                            tzinfo=timezone.utc
-                        )
-                    else:
-                        # Use noon as default time
-                        scheduled_datetime = datetime.combine(
-                            next_occurrence_date,
-                            datetime.min.time().replace(hour=12),
+                            schedule.reminder_time,
                             tzinfo=timezone.utc
                         )
 
-                    # Calculate when to send reminder
-                    reminder_time = scheduled_datetime - timedelta(minutes=schedule.reminder_minutes_before)
+                        # Validate reminder_time is within time window if enabled
+                        if schedule.time_window_enabled and schedule.earliest_time and schedule.latest_time:
+                            earliest_dt = datetime.combine(next_occurrence_date, schedule.earliest_time, tzinfo=timezone.utc)
+                            latest_dt = datetime.combine(next_occurrence_date, schedule.latest_time, tzinfo=timezone.utc)
+
+                            if not (earliest_dt <= reminder_time <= latest_dt):
+                                logger.warning(f"Reminder time {schedule.reminder_time} for schedule {schedule.id} is outside time window {schedule.earliest_time}-{schedule.latest_time}, skipping")
+                                continue
+                    else:
+                        # Legacy style: Calculate from reminder_minutes_before
+                        # If time window is enabled, use earliest_time, otherwise use current time
+                        if schedule.time_window_enabled and schedule.earliest_time:
+                            # Combine next_occurrence_date with earliest_time
+                            scheduled_datetime = datetime.combine(
+                                next_occurrence_date,
+                                schedule.earliest_time,
+                                tzinfo=timezone.utc
+                            )
+                        else:
+                            # Use noon as default time
+                            scheduled_datetime = datetime.combine(
+                                next_occurrence_date,
+                                datetime.min.time().replace(hour=12),
+                                tzinfo=timezone.utc
+                            )
+
+                        # Calculate when to send reminder
+                        reminder_time = scheduled_datetime - timedelta(minutes=schedule.reminder_minutes_before)
 
                     # Check if it's time to send reminder (within 5 minute window)
                     time_until_reminder = (reminder_time - now).total_seconds()

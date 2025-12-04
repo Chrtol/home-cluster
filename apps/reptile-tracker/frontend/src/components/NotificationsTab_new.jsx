@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bell, Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
+import { getUserTimeFormat } from '../utils/dateFormatting';
 
 function NotificationsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [userTimeFormat, setUserTimeFormat] = useState(getUserTimeFormat());
 
   // Global notification preferences
   const [notifyScheduleReminders, setNotifyScheduleReminders] = useState(true);
@@ -14,6 +16,16 @@ function NotificationsTab() {
   const [quietHoursStart, setQuietHoursStart] = useState('22:00');
   const [quietHoursEnd, setQuietHoursEnd] = useState('08:00');
   const [savingPreferences, setSavingPreferences] = useState(false);
+
+  // Time picker state for quiet hours start
+  const [startHours, setStartHours] = useState(22);
+  const [startMinutes, setStartMinutes] = useState(0);
+  const [startPeriod, setStartPeriod] = useState('PM');
+
+  // Time picker state for quiet hours end
+  const [endHours, setEndHours] = useState(8);
+  const [endMinutes, setEndMinutes] = useState(0);
+  const [endPeriod, setEndPeriod] = useState('AM');
 
   // Notification channels
   const [channels, setChannels] = useState([]);
@@ -75,6 +87,112 @@ function NotificationsTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Update quietHoursStart string when time picker values change
+  useEffect(() => {
+    let hour24 = startHours;
+    if (userTimeFormat === '12h') {
+      if (startPeriod === 'PM' && startHours !== 12) {
+        hour24 = startHours + 12;
+      } else if (startPeriod === 'AM' && startHours === 12) {
+        hour24 = 0;
+      }
+    }
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`;
+    setQuietHoursStart(timeString);
+  }, [startHours, startMinutes, startPeriod, userTimeFormat]);
+
+  // Update quietHoursEnd string when time picker values change
+  useEffect(() => {
+    let hour24 = endHours;
+    if (userTimeFormat === '12h') {
+      if (endPeriod === 'PM' && endHours !== 12) {
+        hour24 = endHours + 12;
+      } else if (endPeriod === 'AM' && endHours === 12) {
+        hour24 = 0;
+      }
+    }
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+    setQuietHoursEnd(timeString);
+  }, [endHours, endMinutes, endPeriod, userTimeFormat]);
+
+  // Parse loaded quietHoursStart time into picker state
+  useEffect(() => {
+    if (quietHoursStart) {
+      const [hours, minutes] = quietHoursStart.split(':').map(Number);
+
+      if (userTimeFormat === '12h') {
+        if (hours === 0) {
+          setStartHours(12);
+          setStartPeriod('AM');
+        } else if (hours < 12) {
+          setStartHours(hours);
+          setStartPeriod('AM');
+        } else if (hours === 12) {
+          setStartHours(12);
+          setStartPeriod('PM');
+        } else {
+          setStartHours(hours - 12);
+          setStartPeriod('PM');
+        }
+      } else {
+        setStartHours(hours);
+      }
+
+      setStartMinutes(minutes);
+    }
+  }, []); // Only run on mount
+
+  // Parse loaded quietHoursEnd time into picker state
+  useEffect(() => {
+    if (quietHoursEnd) {
+      const [hours, minutes] = quietHoursEnd.split(':').map(Number);
+
+      if (userTimeFormat === '12h') {
+        if (hours === 0) {
+          setEndHours(12);
+          setEndPeriod('AM');
+        } else if (hours < 12) {
+          setEndHours(hours);
+          setEndPeriod('AM');
+        } else if (hours === 12) {
+          setEndHours(12);
+          setEndPeriod('PM');
+        } else {
+          setEndHours(hours - 12);
+          setEndPeriod('PM');
+        }
+      } else {
+        setEndHours(hours);
+      }
+
+      setEndMinutes(minutes);
+    }
+  }, []); // Only run on mount
+
+  const handleStartHoursChange = (value) => {
+    const num = parseInt(value) || 0;
+    const max = userTimeFormat === '12h' ? 12 : 23;
+    const min = userTimeFormat === '12h' ? 1 : 0;
+    setStartHours(Math.max(min, Math.min(max, num)));
+  };
+
+  const handleStartMinutesChange = (value) => {
+    const num = parseInt(value) || 0;
+    setStartMinutes(Math.max(0, Math.min(59, num)));
+  };
+
+  const handleEndHoursChange = (value) => {
+    const num = parseInt(value) || 0;
+    const max = userTimeFormat === '12h' ? 12 : 23;
+    const min = userTimeFormat === '12h' ? 1 : 0;
+    setEndHours(Math.max(min, Math.min(max, num)));
+  };
+
+  const handleEndMinutesChange = (value) => {
+    const num = parseInt(value) || 0;
+    setEndMinutes(Math.max(0, Math.min(59, num)));
   };
 
   const handleSavePreferences = async () => {
@@ -384,7 +502,7 @@ function NotificationsTab() {
             <div className="flex-1">
               <div className="font-medium text-gray-900 dark:text-white">Overdue Alerts</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Get notified when a scheduled activity is missed (checked daily at 1 AM UTC)
+                Get notified when a scheduled activity is missed
               </div>
             </div>
           </label>
@@ -410,26 +528,76 @@ function NotificationsTab() {
               <div className="ml-7 space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Start Time (UTC)
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Time
                     </label>
-                    <input
-                      type="time"
-                      value={quietHoursStart}
-                      onChange={(e) => setQuietHoursStart(e.target.value)}
-                      className="input-field w-full"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={startHours}
+                        onChange={e => handleStartHoursChange(e.target.value)}
+                        className="input-field w-20 text-center"
+                        min={userTimeFormat === '12h' ? 1 : 0}
+                        max={userTimeFormat === '12h' ? 12 : 23}
+                        required
+                      />
+                      <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                      <input
+                        type="number"
+                        value={String(startMinutes).padStart(2, '0')}
+                        onChange={e => handleStartMinutesChange(e.target.value)}
+                        className="input-field w-20 text-center"
+                        min="0"
+                        max="59"
+                        required
+                      />
+                      {userTimeFormat === '12h' && (
+                        <select
+                          value={startPeriod}
+                          onChange={e => setStartPeriod(e.target.value)}
+                          className="input-field w-20"
+                        >
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      End Time (UTC)
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Time
                     </label>
-                    <input
-                      type="time"
-                      value={quietHoursEnd}
-                      onChange={(e) => setQuietHoursEnd(e.target.value)}
-                      className="input-field w-full"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={endHours}
+                        onChange={e => handleEndHoursChange(e.target.value)}
+                        className="input-field w-20 text-center"
+                        min={userTimeFormat === '12h' ? 1 : 0}
+                        max={userTimeFormat === '12h' ? 12 : 23}
+                        required
+                      />
+                      <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                      <input
+                        type="number"
+                        value={String(endMinutes).padStart(2, '0')}
+                        onChange={e => handleEndMinutesChange(e.target.value)}
+                        className="input-field w-20 text-center"
+                        min="0"
+                        max="59"
+                        required
+                      />
+                      {userTimeFormat === '12h' && (
+                        <select
+                          value={endPeriod}
+                          onChange={e => setEndPeriod(e.target.value)}
+                          className="input-field w-20"
+                        >
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

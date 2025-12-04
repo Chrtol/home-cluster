@@ -341,7 +341,8 @@ class Schedule(Base):
     earliest_time = Column(Time, nullable=True)  # Start of valid feeding window (e.g., 10:00 AM)
     latest_time = Column(Time, nullable=True)  # End of valid feeding window (e.g., 8:00 PM)
     time_window_enabled = Column(Boolean, default=False, nullable=False)
-    reminder_minutes_before = Column(Integer, nullable=True)  # For future notifications
+    reminder_minutes_before = Column(Integer, nullable=True)  # Legacy: minutes before latest_time (deprecated, use reminder_time)
+    reminder_time = Column(Time, nullable=True)  # Absolute reminder time (must be within time window, takes precedence over reminder_minutes_before)
 
     # Notification settings
     notifications_enabled = Column(Boolean, default=True, nullable=False)  # Per-schedule notification toggle
@@ -670,7 +671,8 @@ class ScheduleTemplate(Base):
     earliest_time = Column(Time, nullable=True)
     latest_time = Column(Time, nullable=True)
     time_window_enabled = Column(Boolean, default=False, nullable=False)
-    reminder_minutes_before = Column(Integer, nullable=True)
+    reminder_minutes_before = Column(Integer, nullable=True)  # Legacy: minutes before latest_time (deprecated, use reminder_time)
+    reminder_time = Column(Time, nullable=True)  # Absolute reminder time (must be within time window, takes precedence over reminder_minutes_before)
 
     # Supplement reference (optional)
     supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="SET NULL"), nullable=True)
