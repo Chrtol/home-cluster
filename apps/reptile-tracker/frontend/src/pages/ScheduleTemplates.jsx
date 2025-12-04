@@ -1245,6 +1245,28 @@ function ScheduleTemplates() {
                               Food: {template.food_category}
                             </div>
                           )}
+
+                          {/* Supplement Rotation Details */}
+                          {template.schedule_type === 'supplement_rotation' && template._rotationData && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1.5">
+                              {template._rotationData.applies_to_category && (
+                                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                                  <span className="font-medium">Applies to:</span>
+                                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs">
+                                    {template._rotationData.applies_to_category}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 text-xs">
+                                <span>Priority: <strong className="text-gray-700 dark:text-gray-300">{template._rotationData.priority}</strong> {template._rotationData.priority < 5 ? '(high)' : template._rotationData.priority > 10 ? '(low)' : ''}</span>
+                                {template._rotationData.is_exclusive && (
+                                  <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                                    Exclusive
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Actions - Only View button */}
@@ -1867,6 +1889,53 @@ function ScheduleTemplates() {
                       </div>
                     )}
 
+                    {/* Supplement Rotation Details */}
+                    {selectedTemplate.schedule_type === 'supplement_rotation' && selectedTemplate._rotationData && (
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg space-y-3">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Supplement Rotation Settings</h3>
+
+                        {selectedTemplate._rotationData.applies_to_category && (
+                          <div>
+                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applies to Meals:</div>
+                            <span className="px-3 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-sm capitalize">
+                              {selectedTemplate._rotationData.applies_to_category}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority:</div>
+                            <div className="text-gray-900 dark:text-gray-100">
+                              <span className="font-bold">{selectedTemplate._rotationData.priority}</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                                {selectedTemplate._rotationData.priority < 5 ? '(high priority)' : selectedTemplate._rotationData.priority > 10 ? '(low priority)' : '(normal)'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Exclusive Mode:</div>
+                            <span className={`px-3 py-1 rounded text-sm ${
+                              selectedTemplate._rotationData.is_exclusive
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                            }`}>
+                              {selectedTemplate._rotationData.is_exclusive ? 'Yes' : 'No'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-green-200 dark:border-green-800">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                            {selectedTemplate._rotationData.is_exclusive
+                              ? 'Only the highest priority supplement applies when multiple rotations trigger on the same feeding.'
+                              : 'Multiple supplements can apply simultaneously to the same feeding.'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Notes */}
                     {selectedTemplate.notes && (
                       <div>
@@ -1963,6 +2032,73 @@ function ScheduleTemplates() {
                           <div className="text-xs text-gray-500 dark:text-gray-400 italic">and continues...</div>
                         </div>
                       </div>
+
+                      {/* Reminder Notification Preview */}
+                      {selectedTemplate.reminder_time && (
+                        <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
+                          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">Reminder Notification Preview:</div>
+
+                          {/* Normal Format Preview */}
+                          <div className="mb-3">
+                            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Normal Format:</div>
+                            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-3 text-xs">
+                              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                🔔 Schedule Reminder: {selectedTemplate.name}
+                              </div>
+                              <div className="text-gray-700 dark:text-gray-300 space-y-1">
+                                <p>Reptile: <strong>Example Reptile</strong></p>
+                                <p>Schedule: <strong>{selectedTemplate.name}</strong></p>
+                                <p>Time: <strong>{selectedTemplate.time_window_enabled ? `${formatTime(selectedTemplate.earliest_time)} - ${formatTime(selectedTemplate.latest_time)}` : 'All day'}</strong></p>
+                                {selectedTemplate.notes && <p className="text-gray-600 dark:text-gray-400 italic text-xs mt-1">{selectedTemplate.notes}</p>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Discord Format Preview */}
+                          <div>
+                            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Discord Format:</div>
+                            <div className="bg-[#36393f] rounded p-3 text-xs">
+                              <div className="flex gap-2">
+                                <div className="w-1 rounded bg-blue-500 flex-shrink-0"></div>
+                                <div className="flex-1">
+                                  <div className="text-[#00b0f4] font-semibold mb-2 text-sm">🔔 Schedule Reminder</div>
+                                  <div className="text-[#dcddde] space-y-1.5">
+                                    <div className="grid grid-cols-[80px_1fr] gap-2">
+                                      <span className="text-[#b9bbbe] font-semibold">Reptile:</span>
+                                      <span>Example Reptile</span>
+                                    </div>
+                                    <div className="grid grid-cols-[80px_1fr] gap-2">
+                                      <span className="text-[#b9bbbe] font-semibold">Schedule:</span>
+                                      <span>{selectedTemplate.name}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[80px_1fr] gap-2">
+                                      <span className="text-[#b9bbbe] font-semibold">Type:</span>
+                                      <span className="capitalize">{getTypeDisplayName(selectedTemplate.schedule_type)}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[80px_1fr] gap-2">
+                                      <span className="text-[#b9bbbe] font-semibold">Time:</span>
+                                      <span>{selectedTemplate.time_window_enabled ? `${formatTime(selectedTemplate.earliest_time)} - ${formatTime(selectedTemplate.latest_time)}` : 'All day'}</span>
+                                    </div>
+                                    {selectedTemplate.notes && (
+                                      <div className="grid grid-cols-[80px_1fr] gap-2">
+                                        <span className="text-[#b9bbbe] font-semibold">Notes:</span>
+                                        <span className="text-[#b9bbbe]">{selectedTemplate.notes}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-[#72767d] text-[10px] mt-2">
+                                    Reptile Tracker • Today at {formatTime(selectedTemplate.reminder_time)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
+                            Notification will be sent at {formatTime(selectedTemplate.reminder_time)} on schedule days
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
