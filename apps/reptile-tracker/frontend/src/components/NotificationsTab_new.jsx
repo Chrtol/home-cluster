@@ -310,6 +310,16 @@ function NotificationsTab() {
     return url.substring(0, 20) + '...' + url.substring(url.length - 10);
   };
 
+  const getChannelTypeDisplay = (webhookType) => {
+    const typeMap = {
+      'in_app': 'In-App',
+      'discord': 'Discord',
+      'pushover': 'Pushover',
+      'generic': 'Generic Webhook'
+    };
+    return typeMap[webhookType] || webhookType;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -422,8 +432,8 @@ function NotificationsTab() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900 dark:text-white mb-1">{channel.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                      {channel.webhook_type}
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {getChannelTypeDisplay(channel.webhook_type)}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
