@@ -794,7 +794,7 @@ class NotificationChannelBase(BaseModel):
     config: Optional[dict] = None  # For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
     enabled: bool = True
     household_wide: bool = False  # If true, available to all household members
-    is_system: bool = False  # If true, channel cannot be deleted
+    is_system: Optional[bool] = False  # If true, channel cannot be deleted (optional for backward compatibility)
 
 
 class NotificationChannelCreate(BaseModel):

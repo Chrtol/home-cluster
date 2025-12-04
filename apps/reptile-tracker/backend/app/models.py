@@ -544,7 +544,7 @@ class NotificationChannel(Base):
     config = Column(JSON, nullable=True)  # For pushover and other configs (api_key, user_key, priority, etc.)
     enabled = Column(Boolean, default=True, nullable=False)
     household_wide = Column(Boolean, default=False, nullable=False)  # If true, available to all household members
-    is_system = Column(Boolean, default=False, nullable=False)  # If true, channel cannot be deleted
+    is_system = Column(Boolean, default=False, nullable=True)  # If true, channel cannot be deleted (nullable for backward compatibility)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
