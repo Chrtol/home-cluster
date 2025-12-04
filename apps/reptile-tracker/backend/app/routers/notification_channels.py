@@ -143,8 +143,8 @@ async def delete_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Notification channel not found")
 
-    # Prevent deletion of system channels
-    if channel.is_system:
+    # Prevent deletion of system channels (use getattr for backward compatibility)
+    if getattr(channel, 'is_system', False):
         raise HTTPException(
             status_code=400,
             detail="Cannot delete system notification channel. You can disable it instead."
