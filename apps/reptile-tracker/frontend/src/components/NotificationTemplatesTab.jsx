@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 const NotificationTemplatesTab = () => {
@@ -22,6 +22,9 @@ const NotificationTemplatesTab = () => {
   const [discordColor, setDiscordColor] = useState('#2E5BFF'); // Default blue
   const [discordIncludeFields, setDiscordIncludeFields] = useState(['scheduled_date', 'schedule_type', 'notes']);
   const [discordFooterText, setDiscordFooterText] = useState('Reptile Tracker');
+
+  // Ref for message template textarea
+  const messageTemplateRef = useRef(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -229,7 +232,30 @@ const NotificationTemplatesTab = () => {
   };
 
   const insertVariable = (variable) => {
-    setMessageTemplate(prev => prev + `{${variable}}`);
+    const textarea = messageTemplateRef.current;
+    if (!textarea) {
+      // Fallback if ref is not available
+      setMessageTemplate(prev => prev + `{${variable}}`);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = messageTemplate;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const variableText = `{${variable}}`;
+
+    // Insert variable at cursor position
+    const newText = before + variableText + after;
+    setMessageTemplate(newText);
+
+    // Set cursor position after the inserted variable
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + variableText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
   };
 
   const availableVariables = {
@@ -478,6 +504,7 @@ const NotificationTemplatesTab = () => {
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Message Template</label>
                 <textarea
+                  ref={messageTemplateRef}
                   value={messageTemplate}
                   onChange={(e) => setMessageTemplate(e.target.value)}
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -491,7 +518,7 @@ const NotificationTemplatesTab = () => {
                       <button
                         key={variable}
                         onClick={() => insertVariable(variable)}
-                        className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded"
+                        className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700"
                       >
                         {variable}
                       </button>
