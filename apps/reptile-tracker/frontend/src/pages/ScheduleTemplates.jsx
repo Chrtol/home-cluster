@@ -18,13 +18,14 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import * as api from '../utils/scheduleTemplateApi';
-import { getDayNames, getDayNumbers } from '../utils/dateFormatting';
+import { getDayNames, getDayNumbers, getUserTimeFormat } from '../utils/dateFormatting';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 function ScheduleTemplates() {
   const navigate = useNavigate();
+  const userTimeFormat = getUserTimeFormat();
   const [templates, setTemplates] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [reptiles, setReptiles] = useState([]);
@@ -61,6 +62,9 @@ function ScheduleTemplates() {
   const [globalChannelIds, setGlobalChannelIds] = useState([]);
   const [globalReminderEnabled, setGlobalReminderEnabled] = useState(false);
   const [globalReminderTime, setGlobalReminderTime] = useState('09:00');
+  const [globalReminderHours, setGlobalReminderHours] = useState(9);
+  const [globalReminderMinutes, setGlobalReminderMinutes] = useState(0);
+  const [globalReminderPeriod, setGlobalReminderPeriod] = useState('AM');
   const [availableChannels, setAvailableChannels] = useState([]);
 
   // Import modal
@@ -460,6 +464,36 @@ function ScheduleTemplates() {
         });
     }
   }, [applyModalOpen]);
+
+  // Sync globalReminderTime with hour/minute components
+  useEffect(() => {
+    if (!globalReminderEnabled) return;
+
+    let hour24 = globalReminderHours;
+    if (userTimeFormat === '12h') {
+      if (globalReminderPeriod === 'PM' && globalReminderHours !== 12) {
+        hour24 = globalReminderHours + 12;
+      } else if (globalReminderPeriod === 'AM' && globalReminderHours === 12) {
+        hour24 = 0;
+      }
+    }
+
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(globalReminderMinutes).padStart(2, '0')}`;
+    setGlobalReminderTime(timeString);
+  }, [globalReminderHours, globalReminderMinutes, globalReminderPeriod, globalReminderEnabled, userTimeFormat]);
+
+  // Handler functions for global reminder time
+  const handleGlobalReminderHoursChange = (value) => {
+    const numValue = parseInt(value) || (userTimeFormat === '12h' ? 12 : 0);
+    const maxHours = userTimeFormat === '12h' ? 12 : 23;
+    const minHours = userTimeFormat === '12h' ? 1 : 0;
+    setGlobalReminderHours(Math.max(minHours, Math.min(maxHours, numValue)));
+  };
+
+  const handleGlobalReminderMinutesChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    setGlobalReminderMinutes(Math.max(0, Math.min(59, numValue)));
+  };
 
   function toggleTemplateSelection(templateId) {
     setSelectedTemplateIds(prev => {
@@ -2116,12 +2150,37 @@ function ScheduleTemplates() {
                       Set reminder time
                     </label>
                     {globalReminderEnabled && (
-                      <input
-                        type="time"
-                        value={globalReminderTime}
-                        onChange={(e) => setGlobalReminderTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={globalReminderHours}
+                          onChange={e => handleGlobalReminderHoursChange(e.target.value)}
+                          className="w-20 text-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          min={userTimeFormat === '12h' ? 1 : 0}
+                          max={userTimeFormat === '12h' ? 12 : 23}
+                          required
+                        />
+                        <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                        <input
+                          type="number"
+                          value={String(globalReminderMinutes).padStart(2, '0')}
+                          onChange={e => handleGlobalReminderMinutesChange(e.target.value)}
+                          className="w-20 text-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          min="0"
+                          max="59"
+                          required
+                        />
+                        {userTimeFormat === '12h' && (
+                          <select
+                            value={globalReminderPeriod}
+                            onChange={e => setGlobalReminderPeriod(e.target.value)}
+                            className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          >
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        )}
+                      </div>
                     )}
                   </div>
 
