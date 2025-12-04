@@ -225,6 +225,14 @@ def _create_discord_embed(
         }
     }
 
+    # Add URL if available in context (makes title clickable)
+    if context and context.get("schedule_url"):
+        # Convert relative URL to absolute URL if needed
+        schedule_url = context["schedule_url"]
+        # For now, keep as relative since Discord client will handle it
+        # In production, you might want to add a base URL from config
+        embed["url"] = f"https://reptiletracker.example.com{schedule_url}"  # TODO: Use actual base URL from config
+
     # If template has discord_config, use template-driven approach
     if discord_config:
         # Use the rendered description from template
@@ -438,6 +446,13 @@ async def send_webhook_notification(
                 # Optional sound
                 if config.get("sound"):
                     payload["sound"] = config["sound"]
+
+                # Add URL if available in context
+                if context and context.get("schedule_url"):
+                    schedule_url = context["schedule_url"]
+                    # TODO: Use actual base URL from config
+                    payload["url"] = f"https://reptiletracker.example.com{schedule_url}"
+                    payload["url_title"] = "View Schedule"
 
                 # Send to Pushover API
                 response = await client.post("https://api.pushover.net/1/messages.json", data=payload)

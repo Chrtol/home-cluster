@@ -65,6 +65,9 @@ spec:
               OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
               FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
               WEBHOOK_URL: ""
+              REDIS_HOST: "dragonfly.database.svc.cluster.local"
+              REDIS_PORT: "6379"
+              REDIS_DB: "0"
               ENVIRONMENT: "production"
               SQL_ECHO: "false"
               COOKIE_SECURE: "true"
@@ -127,6 +130,54 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 128Mi
+      celery-worker:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        strategy: RollingUpdate
+        containers:
+          worker:
+            image:
+              repository: ghcr.io/chrtol/reptile-tracker-backend
+              tag: main-20251204211209 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              pullPolicy: Always
+            command: ["python", "celery_worker.py"]
+            env:
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: DATABASE_URL
+              SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: secret-key
+              OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: oidc-client-id
+              OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: oidc-client-secret
+              OIDC_DISCOVERY_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: oidc-discovery-url
+              REDIS_HOST: "dragonfly.database.svc.cluster.local"
+              REDIS_PORT: "6379"
+              REDIS_DB: "0"
+              ENVIRONMENT: "production"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
     service:
       backend:
         controller: reptile-tracker
