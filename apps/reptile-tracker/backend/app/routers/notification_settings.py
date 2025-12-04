@@ -5,11 +5,12 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.models import NotificationSettings, User
+from app.models import NotificationSettings, User, NotificationType
 from app.auth import get_current_user
 from app.schemas import NotificationSettingsSchema, NotificationSettingsUpdate
 from app.notifications import validate_webhook_url, send_webhook_notification
 from app.notification_utils import ensure_in_app_channel
+from app.scheduler import create_in_app_notification
 
 router = APIRouter(prefix="/api/notification-settings", tags=["notification-settings"])
 
@@ -97,7 +98,8 @@ class TestNotificationRequest(BaseModel):
 @router.post("/test")
 async def test_notification(
     test_data: TestNotificationRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Send a test notification to verify webhook configuration"""
     # Validate webhook URL for discord/generic
@@ -139,15 +141,27 @@ async def test_notification(
             "due_date": datetime.now(timezone.utc).strftime('%Y-%m-%d'),
         }
 
-        await send_webhook_notification(
-            webhook_url=test_data.webhook_url,
-            webhook_type=test_data.webhook_type,
-            message=f"Test notification from Reptile Tracker! Sent by {current_user.name}.",
-            title="Schedule Reminder - Example Reptile",
-            config=test_data.config,
-            context=sample_context,
-            trigger_type="schedule_reminder"
-        )
+        # Handle in-app notifications separately
+        if test_data.webhook_type == "in_app":
+            await create_in_app_notification(
+                db=db,
+                user=current_user,
+                notification_type=NotificationType.SCHEDULE_REMINDER,
+                title="Test Notification - Example Reptile",
+                message=f"Test notification from Reptile Tracker! This is an example of a schedule reminder for Morning Feeding. Sent by {current_user.name}.",
+                link="/calendar",
+                notification_metadata=sample_context
+            )
+        else:
+            await send_webhook_notification(
+                webhook_url=test_data.webhook_url,
+                webhook_type=test_data.webhook_type,
+                message=f"Test notification from Reptile Tracker! Sent by {current_user.name}.",
+                title="Schedule Reminder - Example Reptile",
+                config=test_data.config,
+                context=sample_context,
+                trigger_type="schedule_reminder"
+            )
         return {"message": "Test notification sent successfully"}
     except Exception as e:
         raise HTTPException(
