@@ -9,6 +9,7 @@ from app.models import NotificationSettings, User
 from app.auth import get_current_user
 from app.schemas import NotificationSettingsSchema, NotificationSettingsUpdate
 from app.notifications import validate_webhook_url, send_webhook_notification
+from app.notification_utils import ensure_in_app_channel
 
 router = APIRouter(prefix="/api/notification-settings", tags=["notification-settings"])
 
@@ -59,6 +60,9 @@ async def create_or_update_notification_settings(
             **settings_data.model_dump(exclude_unset=True)
         )
         db.add(settings)
+        await db.flush()
+        # Ensure in-app channel exists for new settings
+        await ensure_in_app_channel(db, settings.id)
 
     await db.commit()
     await db.refresh(settings)

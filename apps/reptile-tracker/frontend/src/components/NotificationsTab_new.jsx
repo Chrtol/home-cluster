@@ -445,17 +445,29 @@ function NotificationsTab() {
                     >
                       <Edit2 size={16} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteChannel(channel.id)}
-                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 rounded transition-colors"
-                      title="Delete channel"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {!channel.is_system ? (
+                      <button
+                        onClick={() => handleDeleteChannel(channel.id)}
+                        className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 rounded transition-colors"
+                        title="Delete channel"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="p-2 text-gray-400 cursor-not-allowed rounded transition-colors"
+                        title="System channel cannot be deleted"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
-                  {channel.webhook_type === 'pushover' ? (
+                  {channel.webhook_type === 'in_app' ? (
+                    <div className="italic">Notifications appear in the notification bell icon</div>
+                  ) : channel.webhook_type === 'pushover' ? (
                     <div>
                       <div>User: {channel.config?.user_key ? `${channel.config.user_key.substring(0, 8)}...` : 'Not configured'}</div>
                       <div>Priority: {channel.config?.priority || 'normal'}</div>
