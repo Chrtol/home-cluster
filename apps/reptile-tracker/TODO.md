@@ -386,6 +386,30 @@
 ## ✅ Recently Completed
 
 ### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
+- [x] **In-app notification centre** - ✅ COMPLETED (2025-12-04)
+  - Implemented built-in notification system as a manageable notification channel
+  - System-created in-app channel for all users (automatically created, cannot be deleted)
+  - Users can enable/disable and assign to schedules like other channels
+  - Features:
+    - Notification bell icon in navigation bar with unread count badge
+    - Dropdown notification list showing last 10 notifications
+    - Mark as read / Mark all as read functionality
+    - Full notification history page with filtering by read status and type
+    - Click notifications to navigate to related pages
+    - 30-second polling for real-time updates
+  - Backend:
+    - Created `user_notifications` table and API endpoints
+    - Migration 0046: Created notification storage with enum types
+    - Migration 0047: Added `is_system` column and auto-created in-app channels
+    - Scheduler integration to create in-app notifications for reminders and overdue alerts
+    - Made migrations idempotent to handle deployment failures gracefully
+  - Frontend:
+    - NotificationBell component with unread count and dropdown
+    - NotificationDropdown component with recent notifications
+    - NotificationHistory page with filtering and pagination
+    - Friendly channel type names (shows "In-App" instead of "in_app")
+    - Updated ScheduleForm to show friendly names when selecting channels
+
 - [x] **Notification template customization** - ✅ COMPLETED
   - Added ability to customize system notification templates via Settings > Templates tab
   - Users can click "Customize" on system templates to create editable copies
