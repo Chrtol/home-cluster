@@ -385,6 +385,32 @@
 ## ✅ Recently Completed
 
 ### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
+- [x] **Template-Driven Discord Notifications** - ✅ COMPLETED (2025-12-04)
+  - Resolved inconsistency where Discord used hardcoded formatting while other channels used templates
+  - Added `discord_config` JSON column to notification_templates table for Discord-specific settings
+  - Discord embed customization options:
+    - Custom embed border color (color picker with hex input)
+    - Selectable fields to display (scheduled_date, schedule_type, notes, time_window, food_category, missed_date)
+    - Custom footer text
+  - Templates now work consistently across all notification channels (Discord, Pushover, Generic, In-App)
+  - Backwards compatible: templates without discord_config fall back to hardcoded formatting
+  - Features:
+    - Template-driven embed title and description
+    - Configurable embed color (default: blue for reminders, red for overdue)
+    - Checkbox selection for which fields to include in embed
+    - Custom footer text per template
+  - Backend:
+    - Migration 0050: Added discord_config column with sensible defaults for system templates
+    - Updated _create_discord_embed() to accept template parameter and use discord_config
+    - Modified send_webhook_notification() and scheduler to pass templates through
+  - Frontend:
+    - Discord Embed Settings section in template editor (shown for Discord/All channels)
+    - Visual color picker with hex input field
+    - Grid of checkboxes for field selection
+    - Footer text input with placeholder
+    - Green-styled variable buttons for better visibility
+    - Variable insertion at cursor position (not end of text)
+
 - [x] **Quiet Hours & Critical Notification Override** - ✅ COMPLETED (2025-12-04)
   - Implemented quiet hours to suppress non-critical notifications during specified time range
   - Critical notification types (health events, system messages) bypass quiet hours

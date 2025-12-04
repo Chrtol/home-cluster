@@ -13,7 +13,11 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 🏥 **Health Records**: Track vet visits, medication, and observations
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
-- 🔔 **Notifications**: Per-schedule notification channels with webhook support (Discord/Pushover/Generic) and visual calendar indicators
+- 🔔 **Notifications**: Per-schedule notification channels with webhook support (Discord/Pushover/Generic), customizable templates, and visual calendar indicators
+  - Template-driven Discord embeds with custom colors, fields, and footer
+  - In-app notification center with bell icon and history
+  - Quiet hours with critical notification override
+  - Variable insertion and markdown support in templates
 - 📈 **Statistics**: Comprehensive analytics with customizable charts and layouts
 - ⚙️ **Display Customization**: Drag-and-drop card management and chart settings
 
@@ -471,10 +475,16 @@ The application supports flexible per-schedule notification channels with the fo
 - Critical notifications (health events, system messages) bypass quiet hours
 
 **Template Customization:**
-- Customize notification message templates for different trigger types
-- Preview templates with sample data before saving
-- Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes
+- Customize notification message templates for different trigger types (schedule_reminder, overdue_alert)
+- Preview templates with sample data before saving (with variable substitution and markdown rendering)
+- Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes, scheduled_date, missed_date
 - Per-channel template overrides (e.g., shorter messages for Pushover)
+- Discord-specific settings:
+  - Custom embed border color (visual color picker with hex input)
+  - Selectable embed fields (checkboxes for scheduled_date, schedule_type, notes, time_window, food_category, missed_date)
+  - Custom footer text
+- Green-styled variable buttons with click-to-insert at cursor position
+- Markdown support: **bold** and *italic* formatting
 
 **Supported Types:**
 
@@ -502,7 +512,13 @@ Send rich embedded notifications to Discord channels:
   "webhook_type": "discord"
 }
 ```
-Features: Rich embeds with reptile info, schedule details, and color-coded status
+Features:
+- **Template-driven embeds**: Customize message content with template variables
+- **Custom embed colors**: Choose border color per template (defaults: blue for reminders, red for overdue)
+- **Selectable fields**: Choose which fields to display (scheduled_date, schedule_type, notes, time_window, food_category, missed_date)
+- **Custom footer**: Set footer text per template
+- **Markdown support**: Use **bold** and *italic* formatting in messages
+- **Backwards compatible**: Templates without Discord config fall back to hardcoded formatting
 
 ### Pushover
 Send push notifications via Pushover:
