@@ -15,7 +15,7 @@ from app.schemas import (
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
 
-@router.get("/", response_model=List[UserNotificationSchema])
+@router.get("", response_model=List[UserNotificationSchema])
 async def list_notifications(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -146,7 +146,7 @@ async def delete_notification(
     return {"message": "Notification deleted successfully"}
 
 
-@router.delete("/")
+@router.delete("")
 async def delete_all_read_notifications(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
