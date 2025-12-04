@@ -664,9 +664,9 @@ function Calendar() {
       return null;
     }
 
-    // For uncompleted scheduled events, link to the schedule edit page
+    // For uncompleted scheduled events, link to the schedule read-only view
     if (event.schedule_id) {
-      return `/schedule-edit/${event.schedule_id}`;
+      return `/schedules/${event.schedule_id}`;
     }
 
     return null;
@@ -986,7 +986,7 @@ function Calendar() {
                   key={schedule.id}
                   className="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
                 >
-                  <div className="flex-1">
+                  <Link to={`/schedules/${schedule.id}`} className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {schedule.reptile_name}
@@ -1048,7 +1048,7 @@ function Calendar() {
                         {schedule.notes}
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   <div className="flex items-center gap-2 ml-4">
                     <button

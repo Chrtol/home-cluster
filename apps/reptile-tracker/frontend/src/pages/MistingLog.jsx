@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Edit2, Trash2, Plus } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
@@ -8,6 +8,7 @@ import DateInput from '../components/DateInput';
 export default function MistingLog() {
   const navigate = useNavigate();
   const { reptileId, id } = useParams();
+  const [searchParams] = useSearchParams();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -75,10 +76,39 @@ export default function MistingLog() {
             setError('Failed to load misting log. It may not exist or you may not have permission.');
           }
         } else {
-          if (reptileId) {
-            setSelectedReptile(reptileId);
-          } else if (reptilesRes.data.length > 0) {
-            setSelectedReptile(reptilesRes.data[0].id);
+          // Check for schedule_id in query params to pre-fill
+          const scheduleId = searchParams.get('schedule_id');
+          if (scheduleId) {
+            try {
+              const scheduleRes = await axios.get(`/api/schedules/${scheduleId}`);
+              const schedule = scheduleRes.data;
+
+              // Pre-fill reptile from schedule
+              if (schedule.reptile_id) {
+                setSelectedReptile(schedule.reptile_id);
+              }
+
+              // Pre-fill time from schedule
+              if (schedule.reminder_time || (schedule.time_window_enabled && schedule.earliest_time)) {
+                const timeStr = schedule.reminder_time || schedule.earliest_time;
+                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
+                setHours(timeHours);
+                setMinutes(timeMinutes);
+                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
+                setMistingTime(timeStr);
+              }
+            } catch (scheduleErr) {
+              console.error('Failed to load schedule for pre-fill:', scheduleErr);
+            }
+          }
+
+          // Fallback to defaults if not pre-filled
+          if (!selectedReptile) {
+            if (reptileId) {
+              setSelectedReptile(reptileId);
+            } else if (reptilesRes.data.length > 0) {
+              setSelectedReptile(reptilesRes.data[0].id);
+            }
           }
         }
       } catch (err) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
@@ -8,6 +8,7 @@ import DateInput from '../components/DateInput';
 export default function FeedingLog() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -82,18 +83,69 @@ export default function FeedingLog() {
             setError('Failed to load feeding. It may not exist or you may not have permission.');
           }
         } else {
-          // Creating new feeding - start with one insect item
-          const initialReptileId = reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '';
-          setSelectedReptile(initialReptileId);
+          // Creating new feeding
+          const scheduleId = searchParams.get('schedule_id');
 
-          const insectFoods = foodsRes.data.filter(f => f.category === 'insect');
-          if (insectFoods.length > 0) {
-            setInsectItems([{
-              id: Date.now(),
-              food_id: insectFoods[0].id,
-              quantity: 1,
-              supplement_ids: []
-            }]);
+          // Check if we have a schedule_id query parameter
+          if (scheduleId) {
+            try {
+              const scheduleRes = await axios.get(`/api/schedules/${scheduleId}`);
+              const schedule = scheduleRes.data;
+
+              // Pre-fill reptile
+              if (schedule.reptile_id) {
+                setSelectedReptile(schedule.reptile_id);
+              }
+
+              // Pre-fill time from schedule
+              if (schedule.reminder_time || (schedule.time_window_enabled && schedule.earliest_time)) {
+                const timeStr = schedule.reminder_time || schedule.earliest_time;
+                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
+                setHours(timeHours);
+                setMinutes(timeMinutes);
+                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
+                setFedTime(timeStr);
+              }
+
+              // Pre-fill food category toggles based on schedule
+              if (schedule.food_category) {
+                if (schedule.food_category === 'insects') {
+                  setIncludeInsects(true);
+                  setIncludeSalad(false);
+                  setIncludePrepared(false);
+                } else if (schedule.food_category === 'salad') {
+                  setIncludeInsects(false);
+                  setIncludeSalad(true);
+                  setIncludePrepared(false);
+                } else if (schedule.food_category === 'prepared') {
+                  setIncludeInsects(false);
+                  setIncludeSalad(false);
+                  setIncludePrepared(true);
+                }
+              }
+            } catch (scheduleErr) {
+              console.error('Failed to load schedule for pre-fill:', scheduleErr);
+              // Continue with default initialization if schedule load fails
+            }
+          }
+
+          // Initialize with default values if no schedule or after pre-fill
+          if (!selectedReptile) {
+            const initialReptileId = reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '';
+            setSelectedReptile(initialReptileId);
+          }
+
+          // Start with one insect item if insects are enabled and no items exist
+          if (includeInsects && insectItems.length === 0) {
+            const insectFoods = foodsRes.data.filter(f => f.category === 'insect');
+            if (insectFoods.length > 0) {
+              setInsectItems([{
+                id: Date.now(),
+                food_id: insectFoods[0].id,
+                quantity: 1,
+                supplement_ids: []
+              }]);
+            }
           }
         }
 

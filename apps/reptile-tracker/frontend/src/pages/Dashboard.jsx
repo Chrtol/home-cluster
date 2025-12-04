@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings } from '../utils/displaySettings';
@@ -284,6 +284,8 @@ export default function Dashboard() {
             earliest_time: schedule.earliest_time,
             latest_time: schedule.latest_time,
             notes: schedule.notes,
+            notifications_enabled: schedule.notifications_enabled,
+            reminder_time: schedule.reminder_time,
           });
           currentDay.setDate(currentDay.getDate() + frequency);
         }
@@ -307,6 +309,8 @@ export default function Dashboard() {
               earliest_time: schedule.earliest_time,
               latest_time: schedule.latest_time,
               notes: schedule.notes,
+              notifications_enabled: schedule.notifications_enabled,
+              reminder_time: schedule.reminder_time,
             });
           }
           currentDay.setDate(currentDay.getDate() + 1);
@@ -955,6 +959,9 @@ export default function Dashboard() {
                                 <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                   {event.reptile_name}
                                 </span>
+                                {event.notifications_enabled && (
+                                  <Bell size={12} className="flex-shrink-0 text-amber-600 dark:text-amber-400" title="Notifications enabled" />
+                                )}
                               </div>
                               <div className="text-xs space-y-0.5 ml-5">
                                 {foodCategory && (
@@ -1007,6 +1014,9 @@ export default function Dashboard() {
                                 <span className="truncate text-gray-700 dark:text-gray-300">
                                   {event.reptile_name}
                                 </span>
+                                {event.notifications_enabled && (
+                                  <Bell size={9} className="flex-shrink-0 text-amber-600 dark:text-amber-400" title="Notifications enabled" />
+                                )}
                               </div>
                               {foodCategory && (
                                 <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
