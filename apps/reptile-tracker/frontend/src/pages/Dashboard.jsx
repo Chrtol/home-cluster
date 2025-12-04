@@ -797,10 +797,17 @@ export default function Dashboard() {
 
         // Calculate days based on view
         let daysToShow = 7;
-        if (calendarView === 'day') daysToShow = 1;
-        else if (calendarView === 'three-day') daysToShow = 3;
+        let startDate = weekStart; // Default to week start for 7-day view
 
-        const weekDays = Array.from({ length: daysToShow }, (_, i) => addDays(weekStart, i));
+        if (calendarView === 'day') {
+          daysToShow = 1;
+          startDate = today; // Start from today for 1-day view
+        } else if (calendarView === 'three-day') {
+          daysToShow = 3;
+          startDate = today; // Start from today for 3-day view
+        }
+
+        const weekDays = Array.from({ length: daysToShow }, (_, i) => addDays(startDate, i));
 
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
