@@ -14,6 +14,17 @@ function ScheduleForm() {
   const [schedules, setSchedules] = useState([]); // For dependent schedules
   const [loading, setLoading] = useState(false);
 
+  // Helper function to display friendly channel type names
+  const getChannelTypeDisplay = (webhookType) => {
+    const typeMap = {
+      'in_app': 'In-App',
+      'discord': 'Discord',
+      'pushover': 'Pushover',
+      'generic': 'Generic Webhook'
+    };
+    return typeMap[webhookType] || webhookType;
+  };
+
   // Form state
   const [reptileId, setReptileId] = useState("");
   const [name, setName] = useState("");
@@ -880,7 +891,7 @@ function ScheduleForm() {
                         <UserIcon size={14} className="flex-shrink-0" />
                       )}
                       <span className="font-semibold">{channel.name}</span>
-                      <span className="text-gray-500 dark:text-gray-400">({channel.webhook_type})</span>
+                      <span className="text-gray-500 dark:text-gray-400">({getChannelTypeDisplay(channel.webhook_type)})</span>
                     </button>
                   );
                 })}
