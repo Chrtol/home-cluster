@@ -196,7 +196,7 @@ def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str
     color = color_map.get(trigger_type, 5814783)  # Default to teal
 
     embed = {
-        "title": f"{context.get('emoji', '📅')} {title}",
+        "title": title,
         "color": color,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "fields": [],
@@ -205,36 +205,39 @@ def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str
         }
     }
 
-    # Build fields based on trigger type
+    # Build description and fields based on trigger type
     if trigger_type == "schedule_reminder":
-        fields = [
-            {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
-            {"name": "Schedule", "value": context.get("schedule_name", "Unknown"), "inline": True},
-            {"name": "Type", "value": context.get("schedule_type", "Unknown").title(), "inline": True},
-        ]
+        # Create a descriptive message
+        reptile_name = context.get("reptile_name", "Unknown")
+        schedule_name = context.get("schedule_name", "Unknown")
+        schedule_type = context.get("schedule_type", "Unknown").title()
+
+        desc_parts = [f"It's time for **{reptile_name}**'s {schedule_type.lower()}: **{schedule_name}**"]
+
+        # Add time window to description if available
+        if context.get("time_window_display"):
+            desc_parts.append(f"Complete between **{context['time_window_display']}** for best results.")
+
+        # Add food/supplement info to description
+        if context.get("schedule_type") == "feeding" and context.get("food_category"):
+            food_info = context["food_category"]
+            if context.get("supplement_name"):
+                food_info += f" with {context['supplement_name']}"
+            desc_parts.append(f"\n📋 **Food:** {food_info}")
+        elif context.get("schedule_type") == "supplement" and context.get("supplement_name"):
+            desc_parts.append(f"\n💊 **Supplement:** {context['supplement_name']}")
+
+        embed["description"] = "\n".join(desc_parts)
+
+        # Simplified fields - just the essentials
+        fields = []
 
         if context.get("scheduled_date"):
             fields.append({"name": "Due Date", "value": context["scheduled_date"], "inline": True})
 
-        # Use the clean time_window_display if available, otherwise fall back to time_window
-        if context.get("time_window_display"):
-            fields.append({"name": "Time Window", "value": context["time_window_display"], "inline": True})
-        elif context.get("time_window"):
-            # Extract just the time portion without the newline prefix
-            time_window = context["time_window"].replace("\nTime window: ", "").strip()
-            if time_window:
-                fields.append({"name": "Time Window", "value": time_window, "inline": True})
-
-        # Add food category for feeding schedules
-        if context.get("schedule_type") == "feeding" and context.get("food_category"):
-            fields.append({"name": "Food Type", "value": context["food_category"], "inline": True})
-
-        # Add supplement name for supplement schedules
-        if context.get("schedule_type") == "supplement" and context.get("supplement_name"):
-            fields.append({"name": "Supplement", "value": context["supplement_name"], "inline": True})
+        fields.append({"name": "Schedule Type", "value": schedule_type, "inline": True})
 
         if context.get("notes"):
-            # Extract notes without the "Notes:" prefix if present
             notes = context["notes"].replace("\nNotes: ", "").strip()
             if notes:
                 fields.append({"name": "Notes", "value": notes, "inline": False})
@@ -242,29 +245,44 @@ def _create_discord_embed(context: Dict[str, Any], trigger_type: str, title: str
         embed["fields"] = fields
 
     elif trigger_type == "overdue_alert":
-        fields = [
-            {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
-            {"name": "Schedule", "value": context.get("schedule_name", "Unknown"), "inline": True},
-            {"name": "Type", "value": context.get("schedule_type", "Unknown").title(), "inline": True},
-            {"name": "Missed Date", "value": context.get("missed_date", "Unknown"), "inline": True},
-            {"name": "Status", "value": "⚠️ Overdue", "inline": True},
-        ]
+        # Create a descriptive warning message
+        reptile_name = context.get("reptile_name", "Unknown")
+        schedule_name = context.get("schedule_name", "Unknown")
+        schedule_type = context.get("schedule_type", "Unknown").title()
+        missed_date = context.get("missed_date", "Unknown")
 
-        # Add food category for feeding schedules
+        desc_parts = [f"**{reptile_name}**'s {schedule_type.lower()} schedule was not completed on **{missed_date}**"]
+        desc_parts.append(f"\n⚠️ Schedule: **{schedule_name}**")
+
+        # Add food/supplement info
         if context.get("schedule_type") == "feeding" and context.get("food_category"):
-            fields.append({"name": "Food Type", "value": context["food_category"], "inline": True})
+            food_info = context["food_category"]
+            if context.get("supplement_name"):
+                food_info += f" with {context['supplement_name']}"
+            desc_parts.append(f"📋 **Food:** {food_info}")
+        elif context.get("schedule_type") == "supplement" and context.get("supplement_name"):
+            desc_parts.append(f"💊 **Supplement:** {context['supplement_name']}")
 
-        # Add supplement name for supplement schedules
-        if context.get("schedule_type") == "supplement" and context.get("supplement_name"):
-            fields.append({"name": "Supplement", "value": context["supplement_name"], "inline": True})
+        embed["description"] = "\n".join(desc_parts)
+
+        # Minimal fields for overdue
+        fields = [
+            {"name": "Status", "value": "⚠️ **Overdue**", "inline": True},
+            {"name": "Schedule Type", "value": schedule_type, "inline": True},
+        ]
 
         embed["fields"] = fields
 
     elif trigger_type == "feeding_logged":
+        reptile_name = context.get("reptile_name", "Unknown")
+        user_name = context.get("user_name", "Unknown")
+        food_list = context.get("food_list", "Not specified")
+
+        embed["description"] = f"**{reptile_name}** was fed by {user_name}\n\n📋 **Food:** {food_list}"
+
         embed["fields"] = [
-            {"name": "Reptile", "value": context.get("reptile_name", "Unknown"), "inline": True},
-            {"name": "Fed By", "value": context.get("user_name", "Unknown"), "inline": True},
-            {"name": "Food", "value": context.get("food_list", "Not specified"), "inline": False},
+            {"name": "Fed By", "value": user_name, "inline": True},
+            {"name": "Time", "value": "Just now", "inline": True},
         ]
 
     return embed

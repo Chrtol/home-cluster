@@ -109,6 +109,17 @@ const NotificationTemplatesTab = () => {
     }
   };
 
+  const handleCopyTemplate = async (template) => {
+    try {
+      await axios.post(`/api/notification-templates/${template.id}/copy`);
+      fetchTemplates();
+      alert('Template copied successfully! You can now edit your custom version.');
+    } catch (err) {
+      console.error('Error copying template:', err);
+      alert(err.response?.data?.detail || 'Failed to copy template');
+    }
+  };
+
   const handleToggleActive = async (template) => {
     // Only allow toggling custom templates
     if (template.template_type !== 'custom') {
@@ -132,10 +143,10 @@ const NotificationTemplatesTab = () => {
   };
 
   const availableVariables = {
-    schedule_reminder: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'notes', 'scheduled_date', 'due_date'],
-    overdue_alert: ['reptile_name', 'schedule_name', 'schedule_type', 'missed_date'],
+    schedule_reminder: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'food_category', 'supplement_name'],
+    overdue_alert: ['reptile_name', 'schedule_name', 'schedule_type', 'missed_date', 'food_category', 'supplement_name'],
     feeding_logged: ['reptile_name', 'user_name', 'food_list'],
-    custom: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'notes', 'scheduled_date', 'due_date', 'missed_date']
+    custom: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'missed_date', 'food_category', 'supplement_name']
   };
 
   const groupedTemplates = {
@@ -173,37 +184,67 @@ const NotificationTemplatesTab = () => {
       {/* System Templates */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">System Templates</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          These are default templates. Click "Customize" to create your own editable version.
+        </p>
         <div className="space-y-3">
-          {groupedTemplates.system.map(template => (
-            <div
-              key={template.id}
-              className="p-4 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
-                    <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
-                      {template.trigger_type.replace('_', ' ')}
-                    </span>
-                    {template.channel_type && (
-                      <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
-                        {template.channel_type}
+          {groupedTemplates.system.map(template => {
+            // Check if user already has a custom version of this template
+            const hasCustomVersion = groupedTemplates.custom.some(
+              t => t.trigger_type === template.trigger_type &&
+                   t.channel_type === template.channel_type
+            );
+
+            return (
+              <div
+                key={template.id}
+                className="p-4 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
+                      <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                        {template.trigger_type.replace('_', ' ')}
                       </span>
-                    )}
+                      {template.channel_type && (
+                        <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+                          {template.channel_type}
+                        </span>
+                      )}
+                      {hasCustomVersion && (
+                        <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
+                          Customized
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 text-sm">
+                      <div className="text-gray-600 dark:text-gray-400">
+                        <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400 mt-1">
+                        <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm">
-                    <div className="text-gray-600 dark:text-gray-400">
-                      <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400 mt-1">
-                      <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
-                    </div>
+                  <div className="ml-4">
+                    <button
+                      onClick={() => handleCopyTemplate(template)}
+                      disabled={hasCustomVersion}
+                      className={`px-3 py-1 text-sm rounded ${
+                        hasCustomVersion
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                      }`}
+                      title={hasCustomVersion ? 'You already have a custom version of this template' : 'Create a customizable copy'}
+                    >
+                      Customize
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
