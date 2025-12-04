@@ -850,3 +850,27 @@ class NotificationTemplate(NotificationTemplateBase):
 
     class Config:
         from_attributes = True
+
+
+# User Notification schemas (in-app notifications)
+class UserNotificationBase(BaseModel):
+    notification_type: str
+    title: str
+    message: str
+    link: Optional[str] = None
+    metadata: Optional[dict] = None
+
+
+class UserNotificationCreate(UserNotificationBase):
+    user_id: int
+
+
+class UserNotification(UserNotificationBase):
+    id: int
+    user_id: int
+    is_read: bool
+    read_at: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
