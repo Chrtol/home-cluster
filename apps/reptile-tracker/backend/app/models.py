@@ -539,11 +539,12 @@ class NotificationChannel(Base):
     notification_settings_id = Column(Integer, ForeignKey("notification_settings.id", ondelete="CASCADE"), nullable=False, index=True)
 
     name = Column(String, nullable=False)  # User-friendly name (e.g., "Discord - Main Server")
-    webhook_type = Column(String, nullable=False)  # discord, pushover, generic
+    webhook_type = Column(String, nullable=False)  # discord, pushover, generic, in_app
     webhook_url = Column(String, nullable=True)  # For discord/generic webhooks
     config = Column(JSON, nullable=True)  # For pushover and other configs (api_key, user_key, priority, etc.)
     enabled = Column(Boolean, default=True, nullable=False)
     household_wide = Column(Boolean, default=False, nullable=False)  # If true, available to all household members
+    is_system = Column(Boolean, default=False, nullable=False)  # If true, channel cannot be deleted
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
