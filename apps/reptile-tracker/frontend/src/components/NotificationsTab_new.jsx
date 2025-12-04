@@ -412,6 +412,9 @@ function NotificationsTab() {
         if (pushoverSound.trim()) {
           payload.config.sound = pushoverSound.trim();
         }
+      } else if (channelType === 'in_app') {
+        // In-app notifications don't need a webhook URL
+        // payload already has webhook_type set
       } else {
         if (!channelUrl.trim()) {
           setModalError('Webhook URL is required to test');
