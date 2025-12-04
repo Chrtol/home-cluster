@@ -119,6 +119,62 @@ async def update_template(
     return template
 
 
+@router.post("/{template_id}/copy", response_model=NotificationTemplateSchema)
+async def copy_template(
+    template_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Copy a system template to create a custom user template.
+    This allows users to customize system templates.
+    """
+    # Get the template to copy
+    result = await db.execute(
+        select(NotificationTemplate).where(
+            NotificationTemplate.id == template_id
+        )
+    )
+    source_template = result.scalars().first()
+
+    if not source_template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    # Check if user already has a custom template for this trigger/channel combination
+    existing_result = await db.execute(
+        select(NotificationTemplate).where(
+            NotificationTemplate.user_id == current_user.id,
+            NotificationTemplate.trigger_type == source_template.trigger_type,
+            NotificationTemplate.channel_type == source_template.channel_type
+        )
+    )
+    existing_template = existing_result.scalars().first()
+
+    if existing_template:
+        raise HTTPException(
+            status_code=400,
+            detail="You already have a custom template for this trigger type and channel"
+        )
+
+    # Create copy
+    new_template = NotificationTemplate(
+        user_id=current_user.id,
+        name=f"{source_template.name} (Custom)",
+        template_type="custom",
+        trigger_type=source_template.trigger_type,
+        message_template=source_template.message_template,
+        title_template=source_template.title_template,
+        channel_type=source_template.channel_type,
+        is_active=True
+    )
+
+    db.add(new_template)
+    await db.commit()
+    await db.refresh(new_template)
+
+    return new_template
+
+
 @router.delete("/{template_id}")
 async def delete_template(
     template_id: int,

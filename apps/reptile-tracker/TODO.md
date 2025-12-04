@@ -1,9 +1,9 @@
 # Reptile Tracker - Todo List
 
 ## 🚀 NEXT UP - Tier 1 Priorities
-1. **Notification Template Customization** - Allow users to customize notification message templates (see [🔔 Notifications & Reminders](#notifications--reminders))
-2. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
-3. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines (see [Feature Recommendations](#-feature-assessment--recommendations))
+1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
+2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines (see [Feature Recommendations](#-feature-assessment--recommendations))
+3. **Advanced Notification Features** - Quiet hours, grouping, snooze, preview (see [🔔 Notifications & Reminders](#notifications--reminders))
 
 ---
 
@@ -18,21 +18,21 @@
   - Support for Discord, Pushover, and Generic webhooks
   - Automatic schedule reminders and overdue alerts
 
-- [ ] **Notification template customization** - 🎯 HIGH PRIORITY
+- [x] **Notification template customization** - ✅ COMPLETED (2025-12-04)
   - Allow users to customize notification message templates
   - Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes
   - Different templates for reminders vs overdue alerts
   - Per-channel template overrides (e.g., shorter messages for Pushover)
-  - Preview functionality before saving
-  - Backend: Add template fields to NotificationSettings model
-  - Frontend: Template editor in Settings > Notifications tab
+  - Backend: Template copy endpoint in notification_templates.py
+  - Frontend: Template editor in Settings > Templates tab with variable insertion
 
-- [ ] **Advanced notification features**
+- [ ] **Advanced notification features** - 🎯 HIGH PRIORITY
   - Quiet hours (don't send notifications during specified time range)
   - Notification grouping (combine multiple reminders into digest)
   - Snooze functionality for reminders
   - Per-reptile notification preferences
   - Email notifications as alternative to webhooks
+  - Template preview with sample data before saving
 
 ### Authentication & Session Management
 - [x] **Fix session timeout issues** - ✅ COMPLETED - Sessions expire too quickly, shows blank pages instead of redirect
@@ -386,6 +386,28 @@
 ## ✅ Recently Completed
 
 ### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
+- [x] **Notification template customization** - ✅ COMPLETED
+  - Added ability to customize system notification templates via Settings > Templates tab
+  - Users can click "Customize" on system templates to create editable copies
+  - Custom templates take priority over system templates
+  - Backend: Added `/api/notification-templates/{id}/copy` endpoint
+  - Frontend: Updated NotificationTemplatesTab with copy functionality and improved UI
+  - Added food_category and supplement_name variables to template system
+
+- [x] **Fixed schedule notification bugs** - ✅ COMPLETED
+  - Fixed duplicate completion records causing false overdue notifications
+  - Solution: Update existing PENDING completions instead of creating new ones
+  - Backend: Updated schedule_matcher.py for all log types (feeding, misting, weighing)
+
+- [x] **Dashboard calendar view improvements** - ✅ COMPLETED
+  - Fixed 1-day and 3-day views to start from current date instead of week start
+  - Calendar.jsx and Dashboard.jsx now correctly display today + upcoming days
+
+- [x] **Notification supplement info** - ✅ COMPLETED
+  - Added supplement info to feeding schedule notifications
+  - Queries FeedingRotations to show active supplements
+  - Shows supplement names in both reminders and overdue alerts
+
 - [x] **Fixed schedule notification channel errors** - ✅ COMPLETED
   - Fixed SQLAlchemy MissingGreenlet error when updating schedule notification channels
   - Issue: Lazy loading during property assignment caused async errors
@@ -853,20 +875,19 @@ The Reptile Tracker currently provides:
 ### 📋 Recommended Priority Order (UPDATED)
 
 **Tier 1 - CRITICAL (Implement Immediately - Next 2-4 weeks):**
-1. **Notification Template Customization** - Let users customize notification messages for their workflow
-2. **Statistics Page Phase 2** - Health analytics, shed tracking, timeline (extend existing charts)
-3. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines with sources
+1. **Statistics Page Phase 2** - Health analytics, shed tracking, timeline (extend existing charts)
+2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines with sources
+3. **Advanced Notification Features** - Quiet hours, grouping, snooze, template preview
 
 **Tier 2 - HIGH VALUE (Next 1-2 months):**
-4. **Advanced Notification Features** - Quiet hours, notification grouping, snooze functionality
-5. **Photo Upload & Gallery** - Visual health tracking and progress photos
-6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
+4. **Photo Upload & Gallery** - Visual health tracking and progress photos
+5. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
+6. **Complete Backup & Restore System** - Full household export/import for data portability
 
 **Tier 3 - IMPORTANT (Next 2-3 months):**
-7. **Complete Backup & Restore System** - Full household export/import for data portability
-8. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
-9. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
-10. **Data Export & Reports** - PDF export for vet visits
+7. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
+8. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
+9. **Data Export & Reports** - PDF export for vet visits
 
 **Tier 4 - ADVANCED (Future - 3+ months):**
 11. **Species Care Sheets** - Built-in educational resources
