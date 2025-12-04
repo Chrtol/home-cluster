@@ -358,20 +358,19 @@ async def check_schedule_reminders():
                                 # User doesn't have access, skip
                                 continue
 
-                            # Send the reminder
-                            await send_schedule_reminder(
-                                db=db,
-                                reptile=reptile,
-                                schedule=schedule,
-                                scheduled_date=next_occurrence_date,
-                                user=user,
-                                webhook_url=channel.webhook_url,
-                                webhook_type=channel.webhook_type,
-                                config=channel.config
+                            # Queue reminder task for reliable delivery
+                            from app.celery_tasks import send_schedule_reminder_task
+
+                            send_schedule_reminder_task.delay(
+                                schedule_id=schedule.id,
+                                reptile_id=reptile.id,
+                                scheduled_date_str=next_occurrence_date.isoformat(),
+                                user_id=user.id,
+                                channel_id=channel.id
                             )
 
                             logger.info(
-                                f"Sent reminder for schedule {schedule.id} ({schedule.schedule_type}) "
+                                f"Queued reminder task for schedule {schedule.id} ({schedule.schedule_type}) "
                                 f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
                             )
 
@@ -593,6 +592,9 @@ async def send_schedule_reminder(
     # Build notes string
     notes = f"\nNotes: {schedule.notes}" if schedule.notes else ""
 
+    # Build schedule URL for links
+    schedule_url = f"/schedules/{schedule.id}"
+
     # Build context
     context = {
         "reptile_name": reptile.name,
@@ -604,6 +606,8 @@ async def send_schedule_reminder(
         "notes": notes,
         "scheduled_date": scheduled_date.strftime('%Y-%m-%d'),
         "due_date": scheduled_date.strftime('%Y-%m-%d'),
+        "schedule_url": schedule_url,
+        "schedule_id": schedule.id,
     }
 
     # Add food category for feeding schedules
@@ -678,7 +682,7 @@ async def send_schedule_reminder(
         notification_type=NotificationType.SCHEDULE_REMINDER,
         title=title,
         message=message,
-        link=f"/reptiles/{reptile.id}",
+        link=schedule_url,
         notification_metadata={
             "reptile_id": reptile.id,
             "reptile_name": reptile.name,
