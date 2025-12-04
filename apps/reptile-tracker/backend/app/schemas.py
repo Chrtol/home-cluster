@@ -789,21 +789,15 @@ class NotificationSettingsSchema(NotificationSettingsBase):
 # Notification Channel schemas
 class NotificationChannelBase(BaseModel):
     name: str
-    webhook_type: str  # discord, pushover, generic, in_app
+    webhook_type: str  # discord, pushover, generic
     webhook_url: Optional[str] = None  # For discord/generic
     config: Optional[dict] = None  # For pushover: {api_key, user_key, devices, priority, retry, expire, sound}
     enabled: bool = True
     household_wide: bool = False  # If true, available to all household members
-    is_system: bool = False  # If true, channel cannot be deleted
 
 
-class NotificationChannelCreate(BaseModel):
-    name: str
-    webhook_type: str  # discord, pushover, generic (not in_app - system channels are auto-created)
-    webhook_url: Optional[str] = None
-    config: Optional[dict] = None
-    enabled: bool = True
-    household_wide: bool = False
+class NotificationChannelCreate(NotificationChannelBase):
+    pass
 
 
 class NotificationChannelUpdate(BaseModel):

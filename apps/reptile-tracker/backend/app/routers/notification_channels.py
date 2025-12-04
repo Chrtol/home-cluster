@@ -11,7 +11,6 @@ from app.schemas import (
     NotificationChannelUpdate,
 )
 from app.auth import get_current_user
-from app.notification_utils import ensure_in_app_channel
 
 router = APIRouter()
 
@@ -50,13 +49,6 @@ async def create_channel(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new notification channel"""
-    # Prevent creation of in_app channels (they are system-managed)
-    if channel_data.webhook_type == "in_app":
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot manually create in-app notification channel. It is automatically created for all users."
-        )
-
     # Get or create notification settings
     result = await db.execute(
         select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
@@ -68,10 +60,8 @@ async def create_channel(
         settings = NotificationSettings(user_id=current_user.id)
         db.add(settings)
         await db.flush()
-        # Ensure in-app channel exists for new settings
-        await ensure_in_app_channel(db, settings.id)
 
-    # Create the channel (is_system defaults to False)
+    # Create the channel
     channel = NotificationChannel(
         notification_settings_id=settings.id,
         **channel_data.dict()
@@ -105,13 +95,6 @@ async def update_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Notification channel not found")
 
-    # Prevent changing webhook_type to in_app
-    if channel_data.webhook_type == "in_app":
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot change channel type to in_app. This type is reserved for system channels."
-        )
-
     # Update fields
     for field, value in channel_data.dict(exclude_unset=True).items():
         setattr(channel, field, value)
@@ -142,13 +125,6 @@ async def delete_channel(
 
     if not channel:
         raise HTTPException(status_code=404, detail="Notification channel not found")
-
-    # Prevent deletion of system channels
-    if channel.is_system:
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot delete system notification channel. You can disable it instead."
-        )
 
     await db.delete(channel)
     await db.commit()
