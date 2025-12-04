@@ -423,24 +423,8 @@ async def create_in_app_notification(
     link: str = None,
     notification_metadata: dict = None
 ):
-    """Create an in-app notification for a user if in-app channel is enabled"""
+    """Create an in-app notification for a user"""
     try:
-        # Check if user has in-app notification channel enabled
-        result = await db.execute(
-            select(NotificationChannel)
-            .join(NotificationSettings)
-            .where(
-                NotificationSettings.user_id == user.id,
-                NotificationChannel.webhook_type == "in_app",
-                NotificationChannel.enabled == True
-            )
-        )
-        in_app_channel = result.scalars().first()
-
-        if not in_app_channel:
-            logger.debug(f"In-app notifications disabled for user {user.email}, skipping")
-            return
-
         notification = UserNotification(
             user_id=user.id,
             notification_type=notification_type,
