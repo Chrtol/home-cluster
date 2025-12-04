@@ -906,25 +906,27 @@ function NotificationsTab() {
                 </span>
               </label>
 
-              {/* Household-wide toggle */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={householdWide}
-                    onChange={(e) => setHouseholdWide(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 rounded mt-0.5"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white block">
-                      Household channel
-                    </span>
-                    <span className="text-xs text-gray-600 dark:text-gray-400 block mt-1">
-                      Make this channel available to all household members. When enabled, any household member can select this channel when creating schedules for shared reptiles.
-                    </span>
-                  </div>
-                </label>
-              </div>
+              {/* Household-wide toggle - hide for in-app channels */}
+              {channelType !== 'in_app' && (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={householdWide}
+                      onChange={(e) => setHouseholdWide(e.target.checked)}
+                      className="w-4 h-4 text-primary-600 rounded mt-0.5"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                        Household channel
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 block mt-1">
+                        Make this channel available to all household members. When enabled, any household member can select this channel when creating schedules for shared reptiles.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               {/* Test Button */}
               <div className="pt-2 border-t border-gray-200 dark:border-gray-700">

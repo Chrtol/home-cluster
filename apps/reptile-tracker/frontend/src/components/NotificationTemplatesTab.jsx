@@ -158,6 +158,12 @@ const NotificationTemplatesTab = () => {
       rendered = rendered.replace(regex, sampleData[key]);
     });
 
+    // Convert markdown to HTML
+    // Bold: **text** -> <strong>text</strong>
+    rendered = rendered.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic: *text* -> <em>text</em>
+    rendered = rendered.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
     return rendered;
   };
 
@@ -510,9 +516,10 @@ const NotificationTemplatesTab = () => {
                     Title:
                   </label>
                   <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
-                    <p className="font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
-                      {renderTemplate(previewTemplate, previewTemplate.title_template)}
-                    </p>
+                    <p
+                      className="font-semibold text-gray-900 dark:text-white whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: renderTemplate(previewTemplate, previewTemplate.title_template) }}
+                    />
                   </div>
                 </div>
               )}
@@ -522,9 +529,10 @@ const NotificationTemplatesTab = () => {
                   Message:
                 </label>
                 <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
-                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                    {renderTemplate(previewTemplate, previewTemplate.message_template)}
-                  </p>
+                  <p
+                    className="text-gray-900 dark:text-white whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: renderTemplate(previewTemplate, previewTemplate.message_template) }}
+                  />
                 </div>
               </div>
 
