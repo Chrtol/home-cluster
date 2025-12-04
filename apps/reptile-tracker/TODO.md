@@ -2,8 +2,8 @@
 
 ## 🚀 NEXT UP - Tier 1 Priorities
 1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
-2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines (see [Feature Recommendations](#-feature-assessment--recommendations))
-3. **Advanced Notification Features** - Quiet hours, grouping, snooze, preview (see [🔔 Notifications & Reminders](#notifications--reminders))
+2. **Advanced Notification Features** - Notification grouping, snooze, per-reptile preferences, email notifications (see [🔔 Notifications & Reminders](#notifications--reminders))
+3. **Live Feeder Animal Care** - Track feeder insect colonies, gut loading schedules, hydration (see [🔧 Core Features](#-core-features))
 
 ---
 
@@ -27,11 +27,12 @@
   - Frontend: Template editor in Settings > Templates tab with variable insertion
 
 - [ ] **Advanced notification features** - 🎯 HIGH PRIORITY
-  - Notification grouping (combine multiple reminders into digest)
-  - Snooze functionality for reminders
-  - Per-reptile notification preferences
+  - Notification grouping/digest (combine multiple reminders into single message)
+  - Snooze functionality for reminders (15min, 30min, 1hr, 2hr options)
+  - Per-reptile notification preferences (different channels per reptile)
   - Email notifications as alternative to webhooks
   - Notification history for external channels (log sent notifications)
+  - Notification delivery reports (sent, failed, retried)
 
 ### Authentication & Session Management
 - [x] **Fix session timeout issues** - ✅ COMPLETED - Sessions expire too quickly, shows blank pages instead of redirect
@@ -69,6 +70,47 @@
   - Added multiple categories: frozen_animal, live_rodent, fish_seafood, eggs, other
   - Added AnimalSize enum for tracking sizes (pinky, fuzzy, hopper, weaner, adult_small, etc.)
 
+### Live Feeder Animal Care - 🎯 HIGH PRIORITY
+- [ ] **Feeder colony inventory tracking**
+  - Track live feeder insect colonies (crickets, dubia roaches, mealworms, hornworms, etc.)
+  - Inventory management: current count, breeding colony size
+  - Size tracking (small, medium, large) for growth progression
+  - Purchase history and cost tracking
+  - Mortality/die-off rate monitoring
+
+- [ ] **Gut loading schedules and tracking**
+  - Define gut loading schedules for different feeder types
+  - Track what feeders are fed (fresh vegetables, commercial gut load, etc.)
+  - Schedule reminders for gut loading before feeding reptiles
+  - Best practices per feeder type (e.g., crickets need 24-48h gut loading)
+  - Log gut loading completion
+
+- [ ] **Hydration maintenance**
+  - Water crystal schedules (when to add/replace)
+  - Alternative hydration methods (fresh veggies, water gel, etc.)
+  - Humidity requirements for specific feeder species
+  - Reminder system for hydration tasks
+
+- [ ] **Feeder breeding management** (Optional)
+  - Track breeding colonies separately from feeder colonies
+  - Egg/larvae production tracking
+  - Growth cycle monitoring (egg → larvae → pupae → adult for beetles)
+  - Breeding success rate
+
+- [ ] **Integration with feeding logs**
+  - Link feeder inventory to feeding events
+  - Auto-decrement inventory when logging feedings
+  - Alert when feeder stock is running low
+  - Suggest purchase timing based on usage patterns
+
+- [ ] **Implementation notes**
+  - Database: `feeder_colonies` table (household_id, species, type, count, last_gut_loaded, last_hydrated)
+  - Database: `gut_loading_schedules` table (feeder_type, food_type, frequency, notes)
+  - Backend: CRUD endpoints for feeder management
+  - Frontend: Feeder Management page (similar to Food Management)
+  - Frontend: Gut loading log page
+  - Frontend: Low stock alerts on dashboard
+
 ## 🔧 Core Features
 
 ### Reptile Management
@@ -89,6 +131,24 @@
   - Improved UI organization with better styling and dark mode support
   - Record types: General Observation, Shedding, Bowel Movement, Vet Visit, Medication
 
+- [ ] **Photo Upload & Gallery** - 🎯 HIGH PRIORITY (Tier 2)
+  - Upload photos for health records, feedings, weight checks, shedding
+  - Photo gallery per reptile sorted by date and event type
+  - Before/after shed comparison view
+  - Growth timeline with photo progression
+  - Visual health tracking (scale rot, stuck shed, injuries)
+  - Thumbnail previews in activity logs
+  - Full-size photo viewer with zoom
+  - Multiple photos per event
+  - Implementation:
+    - Backend: File upload endpoint with image validation and compression
+    - Storage: S3-compatible or local file storage with path references
+    - Database: health_records.photo_url already exists, extend to multiple photos
+    - Database: feeding_logs, weight_logs, misting_logs photo support
+    - Frontend: Image upload component with drag-drop
+    - Frontend: Photo gallery page per reptile
+    - Frontend: Lightbox viewer for full-size images
+
 ### Humidity & Environment
 - [x] **Misting logs** - ✅ COMPLETED
   - Backend: Created misting_logs table with migration
@@ -96,6 +156,39 @@
   - Frontend: MistingLog page with date/time picker
   - Frontend: Added to Track button dropdown (desktop & mobile)
   - Note: "Last Misted" dashboard display still pending
+
+- [ ] **Environmental Data Tracking** - 🔧 MEDIUM PRIORITY (Tier 3)
+  - **Temperature & humidity logging:**
+    - Basking spot temperature (high temp area)
+    - Cool side temperature (low temp area)
+    - Ambient temperature
+    - Humidity percentage
+    - Time-based logging (morning/evening checks)
+  - **Equipment tracking:**
+    - UVB bulb installation date and wattage
+    - UVB bulb age tracking with replacement reminders (6-12 months)
+    - Heat lamp types and replacement tracking
+    - Thermostat settings and adjustments
+  - **Species-specific ideal ranges:**
+    - Display recommended temp/humidity ranges per species
+    - Visual indicators when readings are out of range
+    - Dashboard widget showing current conditions
+  - **Historical trends:**
+    - Temperature/humidity graphs over time
+    - Seasonal variation tracking
+    - Correlation with health events
+  - **Future: IoT sensor integration**
+    - Optional integration with smart sensors
+    - Automatic logging from connected devices
+    - Real-time alerts for critical conditions
+  - **Implementation:**
+    - Database: `environmental_logs` table (reptile_id, log_date, basking_temp, cool_temp, humidity, notes)
+    - Database: `equipment` table (reptile_id, equipment_type, install_date, replacement_due, notes)
+    - Database: `species_environmental_ranges` table (species, min_basking, max_basking, min_cool, etc.)
+    - Backend: CRUD endpoints for environmental logs and equipment
+    - Frontend: Environmental logging page (similar to misting logs)
+    - Frontend: Equipment management page
+    - Frontend: Dashboard environmental widget
 
 ### Dashboard Enhancements
 - [x] **Add more reptile info cards** - ✅ COMPLETED
@@ -325,6 +418,53 @@
   - Backend: Store encrypted OIDC config in database
   - Security: Restrict to household owner only
 
+## 📦 Data Management & Export
+
+### Backup & Restore System - 🎯 HIGH PRIORITY (Tier 2)
+- [ ] **Full household data export**
+  - Export entire household data as single JSON/ZIP file
+  - Include: household info, all reptiles, foods, supplements, schedules
+  - Include: all historical data (feedings, weights, health records, mistings)
+  - Include: user preferences and settings
+  - Include: notification channels and templates
+  - Option to export with or without photos (file size consideration)
+  - Encrypted export option for sensitive data
+  - Progress indicator for large exports
+
+- [ ] **Full household data import/restore**
+  - Import from exported backup file
+  - Conflict resolution for existing data (skip, merge, overwrite)
+  - Preview import contents before applying
+  - Selective import (choose which reptiles, foods, schedules to import)
+  - Validation and error handling for corrupted/invalid backups
+  - Dry-run mode to preview changes without applying
+  - Import from other instances/deployments
+
+- [ ] **Data export & reports** - 📊 MEDIUM PRIORITY (Tier 3)
+  - Export reptile history to PDF (vet visits, medication tracking)
+  - Weight growth charts (printable)
+  - Feeding summary reports
+  - Health timeline export
+  - CSV export for advanced users (Excel/Google Sheets compatible)
+  - Custom date range selection
+  - Per-reptile or all-reptiles export options
+
+- [ ] **Implementation**
+  - Backend: GET /api/export/household/{id} endpoint with streaming response
+  - Backend: POST /api/import/household endpoint with multipart/form-data
+  - Backend: File format versioning for compatibility (v1, v2, etc.)
+  - Backend: Schema validation on import
+  - Frontend: Export button in Settings > Household tab with progress bar
+  - Frontend: Import page with drag-drop file upload
+  - Frontend: Preview modal showing import contents before confirming
+  - File format: JSON with schema versioning for future compatibility
+  - Use Cases:
+    - Migrate to new server/instance
+    - Share household setup with another user
+    - Backup before major changes
+    - Disaster recovery
+    - Data portability between deployments
+
 ## 📚 Documentation
 
 ### Deployment Guide
@@ -383,6 +523,23 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### December 2025 - Care Schedules & Recommendations (2025-12-04)
+- [x] **Care Schedules & Recommendations** - ✅ COMPLETED (2025-12-04)
+  - Species-based feeding and supplement guidelines
+  - Automated schedule creation based on reptile species and age
+  - Care recommendations with source references (ReptiFiles, etc.)
+  - Integration with existing scheduling system
+
+- [x] **Schedule Template Notification Settings** - ✅ COMPLETED (2025-12-04)
+  - Global notification settings when applying templates
+  - Enable notifications for all schedules with one click
+  - Select notification channels globally (Discord, Pushover, In-App, etc.)
+  - Set global reminder time for all schedules
+  - Per-schedule notification override option
+  - Customize individual schedule notifications when needed
+  - Override channels and reminder times per schedule
+  - Seamless integration with existing template application flow
 
 ### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
 - [x] **Template-Driven Discord Notifications** - ✅ COMPLETED (2025-12-04)
@@ -955,36 +1112,41 @@ The Reptile Tracker currently provides:
 - AI diagnosis - medical liability concerns
 - Real-time sensor dashboards - requires hardware integration (future PWA feature)
 
-### 📋 Recommended Priority Order (UPDATED)
+### 📋 Recommended Priority Order (UPDATED - December 2025)
 
 **Tier 1 - CRITICAL (Implement Immediately - Next 2-4 weeks):**
-1. **Statistics Page Phase 2** - Health analytics, shed tracking, timeline (extend existing charts)
-2. **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines with sources
-3. **Advanced Notification Features** - Quiet hours, grouping, snooze, template preview
+1. **Statistics Page Phase 2** - Health analytics, shed tracking, weight change rate, timeline
+2. **Advanced Notification Features** - Grouping/digest, snooze, per-reptile preferences
+3. **Live Feeder Animal Care** - Gut loading, hydration, inventory tracking for feeder insects
 
 **Tier 2 - HIGH VALUE (Next 1-2 months):**
-4. **Photo Upload & Gallery** - Visual health tracking and progress photos
-5. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export
-6. **Complete Backup & Restore System** - Full household export/import for data portability
+4. **Photo Upload & Gallery** - Visual health tracking and progress photos (backend ready)
+5. **Complete Backup & Restore System** - Full household export/import for data portability
+6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export charts
 
 **Tier 3 - IMPORTANT (Next 2-3 months):**
-7. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges
+7. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges, UVB bulb tracking
 8. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
 9. **Data Export & Reports** - PDF export for vet visits
 
 **Tier 4 - ADVANCED (Future - 3+ months):**
-11. **Species Care Sheets** - Built-in educational resources
-12. **Statistics Phase 4** - Predictive analytics, growth projections
-13. **Breeding Tracker** - If requested by user base
-14. **PWA Features** - Offline mode, push notifications, install prompt
+10. **Species Care Sheets** - Built-in educational resources
+11. **Statistics Phase 4** - Predictive analytics, growth projections
+12. **Breeding Tracker** - If requested by user base
+13. **PWA Features** - Offline mode, push notifications, install prompt
 
-**Why Statistics Moved to Tier 1:**
-- All data already exists in database
-- High visual impact and user delight factor
-- Medical value (weight charts for vets)
-- Foundation for future analytics features
-- Relatively quick to implement with modern chart libraries
-- Validates the value of consistent data logging
+**Completed in December 2025:**
+- ✅ **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines
+- ✅ **Template-Driven Discord Notifications** - Consistent templates across all channels
+- ✅ **Quiet Hours & Critical Notifications** - Time-based notification suppression
+- ✅ **In-App Notification Centre** - Built-in notification system with history
+
+**Why These Priorities:**
+- **Statistics Phase 2:** Extends existing implementation, high medical value
+- **Advanced Notifications:** Builds on solid notification foundation, improves user experience
+- **Feeder Animal Care:** Unique feature that complements reptile tracking perfectly
+- **Photo Upload:** Backend ready, high user engagement, visual proof of care
+- **Backup/Export:** Critical for data portability and disaster recovery
 
 ---
 
