@@ -421,7 +421,7 @@ async def create_in_app_notification(
     title: str,
     message: str,
     link: str = None,
-    metadata: dict = None
+    notification_metadata: dict = None
 ):
     """Create an in-app notification for a user"""
     try:
@@ -431,7 +431,7 @@ async def create_in_app_notification(
             title=title,
             message=message,
             link=link,
-            metadata=metadata
+            notification_metadata=notification_metadata
         )
         db.add(notification)
         await db.commit()
@@ -565,7 +565,7 @@ async def send_schedule_reminder(
         title=title,
         message=message,
         link=f"/reptiles/{reptile.id}",
-        metadata={
+        notification_metadata={
             "reptile_id": reptile.id,
             "reptile_name": reptile.name,
             "schedule_id": schedule.id,
@@ -675,7 +675,7 @@ async def send_overdue_alert(
         title=title,
         message=message,
         link=f"/reptiles/{reptile.id}",
-        metadata={
+        notification_metadata={
             "reptile_id": reptile.id,
             "reptile_name": reptile.name,
             "schedule_id": schedule.id,

@@ -727,8 +727,9 @@ class UserNotification(Base):
     is_read = Column(Boolean, default=False, nullable=False, index=True)
     read_at = Column(DateTime(timezone=True), nullable=True)
 
-    # Metadata (JSON) - store additional context like reptile_id, schedule_id, etc.
-    metadata = Column(JSON, nullable=True)
+    # Notification metadata (JSON) - store additional context like reptile_id, schedule_id, etc.
+    # Using 'notification_metadata' instead of 'metadata' to avoid conflict with SQLAlchemy's reserved name
+    notification_metadata = Column(JSON, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)

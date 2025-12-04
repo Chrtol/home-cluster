@@ -19,16 +19,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create notification_type enum
+    # Create notification_type enum (only if it doesn't exist)
     op.execute("""
-        CREATE TYPE notificationtype AS ENUM (
-            'schedule_reminder',
-            'overdue_alert',
-            'feeding_logged',
-            'weight_logged',
-            'health_event',
-            'system'
-        )
+        DO $$ BEGIN
+            CREATE TYPE notificationtype AS ENUM (
+                'schedule_reminder',
+                'overdue_alert',
+                'feeding_logged',
+                'weight_logged',
+                'health_event',
+                'system'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # Create user_notifications table
@@ -42,7 +46,7 @@ def upgrade() -> None:
         sa.Column('link', sa.String(), nullable=True),
         sa.Column('is_read', sa.Boolean(), nullable=False, server_default='false'),
         sa.Column('read_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('metadata', sa.JSON(), nullable=True),
+        sa.Column('notification_metadata', sa.JSON(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
@@ -63,4 +67,5 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_user_notifications_user_id'), table_name='user_notifications')
     op.drop_index(op.f('ix_user_notifications_id'), table_name='user_notifications')
     op.drop_table('user_notifications')
-    op.execute('DROP TYPE notificationtype')
+    # Drop enum type
+    op.execute('DROP TYPE IF EXISTS notificationtype')

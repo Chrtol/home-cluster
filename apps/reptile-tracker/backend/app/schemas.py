@@ -858,7 +858,7 @@ class UserNotificationBase(BaseModel):
     title: str
     message: str
     link: Optional[str] = None
-    metadata: Optional[dict] = None
+    notification_metadata: Optional[dict] = None
 
 
 class UserNotificationCreate(UserNotificationBase):
