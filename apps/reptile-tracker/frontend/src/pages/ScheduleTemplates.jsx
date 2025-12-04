@@ -56,6 +56,13 @@ function ScheduleTemplates() {
   const [supplements, setSupplements] = useState([]);
   const [existingSchedules, setExistingSchedules] = useState([]);
 
+  // Global notification settings for template application
+  const [globalNotificationsEnabled, setGlobalNotificationsEnabled] = useState(false);
+  const [globalChannelIds, setGlobalChannelIds] = useState([]);
+  const [globalReminderEnabled, setGlobalReminderEnabled] = useState(false);
+  const [globalReminderTime, setGlobalReminderTime] = useState('09:00');
+  const [availableChannels, setAvailableChannels] = useState([]);
+
   // Import modal
   const [importModalOpen, setImportModalOpen] = useState(false);
 
@@ -439,6 +446,19 @@ function ScheduleTemplates() {
     }
   }, [selectedReptile, applyModalOpen]);
 
+  // Fetch available notification channels when modal opens
+  useEffect(() => {
+    if (applyModalOpen) {
+      axios.get(`${API_BASE_URL}/api/notification-channels`, { withCredentials: true })
+        .then(response => {
+          setAvailableChannels(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching notification channels:', error);
+        });
+    }
+  }, [applyModalOpen]);
+
   function toggleTemplateSelection(templateId) {
     setSelectedTemplateIds(prev => {
       const newSet = new Set(prev);
@@ -600,10 +620,12 @@ function ScheduleTemplates() {
         const template = scheduleTemplates[i];
         const edits = templateEdits[template.id] || {};
         const hasEdits = Object.keys(edits).length > 0;
+        const hasGlobalNotifications = globalNotificationsEnabled;
 
         let response;
 
-        if (hasEdits) {
+        // Use direct schedule creation if there are edits OR global notifications are enabled
+        if (hasEdits || hasGlobalNotifications) {
           // If there are edits, create schedule directly with custom data
           const scheduleData = {
             reptile_id: parseInt(selectedReptile),
@@ -625,6 +647,20 @@ function ScheduleTemplates() {
             notes: edits.notes ?? template.notes,
             parent_schedule_id: parentScheduleId,
           };
+
+          // Add notification settings (per-schedule override or global)
+          const useOverride = edits.notificationOverride === true;
+          if (useOverride) {
+            // Use per-schedule notification settings
+            scheduleData.notifications_enabled = edits.notifications_enabled ?? false;
+            scheduleData.channel_ids = edits.channel_ids ?? [];
+            scheduleData.reminder_time = edits.reminder_time ?? null;
+          } else {
+            // Use global notification settings
+            scheduleData.notifications_enabled = globalNotificationsEnabled;
+            scheduleData.channel_ids = globalChannelIds;
+            scheduleData.reminder_time = globalReminderEnabled ? globalReminderTime : null;
+          }
 
           response = await axios.post(`${API_BASE_URL}/api/schedules`, scheduleData, {
             withCredentials: true
@@ -2017,6 +2053,83 @@ function ScheduleTemplates() {
               </div>
             )}
 
+            {/* Global Notification Settings */}
+            <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="globalNotificationsEnabled"
+                  checked={globalNotificationsEnabled}
+                  onChange={(e) => setGlobalNotificationsEnabled(e.target.checked)}
+                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="globalNotificationsEnabled" className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Enable notifications for all schedules
+                </label>
+              </div>
+
+              {globalNotificationsEnabled && (
+                <div className="ml-7 space-y-4">
+                  {/* Channel Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Notification Channels
+                    </label>
+                    <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded p-2 bg-white dark:bg-gray-800">
+                      {availableChannels.length > 0 ? (
+                        availableChannels.map(channel => (
+                          <label key={channel.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={globalChannelIds.includes(channel.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setGlobalChannelIds([...globalChannelIds, channel.id]);
+                                } else {
+                                  setGlobalChannelIds(globalChannelIds.filter(id => id !== channel.id));
+                                }
+                              }}
+                              className="w-3 h-3 text-purple-600 rounded"
+                            />
+                            <span>{channel.name} ({channel.channel_type === 'in_app' ? 'In-App' : channel.channel_type})</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                          No notification channels configured. Go to Settings → Notifications to add channels.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reminder Time */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={globalReminderEnabled}
+                        onChange={(e) => setGlobalReminderEnabled(e.target.checked)}
+                        className="w-3 h-3 text-purple-600 rounded"
+                      />
+                      Set reminder time
+                    </label>
+                    {globalReminderEnabled && (
+                      <input
+                        type="time"
+                        value={globalReminderTime}
+                        onChange={(e) => setGlobalReminderTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    )}
+                  </div>
+
+                  <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                    These settings will apply to all schedules created from this template. You can override them for individual schedules below.
+                  </p>
+                </div>
+              )}
+            </div>
+
             {selectedTemplate?.groupName ? (
               /* Grouped Template - Show filtered preview */
               <div className="mb-6">
@@ -2296,6 +2409,82 @@ function ScheduleTemplates() {
                                   </div>
                                 );
                               })()}
+
+                              {/* Notification Override */}
+                              {globalNotificationsEnabled && (
+                                <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                                  <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={displayData.notificationOverride === true}
+                                      onChange={(e) => updateTemplateEdit(template.id, 'notificationOverride', e.target.checked)}
+                                      className="w-3 h-3 text-orange-600 rounded"
+                                    />
+                                    Override global notification settings
+                                  </label>
+
+                                  {displayData.notificationOverride && (
+                                    <div className="ml-5 space-y-3 mt-2">
+                                      {/* Per-schedule notifications enabled */}
+                                      <div>
+                                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                          <input
+                                            type="checkbox"
+                                            checked={displayData.notifications_enabled === true}
+                                            onChange={(e) => updateTemplateEdit(template.id, 'notifications_enabled', e.target.checked)}
+                                            className="w-3 h-3 text-purple-600 rounded"
+                                          />
+                                          Enable notifications
+                                        </label>
+                                      </div>
+
+                                      {displayData.notifications_enabled && (
+                                        <>
+                                          {/* Per-schedule channels */}
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                              Notification Channels
+                                            </label>
+                                            <div className="space-y-1 max-h-24 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded p-1.5 bg-white dark:bg-gray-800">
+                                              {availableChannels.map(channel => (
+                                                <label key={channel.id} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded">
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={(displayData.channel_ids || []).includes(channel.id)}
+                                                    onChange={(e) => {
+                                                      const currentChannels = displayData.channel_ids || [];
+                                                      if (e.target.checked) {
+                                                        updateTemplateEdit(template.id, 'channel_ids', [...currentChannels, channel.id]);
+                                                      } else {
+                                                        updateTemplateEdit(template.id, 'channel_ids', currentChannels.filter(id => id !== channel.id));
+                                                      }
+                                                    }}
+                                                    className="w-3 h-3 text-purple-600 rounded"
+                                                  />
+                                                  <span>{channel.name}</span>
+                                                </label>
+                                              ))}
+                                            </div>
+                                          </div>
+
+                                          {/* Per-schedule reminder time */}
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                              Reminder Time
+                                            </label>
+                                            <input
+                                              type="time"
+                                              value={displayData.reminder_time || '09:00'}
+                                              onChange={(e) => updateTemplateEdit(template.id, 'reminder_time', e.target.value)}
+                                              className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                            />
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
