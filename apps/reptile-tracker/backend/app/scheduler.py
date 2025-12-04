@@ -2,7 +2,7 @@
 Notification scheduler for sending reminders and alerts
 """
 import logging
-from datetime import datetime, timezone, timedelta, date as py_date
+from datetime import datetime, timezone, timedelta, date as py_date, time as py_time
 from typing import List, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -15,8 +15,59 @@ from app.notifications import send_webhook_notification, get_template_for_trigge
 
 logger = logging.getLogger(__name__)
 
+# Critical notification types that bypass quiet hours
+CRITICAL_NOTIFICATION_TYPES = {
+    NotificationType.HEALTH_EVENT,
+    NotificationType.SYSTEM
+}
+
 # Global scheduler instance
 scheduler = None
+
+
+def is_within_quiet_hours(
+    notification_settings: NotificationSettings,
+    notification_type: NotificationType = None,
+    current_time: datetime = None
+) -> bool:
+    """
+    Check if current time is within user's quiet hours.
+    Critical notifications bypass quiet hours.
+
+    Args:
+        notification_settings: User's notification settings
+        notification_type: Type of notification (for critical check)
+        current_time: Current datetime (defaults to now in UTC)
+
+    Returns:
+        True if within quiet hours and notification should be suppressed
+    """
+    # Critical notifications always bypass quiet hours
+    if notification_type and notification_type in CRITICAL_NOTIFICATION_TYPES:
+        return False
+
+    # If quiet hours not enabled, always send
+    if not notification_settings.quiet_hours_enabled:
+        return False
+
+    # If times not configured, treat as not within quiet hours
+    if not notification_settings.quiet_hours_start or not notification_settings.quiet_hours_end:
+        return False
+
+    if current_time is None:
+        current_time = datetime.now(timezone.utc)
+
+    current_time_only = current_time.time()
+    start = notification_settings.quiet_hours_start
+    end = notification_settings.quiet_hours_end
+
+    # Handle quiet hours that span midnight (e.g., 22:00 to 08:00)
+    if start > end:
+        # Quiet hours span midnight
+        return current_time_only >= start or current_time_only <= end
+    else:
+        # Normal case (e.g., 01:00 to 06:00)
+        return start <= current_time_only <= end
 
 
 def get_next_occurrence_date(schedule: Schedule, from_date: py_date = None) -> py_date:
@@ -264,6 +315,11 @@ async def check_schedule_reminders():
                             if not notif_settings.notify_schedule_reminders:
                                 continue
 
+                            # Check quiet hours (schedule reminders are not critical)
+                            if is_within_quiet_hours(notif_settings, NotificationType.SCHEDULE_REMINDER, now):
+                                logger.debug(f"Skipping reminder for user {notif_settings.user_id} - within quiet hours")
+                                continue
+
                             # Get the user
                             user = await db.get(User, notif_settings.user_id)
                             if not user:
@@ -373,6 +429,11 @@ async def check_overdue_schedules():
                             if not notif_settings.notify_overdue_alerts:
                                 continue
 
+                            # Check quiet hours (overdue alerts are not critical)
+                            if is_within_quiet_hours(notif_settings, NotificationType.OVERDUE_ALERT, now):
+                                logger.debug(f"Skipping overdue alert for user {notif_settings.user_id} - within quiet hours")
+                                continue
+
                             # Get the user
                             user = await db.get(User, notif_settings.user_id)
                             if not user:
@@ -439,6 +500,17 @@ async def create_in_app_notification(
 
         if not in_app_channel:
             logger.debug(f"In-app notifications disabled for user {user.email}, skipping")
+            return
+
+        # Get user's notification settings to check quiet hours
+        settings_result = await db.execute(
+            select(NotificationSettings).where(NotificationSettings.user_id == user.id)
+        )
+        notif_settings = settings_result.scalars().first()
+
+        # Check quiet hours (unless critical notification)
+        if notif_settings and is_within_quiet_hours(notif_settings, notification_type):
+            logger.debug(f"Skipping in-app notification for user {user.email} - within quiet hours")
             return
 
         notification = UserNotification(

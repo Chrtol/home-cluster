@@ -464,6 +464,18 @@ The application supports flexible per-schedule notification channels with the fo
 - Automatic schedule reminders based on time windows and reminder settings
 - Overdue alerts when schedules are missed
 
+**Quiet Hours:**
+- Configure quiet hours to suppress non-critical notifications during sleep times
+- Set start and end times (UTC) in Settings > Notifications tab
+- Supports overnight periods (e.g., 22:00 to 08:00)
+- Critical notifications (health events, system messages) bypass quiet hours
+
+**Template Customization:**
+- Customize notification message templates for different trigger types
+- Preview templates with sample data before saving
+- Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes
+- Per-channel template overrides (e.g., shorter messages for Pushover)
+
 **Supported Types:**
 
 ### In-App Notifications
