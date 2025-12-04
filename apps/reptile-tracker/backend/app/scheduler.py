@@ -358,21 +358,45 @@ async def check_schedule_reminders():
                                 # User doesn't have access, skip
                                 continue
 
-                            # Queue reminder task for reliable delivery
-                            from app.celery_tasks import send_schedule_reminder_task
+                            # Try to queue reminder task for reliable delivery
+                            # If Celery/Redis is down, fall back to direct send
+                            try:
+                                from app.celery_tasks import send_schedule_reminder_task
 
-                            send_schedule_reminder_task.delay(
-                                schedule_id=schedule.id,
-                                reptile_id=reptile.id,
-                                scheduled_date_str=next_occurrence_date.isoformat(),
-                                user_id=user.id,
-                                channel_id=channel.id
-                            )
+                                send_schedule_reminder_task.delay(
+                                    schedule_id=schedule.id,
+                                    reptile_id=reptile.id,
+                                    scheduled_date_str=next_occurrence_date.isoformat(),
+                                    user_id=user.id,
+                                    channel_id=channel.id
+                                )
 
-                            logger.info(
-                                f"Queued reminder task for schedule {schedule.id} ({schedule.schedule_type}) "
-                                f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
-                            )
+                                logger.info(
+                                    f"Queued reminder task for schedule {schedule.id} ({schedule.schedule_type}) "
+                                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                                )
+                            except Exception as celery_error:
+                                # Fallback: Send notification directly if Celery is down
+                                logger.warning(
+                                    f"Celery queue failed for schedule {schedule.id}, falling back to direct send: {celery_error}"
+                                )
+
+                                # Send the reminder directly (synchronous fallback)
+                                await send_schedule_reminder(
+                                    db=db,
+                                    reptile=reptile,
+                                    schedule=schedule,
+                                    scheduled_date=next_occurrence_date,
+                                    user=user,
+                                    webhook_url=channel.webhook_url,
+                                    webhook_type=channel.webhook_type,
+                                    config=channel.config
+                                )
+
+                                logger.info(
+                                    f"Sent reminder directly (fallback) for schedule {schedule.id} "
+                                    f"to user {user.email} via channel '{channel.name}'"
+                                )
 
                 except Exception as e:
                     logger.error(f"Error processing schedule {schedule.id}: {e}", exc_info=True)

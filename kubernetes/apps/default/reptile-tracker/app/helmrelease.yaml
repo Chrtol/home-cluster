@@ -168,10 +168,46 @@ spec:
                   secretKeyRef:
                     name: reptile-tracker-secret
                     key: oidc-discovery-url
+              OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
+              FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
+              WEBHOOK_URL: ""
               REDIS_HOST: "dragonfly.database.svc.cluster.local"
               REDIS_PORT: "6379"
               REDIS_DB: "0"
               ENVIRONMENT: "production"
+              SQL_ECHO: "false"
+              COOKIE_SECURE: "true"
+              COOKIE_HTTPONLY: "true"
+              COOKIE_SAMESITE: "lax"
+              ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
+              REFRESH_TOKEN_EXPIRE_DAYS: "7"
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - "pgrep -f 'celery worker' || exit 1"
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - "pgrep -f 'celery worker' || exit 1"
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 100m
