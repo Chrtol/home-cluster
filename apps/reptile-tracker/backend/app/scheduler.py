@@ -479,6 +479,32 @@ async def send_schedule_reminder(
         }
         context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
 
+        # Try to get active supplement rotations for this reptile
+        from app.models import FeedingRotation, Supplement
+        rotation_result = await db.execute(
+            select(FeedingRotation)
+            .where(
+                and_(
+                    FeedingRotation.reptile_id == schedule.reptile_id,
+                    FeedingRotation.rotation_type == "supplement",
+                    FeedingRotation.enabled == True
+                )
+            )
+        )
+        rotations = rotation_result.scalars().all()
+
+        if rotations:
+            # Get supplement names
+            supplement_names = []
+            for rotation in rotations:
+                if rotation.supplement_id:
+                    supplement = await db.get(Supplement, rotation.supplement_id)
+                    if supplement:
+                        supplement_names.append(supplement.name)
+
+            if supplement_names:
+                context["supplement_name"] = ", ".join(supplement_names)
+
     # Add supplement info for supplement schedules
     if schedule.schedule_type == "supplement" and schedule.supplement_id:
         from app.models import Supplement
@@ -545,6 +571,32 @@ async def send_overdue_alert(
             "other": "Other"
         }
         context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
+
+        # Try to get active supplement rotations for this reptile
+        from app.models import FeedingRotation, Supplement
+        rotation_result = await db.execute(
+            select(FeedingRotation)
+            .where(
+                and_(
+                    FeedingRotation.reptile_id == schedule.reptile_id,
+                    FeedingRotation.rotation_type == "supplement",
+                    FeedingRotation.enabled == True
+                )
+            )
+        )
+        rotations = rotation_result.scalars().all()
+
+        if rotations:
+            # Get supplement names
+            supplement_names = []
+            for rotation in rotations:
+                if rotation.supplement_id:
+                    supplement = await db.get(Supplement, rotation.supplement_id)
+                    if supplement:
+                        supplement_names.append(supplement.name)
+
+            if supplement_names:
+                context["supplement_name"] = ", ".join(supplement_names)
 
     # Add supplement info for supplement schedules
     if schedule.schedule_type == "supplement" and schedule.supplement_id:

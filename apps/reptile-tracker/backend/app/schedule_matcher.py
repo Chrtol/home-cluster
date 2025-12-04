@@ -243,19 +243,40 @@ async def assign_feeding_to_schedule(
         within_window=within_window,
     )
 
-    # Create completion record
-    completion = ScheduleCompletion(
-        schedule_id=schedule.id,
-        scheduled_date=feeding.fed_at.date(),
-        completed_at=feeding.fed_at,
-        completion_type=CompletionType.FEEDING,
-        completion_id=feeding.id,
-        within_time_window=within_window,
-        status=status,
-        reptile_id=feeding.reptile_id,
+    # Check if there's an existing PENDING completion for this schedule/date
+    existing_result = await db.execute(
+        select(ScheduleCompletion).filter(
+            and_(
+                ScheduleCompletion.schedule_id == schedule.id,
+                ScheduleCompletion.scheduled_date == feeding.fed_at.date(),
+                ScheduleCompletion.status == CompletionStatus.PENDING,
+            )
+        )
     )
+    existing_completion = existing_result.scalar_one_or_none()
 
-    db.add(completion)
+    if existing_completion:
+        # Update existing PENDING completion instead of creating a new one
+        existing_completion.completed_at = feeding.fed_at
+        existing_completion.completion_type = CompletionType.FEEDING
+        existing_completion.completion_id = feeding.id
+        existing_completion.within_time_window = within_window
+        existing_completion.status = status
+        completion = existing_completion
+    else:
+        # Create new completion record
+        completion = ScheduleCompletion(
+            schedule_id=schedule.id,
+            scheduled_date=feeding.fed_at.date(),
+            completed_at=feeding.fed_at,
+            completion_type=CompletionType.FEEDING,
+            completion_id=feeding.id,
+            within_time_window=within_window,
+            status=status,
+            reptile_id=feeding.reptile_id,
+        )
+        db.add(completion)
+
     await db.flush()  # Get the ID without committing
 
     # Link feeding to completion
@@ -297,19 +318,40 @@ async def assign_misting_to_schedule(
         within_window=within_window,
     )
 
-    # Create completion record
-    completion = ScheduleCompletion(
-        schedule_id=schedule.id,
-        scheduled_date=misting.misted_at.date(),
-        completed_at=misting.misted_at,
-        completion_type=CompletionType.MISTING,
-        completion_id=misting.id,
-        within_time_window=within_window,
-        status=status,
-        reptile_id=misting.reptile_id,
+    # Check if there's an existing PENDING completion for this schedule/date
+    existing_result = await db.execute(
+        select(ScheduleCompletion).filter(
+            and_(
+                ScheduleCompletion.schedule_id == schedule.id,
+                ScheduleCompletion.scheduled_date == misting.misted_at.date(),
+                ScheduleCompletion.status == CompletionStatus.PENDING,
+            )
+        )
     )
+    existing_completion = existing_result.scalar_one_or_none()
 
-    db.add(completion)
+    if existing_completion:
+        # Update existing PENDING completion instead of creating a new one
+        existing_completion.completed_at = misting.misted_at
+        existing_completion.completion_type = CompletionType.MISTING
+        existing_completion.completion_id = misting.id
+        existing_completion.within_time_window = within_window
+        existing_completion.status = status
+        completion = existing_completion
+    else:
+        # Create new completion record
+        completion = ScheduleCompletion(
+            schedule_id=schedule.id,
+            scheduled_date=misting.misted_at.date(),
+            completed_at=misting.misted_at,
+            completion_type=CompletionType.MISTING,
+            completion_id=misting.id,
+            within_time_window=within_window,
+            status=status,
+            reptile_id=misting.reptile_id,
+        )
+        db.add(completion)
+
     await db.flush()
 
     # Link misting to completion
@@ -351,19 +393,40 @@ async def assign_weighing_to_schedule(
         within_window=within_window,
     )
 
-    # Create completion record
-    completion = ScheduleCompletion(
-        schedule_id=schedule.id,
-        scheduled_date=weight_log.measured_at.date(),
-        completed_at=weight_log.measured_at,
-        completion_type=CompletionType.WEIGHING,
-        completion_id=weight_log.id,
-        within_time_window=within_window,
-        status=status,
-        reptile_id=weight_log.reptile_id,
+    # Check if there's an existing PENDING completion for this schedule/date
+    existing_result = await db.execute(
+        select(ScheduleCompletion).filter(
+            and_(
+                ScheduleCompletion.schedule_id == schedule.id,
+                ScheduleCompletion.scheduled_date == weight_log.measured_at.date(),
+                ScheduleCompletion.status == CompletionStatus.PENDING,
+            )
+        )
     )
+    existing_completion = existing_result.scalar_one_or_none()
 
-    db.add(completion)
+    if existing_completion:
+        # Update existing PENDING completion instead of creating a new one
+        existing_completion.completed_at = weight_log.measured_at
+        existing_completion.completion_type = CompletionType.WEIGHING
+        existing_completion.completion_id = weight_log.id
+        existing_completion.within_time_window = within_window
+        existing_completion.status = status
+        completion = existing_completion
+    else:
+        # Create new completion record
+        completion = ScheduleCompletion(
+            schedule_id=schedule.id,
+            scheduled_date=weight_log.measured_at.date(),
+            completed_at=weight_log.measured_at,
+            completion_type=CompletionType.WEIGHING,
+            completion_id=weight_log.id,
+            within_time_window=within_window,
+            status=status,
+            reptile_id=weight_log.reptile_id,
+        )
+        db.add(completion)
+
     await db.flush()
 
     # Link weight log to completion
