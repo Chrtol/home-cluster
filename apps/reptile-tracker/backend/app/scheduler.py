@@ -10,7 +10,7 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_maker
-from app.models import Schedule, ScheduleCompletion, NotificationSettings, User, Reptile, CompletionStatus, UserNotification, NotificationType
+from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 
 logger = logging.getLogger(__name__)

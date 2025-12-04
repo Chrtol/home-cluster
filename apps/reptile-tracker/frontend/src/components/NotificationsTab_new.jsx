@@ -753,20 +753,23 @@ function NotificationsTab() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Channel Type
-                </label>
-                <select
-                  value={channelType}
-                  onChange={(e) => setChannelType(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="discord">Discord</option>
-                  <option value="pushover">Pushover</option>
-                  <option value="generic">Generic Webhook</option>
-                </select>
-              </div>
+              {/* Hide channel type selector for in-app channels */}
+              {channelType !== 'in_app' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Channel Type
+                  </label>
+                  <select
+                    value={channelType}
+                    onChange={(e) => setChannelType(e.target.value)}
+                    className="input-field"
+                  >
+                    <option value="discord">Discord</option>
+                    <option value="pushover">Pushover</option>
+                    <option value="generic">Generic Webhook</option>
+                  </select>
+                </div>
+              )}
 
               {/* Conditional fields based on channel type */}
               {channelType === 'pushover' ? (
@@ -873,7 +876,7 @@ function NotificationsTab() {
                     />
                   </div>
                 </>
-              ) : (
+              ) : channelType !== 'in_app' ? (
                 <>
                   {/* Webhook URL for Discord and Generic */}
                   <div>
@@ -889,7 +892,7 @@ function NotificationsTab() {
                     />
                   </div>
                 </>
-              )}
+              ) : null}
 
               <label className="flex items-center gap-2">
                 <input
