@@ -927,7 +927,7 @@ function NotificationsTab() {
               <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleTestChannel}
-                  disabled={testingChannel || (channelType === 'pushover' ? (!pushoverApiKey.trim() || !pushoverUserKey.trim()) : !channelUrl.trim())}
+                  disabled={testingChannel || (channelType === 'pushover' ? (!pushoverApiKey.trim() || !pushoverUserKey.trim()) : (channelType === 'in_app' ? false : !channelUrl.trim()))}
                   className="btn-secondary w-full flex items-center justify-center gap-2"
                 >
                   {testingChannel ? (
