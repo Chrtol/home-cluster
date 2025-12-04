@@ -35,22 +35,21 @@ def upgrade() -> None:
         END $$;
     """)
 
-    # Create user_notifications table
-    op.create_table(
-        'user_notifications',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('notification_type', sa.Enum('schedule_reminder', 'overdue_alert', 'feeding_logged', 'weight_logged', 'health_event', 'system', name='notificationtype', create_type=False), nullable=False),
-        sa.Column('title', sa.String(), nullable=False),
-        sa.Column('message', sa.Text(), nullable=False),
-        sa.Column('link', sa.String(), nullable=True),
-        sa.Column('is_read', sa.Boolean(), nullable=False, server_default='false'),
-        sa.Column('read_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('notification_metadata', sa.JSON(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id')
-    )
+    # Create user_notifications table using raw SQL to avoid enum re-creation
+    op.execute("""
+        CREATE TABLE user_notifications (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            notification_type notificationtype NOT NULL,
+            title VARCHAR NOT NULL,
+            message TEXT NOT NULL,
+            link VARCHAR,
+            is_read BOOLEAN NOT NULL DEFAULT false,
+            read_at TIMESTAMPTZ,
+            notification_metadata JSON,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    """)
 
     # Create indexes
     op.create_index(op.f('ix_user_notifications_id'), 'user_notifications', ['id'], unique=False)
