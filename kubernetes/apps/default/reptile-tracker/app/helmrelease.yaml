@@ -34,7 +34,7 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20251205175418 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20251205181719 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             env:
               DATABASE_URL:
@@ -103,7 +103,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-20251205175420 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
+              tag: main-20251205181722 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
               pullPolicy: Always
             probes:
               liveness:
@@ -139,7 +139,7 @@ spec:
           worker:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20251205175418 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20251205181719 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             command: ["python", "celery_worker.py"]
             env:
