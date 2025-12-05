@@ -74,7 +74,10 @@ async def get_dashboard_data(
     weight_result = await db.execute(
         select(models.WeightLog)
         .where(models.WeightLog.reptile_id.in_(accessible_ids))
-        .options(selectinload(models.WeightLog.reptile))
+        .options(
+            selectinload(models.WeightLog.reptile),
+            selectinload(models.WeightLog.logged_by)
+        )
         .order_by(models.WeightLog.measured_at.desc())
     )
     all_weights = weight_result.scalars().all()
@@ -182,7 +185,10 @@ async def get_dashboard_data(
                 models.Feeding.fed_at <= datetime.combine(week_end, datetime.max.time())
             )
         )
-        .options(selectinload(models.Feeding.reptile))
+        .options(
+            selectinload(models.Feeding.reptile),
+            selectinload(models.Feeding.logged_by)
+        )
     )
     weekly_feedings = weekly_feedings_result.scalars().all()
 
@@ -196,7 +202,10 @@ async def get_dashboard_data(
                 models.MistingLog.misted_at <= datetime.combine(week_end, datetime.max.time())
             )
         )
-        .options(selectinload(models.MistingLog.reptile))
+        .options(
+            selectinload(models.MistingLog.reptile),
+            selectinload(models.MistingLog.logged_by)
+        )
     )
     weekly_mistings = weekly_mistings_result.scalars().all()
 
@@ -305,7 +314,10 @@ async def get_calendar_data(
                 models.Feeding.fed_at <= datetime.combine(end_date, datetime.max.time())
             )
         )
-        .options(selectinload(models.Feeding.reptile))
+        .options(
+            selectinload(models.Feeding.reptile),
+            selectinload(models.Feeding.logged_by)
+        )
     )
     feedings = feedings_result.scalars().all()
 
@@ -319,7 +331,10 @@ async def get_calendar_data(
                 models.MistingLog.misted_at <= datetime.combine(end_date, datetime.max.time())
             )
         )
-        .options(selectinload(models.MistingLog.reptile))
+        .options(
+            selectinload(models.MistingLog.reptile),
+            selectinload(models.MistingLog.logged_by)
+        )
     )
     mistings = mistings_result.scalars().all()
 
