@@ -225,19 +225,20 @@ def _create_discord_embed(
         }
     }
 
-    # Add URL if available in context (makes title clickable)
-    if context and context.get("schedule_url"):
-        # Convert relative URL to absolute URL
-        schedule_url = context["schedule_url"]
-        embed["url"] = f"{settings.frontend_url}{schedule_url}"
-
     # If template has discord_config, use template-driven approach
     if discord_config:
-        # Use the rendered description from template
-        embed["description"] = description
-
         # Build fields based on include_fields configuration
         include_fields = discord_config.get("include_fields", [])
+
+        # When discord_config has fields, use only the first line of the description
+        # to avoid duplicating information that appears in fields below
+        if include_fields:
+            # Extract just the first line as a brief summary
+            description_lines = description.split('\n')
+            embed["description"] = description_lines[0] if description_lines else description
+        else:
+            # No fields configured, use full description
+            embed["description"] = description
         fields = []
 
         for field_name in include_fields:
@@ -258,6 +259,17 @@ def _create_discord_embed(
                 fields.append({"name": "Food", "value": food_info, "inline": True})
             elif field_name == "time_window" and context.get("time_window_display"):
                 fields.append({"name": "Time Window", "value": context["time_window_display"], "inline": True})
+            elif field_name == "schedule_link" and context.get("schedule_url"):
+                # Add clickable link to schedule
+                schedule_url = context["schedule_url"]
+                full_url = f"{settings.frontend_url}{schedule_url}"
+                link_text = discord_config.get("link_text", "View Schedule")
+                link_label = discord_config.get("link_label", "View Details")
+                fields.append({
+                    "name": link_label,
+                    "value": f"[{link_text}]({full_url})",
+                    "inline": False
+                })
 
         embed["fields"] = fields
 
@@ -342,6 +354,18 @@ def _create_discord_embed(
                 {"name": "Fed By", "value": user_name, "inline": True},
                 {"name": "Time", "value": "Just now", "inline": True},
             ]
+
+    # Add "View Schedule" link as a field at the bottom if URL is available
+    # Only add for non-template embeds (templates control this via "schedule_link" field)
+    if not discord_config and context and context.get("schedule_url"):
+        schedule_url = context["schedule_url"]
+        full_url = f"{settings.frontend_url}{schedule_url}"
+        # Add as a non-inline field so it appears on its own line at the bottom
+        embed["fields"].append({
+            "name": "View Details",
+            "value": f"[View Schedule]({full_url})",
+            "inline": False
+        })
 
     return embed
 
