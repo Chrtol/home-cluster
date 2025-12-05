@@ -12,6 +12,10 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 📊 **Weight Tracking**: Monitor weight trends with graphical visualization and interpolation
 - 🏥 **Health Records**: Track vet visits, medication, and observations
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
+  - **Schedule Instances**: Pre-generated schedule occurrences with unique IDs for tracking
+  - **Auto-Complete**: Automatically mark repetitive schedules as completed if not logged (configurable per schedule)
+  - Manual override to mark auto-completed instances as skipped or missed
+  - "Log Now" buttons that pre-fill all form data from schedule instances
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
   - Supplement display in schedule details view with frequency notes
   - Calculated from feeding rotations matching food categories
@@ -279,6 +283,13 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `POST /api/schedules/completions/{completion_id}/complete` - Mark completion as complete
 - `POST /api/schedules/completions/{completion_id}/skip` - Skip a scheduled occurrence
 
+### Schedule Instances
+- `GET /api/schedule-instances/calendar` - Get instances for date range with filters
+- `GET /api/schedule-instances/{id}` - Get instance details with completion info
+- `POST /api/schedule-instances/regenerate/{schedule_id}` - Regenerate instances for a schedule
+- `POST /api/schedule-instances/{instance_id}/mark-skipped` - Mark auto-completed instance as skipped
+- `POST /api/schedule-instances/{instance_id}/mark-missed` - Mark auto-completed instance as missed
+
 ### Schedule Templates
 - `GET /api/schedule-templates` - List all templates with optional filtering
 - `GET /api/schedule-templates/{id}` - Get template details
@@ -432,6 +443,7 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
   - Per-reptile custom layouts
   - Export/import settings as JSON
   - Reset functionality
+  - **Calendar View Persistence**: Remembers your preferred view (1d/3d/7d for dashboard, 1d/3d/7d/30d for calendar) across sessions
 - **Activity Tracking**:
   - Comprehensive activity log with all actions
   - User attribution for multi-user households
