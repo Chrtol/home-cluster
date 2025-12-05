@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: "Discord Notifications"
+
+on:
+  workflow_run:
+    workflows:
+      - "Flux Local"
+      - "Build and Push Reptile Tracker Images"
+      - "Labeler"
+      - "Label Sync"
+    types:
+      - completed
+
+jobs:
+  notify-discord:
+    name: Notify Discord on Failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.GITHUB_ACTIONS_DISCORD_WEBHOOK_URL }}
+        run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          WORKFLOW_URL="${{ github.event.workflow_run.html_url }}"
+          COMMIT_SHA="${{ github.event.workflow_run.head_sha }}"
+          COMMIT_URL="${{ github.event.workflow_run.repository.html_url }}/commit/${COMMIT_SHA}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          ACTOR="${{ github.event.workflow_run.triggering_actor.login }}"
+          REPO="${{ github.event.workflow_run.repository.full_name }}"
+
+          COMMIT_MESSAGE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "${{ github.event.workflow_run.repository.url }}/commits/${COMMIT_SHA}" | \
+            jq -r '.commit.message' | head -n 1)
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "❌ Workflow Failed: ${WORKFLOW_NAME}",
+              "description": "A GitHub Actions workflow has failed in ${REPO}",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "Workflow",
+                  "value": "[${WORKFLOW_NAME}](${WORKFLOW_URL})",
+                  "inline": false
+                },
+                {
+                  "name": "Branch",
+                  "value": "${BRANCH}",
+                  "inline": true
+                },
+                {
+                  "name": "Triggered by",
+                  "value": "${ACTOR}",
+                  "inline": true
+                },
+                {
+                  "name": "Commit",
+                  "value": "[${COMMIT_SHA:0:7}](${COMMIT_URL})",
+                  "inline": true
+                },
+                {
+                  "name": "Commit Message",
+                  "value": "${COMMIT_MESSAGE}",
+                  "inline": false
+                }
+              ],
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
+            }]
+          }
+          EOF
+          )
+
+          curl -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${DISCORD_WEBHOOK_URL}"
