@@ -35,35 +35,27 @@ function ScheduleDetails() {
     // Sort by priority (lower number = higher priority)
     applicable.sort((a, b) => a.priority - b.priority);
 
-    // For schedule-based rotations, check if this schedule's days match
-    const scheduleBasedSupplements = applicable
-      .filter(r => r.trigger_mode === 'schedule_based')
-      .filter(r => {
-        if (!r.schedule_days_of_week || !scheduleData.days_of_week) return false;
-
-        // Get days from rotation and schedule
-        const rotationDays = r.schedule_days_of_week.split(',').map(d => parseInt(d));
-        const scheduleDays = scheduleData.days_of_week.split(',').map(d => parseInt(d));
-
-        // Check if any days overlap
-        return rotationDays.some(day => scheduleDays.includes(day));
-      })
+    // Convert all applicable rotations to supplement display objects
+    const supplements = applicable
       .filter(r => r.supplement)
-      .map(r => r.supplement);
+      .map(r => {
+        const supp = { ...r.supplement };
 
-    // For feeding-count based rotations, we can't determine without actual feeding history
-    // So we'll show them as "may apply" based on the frequency
-    const feedingCountSupplements = applicable
-      .filter(r => r.trigger_mode === 'feeding_count')
-      .filter(r => r.supplement)
-      .map(r => ({
-        ...r.supplement,
-        frequency_note: `Every ${r.every_n_feedings} feeding${r.every_n_feedings > 1 ? 's' : ''}`
-      }));
+        // Add descriptive note based on trigger mode
+        if (r.trigger_mode === 'feeding_count') {
+          supp.frequency_note = `Every ${r.every_n_feedings} feeding${r.every_n_feedings > 1 ? 's' : ''}`;
+        } else if (r.trigger_mode === 'schedule_based' && r.schedule_days_of_week) {
+          // Convert day numbers to day names
+          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const days = r.schedule_days_of_week.split(',').map(d => dayNames[parseInt(d)]);
+          supp.frequency_note = `On ${days.join(', ')}`;
+        }
 
-    // Combine and deduplicate
-    const allSupplements = [...scheduleBasedSupplements, ...feedingCountSupplements];
-    const unique = allSupplements.filter((supp, index, self) =>
+        return supp;
+      });
+
+    // Deduplicate by supplement ID
+    const unique = supplements.filter((supp, index, self) =>
       index === self.findIndex(s => s.id === supp.id)
     );
 
