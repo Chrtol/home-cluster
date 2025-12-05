@@ -148,7 +148,7 @@ async def create_schedule(
     # Generate schedule instances for this schedule
     from app.instance_generator import generate_instances_for_schedule
     try:
-        await generate_instances_for_schedule(db, new_schedule, days_ahead=14)
+        await generate_instances_for_schedule(db, new_schedule)
     except Exception as e:
         # Log error but don't fail the schedule creation
         import logging
@@ -241,7 +241,7 @@ async def update_schedule(
     # Regenerate schedule instances (delete old, create new)
     from app.instance_generator import regenerate_instances_for_schedule
     try:
-        await regenerate_instances_for_schedule(db, schedule.id, days_ahead=14)
+        await regenerate_instances_for_schedule(db, schedule.id)
     except Exception as e:
         # Log error but don't fail the schedule update
         import logging

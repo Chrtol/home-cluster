@@ -10,6 +10,7 @@ from app import models, schemas
 from app.database import get_db
 from app.routers.auth import get_current_user
 from app.permissions import check_reptile_access
+from app.config import settings
 from app.instance_generator import (
     generate_instances_for_schedule,
     regenerate_instances_for_schedule,
@@ -208,11 +209,14 @@ async def update_schedule_instance(
 @router.post("/generate/{schedule_id}")
 async def generate_instances(
     schedule_id: int,
-    days_ahead: int = Query(14, description="How many days ahead to generate instances"),
+    days_ahead: Optional[int] = Query(None, description="How many days ahead to generate instances (default from config)"),
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """Manually trigger instance generation for a schedule"""
+
+    if days_ahead is None:
+        days_ahead = settings.instance_generation_days_ahead
 
     # Get the schedule
     schedule = await db.get(models.Schedule, schedule_id)
@@ -236,11 +240,14 @@ async def generate_instances(
 @router.post("/regenerate/{schedule_id}")
 async def regenerate_instances(
     schedule_id: int,
-    days_ahead: int = Query(14, description="How many days ahead to generate instances"),
+    days_ahead: Optional[int] = Query(None, description="How many days ahead to generate instances (default from config)"),
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """Delete and regenerate instances for a schedule (useful after editing)"""
+
+    if days_ahead is None:
+        days_ahead = settings.instance_generation_days_ahead
 
     # Get the schedule
     schedule = await db.get(models.Schedule, schedule_id)
