@@ -121,10 +121,36 @@ async def get_dashboard_data(
         )
         last_health = last_health_result.scalars().first()
 
+        # Serialize to dicts to avoid ORM serialization issues
+        last_feeding_dict = None
+        if last_feeding:
+            last_feeding_dict = {
+                "id": last_feeding.id,
+                "fed_at": last_feeding.fed_at.isoformat() if last_feeding.fed_at else None,
+                "reptile_id": last_feeding.reptile_id
+            }
+
+        last_misting_dict = None
+        if last_misting:
+            last_misting_dict = {
+                "id": last_misting.id,
+                "misted_at": last_misting.misted_at.isoformat() if last_misting.misted_at else None,
+                "reptile_id": last_misting.reptile_id
+            }
+
+        last_health_dict = None
+        if last_health:
+            last_health_dict = {
+                "id": last_health.id,
+                "date": last_health.date.isoformat() if last_health.date else None,
+                "record_type": last_health.record_type,
+                "reptile_id": last_health.reptile_id
+            }
+
         last_activity[reptile_id] = {
-            "last_feeding": [last_feeding] if last_feeding else [],
-            "last_misting": [last_misting] if last_misting else [],
-            "last_health": [last_health] if last_health else []
+            "last_feeding": [last_feeding_dict] if last_feeding_dict else [],
+            "last_misting": [last_misting_dict] if last_misting_dict else [],
+            "last_health": [last_health_dict] if last_health_dict else []
         }
 
     # Fetch schedules for all accessible reptiles
