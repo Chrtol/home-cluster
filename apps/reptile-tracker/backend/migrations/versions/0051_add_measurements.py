@@ -19,25 +19,30 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create measurements table
-    op.create_table(
-        'measurements',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('reptile_id', sa.Integer(), nullable=False),
-        sa.Column('measurement_type', sa.String(length=100), nullable=False),
-        sa.Column('value', sa.Float(), nullable=False),
-        sa.Column('unit', sa.String(length=20), nullable=False),
-        sa.Column('measured_at', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('custom_label', sa.String(length=100), nullable=True),
-        sa.Column('schedule_completion_id', sa.Integer(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['reptile_id'], ['reptiles.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['schedule_completion_id'], ['schedule_completions.id'], ondelete='SET NULL'),
-    )
-    op.create_index(op.f('ix_measurements_id'), 'measurements', ['id'], unique=False)
-    op.create_index(op.f('ix_measurements_reptile_id'), 'measurements', ['reptile_id'], unique=False)
-    op.create_index(op.f('ix_measurements_schedule_completion_id'), 'measurements', ['schedule_completion_id'], unique=False)
+    # Check if measurements table already exists
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+
+    if 'measurements' not in inspector.get_table_names():
+        # Create measurements table
+        op.create_table(
+            'measurements',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('reptile_id', sa.Integer(), nullable=False),
+            sa.Column('measurement_type', sa.String(length=100), nullable=False),
+            sa.Column('value', sa.Float(), nullable=False),
+            sa.Column('unit', sa.String(length=20), nullable=False),
+            sa.Column('measured_at', sa.DateTime(timezone=True), nullable=False),
+            sa.Column('notes', sa.Text(), nullable=True),
+            sa.Column('custom_label', sa.String(length=100), nullable=True),
+            sa.Column('schedule_completion_id', sa.Integer(), nullable=True),
+            sa.PrimaryKeyConstraint('id'),
+            sa.ForeignKeyConstraint(['reptile_id'], ['reptiles.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['schedule_completion_id'], ['schedule_completions.id'], ondelete='SET NULL'),
+        )
+        op.create_index(op.f('ix_measurements_id'), 'measurements', ['id'], unique=False)
+        op.create_index(op.f('ix_measurements_reptile_id'), 'measurements', ['reptile_id'], unique=False)
+        op.create_index(op.f('ix_measurements_schedule_completion_id'), 'measurements', ['schedule_completion_id'], unique=False)
 
 
 def downgrade() -> None:
