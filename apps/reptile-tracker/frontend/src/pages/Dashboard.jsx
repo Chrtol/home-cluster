@@ -200,10 +200,10 @@ export default function Dashboard() {
 
   // Re-fetch instances when calendar filter changes
   useEffect(() => {
-    if (reptiles.length > 0 && calendarReptileFilter.size > 0) {
+    if (reptiles.length > 0) {
       fetchWeeklyInstances();
     }
-  }, [calendarReptileFilter]);
+  }, [calendarReptileFilter, reptiles]);
 
   const fetchSchedules = async () => {
     try {
@@ -449,11 +449,13 @@ export default function Dashboard() {
       const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
       const weekEnd = addDays(weekStart, 6);
 
-      // Build reptile_ids filter
-      const activeReptileIds = reptiles
-        .filter(r => calendarReptileFilter.has(r.id))
-        .map(r => r.id)
-        .join(',');
+      // Build reptile_ids filter - use all reptiles if filter is empty
+      const activeReptileIds = calendarReptileFilter.size > 0
+        ? reptiles
+            .filter(r => calendarReptileFilter.has(r.id))
+            .map(r => r.id)
+            .join(',')
+        : reptiles.map(r => r.id).join(',');
 
       if (!activeReptileIds) {
         setWeeklyEvents([]);
