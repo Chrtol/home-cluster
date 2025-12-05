@@ -1,17 +1,19 @@
 """
 Notification scheduler for sending reminders and alerts
 """
+import asyncio
 import logging
 from datetime import datetime, timezone, timedelta, date as py_date, time as py_time
 from typing import List, Dict
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, delete
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_maker
-from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType
+from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 
 logger = logging.getLogger(__name__)
@@ -69,6 +71,442 @@ def is_within_quiet_hours(
     else:
         # Normal case (e.g., 01:00 to 06:00)
         return start <= current_time_only <= end
+
+
+async def execute_scheduled_notification(
+    schedule_id: int,
+    user_id: int,
+    channel_id: int,
+    scheduled_date: py_date,
+    job_id: str
+):
+    """
+    Execute a scheduled notification job (called by APScheduler at exact time)
+    This function queues the notification to Celery
+    """
+    try:
+        async with async_session_maker() as db:
+            # Get the scheduled job record
+            job_record = await db.execute(
+                select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+            )
+            job_record = job_record.scalars().first()
+
+            if not job_record or job_record.status != "pending":
+                logger.warning(f"Job {job_id} not found or already processed, skipping")
+                return
+
+            # Get schedule, reptile, user, and channel
+            schedule = await db.get(Schedule, schedule_id)
+            if not schedule or not schedule.enabled or not schedule.notifications_enabled:
+                logger.info(f"Schedule {schedule_id} disabled, marking job as cancelled")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            reptile = await db.get(Reptile, schedule.reptile_id)
+            user = await db.get(User, user_id)
+            channel = await db.get(NotificationChannel, channel_id)
+
+            if not reptile or not user or not channel or not channel.enabled:
+                logger.warning(f"Missing required entities for job {job_id}, marking as cancelled")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check if already completed
+            completion = await db.execute(
+                select(ScheduleCompletion).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule_id,
+                        ScheduleCompletion.scheduled_date == scheduled_date,
+                        ScheduleCompletion.status == CompletionStatus.COMPLETED_ON_TIME
+                    )
+                )
+            )
+            if completion.scalars().first():
+                logger.info(f"Schedule {schedule_id} already completed for {scheduled_date}, skipping notification")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check quiet hours
+            notif_settings = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == user_id)
+            )
+            notif_settings = notif_settings.scalars().first()
+
+            if notif_settings and is_within_quiet_hours(notif_settings, NotificationType.SCHEDULE_REMINDER, datetime.now(timezone.utc)):
+                logger.info(f"Skipping job {job_id} - within quiet hours")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check user access
+            from app.permissions import check_reptile_access
+            try:
+                await check_reptile_access(db, user, reptile.id)
+            except:
+                logger.warning(f"User {user_id} no longer has access to reptile {reptile.id}")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Queue to Celery
+            try:
+                from app.celery_tasks import send_schedule_reminder_task
+
+                send_schedule_reminder_task.delay(
+                    schedule_id=schedule.id,
+                    reptile_id=reptile.id,
+                    scheduled_date_str=scheduled_date.isoformat(),
+                    user_id=user.id,
+                    channel_id=channel.id
+                )
+
+                logger.info(
+                    f"Queued exact-time reminder for schedule {schedule.id} ({schedule.schedule_type}) "
+                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                )
+
+                job_record.status = "sent"
+                await db.commit()
+
+            except Exception as celery_error:
+                logger.error(f"Failed to queue job {job_id} to Celery: {celery_error}")
+                job_record.status = "failed"
+                await db.commit()
+
+                # Fallback: Send directly
+                from app.scheduler import send_schedule_reminder
+                await send_schedule_reminder(
+                    db=db,
+                    reptile=reptile,
+                    schedule=schedule,
+                    scheduled_date=scheduled_date,
+                    user=user,
+                    webhook_url=channel.webhook_url,
+                    webhook_type=channel.webhook_type,
+                    config=channel.config
+                )
+
+    except Exception as e:
+        logger.error(f"Error executing scheduled notification job {job_id}: {e}", exc_info=True)
+
+
+async def schedule_notification_jobs_for_schedule(schedule: Schedule, days_ahead: int = 7):
+    """
+    Schedule notification jobs for a given schedule for the next N days
+
+    Args:
+        schedule: The Schedule object
+        days_ahead: How many days ahead to schedule (default 7)
+    """
+    global scheduler
+
+    if not scheduler:
+        logger.warning("Scheduler not initialized, cannot schedule jobs")
+        return
+
+    try:
+        async with async_session_maker() as db:
+            # Reload schedule with relationships
+            await db.refresh(schedule, ["notification_channels"])
+
+            if not schedule.enabled or not schedule.notifications_enabled:
+                logger.debug(f"Schedule {schedule.id} disabled, skipping job scheduling")
+                return
+
+            if not schedule.notification_channels:
+                logger.debug(f"Schedule {schedule.id} has no notification channels")
+                return
+
+            if not schedule.reminder_time:
+                logger.debug(f"Schedule {schedule.id} has no reminder_time set")
+                return
+
+            today = datetime.now(timezone.utc).date()
+
+            # Get all users with channels for this schedule
+            channel_user_map = {}
+            for channel in schedule.notification_channels:
+                if not channel.enabled:
+                    continue
+
+                notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
+                if not notif_settings or not notif_settings.notify_schedule_reminders:
+                    continue
+
+                user = await db.get(User, notif_settings.user_id)
+                if not user:
+                    continue
+
+                if channel.id not in channel_user_map:
+                    channel_user_map[channel.id] = user
+
+            if not channel_user_map:
+                logger.debug(f"No valid channels/users for schedule {schedule.id}")
+                return
+
+            # Schedule jobs for next N days
+            for days_offset in range(days_ahead):
+                check_date = today + timedelta(days=days_offset)
+
+                # Check if this date matches the schedule
+                if not should_schedule_occur_on_date(schedule, check_date):
+                    continue
+
+                # Schedule for each channel/user combination
+                for channel_id, user in channel_user_map.items():
+                    await _schedule_single_notification_job(
+                        db=db,
+                        schedule=schedule,
+                        user=user,
+                        channel_id=channel_id,
+                        scheduled_date=check_date
+                    )
+
+            await db.commit()
+
+    except Exception as e:
+        logger.error(f"Error scheduling jobs for schedule {schedule.id}: {e}", exc_info=True)
+
+
+async def _schedule_single_notification_job(
+    db: AsyncSession,
+    schedule: Schedule,
+    user: User,
+    channel_id: int,
+    scheduled_date: py_date
+):
+    """Helper function to schedule a single notification job"""
+    global scheduler
+
+    try:
+        # Calculate reminder time in user's timezone
+        user_tz = ZoneInfo(user.timezone if user.timezone else "UTC")
+        reminder_time_local = datetime.combine(scheduled_date, schedule.reminder_time, tzinfo=user_tz)
+        reminder_time_utc = reminder_time_local.astimezone(timezone.utc)
+
+        # Skip if in the past
+        if reminder_time_utc < datetime.now(timezone.utc):
+            return
+
+        # Generate unique job ID
+        job_id = f"notif_{schedule.id}_{user.id}_{channel_id}_{scheduled_date.isoformat()}"
+
+        # Check if job already exists
+        existing = await db.execute(
+            select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+        )
+        if existing.scalars().first():
+            logger.debug(f"Job {job_id} already exists")
+            return
+
+        # Create database record
+        job_record = ScheduledNotificationJob(
+            job_id=job_id,
+            schedule_id=schedule.id,
+            user_id=user.id,
+            channel_id=channel_id,
+            scheduled_date=scheduled_date,
+            scheduled_time_utc=reminder_time_utc,
+            status="pending"
+        )
+        db.add(job_record)
+        await db.flush()
+
+        # Schedule APScheduler job
+        scheduler.add_job(
+            func=execute_scheduled_notification,
+            trigger='date',
+            run_date=reminder_time_utc,
+            args=[schedule.id, user.id, channel_id, scheduled_date, job_id],
+            id=job_id,
+            replace_existing=True,
+            misfire_grace_time=300  # Allow 5 minutes grace if scheduler was down
+        )
+
+        logger.info(f"Scheduled notification job {job_id} for {reminder_time_utc} UTC ({reminder_time_local} local)")
+
+    except Exception as e:
+        logger.error(f"Error scheduling single job: {e}", exc_info=True)
+
+
+async def cancel_notification_jobs_for_schedule(schedule_id: int):
+    """Cancel all pending notification jobs for a schedule"""
+    global scheduler
+
+    try:
+        async with async_session_maker() as db:
+            # Get all pending jobs for this schedule
+            result = await db.execute(
+                select(ScheduledNotificationJob).where(
+                    and_(
+                        ScheduledNotificationJob.schedule_id == schedule_id,
+                        ScheduledNotificationJob.status == "pending"
+                    )
+                )
+            )
+            jobs = result.scalars().all()
+
+            for job in jobs:
+                # Remove from APScheduler
+                try:
+                    if scheduler and scheduler.get_job(job.job_id):
+                        scheduler.remove_job(job.job_id)
+                except Exception as e:
+                    logger.warning(f"Failed to remove job {job.job_id} from scheduler: {e}")
+
+                # Mark as cancelled
+                job.status = "cancelled"
+
+            await db.commit()
+            logger.info(f"Cancelled {len(jobs)} jobs for schedule {schedule_id}")
+
+    except Exception as e:
+        logger.error(f"Error cancelling jobs for schedule {schedule_id}: {e}", exc_info=True)
+
+
+async def reschedule_notification_jobs_for_schedule(schedule_id: int):
+    """Reschedule notification jobs for a schedule (cancel old, create new)"""
+    schedule = None
+    try:
+        async with async_session_maker() as db:
+            schedule = await db.get(Schedule, schedule_id)
+            if not schedule:
+                logger.warning(f"Schedule {schedule_id} not found")
+                return
+
+    except Exception as e:
+        logger.error(f"Error fetching schedule {schedule_id}: {e}")
+        return
+
+    # Cancel existing jobs
+    await cancel_notification_jobs_for_schedule(schedule_id)
+
+    # Schedule new jobs
+    await schedule_notification_jobs_for_schedule(schedule)
+
+
+async def rebuild_notification_jobs_from_db():
+    """
+    Rebuild APScheduler jobs from database on startup
+    This recovers jobs after pod restarts
+    """
+    global scheduler
+
+    if not scheduler:
+        logger.warning("Scheduler not initialized, cannot rebuild jobs")
+        return
+
+    try:
+        async with async_session_maker() as db:
+            # Get all pending jobs that are in the future
+            now_utc = datetime.now(timezone.utc)
+
+            result = await db.execute(
+                select(ScheduledNotificationJob).where(
+                    and_(
+                        ScheduledNotificationJob.status == "pending",
+                        ScheduledNotificationJob.scheduled_time_utc > now_utc
+                    )
+                ).order_by(ScheduledNotificationJob.scheduled_time_utc)
+            )
+            pending_jobs = result.scalars().all()
+
+            if not pending_jobs:
+                logger.info("No pending notification jobs to rebuild")
+                return
+
+            logger.info(f"Rebuilding {len(pending_jobs)} notification jobs from database")
+
+            for job_record in pending_jobs:
+                try:
+                    # Recreate the APScheduler job
+                    scheduler.add_job(
+                        func=execute_scheduled_notification,
+                        trigger='date',
+                        run_date=job_record.scheduled_time_utc,
+                        args=[
+                            job_record.schedule_id,
+                            job_record.user_id,
+                            job_record.channel_id,
+                            job_record.scheduled_date,
+                            job_record.job_id
+                        ],
+                        id=job_record.job_id,
+                        replace_existing=True,
+                        misfire_grace_time=300
+                    )
+
+                    logger.debug(f"Rebuilt job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
+
+                except Exception as e:
+                    logger.error(f"Failed to rebuild job {job_record.job_id}: {e}")
+                    continue
+
+            logger.info(f"Successfully rebuilt {len(pending_jobs)} notification jobs")
+
+    except Exception as e:
+        logger.error(f"Error rebuilding notification jobs from database: {e}", exc_info=True)
+
+
+async def daily_notification_maintenance():
+    """
+    Daily maintenance job to:
+    1. Schedule notification jobs for the next 7 days for all enabled schedules
+    2. Clean up old completed/failed jobs from the database
+    """
+    logger.info("Starting daily notification maintenance")
+
+    try:
+        async with async_session_maker() as db:
+            # 1. Get all enabled schedules with notifications enabled
+            result = await db.execute(
+                select(Schedule).where(
+                    and_(
+                        Schedule.enabled == True,
+                        Schedule.notifications_enabled == True,
+                        Schedule.reminder_time.is_not(None)
+                    )
+                ).options(
+                    selectinload(Schedule.notification_channels)
+                )
+            )
+            schedules = result.scalars().all()
+
+            logger.info(f"Scheduling jobs for {len(schedules)} active schedules")
+
+            # Schedule jobs for each schedule
+            for schedule in schedules:
+                try:
+                    await schedule_notification_jobs_for_schedule(schedule, days_ahead=7)
+                except Exception as e:
+                    logger.error(f"Error scheduling jobs for schedule {schedule.id}: {e}")
+                    continue
+
+            # 2. Clean up old job records (older than 30 days and not pending)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+            delete_result = await db.execute(
+                delete(ScheduledNotificationJob).where(
+                    and_(
+                        ScheduledNotificationJob.scheduled_time_utc < cutoff_date,
+                        ScheduledNotificationJob.status.in_(["sent", "failed", "cancelled"])
+                    )
+                )
+            )
+
+            await db.commit()
+
+            deleted_count = delete_result.rowcount if hasattr(delete_result, 'rowcount') else 0
+            logger.info(f"Cleaned up {deleted_count} old notification job records")
+
+            logger.info("Daily notification maintenance completed successfully")
+
+    except Exception as e:
+        logger.error(f"Error in daily notification maintenance: {e}", exc_info=True)
 
 
 def get_next_occurrence_date(schedule: Schedule, from_date: py_date = None) -> py_date:
@@ -908,9 +1346,32 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # Daily maintenance: schedule new jobs and cleanup old ones (runs at 2 AM UTC)
+    scheduler.add_job(
+        daily_notification_maintenance,
+        trigger="cron",
+        hour=2,
+        minute=0,
+        id="daily_maintenance",
+        name="Daily notification maintenance",
+        replace_existing=True
+    )
+
     scheduler.start()
 
     logger.info("Notification scheduler started successfully")
+
+    # Rebuild notification jobs from database (for recovery after pod restarts)
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If event loop is already running, schedule as a task
+            asyncio.create_task(rebuild_notification_jobs_from_db())
+        else:
+            # If no event loop is running, run directly
+            loop.run_until_complete(rebuild_notification_jobs_from_db())
+    except Exception as e:
+        logger.error(f"Error rebuilding notification jobs: {e}", exc_info=True)
 
 
 def stop_scheduler():

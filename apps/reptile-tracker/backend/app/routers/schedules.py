@@ -135,6 +135,16 @@ async def create_schedule(
     db.add(new_schedule)
     await db.commit()
     await db.refresh(new_schedule, ["notification_channels"])
+
+    # Schedule notification jobs for this schedule
+    from app.scheduler import schedule_notification_jobs_for_schedule
+    try:
+        await schedule_notification_jobs_for_schedule(new_schedule, days_ahead=7)
+    except Exception as e:
+        # Log error but don't fail the schedule creation
+        import logging
+        logging.getLogger(__name__).error(f"Failed to schedule notification jobs for schedule {new_schedule.id}: {e}")
+
     return new_schedule
 
 
@@ -209,6 +219,16 @@ async def update_schedule(
     schedule.updated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(schedule, ["notification_channels"])
+
+    # Reschedule notification jobs for this schedule (cancels old, creates new)
+    from app.scheduler import reschedule_notification_jobs_for_schedule
+    try:
+        await reschedule_notification_jobs_for_schedule(schedule.id)
+    except Exception as e:
+        # Log error but don't fail the schedule update
+        import logging
+        logging.getLogger(__name__).error(f"Failed to reschedule notification jobs for schedule {schedule.id}: {e}")
+
     return schedule
 
 
@@ -226,6 +246,16 @@ async def delete_schedule(
             status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
         )
     await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.CARETAKER)
+
+    # Cancel all pending notification jobs for this schedule
+    from app.scheduler import cancel_notification_jobs_for_schedule
+    try:
+        await cancel_notification_jobs_for_schedule(schedule_id)
+    except Exception as e:
+        # Log error but don't fail the schedule deletion
+        import logging
+        logging.getLogger(__name__).error(f"Failed to cancel notification jobs for schedule {schedule_id}: {e}")
+
     await db.execute(delete(Schedule).where(Schedule.id == schedule_id))
     await db.commit()
     return None

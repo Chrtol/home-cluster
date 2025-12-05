@@ -625,6 +625,26 @@ schedule_notification_channels = Table(
 )
 
 
+class ScheduledNotificationJob(Base):
+    """Tracks scheduled notification jobs for APScheduler"""
+    __tablename__ = "scheduled_notification_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String(255), unique=True, nullable=False, index=True)  # APScheduler job ID
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="CASCADE"), nullable=False)
+    scheduled_date = Column(Date, nullable=False)  # The date this notification is for
+    scheduled_time_utc = Column(DateTime(timezone=True), nullable=False, index=True)  # When to send (UTC)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    status = Column(String(50), nullable=False, default="pending")  # pending, sent, failed, cancelled
+
+    # Relationships
+    schedule = relationship("Schedule")
+    user = relationship("User")
+    channel = relationship("NotificationChannel")
+
+
 # Household and Invitation models
 household_members = Table(
     "household_members",
