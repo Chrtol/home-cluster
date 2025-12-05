@@ -90,6 +90,19 @@ function Calendar() {
     }
   }, [visibleReptiles]);
 
+  // Re-fetch data when page becomes visible (handles stale data when navigating back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && reptiles.length > 0) {
+        fetchInstances();
+        fetchPastData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [reptiles]);
+
   const fetchReptiles = async () => {
     try {
       const response = await axios.get("/api/reptiles");

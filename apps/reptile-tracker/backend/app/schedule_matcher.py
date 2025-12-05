@@ -5,7 +5,7 @@ Automatically matches feedings, mistings, and weight logs to their corresponding
 Handles time window validation, completion tracking, and status determination.
 """
 
-from datetime import datetime, time as py_time, timedelta
+from datetime import datetime, time as py_time, timedelta, timezone
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
@@ -109,7 +109,12 @@ async def find_matching_schedule(
 
         # 2. Food category check (if specified on schedule)
         if schedule.food_category:
-            if food_category == schedule.food_category:
+            # Normalize both values for comparison (handle singular/plural variations)
+            # e.g., "insect" matches "insects", "worm" matches "worms"
+            normalized_food_category = food_category.lower().rstrip('s') if food_category else None
+            normalized_schedule_category = schedule.food_category.lower().rstrip('s')
+
+            if normalized_food_category == normalized_schedule_category:
                 match_score += 5
             else:
                 # Wrong food category, skip this schedule
@@ -210,7 +215,8 @@ async def assign_feeding_to_schedule(
     )
     first_food = food_result.scalar_one_or_none()
     if first_food:
-        food_category = first_food.category
+        # Convert enum to its string value for comparison
+        food_category = first_food.category.value if hasattr(first_food.category, 'value') else str(first_food.category)
 
     # Check if supplements were used
     supplement_result = await db.execute(
@@ -255,6 +261,25 @@ async def assign_feeding_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
+    # Look up the instance for this schedule and date
+    from app.models import ScheduleInstance
+    instance = None
+    instance_id = None
+    try:
+        instance_result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.scheduled_date == feeding.fed_at.date()
+                )
+            )
+        )
+        instance = instance_result.scalars().first()
+        if instance:
+            instance_id = instance.id
+    except Exception:
+        pass  # Instance not found, continue without it
+
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
         existing_completion.completed_at = feeding.fed_at
@@ -262,26 +287,9 @@ async def assign_feeding_to_schedule(
         existing_completion.completion_id = feeding.id
         existing_completion.within_time_window = within_window
         existing_completion.status = status
+        existing_completion.instance_id = instance_id
         completion = existing_completion
     else:
-        # Look up the instance for this schedule and date
-        from app.models import ScheduleInstance
-        instance_id = None
-        try:
-            instance_result = await db.execute(
-                select(ScheduleInstance).where(
-                    and_(
-                        ScheduleInstance.schedule_id == schedule.id,
-                        ScheduleInstance.scheduled_date == feeding.fed_at.date()
-                    )
-                )
-            )
-            instance = instance_result.scalars().first()
-            if instance:
-                instance_id = instance.id
-        except Exception:
-            pass  # Instance not found, continue without it
-
         # Create new completion record
         completion = ScheduleCompletion(
             schedule_id=schedule.id,
@@ -297,6 +305,11 @@ async def assign_feeding_to_schedule(
         db.add(completion)
 
     await db.flush()  # Get the ID without committing
+
+    # Mark the instance as completed
+    if instance:
+        instance.status = "completed"
+        instance.updated_at = datetime.now(timezone.utc)
 
     # Link feeding to completion
     feeding.schedule_completion_id = completion.id
@@ -349,6 +362,25 @@ async def assign_misting_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
+    # Look up the instance for this schedule and date
+    from app.models import ScheduleInstance
+    instance = None
+    instance_id = None
+    try:
+        instance_result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.scheduled_date == misting.misted_at.date()
+                )
+            )
+        )
+        instance = instance_result.scalars().first()
+        if instance:
+            instance_id = instance.id
+    except Exception:
+        pass  # Instance not found, continue without it
+
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
         existing_completion.completed_at = misting.misted_at
@@ -356,26 +388,9 @@ async def assign_misting_to_schedule(
         existing_completion.completion_id = misting.id
         existing_completion.within_time_window = within_window
         existing_completion.status = status
+        existing_completion.instance_id = instance_id
         completion = existing_completion
     else:
-        # Look up the instance for this schedule and date
-        from app.models import ScheduleInstance
-        instance_id = None
-        try:
-            instance_result = await db.execute(
-                select(ScheduleInstance).where(
-                    and_(
-                        ScheduleInstance.schedule_id == schedule.id,
-                        ScheduleInstance.scheduled_date == misting.misted_at.date()
-                    )
-                )
-            )
-            instance = instance_result.scalars().first()
-            if instance:
-                instance_id = instance.id
-        except Exception:
-            pass  # Instance not found, continue without it
-
         # Create new completion record
         completion = ScheduleCompletion(
             schedule_id=schedule.id,
@@ -391,6 +406,11 @@ async def assign_misting_to_schedule(
         db.add(completion)
 
     await db.flush()
+
+    # Mark the instance as completed
+    if instance:
+        instance.status = "completed"
+        instance.updated_at = datetime.now(timezone.utc)
 
     # Link misting to completion
     misting.schedule_completion_id = completion.id
@@ -443,6 +463,25 @@ async def assign_weighing_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
+    # Look up the instance for this schedule and date
+    from app.models import ScheduleInstance
+    instance = None
+    instance_id = None
+    try:
+        instance_result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.scheduled_date == weight_log.measured_at.date()
+                )
+            )
+        )
+        instance = instance_result.scalars().first()
+        if instance:
+            instance_id = instance.id
+    except Exception:
+        pass  # Instance not found, continue without it
+
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
         existing_completion.completed_at = weight_log.measured_at
@@ -450,26 +489,9 @@ async def assign_weighing_to_schedule(
         existing_completion.completion_id = weight_log.id
         existing_completion.within_time_window = within_window
         existing_completion.status = status
+        existing_completion.instance_id = instance_id
         completion = existing_completion
     else:
-        # Look up the instance for this schedule and date
-        from app.models import ScheduleInstance
-        instance_id = None
-        try:
-            instance_result = await db.execute(
-                select(ScheduleInstance).where(
-                    and_(
-                        ScheduleInstance.schedule_id == schedule.id,
-                        ScheduleInstance.scheduled_date == weight_log.measured_at.date()
-                    )
-                )
-            )
-            instance = instance_result.scalars().first()
-            if instance:
-                instance_id = instance.id
-        except Exception:
-            pass  # Instance not found, continue without it
-
         # Create new completion record
         completion = ScheduleCompletion(
             schedule_id=schedule.id,
@@ -485,6 +507,11 @@ async def assign_weighing_to_schedule(
         db.add(completion)
 
     await db.flush()
+
+    # Mark the instance as completed
+    if instance:
+        instance.status = "completed"
+        instance.updated_at = datetime.now(timezone.utc)
 
     # Link weight log to completion
     weight_log.schedule_completion_id = completion.id

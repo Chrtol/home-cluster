@@ -152,7 +152,8 @@ async def get_schedule_instance(
         select(models.ScheduleInstance)
         .where(models.ScheduleInstance.id == instance_id)
         .options(
-            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile)
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile),
+            selectinload(models.ScheduleInstance.completions)
         )
     )
     instance = result.scalars().first()
