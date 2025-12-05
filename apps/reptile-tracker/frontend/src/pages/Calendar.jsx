@@ -227,24 +227,9 @@ function Calendar() {
         }
       });
 
-      console.log('[Calendar] Fetched instances:', response.data.length, 'instances');
-      if (response.data.length > 0) {
-        console.log('[Calendar] First instance:', response.data[0]);
-        console.log('[Calendar] First instance has schedule?', !!response.data[0].schedule);
-        console.log('[Calendar] First instance has reptile?', !!response.data[0].schedule?.reptile);
-        console.log('[Calendar] First instance reptile:', response.data[0].schedule?.reptile);
-      }
-
       // Transform instances to event format - filter out instances with missing schedule/reptile
       const instanceEvents = response.data
-        .filter(instance => {
-          const hasSchedule = !!instance.schedule;
-          const hasReptile = !!instance.schedule?.reptile;
-          if (!hasSchedule || !hasReptile) {
-            console.log('[Calendar] Filtering out instance:', instance.id, 'hasSchedule:', hasSchedule, 'hasReptile:', hasReptile);
-          }
-          return hasSchedule && hasReptile;
-        })
+        .filter(instance => instance.schedule && instance.schedule.reptile)
         .map(instance => {
           // Parse date as local time to avoid timezone issues
           // scheduled_date is "YYYY-MM-DD", parse as local not UTC
@@ -273,11 +258,6 @@ function Calendar() {
           suggested_supplements: instance.supplements || []
         };
       });
-
-      console.log('[Calendar] Created', instanceEvents.length, 'events after transformation');
-      if (instanceEvents.length > 0) {
-        console.log('[Calendar] First event:', instanceEvents[0]);
-      }
 
       setEvents(instanceEvents);
     } catch (error) {
@@ -312,22 +292,6 @@ function Calendar() {
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
-    }
-
-    // Debug logging - check what dates we're returning
-    const nonNullDays = days.filter(d => d !== null);
-    if (nonNullDays.length > 0) {
-      console.log('[Calendar] getDaysInMonth returning', nonNullDays.length, 'days');
-      console.log('[Calendar] First 3 dates:', nonNullDays.slice(0, 3).map(d => d.toDateString()));
-      console.log('[Calendar] Last 3 dates:', nonNullDays.slice(-3).map(d => d.toDateString()));
-
-      // CRITICAL: Check if all dates are the same object
-      const allSame = nonNullDays.every(d => d === nonNullDays[0]);
-      console.log('[Calendar] All dates same object reference?', allSame);
-
-      // Check actual date values
-      const uniqueDates = new Set(nonNullDays.map(d => d.toDateString()));
-      console.log('[Calendar] Unique date strings:', uniqueDates.size, 'out of', nonNullDays.length);
     }
 
     return days;
@@ -408,26 +372,9 @@ function Calendar() {
     // Instances already have status and completion info from the backend
     const filtered = events.filter(event => {
       // event.date is already a proper Date object parsed as local time
-      const eventDateStr = event.date.toDateString();
-      const targetDateStr = date.toDateString();
-      const dateMatch = eventDateStr === targetDateStr;
+      const dateMatch = event.date.toDateString() === date.toDateString();
       const reptileMatch = visibleReptiles.has(event.reptile_id);
       const categoryMatch = visibleCategories.has(event.schedule_type);
-
-      if (!dateMatch || !reptileMatch || !categoryMatch) {
-        console.log('[Calendar] Event filtered out:', {
-          id: event.instance_id,
-          eventDate: event.date,
-          eventDateStr,
-          targetDate: date,
-          targetDateStr,
-          reptile_id: event.reptile_id,
-          schedule_type: event.schedule_type,
-          dateMatch,
-          reptileMatch,
-          categoryMatch
-        });
-      }
 
       return dateMatch && reptileMatch && categoryMatch;
     }).map(e => ({
@@ -1205,11 +1152,6 @@ function Calendar() {
 
             <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {getDaysInMonth().map((date, index) => {
-                // Debug: Log the date we're about to pass to getEventsForDate
-                if (date && index < 5) {
-                  console.log(`[Calendar] Rendering cell ${index}, date:`, date, date.toDateString());
-                }
-
                 const dayEvents = date ? getEventsForDate(date) : [];
                 const isToday = date && date.toDateString() === new Date().toDateString();
                 const isSelected = selectedDate && date && date.toDateString() === selectedDate.toDateString();

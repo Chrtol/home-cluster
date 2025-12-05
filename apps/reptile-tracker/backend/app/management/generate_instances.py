@@ -15,11 +15,11 @@ from app.instance_generator import generate_instances_for_all_schedules
 
 async def main():
     print("Generating schedule instances for all schedules...")
-    print("This will create instances for the next 14 days.")
+    print("This will create instances for the next 60 days.")
     print()
 
     try:
-        result = await generate_instances_for_all_schedules(days_ahead=14)
+        result = await generate_instances_for_all_schedules(days_ahead=60)
 
         print(f"✓ Successfully generated instances!")
         print(f"  - Schedules processed: {result['schedules_processed']}")
