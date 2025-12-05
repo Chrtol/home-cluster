@@ -99,7 +99,8 @@ async def create_weight_log(
     # The fix is here: exclude the duplicate timestamp before saving
     new_log = WeightLog(
         **log.model_dump(exclude={"measured_at"}),
-        measured_at=log.measured_at or datetime.now(timezone.utc)
+        measured_at=log.measured_at or datetime.now(timezone.utc),
+        logged_by_user_id=current_user.id
     )
     db.add(new_log)
     await db.flush()

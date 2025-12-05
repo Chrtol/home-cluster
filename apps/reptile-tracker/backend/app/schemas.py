@@ -30,6 +30,15 @@ class User(UserBase):
         from_attributes = True
 
 
+class UserSimple(BaseModel):
+    """Simplified user schema for logged_by fields"""
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 # Reptile schemas
 class ReptileBase(BaseModel):
     name: str
@@ -225,6 +234,8 @@ class WeightLog(WeightLogBase):
     reptile_id: int
     measured_at: datetime
     schedule_completion_id: Optional[int] = None
+    logged_by_user_id: Optional[int] = None
+    logged_by: Optional[UserSimple] = None
 
     class Config:
         from_attributes = True
@@ -262,6 +273,8 @@ class HealthRecord(HealthRecordBase):
     id: int
     reptile_id: int
     created_at: datetime
+    logged_by_user_id: Optional[int] = None
+    logged_by: Optional[UserSimple] = None
 
     class Config:
         from_attributes = True
@@ -288,6 +301,8 @@ class MistingLog(MistingLogBase):
     created_at: datetime
     schedule_completion_id: Optional[int] = None
     reptile: Optional["Reptile"] = None
+    logged_by_user_id: Optional[int] = None
+    logged_by: Optional[UserSimple] = None
 
     class Config:
         from_attributes = True
@@ -983,6 +998,8 @@ class Measurement(MeasurementBase):
     id: int
     reptile_id: int
     schedule_completion_id: Optional[int] = None
+    logged_by_user_id: Optional[int] = None
+    logged_by: Optional[UserSimple] = None
 
     class Config:
         from_attributes = True

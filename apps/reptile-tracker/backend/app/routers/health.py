@@ -61,7 +61,8 @@ async def create_health_record(
     await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.MANAGER)
     new_record = HealthRecord(
         **record.model_dump(exclude={"date"}),
-        date=record.date or datetime.now(timezone.utc)
+        date=record.date or datetime.now(timezone.utc),
+        logged_by_user_id=current_user.id
     )
     db.add(new_record)
     await db.commit()

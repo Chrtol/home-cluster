@@ -68,7 +68,10 @@ async def create_measurement(
             detail="custom_label is required when measurement_type is 'custom'"
         )
 
-    new_measurement = Measurement(**measurement.model_dump())
+    new_measurement = Measurement(
+        **measurement.model_dump(),
+        logged_by_user_id=current_user.id
+    )
     db.add(new_measurement)
     await db.commit()
     await db.refresh(new_measurement)

@@ -254,6 +254,7 @@ class WeightLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
+    logged_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     weight_grams = Column(Float, nullable=False)
     measured_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     notes = Column(Text, nullable=True)
@@ -263,6 +264,7 @@ class WeightLog(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="weight_logs")
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
@@ -275,6 +277,7 @@ class Measurement(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
+    logged_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     measurement_type = Column(String(100), nullable=False)  # e.g., 'weight', 'svl', 'total_length', 'shell_length', 'custom'
     value = Column(Float, nullable=False)
     unit = Column(String(20), nullable=False)  # e.g., 'g', 'kg', 'cm', 'mm', 'in'
@@ -289,6 +292,7 @@ class Measurement(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="measurements")
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
@@ -297,6 +301,7 @@ class HealthRecord(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
+    logged_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     record_type = Column(String, nullable=False)  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
     title = Column(String, nullable=False)
@@ -311,6 +316,7 @@ class HealthRecord(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="health_records")
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
 
 
 class MistingLog(Base):
@@ -318,6 +324,7 @@ class MistingLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    logged_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     misted_at = Column(DateTime(timezone=True), nullable=False)
     notes = Column(Text, nullable=True)
@@ -329,6 +336,7 @@ class MistingLog(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="misting_logs")
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
