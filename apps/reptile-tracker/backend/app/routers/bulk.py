@@ -72,10 +72,10 @@ async def get_dashboard_data(
 
     # Fetch weight dashboard data
     weight_result = await db.execute(
-        select(models.Weight)
-        .where(models.Weight.reptile_id.in_(accessible_ids))
-        .options(selectinload(models.Weight.reptile))
-        .order_by(models.Weight.weighed_at.desc())
+        select(models.WeightLog)
+        .where(models.WeightLog.reptile_id.in_(accessible_ids))
+        .options(selectinload(models.WeightLog.reptile))
+        .order_by(models.WeightLog.weighed_at.desc())
     )
     all_weights = weight_result.scalars().all()
 
@@ -105,18 +105,18 @@ async def get_dashboard_data(
 
         # Last misting
         last_misting_result = await db.execute(
-            select(models.Misting)
-            .where(models.Misting.reptile_id == reptile_id)
-            .order_by(models.Misting.misted_at.desc())
+            select(models.MistingLog)
+            .where(models.MistingLog.reptile_id == reptile_id)
+            .order_by(models.MistingLog.misted_at.desc())
             .limit(1)
         )
         last_misting = last_misting_result.scalars().first()
 
         # Last health
         last_health_result = await db.execute(
-            select(models.Health)
-            .where(models.Health.reptile_id == reptile_id)
-            .order_by(models.Health.recorded_at.desc())
+            select(models.HealthRecord)
+            .where(models.HealthRecord.reptile_id == reptile_id)
+            .order_by(models.HealthRecord.date.desc())
             .limit(1)
         )
         last_health = last_health_result.scalars().first()
@@ -162,15 +162,15 @@ async def get_dashboard_data(
 
     # Fetch weekly mistings (filtered by date range)
     weekly_mistings_result = await db.execute(
-        select(models.Misting)
+        select(models.MistingLog)
         .where(
             and_(
-                models.Misting.reptile_id.in_(accessible_ids),
-                models.Misting.misted_at >= datetime.combine(week_start, datetime.min.time()),
-                models.Misting.misted_at <= datetime.combine(week_end, datetime.max.time())
+                models.MistingLog.reptile_id.in_(accessible_ids),
+                models.MistingLog.misted_at >= datetime.combine(week_start, datetime.min.time()),
+                models.MistingLog.misted_at <= datetime.combine(week_end, datetime.max.time())
             )
         )
-        .options(selectinload(models.Misting.reptile))
+        .options(selectinload(models.MistingLog.reptile))
     )
     weekly_mistings = weekly_mistings_result.scalars().all()
 
@@ -285,15 +285,15 @@ async def get_calendar_data(
 
     # Fetch mistings in date range
     mistings_result = await db.execute(
-        select(models.Misting)
+        select(models.MistingLog)
         .where(
             and_(
-                models.Misting.reptile_id.in_(accessible_ids),
-                models.Misting.misted_at >= datetime.combine(start_date, datetime.min.time()),
-                models.Misting.misted_at <= datetime.combine(end_date, datetime.max.time())
+                models.MistingLog.reptile_id.in_(accessible_ids),
+                models.MistingLog.misted_at >= datetime.combine(start_date, datetime.min.time()),
+                models.MistingLog.misted_at <= datetime.combine(end_date, datetime.max.time())
             )
         )
-        .options(selectinload(models.Misting.reptile))
+        .options(selectinload(models.MistingLog.reptile))
     )
     mistings = mistings_result.scalars().all()
 
