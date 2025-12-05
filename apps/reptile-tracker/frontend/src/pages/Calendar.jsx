@@ -1126,6 +1126,13 @@ function Calendar() {
                               {displayName}
                             </div>
                           </div>
+                          {event.supplement && (
+                            <div className="flex gap-1.5 flex-wrap">
+                              <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700">
+                                {event.supplement.name}
+                              </span>
+                            </div>
+                          )}
                           {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                             <div className="flex gap-1.5 flex-wrap">
                               {event.suggested_supplements.map((supp, suppIdx) => (
@@ -1582,6 +1589,9 @@ function Calendar() {
                                 {event.food_category && (
                                   <div className="text-xs opacity-90">Food: {event.food_category}</div>
                                 )}
+                                {event.supplement && (
+                                  <div className="text-xs font-medium text-green-700 dark:text-green-400">Supplement: {event.supplement.name}</div>
+                                )}
                                 {event.time_window_enabled && event.earliest_time && event.latest_time && (
                                   <div className="flex items-center gap-1 opacity-90">
                                     <Clock size={10} />
@@ -1753,7 +1763,17 @@ function Calendar() {
                         )}
                       </div>
 
-                      {/* Supplements */}
+                      {/* Supplement (for supplement schedules) */}
+                      {event.supplement && (
+                        <div className="mb-3">
+                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Supplement</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {event.supplement.name}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Suggested Supplements (for feeding schedules) */}
                       {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                         <div className="mb-3">
                           <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Suggested Supplements</div>

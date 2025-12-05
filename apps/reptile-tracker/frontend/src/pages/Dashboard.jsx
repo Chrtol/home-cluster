@@ -1414,6 +1414,13 @@ export default function Dashboard() {
                             </div>
                           )}
 
+                          {event.supplement && (
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Supplement</span>
+                              <span className="text-gray-900 dark:text-white truncate">{event.supplement.name}</span>
+                            </div>
+                          )}
+
                           {event.time_window_enabled && event.earliest_time && event.latest_time ? (
                             <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">

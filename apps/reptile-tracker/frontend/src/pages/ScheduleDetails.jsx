@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { ArrowLeft, Edit, Calendar, Clock, Bell, CheckCircle, XCircle, FileText, Users, User as UserIcon } from "lucide-react";
 import { getUserTimeFormat, getDayNames } from "../utils/dateFormatting";
@@ -213,7 +213,7 @@ function ScheduleDetails() {
             </h1>
             {reptile && (
               <p className="text-gray-600 dark:text-gray-400">
-                For: <span className="font-semibold text-gray-900 dark:text-white">{reptile.name}</span>
+                For: <Link to={`/reptiles/${reptile.id}`} className="font-semibold text-primary-600 dark:text-primary-400 hover:underline">{reptile.name}</Link>
               </p>
             )}
           </div>
@@ -402,35 +402,6 @@ function ScheduleDetails() {
             </div>
           )}
 
-          {/* Quick Actions */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <button
-                onClick={handleLogNow}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
-              >
-                <CheckCircle size={20} />
-                {getActionButtonText()}
-              </button>
-
-              {reptile && (
-                <button
-                  onClick={() => navigate(`/reptiles/${reptile.id}`)}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
-                >
-                  View {reptile.name}'s Profile
-                </button>
-              )}
-
-              <button
-                onClick={() => navigate(`/schedule-edit/${schedule.id}`)}
-                className="w-full px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
-              >
-                Edit Schedule
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
