@@ -7,7 +7,7 @@ of schedules with pre-calculated supplements.
 import logging
 from datetime import datetime, timezone, timedelta, date as py_date
 from typing import List, Dict, Optional
-from sqlalchemy import select, and_, delete
+from sqlalchemy import select, and_, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -57,11 +57,20 @@ async def calculate_supplements_for_instance(
     reptile_id: int,
     schedule_type: str,
     scheduled_date: py_date,
+    feeding_sequence_number: Optional[int] = None,
     food_category: Optional[str] = None
 ) -> List[Dict]:
     """
     Calculate which supplements should apply to a schedule instance.
     Returns a list of supplement dictionaries with id, name, and priority.
+
+    Args:
+        db: Database session
+        reptile_id: ID of the reptile
+        schedule_type: Type of schedule (feeding, misting, etc.)
+        scheduled_date: Date of the instance
+        feeding_sequence_number: Sequence number for feeding instances (1, 2, 3, etc.)
+        food_category: Category of food (for filtering applicable rotations)
     """
     if schedule_type != "feeding":
         return []
@@ -84,20 +93,26 @@ async def calculate_supplements_for_instance(
     if not rotations:
         return []
 
-    supplements = []
+    # First, collect all triggered rotations
+    triggered_rotations = []
 
     for rotation in rotations:
         if not rotation.supplement:
             continue
 
-        # Check if this rotation applies to this date
+        # Check if this rotation applies based on food category
+        if food_category and rotation.applies_to_category:
+            if rotation.applies_to_category != 'all' and rotation.applies_to_category != food_category:
+                continue
+
+        # Check if this rotation applies to this instance
         applies = False
 
         if rotation.trigger_mode == "feeding_count":
-            # For feeding_count mode, we need to count previous feedings
-            # This is complex - for now, we'll skip this and handle it separately
-            # TODO: Implement feeding count tracking for instances
-            continue
+            # Check if this feeding number triggers the supplement
+            if feeding_sequence_number and rotation.every_n_feedings:
+                if feeding_sequence_number % rotation.every_n_feedings == 0:
+                    applies = True
 
         elif rotation.trigger_mode == "schedule_based":
             # Check if the scheduled_date's day of week matches
@@ -108,11 +123,26 @@ async def calculate_supplements_for_instance(
                     applies = True
 
         if applies:
-            supplements.append({
-                "id": rotation.supplement.id,
-                "name": rotation.supplement.name,
-                "priority": rotation.priority if rotation.priority else 999
-            })
+            triggered_rotations.append(rotation)
+
+    # Handle exclusivity: If any rotation is exclusive, only keep highest priority
+    if triggered_rotations and any(r.is_exclusive for r in triggered_rotations):
+        exclusive_rotations = [r for r in triggered_rotations if r.is_exclusive]
+        if exclusive_rotations:
+            # Get the highest priority (lowest number) among exclusive rotations
+            highest_priority = min(r.priority if r.priority is not None else 999 for r in exclusive_rotations)
+            # Filter to only rotations at this priority level
+            triggered_rotations = [r for r in triggered_rotations if (r.priority if r.priority is not None else 999) == highest_priority]
+
+    # Convert to supplement dictionaries
+    supplements = [
+        {
+            "id": rotation.supplement.id,
+            "name": rotation.supplement.name,
+            "priority": rotation.priority if rotation.priority is not None else 999
+        }
+        for rotation in triggered_rotations
+    ]
 
     return supplements
 
@@ -142,6 +172,14 @@ async def generate_instances_for_schedule(
     if from_date is None:
         from_date = datetime.now(timezone.utc).date()
 
+    # Get the current maximum feeding sequence number for this schedule
+    # This allows us to continue the sequence when generating new instances
+    max_seq_result = await db.execute(
+        select(func.max(ScheduleInstance.feeding_sequence_number))
+        .where(ScheduleInstance.schedule_id == schedule.id)
+    )
+    current_max_sequence = max_seq_result.scalar() or 0
+
     instances_created = 0
 
     for days_offset in range(days_ahead):
@@ -164,12 +202,19 @@ async def generate_instances_for_schedule(
             logger.debug(f"Instance already exists for schedule {schedule.id} on {check_date}")
             continue
 
+        # Increment feeding sequence number for feeding schedules
+        feeding_sequence_number = None
+        if schedule.schedule_type == "feeding":
+            current_max_sequence += 1
+            feeding_sequence_number = current_max_sequence
+
         # Calculate supplements for this instance
         supplements = await calculate_supplements_for_instance(
             db=db,
             reptile_id=schedule.reptile_id,
             schedule_type=schedule.schedule_type,
             scheduled_date=check_date,
+            feeding_sequence_number=feeding_sequence_number,
             food_category=schedule.food_category
         )
 
@@ -178,6 +223,7 @@ async def generate_instances_for_schedule(
             schedule_id=schedule.id,
             scheduled_date=check_date,
             status="pending",
+            feeding_sequence_number=feeding_sequence_number,
             supplements=supplements if supplements else None
         )
         db.add(instance)
@@ -185,7 +231,7 @@ async def generate_instances_for_schedule(
 
         logger.debug(
             f"Created instance for schedule {schedule.id} ({schedule.schedule_type}) "
-            f"on {check_date} with {len(supplements)} supplements"
+            f"on {check_date} (seq #{feeding_sequence_number}) with {len(supplements)} supplements"
         )
 
     await db.flush()
