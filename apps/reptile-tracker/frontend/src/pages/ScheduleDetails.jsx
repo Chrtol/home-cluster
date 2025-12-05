@@ -470,6 +470,7 @@ function ScheduleDetails() {
               </div>
             </div>
           )}
+      </div>
     </div>
   );
 }
