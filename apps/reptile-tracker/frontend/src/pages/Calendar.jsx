@@ -45,7 +45,14 @@ function Calendar() {
     // Load category filter state from localStorage
     const savedCategoryFilters = localStorage.getItem('calendar_category_filters');
     if (savedCategoryFilters) {
-      setVisibleCategories(new Set(JSON.parse(savedCategoryFilters)));
+      const parsed = JSON.parse(savedCategoryFilters);
+      // If saved filters is empty array, don't use it (use default)
+      if (parsed && parsed.length > 0) {
+        setVisibleCategories(new Set(parsed));
+      } else {
+        // Default to all categories visible
+        setVisibleCategories(new Set(['feeding', 'misting', 'weighing', 'supplement']));
+      }
     } else {
       // Default to all categories visible
       setVisibleCategories(new Set(['feeding', 'misting', 'weighing', 'supplement']));
