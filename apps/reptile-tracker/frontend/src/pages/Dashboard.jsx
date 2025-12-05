@@ -1541,6 +1541,7 @@ export default function Dashboard() {
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
+                                {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                               </span>
                               <span className="text-gray-900 dark:text-white font-medium break-words">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
@@ -1548,8 +1549,19 @@ export default function Dashboard() {
                             </div>
                           ) : event.time_slot ? (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</span>
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                Time
+                                {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
+                              </span>
                               <span className="text-gray-900 dark:text-white truncate">{event.time_slot}</span>
+                            </div>
+                          ) : event.notifications_enabled ? (
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                <Bell size={10} className="text-blue-500 dark:text-blue-400" />
+                                Notifications
+                              </span>
+                              <span className="text-blue-600 dark:text-blue-400 text-xs">Enabled</span>
                             </div>
                           ) : null}
                         </div>
