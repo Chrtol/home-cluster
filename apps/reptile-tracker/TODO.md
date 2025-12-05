@@ -553,14 +553,19 @@
   - Seamless integration with existing template application flow
 
 ### December 2025 - Timezone Handling & Scheduler Fixes (2025-12-05)
-- [x] **Proper timezone handling with DST support** - ✅ COMPLETED (2025-12-05)
+- [x] **CRITICAL: Fix scheduler never triggering on correct day** - ✅ COMPLETED (2025-12-05)
+  - Fixed get_next_occurrence_date() to include today in search (was starting from tomorrow)
+  - Changed range(1, 8) to range(0, 8) for days_of_week schedules
+  - Notifications now trigger on the correct day of week
+  - This was the root cause of all notification failures
+
+- [x] **Timezone infrastructure added (partial implementation)** - ✅ COMPLETED (2025-12-05)
   - Added timezone column to users table (migration 0052)
-  - Backend scheduler uses user timezone for calculating reminder times
-  - Python's zoneinfo automatically handles DST transitions (winter/summer time)
   - Frontend Settings page fetches and saves timezone to database
-  - PATCH /api/auth/me endpoint to update user timezone
-  - Timezone fallback to UTC if not set or invalid
-  - Fixes 1-hour offset during winter time in Europe/Oslo
+  - PATCH /api/auth/me endpoint to update user timezone with validation
+  - Scheduler reverted to UTC due to architectural constraints
+  - Full per-user timezone support requires redesign (user loaded after time calculation)
+  - Users should enter times in UTC for now
 
 ### December 2025 - Schedule UI Improvements & Supplement Display (2025-12-05)
 - [x] **Supplement rotation display in schedule views** - ✅ COMPLETED (2025-12-05)

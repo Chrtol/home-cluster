@@ -90,8 +90,8 @@ def get_next_occurrence_date(schedule: Schedule, from_date: py_date = None) -> p
         target_days = [int(d) for d in schedule.days_of_week.split(",")]
         current_weekday = from_date.weekday()
 
-        # Find next occurrence
-        for i in range(1, 8):  # Check next 7 days
+        # Find next occurrence (including today)
+        for i in range(0, 8):  # Check today + next 7 days
             check_date = from_date + timedelta(days=i)
             # Convert Python weekday (0=Monday) to our format (0=Sunday, 1=Monday, etc.)
             weekday = (check_date.weekday() + 1) % 7
