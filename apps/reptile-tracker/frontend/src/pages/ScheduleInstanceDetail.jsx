@@ -110,9 +110,18 @@ export default function ScheduleInstanceDetail() {
         const supplements = feeding.supplements && feeding.supplements.length > 0
           ? ` + ${feeding.supplements.map(s => s.name).join(', ')}`
           : '';
+
+        // Check if this is a countable food (not salad)
+        const isCountable = foodItems.some(f => {
+          const name = (f.food?.name || f.name || '').toLowerCase();
+          return !name.includes('salad');
+        });
+
         return {
           label: 'Feeding',
-          value: `${totalItems} items: ${foodNames}${supplements}`,
+          quantity: totalItems,
+          details: `${foodNames}${supplements}`,
+          showQuantityBold: isCountable,
           timestamp: feeding.fed_at,
         };
       }
@@ -120,7 +129,7 @@ export default function ScheduleInstanceDetail() {
         const misting = completion.data;
         return {
           label: 'Misting',
-          value: misting.notes || 'Misting completed',
+          details: misting.notes || 'Misting completed',
           timestamp: misting.misted_at,
         };
       }
@@ -128,7 +137,7 @@ export default function ScheduleInstanceDetail() {
         const weight = completion.data;
         return {
           label: 'Weight',
-          value: `${weight.weight_grams}g`,
+          details: `${weight.weight_grams}g`,
           timestamp: weight.measured_at,
         };
       }
@@ -350,38 +359,29 @@ export default function ScheduleInstanceDetail() {
               </p>
             </div>
           )}
-        </div>
 
-        {/* Two column layout for supplements and action/completion */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column - Supplements */}
+          {/* Supplements section */}
           {instance.supplements && instance.supplements.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Pre-calculated Supplements
-              </h3>
+              </label>
               <div className="flex flex-wrap gap-2">
                 {instance.supplements.map((supp, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 rounded-lg font-medium text-sm"
+                    className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 rounded text-xs font-medium"
                   >
                     {supp.name}
-                    {supp.priority !== undefined && (
-                      <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">
-                        (Priority: {supp.priority})
-                      </span>
-                    )}
+                    {supp.priority !== undefined && ` (${supp.priority})`}
                   </span>
                 ))}
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-                These supplements were pre-calculated based on your feeding rotation rules
-              </p>
             </div>
           )}
+        </div>
 
-          {/* Right column - Pending Action Card */}
+        {/* Action/Completion Card */}
           {instance.status === 'pending' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-blue-500 dark:border-blue-600 p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -407,18 +407,8 @@ export default function ScheduleInstanceDetail() {
             </div>
           )}
 
-          {/* Right column - Completion Card */}
           {instance.status === 'completed' && completionSummary && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-green-500 dark:border-green-600 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Completed
-                </h3>
-              </div>
-
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
@@ -434,7 +424,16 @@ export default function ScheduleInstanceDetail() {
                     Details
                   </label>
                   <p className="text-gray-900 dark:text-white">
-                    {completionSummary.value}
+                    {completionSummary.quantity !== undefined ? (
+                      <>
+                        <span className={completionSummary.showQuantityBold ? 'font-bold' : ''}>
+                          {completionSummary.quantity} items
+                        </span>
+                        : {completionSummary.details}
+                      </>
+                    ) : (
+                      completionSummary.details
+                    )}
                   </p>
                 </div>
 
@@ -443,7 +442,7 @@ export default function ScheduleInstanceDetail() {
                     Completed At
                   </label>
                   <span className="text-gray-900 dark:text-white">
-                    {formatDate(new Date(completionSummary.timestamp))}
+                    {formatTime(new Date(completionSummary.timestamp))} on {formatDate(new Date(completionSummary.timestamp))}
                   </span>
                 </div>
 
@@ -461,7 +460,6 @@ export default function ScheduleInstanceDetail() {
               </div>
             </div>
           )}
-        </div>
 
       </div>
     </div>
