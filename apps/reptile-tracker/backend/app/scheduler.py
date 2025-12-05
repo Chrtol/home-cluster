@@ -1322,6 +1322,123 @@ async def send_overdue_alert(
     )
 
 
+async def check_auto_complete_schedules():
+    """
+    Check for schedule instances that should be auto-completed.
+    Runs every 30 minutes to check if any pending instances are past their auto-complete trigger time.
+    """
+    logger.info("Running auto-complete check for schedule instances")
+
+    try:
+        async with async_session_maker() as db:
+            now = datetime.now(timezone.utc)
+
+            # Import ScheduleInstance model
+            from app.models import ScheduleInstance
+
+            # Get all pending instances for schedules with auto-complete enabled
+            result = await db.execute(
+                select(ScheduleInstance)
+                .join(Schedule, ScheduleInstance.schedule_id == Schedule.id)
+                .where(
+                    and_(
+                        Schedule.enabled == True,
+                        Schedule.auto_complete_enabled == True,
+                        ScheduleInstance.status == "pending"
+                    )
+                )
+                .options(selectinload(ScheduleInstance.schedule))
+            )
+            instances = result.scalars().all()
+
+            logger.info(f"Found {len(instances)} pending instances with auto-complete enabled")
+
+            auto_completed_count = 0
+
+            for instance in instances:
+                try:
+                    schedule = instance.schedule
+
+                    # Calculate the trigger time for auto-completion
+                    # If schedule has time window, use latest_time + delay hours
+                    # Otherwise, use end of day (23:59) + delay hours
+                    if schedule.time_window_enabled and schedule.latest_time:
+                        # Use latest_time as the base
+                        trigger_datetime = datetime.combine(
+                            instance.scheduled_date,
+                            schedule.latest_time,
+                            tzinfo=timezone.utc
+                        )
+                    else:
+                        # Use end of day (23:59) as the base
+                        trigger_datetime = datetime.combine(
+                            instance.scheduled_date,
+                            py_time(23, 59),
+                            tzinfo=timezone.utc
+                        )
+
+                    # Add the configured delay hours
+                    trigger_datetime += timedelta(hours=schedule.auto_complete_hours_after)
+
+                    # Check if we're past the trigger time
+                    if now < trigger_datetime:
+                        continue  # Not yet time to auto-complete
+
+                    # Check if there's already a completion record
+                    existing_result = await db.execute(
+                        select(ScheduleCompletion).where(
+                            and_(
+                                ScheduleCompletion.schedule_id == schedule.id,
+                                ScheduleCompletion.scheduled_date == instance.scheduled_date
+                            )
+                        )
+                    )
+                    existing_completion = existing_result.scalar_one_or_none()
+
+                    if existing_completion:
+                        # If there's already a completion (manually logged or previously auto-completed), skip
+                        logger.debug(f"Instance {instance.id} already has completion record, skipping")
+                        continue
+
+                    # Create auto-completion record
+                    completion = ScheduleCompletion(
+                        schedule_id=schedule.id,
+                        instance_id=instance.id,
+                        reptile_id=schedule.reptile_id,
+                        scheduled_date=instance.scheduled_date,
+                        completed_at=trigger_datetime,  # Use trigger time as completion time
+                        completion_type=None,  # No specific type for auto-completion
+                        completion_id=None,  # No linked activity
+                        within_time_window=False,  # Auto-completed, not within window
+                        status=CompletionStatus.COMPLETED_ON_TIME,
+                        auto_completed=True  # Mark as auto-completed
+                    )
+                    db.add(completion)
+
+                    # Update instance status
+                    instance.status = "completed"
+                    instance.updated_at = now
+
+                    await db.flush()
+
+                    auto_completed_count += 1
+                    logger.info(
+                        f"Auto-completed instance {instance.id} for schedule {schedule.id} "
+                        f"({schedule.schedule_type}) on {instance.scheduled_date}"
+                    )
+
+                except Exception as e:
+                    logger.error(f"Error auto-completing instance {instance.id}: {e}", exc_info=True)
+                    await db.rollback()
+                    continue
+
+            await db.commit()
+            logger.info(f"Auto-completed {auto_completed_count} schedule instances")
+
+    except Exception as e:
+        logger.error(f"Error in check_auto_complete_schedules: {e}", exc_info=True)
+
+
 async def daily_instance_maintenance():
     """
     Daily job to generate schedule instances and clean up old ones.
@@ -1411,6 +1528,15 @@ def start_scheduler():
         minute=0,
         id="daily_instance_maintenance",
         name="Daily schedule instance maintenance",
+        replace_existing=True
+    )
+
+    # Check for auto-complete instances every 30 minutes
+    scheduler.add_job(
+        check_auto_complete_schedules,
+        trigger=IntervalTrigger(minutes=30),
+        id="check_auto_complete",
+        name="Check auto-complete schedules",
         replace_existing=True
     )
 

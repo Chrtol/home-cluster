@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Calendar, Clock, Utensils, Droplets, Scale, Activity, CheckCircle, AlertCircle, XCircle, MinusCircle, Bell, Plus } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Utensils, Droplets, Scale, Activity, CheckCircle, AlertCircle, XCircle, MinusCircle, Bell, Plus, Bot } from 'lucide-react';
 import { formatDate, formatTime } from '../utils/dateFormatting';
 
 export default function ScheduleInstanceDetail() {
@@ -9,6 +9,7 @@ export default function ScheduleInstanceDetail() {
   const navigate = useNavigate();
   const [instance, setInstance] = useState(null);
   const [completion, setCompletion] = useState(null);
+  const [completionRecord, setCompletionRecord] = useState(null); // Full completion record with auto_completed flag
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,8 +27,9 @@ export default function ScheduleInstanceDetail() {
       if (response.data.status === 'completed' && response.data.completions && response.data.completions.length > 0) {
         // Get the first completion (should only be one)
         const completionData = response.data.completions[0];
+        setCompletionRecord(completionData); // Store full completion record
 
-        // Fetch the actual feeding/misting/weighing that completed this instance
+        // Fetch the actual feeding/misting/weighing that completed this instance (if not auto-completed)
         if (completionData.completion_type && completionData.completion_id) {
           const type = completionData.completion_type.toLowerCase();
 
@@ -181,6 +183,38 @@ export default function ScheduleInstanceDetail() {
         return 'Log Health Check';
       default:
         return 'Log Now';
+    }
+  };
+
+  const handleMarkSkipped = async () => {
+    if (!confirm('Mark this auto-completed instance as skipped? This indicates the task was intentionally not performed.')) {
+      return;
+    }
+
+    try {
+      await axios.post(`/api/schedule-instances/${id}/mark-skipped`);
+      // Refresh the instance details
+      await fetchInstanceDetails();
+      alert('Instance marked as skipped');
+    } catch (err) {
+      console.error('Error marking instance as skipped:', err);
+      alert('Failed to mark instance as skipped. ' + (err.response?.data?.detail || ''));
+    }
+  };
+
+  const handleMarkMissed = async () => {
+    if (!confirm('Mark this auto-completed instance as missed? This indicates the task was not performed and should have been.')) {
+      return;
+    }
+
+    try {
+      await axios.post(`/api/schedule-instances/${id}/mark-missed`);
+      // Refresh the instance details
+      await fetchInstanceDetails();
+      alert('Instance marked as missed');
+    } catch (err) {
+      console.error('Error marking instance as missed:', err);
+      alert('Failed to mark instance as missed. ' + (err.response?.data?.detail || ''));
     }
   };
 
@@ -407,57 +441,108 @@ export default function ScheduleInstanceDetail() {
             </div>
           )}
 
-          {instance.status === 'completed' && completionSummary && (
+          {instance.status === 'completed' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-green-500 dark:border-green-600 p-6">
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Completion Type
-                  </label>
-                  <span className="text-gray-900 dark:text-white capitalize">
-                    {completionSummary.label}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Details
-                  </label>
-                  <p className="text-gray-900 dark:text-white">
-                    {completionSummary.quantity !== undefined ? (
-                      <>
-                        <span className={completionSummary.showQuantityBold ? 'font-bold' : ''}>
-                          {completionSummary.quantity} items
-                        </span>
-                        : {completionSummary.details}
-                      </>
-                    ) : (
-                      completionSummary.details
-                    )}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Completed At
-                  </label>
-                  <span className="text-gray-900 dark:text-white">
-                    {formatTime(new Date(completionSummary.timestamp))} on {formatDate(new Date(completionSummary.timestamp))}
-                  </span>
-                </div>
-
-                {completionLink && (
-                  <div className="pt-3">
-                    <Link
-                      to={completionLink}
-                      className="btn-primary inline-flex items-center gap-2"
-                    >
-                      View {completionSummary.label} Details
-                      <ArrowLeft size={16} className="rotate-180" />
-                    </Link>
+              {completionRecord?.auto_completed ? (
+                // Auto-completed instance
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <Bot size={20} className="text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Auto-Completed
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        This instance was automatically marked as completed
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Completed At
+                    </label>
+                    <span className="text-gray-900 dark:text-white">
+                      {formatTime(new Date(completionRecord.completed_at))} on {formatDate(new Date(completionRecord.completed_at))}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-amber-600 dark:text-amber-400 mb-3">
+                      If this task was not actually completed, you can manually mark it as skipped or missed:
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleMarkSkipped}
+                        className="btn-secondary inline-flex items-center gap-2"
+                      >
+                        <MinusCircle size={16} />
+                        Mark as Skipped
+                      </button>
+                      <button
+                        onClick={handleMarkMissed}
+                        className="btn-secondary inline-flex items-center gap-2 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <XCircle size={16} />
+                        Mark as Missed
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : completionSummary ? (
+                // Manually logged completion
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Completion Type
+                    </label>
+                    <span className="text-gray-900 dark:text-white capitalize">
+                      {completionSummary.label}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Details
+                    </label>
+                    <p className="text-gray-900 dark:text-white">
+                      {completionSummary.quantity !== undefined ? (
+                        <>
+                          <span className={completionSummary.showQuantityBold ? 'font-bold' : ''}>
+                            {completionSummary.quantity} items
+                          </span>
+                          : {completionSummary.details}
+                        </>
+                      ) : (
+                        completionSummary.details
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Completed At
+                    </label>
+                    <span className="text-gray-900 dark:text-white">
+                      {formatTime(new Date(completionSummary.timestamp))} on {formatDate(new Date(completionSummary.timestamp))}
+                    </span>
+                  </div>
+
+                  {completionLink && (
+                    <div className="pt-3">
+                      <Link
+                        to={completionLink}
+                        className="btn-primary inline-flex items-center gap-2"
+                      >
+                        View {completionSummary.label} Details
+                        <ArrowLeft size={16} className="rotate-180" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
           )}
 
