@@ -245,10 +245,16 @@ function Calendar() {
           }
           return hasSchedule && hasReptile;
         })
-        .map(instance => ({
-          instance_id: instance.id,
-          date: new Date(instance.scheduled_date),
-          schedule_id: instance.schedule.id,
+        .map(instance => {
+          // Parse date as local time to avoid timezone issues
+          // scheduled_date is "YYYY-MM-DD", parse as local not UTC
+          const [year, month, day] = instance.scheduled_date.split('-').map(Number);
+          const localDate = new Date(year, month - 1, day);
+
+          return {
+            instance_id: instance.id,
+            date: localDate,
+            schedule_id: instance.schedule.id,
           schedule_type: instance.schedule.schedule_type,
           schedule_rule: instance.schedule.schedule_rule,
           reptile_name: instance.schedule.reptile.name,
@@ -262,10 +268,11 @@ function Calendar() {
         latest_time: instance.schedule.latest_time,
         notifications_enabled: instance.schedule.notifications_enabled,
         notes: instance.schedule.notes,
-        status: instance.status,
-        // Pre-calculated supplements from the instance
-        suggested_supplements: instance.supplements || []
-      }));
+          status: instance.status,
+          // Pre-calculated supplements from the instance
+          suggested_supplements: instance.supplements || []
+        };
+      });
 
       console.log('[Calendar] Created', instanceEvents.length, 'events after transformation');
       if (instanceEvents.length > 0) {

@@ -474,10 +474,16 @@ export default function Dashboard() {
       // Transform instances to event format - filter out instances with missing schedule/reptile
       const instanceEvents = response.data
         .filter(instance => instance.schedule && instance.schedule.reptile)
-        .map(instance => ({
-          instance_id: instance.id,
-          date: new Date(instance.scheduled_date),
-          schedule_id: instance.schedule.id,
+        .map(instance => {
+          // Parse date as local time to avoid timezone issues
+          // scheduled_date is "YYYY-MM-DD", parse as local not UTC
+          const [year, month, day] = instance.scheduled_date.split('-').map(Number);
+          const localDate = new Date(year, month - 1, day);
+
+          return {
+            instance_id: instance.id,
+            date: localDate,
+            schedule_id: instance.schedule.id,
           schedule_type: instance.schedule.schedule_type,
           schedule_rule: instance.schedule.schedule_rule,
           reptile_name: instance.schedule.reptile.name,
@@ -494,7 +500,8 @@ export default function Dashboard() {
         status: instance.status,
         // Pre-calculated supplements from the instance
         suggested_supplements: instance.supplements || []
-      }));
+          };
+        });
 
       setWeeklyEvents(instanceEvents);
     } catch (error) {
