@@ -2453,24 +2453,120 @@ function ScheduleTemplates() {
                                   />
                                   Time Window
                                 </label>
-                                {displayData.time_window_enabled && (
-                                  <div className="grid grid-cols-2 gap-2 mt-1">
-                                    <input
-                                      type="time"
-                                      value={displayData.earliest_time || ''}
-                                      onChange={(e) => updateTemplateEdit(template.id, 'earliest_time', e.target.value)}
-                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                                      placeholder="Earliest"
-                                    />
-                                    <input
-                                      type="time"
-                                      value={displayData.latest_time || ''}
-                                      onChange={(e) => updateTemplateEdit(template.id, 'latest_time', e.target.value)}
-                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                                      placeholder="Latest"
-                                    />
-                                  </div>
-                                )}
+                                {displayData.time_window_enabled && (() => {
+                                  // Parse earliest time
+                                  const parseTime = (timeStr) => {
+                                    if (!timeStr) return { hours: userTimeFormat === '12h' ? 9 : 9, minutes: 0, period: 'AM' };
+                                    const [hours24, minutes] = timeStr.split(':').map(Number);
+                                    if (userTimeFormat === '12h') {
+                                      if (hours24 === 0) return { hours: 12, minutes, period: 'AM' };
+                                      if (hours24 < 12) return { hours: hours24, minutes, period: 'AM' };
+                                      if (hours24 === 12) return { hours: 12, minutes, period: 'PM' };
+                                      return { hours: hours24 - 12, minutes, period: 'PM' };
+                                    }
+                                    return { hours: hours24, minutes, period: 'AM' };
+                                  };
+
+                                  const convertTo24h = (hours, minutes, period) => {
+                                    let hour24 = hours;
+                                    if (userTimeFormat === '12h') {
+                                      if (period === 'PM' && hours !== 12) hour24 = hours + 12;
+                                      else if (period === 'AM' && hours === 12) hour24 = 0;
+                                    }
+                                    return `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                                  };
+
+                                  const earliest = parseTime(displayData.earliest_time);
+                                  const latest = parseTime(displayData.latest_time);
+
+                                  return (
+                                    <div className="space-y-2 mt-1">
+                                      {/* Earliest Time */}
+                                      <div>
+                                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Earliest</label>
+                                        <div className="flex gap-1">
+                                          <input
+                                            type="number"
+                                            value={earliest.hours}
+                                            onChange={(e) => {
+                                              const hours = Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0));
+                                              updateTemplateEdit(template.id, 'earliest_time', convertTo24h(hours, earliest.minutes, earliest.period));
+                                            }}
+                                            min={userTimeFormat === '12h' ? '1' : '0'}
+                                            max={userTimeFormat === '12h' ? '12' : '23'}
+                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                          />
+                                          <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                                          <input
+                                            type="number"
+                                            value={earliest.minutes}
+                                            onChange={(e) => {
+                                              const minutes = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                                              updateTemplateEdit(template.id, 'earliest_time', convertTo24h(earliest.hours, minutes, earliest.period));
+                                            }}
+                                            min="0"
+                                            max="59"
+                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                          />
+                                          {userTimeFormat === '12h' && (
+                                            <select
+                                              value={earliest.period}
+                                              onChange={(e) => {
+                                                updateTemplateEdit(template.id, 'earliest_time', convertTo24h(earliest.hours, earliest.minutes, e.target.value));
+                                              }}
+                                              className="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                            >
+                                              <option value="AM">AM</option>
+                                              <option value="PM">PM</option>
+                                            </select>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Latest Time */}
+                                      <div>
+                                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Latest</label>
+                                        <div className="flex gap-1">
+                                          <input
+                                            type="number"
+                                            value={latest.hours}
+                                            onChange={(e) => {
+                                              const hours = Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0));
+                                              updateTemplateEdit(template.id, 'latest_time', convertTo24h(hours, latest.minutes, latest.period));
+                                            }}
+                                            min={userTimeFormat === '12h' ? '1' : '0'}
+                                            max={userTimeFormat === '12h' ? '12' : '23'}
+                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                          />
+                                          <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                                          <input
+                                            type="number"
+                                            value={latest.minutes}
+                                            onChange={(e) => {
+                                              const minutes = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                                              updateTemplateEdit(template.id, 'latest_time', convertTo24h(latest.hours, minutes, latest.period));
+                                            }}
+                                            min="0"
+                                            max="59"
+                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                          />
+                                          {userTimeFormat === '12h' && (
+                                            <select
+                                              value={latest.period}
+                                              onChange={(e) => {
+                                                updateTemplateEdit(template.id, 'latest_time', convertTo24h(latest.hours, latest.minutes, e.target.value));
+                                              }}
+                                              className="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                            >
+                                              <option value="AM">AM</option>
+                                              <option value="PM">PM</option>
+                                            </select>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
 
                               {/* Food Category (for feeding schedules) */}
@@ -2669,12 +2765,70 @@ function ScheduleTemplates() {
                                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                               Reminder Time
                                             </label>
-                                            <input
-                                              type="time"
-                                              value={displayData.reminder_time || '09:00'}
-                                              onChange={(e) => updateTemplateEdit(template.id, 'reminder_time', e.target.value)}
-                                              className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                                            />
+                                            {(() => {
+                                              const parseTime = (timeStr) => {
+                                                if (!timeStr) return { hours: userTimeFormat === '12h' ? 9 : 9, minutes: 0, period: 'AM' };
+                                                const [hours24, minutes] = timeStr.split(':').map(Number);
+                                                if (userTimeFormat === '12h') {
+                                                  if (hours24 === 0) return { hours: 12, minutes, period: 'AM' };
+                                                  if (hours24 < 12) return { hours: hours24, minutes, period: 'AM' };
+                                                  if (hours24 === 12) return { hours: 12, minutes, period: 'PM' };
+                                                  return { hours: hours24 - 12, minutes, period: 'PM' };
+                                                }
+                                                return { hours: hours24, minutes, period: 'AM' };
+                                              };
+
+                                              const convertTo24h = (hours, minutes, period) => {
+                                                let hour24 = hours;
+                                                if (userTimeFormat === '12h') {
+                                                  if (period === 'PM' && hours !== 12) hour24 = hours + 12;
+                                                  else if (period === 'AM' && hours === 12) hour24 = 0;
+                                                }
+                                                return `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                                              };
+
+                                              const reminder = parseTime(displayData.reminder_time || '09:00');
+
+                                              return (
+                                                <div className="flex gap-1">
+                                                  <input
+                                                    type="number"
+                                                    value={reminder.hours}
+                                                    onChange={(e) => {
+                                                      const hours = Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0));
+                                                      updateTemplateEdit(template.id, 'reminder_time', convertTo24h(hours, reminder.minutes, reminder.period));
+                                                    }}
+                                                    min={userTimeFormat === '12h' ? '1' : '0'}
+                                                    max={userTimeFormat === '12h' ? '12' : '23'}
+                                                    className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                                  />
+                                                  <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                                                  <input
+                                                    type="number"
+                                                    value={reminder.minutes}
+                                                    onChange={(e) => {
+                                                      const minutes = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                                                      updateTemplateEdit(template.id, 'reminder_time', convertTo24h(reminder.hours, minutes, reminder.period));
+                                                    }}
+                                                    min="0"
+                                                    max="59"
+                                                    className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                                  />
+                                                  {userTimeFormat === '12h' && (
+                                                    <select
+                                                      value={reminder.period}
+                                                      onChange={(e) => {
+                                                        updateTemplateEdit(template.id, 'reminder_time', convertTo24h(reminder.hours, reminder.minutes, e.target.value));
+                                                      }}
+                                                      className="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                                    >
+                                                      <option value="AM">AM</option>
+                                                      <option value="PM">PM</option>
+                                                    </select>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
                                           </div>
                                         </>
                                       )}
