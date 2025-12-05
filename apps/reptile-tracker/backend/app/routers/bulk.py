@@ -75,7 +75,7 @@ async def get_dashboard_data(
         select(models.WeightLog)
         .where(models.WeightLog.reptile_id.in_(accessible_ids))
         .options(selectinload(models.WeightLog.reptile))
-        .order_by(models.WeightLog.weighed_at.desc())
+        .order_by(models.WeightLog.measured_at.desc())
     )
     all_weights = weight_result.scalars().all()
 
@@ -86,8 +86,8 @@ async def get_dashboard_data(
             weight_data[weight.reptile_id] = []
         weight_data[weight.reptile_id].append({
             "id": weight.id,
-            "weight": weight.weight,
-            "weighed_at": weight.weighed_at.isoformat(),
+            "weight": weight.weight_grams,
+            "weighed_at": weight.measured_at.isoformat(),
             "notes": weight.notes
         })
 
