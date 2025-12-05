@@ -2,16 +2,6 @@
 
 ## 🚀 NEXT UP - Tier 1 Priorities
 
-### Schedule Instance System - 🎯 CRITICAL PRIORITY
-- **Create individual schedule occurrence objects**
-  - When a schedule is active, create separate objects for each occurrence (e.g., 7 daily objects for the week)
-  - Each instance has unique ID and pre-calculated supplement attachment
-  - Calculate supplements the same way as calendar does (based on feeding rotations)
-  - Links from calendar/notifications go to specific instance, not general schedule
-  - Allows completion tracking at the individual occurrence level
-  - Supports better notification targeting and history
-  - Foundation for improved schedule management UX
-
 1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
 2. **Advanced Notification Features** - Notification grouping, snooze, per-reptile preferences, email notifications (see [🔔 Notifications & Reminders](#notifications--reminders))
 3. **Live Feeder Animal Care** - Track feeder insect colonies, gut loading schedules, hydration (see [🔧 Core Features](#-core-features))
@@ -534,6 +524,26 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### December 2025 - Schedule Instance System (2025-12-05)
+- [x] **Schedule Instance System** - ✅ COMPLETED (2025-12-05)
+  - Pre-generation of schedule occurrences with unique IDs for each instance
+  - Pre-calculated supplements attached to instances based on feeding rotation rules
+  - Automatic completion tracking when activities are logged (feeding/misting/weighing)
+  - Schedule instances marked as completed when matched to logged activities
+  - Instance detail page with completion information and navigation
+  - "Log Now" buttons for pending instances that pre-fill all form data
+  - Pre-filling works for all tracking types (feeding, misting, weight, health)
+  - Instance generation configurable via INSTANCE_GENERATION_DAYS_AHEAD setting (default: 60 days)
+  - Backend: ScheduleInstance model with status tracking (pending, completed, missed, skipped)
+  - Backend: Instance generation triggered on schedule create/update
+  - Backend: Automatic instance completion in schedule_matcher.py
+  - Backend: Instance lookup and status updates for all activity types
+  - Frontend: ScheduleInstanceDetail.jsx page with optimized layout
+  - Frontend: Supplements displayed inline in main status card
+  - Frontend: Completion details show time (not just date) and bold quantities for countable items
+  - Frontend: Pre-filling from instance_id parameter in all logging forms
+  - Foundation for improved notification targeting and history tracking
 
 ### December 2025 - Care Schedules & Recommendations (2025-12-04)
 - [x] **Care Schedules & Recommendations** - ✅ COMPLETED (2025-12-04)
