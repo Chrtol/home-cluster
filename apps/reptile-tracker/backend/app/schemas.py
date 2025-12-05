@@ -441,9 +441,18 @@ class ScheduleInstance(ScheduleInstanceBase):
         from_attributes = True
 
 
+class ScheduleWithReptile(Schedule):
+    """Schedule with reptile details for calendar display"""
+    reptile: Optional["Reptile"] = None
+
+    class Config:
+        from_attributes = True
+
+
 class ScheduleInstanceWithSchedule(ScheduleInstance):
-    """Schedule instance with full schedule details"""
-    schedule: "Schedule"
+    """Schedule instance with full schedule and reptile details"""
+    schedule: "ScheduleWithReptile"
+    completions: List["ScheduleCompletion"] = []
 
     class Config:
         from_attributes = True
