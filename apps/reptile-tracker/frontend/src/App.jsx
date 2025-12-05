@@ -17,6 +17,7 @@ import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
 import HealthLog from './pages/HealthLog';
 import MistingLog from './pages/MistingLog';
+import Measurements from './pages/Measurements';
 import FoodManagement from './pages/FoodManagement';
 import ScheduleForm from './pages/ScheduleForm';
 import ScheduleDetails from './pages/ScheduleDetails';
@@ -181,6 +182,7 @@ function App() {
             <Route path="/misting-log" element={<MistingLog />} />
             <Route path="/misting-log/:reptileId" element={<MistingLog />} />
             <Route path="/misting/:id" element={<MistingLog />} />
+            <Route path="/measurements/:reptileId" element={<Measurements />} />
             <Route path="/foods" element={<FoodManagement />} />
             <Route path="/notifications" element={<NotificationHistory />} />
             <Route path="*" element={<Navigate to="/" replace />} />

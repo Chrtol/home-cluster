@@ -341,6 +341,7 @@ export default function ReptileDetail() {
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
+          <Link to={`/measurements/${id}`} className="btn-secondary text-sm sm:text-base whitespace-nowrap">Measurements</Link>
           <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
           <button
             onClick={handleToggleActive}

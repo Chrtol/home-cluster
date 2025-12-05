@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
 import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek } from '../utils/dateFormatting';
@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { getDashboardCardSettings, getChartSettings } from '../utils/displaySettings';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [recentFeedings, setRecentFeedings] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]); // Combined activity feed
   const [reptiles, setReptiles] = useState([]);
@@ -1369,10 +1370,11 @@ export default function Dashboard() {
                     return (
                       <div
                         key={idx}
-                        className={`px-4 py-3 rounded-lg border-2 ${
+                        onClick={() => event.schedule_id && navigate(`/schedules/${event.schedule_id}`)}
+                        className={`px-4 py-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                           event.is_completed
-                            ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
-                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                            ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600 hover:border-green-600 dark:hover:border-green-500'
+                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400'
                         }`}
                       >
                         <div className="flex items-center gap-3 mb-3">
