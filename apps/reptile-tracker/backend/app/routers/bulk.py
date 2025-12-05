@@ -87,7 +87,7 @@ async def get_dashboard_data(
         weight_data[weight.reptile_id].append({
             "id": weight.id,
             "weight": weight.weight_grams,
-            "weighed_at": weight.measured_at.isoformat(),
+            "weighed_at": weight.measured_at.isoformat() if weight.measured_at else None,
             "notes": weight.notes
         })
 
