@@ -122,7 +122,7 @@ function PreferencesTab() {
     // Fetch user data from backend to get timezone
     const fetchUserData = async () => {
       try {
-        const response = await axios.get('/api/auth/me');
+        const response = await axios.get('/auth/me');
         if (response.data.timezone) {
           setTimezone(response.data.timezone);
           // Also update localStorage for immediate use
@@ -161,7 +161,7 @@ function PreferencesTab() {
       localStorage.setItem('darkMode', darkMode.toString());
 
       // Save timezone to backend
-      await axios.patch('/api/auth/me', { timezone });
+      await axios.patch('/auth/me', { timezone });
 
       setSuccess('Settings saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
