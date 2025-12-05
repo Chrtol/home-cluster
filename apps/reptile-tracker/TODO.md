@@ -552,6 +552,28 @@
   - Override channels and reminder times per schedule
   - Seamless integration with existing template application flow
 
+### December 2025 - Discord Notification Formatting & Template Improvements (2025-12-05)
+- [x] **Discord notification link formatting** - ✅ COMPLETED (2025-12-05)
+  - Removed clickable URL from embed title (user feedback: preferred Tautulli style)
+  - Added separate "View Details" section at bottom with clickable link
+  - Made schedule_link available as Discord field checkbox option
+  - Made schedule_url available as message template variable for all channels
+  - Configurable link text and label via discord_config
+
+- [x] **Fixed duplicate content in Discord embeds** - ✅ COMPLETED (2025-12-05)
+  - Issue: message_template content showing in description AND in Discord fields
+  - Solution: When discord_config has include_fields, only use first line as brief description
+  - Prevents information duplication (content appeared twice)
+  - Fields now contain the detailed information exclusively
+  - Clean Tautulli-like presentation with summary + structured fields
+
+- [x] **Template editor UI improvements** - ✅ COMPLETED (2025-12-05)
+  - Added schedule_link to available Discord embed field options
+  - Added schedule_url to available template variables (schedule_reminder, overdue_alert, custom)
+  - User-friendly interface for adding links without manual JSON editing
+  - Checkbox selection for Discord embed fields
+  - Click-to-insert variable buttons for message templates
+
 ### December 2025 - Timezone Handling & Scheduler Fixes (2025-12-05)
 - [x] **CRITICAL: Fix scheduler never triggering on correct day** - ✅ COMPLETED (2025-12-05)
   - Fixed get_next_occurrence_date() to include today in search (was starting from tomorrow)
