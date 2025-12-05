@@ -8,10 +8,16 @@ from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, Comple
 class UserBase(BaseModel):
     email: EmailStr
     name: str
+    timezone: Optional[str] = "UTC"
 
 
 class UserCreate(UserBase):
     oidc_sub: str
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    timezone: Optional[str] = None
 
 
 class User(UserBase):

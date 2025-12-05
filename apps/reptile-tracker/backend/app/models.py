@@ -141,6 +141,7 @@ class User(Base):
     oidc_sub = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
+    timezone = Column(String(100), nullable=False, default="UTC")  # User's timezone (e.g., "Europe/Oslo")
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

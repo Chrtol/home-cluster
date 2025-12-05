@@ -114,11 +114,30 @@ function PreferencesTab() {
     // Load settings from localStorage
     setTimeFormat(getUserTimeFormat());
     setDateFormat(getUserDateFormat());
-    setTimezone(getUserTimezone());
     setFirstDayOfWeek(localStorage.getItem('firstDayOfWeek') || 'sunday');
     const savedMode = localStorage.getItem('darkMode');
     const isDark = savedMode === null ? true : savedMode === 'true';
     setDarkMode(isDark);
+
+    // Fetch user data from backend to get timezone
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get('/api/auth/me');
+        if (response.data.timezone) {
+          setTimezone(response.data.timezone);
+          // Also update localStorage for immediate use
+          localStorage.setItem('timezone', response.data.timezone);
+        } else {
+          // Fallback to localStorage or browser detection
+          setTimezone(getUserTimezone());
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        // Fallback to localStorage or browser detection
+        setTimezone(getUserTimezone());
+      }
+    };
+    fetchUserData();
   }, []);
 
   const toggleDarkMode = () => {
@@ -132,15 +151,25 @@ function PreferencesTab() {
     }
   };
 
-  const handleSave = () => {
-    localStorage.setItem('timeFormat', timeFormat);
-    localStorage.setItem('dateFormat', dateFormat);
-    localStorage.setItem('timezone', timezone);
-    localStorage.setItem('firstDayOfWeek', firstDayOfWeek);
-    localStorage.setItem('darkMode', darkMode.toString());
+  const handleSave = async () => {
+    try {
+      // Save to localStorage for immediate use
+      localStorage.setItem('timeFormat', timeFormat);
+      localStorage.setItem('dateFormat', dateFormat);
+      localStorage.setItem('timezone', timezone);
+      localStorage.setItem('firstDayOfWeek', firstDayOfWeek);
+      localStorage.setItem('darkMode', darkMode.toString());
 
-    setSuccess('Settings saved successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+      // Save timezone to backend
+      await axios.patch('/api/auth/me', { timezone });
+
+      setSuccess('Settings saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      setSuccess('Settings saved locally, but failed to sync timezone to server');
+      setTimeout(() => setSuccess(''), 5000);
+    }
   };
 
   const now = new Date();
