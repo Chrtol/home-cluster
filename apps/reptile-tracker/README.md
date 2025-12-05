@@ -301,6 +301,10 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 - `GET /api/schedule-templates/export` - Export user's templates as JSON
 - `POST /api/schedule-templates/import` - Import templates from JSON
 
+### Bulk Data (Performance Optimized)
+- `GET /api/bulk/dashboard` - Get all dashboard data in single request (reptiles, feedings, weight, schedules, instances, etc.)
+- `GET /api/bulk/calendar` - Get all calendar data in single request (reptiles, schedules, feedings, mistings, instances for date range)
+
 ### Supplement Rotations
 - `GET /api/rotations/reptile/{reptile_id}` - List rotations for a reptile
 - `POST /api/rotations` - Create rotation
