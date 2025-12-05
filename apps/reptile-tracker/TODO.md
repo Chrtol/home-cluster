@@ -552,6 +552,16 @@
   - Override channels and reminder times per schedule
   - Seamless integration with existing template application flow
 
+### December 2025 - Timezone Handling & Scheduler Fixes (2025-12-05)
+- [x] **Proper timezone handling with DST support** - ✅ COMPLETED (2025-12-05)
+  - Added timezone column to users table (migration 0052)
+  - Backend scheduler uses user timezone for calculating reminder times
+  - Python's zoneinfo automatically handles DST transitions (winter/summer time)
+  - Frontend Settings page fetches and saves timezone to database
+  - PATCH /api/auth/me endpoint to update user timezone
+  - Timezone fallback to UTC if not set or invalid
+  - Fixes 1-hour offset during winter time in Europe/Oslo
+
 ### December 2025 - Schedule UI Improvements & Supplement Display (2025-12-05)
 - [x] **Supplement rotation display in schedule views** - ✅ COMPLETED (2025-12-05)
   - Added supplement rotation information to ScheduleDetails page
