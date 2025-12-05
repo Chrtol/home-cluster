@@ -1512,6 +1512,12 @@ function Calendar() {
                                 <Bell size={10} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
                               )}
                             </div>
+                            {event.time_window_enabled && event.earliest_time && event.latest_time && (
+                              <div className="text-[10px] opacity-60 flex items-center gap-0.5 mt-0.5">
+                                <Clock size={8} />
+                                {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

@@ -186,6 +186,7 @@ class Reptile(Base):
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
     weight_logs = relationship("WeightLog", back_populates="reptile", cascade="all, delete-orphan")
+    measurements = relationship("Measurement", back_populates="reptile", cascade="all, delete-orphan")
     health_records = relationship("HealthRecord", back_populates="reptile", cascade="all, delete-orphan")
     misting_logs = relationship("MistingLog", back_populates="reptile", cascade="all, delete-orphan")
     schedules = relationship("Schedule", back_populates="reptile", cascade="all, delete-orphan")
@@ -261,6 +262,32 @@ class WeightLog(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="weight_logs")
+    schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
+
+
+class Measurement(Base):
+    """
+    Flexible measurement tracking for reptiles.
+    Supports both predefined measurement types (SVL, total length, etc.) and custom measurements.
+    """
+    __tablename__ = "measurements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
+    measurement_type = Column(String(100), nullable=False)  # e.g., 'weight', 'svl', 'total_length', 'shell_length', 'custom'
+    value = Column(Float, nullable=False)
+    unit = Column(String(20), nullable=False)  # e.g., 'g', 'kg', 'cm', 'mm', 'in'
+    measured_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    notes = Column(Text, nullable=True)
+
+    # For custom measurement types
+    custom_label = Column(String(100), nullable=True)  # Used when measurement_type is 'custom'
+
+    # Link to schedule completion (if this measurement fulfilled a schedule)
+    schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # Relationships
+    reptile = relationship("Reptile", back_populates="measurements")
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 

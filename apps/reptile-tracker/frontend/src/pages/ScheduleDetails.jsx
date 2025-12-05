@@ -135,20 +135,20 @@ function ScheduleDetails() {
     // Navigate to the appropriate logging page based on schedule type
     switch (schedule.schedule_type) {
       case 'feeding':
-        navigate(`/reptiles/${reptile.id}/feed?schedule_id=${schedule.id}`);
+        navigate(`/feed?schedule_id=${schedule.id}`);
         break;
       case 'misting':
-        navigate(`/reptiles/${reptile.id}/misting?schedule_id=${schedule.id}`);
+        navigate(`/misting-log/${reptile.id}?schedule_id=${schedule.id}`);
         break;
       case 'weighing':
-        navigate(`/reptiles/${reptile.id}/weight?schedule_id=${schedule.id}`);
+        navigate(`/health-log/${reptile.id}?schedule_id=${schedule.id}&log_type=weight`);
         break;
       case 'health':
-        navigate(`/reptiles/${reptile.id}/health?schedule_id=${schedule.id}`);
+        navigate(`/health-log/${reptile.id}?schedule_id=${schedule.id}`);
         break;
       case 'supplement':
         // Supplements are logged through feeding
-        navigate(`/reptiles/${reptile.id}/feed?schedule_id=${schedule.id}`);
+        navigate(`/feed?schedule_id=${schedule.id}`);
         break;
       default:
         navigate(`/reptiles/${reptile.id}`);
