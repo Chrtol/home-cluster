@@ -153,3 +153,4 @@ cilium status
 - Never use kubectl apply since I am using FluxCD
 - Always write a summary of what has been changed that I can add to a commit message
 - Never suggest to use the task commands
+- Never git add or commit, always just give me a one line commit message based on the changed files in the format: "verb(app): summary", i.e. "fix(reptile-tracker): revert timezone changes in scheduler to fix notification crashes"
