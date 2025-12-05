@@ -30,13 +30,23 @@ export default function Dashboard() {
   const [showReptileFilter, setShowReptileFilter] = useState(false);
   const [weeklyFeedings, setWeeklyFeedings] = useState([]);
   const [weeklyMistings, setWeeklyMistings] = useState([]);
-  const [calendarView, setCalendarView] = useState('week'); // 'day', 'three-day', 'week'
+
+  // Load calendar view from localStorage or default to 'week'
+  const [calendarView, setCalendarView] = useState(() => {
+    const saved = localStorage.getItem('dashboard_calendar_view');
+    return saved || 'week'; // 'day', 'three-day', 'week'
+  });
 
   // Load display settings on mount
   useEffect(() => {
     setDashboardCards(getDashboardCardSettings());
     setChartSettings(getChartSettings());
   }, []);
+
+  // Save calendar view to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('dashboard_calendar_view', calendarView);
+  }, [calendarView]);
 
   useEffect(() => {
     const fetchData = async () => {
