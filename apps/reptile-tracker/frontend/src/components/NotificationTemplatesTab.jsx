@@ -571,7 +571,7 @@ const NotificationTemplatesTab = () => {
                     <div>
                       <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Include Fields</label>
                       <div className="grid grid-cols-2 gap-2">
-                        {['scheduled_date', 'schedule_type', 'notes', 'time_window', 'food_category', 'missed_date'].map(field => (
+                        {['scheduled_date', 'schedule_type', 'notes', 'time_window', 'food_category', 'missed_date', 'schedule_link'].map(field => (
                           <label key={field} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                             <input
                               type="checkbox"
