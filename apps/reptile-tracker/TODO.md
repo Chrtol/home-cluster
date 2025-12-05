@@ -559,13 +559,15 @@
   - Notifications now trigger on the correct day of week
   - This was the root cause of all notification failures
 
-- [x] **Timezone infrastructure added (partial implementation)** - ✅ COMPLETED (2025-12-05)
+- [x] **Full per-user timezone support** - ✅ COMPLETED (2025-12-05)
   - Added timezone column to users table (migration 0052)
   - Frontend Settings page fetches and saves timezone to database
   - PATCH /api/auth/me endpoint to update user timezone with validation
-  - Scheduler reverted to UTC due to architectural constraints
-  - Full per-user timezone support requires redesign (user loaded after time calculation)
-  - Users should enter times in UTC for now
+  - Restructured scheduler to loop through users first (not schedules first)
+  - Reminder times now calculated in each user's timezone, converted to UTC for comparison
+  - Supports automatic DST handling via Python's zoneinfo module
+  - Notification links now use FRONTEND_URL env var instead of hardcoded domain
+  - Users can now enter schedule times in their local timezone
 
 ### December 2025 - Schedule UI Improvements & Supplement Display (2025-12-05)
 - [x] **Supplement rotation display in schedule views** - ✅ COMPLETED (2025-12-05)
