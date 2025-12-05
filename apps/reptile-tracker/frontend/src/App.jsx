@@ -21,6 +21,7 @@ import Measurements from './pages/Measurements';
 import FoodManagement from './pages/FoodManagement';
 import ScheduleForm from './pages/ScheduleForm';
 import ScheduleDetails from './pages/ScheduleDetails';
+import ScheduleInstanceDetail from './pages/ScheduleInstanceDetail';
 import ScheduleTemplates from './pages/ScheduleTemplates';
 import ScheduleTemplateForm from './pages/ScheduleTemplateForm';
 import SupplementRotations from './pages/SupplementRotations';
@@ -171,6 +172,7 @@ function App() {
             <Route path="/schedule-create" element={<ScheduleForm />} />
             <Route path="/schedule-edit/:id" element={<ScheduleForm />} />
             <Route path="/schedules/:id" element={<ScheduleDetails />} />
+            <Route path="/schedule-instances/:id" element={<ScheduleInstanceDetail />} />
             <Route path="/schedule-templates" element={<ScheduleTemplates />} />
             <Route path="/schedule-templates/new" element={<ScheduleTemplateForm />} />
             <Route path="/schedule-templates/edit/:id" element={<ScheduleTemplateForm />} />
