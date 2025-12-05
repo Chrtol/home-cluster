@@ -230,11 +230,21 @@ function Calendar() {
       console.log('[Calendar] Fetched instances:', response.data.length, 'instances');
       if (response.data.length > 0) {
         console.log('[Calendar] First instance:', response.data[0]);
+        console.log('[Calendar] First instance has schedule?', !!response.data[0].schedule);
+        console.log('[Calendar] First instance has reptile?', !!response.data[0].schedule?.reptile);
+        console.log('[Calendar] First instance reptile:', response.data[0].schedule?.reptile);
       }
 
       // Transform instances to event format - filter out instances with missing schedule/reptile
       const instanceEvents = response.data
-        .filter(instance => instance.schedule && instance.schedule.reptile)
+        .filter(instance => {
+          const hasSchedule = !!instance.schedule;
+          const hasReptile = !!instance.schedule?.reptile;
+          if (!hasSchedule || !hasReptile) {
+            console.log('[Calendar] Filtering out instance:', instance.id, 'hasSchedule:', hasSchedule, 'hasReptile:', hasReptile);
+          }
+          return hasSchedule && hasReptile;
+        })
         .map(instance => ({
           instance_id: instance.id,
           date: new Date(instance.scheduled_date),
@@ -256,6 +266,11 @@ function Calendar() {
         // Pre-calculated supplements from the instance
         suggested_supplements: instance.supplements || []
       }));
+
+      console.log('[Calendar] Created', instanceEvents.length, 'events after transformation');
+      if (instanceEvents.length > 0) {
+        console.log('[Calendar] First event:', instanceEvents[0]);
+      }
 
       setEvents(instanceEvents);
     } catch (error) {
@@ -341,19 +356,41 @@ function Calendar() {
   const getEventsForDate = (date) => {
     if (!date) return [];
 
+    console.log('[Calendar] getEventsForDate called for', date.toDateString());
+    console.log('[Calendar] Total events:', events.length);
+    console.log('[Calendar] visibleReptiles:', Array.from(visibleReptiles));
+    console.log('[Calendar] visibleCategories:', Array.from(visibleCategories));
+
     // Get schedule instances for this date
     // Instances already have status and completion info from the backend
-    return events.filter(event => {
+    const filtered = events.filter(event => {
       const eventDate = new Date(event.date);
-      return eventDate.toDateString() === date.toDateString() &&
-             visibleReptiles.has(event.reptile_id) &&
-             visibleCategories.has(event.schedule_type);
+      const dateMatch = eventDate.toDateString() === date.toDateString();
+      const reptileMatch = visibleReptiles.has(event.reptile_id);
+      const categoryMatch = visibleCategories.has(event.schedule_type);
+
+      if (!dateMatch || !reptileMatch || !categoryMatch) {
+        console.log('[Calendar] Event filtered out:', {
+          id: event.instance_id,
+          date: eventDate.toDateString(),
+          reptile_id: event.reptile_id,
+          schedule_type: event.schedule_type,
+          dateMatch,
+          reptileMatch,
+          categoryMatch
+        });
+      }
+
+      return dateMatch && reptileMatch && categoryMatch;
     }).map(e => ({
       ...e,
       // Mark as completed if status indicates completion
       is_completed: e.status === 'completed',
       is_actual: false, // This is a schedule instance
     }));
+
+    console.log('[Calendar] Returning', filtered.length, 'events for', date.toDateString());
+    return filtered;
   };
 
   const navigateMonth = (direction) => {
