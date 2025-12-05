@@ -363,10 +363,30 @@ function Calendar() {
   const getEventsForDate = (date) => {
     if (!date) return [];
 
-    console.log('[Calendar] getEventsForDate called for', date.toDateString());
-    console.log('[Calendar] Total events:', events.length);
-    console.log('[Calendar] visibleReptiles:', Array.from(visibleReptiles));
-    console.log('[Calendar] visibleCategories:', Array.from(visibleCategories));
+    // Only log for a specific date to avoid console spam
+    const isTargetDate = date.getDate() === 5 && date.getMonth() === 11; // Dec 5
+    if (isTargetDate) {
+      console.log('[Calendar] ===== Detailed logging for Dec 5 =====');
+      console.log('[Calendar] getEventsForDate called for', date.toDateString(), date);
+      console.log('[Calendar] Total events:', events.length);
+
+      // Log ALL events for Dec 5
+      const dec5Events = events.filter(e => e.date.getDate() === 5 && e.date.getMonth() === 11);
+      console.log('[Calendar] Events with date Dec 5:', dec5Events.length);
+      dec5Events.forEach(e => {
+        console.log('[Calendar] Dec 5 event:', {
+          id: e.instance_id,
+          date: e.date,
+          dateStr: e.date.toDateString(),
+          reptile_id: e.reptile_id,
+          reptile_name: e.reptile_name,
+          schedule_type: e.schedule_type
+        });
+      });
+
+      console.log('[Calendar] visibleReptiles:', Array.from(visibleReptiles));
+      console.log('[Calendar] visibleCategories:', Array.from(visibleCategories));
+    }
 
     // Get schedule instances for this date
     // Instances already have status and completion info from the backend
