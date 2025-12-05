@@ -85,7 +85,7 @@ function Calendar() {
 
   // Re-fetch instances when reptile filters change
   useEffect(() => {
-    if (reptiles.length > 0 && visibleReptiles.size > 0) {
+    if (reptiles.length > 0) {
       fetchInstances();
     }
   }, [visibleReptiles]);
@@ -95,9 +95,9 @@ function Calendar() {
       const response = await axios.get("/api/reptiles");
       setReptiles(response.data);
 
-      // Initialize all reptiles as visible if no saved filters
+      // Initialize all reptiles as visible if no saved filters or if saved filter is empty
       const savedFilters = localStorage.getItem('calendar_reptile_filters');
-      if (!savedFilters) {
+      if (!savedFilters || (savedFilters && JSON.parse(savedFilters).length === 0)) {
         setVisibleReptiles(new Set(response.data.map(r => r.id)));
       }
     } catch (error) {
