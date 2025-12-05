@@ -200,3 +200,13 @@ async def is_manager_or_above(db: AsyncSession, user: User, reptile_id: int) -> 
             return True
 
     return False
+
+
+async def get_accessible_reptile_ids(
+    db: AsyncSession,
+    user: User,
+    min_access_level: AccessLevel = AccessLevel.VIEWER,
+) -> list[int]:
+    """Get list of reptile IDs the user has access to"""
+    user_reptiles = await get_user_reptiles(db, user, min_access_level)
+    return [r["reptile"].id for r in user_reptiles]
