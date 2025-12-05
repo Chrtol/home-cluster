@@ -658,8 +658,12 @@ def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bo
 
 
 async def check_schedule_reminders():
-    """Check for schedules that need reminder notifications (user-first approach for timezone support)"""
-    logger.info("Running schedule reminder check")
+    """
+    Check for LEGACY schedules that need reminder notifications (polling-based)
+    This only handles schedules using reminder_minutes_before (legacy approach)
+    Schedules with reminder_time are handled by the exact-time APScheduler system
+    """
+    logger.info("Running legacy schedule reminder check (polling-based)")
 
     try:
         async with async_session_maker() as db:
@@ -708,6 +712,8 @@ async def check_schedule_reminders():
                     channel_ids = [c.id for c in channels]
 
                     # Query schedules that have these channels
+                    # ONLY include legacy schedules using reminder_minutes_before
+                    # Schedules with reminder_time are handled by the exact-time APScheduler system
                     schedules_result = await db.execute(
                         select(Schedule)
                         .join(Schedule.notification_channels)
@@ -715,13 +721,10 @@ async def check_schedule_reminders():
                             and_(
                                 Schedule.enabled == True,
                                 Schedule.notifications_enabled == True,
-                                or_(
-                                    Schedule.reminder_time.isnot(None),
-                                    and_(
-                                        Schedule.reminder_minutes_before.isnot(None),
-                                        Schedule.reminder_minutes_before > 0
-                                    )
-                                ),
+                                # Only legacy schedules (no reminder_time set)
+                                Schedule.reminder_time.is_(None),
+                                Schedule.reminder_minutes_before.isnot(None),
+                                Schedule.reminder_minutes_before > 0,
                                 NotificationChannel.id.in_(channel_ids)
                             )
                         )
@@ -752,49 +755,27 @@ async def check_schedule_reminders():
                                 continue
 
                             # Calculate when to send reminder using user's timezone
-                            if schedule.reminder_time:
-                                # New style: Use absolute reminder time in user's timezone
-                                reminder_time = datetime.combine(
+                            # This polling system only handles legacy schedules with reminder_minutes_before
+                            # Schedules with reminder_time are handled by exact-time APScheduler
+
+                            # If time window is enabled, use earliest_time, otherwise use noon
+                            if schedule.time_window_enabled and schedule.earliest_time:
+                                scheduled_datetime = datetime.combine(
                                     next_occurrence_date,
-                                    schedule.reminder_time,
+                                    schedule.earliest_time,
                                     tzinfo=user_tz
                                 )
-                                # Convert to UTC for comparison with now
-                                reminder_time = reminder_time.astimezone(timezone.utc)
-
-                                # Validate reminder_time is within time window if enabled
-                                if schedule.time_window_enabled and schedule.earliest_time and schedule.latest_time:
-                                    earliest_dt = datetime.combine(next_occurrence_date, schedule.earliest_time, tzinfo=user_tz)
-                                    latest_dt = datetime.combine(next_occurrence_date, schedule.latest_time, tzinfo=user_tz)
-                                    earliest_utc = earliest_dt.astimezone(timezone.utc)
-                                    latest_utc = latest_dt.astimezone(timezone.utc)
-
-                                    if not (earliest_utc <= reminder_time <= latest_utc):
-                                        logger.warning(
-                                            f"Reminder time {schedule.reminder_time} for schedule {schedule.id} "
-                                            f"is outside time window {schedule.earliest_time}-{schedule.latest_time}, skipping"
-                                        )
-                                        continue
                             else:
-                                # Legacy style: Calculate from reminder_minutes_before
-                                # If time window is enabled, use earliest_time, otherwise use noon
-                                if schedule.time_window_enabled and schedule.earliest_time:
-                                    scheduled_datetime = datetime.combine(
-                                        next_occurrence_date,
-                                        schedule.earliest_time,
-                                        tzinfo=user_tz
-                                    )
-                                else:
-                                    # Use noon as default time
-                                    scheduled_datetime = datetime.combine(
-                                        next_occurrence_date,
-                                        datetime.min.time().replace(hour=12),
-                                        tzinfo=user_tz
-                                    )
+                                # Use noon as default time
+                                scheduled_datetime = datetime.combine(
+                                    next_occurrence_date,
+                                    datetime.min.time().replace(hour=12),
+                                    tzinfo=user_tz
+                                )
 
-                                # Convert to UTC and calculate reminder time
-                                scheduled_utc = scheduled_datetime.astimezone(timezone.utc)
-                                reminder_time = scheduled_utc - timedelta(minutes=schedule.reminder_minutes_before)
+                            # Convert to UTC and calculate reminder time
+                            scheduled_utc = scheduled_datetime.astimezone(timezone.utc)
+                            reminder_time = scheduled_utc - timedelta(minutes=schedule.reminder_minutes_before)
 
                             # Check if it's time to send reminder (within 5 minute window)
                             time_until_reminder = (reminder_time - now).total_seconds()
