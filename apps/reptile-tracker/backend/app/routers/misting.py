@@ -67,7 +67,8 @@ async def create_misting_log(
     new_log = MistingLog(
         **log.model_dump(exclude={"misted_at"}),
         misted_at=log.misted_at or datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        logged_by_user_id=current_user.id
     )
     db.add(new_log)
     await db.flush()
