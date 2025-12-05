@@ -892,3 +892,36 @@ class UserNotification(UserNotificationBase):
 
     class Config:
         from_attributes = True
+
+
+# Measurement schemas
+class MeasurementBase(BaseModel):
+    measurement_type: str  # e.g., 'weight', 'svl', 'total_length', 'shell_length', 'custom'
+    value: float
+    unit: str  # e.g., 'g', 'kg', 'cm', 'mm', 'in'
+    measured_at: datetime
+    notes: Optional[str] = None
+    custom_label: Optional[str] = None  # Used when measurement_type is 'custom'
+
+
+class MeasurementCreate(MeasurementBase):
+    reptile_id: int
+    schedule_completion_id: Optional[int] = None
+
+
+class MeasurementUpdate(BaseModel):
+    measurement_type: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    measured_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    custom_label: Optional[str] = None
+
+
+class Measurement(MeasurementBase):
+    id: int
+    reptile_id: int
+    schedule_completion_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True

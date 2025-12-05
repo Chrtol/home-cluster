@@ -304,35 +304,6 @@ function ScheduleDetails() {
                 </div>
               )}
 
-              {schedule.schedule_type === 'supplement_rotation' && (
-                <>
-                  {schedule.applies_to_category && (
-                    <div>
-                      <div className="text-gray-500 dark:text-gray-400 mb-1">Applies To</div>
-                      <div className="font-medium text-gray-900 dark:text-white capitalize">
-                        {schedule.applies_to_category}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-1">Priority</div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {schedule.priority || 'Not set'}
-                    </div>
-                  </div>
-
-                  {schedule.is_exclusive && (
-                    <div>
-                      <div className="text-gray-500 dark:text-gray-400 mb-1">Exclusive Mode</div>
-                      <div className="font-medium text-orange-600 dark:text-orange-400">
-                        This supplement is applied alone (no other supplements on same day)
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
               {parentSchedule && (
                 <div>
                   <div className="text-gray-500 dark:text-gray-400 mb-1">Parent Schedule</div>
