@@ -198,6 +198,13 @@ export default function Dashboard() {
     }
   }, [reptiles]);
 
+  // Re-fetch instances when calendar filter changes
+  useEffect(() => {
+    if (reptiles.length > 0 && calendarReptileFilter.size > 0) {
+      fetchWeeklyInstances();
+    }
+  }, [calendarReptileFilter]);
+
   const fetchSchedules = async () => {
     try {
       const schedulePromises = reptiles.map(reptile =>
@@ -222,7 +229,7 @@ export default function Dashboard() {
 
       setSchedules(allSchedules);
       setFeedingRotations(allRotations);
-      calculateWeeklyEvents(allSchedules, allRotations);
+      await fetchWeeklyInstances();
     } catch (error) {
       console.error("Error fetching schedules:", error);
     }
@@ -433,6 +440,63 @@ export default function Dashboard() {
     });
 
     setWeeklyEvents(calculatedEvents);
+  };
+
+  const fetchWeeklyInstances = async () => {
+    try {
+      const today = new Date();
+      const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
+      const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+      const weekEnd = addDays(weekStart, 6);
+
+      // Build reptile_ids filter
+      const activeReptileIds = reptiles
+        .filter(r => calendarReptileFilter.has(r.id))
+        .map(r => r.id)
+        .join(',');
+
+      if (!activeReptileIds) {
+        setWeeklyEvents([]);
+        return;
+      }
+
+      // Fetch instances from backend
+      const response = await axios.get('/api/schedule-instances/calendar', {
+        params: {
+          start_date: weekStart.toISOString().split('T')[0],
+          end_date: weekEnd.toISOString().split('T')[0],
+          reptile_ids: activeReptileIds
+        }
+      });
+
+      // Transform instances to event format
+      const instanceEvents = response.data.map(instance => ({
+        instance_id: instance.id,
+        date: new Date(instance.scheduled_date),
+        schedule_id: instance.schedule.id,
+        schedule_type: instance.schedule.schedule_type,
+        schedule_rule: instance.schedule.schedule_rule,
+        reptile_name: instance.schedule.reptile.name,
+        reptile_id: instance.schedule.reptile_id,
+        name: instance.schedule.name,
+        food_category: instance.schedule.food_category,
+        time_slot: instance.schedule.time_slot,
+        health_category: instance.schedule.health_category,
+        time_window_enabled: instance.schedule.time_window_enabled,
+        earliest_time: instance.schedule.earliest_time,
+        latest_time: instance.schedule.latest_time,
+        notifications_enabled: instance.schedule.notifications_enabled,
+        notes: instance.schedule.notes,
+        status: instance.status,
+        // Pre-calculated supplements from the instance
+        suggested_supplements: instance.supplements || []
+      }));
+
+      setWeeklyEvents(instanceEvents);
+    } catch (error) {
+      console.error("Error fetching weekly schedule instances:", error);
+      setWeeklyEvents([]);
+    }
   };
 
   const getEventsForDate = (date) => {

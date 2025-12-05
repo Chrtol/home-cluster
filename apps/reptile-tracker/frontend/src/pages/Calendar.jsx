@@ -76,7 +76,7 @@ function Calendar() {
     if (reptiles.length > 0) {
       fetchInstances();
     }
-  }, [activeReptiles]);
+  }, [visibleReptiles]);
 
   const fetchReptiles = async () => {
     try {
@@ -397,7 +397,7 @@ function Calendar() {
 
       // Build reptile_ids filter
       const activeReptileIds = reptiles
-        .filter(r => activeReptiles[r.id])
+        .filter(r => visibleReptiles.has(r.id))
         .map(r => r.id)
         .join(',');
 
