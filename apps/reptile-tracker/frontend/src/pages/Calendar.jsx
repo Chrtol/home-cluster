@@ -1205,6 +1205,11 @@ function Calendar() {
 
             <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {getDaysInMonth().map((date, index) => {
+                // Debug: Log the date we're about to pass to getEventsForDate
+                if (date && index < 5) {
+                  console.log(`[Calendar] Rendering cell ${index}, date:`, date, date.toDateString());
+                }
+
                 const dayEvents = date ? getEventsForDate(date) : [];
                 const isToday = date && date.toDateString() === new Date().toDateString();
                 const isSelected = selectedDate && date && date.toDateString() === selectedDate.toDateString();
