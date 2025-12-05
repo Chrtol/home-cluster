@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale, Bell } from "lucide-react";
-import { formatTime, getDayNames, getUserFirstDayOfWeek } from "../utils/dateFormatting";
+import { formatTime, getDayNames, getUserFirstDayOfWeek, toLocalISODate } from "../utils/dateFormatting";
 
 function Calendar() {
   const navigate = useNavigate();
@@ -221,8 +221,8 @@ function Calendar() {
       // Fetch instances from backend
       const response = await axios.get('/api/schedule-instances/calendar', {
         params: {
-          start_date: monthStart.toISOString().split('T')[0],
-          end_date: monthEnd.toISOString().split('T')[0],
+          start_date: toLocalISODate(monthStart),
+          end_date: toLocalISODate(monthEnd),
           reptile_ids: activeReptileIds
         }
       });
@@ -371,15 +371,20 @@ function Calendar() {
     // Get schedule instances for this date
     // Instances already have status and completion info from the backend
     const filtered = events.filter(event => {
-      const eventDate = new Date(event.date);
-      const dateMatch = eventDate.toDateString() === date.toDateString();
+      // event.date is already a proper Date object parsed as local time
+      const eventDateStr = event.date.toDateString();
+      const targetDateStr = date.toDateString();
+      const dateMatch = eventDateStr === targetDateStr;
       const reptileMatch = visibleReptiles.has(event.reptile_id);
       const categoryMatch = visibleCategories.has(event.schedule_type);
 
       if (!dateMatch || !reptileMatch || !categoryMatch) {
         console.log('[Calendar] Event filtered out:', {
           id: event.instance_id,
-          date: eventDate.toDateString(),
+          eventDate: event.date,
+          eventDateStr,
+          targetDate: date,
+          targetDateStr,
           reptile_id: event.reptile_id,
           schedule_type: event.schedule_type,
           dateMatch,
