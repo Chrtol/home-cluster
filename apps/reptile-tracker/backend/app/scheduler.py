@@ -1072,8 +1072,25 @@ async def send_schedule_reminder(
     # Build notes string
     notes = f"\nNotes: {schedule.notes}" if schedule.notes else ""
 
-    # Build schedule URL for links
+    # Build schedule URL for links - use instance if available
     schedule_url = f"/schedules/{schedule.id}"
+    try:
+        from app.models import ScheduleInstance
+        # Try to find the specific instance for this date
+        instance_result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.scheduled_date == scheduled_date
+                )
+            )
+        )
+        instance = instance_result.scalars().first()
+        if instance:
+            schedule_url = f"/schedule-instances/{instance.id}"
+    except Exception as e:
+        logger.warning(f"Could not find instance for schedule {schedule.id} on {scheduled_date}: {e}")
+        # Fall back to schedule URL
 
     # Build context
     context = {
@@ -1194,11 +1211,32 @@ async def send_overdue_alert(
 
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
+    # Build schedule URL for links - use instance if available
+    schedule_url = f"/schedules/{schedule.id}"
+    try:
+        from app.models import ScheduleInstance
+        # Try to find the specific instance for this date
+        instance_result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.scheduled_date == missed_date
+                )
+            )
+        )
+        instance = instance_result.scalars().first()
+        if instance:
+            schedule_url = f"/schedule-instances/{instance.id}"
+    except Exception as e:
+        logger.warning(f"Could not find instance for schedule {schedule.id} on {missed_date}: {e}")
+        # Fall back to schedule URL
+
     context = {
         "reptile_name": reptile.name,
         "schedule_name": schedule_name,
         "schedule_type": schedule.schedule_type,
         "missed_date": missed_date.strftime('%Y-%m-%d'),
+        "schedule_url": schedule_url,
     }
 
     # Add food category for feeding schedules
@@ -1273,7 +1311,7 @@ async def send_overdue_alert(
         notification_type=NotificationType.OVERDUE_ALERT,
         title=title,
         message=message,
-        link=f"/reptiles/{reptile.id}",
+        link=schedule_url,  # Link to specific instance or schedule
         notification_metadata={
             "reptile_id": reptile.id,
             "reptile_name": reptile.name,

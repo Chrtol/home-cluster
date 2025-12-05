@@ -19,6 +19,59 @@ from app.instance_generator import (
 router = APIRouter(prefix="/schedule-instances", tags=["schedule-instances"])
 
 
+@router.get("/calendar", response_model=List[schemas.ScheduleInstanceWithSchedule])
+async def get_calendar_instances(
+    start_date: py_date = Query(..., description="Start date for calendar view"),
+    end_date: py_date = Query(..., description="End date for calendar view"),
+    reptile_ids: Optional[str] = Query(None, description="Comma-separated reptile IDs to filter"),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Get schedule instances for calendar display.
+    Returns all instances within the date range with full schedule details.
+    """
+
+    # Build query
+    query = select(models.ScheduleInstance).options(
+        selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile),
+        selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.notification_channels),
+        selectinload(models.ScheduleInstance.completions)
+    ).join(models.Schedule)
+
+    # Date range filter
+    query = query.where(
+        and_(
+            models.ScheduleInstance.scheduled_date >= start_date,
+            models.ScheduleInstance.scheduled_date <= end_date
+        )
+    )
+
+    # Reptile filter
+    if reptile_ids:
+        reptile_id_list = [int(rid.strip()) for rid in reptile_ids.split(',') if rid.strip()]
+        query = query.where(models.Schedule.reptile_id.in_(reptile_id_list))
+
+    # Order by date
+    query = query.order_by(models.ScheduleInstance.scheduled_date.asc())
+
+    result = await db.execute(query)
+    instances = result.scalars().all()
+
+    # Check access for each instance's reptile
+    filtered_instances = []
+    for instance in instances:
+        if instance.schedule and instance.schedule.reptile:
+            try:
+                await check_reptile_access(db, current_user, instance.schedule.reptile.id)
+                filtered_instances.append(instance)
+            except HTTPException:
+                # User doesn't have access, skip this instance
+                continue
+
+    return filtered_instances
+
+
 @router.get("/", response_model=List[schemas.ScheduleInstance])
 async def list_schedule_instances(
     schedule_id: Optional[int] = Query(None, description="Filter by schedule ID"),

@@ -264,9 +264,28 @@ async def assign_feeding_to_schedule(
         existing_completion.status = status
         completion = existing_completion
     else:
+        # Look up the instance for this schedule and date
+        from app.models import ScheduleInstance
+        instance_id = None
+        try:
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(
+                    and_(
+                        ScheduleInstance.schedule_id == schedule.id,
+                        ScheduleInstance.scheduled_date == feeding.fed_at.date()
+                    )
+                )
+            )
+            instance = instance_result.scalars().first()
+            if instance:
+                instance_id = instance.id
+        except Exception:
+            pass  # Instance not found, continue without it
+
         # Create new completion record
         completion = ScheduleCompletion(
             schedule_id=schedule.id,
+            instance_id=instance_id,
             scheduled_date=feeding.fed_at.date(),
             completed_at=feeding.fed_at,
             completion_type=CompletionType.FEEDING,
@@ -339,9 +358,28 @@ async def assign_misting_to_schedule(
         existing_completion.status = status
         completion = existing_completion
     else:
+        # Look up the instance for this schedule and date
+        from app.models import ScheduleInstance
+        instance_id = None
+        try:
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(
+                    and_(
+                        ScheduleInstance.schedule_id == schedule.id,
+                        ScheduleInstance.scheduled_date == misting.misted_at.date()
+                    )
+                )
+            )
+            instance = instance_result.scalars().first()
+            if instance:
+                instance_id = instance.id
+        except Exception:
+            pass  # Instance not found, continue without it
+
         # Create new completion record
         completion = ScheduleCompletion(
             schedule_id=schedule.id,
+            instance_id=instance_id,
             scheduled_date=misting.misted_at.date(),
             completed_at=misting.misted_at,
             completion_type=CompletionType.MISTING,
@@ -414,9 +452,28 @@ async def assign_weighing_to_schedule(
         existing_completion.status = status
         completion = existing_completion
     else:
+        # Look up the instance for this schedule and date
+        from app.models import ScheduleInstance
+        instance_id = None
+        try:
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(
+                    and_(
+                        ScheduleInstance.schedule_id == schedule.id,
+                        ScheduleInstance.scheduled_date == weight_log.measured_at.date()
+                    )
+                )
+            )
+            instance = instance_result.scalars().first()
+            if instance:
+                instance_id = instance.id
+        except Exception:
+            pass  # Instance not found, continue without it
+
         # Create new completion record
         completion = ScheduleCompletion(
             schedule_id=schedule.id,
+            instance_id=instance_id,
             scheduled_date=weight_log.measured_at.date(),
             completed_at=weight_log.measured_at,
             completion_type=CompletionType.WEIGHING,
