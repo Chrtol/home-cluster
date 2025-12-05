@@ -71,6 +71,13 @@ function Calendar() {
     }
   }, [reptiles, currentDate]);
 
+  // Re-fetch instances when reptile filters change
+  useEffect(() => {
+    if (reptiles.length > 0) {
+      fetchInstances();
+    }
+  }, [activeReptiles]);
+
   const fetchReptiles = async () => {
     try {
       const response = await axios.get("/api/reptiles");
@@ -119,7 +126,8 @@ function Calendar() {
 
       setSchedules(allSchedules);
       setFeedingRotations(allRotations);
-      calculateEvents(allSchedules, allRotations);
+      // Replaced client-side event calculation with fetching pre-generated instances
+      await fetchInstances();
     } catch (error) {
       console.error("Error fetching schedules:", error);
     } finally {
@@ -382,6 +390,61 @@ function Calendar() {
     setEvents(calculatedEvents);
   };
 
+  const fetchInstances = async () => {
+    try {
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      // Build reptile_ids filter
+      const activeReptileIds = reptiles
+        .filter(r => activeReptiles[r.id])
+        .map(r => r.id)
+        .join(',');
+
+      if (!activeReptileIds) {
+        setEvents([]);
+        return;
+      }
+
+      // Fetch instances from backend
+      const response = await axios.get('/api/schedule-instances/calendar', {
+        params: {
+          start_date: monthStart.toISOString().split('T')[0],
+          end_date: monthEnd.toISOString().split('T')[0],
+          reptile_ids: activeReptileIds
+        }
+      });
+
+      // Transform instances to event format
+      const instanceEvents = response.data.map(instance => ({
+        instance_id: instance.id,
+        date: new Date(instance.scheduled_date),
+        schedule_id: instance.schedule.id,
+        schedule_type: instance.schedule.schedule_type,
+        schedule_rule: instance.schedule.schedule_rule,
+        reptile_name: instance.schedule.reptile.name,
+        reptile_id: instance.schedule.reptile_id,
+        name: instance.schedule.name,
+        food_category: instance.schedule.food_category,
+        time_slot: instance.schedule.time_slot,
+        health_category: instance.schedule.health_category,
+        time_window_enabled: instance.schedule.time_window_enabled,
+        earliest_time: instance.schedule.earliest_time,
+        latest_time: instance.schedule.latest_time,
+        notifications_enabled: instance.schedule.notifications_enabled,
+        notes: instance.schedule.notes,
+        status: instance.status,
+        // Pre-calculated supplements from the instance
+        suggested_supplements: instance.supplements || []
+      }));
+
+      setEvents(instanceEvents);
+    } catch (error) {
+      console.error("Error fetching schedule instances:", error);
+      setEvents([]);
+    }
+  };
+
   const getDaysInMonth = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -598,7 +661,7 @@ function Calendar() {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() + direction);
     setCurrentDate(newDate);
-    setTimeout(() => calculateEvents(schedules, feedingRotations), 0);
+    setTimeout(() => fetchInstances(), 0);
   };
 
   const navigateWeek = (direction) => {
