@@ -33,14 +33,13 @@ function ScheduleDetails() {
         setReptile(reptileResponse.data);
       }
 
-      if (scheduleData.supplement_id) {
-        const supplementResponse = await axios.get(`/api/supplements/${scheduleData.supplement_id}`);
-        setSupplement(supplementResponse.data);
+      // Supplement and parent_schedule are already included in the response
+      if (scheduleData.supplement) {
+        setSupplement(scheduleData.supplement);
       }
 
-      if (scheduleData.parent_schedule_id) {
-        const parentResponse = await axios.get(`/api/schedules/${scheduleData.parent_schedule_id}`);
-        setParentSchedule(parentResponse.data);
+      if (scheduleData.parent_schedule) {
+        setParentSchedule(scheduleData.parent_schedule);
       }
 
       // Fetch notification channels if notifications are enabled
@@ -252,10 +251,8 @@ function ScheduleDetails() {
         )}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Schedule Details */}
-        <div className="space-y-6">
+      {/* Main Content */}
+      <div className="space-y-6">
           {/* Schedule Type */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Schedule Information</h2>
@@ -351,12 +348,8 @@ function ScheduleDetails() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Right Column - Notifications & Actions */}
-        <div className="space-y-6">
-          {/* Notifications */}
-          {schedule.notifications_enabled && (
+        {/* Notifications */}
+        {schedule.notifications_enabled && (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <Bell size={20} />
@@ -400,10 +393,7 @@ function ScheduleDetails() {
                 )}
               </div>
             </div>
-          )}
-
-        </div>
-      </div>
+        )}
     </div>
   );
 }
