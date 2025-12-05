@@ -486,12 +486,14 @@ The application supports flexible per-schedule notification channels with the fo
 **Template Customization:**
 - Customize notification message templates for different trigger types (schedule_reminder, overdue_alert)
 - Preview templates with sample data before saving (with variable substitution and markdown rendering)
-- Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes, scheduled_date, missed_date
+- Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes, scheduled_date, missed_date, schedule_url
 - Per-channel template overrides (e.g., shorter messages for Pushover)
 - Discord-specific settings:
   - Custom embed border color (visual color picker with hex input)
-  - Selectable embed fields (checkboxes for scheduled_date, schedule_type, notes, time_window, food_category, missed_date)
+  - Selectable embed fields (checkboxes for scheduled_date, schedule_type, notes, time_window, food_category, missed_date, schedule_link)
   - Custom footer text
+  - Tautulli-style "View Details" links (non-clickable title with separate link at bottom)
+  - Smart content deduplication (brief description when fields are used)
 - Green-styled variable buttons with click-to-insert at cursor position
 - Markdown support: **bold** and *italic* formatting
 
@@ -524,7 +526,9 @@ Send rich embedded notifications to Discord channels:
 Features:
 - **Template-driven embeds**: Customize message content with template variables
 - **Custom embed colors**: Choose border color per template (defaults: blue for reminders, red for overdue)
-- **Selectable fields**: Choose which fields to display (scheduled_date, schedule_type, notes, time_window, food_category, missed_date)
+- **Selectable fields**: Choose which fields to display (scheduled_date, schedule_type, notes, time_window, food_category, missed_date, schedule_link)
+- **Tautulli-style links**: Non-clickable embed title with "View Details" link at bottom
+- **Smart content deduplication**: Only first line of message shown in description when fields are used
 - **Custom footer**: Set footer text per template
 - **Markdown support**: Use **bold** and *italic* formatting in messages
 - **Backwards compatible**: Templates without Discord config fall back to hardcoded formatting
