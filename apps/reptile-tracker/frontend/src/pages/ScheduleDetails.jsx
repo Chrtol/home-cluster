@@ -309,8 +309,8 @@ function ScheduleDetails() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Schedule Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+          {/* Left Column: Schedule Information */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Schedule Information</h2>
 
@@ -387,80 +387,83 @@ function ScheduleDetails() {
             </div>
           </div>
 
-          {/* Frequency */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Calendar size={20} />
-              Frequency
-            </h2>
-            <div className="font-medium text-gray-900 dark:text-white">
-              {formatScheduleRule()}
-            </div>
-          </div>
-
-          {/* Time Window */}
-          {schedule.time_window_enabled && (
+          {/* Right Column: Stacked Cards */}
+          <div className="space-y-6">
+            {/* Frequency */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Clock size={20} />
-                Time Window
+                <Calendar size={20} />
+                Frequency
               </h2>
               <div className="font-medium text-gray-900 dark:text-white">
-                {formatTime(schedule.earliest_time)} - {formatTime(schedule.latest_time)}
+                {formatScheduleRule()}
               </div>
             </div>
-          )}
 
-        {/* Notifications */}
-        {schedule.notifications_enabled && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Bell size={20} />
-                Notifications
-              </h2>
-
-              <div className="space-y-4">
-                {/* Reminder Time */}
-                {schedule.reminder_time && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Reminder Time</div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {formatTime(schedule.reminder_time)}
-                    </div>
-                  </div>
-                )}
-
-                {/* Notification Channels */}
-                {notificationChannels.length > 0 && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Channels</div>
-                    <div className="space-y-2">
-                      {notificationChannels.map(channel => (
-                        <div
-                          key={channel.id}
-                          className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
-                        >
-                          {channel.household_wide ? (
-                            <Users size={14} className="flex-shrink-0" />
-                          ) : (
-                            <UserIcon size={14} className="flex-shrink-0" />
-                          )}
-                          <span className="font-medium">{channel.name}</span>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            ({getChannelTypeDisplay(channel.webhook_type)})
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Time Window */}
+            {schedule.time_window_enabled && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Clock size={20} />
+                  Time Window
+                </h2>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {formatTime(schedule.earliest_time)} - {formatTime(schedule.latest_time)}
+                </div>
               </div>
-            </div>
-        )}
+            )}
+
+            {/* Notifications */}
+            {schedule.notifications_enabled && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Bell size={20} />
+                  Notifications
+                </h2>
+
+                <div className="space-y-4">
+                  {/* Reminder Time */}
+                  {schedule.reminder_time && (
+                    <div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Reminder Time</div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {formatTime(schedule.reminder_time)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notification Channels */}
+                  {notificationChannels.length > 0 && (
+                    <div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Channels</div>
+                      <div className="space-y-2">
+                        {notificationChannels.map(channel => (
+                          <div
+                            key={channel.id}
+                            className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                          >
+                            {channel.household_wide ? (
+                              <Users size={14} className="flex-shrink-0" />
+                            ) : (
+                              <UserIcon size={14} className="flex-shrink-0" />
+                            )}
+                            <span className="font-medium">{channel.name}</span>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              ({getChannelTypeDisplay(channel.webhook_type)})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Notes - Full Width */}
           {schedule.notes && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 md:col-span-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 lg:col-span-2">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <FileText size={20} />
                 Notes
