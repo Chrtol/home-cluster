@@ -468,6 +468,36 @@ export default function Dashboard() {
       }
     });
 
+    // Sort events according to the rules:
+    // 1. Items with time windows sorted by earliest time (earliest first)
+    // 2. Items without time windows grouped by reptile
+    // 3. Items with equal time windows grouped by reptile
+    scheduledEvents.sort((a, b) => {
+      const aHasTime = a.time_window_enabled && a.earliest_time;
+      const bHasTime = b.time_window_enabled && b.earliest_time;
+
+      // Both have time windows - sort by time, then by reptile name
+      if (aHasTime && bHasTime) {
+        if (a.earliest_time !== b.earliest_time) {
+          return a.earliest_time.localeCompare(b.earliest_time);
+        }
+        return a.reptile_name.localeCompare(b.reptile_name);
+      }
+
+      // Only a has time window - a comes first
+      if (aHasTime && !bHasTime) {
+        return -1;
+      }
+
+      // Only b has time window - b comes first
+      if (!aHasTime && bHasTime) {
+        return 1;
+      }
+
+      // Neither has time window - sort by reptile name
+      return a.reptile_name.localeCompare(b.reptile_name);
+    });
+
     return scheduledEvents;
   };
 
@@ -1033,14 +1063,15 @@ export default function Dashboard() {
                           return (
                             <div
                               key={idx}
-                              className={`px-2 py-2 rounded bg-white dark:bg-gray-800 border ${
+                              className={`px-2 py-1.5 rounded bg-white dark:bg-gray-800 border ${
                                 event.is_completed
                                   ? 'border-green-500 dark:border-green-600'
                                   : 'border-gray-200 dark:border-gray-600'
                               }`}
                               title={event.name || event.reptile_name}
                             >
-                              <div className="flex items-center gap-1.5 mb-1">
+                              {/* First row: Reptile name and food category */}
+                              <div className="flex items-center gap-1.5 mb-0.5">
                                 {event.is_completed && (
                                   <span className="text-green-600 dark:text-green-400 text-sm font-bold flex-shrink-0">✓</span>
                                 )}
@@ -1051,26 +1082,22 @@ export default function Dashboard() {
                                 {event.notifications_enabled && (
                                   <Bell size={12} className="flex-shrink-0 text-amber-600 dark:text-amber-400" title="Notifications enabled" />
                                 )}
-                              </div>
-                              <div className="text-xs space-y-0.5 ml-5">
                                 {foodCategory && (
-                                  <div className="text-gray-700 dark:text-gray-300">
-                                    <span className="font-medium">Food:</span> {foodCategory}
-                                  </div>
+                                  <span className="text-xs text-gray-600 dark:text-gray-400 ml-auto flex-shrink-0">
+                                    {foodCategory}
+                                  </span>
                                 )}
+                              </div>
+                              {/* Second row: Time and supplements */}
+                              <div className="flex items-center gap-2 ml-5 text-xs">
                                 {timeText && (
-                                  <div className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                  <div className="text-gray-600 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
                                     <Clock size={10} />
                                     {timeText}
                                   </div>
                                 )}
-                                {event.notes && (
-                                  <div className="text-gray-500 dark:text-gray-400 italic line-clamp-2">
-                                    {event.notes}
-                                  </div>
-                                )}
                                 {event.suggested_supplements && event.suggested_supplements.length > 0 && (
-                                  <div className="flex gap-1 flex-wrap mt-1">
+                                  <div className="flex gap-1 flex-wrap">
                                     {event.suggested_supplements.map((supp, suppIdx) => (
                                       <span key={suppIdx} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200">
                                         +{supp.name}
@@ -1079,6 +1106,12 @@ export default function Dashboard() {
                                   </div>
                                 )}
                               </div>
+                              {/* Third row (optional): Notes if present */}
+                              {event.notes && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-1 ml-5 mt-0.5">
+                                  {event.notes}
+                                </div>
+                              )}
                             </div>
                           );
                         }
