@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"  # CSRF protection
     cookie_domain: str | None = None
 
+    # Schedule instance generation settings
+    instance_generation_days_ahead: int = 60  # How many days ahead to generate schedule instances
+
     class Config:
         env_file = ".env"
         case_sensitive = False

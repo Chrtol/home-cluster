@@ -14,12 +14,14 @@ from app.instance_generator import generate_instances_for_all_schedules
 
 
 async def main():
+    from app.config import settings
+
     print("Generating schedule instances for all schedules...")
-    print("This will create instances for the next 60 days.")
+    print(f"This will create instances for the next {settings.instance_generation_days_ahead} days.")
     print()
 
     try:
-        result = await generate_instances_for_all_schedules(days_ahead=60)
+        result = await generate_instances_for_all_schedules()
 
         print(f"✓ Successfully generated instances!")
         print(f"  - Schedules processed: {result['schedules_processed']}")

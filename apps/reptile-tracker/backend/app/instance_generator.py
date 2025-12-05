@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models import Schedule, ScheduleInstance, FeedingRotation, Supplement
 from app.database import async_session_maker
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ async def calculate_supplements_for_instance(
 async def generate_instances_for_schedule(
     db: AsyncSession,
     schedule: Schedule,
-    days_ahead: int = 60,
+    days_ahead: Optional[int] = None,
     from_date: Optional[py_date] = None
 ) -> int:
     """
@@ -159,12 +160,14 @@ async def generate_instances_for_schedule(
     Args:
         db: Database session
         schedule: The schedule to generate instances for
-        days_ahead: How many days ahead to generate instances (default 60)
+        days_ahead: How many days ahead to generate instances (default from settings)
         from_date: Start date (default: today)
 
     Returns:
         Number of instances created
     """
+    if days_ahead is None:
+        days_ahead = settings.instance_generation_days_ahead
     if not schedule.enabled:
         logger.debug(f"Schedule {schedule.id} is disabled, skipping instance generation")
         return 0
@@ -238,7 +241,7 @@ async def generate_instances_for_schedule(
     return instances_created
 
 
-async def generate_instances_for_all_schedules(days_ahead: int = 60) -> Dict[str, int]:
+async def generate_instances_for_all_schedules(days_ahead: Optional[int] = None) -> Dict[str, int]:
     """
     Generate instances for all enabled schedules.
     This should be run daily to ensure instances exist for the next N days.
@@ -246,6 +249,8 @@ async def generate_instances_for_all_schedules(days_ahead: int = 60) -> Dict[str
     Returns:
         Dictionary with statistics: {'schedules_processed': X, 'instances_created': Y}
     """
+    if days_ahead is None:
+        days_ahead = settings.instance_generation_days_ahead
     logger.info(f"Generating instances for all schedules ({days_ahead} days ahead)")
 
     async with async_session_maker() as db:
@@ -309,7 +314,7 @@ async def delete_instances_for_schedule(db: AsyncSession, schedule_id: int) -> i
 async def regenerate_instances_for_schedule(
     db: AsyncSession,
     schedule_id: int,
-    days_ahead: int = 60
+    days_ahead: Optional[int] = None
 ) -> int:
     """
     Delete and regenerate instances for a schedule.
@@ -318,6 +323,8 @@ async def regenerate_instances_for_schedule(
     Returns:
         Number of instances created
     """
+    if days_ahead is None:
+        days_ahead = settings.instance_generation_days_ahead
     logger.info(f"Regenerating instances for schedule {schedule_id}")
 
     # Delete existing future instances

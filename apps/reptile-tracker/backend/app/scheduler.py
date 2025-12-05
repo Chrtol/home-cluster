@@ -1325,15 +1325,15 @@ async def send_overdue_alert(
 async def daily_instance_maintenance():
     """
     Daily job to generate schedule instances and clean up old ones.
-    Runs at 3 AM UTC to ensure instances exist for the next 14 days.
+    Runs at 3 AM UTC to ensure instances exist for configured days ahead.
     """
     logger.info("Starting daily instance maintenance")
 
     try:
         from app.instance_generator import generate_instances_for_all_schedules, cleanup_old_instances
 
-        # Generate instances for next 14 days
-        stats = await generate_instances_for_all_schedules(days_ahead=14)
+        # Generate instances (uses config value)
+        stats = await generate_instances_for_all_schedules()
         logger.info(
             f"Generated instances: {stats['schedules_processed']} schedules processed, "
             f"{stats['instances_created']} instances created"
