@@ -13,12 +13,62 @@ function ScheduleDetails() {
   const [supplement, setSupplement] = useState(null);
   const [parentSchedule, setParentSchedule] = useState(null);
   const [notificationChannels, setNotificationChannels] = useState([]);
+  const [feedingRotations, setFeedingRotations] = useState([]);
+  const [applicableSupplements, setApplicableSupplements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchScheduleDetails();
   }, [id]);
+
+  const calculateApplicableSupplements = (scheduleData, rotations) => {
+    if (!scheduleData.food_category) return [];
+
+    // Filter rotations that apply to this food category
+    const applicable = rotations.filter(r => {
+      if (r.rotation_type !== 'supplement') return false;
+      if (!r.applies_to_category || r.applies_to_category === 'all') return true;
+      return r.applies_to_category === scheduleData.food_category;
+    });
+
+    // Sort by priority (lower number = higher priority)
+    applicable.sort((a, b) => a.priority - b.priority);
+
+    // For schedule-based rotations, check if this schedule's days match
+    const scheduleBasedSupplements = applicable
+      .filter(r => r.trigger_mode === 'schedule_based')
+      .filter(r => {
+        if (!r.schedule_days_of_week || !scheduleData.days_of_week) return false;
+
+        // Get days from rotation and schedule
+        const rotationDays = r.schedule_days_of_week.split(',').map(d => parseInt(d));
+        const scheduleDays = scheduleData.days_of_week.split(',').map(d => parseInt(d));
+
+        // Check if any days overlap
+        return rotationDays.some(day => scheduleDays.includes(day));
+      })
+      .filter(r => r.supplement)
+      .map(r => r.supplement);
+
+    // For feeding-count based rotations, we can't determine without actual feeding history
+    // So we'll show them as "may apply" based on the frequency
+    const feedingCountSupplements = applicable
+      .filter(r => r.trigger_mode === 'feeding_count')
+      .filter(r => r.supplement)
+      .map(r => ({
+        ...r.supplement,
+        frequency_note: `Every ${r.every_n_feedings} feeding${r.every_n_feedings > 1 ? 's' : ''}`
+      }));
+
+    // Combine and deduplicate
+    const allSupplements = [...scheduleBasedSupplements, ...feedingCountSupplements];
+    const unique = allSupplements.filter((supp, index, self) =>
+      index === self.findIndex(s => s.id === supp.id)
+    );
+
+    return unique;
+  };
 
   const fetchScheduleDetails = async () => {
     try {
@@ -47,6 +97,21 @@ function ScheduleDetails() {
         const channelsResponse = await axios.get("/api/notification-channels/me");
         const enabledChannels = channelsResponse.data.filter(ch => scheduleData.channel_ids.includes(ch.id));
         setNotificationChannels(enabledChannels);
+      }
+
+      // Fetch feeding rotations for supplement calculation (only for feeding schedules)
+      if (scheduleData.schedule_type === 'feeding' && scheduleData.reptile_id) {
+        try {
+          const rotationsResponse = await axios.get(`/api/feeding-rotations/reptile/${scheduleData.reptile_id}`);
+          const rotations = rotationsResponse.data;
+          setFeedingRotations(rotations);
+
+          // Calculate applicable supplements for this schedule
+          const supplements = calculateApplicableSupplements(scheduleData, rotations);
+          setApplicableSupplements(supplements);
+        } catch (err) {
+          console.error("Error fetching feeding rotations:", err);
+        }
       }
 
       setLoading(false);
@@ -252,8 +317,8 @@ function ScheduleDetails() {
       </div>
 
       {/* Main Content */}
-      <div className="space-y-6">
-          {/* Schedule Type */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Schedule Information */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Schedule Information</h2>
 
@@ -301,6 +366,24 @@ function ScheduleDetails() {
                 </div>
               )}
 
+              {applicableSupplements.length > 0 && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-400 mb-1">Applicable Supplements</div>
+                  <div className="space-y-1">
+                    {applicableSupplements.map((supp, idx) => (
+                      <div key={idx} className="font-medium text-gray-900 dark:text-white">
+                        {supp.name}
+                        {supp.frequency_note && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            ({supp.frequency_note})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {parentSchedule && (
                 <div>
                   <div className="text-gray-500 dark:text-gray-400 mb-1">Parent Schedule</div>
@@ -336,18 +419,6 @@ function ScheduleDetails() {
             </div>
           )}
 
-          {/* Notes */}
-          {schedule.notes && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <FileText size={20} />
-                Notes
-              </h2>
-              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                {schedule.notes}
-              </div>
-            </div>
-          )}
         {/* Notifications */}
         {schedule.notifications_enabled && (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -394,6 +465,19 @@ function ScheduleDetails() {
               </div>
             </div>
         )}
+
+          {/* Notes - Full Width */}
+          {schedule.notes && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 md:col-span-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <FileText size={20} />
+                Notes
+              </h2>
+              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                {schedule.notes}
+              </div>
+            </div>
+          )}
     </div>
   );
 }

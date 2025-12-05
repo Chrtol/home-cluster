@@ -23,6 +23,7 @@ export default function Dashboard() {
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
+  const [feedingRotations, setFeedingRotations] = useState([]); // Feeding rotations for supplement suggestions
   const [weeklyEvents, setWeeklyEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [calendarReptileFilter, setCalendarReptileFilter] = useState(new Set());
@@ -205,10 +206,23 @@ export default function Dashboard() {
           .catch(() => [])
       );
 
-      const scheduleResults = await Promise.all(schedulePromises);
+      const rotationPromises = reptiles.map(reptile =>
+        axios.get(`/api/feeding-rotations/reptile/${reptile.id}`)
+          .then(res => res.data.map(r => ({ ...r, reptile_name: reptile.name })))
+          .catch(() => [])
+      );
+
+      const [scheduleResults, rotationResults] = await Promise.all([
+        Promise.all(schedulePromises),
+        Promise.all(rotationPromises)
+      ]);
+
       const allSchedules = scheduleResults.flat();
+      const allRotations = rotationResults.flat();
+
       setSchedules(allSchedules);
-      calculateWeeklyEvents(allSchedules);
+      setFeedingRotations(allRotations);
+      calculateWeeklyEvents(allSchedules, allRotations);
     } catch (error) {
       console.error("Error fetching schedules:", error);
     }
@@ -252,7 +266,7 @@ export default function Dashboard() {
     }
   };
 
-  const calculateWeeklyEvents = (scheduleList) => {
+  const calculateWeeklyEvents = (scheduleList, rotationsList = []) => {
     const calculatedEvents = [];
     const today = new Date();
     const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
@@ -260,6 +274,73 @@ export default function Dashboard() {
     // Get start of week
     const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
     const weekEnd = addDays(weekStart, 6);
+
+    // Group rotations by reptile for easy lookup
+    const rotationsByReptile = {};
+    rotationsList.forEach(rotation => {
+      if (!rotationsByReptile[rotation.reptile_id]) {
+        rotationsByReptile[rotation.reptile_id] = [];
+      }
+      rotationsByReptile[rotation.reptile_id].push(rotation);
+    });
+
+    // Helper function to find applicable supplements for a feeding event
+    const getSuggestedSupplements = (reptileId, foodCategory, eventIndex, eventDate) => {
+      const rotations = rotationsByReptile[reptileId] || [];
+
+      // Filter rotations that apply to this food category
+      const applicable = rotations.filter(r => {
+        if (r.rotation_type !== 'supplement') return false;
+        if (!r.applies_to_category || r.applies_to_category === 'all') return true;
+        return r.applies_to_category === foodCategory;
+      });
+
+      // Sort by priority (lower number = higher priority)
+      applicable.sort((a, b) => a.priority - b.priority);
+
+      // Find ALL rotations that trigger on this event
+      const triggeredRotations = [];
+      for (const rotation of applicable) {
+        let shouldTrigger = false;
+
+        if (rotation.trigger_mode === 'feeding_count') {
+          // Using eventIndex as a rough approximation of feeding number
+          if ((eventIndex + 1) % rotation.every_n_feedings === 0) {
+            shouldTrigger = true;
+          }
+        } else if (rotation.trigger_mode === 'schedule_based') {
+          // Check if event date's day of week matches configured days
+          if (rotation.schedule_days_of_week && eventDate) {
+            const dayOfWeek = eventDate.getDay(); // 0=Sunday, 1=Monday, etc
+            const configuredDays = rotation.schedule_days_of_week.split(',').map(d => parseInt(d));
+            if (configuredDays.includes(dayOfWeek)) {
+              shouldTrigger = true;
+            }
+          }
+        }
+
+        if (shouldTrigger && rotation.supplement) {
+          triggeredRotations.push(rotation);
+        }
+      }
+
+      // Handle exclusive mode: If any rotation is exclusive, only keep highest priority
+      if (triggeredRotations.length > 0 && triggeredRotations.some(r => r.is_exclusive)) {
+        const exclusiveRotations = triggeredRotations.filter(r => r.is_exclusive);
+        if (exclusiveRotations.length > 0) {
+          // Keep only the highest priority (first after sorting)
+          const highestPriority = exclusiveRotations[0].priority;
+          // Filter to only rotations at this priority level
+          const filtered = triggeredRotations.filter(r => r.priority === highestPriority);
+          return filtered.map(r => r.supplement);
+        }
+      }
+
+      return triggeredRotations.map(r => r.supplement);
+    };
+
+    // Helper to create event object with supplement suggestion
+    let eventIndexCounter = 0;
 
     const baseSchedules = scheduleList.filter(s => s.schedule_rule !== "dependent");
 
@@ -271,7 +352,7 @@ export default function Dashboard() {
         let currentDay = new Date(weekStart);
 
         while (currentDay <= weekEnd) {
-          calculatedEvents.push({
+          const event = {
             date: new Date(currentDay),
             schedule_id: schedule.id,
             schedule_type: schedule.schedule_type,
@@ -287,7 +368,23 @@ export default function Dashboard() {
             notes: schedule.notes,
             notifications_enabled: schedule.notifications_enabled,
             reminder_time: schedule.reminder_time,
-          });
+          };
+
+          // Add supplement suggestions for feeding schedules
+          if (schedule.schedule_type === 'feeding' && schedule.food_category) {
+            const supplements = getSuggestedSupplements(
+              schedule.reptile_id,
+              schedule.food_category,
+              eventIndexCounter,
+              event.date
+            );
+            if (supplements && supplements.length > 0) {
+              event.suggested_supplements = supplements;
+            }
+            eventIndexCounter++;
+          }
+
+          calculatedEvents.push(event);
           currentDay.setDate(currentDay.getDate() + frequency);
         }
       } else if (schedule.schedule_rule === "days_of_week") {
@@ -296,7 +393,7 @@ export default function Dashboard() {
 
         while (currentDay <= weekEnd) {
           if (days.includes(currentDay.getDay())) {
-            calculatedEvents.push({
+            const event = {
               date: new Date(currentDay),
               schedule_id: schedule.id,
               schedule_type: schedule.schedule_type,
@@ -312,7 +409,23 @@ export default function Dashboard() {
               notes: schedule.notes,
               notifications_enabled: schedule.notifications_enabled,
               reminder_time: schedule.reminder_time,
-            });
+            };
+
+            // Add supplement suggestions for feeding schedules
+            if (schedule.schedule_type === 'feeding' && schedule.food_category) {
+              const supplements = getSuggestedSupplements(
+                schedule.reptile_id,
+                schedule.food_category,
+                eventIndexCounter,
+                event.date
+              );
+              if (supplements && supplements.length > 0) {
+                event.suggested_supplements = supplements;
+              }
+              eventIndexCounter++;
+            }
+
+            calculatedEvents.push(event);
           }
           currentDay.setDate(currentDay.getDate() + 1);
         }
@@ -1414,10 +1527,12 @@ export default function Dashboard() {
                             </div>
                           )}
 
-                          {event.supplement && (
+                          {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                             <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Supplement</span>
-                              <span className="text-gray-900 dark:text-white truncate">{event.supplement.name}</span>
+                              <span className="text-gray-900 dark:text-white truncate">
+                                {event.suggested_supplements.map(s => s.name).join(', ')}
+                              </span>
                             </div>
                           )}
 
