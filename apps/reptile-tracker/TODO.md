@@ -525,6 +525,25 @@
 
 ## ✅ Recently Completed
 
+### December 2025 - Auto-Complete Schedules & UX Improvements (2025-12-05)
+- [x] **Auto-Complete Schedules** - ✅ COMPLETED (2025-12-05)
+  - Enable auto-complete per schedule for repetitive daily tasks (e.g., salad feeding, misting)
+  - Configurable delay hours after time window or end of day before auto-completing
+  - Database migration adds auto_complete_enabled, auto_complete_hours_after to schedules table
+  - Database migration adds auto_completed flag to schedule_completions table
+  - Backend scheduler function checks every 30 minutes for instances to auto-complete
+  - Manual override API endpoints to mark auto-completed instances as skipped or missed
+  - Frontend: Schedule form with auto-complete settings (checkbox + hours input)
+  - Frontend: Instance detail page shows robot icon and special UI for auto-completed instances
+  - Frontend: "Mark as Skipped" and "Mark as Missed" buttons for manual correction
+  - Reduces burden of logging every single occurrence of daily repetitive tasks
+
+- [x] **Calendar View Persistence** - ✅ COMPLETED (2025-12-05)
+  - Dashboard calendar view (1d/3d/7d) persists across sessions via localStorage
+  - Main calendar view (1d/3d/7d/30d) persists across sessions via localStorage
+  - Separate storage keys for dashboard and calendar preferences
+  - Mobile/desktop constraints respected when loading saved preferences
+
 ### December 2025 - Schedule Instance System (2025-12-05)
 - [x] **Schedule Instance System** - ✅ COMPLETED (2025-12-05)
   - Pre-generation of schedule occurrences with unique IDs for each instance
