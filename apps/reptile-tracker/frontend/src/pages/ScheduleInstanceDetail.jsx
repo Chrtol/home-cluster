@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Calendar, Clock, Utensils, Droplets, Scale, Activity, CheckCircle, AlertCircle, XCircle, MinusCircle, Bell } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Utensils, Droplets, Scale, Activity, CheckCircle, AlertCircle, XCircle, MinusCircle, Bell, Plus } from 'lucide-react';
 import { formatDate, formatTime } from '../utils/dateFormatting';
 
 export default function ScheduleInstanceDetail() {
@@ -28,15 +28,19 @@ export default function ScheduleInstanceDetail() {
         const completionData = response.data.completions[0];
 
         // Fetch the actual feeding/misting/weighing that completed this instance
-        if (completionData.feeding_id) {
-          const feedingRes = await axios.get(`/api/feedings/${completionData.feeding_id}`);
-          setCompletion({ type: 'feeding', data: feedingRes.data });
-        } else if (completionData.misting_id) {
-          const mistingRes = await axios.get(`/api/misting/${completionData.misting_id}`);
-          setCompletion({ type: 'misting', data: mistingRes.data });
-        } else if (completionData.weight_id) {
-          const weightRes = await axios.get(`/api/weight/${completionData.weight_id}`);
-          setCompletion({ type: 'weight', data: weightRes.data });
+        if (completionData.completion_type && completionData.completion_id) {
+          const type = completionData.completion_type.toLowerCase();
+
+          if (type === 'feeding') {
+            const feedingRes = await axios.get(`/api/feedings/${completionData.completion_id}`);
+            setCompletion({ type: 'feeding', data: feedingRes.data });
+          } else if (type === 'misting') {
+            const mistingRes = await axios.get(`/api/misting/${completionData.completion_id}`);
+            setCompletion({ type: 'misting', data: mistingRes.data });
+          } else if (type === 'weighing') {
+            const weightRes = await axios.get(`/api/weight/${completionData.completion_id}`);
+            setCompletion({ type: 'weight', data: weightRes.data });
+          }
         }
       }
 
@@ -130,6 +134,44 @@ export default function ScheduleInstanceDetail() {
       }
       default:
         return null;
+    }
+  };
+
+  const handleLogNow = () => {
+    const scheduleType = schedule?.schedule_type;
+    const reptileId = reptile?.id;
+
+    // Navigate to the appropriate logging page with instance_id
+    switch (scheduleType) {
+      case 'feeding':
+        navigate(`/feed?instance_id=${id}`);
+        break;
+      case 'misting':
+        navigate(`/misting-log/${reptileId}?instance_id=${id}`);
+        break;
+      case 'weighing':
+        navigate(`/health-log/${reptileId}?instance_id=${id}&log_type=weight`);
+        break;
+      case 'health':
+        navigate(`/health-log/${reptileId}?instance_id=${id}`);
+        break;
+      default:
+        navigate(`/reptiles/${reptileId}`);
+    }
+  };
+
+  const getActionButtonText = () => {
+    switch (schedule?.schedule_type) {
+      case 'feeding':
+        return 'Log Feeding';
+      case 'misting':
+        return 'Log Misting';
+      case 'weighing':
+        return 'Record Weight';
+      case 'health':
+        return 'Log Health Check';
+      default:
+        return 'Log Now';
     }
   };
 
@@ -327,6 +369,32 @@ export default function ScheduleInstanceDetail() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
               These supplements were pre-calculated based on your feeding rotation rules
             </p>
+          </div>
+        )}
+
+        {/* Pending Action Card */}
+        {instance.status === 'pending' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-blue-500 dark:border-blue-600 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Clock size={20} className="text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Action Required
+              </h3>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              This schedule instance is pending and needs to be completed.
+            </p>
+
+            <button
+              onClick={handleLogNow}
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <Plus size={16} />
+              {getActionButtonText()}
+            </button>
           </div>
         )}
 

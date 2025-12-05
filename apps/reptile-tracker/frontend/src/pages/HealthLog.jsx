@@ -91,11 +91,48 @@ export default function HealthLog() {
             setError('Failed to load log. It may not exist or you may not have permission.');
           }
         } else {
-          // Check for schedule_id in query params to pre-fill
+          // Check for instance_id or schedule_id in query params to pre-fill
+          const instanceId = searchParams.get('instance_id');
           const scheduleId = searchParams.get('schedule_id');
           const logTypeParam = searchParams.get('log_type');
 
-          if (scheduleId) {
+          if (instanceId) {
+            try {
+              const instanceRes = await axios.get(`/api/schedule-instances/${instanceId}`);
+              const instance = instanceRes.data;
+              const schedule = instance.schedule;
+
+              // Pre-fill reptile from schedule
+              if (schedule?.reptile_id) {
+                setSelectedReptile(schedule.reptile_id);
+              }
+
+              // Pre-fill date from instance
+              if (instance.scheduled_date) {
+                setDate(instance.scheduled_date);
+              }
+
+              // Pre-fill time from schedule
+              if (schedule?.reminder_time || (schedule?.time_window_enabled && schedule?.earliest_time)) {
+                const timeStr = schedule.reminder_time || schedule.earliest_time;
+                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
+                setHours(timeHours);
+                setMinutes(timeMinutes);
+                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
+                setLogTime(timeStr);
+              }
+
+              // Pre-fill log type if specified in URL or from schedule
+              if (logTypeParam) {
+                setLogType(logTypeParam);
+              } else if (schedule?.health_category) {
+                // Map health category to record type if applicable
+                setRecordType(schedule.health_category);
+              }
+            } catch (instanceErr) {
+              console.error('Failed to load instance for pre-fill:', instanceErr);
+            }
+          } else if (scheduleId) {
             try {
               const scheduleRes = await axios.get(`/api/schedules/${scheduleId}`);
               const schedule = scheduleRes.data;

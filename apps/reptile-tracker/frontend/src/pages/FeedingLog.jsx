@@ -85,9 +85,63 @@ export default function FeedingLog() {
         } else {
           // Creating new feeding
           const scheduleId = searchParams.get('schedule_id');
+          const instanceId = searchParams.get('instance_id');
 
-          // Check if we have a schedule_id query parameter
-          if (scheduleId) {
+          // Check if we have an instance_id query parameter (preferred over schedule_id)
+          if (instanceId) {
+            try {
+              const instanceRes = await axios.get(`/api/schedule-instances/${instanceId}`);
+              const instance = instanceRes.data;
+              const schedule = instance.schedule;
+
+              // Pre-fill reptile
+              if (schedule?.reptile_id) {
+                setSelectedReptile(schedule.reptile_id);
+              }
+
+              // Pre-fill date from instance
+              if (instance.scheduled_date) {
+                setDate(instance.scheduled_date);
+              }
+
+              // Pre-fill time from schedule
+              if (schedule?.reminder_time || (schedule?.time_window_enabled && schedule?.earliest_time)) {
+                const timeStr = schedule.reminder_time || schedule.earliest_time;
+                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
+                setHours(timeHours);
+                setMinutes(timeMinutes);
+                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
+                setFedTime(timeStr);
+              }
+
+              // Pre-fill food category toggles based on schedule
+              if (schedule?.food_category) {
+                if (schedule.food_category === 'insects') {
+                  setIncludeInsects(true);
+                  setIncludeSalad(false);
+                  setIncludePrepared(false);
+                } else if (schedule.food_category === 'salad') {
+                  setIncludeInsects(false);
+                  setIncludeSalad(true);
+                  setIncludePrepared(false);
+                } else if (schedule.food_category === 'prepared') {
+                  setIncludeInsects(false);
+                  setIncludeSalad(false);
+                  setIncludePrepared(true);
+                }
+              }
+
+              // Pre-fill supplements from pre-calculated instance supplements
+              if (instance.supplements && instance.supplements.length > 0) {
+                const suppIds = instance.supplements.map(s => s.id);
+                setSelectedSupplements(suppIds);
+              }
+            } catch (instanceErr) {
+              console.error('Failed to load instance for pre-fill:', instanceErr);
+              // Continue with default initialization if instance load fails
+            }
+          } else if (scheduleId) {
+            // Fallback to schedule_id if no instance_id
             try {
               const scheduleRes = await axios.get(`/api/schedules/${scheduleId}`);
               const schedule = scheduleRes.data;
