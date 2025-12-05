@@ -13,7 +13,7 @@ from app.auth import (
 )
 from app.config import settings
 from app.database import get_db
-from app.schemas import User
+from app.schemas import User, UserUpdate
 from app.rate_limit import limiter
 import jwt
 from sqlalchemy import select, update
@@ -188,6 +188,35 @@ async def refresh_token(
 @router.get("/me", response_model=User)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current user info"""
+    return current_user
+
+
+@router.patch("/me", response_model=User)
+async def update_me(
+    user_update: UserUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update current user info (e.g., timezone)"""
+    # Update user fields
+    if user_update.name is not None:
+        current_user.name = user_update.name
+    if user_update.timezone is not None:
+        # Validate timezone string
+        try:
+            from zoneinfo import ZoneInfo
+            ZoneInfo(user_update.timezone)  # Will raise if invalid
+            current_user.timezone = user_update.timezone
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid timezone: {user_update.timezone}"
+            )
+
+    await db.commit()
+    await db.refresh(current_user)
+
+    logger.info(f"User {current_user.email} updated their profile")
     return current_user
 
 
