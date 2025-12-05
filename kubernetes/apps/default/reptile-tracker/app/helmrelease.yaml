@@ -34,7 +34,7 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20251205164925 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20251205165619 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             env:
               DATABASE_URL:
@@ -139,7 +139,7 @@ spec:
           worker:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20251205164925 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20251205165619 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             command: ["python", "celery_worker.py"]
             env:
