@@ -35,7 +35,11 @@ function Calendar() {
     // Load filter state from localStorage
     const savedFilters = localStorage.getItem('calendar_reptile_filters');
     if (savedFilters) {
-      setVisibleReptiles(new Set(JSON.parse(savedFilters)));
+      const parsed = JSON.parse(savedFilters);
+      // If saved filters is empty array, don't use it (initialize with all reptiles later)
+      if (parsed && parsed.length > 0) {
+        setVisibleReptiles(new Set(parsed));
+      }
     }
 
     // Load category filter state from localStorage
@@ -194,11 +198,13 @@ function Calendar() {
       const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-      // Build reptile_ids filter
-      const activeReptileIds = reptiles
-        .filter(r => visibleReptiles.has(r.id))
-        .map(r => r.id)
-        .join(',');
+      // Build reptile_ids filter - use all reptiles if filter is empty
+      const activeReptileIds = visibleReptiles.size > 0
+        ? reptiles
+            .filter(r => visibleReptiles.has(r.id))
+            .map(r => r.id)
+            .join(',')
+        : reptiles.map(r => r.id).join(',');
 
       if (!activeReptileIds) {
         setEvents([]);
