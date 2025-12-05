@@ -259,10 +259,10 @@ const NotificationTemplatesTab = () => {
   };
 
   const availableVariables = {
-    schedule_reminder: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'food_category', 'supplement_name'],
-    overdue_alert: ['reptile_name', 'schedule_name', 'schedule_type', 'missed_date', 'food_category', 'supplement_name'],
+    schedule_reminder: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'food_category', 'supplement_name', 'schedule_url'],
+    overdue_alert: ['reptile_name', 'schedule_name', 'schedule_type', 'missed_date', 'food_category', 'supplement_name', 'schedule_url'],
     feeding_logged: ['reptile_name', 'user_name', 'food_list'],
-    custom: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'missed_date', 'food_category', 'supplement_name']
+    custom: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'missed_date', 'food_category', 'supplement_name', 'schedule_url']
   };
 
   const groupedTemplates = {
