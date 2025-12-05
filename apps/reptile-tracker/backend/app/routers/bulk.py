@@ -1,0 +1,327 @@
+"""Bulk data API endpoints for optimized dashboard and calendar loading"""
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select, and_, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from typing import List, Optional
+from datetime import date as py_date, datetime, timedelta
+
+from app import models
+from app.database import get_db
+from app.routers.auth import get_current_user
+from app.permissions import get_accessible_reptile_ids
+
+router = APIRouter(prefix="/bulk", tags=["bulk"])
+
+
+@router.get("/dashboard")
+async def get_dashboard_data(
+    week_start: py_date = Query(..., description="Start date for weekly calendar"),
+    week_end: py_date = Query(..., description="End date for weekly calendar"),
+    reptile_ids: Optional[str] = Query(None, description="Comma-separated reptile IDs for calendar filter"),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Get all data needed for dashboard in a single request.
+    Returns: reptiles, recent feedings, weight data, schedules, rotations, weekly completions, and instances.
+    """
+    # Get accessible reptile IDs
+    accessible_ids = await get_accessible_reptile_ids(db, current_user)
+
+    if not accessible_ids:
+        return {
+            "reptiles": [],
+            "recent_feedings": [],
+            "weight_data": [],
+            "last_activity": {},
+            "schedules": [],
+            "feeding_rotations": [],
+            "weekly_feedings": [],
+            "weekly_mistings": [],
+            "weekly_instances": []
+        }
+
+    # Parse reptile filter
+    calendar_reptile_ids = accessible_ids
+    if reptile_ids:
+        try:
+            calendar_reptile_ids = [int(rid.strip()) for rid in reptile_ids.split(',') if rid.strip()]
+            # Only include accessible IDs
+            calendar_reptile_ids = [rid for rid in calendar_reptile_ids if rid in accessible_ids]
+        except ValueError:
+            calendar_reptile_ids = accessible_ids
+
+    # Fetch reptiles
+    reptiles_result = await db.execute(
+        select(models.Reptile)
+        .where(models.Reptile.id.in_(accessible_ids))
+        .options(selectinload(models.Reptile.household))
+    )
+    reptiles = reptiles_result.scalars().all()
+
+    # Fetch recent feedings (last 5)
+    recent_feedings_result = await db.execute(
+        select(models.Feeding)
+        .where(models.Feeding.reptile_id.in_(accessible_ids))
+        .options(selectinload(models.Feeding.reptile))
+        .order_by(models.Feeding.fed_at.desc())
+        .limit(5)
+    )
+    recent_feedings = recent_feedings_result.scalars().all()
+
+    # Fetch weight dashboard data
+    weight_result = await db.execute(
+        select(models.Weight)
+        .where(models.Weight.reptile_id.in_(accessible_ids))
+        .options(selectinload(models.Weight.reptile))
+        .order_by(models.Weight.weighed_at.desc())
+    )
+    all_weights = weight_result.scalars().all()
+
+    # Group weights by reptile for dashboard
+    weight_data = {}
+    for weight in all_weights:
+        if weight.reptile_id not in weight_data:
+            weight_data[weight.reptile_id] = []
+        weight_data[weight.reptile_id].append({
+            "id": weight.id,
+            "weight": weight.weight,
+            "weighed_at": weight.weighed_at.isoformat(),
+            "notes": weight.notes
+        })
+
+    # Fetch last activity per reptile (last feeding, misting, health)
+    last_activity = {}
+    for reptile_id in accessible_ids:
+        # Last feeding
+        last_feeding_result = await db.execute(
+            select(models.Feeding)
+            .where(models.Feeding.reptile_id == reptile_id)
+            .order_by(models.Feeding.fed_at.desc())
+            .limit(1)
+        )
+        last_feeding = last_feeding_result.scalars().first()
+
+        # Last misting
+        last_misting_result = await db.execute(
+            select(models.Misting)
+            .where(models.Misting.reptile_id == reptile_id)
+            .order_by(models.Misting.misted_at.desc())
+            .limit(1)
+        )
+        last_misting = last_misting_result.scalars().first()
+
+        # Last health
+        last_health_result = await db.execute(
+            select(models.Health)
+            .where(models.Health.reptile_id == reptile_id)
+            .order_by(models.Health.recorded_at.desc())
+            .limit(1)
+        )
+        last_health = last_health_result.scalars().first()
+
+        last_activity[reptile_id] = {
+            "last_feeding": [last_feeding] if last_feeding else [],
+            "last_misting": [last_misting] if last_misting else [],
+            "last_health": [last_health] if last_health else []
+        }
+
+    # Fetch schedules for all accessible reptiles
+    schedules_result = await db.execute(
+        select(models.Schedule)
+        .where(models.Schedule.reptile_id.in_(accessible_ids))
+        .options(
+            selectinload(models.Schedule.reptile),
+            selectinload(models.Schedule.notification_channels)
+        )
+    )
+    schedules = schedules_result.scalars().all()
+
+    # Fetch feeding rotations
+    rotations_result = await db.execute(
+        select(models.FeedingRotation)
+        .where(models.FeedingRotation.reptile_id.in_(accessible_ids))
+        .options(selectinload(models.FeedingRotation.reptile))
+    )
+    feeding_rotations = rotations_result.scalars().all()
+
+    # Fetch weekly feedings (filtered by date range)
+    weekly_feedings_result = await db.execute(
+        select(models.Feeding)
+        .where(
+            and_(
+                models.Feeding.reptile_id.in_(accessible_ids),
+                models.Feeding.fed_at >= datetime.combine(week_start, datetime.min.time()),
+                models.Feeding.fed_at <= datetime.combine(week_end, datetime.max.time())
+            )
+        )
+        .options(selectinload(models.Feeding.reptile))
+    )
+    weekly_feedings = weekly_feedings_result.scalars().all()
+
+    # Fetch weekly mistings (filtered by date range)
+    weekly_mistings_result = await db.execute(
+        select(models.Misting)
+        .where(
+            and_(
+                models.Misting.reptile_id.in_(accessible_ids),
+                models.Misting.misted_at >= datetime.combine(week_start, datetime.min.time()),
+                models.Misting.misted_at <= datetime.combine(week_end, datetime.max.time())
+            )
+        )
+        .options(selectinload(models.Misting.reptile))
+    )
+    weekly_mistings = weekly_mistings_result.scalars().all()
+
+    # Fetch weekly schedule instances (with calendar filter applied)
+    instances_result = await db.execute(
+        select(models.ScheduleInstance)
+        .join(models.Schedule)
+        .where(
+            and_(
+                models.ScheduleInstance.scheduled_date >= week_start,
+                models.ScheduleInstance.scheduled_date <= week_end,
+                models.Schedule.reptile_id.in_(calendar_reptile_ids)
+            )
+        )
+        .options(
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile),
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.notification_channels),
+            selectinload(models.ScheduleInstance.completions)
+        )
+        .order_by(models.ScheduleInstance.scheduled_date.asc())
+    )
+    weekly_instances = instances_result.scalars().all()
+
+    return {
+        "reptiles": reptiles,
+        "recent_feedings": recent_feedings,
+        "weight_data": weight_data,
+        "last_activity": last_activity,
+        "schedules": schedules,
+        "feeding_rotations": feeding_rotations,
+        "weekly_feedings": weekly_feedings,
+        "weekly_mistings": weekly_mistings,
+        "weekly_instances": weekly_instances
+    }
+
+
+@router.get("/calendar")
+async def get_calendar_data(
+    start_date: py_date = Query(..., description="Start date for calendar view"),
+    end_date: py_date = Query(..., description="End date for calendar view"),
+    reptile_ids: Optional[str] = Query(None, description="Comma-separated reptile IDs to filter"),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Get all data needed for calendar view in a single request.
+    Returns: reptiles, schedules, rotations, feedings, mistings, and instances for the date range.
+    """
+    # Get accessible reptile IDs
+    accessible_ids = await get_accessible_reptile_ids(db, current_user)
+
+    if not accessible_ids:
+        return {
+            "reptiles": [],
+            "schedules": [],
+            "feeding_rotations": [],
+            "feedings": [],
+            "mistings": [],
+            "instances": []
+        }
+
+    # Parse reptile filter for instances
+    instance_reptile_ids = accessible_ids
+    if reptile_ids:
+        try:
+            instance_reptile_ids = [int(rid.strip()) for rid in reptile_ids.split(',') if rid.strip()]
+            # Only include accessible IDs
+            instance_reptile_ids = [rid for rid in instance_reptile_ids if rid in accessible_ids]
+        except ValueError:
+            instance_reptile_ids = accessible_ids
+
+    # Fetch reptiles
+    reptiles_result = await db.execute(
+        select(models.Reptile)
+        .where(models.Reptile.id.in_(accessible_ids))
+        .options(selectinload(models.Reptile.household))
+    )
+    reptiles = reptiles_result.scalars().all()
+
+    # Fetch schedules for all accessible reptiles
+    schedules_result = await db.execute(
+        select(models.Schedule)
+        .where(models.Schedule.reptile_id.in_(accessible_ids))
+        .options(
+            selectinload(models.Schedule.reptile),
+            selectinload(models.Schedule.notification_channels)
+        )
+    )
+    schedules = schedules_result.scalars().all()
+
+    # Fetch feeding rotations
+    rotations_result = await db.execute(
+        select(models.FeedingRotation)
+        .where(models.FeedingRotation.reptile_id.in_(accessible_ids))
+        .options(selectinload(models.FeedingRotation.reptile))
+    )
+    feeding_rotations = rotations_result.scalars().all()
+
+    # Fetch feedings in date range
+    feedings_result = await db.execute(
+        select(models.Feeding)
+        .where(
+            and_(
+                models.Feeding.reptile_id.in_(accessible_ids),
+                models.Feeding.fed_at >= datetime.combine(start_date, datetime.min.time()),
+                models.Feeding.fed_at <= datetime.combine(end_date, datetime.max.time())
+            )
+        )
+        .options(selectinload(models.Feeding.reptile))
+    )
+    feedings = feedings_result.scalars().all()
+
+    # Fetch mistings in date range
+    mistings_result = await db.execute(
+        select(models.Misting)
+        .where(
+            and_(
+                models.Misting.reptile_id.in_(accessible_ids),
+                models.Misting.misted_at >= datetime.combine(start_date, datetime.min.time()),
+                models.Misting.misted_at <= datetime.combine(end_date, datetime.max.time())
+            )
+        )
+        .options(selectinload(models.Misting.reptile))
+    )
+    mistings = mistings_result.scalars().all()
+
+    # Fetch schedule instances (with reptile filter applied)
+    instances_result = await db.execute(
+        select(models.ScheduleInstance)
+        .join(models.Schedule)
+        .where(
+            and_(
+                models.ScheduleInstance.scheduled_date >= start_date,
+                models.ScheduleInstance.scheduled_date <= end_date,
+                models.Schedule.reptile_id.in_(instance_reptile_ids)
+            )
+        )
+        .options(
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile),
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.notification_channels),
+            selectinload(models.ScheduleInstance.completions)
+        )
+        .order_by(models.ScheduleInstance.scheduled_date.asc())
+    )
+    instances = instances_result.scalars().all()
+
+    return {
+        "reptiles": reptiles,
+        "schedules": schedules,
+        "feeding_rotations": feeding_rotations,
+        "feedings": feedings,
+        "mistings": mistings,
+        "instances": instances
+    }

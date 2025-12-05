@@ -51,80 +51,87 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [feedingsRes, reptilesRes, weightRes] = await Promise.all([
-          axios.get('/api/feedings?limit=5'),
-          axios.get('/api/reptiles'),
-          axios.get('/api/weight/dashboard')
-        ]);
-        setRecentFeedings(feedingsRes.data);
-        setReptiles(reptilesRes.data);
-        setWeightData(weightRes.data);
+        // Calculate week range for bulk endpoint
+        const today = new Date();
+        const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
+        const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+        const weekEnd = addDays(weekStart, 6);
 
-        // Fetch feeding, misting and health data for each reptile (single fetch, used for both stats and activity)
-        const feedingPromises = reptilesRes.data.map(r =>
-          axios.get(`/api/feedings?reptile_id=${r.id}&limit=1`).catch(() => ({ data: [] }))
-        );
-        const mistingPromises = reptilesRes.data.map(r =>
-          axios.get(`/api/misting/reptile/${r.id}`).catch(() => ({ data: [] }))
-        );
-        const healthPromises = reptilesRes.data.map(r =>
-          axios.get(`/api/health/reptile/${r.id}`).catch(() => ({ data: [] }))
-        );
+        const toLocalISODate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
 
-        const [feedingResults, mistingResults, healthResults] = await Promise.all([
-          Promise.all(feedingPromises),
-          Promise.all(mistingPromises),
-          Promise.all(healthPromises)
-        ]);
+        // Single bulk request for all dashboard data
+        const bulkResponse = await axios.get('/api/bulk/dashboard', {
+          params: {
+            week_start: toLocalISODate(weekStart),
+            week_end: toLocalISODate(weekEnd),
+            reptile_ids: calendarReptileFilter.size > 0 ? Array.from(calendarReptileFilter).join(',') : undefined
+          }
+        });
 
-        // Process feeding data - get last feeding for each reptile
+        const data = bulkResponse.data;
+
+        // Set basic data
+        setReptiles(data.reptiles);
+        setRecentFeedings(data.recent_feedings);
+        setSchedules(data.schedules);
+        setFeedingRotations(data.feeding_rotations);
+        setWeeklyFeedings(data.weekly_feedings);
+        setWeeklyMistings(data.weekly_mistings);
+
+        // Process weight data
+        const weightArray = [];
+        Object.entries(data.weight_data).forEach(([reptileId, weights]) => {
+          weights.forEach(w => weightArray.push({ ...w, reptile_id: parseInt(reptileId) }));
+        });
+        setWeightData(weightArray);
+
+        // Process last activity data
         const feedingMap = {};
-        reptilesRes.data.forEach((reptile, index) => {
-          const logs = feedingResults[index].data;
-          if (logs && logs.length > 0) {
-            feedingMap[reptile.id] = logs[0].fed_at; // Already sorted by fed_at desc
-          }
-        });
-        setFeedingData(feedingMap);
-
-        // Process misting data - get last misting for each reptile
         const mistingMap = {};
-        reptilesRes.data.forEach((reptile, index) => {
-          const logs = mistingResults[index].data;
-          if (logs && logs.length > 0) {
-            mistingMap[reptile.id] = logs[0].misted_at; // Already sorted by misted_at desc
-          }
-        });
-        setMistingData(mistingMap);
-
-        // Process health data - get last shed for each reptile
         const healthMap = {};
-        reptilesRes.data.forEach((reptile, index) => {
-          const records = healthResults[index].data;
-          const sheds = records.filter(r => r.record_type === 'shedding');
-          if (sheds && sheds.length > 0) {
-            healthMap[reptile.id] = sheds[0].date; // Already sorted by date desc
-          }
-        });
-        setHealthData(healthMap);
-
-        // Process weighing data - get last weighing for each reptile from weightData
         const weighingMap = {};
-        reptilesRes.data.forEach((reptile) => {
-          const reptileWeights = weightRes.data
-            .filter(w => w.reptile_id === reptile.id)
-            .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at));
-          if (reptileWeights.length > 0) {
-            weighingMap[reptile.id] = reptileWeights[0].measured_at;
+
+        Object.entries(data.last_activity).forEach(([reptileId, activity]) => {
+          const id = parseInt(reptileId);
+
+          if (activity.last_feeding && activity.last_feeding.length > 0) {
+            feedingMap[id] = activity.last_feeding[0].fed_at;
+          }
+
+          if (activity.last_misting && activity.last_misting.length > 0) {
+            mistingMap[id] = activity.last_misting[0].misted_at;
+          }
+
+          if (activity.last_health && activity.last_health.length > 0) {
+            const sheds = activity.last_health.filter(r => r.record_type === 'shedding');
+            if (sheds.length > 0) {
+              healthMap[id] = sheds[0].date;
+            }
           }
         });
+
+        // Get last weighing from weight_data
+        Object.entries(data.weight_data).forEach(([reptileId, weights]) => {
+          if (weights.length > 0) {
+            weighingMap[parseInt(reptileId)] = weights[0].weighed_at;
+          }
+        });
+
+        setFeedingData(feedingMap);
+        setMistingData(mistingMap);
+        setHealthData(healthMap);
         setWeighingData(weighingMap);
 
-        // Build recent activity from already-fetched data
+        // Build recent activity
         const allActivity = [];
 
-        // Add feedings
-        feedingsRes.data.forEach(feeding => {
+        // Add recent feedings
+        data.recent_feedings.forEach(feeding => {
           allActivity.push({
             type: 'feeding',
             id: `feeding-${feeding.id}`,
@@ -136,53 +143,87 @@ export default function Dashboard() {
           });
         });
 
-        // Add recent mistings from already-fetched data
-        reptilesRes.data.forEach((reptile, index) => {
-          const logs = mistingResults[index].data;
-          logs.slice(0, 5).forEach(m => {
-            allActivity.push({
-              type: 'misting',
-              id: `misting-${m.id}`,
-              timestamp: new Date(m.misted_at),
-              reptile: { id: reptile.id, name: reptile.name },
-              data: m,
-              icon: Droplets,
-              color: 'blue'
+        // Add recent mistings and health from last_activity
+        Object.entries(data.last_activity).forEach(([reptileId, activity]) => {
+          const reptile = data.reptiles.find(r => r.id === parseInt(reptileId));
+          if (!reptile) return;
+
+          if (activity.last_misting && activity.last_misting.length > 0) {
+            activity.last_misting.slice(0, 5).forEach(m => {
+              allActivity.push({
+                type: 'misting',
+                id: `misting-${m.id}`,
+                timestamp: new Date(m.misted_at),
+                reptile: { id: reptile.id, name: reptile.name },
+                data: m,
+                icon: Droplets,
+                color: 'blue'
+              });
             });
-          });
+          }
+
+          if (activity.last_health && activity.last_health.length > 0) {
+            activity.last_health.slice(0, 5).forEach(h => {
+              allActivity.push({
+                type: 'health',
+                id: `health-${h.id}`,
+                timestamp: new Date(h.date),
+                reptile: { id: reptile.id, name: reptile.name },
+                data: h,
+                icon: Activity,
+                color: 'green'
+              });
+            });
+          }
         });
 
         // Add recent weight logs
-        const recentWeightLogs = weightRes.data.slice(0, 10).map(w => ({
+        const recentWeightLogs = weightArray.slice(0, 10).map(w => ({
           type: 'weight',
           id: `weight-${w.id}`,
-          timestamp: new Date(w.measured_at),
-          reptile: { id: w.reptile_id, name: w.reptile_name },
+          timestamp: new Date(w.weighed_at),
+          reptile: data.reptiles.find(r => r.id === w.reptile_id),
           data: w,
           icon: Scale,
           color: 'purple'
         }));
         allActivity.push(...recentWeightLogs);
 
-        // Add recent health logs from already-fetched data
-        reptilesRes.data.forEach((reptile, index) => {
-          const records = healthResults[index].data;
-          records.slice(0, 5).forEach(h => {
-            allActivity.push({
-              type: 'health',
-              id: `health-${h.id}`,
-              timestamp: new Date(h.date),
-              reptile: { id: reptile.id, name: reptile.name },
-              data: h,
-              icon: Activity,
-              color: 'green'
-            });
-          });
-        });
-
         // Sort by timestamp and take top 10
         allActivity.sort((a, b) => b.timestamp - a.timestamp);
         setRecentActivity(allActivity.slice(0, 10));
+
+        // Transform instances to event format
+        const instanceEvents = data.weekly_instances
+          .filter(instance => instance.schedule && instance.schedule.reptile)
+          .map(instance => {
+            // Parse date as local time to avoid timezone issues
+            const [year, month, day] = instance.scheduled_date.split('-').map(Number);
+            const localDate = new Date(year, month - 1, day);
+
+            return {
+              instance_id: instance.id,
+              date: localDate,
+              schedule_id: instance.schedule.id,
+              schedule_type: instance.schedule.schedule_type,
+              schedule_rule: instance.schedule.schedule_rule,
+              reptile_name: instance.schedule.reptile.name,
+              reptile_id: instance.schedule.reptile_id,
+              name: instance.schedule.name,
+              food_category: instance.schedule.food_category,
+              time_slot: instance.schedule.time_slot,
+              health_category: instance.schedule.health_category,
+              time_window_enabled: instance.schedule.time_window_enabled,
+              earliest_time: instance.schedule.earliest_time,
+              latest_time: instance.schedule.latest_time,
+              notifications_enabled: instance.schedule.notifications_enabled,
+              notes: instance.schedule.notes,
+              status: instance.status,
+              suggested_supplements: instance.supplements || []
+            };
+          });
+
+        setWeeklyEvents(instanceEvents);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -191,7 +232,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [calendarReptileFilter]);
 
   // Initialize reptile filter when reptiles are loaded
   useEffect(() => {
@@ -199,89 +240,6 @@ export default function Dashboard() {
       setCalendarReptileFilter(new Set(reptiles.map(r => r.id)));
     }
   }, [reptiles]);
-
-  // Fetch schedules for weekly calendar
-  useEffect(() => {
-    if (reptiles.length > 0) {
-      fetchSchedules();
-      fetchWeeklyCompletions();
-    }
-  }, [reptiles]);
-
-  // Re-fetch instances when calendar filter changes
-  useEffect(() => {
-    if (reptiles.length > 0) {
-      fetchWeeklyInstances();
-    }
-  }, [calendarReptileFilter, reptiles]);
-
-  const fetchSchedules = async () => {
-    try {
-      const schedulePromises = reptiles.map(reptile =>
-        axios.get(`/api/schedules/reptile/${reptile.id}`)
-          .then(res => res.data.map(s => ({ ...s, reptile_name: reptile.name })))
-          .catch(() => [])
-      );
-
-      const rotationPromises = reptiles.map(reptile =>
-        axios.get(`/api/feeding-rotations/reptile/${reptile.id}`)
-          .then(res => res.data.map(r => ({ ...r, reptile_name: reptile.name })))
-          .catch(() => [])
-      );
-
-      const [scheduleResults, rotationResults] = await Promise.all([
-        Promise.all(schedulePromises),
-        Promise.all(rotationPromises)
-      ]);
-
-      const allSchedules = scheduleResults.flat();
-      const allRotations = rotationResults.flat();
-
-      setSchedules(allSchedules);
-      setFeedingRotations(allRotations);
-      await fetchWeeklyInstances();
-    } catch (error) {
-      console.error("Error fetching schedules:", error);
-    }
-  };
-
-  const fetchWeeklyCompletions = async () => {
-    try {
-      const today = new Date();
-      const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
-      const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
-      const weekEnd = addDays(weekStart, 6);
-
-      // Fetch feedings and mistings for the week
-      const feedingPromises = reptiles.map(reptile =>
-        axios.get(`/api/feedings?reptile_id=${reptile.id}`)
-          .then(res => res.data.filter(f => {
-            const feedDate = new Date(f.fed_at);
-            return feedDate >= weekStart && feedDate <= weekEnd;
-          }))
-          .catch(() => [])
-      );
-
-      const mistingPromises = reptiles.map(reptile =>
-        axios.get(`/api/misting/reptile/${reptile.id}`)
-          .then(res => res.data.filter(m => {
-            const mistDate = new Date(m.misted_at);
-            return mistDate >= weekStart && mistDate <= weekEnd;
-          }))
-          .catch(() => [])
-      );
-
-      const [feedingResults, mistingResults] = await Promise.all([
-        Promise.all(feedingPromises),
-        Promise.all(mistingPromises)
-      ]);
-
-      setWeeklyFeedings(feedingResults.flat());
-      setWeeklyMistings(mistingResults.flat());
-    } catch (error) {
-      console.error("Error fetching weekly completions:", error);
-    }
-  };
 
   const calculateWeeklyEvents = (scheduleList, rotationsList = []) => {
     const calculatedEvents = [];
@@ -450,74 +408,6 @@ export default function Dashboard() {
     });
 
     setWeeklyEvents(calculatedEvents);
-  };
-
-  const fetchWeeklyInstances = async () => {
-    try {
-      const today = new Date();
-      const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
-      const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
-      const weekEnd = addDays(weekStart, 6);
-
-      // Build reptile_ids filter - use all reptiles if filter is empty
-      const activeReptileIds = calendarReptileFilter.size > 0
-        ? reptiles
-            .filter(r => calendarReptileFilter.has(r.id))
-            .map(r => r.id)
-            .join(',')
-        : reptiles.map(r => r.id).join(',');
-
-      if (!activeReptileIds) {
-        setWeeklyEvents([]);
-        return;
-      }
-
-      // Fetch instances from backend
-      const response = await axios.get('/api/schedule-instances/calendar', {
-        params: {
-          start_date: toLocalISODate(weekStart),
-          end_date: toLocalISODate(weekEnd),
-          reptile_ids: activeReptileIds
-        }
-      });
-
-      // Transform instances to event format - filter out instances with missing schedule/reptile
-      const instanceEvents = response.data
-        .filter(instance => instance.schedule && instance.schedule.reptile)
-        .map(instance => {
-          // Parse date as local time to avoid timezone issues
-          // scheduled_date is "YYYY-MM-DD", parse as local not UTC
-          const [year, month, day] = instance.scheduled_date.split('-').map(Number);
-          const localDate = new Date(year, month - 1, day);
-
-          return {
-            instance_id: instance.id,
-            date: localDate,
-            schedule_id: instance.schedule.id,
-          schedule_type: instance.schedule.schedule_type,
-          schedule_rule: instance.schedule.schedule_rule,
-          reptile_name: instance.schedule.reptile.name,
-          reptile_id: instance.schedule.reptile_id,
-        name: instance.schedule.name,
-        food_category: instance.schedule.food_category,
-        time_slot: instance.schedule.time_slot,
-        health_category: instance.schedule.health_category,
-        time_window_enabled: instance.schedule.time_window_enabled,
-        earliest_time: instance.schedule.earliest_time,
-        latest_time: instance.schedule.latest_time,
-        notifications_enabled: instance.schedule.notifications_enabled,
-        notes: instance.schedule.notes,
-        status: instance.status,
-        // Pre-calculated supplements from the instance
-        suggested_supplements: instance.supplements || []
-          };
-        });
-
-      setWeeklyEvents(instanceEvents);
-    } catch (error) {
-      console.error("Error fetching weekly schedule instances:", error);
-      setWeeklyEvents([]);
-    }
   };
 
   const getEventsForDate = (date) => {
