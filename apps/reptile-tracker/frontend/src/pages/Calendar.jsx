@@ -94,31 +94,21 @@ function Calendar() {
 
   useEffect(() => {
     if (reptiles.length > 0) {
-      fetchSchedules();
-      fetchPastData();
-      fetchInstances();
+      fetchCalendarData();
     }
-  }, [reptiles, currentDate]);
-
-  // Re-fetch instances when reptile filters change
-  useEffect(() => {
-    if (reptiles.length > 0) {
-      fetchInstances();
-    }
-  }, [visibleReptiles]);
+  }, [reptiles, currentDate, visibleReptiles]);
 
   // Re-fetch data when page becomes visible (handles stale data when navigating back)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && reptiles.length > 0) {
-        fetchInstances();
-        fetchPastData();
+        fetchCalendarData();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [reptiles]);
+  }, [reptiles, currentDate, visibleReptiles]);
 
   const fetchReptiles = async () => {
     try {
@@ -135,121 +125,27 @@ function Calendar() {
     }
   };
 
-  const fetchSchedules = async () => {
+  const fetchCalendarData = async () => {
     try {
       setLoading(true);
 
-      // Fetch schedules and rotations in parallel
-      const schedulePromises = reptiles.map(reptile =>
-        axios.get(`/api/schedules/reptile/${reptile.id}`)
-          .then(res => res.data.map(s => ({ ...s, reptile_name: reptile.name })))
-          .catch(err => {
-            console.error(`Error fetching schedules for ${reptile.name}:`, err);
-            return [];
-          })
-      );
-
-      const rotationPromises = reptiles.map(reptile =>
-        axios.get(`/api/feeding-rotations/reptile/${reptile.id}`)
-          .then(res => res.data.map(r => ({ ...r, reptile_name: reptile.name })))
-          .catch(err => {
-            console.error(`Error fetching rotations for ${reptile.name}:`, err);
-            return [];
-          })
-      );
-
-      const [scheduleResults, rotationResults] = await Promise.all([
-        Promise.all(schedulePromises),
-        Promise.all(rotationPromises)
-      ]);
-
-      const allSchedules = scheduleResults.flat();
-      const allRotations = rotationResults.flat();
-
-      setSchedules(allSchedules);
-      setFeedingRotations(allRotations);
-      // Replaced client-side event calculation with fetching pre-generated instances
-      await fetchInstances();
-    } catch (error) {
-      console.error("Error fetching schedules:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPastData = async () => {
-    try {
       const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-      // Fetch feedings and mistings in parallel
-      const feedingPromises = reptiles.map(reptile =>
-        axios.get(`/api/feedings`, {
-          params: {
-            reptile_id: reptile.id,
-            start_date: monthStart.toISOString(),
-            end_date: monthEnd.toISOString(),
-            limit: 1000
-          }
-        })
-          .then(res => res.data.map(f => ({
-            ...f,
-            reptile_name: reptile.name,
-            type: "feeding"
-          })))
-          .catch(err => {
-            console.error(`Error fetching feedings for ${reptile.name}:`, err);
-            return [];
-          })
-      );
+      const toLocalISODate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
 
-      const mistingPromises = reptiles.map(reptile =>
-        axios.get(`/api/misting/reptile/${reptile.id}`)
-          .then(res => res.data
-            .filter(m => {
-              const mistDate = new Date(m.misted_at);
-              return mistDate >= monthStart && mistDate <= monthEnd;
-            })
-            .map(m => ({ ...m, reptile_name: reptile.name, type: "misting" }))
-          )
-          .catch(err => {
-            console.error(`Error fetching mistings for ${reptile.name}:`, err);
-            return [];
-          })
-      );
-
-      const [feedingResults, mistingResults] = await Promise.all([
-        Promise.all(feedingPromises),
-        Promise.all(mistingPromises)
-      ]);
-
-      setFeedings(feedingResults.flat());
-      setMistings(mistingResults.flat());
-    } catch (error) {
-      console.error("Error fetching past data:", error);
-    }
-  };
-
-  const fetchInstances = async () => {
-    try {
-      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-
-      // Build reptile_ids filter - use all reptiles if filter is empty
+      // Build reptile_ids filter for instances
       const activeReptileIds = visibleReptiles.size > 0
-        ? reptiles
-            .filter(r => visibleReptiles.has(r.id))
-            .map(r => r.id)
-            .join(',')
-        : reptiles.map(r => r.id).join(',');
+        ? Array.from(visibleReptiles).join(',')
+        : undefined;
 
-      if (!activeReptileIds) {
-        setEvents([]);
-        return;
-      }
-
-      // Fetch instances from backend
-      const response = await axios.get('/api/schedule-instances/calendar', {
+      // Single bulk request for all calendar data
+      const bulkResponse = await axios.get('/api/bulk/calendar', {
         params: {
           start_date: toLocalISODate(monthStart),
           end_date: toLocalISODate(monthEnd),
@@ -257,12 +153,32 @@ function Calendar() {
         }
       });
 
-      // Transform instances to event format - filter out instances with missing schedule/reptile
-      const instanceEvents = response.data
+      const data = bulkResponse.data;
+
+      // Set schedules and rotations (already have reptile_name from backend)
+      setSchedules(data.schedules);
+      setFeedingRotations(data.feeding_rotations);
+
+      // Set past feedings and mistings
+      const feedingsWithType = data.feedings.map(f => ({
+        ...f,
+        reptile_name: f.reptile?.name || 'Unknown',
+        type: 'feeding'
+      }));
+      const mistingsWithType = data.mistings.map(m => ({
+        ...m,
+        reptile_name: m.reptile?.name || 'Unknown',
+        type: 'misting'
+      }));
+
+      setFeedings(feedingsWithType);
+      setMistings(mistingsWithType);
+
+      // Transform instances to event format
+      const instanceEvents = data.instances
         .filter(instance => instance.schedule && instance.schedule.reptile)
         .map(instance => {
           // Parse date as local time to avoid timezone issues
-          // scheduled_date is "YYYY-MM-DD", parse as local not UTC
           const [year, month, day] = instance.scheduled_date.split('-').map(Number);
           const localDate = new Date(year, month - 1, day);
 
@@ -270,18 +186,18 @@ function Calendar() {
             instance_id: instance.id,
             date: localDate,
             schedule_id: instance.schedule.id,
-          schedule_type: instance.schedule.schedule_type,
-          schedule_rule: instance.schedule.schedule_rule,
-          reptile_name: instance.schedule.reptile.name,
-          reptile_id: instance.schedule.reptile_id,
-        name: instance.schedule.name,
-        food_category: instance.schedule.food_category,
-        time_slot: instance.schedule.time_slot,
-        health_category: instance.schedule.health_category,
-        time_window_enabled: instance.schedule.time_window_enabled,
-        earliest_time: instance.schedule.earliest_time,
-        latest_time: instance.schedule.latest_time,
-        notifications_enabled: instance.schedule.notifications_enabled,
+            schedule_type: instance.schedule.schedule_type,
+            schedule_rule: instance.schedule.schedule_rule,
+            reptile_name: instance.schedule.reptile.name,
+            reptile_id: instance.schedule.reptile_id,
+            name: instance.schedule.name,
+            food_category: instance.schedule.food_category,
+            time_slot: instance.schedule.time_slot,
+            health_category: instance.schedule.health_category,
+            time_window_enabled: instance.schedule.time_window_enabled,
+            earliest_time: instance.schedule.earliest_time,
+            latest_time: instance.schedule.latest_time,
+            notifications_enabled: instance.schedule.notifications_enabled,
         notes: instance.schedule.notes,
           status: instance.status,
           // Pre-calculated supplements from the instance
@@ -291,8 +207,10 @@ function Calendar() {
 
       setEvents(instanceEvents);
     } catch (error) {
-      console.error("Error fetching schedule instances:", error);
+      console.error("Error fetching calendar data:", error);
       setEvents([]);
+    } finally {
+      setLoading(false);
     }
   };
 
