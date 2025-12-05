@@ -12,6 +12,7 @@ TALOS_DIR = "{{config_root}}/talos"
 [tools]
 "python" = "3.14.1"
 "pipx:makejinja" = "2.8.1"
+"pipx:kuba" = "latest"  # or specific version
 "aqua:budimanjojo/talhelper" = "3.0.41"
 "aqua:cilium/cilium-cli" = "0.18.8"
 "aqua:cli/cli" = "2.83.1"
@@ -29,3 +30,9 @@ TALOS_DIR = "{{config_root}}/talos"
 "aqua:mikefarah/yq" = "4.49.2"
 "aqua:siderolabs/talos" = "1.11.0"
 "aqua:yannh/kubeconform" = "0.7.0"
+"aqua:junegunn/fzf" = "0.58.0"  # dependency for kuba
+"aqua:antonmedv/fx" = "39.2.0" # dependency for kuba
+"aqua:kubecolor/kubecolor" = "0.4.0" # dependency for kuba
+"aqua:kubernetes-sigs/krew" = "0.4.4" # dependency for kuba
+"aqua:stern/stern" = "1.33.1" # dependency for kuba
+"aqua:tohjustin/kube-lineage" = "0.5.0" # dependency for kuba
