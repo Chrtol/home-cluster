@@ -314,6 +314,22 @@ function Calendar() {
       days.push(new Date(year, month, day));
     }
 
+    // Debug logging - check what dates we're returning
+    const nonNullDays = days.filter(d => d !== null);
+    if (nonNullDays.length > 0) {
+      console.log('[Calendar] getDaysInMonth returning', nonNullDays.length, 'days');
+      console.log('[Calendar] First 3 dates:', nonNullDays.slice(0, 3).map(d => d.toDateString()));
+      console.log('[Calendar] Last 3 dates:', nonNullDays.slice(-3).map(d => d.toDateString()));
+
+      // CRITICAL: Check if all dates are the same object
+      const allSame = nonNullDays.every(d => d === nonNullDays[0]);
+      console.log('[Calendar] All dates same object reference?', allSame);
+
+      // Check actual date values
+      const uniqueDates = new Set(nonNullDays.map(d => d.toDateString()));
+      console.log('[Calendar] Unique date strings:', uniqueDates.size, 'out of', nonNullDays.length);
+    }
+
     return days;
   };
 
