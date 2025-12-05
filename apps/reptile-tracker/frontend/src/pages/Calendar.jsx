@@ -321,139 +321,19 @@ function Calendar() {
   const getEventsForDate = (date) => {
     if (!date) return [];
 
-    // Get scheduled events for this date
-    const scheduledEvents = events.filter(event => {
+    // Get schedule instances for this date
+    // Instances already have status and completion info from the backend
+    return events.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate.toDateString() === date.toDateString() &&
              visibleReptiles.has(event.reptile_id) &&
              visibleCategories.has(event.schedule_type);
     }).map(e => ({
       ...e,
-      is_actual: false, // This is a schedule, not an actual feeding
+      // Mark as completed if status indicates completion
+      is_completed: e.status === 'completed',
+      is_actual: false, // This is a schedule instance
     }));
-
-    // Get actual completed feedings for this date
-    const actualFeedings = feedings.filter(feeding => {
-      const feedDate = new Date(feeding.fed_at);
-      return feedDate.toDateString() === date.toDateString() &&
-             visibleReptiles.has(feeding.reptile_id) &&
-             visibleCategories.has('feeding');
-    }).map(f => ({
-      ...f,
-      schedule_type: "feeding",
-      reptile_name: f.reptile_name,
-      notes: f.notes,
-      is_actual: true, // This is an actual feeding that happened
-      time: formatTime(new Date(f.fed_at)),
-    }));
-
-    // Get actual completed mistings for this date
-    const actualMistings = mistings.filter(misting => {
-      const mistDate = new Date(misting.misted_at);
-      return mistDate.toDateString() === date.toDateString() &&
-             visibleReptiles.has(misting.reptile_id) &&
-             visibleCategories.has('misting');
-    }).map(m => ({
-      ...m,
-      schedule_type: "misting",
-      reptile_name: m.reptile_name,
-      notes: m.notes,
-      is_actual: true, // This is an actual misting that happened
-      time: formatTime(new Date(m.misted_at)),
-    }));
-
-    // Match actual events to their corresponding schedules
-    const matchedScheduleIds = new Set();
-
-    // Helper function to normalize food category (Food model uses singular, schedules use plural)
-    const normalizeFoodCategory = (category) => {
-      if (!category) return null;
-      const normalizeMap = {
-        'insect': 'insects',
-        'insects': 'insects',
-        'worms': 'worms',
-        'salad': 'salad',
-        'vegetable': 'salad',
-        'fruit': 'salad',
-        'prepared': 'prepared',
-        'mixed': 'mixed'
-      };
-      return normalizeMap[category.toLowerCase()] || category;
-    };
-
-    // For each actual feeding/misting, find matching schedule and mark it as completed
-    actualFeedings.forEach(actual => {
-      // Determine the food category from the feeding
-      // Feedings have is_salad flag or foods array with categories
-      let actualFoodCategory = null;
-
-      if (actual.is_salad) {
-        actualFoodCategory = "salad";
-      } else if (actual.foods && actual.foods.length > 0) {
-        // Use the category of the first food item and normalize it
-        actualFoodCategory = normalizeFoodCategory(actual.foods[0].category);
-      }
-
-      const matchingSchedule = scheduledEvents.find(scheduled =>
-        scheduled.reptile_id === actual.reptile_id &&
-        scheduled.schedule_type === "feeding" &&
-        scheduled.food_category === actualFoodCategory &&
-        !matchedScheduleIds.has(scheduled.schedule_id)
-      );
-
-      if (matchingSchedule) {
-        matchingSchedule.is_completed = true;
-        matchingSchedule.completed_at = actual.fed_at;
-        matchingSchedule.completed_time = actual.time;
-        matchingSchedule.completion_id = actual.id;
-        matchedScheduleIds.add(matchingSchedule.schedule_id);
-      }
-    });
-
-    actualMistings.forEach(actual => {
-      const matchingSchedule = scheduledEvents.find(scheduled =>
-        scheduled.reptile_id === actual.reptile_id &&
-        scheduled.schedule_type === "misting" &&
-        !matchedScheduleIds.has(scheduled.schedule_id)
-      );
-
-      if (matchingSchedule) {
-        matchingSchedule.is_completed = true;
-        matchingSchedule.completed_at = actual.misted_at;
-        matchingSchedule.completed_time = actual.time;
-        matchingSchedule.completion_id = actual.id;
-        matchedScheduleIds.add(matchingSchedule.schedule_id);
-      }
-    });
-
-    // Only include actual events that didn't match any schedule (manual entries)
-    const unmatchedActualFeedings = actualFeedings.filter(actual => {
-      // Determine the food category from the feeding
-      let actualFoodCategory = null;
-      if (actual.is_salad) {
-        actualFoodCategory = "salad";
-      } else if (actual.foods && actual.foods.length > 0) {
-        actualFoodCategory = normalizeFoodCategory(actual.foods[0].category);
-      }
-
-      const hasMatchingSchedule = scheduledEvents.some(scheduled =>
-        scheduled.reptile_id === actual.reptile_id &&
-        scheduled.schedule_type === "feeding" &&
-        scheduled.food_category === actualFoodCategory
-      );
-      return !hasMatchingSchedule;
-    });
-
-    const unmatchedActualMistings = actualMistings.filter(actual => {
-      const hasMatchingSchedule = scheduledEvents.some(scheduled =>
-        scheduled.reptile_id === actual.reptile_id &&
-        scheduled.schedule_type === "misting"
-      );
-      return !hasMatchingSchedule;
-    });
-
-    // Combine: scheduled events (some now marked completed) + unmatched actual events
-    return [...scheduledEvents, ...unmatchedActualFeedings, ...unmatchedActualMistings];
   };
 
   const navigateMonth = (direction) => {
@@ -509,26 +389,21 @@ function Calendar() {
   };
 
   const getEventLink = (event) => {
-    // For completed scheduled events, link to the completion view
-    if (event.is_completed && event.completion_id) {
-      if (event.schedule_type === "feeding") {
-        return `/feed/${event.completion_id}`;
-      } else if (event.schedule_type === "misting") {
-        return `/misting/${event.completion_id}`;
-      }
+    // Always link to schedule instance if we have an instance_id
+    if (event.instance_id) {
+      return `/schedule-instances/${event.instance_id}`;
     }
 
-    // For actual completed events (unmatched), link to the read-only view
+    // Fallback for manual entries without a schedule
     if (event.is_actual) {
       if (event.type === "feeding" || event.schedule_type === "feeding") {
         return `/feed/${event.id}`;
       } else if (event.type === "misting" || event.schedule_type === "misting") {
         return `/misting/${event.id}`;
       }
-      return null;
     }
 
-    // For uncompleted scheduled events, link to the schedule read-only view
+    // Final fallback to schedule
     if (event.schedule_id) {
       return `/schedules/${event.schedule_id}`;
     }

@@ -1547,7 +1547,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={idx}
-                        onClick={() => event.schedule_id && navigate(`/schedules/${event.schedule_id}`)}
+                        onClick={() => event.instance_id && navigate(`/schedule-instances/${event.instance_id}`)}
                         className={`px-4 py-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                           event.is_completed
                             ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600 hover:border-green-600 dark:hover:border-green-500'
