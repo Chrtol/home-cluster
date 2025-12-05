@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Send Discord Notification
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.GITHUB_ACTIONS_DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.ACTIONS_DISCORD_WEBHOOK_URL }}
         run: |
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
           WORKFLOW_URL="${{ github.event.workflow_run.html_url }}"
