@@ -152,3 +152,16 @@ export function formatRelativeTime(date) {
 
   return formatDate(date);
 }
+
+/**
+ * Format a Date object as an ISO date string (YYYY-MM-DD) in local time
+ * This avoids timezone conversion issues when sending dates to the backend
+ * @param {Date} date - The date to format
+ * @returns {string} ISO date string in local time (e.g., "2025-12-05")
+ */
+export function toLocalISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}

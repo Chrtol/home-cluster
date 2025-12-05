@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
 import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell } from 'lucide-react';
-import { formatDateTime, formatTime, getUserFirstDayOfWeek } from '../utils/dateFormatting';
+import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings } from '../utils/displaySettings';
 
@@ -465,8 +465,8 @@ export default function Dashboard() {
       // Fetch instances from backend
       const response = await axios.get('/api/schedule-instances/calendar', {
         params: {
-          start_date: weekStart.toISOString().split('T')[0],
-          end_date: weekEnd.toISOString().split('T')[0],
+          start_date: toLocalISODate(weekStart),
+          end_date: toLocalISODate(weekEnd),
           reptile_ids: activeReptileIds
         }
       });
@@ -514,10 +514,10 @@ export default function Dashboard() {
     if (!date) return [];
 
     const scheduledEvents = weeklyEvents.filter(event => {
-      const eventDate = new Date(event.date);
-      return eventDate.toDateString() === date.toDateString() &&
+      // event.date is already a proper Date object parsed as local time
+      return event.date.toDateString() === date.toDateString() &&
              calendarReptileFilter.has(event.reptile_id);
-    }).map(event => ({ ...event, is_completed: false }));
+    }).map(event => ({ ...event, is_completed: event.status === 'completed', is_actual: false }));
 
     // Get actual completed feedings for this date
     const actualFeedings = weeklyFeedings.filter(feeding => {
