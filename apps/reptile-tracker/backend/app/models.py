@@ -429,6 +429,11 @@ class ScheduleInstance(Base):
     # Status of this instance
     status = Column(String(50), nullable=False, default="pending", index=True)  # pending, completed, missed, skipped
 
+    # Feeding sequence number for this schedule (used for feeding_count supplement rotations)
+    # This is the nth feeding instance for this specific schedule (1, 2, 3, etc.)
+    # Only populated for feeding schedules
+    feeding_sequence_number = Column(Integer, nullable=True, index=True)
+
     # Pre-calculated supplements for this instance (JSONB array of supplement IDs and names)
     # Example: [{"id": 1, "name": "Calcium", "priority": 1}, {"id": 2, "name": "Multivitamin", "priority": 2}]
     supplements = Column(JSON, nullable=True)

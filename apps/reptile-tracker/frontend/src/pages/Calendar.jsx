@@ -68,12 +68,13 @@ function Calendar() {
     if (reptiles.length > 0) {
       fetchSchedules();
       fetchPastData();
+      fetchInstances();
     }
   }, [reptiles, currentDate]);
 
   // Re-fetch instances when reptile filters change
   useEffect(() => {
-    if (reptiles.length > 0) {
+    if (reptiles.length > 0 && visibleReptiles.size > 0) {
       fetchInstances();
     }
   }, [visibleReptiles]);
@@ -186,208 +187,6 @@ function Calendar() {
     } catch (error) {
       console.error("Error fetching past data:", error);
     }
-  };
-
-  const calculateEvents = (scheduleList, rotationsList = []) => {
-    // Calculate events for the current month view
-    const calculatedEvents = [];
-    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-
-    // Group rotations by reptile for easy lookup
-    const rotationsByReptile = {};
-    rotationsList.forEach(rotation => {
-      if (!rotationsByReptile[rotation.reptile_id]) {
-        rotationsByReptile[rotation.reptile_id] = [];
-      }
-      rotationsByReptile[rotation.reptile_id].push(rotation);
-    });
-
-    // Helper function to find applicable supplements for a feeding event
-    // NOTE: This is a simplified client-side calculation for display purposes
-    // The actual rotation calculation happens server-side when logging feedings
-    const getSuggestedSupplements = (reptileId, foodCategory, eventIndex, eventDate) => {
-      const rotations = rotationsByReptile[reptileId] || [];
-
-      // Filter rotations that apply to this food category
-      const applicable = rotations.filter(r => {
-        if (r.rotation_type !== 'supplement') return false;
-        if (!r.applies_to_category || r.applies_to_category === 'all') return true;
-        return r.applies_to_category === foodCategory;
-      });
-
-      // Sort by priority (lower number = higher priority)
-      applicable.sort((a, b) => a.priority - b.priority);
-
-      // Find ALL rotations that trigger on this event
-      const triggeredRotations = [];
-      for (const rotation of applicable) {
-        let shouldTrigger = false;
-
-        if (rotation.trigger_mode === 'feeding_count') {
-          // Using eventIndex as a rough approximation of feeding number
-          if ((eventIndex + 1) % rotation.every_n_feedings === 0) {
-            shouldTrigger = true;
-          }
-        } else if (rotation.trigger_mode === 'schedule_based') {
-          // Check if event date's day of week matches configured days
-          if (rotation.schedule_days_of_week && eventDate) {
-            const dayOfWeek = eventDate.getDay(); // 0=Sunday, 1=Monday, etc
-            const configuredDays = rotation.schedule_days_of_week.split(',').map(d => parseInt(d));
-            if (configuredDays.includes(dayOfWeek)) {
-              shouldTrigger = true;
-            }
-          }
-        }
-
-        if (shouldTrigger && rotation.supplement) {
-          triggeredRotations.push(rotation);
-        }
-      }
-
-      // Handle exclusive mode: If any rotation is exclusive, only keep highest priority
-      if (triggeredRotations.length > 0 && triggeredRotations.some(r => r.is_exclusive)) {
-        const exclusiveRotations = triggeredRotations.filter(r => r.is_exclusive);
-        if (exclusiveRotations.length > 0) {
-          // Keep only the highest priority (first after sorting)
-          const highestPriority = exclusiveRotations[0].priority;
-          // Filter to only rotations at this priority level
-          const filtered = triggeredRotations.filter(r => r.priority === highestPriority);
-          return filtered.map(r => r.supplement);
-        }
-      }
-
-      return triggeredRotations.map(r => r.supplement);
-    };
-
-    // Helper to create event object with supplement suggestion
-    let eventIndexCounter = 0;
-    const createEvent = (schedule, date) => {
-      const event = {
-        date: new Date(date),
-        schedule_id: schedule.id,
-        schedule_type: schedule.schedule_type,
-        schedule_rule: schedule.schedule_rule,
-        reptile_name: schedule.reptile_name,
-        reptile_id: schedule.reptile_id,
-        name: schedule.name,
-        food_category: schedule.food_category,
-        time_slot: schedule.time_slot,
-        health_category: schedule.health_category,
-        time_window_enabled: schedule.time_window_enabled,
-        earliest_time: schedule.earliest_time,
-        latest_time: schedule.latest_time,
-        notifications_enabled: schedule.notifications_enabled,
-        notes: schedule.notes,
-      };
-
-      // Add supplement suggestions for feeding schedules
-      if (schedule.schedule_type === 'feeding' && schedule.food_category) {
-        const supplements = getSuggestedSupplements(
-          schedule.reptile_id,
-          schedule.food_category,
-          eventIndexCounter,
-          event.date
-        );
-        if (supplements && supplements.length > 0) {
-          event.suggested_supplements = supplements;
-        }
-        eventIndexCounter++;
-      }
-
-      return event;
-    };
-
-    // First pass: Calculate base schedules (non-dependent)
-    const baseSchedules = scheduleList.filter(s => s.schedule_rule !== "dependent");
-    const dependentSchedules = scheduleList.filter(s => s.schedule_rule === "dependent");
-
-    baseSchedules.forEach(schedule => {
-      if (!schedule.enabled) return;
-
-      // Calculate events based on schedule_rule
-      if (schedule.schedule_rule === "every_x_days") {
-        // Start from beginning of month and iterate by frequency_days
-        const frequency = schedule.frequency_days;
-        let currentDay = new Date(monthStart);
-
-        // Use schedule created_at as reference point (simplified version)
-        // In a real app, you'd want to track the last actual occurrence
-        while (currentDay <= monthEnd) {
-          calculatedEvents.push(createEvent(schedule, currentDay));
-          currentDay.setDate(currentDay.getDate() + frequency);
-        }
-      } else if (schedule.schedule_rule === "days_of_week") {
-        const days = schedule.days_of_week.split(",").map(d => parseInt(d));
-        let currentDay = new Date(monthStart);
-
-        while (currentDay <= monthEnd) {
-          if (days.includes(currentDay.getDay())) {
-            calculatedEvents.push(createEvent(schedule, currentDay));
-          }
-          currentDay.setDate(currentDay.getDate() + 1);
-        }
-      } else if (schedule.schedule_rule === "monthly") {
-        const day = schedule.day_of_month;
-        const eventDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        if (eventDate >= monthStart && eventDate <= monthEnd) {
-          calculatedEvents.push(createEvent(schedule, eventDate));
-        }
-      }
-    });
-
-    // Second pass: Calculate dependent schedules based on parent occurrences
-    dependentSchedules.forEach(schedule => {
-      if (!schedule.enabled) return;
-
-      // Find parent schedule events
-      const parentEvents = calculatedEvents.filter(e => e.schedule_id === schedule.parent_schedule_id);
-
-      if (schedule.dependent_rule === "every_occurrence") {
-        // Add event for every parent occurrence
-        parentEvents.forEach(parentEvent => {
-          const event = createEvent(schedule, parentEvent.date);
-          event.parent_schedule_id = schedule.parent_schedule_id;
-          calculatedEvents.push(event);
-        });
-      } else if (schedule.dependent_rule === "every_nth") {
-        // Add event for every Nth parent occurrence
-        const frequency = schedule.dependent_frequency;
-        parentEvents.forEach((parentEvent, index) => {
-          if ((index + 1) % frequency === 0) {
-            const event = createEvent(schedule, parentEvent.date);
-            event.parent_schedule_id = schedule.parent_schedule_id;
-            calculatedEvents.push(event);
-          }
-        });
-      } else if (schedule.dependent_rule === "specific_days") {
-        // Add event only when parent occurrence falls on specific days
-        const days = schedule.dependent_days.split(",").map(d => parseInt(d));
-        parentEvents.forEach(parentEvent => {
-          if (days.includes(parentEvent.date.getDay())) {
-            const event = createEvent(schedule, parentEvent.date);
-            event.parent_schedule_id = schedule.parent_schedule_id;
-            calculatedEvents.push(event);
-          }
-        });
-      } else if (schedule.dependent_rule === "once_per_day") {
-        // Add event only for the first parent occurrence each day
-        const eventsByDate = new Map();
-
-        parentEvents.forEach(parentEvent => {
-          const dateKey = parentEvent.date.toDateString();
-          // Only add if we haven't already added an event for this date
-          if (!eventsByDate.has(dateKey)) {
-            eventsByDate.set(dateKey, true);
-            const event = createEvent(schedule, parentEvent.date);
-            event.parent_schedule_id = schedule.parent_schedule_id;
-            calculatedEvents.push(event);
-          }
-        });
-      }
-    });
-
-    setEvents(calculatedEvents);
   };
 
   const fetchInstances = async () => {
@@ -668,12 +467,14 @@ function Calendar() {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + (direction * 7));
     setCurrentDate(newDate);
+    setTimeout(() => fetchInstances(), 0);
   };
 
   const navigateDay = (direction) => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + direction);
     setCurrentDate(newDate);
+    setTimeout(() => fetchInstances(), 0);
   };
 
   const navigateView = (direction) => {

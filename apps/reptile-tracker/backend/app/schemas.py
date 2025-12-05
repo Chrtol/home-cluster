@@ -418,6 +418,7 @@ class ScheduleInstanceBase(BaseModel):
     schedule_id: int
     scheduled_date: date
     status: str = "pending"  # pending, completed, missed, skipped
+    feeding_sequence_number: Optional[int] = None
     supplements: Optional[List[Dict]] = None
 
 
@@ -427,6 +428,7 @@ class ScheduleInstanceCreate(ScheduleInstanceBase):
 
 class ScheduleInstanceUpdate(BaseModel):
     status: Optional[str] = None
+    feeding_sequence_number: Optional[int] = None
     supplements: Optional[List[Dict]] = None
 
 
