@@ -11,9 +11,21 @@ function Calendar() {
   // Detect if mobile device
   const [isMobile, setIsMobile] = useState(false);
 
-  // Set initial view based on device - mobile defaults to 3-day
+  // Set initial view based on localStorage and device - mobile defaults to 3-day
   const getInitialView = () => {
     const isMobileDevice = window.innerWidth < 768;
+    const saved = localStorage.getItem('calendar_view');
+
+    // If we have a saved preference, use it (unless it's month/week on mobile)
+    if (saved) {
+      // On mobile, only allow day and 3-day views
+      if (isMobileDevice && (saved === 'month' || saved === 'week')) {
+        return '3-day';
+      }
+      return saved;
+    }
+
+    // Default: mobile gets 3-day, desktop gets month
     return isMobileDevice ? "3-day" : "month";
   };
 
@@ -74,6 +86,11 @@ function Calendar() {
 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Save calendar view to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('calendar_view', view);
+  }, [view]);
 
   useEffect(() => {
     if (reptiles.length > 0) {
