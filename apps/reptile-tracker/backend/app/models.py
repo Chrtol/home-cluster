@@ -375,6 +375,10 @@ class Schedule(Base):
     # Notification settings
     notifications_enabled = Column(Boolean, default=True, nullable=False)  # Per-schedule notification toggle
 
+    # Auto-complete settings
+    auto_complete_enabled = Column(Boolean, default=False, nullable=False)  # Auto-complete after time window + delay
+    auto_complete_hours_after = Column(Integer, default=2, nullable=False)  # Hours after time window (or end of day if no window)
+
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
 
@@ -406,6 +410,7 @@ class ScheduleCompletion(Base):
 
     within_time_window = Column(Boolean, nullable=True)  # True if completed within earliest/latest times
     status = Column(Enum(CompletionStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    auto_completed = Column(Boolean, default=False, nullable=False)  # True if auto-completed by system (not manually logged)
 
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
 

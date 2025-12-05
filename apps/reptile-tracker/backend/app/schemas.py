@@ -320,6 +320,10 @@ class ScheduleBase(BaseModel):
     # Notification settings
     notifications_enabled: bool = True  # Per-schedule notification toggle
 
+    # Auto-complete settings
+    auto_complete_enabled: bool = False  # Auto-complete after time window + delay
+    auto_complete_hours_after: int = 2  # Hours after time window (or end of day if no window)
+
     enabled: bool = True
     notes: Optional[str] = None
 
@@ -357,6 +361,10 @@ class ScheduleUpdate(BaseModel):
     notifications_enabled: Optional[bool] = None
     channel_ids: Optional[List[int]] = None  # List of notification channel IDs to use
 
+    # Auto-complete settings
+    auto_complete_enabled: Optional[bool] = None
+    auto_complete_hours_after: Optional[int] = None
+
     enabled: Optional[bool] = None
     notes: Optional[str] = None
 
@@ -387,6 +395,7 @@ class ScheduleCompletionBase(BaseModel):
     completion_id: Optional[int] = None
     within_time_window: Optional[bool] = None
     status: CompletionStatus
+    auto_completed: bool = False  # True if auto-completed by system
 
 
 class ScheduleCompletionCreate(ScheduleCompletionBase):
@@ -400,6 +409,7 @@ class ScheduleCompletionUpdate(BaseModel):
     completion_id: Optional[int] = None
     within_time_window: Optional[bool] = None
     status: Optional[CompletionStatus] = None
+    auto_completed: Optional[bool] = None
 
 
 class ScheduleCompletion(ScheduleCompletionBase):

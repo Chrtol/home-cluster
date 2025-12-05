@@ -269,3 +269,127 @@ async def regenerate_instances(
         "instances_created": count,
         "message": f"Regenerated {count} instances for the next {days_ahead} days"
     }
+
+
+@router.post("/{instance_id}/mark-skipped", response_model=schemas.ScheduleInstance)
+async def mark_instance_skipped(
+    instance_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Mark an auto-completed instance as skipped (manual override).
+    This indicates the task was intentionally not performed.
+    """
+    # Get the instance with schedule
+    result = await db.execute(
+        select(models.ScheduleInstance)
+        .where(models.ScheduleInstance.id == instance_id)
+        .options(
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile),
+            selectinload(models.ScheduleInstance.completions)
+        )
+    )
+    instance = result.scalars().first()
+
+    if not instance:
+        raise HTTPException(status_code=404, detail="Schedule instance not found")
+
+    # Check access to the reptile
+    if instance.schedule and instance.schedule.reptile:
+        await check_reptile_access(db, current_user, instance.schedule.reptile.id)
+
+    # Find the completion record
+    completion_result = await db.execute(
+        select(models.ScheduleCompletion).where(
+            and_(
+                models.ScheduleCompletion.schedule_id == instance.schedule_id,
+                models.ScheduleCompletion.scheduled_date == instance.scheduled_date
+            )
+        )
+    )
+    completion = completion_result.scalars().first()
+
+    if not completion:
+        raise HTTPException(status_code=400, detail="No completion record found for this instance")
+
+    if not completion.auto_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="Can only override auto-completed instances. This instance was manually logged."
+        )
+
+    # Update completion status to SKIPPED
+    completion.status = models.CompletionStatus.SKIPPED
+    completion.updated_at = datetime.now(timezone.utc)
+
+    # Update instance status
+    instance.status = "skipped"
+    instance.updated_at = datetime.now(timezone.utc)
+
+    await db.commit()
+    await db.refresh(instance)
+
+    return instance
+
+
+@router.post("/{instance_id}/mark-missed", response_model=schemas.ScheduleInstance)
+async def mark_instance_missed(
+    instance_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Mark an auto-completed instance as missed (manual override).
+    This indicates the task was not performed and should have been.
+    """
+    # Get the instance with schedule
+    result = await db.execute(
+        select(models.ScheduleInstance)
+        .where(models.ScheduleInstance.id == instance_id)
+        .options(
+            selectinload(models.ScheduleInstance.schedule).selectinload(models.Schedule.reptile),
+            selectinload(models.ScheduleInstance.completions)
+        )
+    )
+    instance = result.scalars().first()
+
+    if not instance:
+        raise HTTPException(status_code=404, detail="Schedule instance not found")
+
+    # Check access to the reptile
+    if instance.schedule and instance.schedule.reptile:
+        await check_reptile_access(db, current_user, instance.schedule.reptile.id)
+
+    # Find the completion record
+    completion_result = await db.execute(
+        select(models.ScheduleCompletion).where(
+            and_(
+                models.ScheduleCompletion.schedule_id == instance.schedule_id,
+                models.ScheduleCompletion.scheduled_date == instance.scheduled_date
+            )
+        )
+    )
+    completion = completion_result.scalars().first()
+
+    if not completion:
+        raise HTTPException(status_code=400, detail="No completion record found for this instance")
+
+    if not completion.auto_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="Can only override auto-completed instances. This instance was manually logged."
+        )
+
+    # Update completion status to MISSED
+    completion.status = models.CompletionStatus.MISSED
+    completion.updated_at = datetime.now(timezone.utc)
+
+    # Update instance status
+    instance.status = "missed"
+    instance.updated_at = datetime.now(timezone.utc)
+
+    await db.commit()
+    await db.refresh(instance)
+
+    return instance

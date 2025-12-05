@@ -52,6 +52,10 @@ function ScheduleForm() {
   const [reminderTime, setReminderTime] = useState("");
   const [reminderEnabled, setReminderEnabled] = useState(false);
 
+  // Auto-complete settings
+  const [autoCompleteEnabled, setAutoCompleteEnabled] = useState(false);
+  const [autoCompleteHoursAfter, setAutoCompleteHoursAfter] = useState(2);
+
   // Notification settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [availableChannels, setAvailableChannels] = useState([]);
@@ -226,6 +230,10 @@ function ScheduleForm() {
       if (schedule.notification_channels) {
         setSelectedChannelIds(schedule.notification_channels.map(ch => ch.id));
       }
+
+      // Auto-complete settings
+      setAutoCompleteEnabled(schedule.auto_complete_enabled || false);
+      setAutoCompleteHoursAfter(schedule.auto_complete_hours_after || 2);
     } catch (error) {
       console.error("Error fetching schedule:", error);
       alert("Failed to load schedule data");
@@ -403,6 +411,10 @@ function ScheduleForm() {
         scheduleData.earliest_time = earliestTime || null;
         scheduleData.latest_time = latestTime || null;
       }
+
+      // Add auto-complete settings
+      scheduleData.auto_complete_enabled = autoCompleteEnabled;
+      scheduleData.auto_complete_hours_after = parseInt(autoCompleteHoursAfter) || 2;
 
       // Add notification settings
       scheduleData.notifications_enabled = notificationsEnabled;
@@ -898,6 +910,52 @@ function ScheduleForm() {
                     When the feeding must be completed by
                   </p>
                 </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Auto-Complete Settings */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <input
+              type="checkbox"
+              id="autoCompleteEnabled"
+              checked={autoCompleteEnabled}
+              onChange={(e) => setAutoCompleteEnabled(e.target.checked)}
+              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="autoCompleteEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Enable Auto-Complete
+            </label>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Automatically mark this schedule as completed if not manually logged. Useful for daily repetitive tasks like salad feeding or misting.
+          </p>
+
+          {autoCompleteEnabled && (
+            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Hours After Window
+                </label>
+                <input
+                  type="number"
+                  value={autoCompleteHoursAfter}
+                  onChange={(e) => setAutoCompleteHoursAfter(e.target.value)}
+                  className="input-field w-32"
+                  min="0"
+                  max="24"
+                  required
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {timeWindowEnabled
+                    ? "Hours after the latest time to auto-complete this schedule"
+                    : "Hours after end of day (11:59 PM) to auto-complete this schedule"}
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  Note: Auto-completed instances can be manually marked as "missed" or "skipped" if needed
+                </p>
               </div>
             </div>
           )}
