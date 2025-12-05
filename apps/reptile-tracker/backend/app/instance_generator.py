@@ -150,7 +150,7 @@ async def calculate_supplements_for_instance(
 async def generate_instances_for_schedule(
     db: AsyncSession,
     schedule: Schedule,
-    days_ahead: int = 14,
+    days_ahead: int = 60,
     from_date: Optional[py_date] = None
 ) -> int:
     """
@@ -159,7 +159,7 @@ async def generate_instances_for_schedule(
     Args:
         db: Database session
         schedule: The schedule to generate instances for
-        days_ahead: How many days ahead to generate instances (default 14)
+        days_ahead: How many days ahead to generate instances (default 60)
         from_date: Start date (default: today)
 
     Returns:
@@ -238,7 +238,7 @@ async def generate_instances_for_schedule(
     return instances_created
 
 
-async def generate_instances_for_all_schedules(days_ahead: int = 14) -> Dict[str, int]:
+async def generate_instances_for_all_schedules(days_ahead: int = 60) -> Dict[str, int]:
     """
     Generate instances for all enabled schedules.
     This should be run daily to ensure instances exist for the next N days.
@@ -309,7 +309,7 @@ async def delete_instances_for_schedule(db: AsyncSession, schedule_id: int) -> i
 async def regenerate_instances_for_schedule(
     db: AsyncSession,
     schedule_id: int,
-    days_ahead: int = 14
+    days_ahead: int = 60
 ) -> int:
     """
     Delete and regenerate instances for a schedule.
