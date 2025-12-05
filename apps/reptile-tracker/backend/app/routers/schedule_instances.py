@@ -58,16 +58,21 @@ async def get_calendar_instances(
     result = await db.execute(query)
     instances = result.scalars().all()
 
-    # Check access for each instance's reptile
+    # Check access for each instance's reptile and filter out orphaned instances
     filtered_instances = []
     for instance in instances:
-        if instance.schedule and instance.schedule.reptile:
-            try:
-                await check_reptile_access(db, current_user, instance.schedule.reptile.id)
-                filtered_instances.append(instance)
-            except HTTPException:
-                # User doesn't have access, skip this instance
-                continue
+        # Skip instances with missing schedule or reptile (orphaned data)
+        if not instance.schedule:
+            continue
+        if not instance.schedule.reptile:
+            continue
+
+        try:
+            await check_reptile_access(db, current_user, instance.schedule.reptile.id)
+            filtered_instances.append(instance)
+        except HTTPException:
+            # User doesn't have access, skip this instance
+            continue
 
     return filtered_instances
 
@@ -116,16 +121,21 @@ async def list_schedule_instances(
     result = await db.execute(query)
     instances = result.scalars().all()
 
-    # Check access for each instance's reptile
+    # Check access for each instance's reptile and filter out orphaned instances
     filtered_instances = []
     for instance in instances:
-        if instance.schedule and instance.schedule.reptile:
-            try:
-                await check_reptile_access(db, current_user, instance.schedule.reptile.id)
-                filtered_instances.append(instance)
-            except HTTPException:
-                # User doesn't have access, skip this instance
-                continue
+        # Skip instances with missing schedule or reptile (orphaned data)
+        if not instance.schedule:
+            continue
+        if not instance.schedule.reptile:
+            continue
+
+        try:
+            await check_reptile_access(db, current_user, instance.schedule.reptile.id)
+            filtered_instances.append(instance)
+        except HTTPException:
+            # User doesn't have access, skip this instance
+            continue
 
     return filtered_instances
 

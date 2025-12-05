@@ -471,15 +471,17 @@ export default function Dashboard() {
         }
       });
 
-      // Transform instances to event format
-      const instanceEvents = response.data.map(instance => ({
-        instance_id: instance.id,
-        date: new Date(instance.scheduled_date),
-        schedule_id: instance.schedule.id,
-        schedule_type: instance.schedule.schedule_type,
-        schedule_rule: instance.schedule.schedule_rule,
-        reptile_name: instance.schedule.reptile.name,
-        reptile_id: instance.schedule.reptile_id,
+      // Transform instances to event format - filter out instances with missing schedule/reptile
+      const instanceEvents = response.data
+        .filter(instance => instance.schedule && instance.schedule.reptile)
+        .map(instance => ({
+          instance_id: instance.id,
+          date: new Date(instance.scheduled_date),
+          schedule_id: instance.schedule.id,
+          schedule_type: instance.schedule.schedule_type,
+          schedule_rule: instance.schedule.schedule_rule,
+          reptile_name: instance.schedule.reptile.name,
+          reptile_id: instance.schedule.reptile_id,
         name: instance.schedule.name,
         food_category: instance.schedule.food_category,
         time_slot: instance.schedule.time_slot,
