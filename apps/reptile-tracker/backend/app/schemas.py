@@ -1,5 +1,5 @@
 from datetime import datetime, time, date
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr, Field, field_serializer
 from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType
 
