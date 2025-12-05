@@ -388,6 +388,7 @@ class Schedule(Base):
     child_schedules = relationship("Schedule", back_populates="parent_schedule", cascade="all, delete-orphan")
     supplement = relationship("Supplement")
     completions = relationship("ScheduleCompletion", back_populates="schedule", cascade="all, delete-orphan")
+    instances = relationship("ScheduleInstance", back_populates="schedule", cascade="all, delete-orphan")
 
 
 class ScheduleCompletion(Base):
@@ -396,6 +397,7 @@ class ScheduleCompletion(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    instance_id = Column(Integer, ForeignKey("schedule_instances.id", ondelete="SET NULL"), nullable=True, index=True)
     scheduled_date = Column(Date, nullable=False, index=True)  # The date this occurrence was scheduled for
 
     completed_at = Column(DateTime(timezone=True), nullable=True)  # When it was actually completed
@@ -413,6 +415,30 @@ class ScheduleCompletion(Base):
     # Relationships
     schedule = relationship("Schedule", back_populates="completions")
     reptile = relationship("Reptile")
+    instance = relationship("ScheduleInstance", back_populates="completions")
+
+
+class ScheduleInstance(Base):
+    """Individual occurrence of a schedule (pre-generated for upcoming dates)"""
+    __tablename__ = "schedule_instances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    scheduled_date = Column(Date, nullable=False, index=True)  # The date this instance is scheduled for
+
+    # Status of this instance
+    status = Column(String(50), nullable=False, default="pending", index=True)  # pending, completed, missed, skipped
+
+    # Pre-calculated supplements for this instance (JSONB array of supplement IDs and names)
+    # Example: [{"id": 1, "name": "Calcium", "priority": 1}, {"id": 2, "name": "Multivitamin", "priority": 2}]
+    supplements = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    schedule = relationship("Schedule", back_populates="instances")
+    completions = relationship("ScheduleCompletion", back_populates="instance")
 
 
 class FeedingRotation(Base):

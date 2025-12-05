@@ -413,6 +413,40 @@ class ScheduleCompletion(ScheduleCompletionBase):
         from_attributes = True
 
 
+# Schedule Instance schemas
+class ScheduleInstanceBase(BaseModel):
+    schedule_id: int
+    scheduled_date: date
+    status: str = "pending"  # pending, completed, missed, skipped
+    supplements: Optional[List[Dict]] = None
+
+
+class ScheduleInstanceCreate(ScheduleInstanceBase):
+    pass
+
+
+class ScheduleInstanceUpdate(BaseModel):
+    status: Optional[str] = None
+    supplements: Optional[List[Dict]] = None
+
+
+class ScheduleInstance(ScheduleInstanceBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ScheduleInstanceWithSchedule(ScheduleInstance):
+    """Schedule instance with full schedule details"""
+    schedule: "Schedule"
+
+    class Config:
+        from_attributes = True
+
+
 # Access control schemas
 class GrantAccess(BaseModel):
     user_email: EmailStr

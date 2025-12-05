@@ -1284,6 +1284,33 @@ async def send_overdue_alert(
     )
 
 
+async def daily_instance_maintenance():
+    """
+    Daily job to generate schedule instances and clean up old ones.
+    Runs at 3 AM UTC to ensure instances exist for the next 14 days.
+    """
+    logger.info("Starting daily instance maintenance")
+
+    try:
+        from app.instance_generator import generate_instances_for_all_schedules, cleanup_old_instances
+
+        # Generate instances for next 14 days
+        stats = await generate_instances_for_all_schedules(days_ahead=14)
+        logger.info(
+            f"Generated instances: {stats['schedules_processed']} schedules processed, "
+            f"{stats['instances_created']} instances created"
+        )
+
+        # Clean up instances older than 30 days
+        deleted_count = await cleanup_old_instances(days_to_keep=30)
+        logger.info(f"Cleaned up {deleted_count} old instances")
+
+        logger.info("Daily instance maintenance completed successfully")
+
+    except Exception as e:
+        logger.error(f"Error in daily instance maintenance: {e}", exc_info=True)
+
+
 def start_scheduler():
     """Start the notification scheduler"""
     global scheduler
@@ -1338,6 +1365,17 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # Daily instance maintenance: generate instances for next 14 days and cleanup old ones (runs at 3 AM UTC)
+    scheduler.add_job(
+        daily_instance_maintenance,
+        trigger="cron",
+        hour=3,
+        minute=0,
+        id="daily_instance_maintenance",
+        name="Daily schedule instance maintenance",
+        replace_existing=True
+    )
+
     scheduler.start()
 
     logger.info("Notification scheduler started successfully")
@@ -1353,6 +1391,18 @@ def start_scheduler():
             loop.run_until_complete(rebuild_notification_jobs_from_db())
     except Exception as e:
         logger.error(f"Error rebuilding notification jobs: {e}", exc_info=True)
+
+    # Generate initial schedule instances on startup
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If event loop is already running, schedule as a task
+            asyncio.create_task(daily_instance_maintenance())
+        else:
+            # If no event loop is running, run directly
+            loop.run_until_complete(daily_instance_maintenance())
+    except Exception as e:
+        logger.error(f"Error generating initial schedule instances: {e}", exc_info=True)
 
 
 def stop_scheduler():

@@ -145,6 +145,15 @@ async def create_schedule(
         import logging
         logging.getLogger(__name__).error(f"Failed to schedule notification jobs for schedule {new_schedule.id}: {e}")
 
+    # Generate schedule instances for this schedule
+    from app.instance_generator import generate_instances_for_schedule
+    try:
+        await generate_instances_for_schedule(db, new_schedule, days_ahead=14)
+    except Exception as e:
+        # Log error but don't fail the schedule creation
+        import logging
+        logging.getLogger(__name__).error(f"Failed to generate instances for schedule {new_schedule.id}: {e}")
+
     return new_schedule
 
 
@@ -228,6 +237,15 @@ async def update_schedule(
         # Log error but don't fail the schedule update
         import logging
         logging.getLogger(__name__).error(f"Failed to reschedule notification jobs for schedule {schedule.id}: {e}")
+
+    # Regenerate schedule instances (delete old, create new)
+    from app.instance_generator import regenerate_instances_for_schedule
+    try:
+        await regenerate_instances_for_schedule(db, schedule.id, days_ahead=14)
+    except Exception as e:
+        # Log error but don't fail the schedule update
+        import logging
+        logging.getLogger(__name__).error(f"Failed to regenerate instances for schedule {schedule.id}: {e}")
 
     return schedule
 
