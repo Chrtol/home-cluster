@@ -13,11 +13,15 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 🏥 **Health Records**: Track vet visits, medication, and observations
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
+  - Supplement display in schedule details view with frequency notes
+  - Calculated from feeding rotations matching food categories
+  - Dashboard and calendar integration showing applicable supplements
 - 🔔 **Notifications**: Per-schedule notification channels with webhook support (Discord/Pushover/Generic), customizable templates, and visual calendar indicators
   - Template-driven Discord embeds with custom colors, fields, and footer
   - In-app notification center with bell icon and history
   - Quiet hours with critical notification override
   - Variable insertion and markdown support in templates
+  - Bell icon indicators throughout calendar views showing notification status
 - 📈 **Statistics**: Comprehensive analytics with customizable charts and layouts
 - ⚙️ **Display Customization**: Drag-and-drop card management and chart settings
 
@@ -327,6 +331,8 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
    - Show/hide individual cards
    - Resize cards (XS/S/M/L)
    - Multi-reptile weight chart with interpolation and extrapolation
+   - Calendar view with modal showing schedule details and applicable supplements
+   - Bell icon indicators for notification-enabled schedules in calendar modal
 3. **ReptileList**: Grouped by household with filter toggles and hide/unhide functionality
    - Visual household sections with headers
    - Filter toggles to show/hide households (Eye/EyeOff icons)
@@ -339,6 +345,9 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
    - Schedule management with completion tracking
    - Supplement rotation configuration
    - Hide/Unhide toggle button
+   - Schedule details view with asymmetric layout (2fr:1fr grid)
+   - Applicable supplements display with frequency notes
+   - Bell icon indicators for notification-enabled schedules
 5. **ReptileForm**: Create/edit forms with full reptile information
 6. **FeedingLog**: Multi-reptile feeding interface
    - +/- counter for quick food quantity entry

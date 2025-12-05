@@ -1,6 +1,17 @@
 # Reptile Tracker - Todo List
 
 ## 🚀 NEXT UP - Tier 1 Priorities
+
+### Schedule Instance System - 🎯 CRITICAL PRIORITY
+- **Create individual schedule occurrence objects**
+  - When a schedule is active, create separate objects for each occurrence (e.g., 7 daily objects for the week)
+  - Each instance has unique ID and pre-calculated supplement attachment
+  - Calculate supplements the same way as calendar does (based on feeding rotations)
+  - Links from calendar/notifications go to specific instance, not general schedule
+  - Allows completion tracking at the individual occurrence level
+  - Supports better notification targeting and history
+  - Foundation for improved schedule management UX
+
 1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
 2. **Advanced Notification Features** - Notification grouping, snooze, per-reptile preferences, email notifications (see [🔔 Notifications & Reminders](#notifications--reminders))
 3. **Live Feeder Animal Care** - Track feeder insect colonies, gut loading schedules, hydration (see [🔧 Core Features](#-core-features))
@@ -540,6 +551,34 @@
   - Customize individual schedule notifications when needed
   - Override channels and reminder times per schedule
   - Seamless integration with existing template application flow
+
+### December 2025 - Schedule UI Improvements & Supplement Display (2025-12-05)
+- [x] **Supplement rotation display in schedule views** - ✅ COMPLETED (2025-12-05)
+  - Added supplement rotation information to ScheduleDetails page
+  - Shows applicable supplements calculated from feeding rotations
+  - Displays frequency notes (e.g., "Every 2 feedings" or "On Mon, Wed, Fri")
+  - Matches Calendar page supplement calculation logic
+  - Works for all schedule rule types (every_x_days, days_of_week, monthly)
+  - Dashboard calendar modal shows supplements in event details
+
+- [x] **Bell icon notification indicators** - ✅ COMPLETED (2025-12-05)
+  - Added bell icons to Dashboard calendar modal for notification-enabled schedules
+  - Matches existing Calendar page daily view behavior
+  - Visual consistency across all calendar interfaces
+  - Bell icons shown next to time window or time slot information
+
+- [x] **ScheduleDetails layout improvements** - ✅ COMPLETED (2025-12-05)
+  - Changed from strict 2-column grid to asymmetric layout
+  - Left column (wider): Schedule Information card
+  - Right column (narrower): Stacked Frequency, Time Window, and Notifications cards
+  - Notes card spans full width at bottom
+  - Better visual balance and space utilization
+  - Uses CSS Grid `lg:grid-cols-[2fr_1fr]` for responsive layout
+
+- [x] **Fixed frontend build errors** - ✅ COMPLETED (2025-12-05)
+  - Fixed missing closing div tag in ScheduleDetails.jsx
+  - Fixed SQL migration error (measurements table already exists check)
+  - Both backend and frontend deployments now succeed
 
 ### December 2025 - Notification System Enhancements & Bug Fixes (2025-12-04)
 - [x] **Template-Driven Discord Notifications** - ✅ COMPLETED (2025-12-04)
