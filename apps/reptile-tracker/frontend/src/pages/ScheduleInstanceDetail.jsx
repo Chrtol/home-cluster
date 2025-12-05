@@ -222,6 +222,13 @@ export default function ScheduleInstanceDetail() {
             Schedule Instance
           </h1>
         </div>
+        <Link
+          to={`/schedules/${schedule?.id}`}
+          className="btn-secondary inline-flex items-center gap-2"
+        >
+          <Calendar size={16} />
+          View Schedule Details
+        </Link>
       </div>
 
       {/* Main Content */}
@@ -250,7 +257,7 @@ export default function ScheduleInstanceDetail() {
           </div>
 
           {/* Schedule Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Reptile
@@ -345,127 +352,117 @@ export default function ScheduleInstanceDetail() {
           )}
         </div>
 
-        {/* Supplements Card */}
-        {instance.supplements && instance.supplements.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Pre-calculated Supplements
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {instance.supplements.map((supp, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 rounded-lg font-medium"
-                >
-                  {supp.name}
-                  {supp.priority !== undefined && (
-                    <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">
-                      (Priority: {supp.priority})
-                    </span>
-                  )}
-                </span>
-              ))}
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-              These supplements were pre-calculated based on your feeding rotation rules
-            </p>
-          </div>
-        )}
-
-        {/* Pending Action Card */}
-        {instance.status === 'pending' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-blue-500 dark:border-blue-600 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Clock size={20} className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Action Required
+        {/* Two column layout for supplements and action/completion */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left column - Supplements */}
+          {instance.supplements && instance.supplements.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Pre-calculated Supplements
               </h3>
-            </div>
-
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              This schedule instance is pending and needs to be completed.
-            </p>
-
-            <button
-              onClick={handleLogNow}
-              className="btn-primary inline-flex items-center gap-2"
-            >
-              <Plus size={16} />
-              {getActionButtonText()}
-            </button>
-          </div>
-        )}
-
-        {/* Completion Card */}
-        {instance.status === 'completed' && completionSummary && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-green-500 dark:border-green-600 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Completed
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Completion Type
-                </label>
-                <span className="text-gray-900 dark:text-white capitalize">
-                  {completionSummary.label}
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Details
-                </label>
-                <p className="text-gray-900 dark:text-white">
-                  {completionSummary.value}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Completed At
-                </label>
-                <span className="text-gray-900 dark:text-white">
-                  {formatDate(new Date(completionSummary.timestamp))}
-                </span>
-              </div>
-
-              {completionLink && (
-                <div className="pt-3">
-                  <Link
-                    to={completionLink}
-                    className="btn-primary inline-flex items-center gap-2"
+              <div className="flex flex-wrap gap-2">
+                {instance.supplements.map((supp, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 rounded-lg font-medium text-sm"
                   >
-                    View {completionSummary.label} Details
-                    <ArrowLeft size={16} className="rotate-180" />
-                  </Link>
-                </div>
-              )}
+                    {supp.name}
+                    {supp.priority !== undefined && (
+                      <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">
+                        (Priority: {supp.priority})
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                These supplements were pre-calculated based on your feeding rotation rules
+              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Parent Schedule Link */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Parent Schedule
-          </h3>
-          <Link
-            to={`/schedules/${schedule?.id}`}
-            className="btn-secondary inline-flex items-center gap-2"
-          >
-            <Calendar size={16} />
-            View Schedule Details
-          </Link>
+          {/* Right column - Pending Action Card */}
+          {instance.status === 'pending' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-blue-500 dark:border-blue-600 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Clock size={20} className="text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Action Required
+                </h3>
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                This schedule instance is pending and needs to be completed.
+              </p>
+
+              <button
+                onClick={handleLogNow}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Plus size={16} />
+                {getActionButtonText()}
+              </button>
+            </div>
+          )}
+
+          {/* Right column - Completion Card */}
+          {instance.status === 'completed' && completionSummary && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-green-500 dark:border-green-600 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Completed
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Completion Type
+                  </label>
+                  <span className="text-gray-900 dark:text-white capitalize">
+                    {completionSummary.label}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Details
+                  </label>
+                  <p className="text-gray-900 dark:text-white">
+                    {completionSummary.value}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Completed At
+                  </label>
+                  <span className="text-gray-900 dark:text-white">
+                    {formatDate(new Date(completionSummary.timestamp))}
+                  </span>
+                </div>
+
+                {completionLink && (
+                  <div className="pt-3">
+                    <Link
+                      to={completionLink}
+                      className="btn-primary inline-flex items-center gap-2"
+                    >
+                      View {completionSummary.label} Details
+                      <ArrowLeft size={16} className="rotate-180" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );
