@@ -262,7 +262,7 @@ async def get_dashboard_data(
         "feeding_rotations": feeding_rotations,
         "weekly_feedings": weekly_feedings,
         "weekly_mistings": weekly_mistings,
-        "weekly_instances": weekly_instances
+        "weekly_instances": []  # Temporarily empty to isolate the issue
     })
     return convert_time_fields(data)
 
