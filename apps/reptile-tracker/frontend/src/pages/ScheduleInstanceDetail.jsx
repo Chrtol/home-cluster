@@ -591,11 +591,16 @@ export default function ScheduleInstanceDetail() {
                       const dayText = absDay === 1 ? '1 day' : `${absDay} days`;
                       const direction = daysDiff > 0 ? 'after' : 'before';
 
+                      // Get flexible window setting from schedule
+                      const flexibleEnabled = instance.schedule?.flexible_completion_enabled;
+                      const flexibleDays = instance.schedule?.flexible_completion_days || 2;
+
                       return (
                         <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                           <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
                             <Calendar size={14} className="flex-shrink-0" />
-                            Completed {dayText} {direction} scheduled date (flexible ±2 day window)
+                            Completed {dayText} {direction} scheduled date
+                            {flexibleEnabled && ` (flexible ±${flexibleDays} day window)`}
                           </p>
                         </div>
                       );
