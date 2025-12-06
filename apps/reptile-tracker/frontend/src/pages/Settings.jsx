@@ -108,6 +108,7 @@ function PreferencesTab() {
   const [timezone, setTimezone] = useState('');
   const [firstDayOfWeek, setFirstDayOfWeek] = useState('sunday');
   const [darkMode, setDarkMode] = useState(true);
+  const [showFavoritesFirst, setShowFavoritesFirst] = useState(true);
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
@@ -119,7 +120,7 @@ function PreferencesTab() {
     const isDark = savedMode === null ? true : savedMode === 'true';
     setDarkMode(isDark);
 
-    // Fetch user data from backend to get timezone
+    // Fetch user data from backend to get timezone and preferences
     const fetchUserData = async () => {
       try {
         const response = await axios.get('/auth/me');
@@ -130,6 +131,11 @@ function PreferencesTab() {
         } else {
           // Fallback to localStorage or browser detection
           setTimezone(getUserTimezone());
+        }
+
+        // Load show_favorites_first preference
+        if (response.data.show_favorites_first !== undefined) {
+          setShowFavoritesFirst(response.data.show_favorites_first);
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
@@ -160,14 +166,17 @@ function PreferencesTab() {
       localStorage.setItem('firstDayOfWeek', firstDayOfWeek);
       localStorage.setItem('darkMode', darkMode.toString());
 
-      // Save timezone to backend
-      await axios.patch('/auth/me', { timezone });
+      // Save timezone and preferences to backend
+      await axios.patch('/auth/me', {
+        timezone,
+        show_favorites_first: showFavoritesFirst
+      });
 
       setSuccess('Settings saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error saving settings:', err);
-      setSuccess('Settings saved locally, but failed to sync timezone to server');
+      setSuccess('Settings saved locally, but failed to sync to server');
       setTimeout(() => setSuccess(''), 5000);
     }
   };
@@ -286,6 +295,23 @@ function PreferencesTab() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Affects calendar view and rotation day-of-week picker
               </p>
+            </div>
+
+            {/* Show Favorites First */}
+            <div>
+              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Food Favorites</label>
+              <label className="flex items-center gap-3 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={showFavoritesFirst}
+                  onChange={(e) => setShowFavoritesFirst(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 dark:text-white">Show favorite foods first when logging feedings</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Automatically sort foods with reptile favorites first, then global favorites</div>
+                </div>
+              </label>
             </div>
           </div>
 

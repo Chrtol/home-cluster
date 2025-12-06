@@ -64,6 +64,9 @@ export default function FeedingLog() {
   const [minutes, setMinutes] = useState(new Date().getMinutes());
   const [period, setPeriod] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
 
+  // User preferences
+  const [showFavoritesFirst, setShowFavoritesFirst] = useState(true);
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
@@ -71,14 +74,20 @@ export default function FeedingLog() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [reptilesRes, foodsRes, supplementsRes] = await Promise.all([
+        const [reptilesRes, foodsRes, supplementsRes, userRes] = await Promise.all([
           axios.get('/api/reptiles'),
           axios.get('/api/foods'),
           axios.get('/api/supplements'),
+          axios.get('/auth/me'),
         ]);
         setReptiles(reptilesRes.data);
         setFoods(foodsRes.data);
         setSupplements(supplementsRes.data);
+
+        // Load user preference for showing favorites first
+        if (userRes.data.show_favorites_first !== undefined) {
+          setShowFavoritesFirst(userRes.data.show_favorites_first);
+        }
 
         // Check if we're viewing/editing an existing feeding
         if (id && !isNaN(id)) {
@@ -502,6 +511,35 @@ export default function FeedingLog() {
     ));
   };
 
+  // Quick add to reptile favorites
+  const toggleReptileFavorite = async (foodId) => {
+    if (!selectedReptile) {
+      alert('Please select a reptile first');
+      return;
+    }
+
+    const food = foods.find(f => f.id === parseInt(foodId));
+    if (!food) return;
+
+    const isCurrentlyFavorite = food.is_reptile_favorite || false;
+
+    try {
+      if (isCurrentlyFavorite) {
+        await axios.delete(`/api/reptiles/${selectedReptile}/favorite-foods/${foodId}`);
+      } else {
+        await axios.post(`/api/reptiles/${selectedReptile}/favorite-foods/${foodId}`);
+      }
+
+      // Update local state
+      setFoods(foods.map(f =>
+        f.id === parseInt(foodId) ? { ...f, is_reptile_favorite: !isCurrentlyFavorite } : f
+      ));
+    } catch (error) {
+      console.error('Failed to toggle reptile favorite:', error);
+      alert('Failed to update favorite status');
+    }
+  };
+
   // Toggle salad component
   const toggleSaladComponent = (foodId) => {
     if (saladComponents.includes(foodId)) {
@@ -684,8 +722,13 @@ export default function FeedingLog() {
     }
   };
 
-  // Helper function to sort foods by favorites
+  // Helper function to sort foods by favorites (only if preference is enabled)
   const sortByFavorites = (foodList) => {
+    if (!showFavoritesFirst) {
+      // Just sort alphabetically if preference is disabled
+      return foodList.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
     return foodList.sort((a, b) => {
       // Reptile favorites first (if is_reptile_favorite exists)
       const aReptileFav = a.is_reptile_favorite || false;
@@ -1030,23 +1073,40 @@ export default function FeedingLog() {
               </button>
             </div>
 
-            {insectItems.map((item, index) => (
-              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  <div className="flex-1 min-w-0">
-                    <select
-                      value={item.food_id}
-                      onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
-                      className="input w-full text-sm sm:text-base"
-                    >
-                      {insectFoods.map(food => {
-                        const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
-                        return (
-                          <option key={food.id} value={food.id}>{prefix}{food.name}</option>
-                        );
-                      })}
-                    </select>
-                  </div>
+            {insectItems.map((item, index) => {
+              const selectedFood = foods.find(f => f.id === parseInt(item.food_id));
+              const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
+
+              return (
+                <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <select
+                        value={item.food_id}
+                        onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
+                        className="input w-full text-sm sm:text-base"
+                      >
+                        {insectFoods.map(food => {
+                          const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                          return (
+                            <option key={food.id} value={food.id}>{prefix}{food.name}</option>
+                          );
+                        })}
+                      </select>
+                      {selectedReptile && (
+                        <button
+                          type="button"
+                          onClick={() => toggleReptileFavorite(item.food_id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
+                          title={isReptileFavorite ? "Remove from reptile's favorites" : "Add to reptile's favorites"}
+                        >
+                          <Heart
+                            size={20}
+                            className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+                          />
+                        </button>
+                      )}
+                    </div>
                   <div className="flex items-center justify-between sm:justify-start gap-2">
                     <div className="flex items-center gap-2">
                       <button
@@ -1184,23 +1244,40 @@ export default function FeedingLog() {
               </button>
             </div>
 
-            {preparedItems.map((item, index) => (
-              <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  <div className="flex-1 min-w-0">
-                    <select
-                      value={item.food_id}
-                      onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
-                      className="input w-full text-sm sm:text-base"
-                    >
-                      {preparedFoods.map(food => {
-                        const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
-                        return (
-                          <option key={food.id} value={food.id}>{prefix}{food.name}</option>
-                        );
-                      })}
-                    </select>
-                  </div>
+            {preparedItems.map((item, index) => {
+              const selectedFood = foods.find(f => f.id === parseInt(item.food_id));
+              const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
+
+              return (
+                <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <select
+                        value={item.food_id}
+                        onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
+                        className="input w-full text-sm sm:text-base"
+                      >
+                        {preparedFoods.map(food => {
+                          const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                          return (
+                            <option key={food.id} value={food.id}>{prefix}{food.name}</option>
+                          );
+                        })}
+                      </select>
+                      {selectedReptile && (
+                        <button
+                          type="button"
+                          onClick={() => toggleReptileFavorite(item.food_id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
+                          title={isReptileFavorite ? "Remove from reptile's favorites" : "Add to reptile's favorites"}
+                        >
+                          <Heart
+                            size={20}
+                            className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+                          />
+                        </button>
+                      )}
+                    </div>
                   <div className="flex items-center justify-between sm:justify-start gap-2">
                     <div className="flex items-center gap-2">
                       <button
@@ -1255,8 +1332,9 @@ export default function FeedingLog() {
                     </div>
                   </div>
                 )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
 
