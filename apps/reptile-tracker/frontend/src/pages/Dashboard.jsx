@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [showReptileFilter, setShowReptileFilter] = useState(false);
   const [weeklyFeedings, setWeeklyFeedings] = useState([]);
   const [weeklyMistings, setWeeklyMistings] = useState([]);
+  const [quotaStatuses, setQuotaStatuses] = useState({});
 
   // Load calendar view from localStorage or default to 'week'
   const [calendarView, setCalendarView] = useState(() => {
@@ -96,6 +97,7 @@ export default function Dashboard() {
         setFeedingRotations(data.feeding_rotations);
         setWeeklyFeedings(data.weekly_feedings);
         setWeeklyMistings(data.weekly_mistings);
+        setQuotaStatuses(data.quota_statuses || {});
 
         // Process weight data
         const weightArray = [];
@@ -221,6 +223,9 @@ export default function Dashboard() {
               schedule_id: instance.schedule.id,
               schedule_type: instance.schedule.schedule_type,
               schedule_rule: instance.schedule.schedule_rule,
+              schedule_mode: instance.schedule.schedule_mode,
+              quota_period: instance.schedule.quota_period,
+              quota_frequency: instance.schedule.quota_frequency,
               reptile_name: instance.schedule.reptile.name,
               reptile_id: instance.schedule.reptile_id,
               name: instance.schedule.name,
@@ -513,6 +518,31 @@ export default function Dashboard() {
     });
 
     return scheduledEvents;
+  };
+
+  const getQuotaBadge = (scheduleId) => {
+    const quotaStatus = quotaStatuses[scheduleId];
+    if (!quotaStatus) return null;
+
+    const { count, quota_frequency, period_type, quota_met, quota_exceeded } = quotaStatus;
+    const periodLabel = period_type === 'week' ? 'wk' : 'mo';
+
+    if (quota_exceeded) {
+      return {
+        text: `${count}/${quota_frequency}/${periodLabel} ⚠`,
+        className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700'
+      };
+    } else if (quota_met) {
+      return {
+        text: `${count}/${quota_frequency}/${periodLabel} ✓`,
+        className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700'
+      };
+    } else {
+      return {
+        text: `${count}/${quota_frequency}/${periodLabel}`,
+        className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+      };
+    }
   };
 
   const getScheduleTypeIcon = (type) => {
@@ -1135,6 +1165,17 @@ export default function Dashboard() {
                                     </span>
                                   </>
                                 )}
+                                {event.schedule_mode === 'requirement' && (() => {
+                                  const quotaBadge = getQuotaBadge(event.schedule_id);
+                                  return quotaBadge ? (
+                                    <>
+                                      <span className="text-gray-400 dark:text-gray-500">•</span>
+                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${quotaBadge.className}`}>
+                                        {quotaBadge.text}
+                                      </span>
+                                    </>
+                                  ) : null;
+                                })()}
                               </div>
                             </div>
                           );
@@ -1170,6 +1211,17 @@ export default function Dashboard() {
                               {foodCategory && (
                                 <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
                               )}
+                              {event.schedule_mode === 'requirement' && (() => {
+                                const quotaBadge = getQuotaBadge(event.schedule_id);
+                                return quotaBadge ? (
+                                  <>
+                                    <span className="text-gray-400 dark:text-gray-500">•</span>
+                                    <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${quotaBadge.className}`}>
+                                      {quotaBadge.text}
+                                    </span>
+                                  </>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
                         );
@@ -1538,6 +1590,17 @@ export default function Dashboard() {
                             {event.schedule_type}
                           </span>
                         </div>
+
+                        {event.schedule_mode === 'requirement' && (() => {
+                          const quotaBadge = getQuotaBadge(event.schedule_id);
+                          return quotaBadge ? (
+                            <div className="mb-2">
+                              <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>
+                                {quotaBadge.text}
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
                           <div className="flex flex-col min-w-0">

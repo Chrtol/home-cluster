@@ -41,6 +41,7 @@ function Calendar() {
   const [showSchedules, setShowSchedules] = useState(false);
   const [visibleReptiles, setVisibleReptiles] = useState(new Set());
   const [visibleCategories, setVisibleCategories] = useState(new Set());
+  const [quotaStatuses, setQuotaStatuses] = useState({});
 
   useEffect(() => {
     fetchReptiles();
@@ -158,6 +159,7 @@ function Calendar() {
       // Set schedules and rotations (already have reptile_name from backend)
       setSchedules(data.schedules);
       setFeedingRotations(data.feeding_rotations);
+      setQuotaStatuses(data.quota_statuses || {});
 
       // Set past feedings and mistings
       const feedingsWithType = data.feedings.map(f => ({
@@ -188,6 +190,10 @@ function Calendar() {
             schedule_id: instance.schedule.id,
             schedule_type: instance.schedule.schedule_type,
             schedule_rule: instance.schedule.schedule_rule,
+            schedule_mode: instance.schedule.schedule_mode,
+            quota_period: instance.schedule.quota_period,
+            quota_frequency: instance.schedule.quota_frequency,
+            min_days_between: instance.schedule.min_days_between,
             reptile_name: instance.schedule.reptile.name,
             reptile_id: instance.schedule.reptile_id,
             name: instance.schedule.name,
@@ -519,6 +525,31 @@ function Calendar() {
     }
   };
 
+  const getQuotaBadge = (scheduleId) => {
+    const quotaStatus = quotaStatuses[scheduleId];
+    if (!quotaStatus) return null;
+
+    const { count, quota_frequency, period_type, quota_met, quota_exceeded } = quotaStatus;
+    const periodLabel = period_type === 'week' ? 'week' : 'month';
+
+    if (quota_exceeded) {
+      return {
+        text: `${count}/${quota_frequency} this ${periodLabel} ⚠`,
+        className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700'
+      };
+    } else if (quota_met) {
+      return {
+        text: `${count}/${quota_frequency} this ${periodLabel} ✓`,
+        className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700'
+      };
+    } else {
+      return {
+        text: `${count}/${quota_frequency} this ${periodLabel}`,
+        className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+      };
+    }
+  };
+
   const getScheduleTypeColor = (type, isActual) => {
     if (isActual) {
       // Solid colors for actual completed activities
@@ -741,11 +772,34 @@ function Calendar() {
                     </div>
 
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {formatScheduleRule(schedule)}
-                      {schedule.name && <span className="ml-2">• {schedule.name}</span>}
+                      {schedule.schedule_mode === 'requirement' ? (
+                        <>
+                          Requirement-based
+                          {schedule.quota_frequency && schedule.quota_period && (
+                            <span className="ml-2">• {schedule.quota_frequency}x per {schedule.quota_period}</span>
+                          )}
+                          {schedule.min_days_between && (
+                            <span className="ml-2">• {schedule.min_days_between}+ days between</span>
+                          )}
+                          {schedule.name && <span className="ml-2">• {schedule.name}</span>}
+                        </>
+                      ) : (
+                        <>
+                          {formatScheduleRule(schedule)}
+                          {schedule.name && <span className="ml-2">• {schedule.name}</span>}
+                        </>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-3 mt-2">
+                      {schedule.schedule_mode === 'requirement' && (() => {
+                        const quotaBadge = getQuotaBadge(schedule.id);
+                        return quotaBadge ? (
+                          <div className={`text-xs px-2 py-0.5 rounded-full font-medium ${quotaBadge.className}`}>
+                            {quotaBadge.text}
+                          </div>
+                        ) : null;
+                      })()}
                       {schedule.food_category && (
                         <div className="text-xs text-gray-500 dark:text-gray-500">
                           <span className="font-medium">Food:</span> {schedule.food_category}
@@ -847,12 +901,21 @@ function Calendar() {
 
                     const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
 
+                    const quotaBadge = event.schedule_mode === 'requirement' ? getQuotaBadge(event.schedule_id) : null;
+
                     const EventContent = (
                       <div className={`px-4 py-3 rounded-lg border-2 ${
                         event.is_completed || event.is_actual
                           ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
                           : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                       }`}>
+                        {quotaBadge && (
+                          <div className="mb-2">
+                            <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>
+                              {quotaBadge.text}
+                            </div>
+                          </div>
+                        )}
                         <div className="flex items-center gap-3 mb-3">
                           <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
                             <TypeIcon size={20} />
@@ -1325,6 +1388,14 @@ function Calendar() {
                               </div>
 
                               <div className="text-xs space-y-1">
+                                {event.schedule_mode === 'requirement' && (() => {
+                                  const quotaBadge = getQuotaBadge(event.schedule_id);
+                                  return quotaBadge ? (
+                                    <div className={`inline-block px-2 py-0.5 rounded-full font-medium ${quotaBadge.className}`}>
+                                      {quotaBadge.text}
+                                    </div>
+                                  ) : null;
+                                })()}
                                 {event.food_category && (
                                   <div className="text-xs opacity-90">Food: {event.food_category}</div>
                                 )}
@@ -1428,6 +1499,18 @@ function Calendar() {
                           {event.schedule_type}
                         </span>
                       </div>
+
+                      {/* Quota Badge for Requirement Schedules */}
+                      {event.schedule_mode === 'requirement' && (() => {
+                        const quotaBadge = getQuotaBadge(event.schedule_id);
+                        return quotaBadge ? (
+                          <div className="mb-3">
+                            <div className={`inline-block px-3 py-1.5 rounded-lg text-sm font-medium ${quotaBadge.className}`}>
+                              {quotaBadge.text}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
 
                       {/* Details Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">

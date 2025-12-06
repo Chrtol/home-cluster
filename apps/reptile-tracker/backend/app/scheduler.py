@@ -13,8 +13,9 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_maker
-from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members
+from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members, ScheduleMode
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
+from app.quota_tracker import check_quota_status
 
 logger = logging.getLogger(__name__)
 
@@ -1764,6 +1765,278 @@ async def check_auto_complete_schedules():
         logger.error(f"Error in check_auto_complete_schedules: {e}", exc_info=True)
 
 
+async def check_requirement_schedule_notifications():
+    """
+    Check requirement-based schedules and send quota-related notifications:
+    - Max days between warnings
+    - End-of-period reminders (for quota not yet met)
+    - Quota exceeded alerts
+    """
+    logger.info("Running requirement schedule notification check")
+
+    try:
+        async with async_session_maker() as db:
+            now = datetime.now(timezone.utc)
+            today = now.date()
+
+            # Get all enabled requirement schedules with notifications enabled
+            result = await db.execute(
+                select(Schedule).where(
+                    and_(
+                        Schedule.enabled == True,
+                        Schedule.notifications_enabled == True,
+                        Schedule.schedule_mode == ScheduleMode.REQUIREMENT
+                    )
+                ).options(
+                    selectinload(Schedule.notification_channels)
+                )
+            )
+            schedules = result.scalars().all()
+
+            logger.info(f"Found {len(schedules)} requirement schedules with notifications enabled")
+
+            for schedule in schedules:
+                try:
+                    # Get reptile
+                    reptile = await db.get(Reptile, schedule.reptile_id)
+                    if not reptile:
+                        continue
+
+                    # Get quota status
+                    period_type = schedule.quota_period.value if schedule.quota_period else "week"
+                    quota_status = await check_quota_status(
+                        db, schedule, schedule.reptile_id, today, first_day_of_week=0
+                    )
+
+                    # Check max_days_between warning
+                    if schedule.max_days_between and quota_status.get("days_since_last") is not None:
+                        days_since_last = quota_status["days_since_last"]
+
+                        # Send warning if approaching max (1 day before max)
+                        if days_since_last == schedule.max_days_between - 1:
+                            await send_quota_warning_notification(
+                                db=db,
+                                reptile=reptile,
+                                schedule=schedule,
+                                warning_type="max_days_approaching",
+                                quota_status=quota_status
+                            )
+                        # Send alert if max exceeded
+                        elif days_since_last >= schedule.max_days_between:
+                            await send_quota_warning_notification(
+                                db=db,
+                                reptile=reptile,
+                                schedule=schedule,
+                                warning_type="max_days_exceeded",
+                                quota_status=quota_status
+                            )
+
+                    # Check end-of-period reminder (send 1 day before period ends)
+                    if not quota_status.get("quota_met"):
+                        # Calculate period end date
+                        period_start = quota_status.get("period_start_date")
+                        if period_start:
+                            if period_type == "week":
+                                period_end = period_start + timedelta(days=6)
+                            else:  # month
+                                # Last day of month
+                                if period_start.month == 12:
+                                    next_month_start = period_start.replace(year=period_start.year + 1, month=1)
+                                else:
+                                    next_month_start = period_start.replace(month=period_start.month + 1)
+                                period_end = next_month_start - timedelta(days=1)
+
+                            # Send reminder if tomorrow is the last day
+                            if today == period_end - timedelta(days=1):
+                                await send_quota_warning_notification(
+                                    db=db,
+                                    reptile=reptile,
+                                    schedule=schedule,
+                                    warning_type="period_ending_soon",
+                                    quota_status=quota_status
+                                )
+
+                    # Check quota exceeded alert
+                    if quota_status.get("quota_exceeded"):
+                        # Only send once per period (check if we've already sent this period)
+                        # We'll use a simple check: only send on the day the quota was exceeded
+                        if quota_status["count"] == (schedule.quota_frequency or 0) + 1:
+                            await send_quota_warning_notification(
+                                db=db,
+                                reptile=reptile,
+                                schedule=schedule,
+                                warning_type="quota_exceeded",
+                                quota_status=quota_status
+                            )
+
+                except Exception as e:
+                    logger.error(f"Error checking requirement schedule {schedule.id}: {e}", exc_info=True)
+                    continue
+
+    except Exception as e:
+        logger.error(f"Error in check_requirement_schedule_notifications: {e}", exc_info=True)
+
+
+async def send_quota_warning_notification(
+    db: AsyncSession,
+    reptile: Reptile,
+    schedule: Schedule,
+    warning_type: str,
+    quota_status: Dict
+):
+    """
+    Send quota warning notification to all channels for a requirement schedule
+
+    Uses the notification template system to allow user customization.
+
+    warning_type can be:
+    - max_days_approaching: Approaching max_days_between limit
+    - max_days_exceeded: Exceeded max_days_between limit
+    - period_ending_soon: Period ending soon and quota not met
+    - quota_exceeded: Quota has been exceeded this period
+    """
+    try:
+        # Get schedule's notification channels
+        await db.refresh(schedule, ["notification_channels"])
+
+        if not schedule.notification_channels:
+            logger.debug(f"No channels for schedule {schedule.id}, skipping quota notification")
+            return
+
+        period_type = schedule.quota_period.value if schedule.quota_period else "week"
+        period_label = "this week" if period_type == "week" else "this month"
+
+        schedule_url = f"/schedules/{schedule.id}"
+
+        # Calculate remaining feedings for period_ending_soon
+        remaining = quota_status['quota_frequency'] - quota_status['count'] if warning_type == "period_ending_soon" else 0
+
+        # Build context for template rendering
+        context = {
+            "reptile_name": reptile.name,
+            "schedule_name": schedule.name or "Requirement Schedule",
+            "schedule_type": schedule.schedule_type,
+            "schedule_url": schedule_url,
+            "schedule_id": schedule.id,
+            "quota_count": quota_status["count"],
+            "quota_frequency": quota_status["quota_frequency"],
+            "period_type": period_type,
+            "period_label": period_label,
+            "days_since_last": quota_status.get("days_since_last"),
+            "max_days_between": schedule.max_days_between,
+            "warning_type": warning_type,
+            "remaining_feedings": remaining,
+            "emoji": "📊",  # Default emoji for quota warnings
+        }
+
+        # Send to each channel
+        for channel in schedule.notification_channels:
+            if not channel.enabled:
+                continue
+
+            # Get the channel owner's notification settings and user
+            notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
+            if not notif_settings or not notif_settings.notify_schedule_reminders:
+                continue
+
+            # Get the user
+            user = await db.get(User, notif_settings.user_id)
+            if not user:
+                continue
+
+            # Check quiet hours
+            if is_within_quiet_hours(notif_settings, NotificationType.SCHEDULE_REMINDER, datetime.now(timezone.utc)):
+                logger.debug(f"Skipping quota notification for user {user.email} - within quiet hours")
+                continue
+
+            # Check user access
+            from app.permissions import check_reptile_access
+            try:
+                await check_reptile_access(db, user, reptile.id)
+            except:
+                continue
+
+            # Get template for this trigger (reuse schedule_reminder trigger type)
+            template = await get_template_for_trigger(
+                db=db,
+                trigger_type="schedule_reminder",
+                user_id=user.id,
+                channel_type=channel.webhook_type
+            )
+
+            # Render template or use fallback based on warning_type
+            if template:
+                # User has a custom template - use it with quota warning context
+                message = render_template(template.message_template, context)
+                title = render_template(template.title_template, context) if template.title_template else f"Schedule Reminder - {reptile.name}"
+            else:
+                # Fallback to hardcoded messages if no template exists
+                if warning_type == "max_days_approaching":
+                    title = f"Feeding Reminder - {reptile.name}"
+                    message = (
+                        f"⏰ **Reminder:** It's been {quota_status['days_since_last']} days since you fed **{reptile.name}**.\n"
+                        f"The maximum time between feedings is {schedule.max_days_between} days."
+                    )
+                elif warning_type == "max_days_exceeded":
+                    title = f"Feeding Overdue - {reptile.name}"
+                    message = (
+                        f"⚠️ **Alert:** It's been {quota_status['days_since_last']} days since you fed **{reptile.name}**!\n"
+                        f"The maximum time between feedings is {schedule.max_days_between} days. Please feed soon."
+                    )
+                elif warning_type == "period_ending_soon":
+                    title = f"Quota Reminder - {reptile.name}"
+                    message = (
+                        f"📊 **Reminder:** **{reptile.name}** still needs {remaining} more feeding(s) {period_label}.\n"
+                        f"Current progress: {quota_status['count']}/{quota_status['quota_frequency']}"
+                    )
+                elif warning_type == "quota_exceeded":
+                    title = f"Quota Exceeded - {reptile.name}"
+                    message = (
+                        f"⚠️ **Notice:** **{reptile.name}** has been fed {quota_status['count']} times {period_label}.\n"
+                        f"Target quota: {quota_status['quota_frequency']} times {period_label}"
+                    )
+                else:
+                    return  # Unknown warning type
+
+            # Send notification
+            await send_webhook_notification(
+                webhook_url=channel.webhook_url,
+                webhook_type=channel.webhook_type,
+                message=message,
+                title=title,
+                config=channel.config,
+                context=context,
+                trigger_type="schedule_reminder",
+                template=template
+            )
+
+            # Create in-app notification
+            await create_in_app_notification(
+                db=db,
+                user=user,
+                notification_type=NotificationType.SCHEDULE_REMINDER,
+                title=title,
+                message=message,
+                link=schedule_url,
+                notification_metadata={
+                    "reptile_id": reptile.id,
+                    "reptile_name": reptile.name,
+                    "schedule_id": schedule.id,
+                    "schedule_name": schedule.name or "Requirement Schedule",
+                    "warning_type": warning_type,
+                    "quota_status": quota_status
+                }
+            )
+
+            logger.info(
+                f"Sent quota {warning_type} notification for schedule {schedule.id} "
+                f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+            )
+
+    except Exception as e:
+        logger.error(f"Error sending quota warning notification: {e}", exc_info=True)
+
+
 async def daily_instance_maintenance():
     """
     Daily job to generate schedule instances and clean up old ones.
@@ -1835,6 +2108,17 @@ async def start_scheduler():
         minute=0,
         id="check_overdue",
         name="Check overdue schedules",
+        replace_existing=True
+    )
+
+    # Check requirement schedule notifications once per day at 10 AM UTC
+    scheduler.add_job(
+        check_requirement_schedule_notifications,
+        trigger="cron",
+        hour=10,
+        minute=0,
+        id="check_requirement_notifications",
+        name="Check requirement schedule notifications",
         replace_existing=True
     )
 
