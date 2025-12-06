@@ -45,8 +45,9 @@ function ScheduleForm() {
   const [notes, setNotes] = useState("");
   const [enabled, setEnabled] = useState(true);
 
-  // Requirement mode fields (for flexible weekly quotas)
-  const [frequencyPerWeek, setFrequencyPerWeek] = useState("");
+  // Requirement mode fields (for flexible quotas - weekly or monthly)
+  const [quotaPeriod, setQuotaPeriod] = useState("week");  // "week" or "month"
+  const [quotaFrequency, setQuotaFrequency] = useState("");
   const [minDaysBetween, setMinDaysBetween] = useState("");
   const [maxDaysBetween, setMaxDaysBetween] = useState("");
   const [suggestedDays, setSuggestedDays] = useState([]);
@@ -174,7 +175,8 @@ function ScheduleForm() {
       setHealthCategory(schedule.health_category || "");
 
       // Load requirement mode fields
-      setFrequencyPerWeek(schedule.frequency_per_week || "");
+      setQuotaPeriod(schedule.quota_period || "week");
+      setQuotaFrequency(schedule.quota_frequency || "");
       setMinDaysBetween(schedule.min_days_between || "");
       setMaxDaysBetween(schedule.max_days_between || "");
       setSuggestedDays(schedule.suggested_days || []);
@@ -404,7 +406,8 @@ function ScheduleForm() {
 
       // Add requirement mode fields
       if (scheduleMode === "requirement") {
-        scheduleData.frequency_per_week = parseInt(frequencyPerWeek) || null;
+        scheduleData.quota_period = quotaPeriod;
+        scheduleData.quota_frequency = parseInt(quotaFrequency) || null;
         scheduleData.min_days_between = parseInt(minDaysBetween) || null;
         scheduleData.max_days_between = maxDaysBetween ? parseInt(maxDaysBetween) : null;
         scheduleData.suggested_days = suggestedDays.length > 0 ? suggestedDays : null;
@@ -602,20 +605,42 @@ function ScheduleForm() {
           <>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Feedings Per Week *
+                Quota Period *
+              </label>
+              <select
+                value={quotaPeriod}
+                onChange={(e) => setQuotaPeriod(e.target.value)}
+                required
+                className="input-field"
+              >
+                <option value="week">Weekly</option>
+                <option value="month">Monthly</option>
+              </select>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {quotaPeriod === "week"
+                  ? "Track feedings per week (e.g., 2x per week)"
+                  : "Track feedings per month (e.g., 4x per month)"}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                {quotaPeriod === "week" ? "Feedings Per Week" : "Feedings Per Month"} *
               </label>
               <input
                 type="number"
                 min="1"
-                max="7"
-                value={frequencyPerWeek}
-                onChange={(e) => setFrequencyPerWeek(e.target.value)}
+                max={quotaPeriod === "week" ? "7" : "31"}
+                value={quotaFrequency}
+                onChange={(e) => setQuotaFrequency(e.target.value)}
                 required
-                placeholder="e.g., 2 for 2 feedings per week"
+                placeholder={quotaPeriod === "week" ? "e.g., 2 for 2x per week" : "e.g., 4 for 4x per month"}
                 className="input-field"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                How many times per week should this feeding occur?
+                {quotaPeriod === "week"
+                  ? "How many times per week should this feeding occur?"
+                  : "How many times per month should this feeding occur?"}
               </p>
             </div>
 

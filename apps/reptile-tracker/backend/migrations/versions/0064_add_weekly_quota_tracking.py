@@ -1,4 +1,4 @@
-"""add weekly quota tracking for requirement schedules
+"""add quota tracking for requirement schedules (weekly and monthly)
 
 Revision ID: 0064
 Revises: 0063
@@ -19,15 +19,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create weekly_quotas table for tracking requirement-based schedule progress
+    # Create quota_tracking table for tracking requirement-based schedule progress (weekly and monthly)
     op.create_table(
-        'weekly_quotas',
+        'quota_tracking',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('schedule_id', sa.Integer(), nullable=False),
         sa.Column('reptile_id', sa.Integer(), nullable=False),
-        sa.Column('week_start_date', sa.Date(), nullable=False, comment='Monday of the week'),
-        sa.Column('feedings_count', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('last_feeding_date', sa.Date(), nullable=True),
+        sa.Column('period_start_date', sa.Date(), nullable=False, comment='Start of the period (Monday for week, 1st for month)'),
+        sa.Column('period_type', sa.String(10), nullable=False, comment='week or month'),
+        sa.Column('count', sa.Integer(), nullable=False, server_default='0', comment='Number of completions this period'),
+        sa.Column('last_completion_date', sa.Date(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='CASCADE'),
@@ -36,25 +37,25 @@ def upgrade() -> None:
     )
 
     # Create indexes for efficient querying
-    op.create_index('ix_weekly_quotas_schedule_id', 'weekly_quotas', ['schedule_id'])
-    op.create_index('ix_weekly_quotas_reptile_id', 'weekly_quotas', ['reptile_id'])
-    op.create_index('ix_weekly_quotas_week_start_date', 'weekly_quotas', ['week_start_date'])
+    op.create_index('ix_quota_tracking_schedule_id', 'quota_tracking', ['schedule_id'])
+    op.create_index('ix_quota_tracking_reptile_id', 'quota_tracking', ['reptile_id'])
+    op.create_index('ix_quota_tracking_period_start_date', 'quota_tracking', ['period_start_date'])
 
-    # Create unique constraint to prevent duplicate entries for same schedule+week
+    # Create unique constraint to prevent duplicate entries for same schedule+period
     op.create_index(
-        'ix_weekly_quotas_schedule_week_unique',
-        'weekly_quotas',
-        ['schedule_id', 'week_start_date'],
+        'ix_quota_tracking_schedule_period_unique',
+        'quota_tracking',
+        ['schedule_id', 'period_start_date'],
         unique=True
     )
 
 
 def downgrade() -> None:
     # Drop indexes first
-    op.drop_index('ix_weekly_quotas_schedule_week_unique', table_name='weekly_quotas')
-    op.drop_index('ix_weekly_quotas_week_start_date', table_name='weekly_quotas')
-    op.drop_index('ix_weekly_quotas_reptile_id', table_name='weekly_quotas')
-    op.drop_index('ix_weekly_quotas_schedule_id', table_name='weekly_quotas')
+    op.drop_index('ix_quota_tracking_schedule_period_unique', table_name='quota_tracking')
+    op.drop_index('ix_quota_tracking_period_start_date', table_name='quota_tracking')
+    op.drop_index('ix_quota_tracking_reptile_id', table_name='quota_tracking')
+    op.drop_index('ix_quota_tracking_schedule_id', table_name='quota_tracking')
 
     # Drop table
-    op.drop_table('weekly_quotas')
+    op.drop_table('quota_tracking')

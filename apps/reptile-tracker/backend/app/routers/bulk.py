@@ -11,6 +11,8 @@ from app import models
 from app.database import get_db
 from app.routers.auth import get_current_user
 from app.permissions import get_accessible_reptile_ids
+from app.quota_tracker import check_quota_status
+from app.models import ScheduleMode
 
 router = APIRouter(prefix="/bulk", tags=["bulk"])
 
@@ -66,7 +68,8 @@ async def get_dashboard_data(
             "feeding_rotations": [],
             "weekly_feedings": [],
             "weekly_mistings": [],
-            "weekly_instances": []
+            "weekly_instances": [],
+            "quota_statuses": {}
         }
 
     # Parse reptile filter
@@ -271,6 +274,20 @@ async def get_dashboard_data(
     )
     weekly_instances = instances_result.scalars().all()
 
+    # Fetch quota status for requirement schedules
+    quota_statuses = {}
+    for schedule in schedules:
+        if schedule.schedule_mode == ScheduleMode.REQUIREMENT:
+            try:
+                quota_status = await check_quota_status(
+                    db, schedule, schedule.reptile_id, py_date.today(), first_day_of_week=0
+                )
+                quota_statuses[schedule.id] = quota_status
+            except Exception as e:
+                # Log error but don't fail the whole request
+                print(f"Error fetching quota status for schedule {schedule.id}: {e}")
+                quota_statuses[schedule.id] = None
+
     data = jsonable_encoder({
         "reptiles": reptiles,
         "recent_feedings": recent_feedings,
@@ -280,7 +297,8 @@ async def get_dashboard_data(
         "feeding_rotations": feeding_rotations,
         "weekly_feedings": weekly_feedings,
         "weekly_mistings": weekly_mistings,
-        "weekly_instances": weekly_instances
+        "weekly_instances": weekly_instances,
+        "quota_statuses": quota_statuses
     })
     return convert_time_fields(data)
 
@@ -307,7 +325,8 @@ async def get_calendar_data(
             "feeding_rotations": [],
             "feedings": [],
             "mistings": [],
-            "instances": []
+            "instances": [],
+            "quota_statuses": {}
         }
 
     # Parse reptile filter for instances
@@ -403,12 +422,27 @@ async def get_calendar_data(
     )
     instances = instances_result.scalars().all()
 
+    # Fetch quota status for requirement schedules
+    quota_statuses = {}
+    for schedule in schedules:
+        if schedule.schedule_mode == ScheduleMode.REQUIREMENT:
+            try:
+                quota_status = await check_quota_status(
+                    db, schedule, schedule.reptile_id, py_date.today(), first_day_of_week=0
+                )
+                quota_statuses[schedule.id] = quota_status
+            except Exception as e:
+                # Log error but don't fail the whole request
+                print(f"Error fetching quota status for schedule {schedule.id}: {e}")
+                quota_statuses[schedule.id] = None
+
     data = jsonable_encoder({
         "reptiles": reptiles,
         "schedules": schedules,
         "feeding_rotations": feeding_rotations,
         "feedings": feedings,
         "mistings": mistings,
-        "instances": instances
+        "instances": instances,
+        "quota_statuses": quota_statuses
     })
     return convert_time_fields(data)

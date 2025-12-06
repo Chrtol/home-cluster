@@ -350,8 +350,9 @@ class ScheduleBase(BaseModel):
     dependent_frequency: Optional[int] = None  # For every_nth
     dependent_days: Optional[str] = None  # For specific_days
 
-    # For requirement-based schedules (flexible weekly quotas)
-    frequency_per_week: Optional[int] = None  # Number of feedings per week (e.g., 2x per week)
+    # For requirement-based schedules (flexible quotas - weekly or monthly)
+    quota_period: Optional[str] = None  # "week" or "month"
+    quota_frequency: Optional[int] = None  # Number of times per period (e.g., 2x per week or 4x per month)
     min_days_between: Optional[int] = None  # Minimum days between feedings (e.g., 2 days)
     max_days_between: Optional[int] = None  # Maximum days between feedings (optional, e.g., 4 days)
     suggested_days: Optional[List[int]] = None  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
@@ -402,8 +403,9 @@ class ScheduleUpdate(BaseModel):
     dependent_frequency: Optional[int] = None
     dependent_days: Optional[str] = None
 
-    # For requirement-based schedules (flexible weekly quotas)
-    frequency_per_week: Optional[int] = None
+    # For requirement-based schedules (flexible quotas - weekly or monthly)
+    quota_period: Optional[str] = None
+    quota_frequency: Optional[int] = None
     min_days_between: Optional[int] = None
     max_days_between: Optional[int] = None
     suggested_days: Optional[List[int]] = None
@@ -487,25 +489,26 @@ class ScheduleCompletion(ScheduleCompletionBase):
         from_attributes = True
 
 
-# Weekly Quota schemas (for requirement-based schedules)
-class WeeklyQuotaBase(BaseModel):
+# Quota Tracking schemas (for requirement-based schedules - weekly or monthly)
+class QuotaTrackingBase(BaseModel):
     schedule_id: int
     reptile_id: int
-    week_start_date: date  # Monday of the week
-    feedings_count: int = 0
-    last_feeding_date: Optional[date] = None
+    period_start_date: date  # Start of the period (Monday for week, 1st for month)
+    period_type: str  # "week" or "month"
+    count: int = 0  # Number of completions this period
+    last_completion_date: Optional[date] = None
 
 
-class WeeklyQuotaCreate(WeeklyQuotaBase):
+class QuotaTrackingCreate(QuotaTrackingBase):
     pass
 
 
-class WeeklyQuotaUpdate(BaseModel):
-    feedings_count: Optional[int] = None
-    last_feeding_date: Optional[date] = None
+class QuotaTrackingUpdate(BaseModel):
+    count: Optional[int] = None
+    last_completion_date: Optional[date] = None
 
 
-class WeeklyQuota(WeeklyQuotaBase):
+class QuotaTracking(QuotaTrackingBase):
     id: int
     created_at: datetime
     updated_at: datetime
