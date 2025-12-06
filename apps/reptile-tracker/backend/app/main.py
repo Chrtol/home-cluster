@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -22,11 +23,60 @@ from app.scheduler import start_scheduler, stop_scheduler
 # Health check filter is defined in app.logging_filters
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for FastAPI application startup and shutdown.
+    Replaces deprecated @app.on_event("startup") and @app.on_event("shutdown").
+    """
+    # Startup
+    logger.info(f"Starting Reptile Tracker API v2.0.1 in {settings.environment} mode")
+
+    # H-2 Fix: Validate secret key on startup
+    if settings.secret_key in ["your-secret-key-here-change-in-production", "dev_secret_key_change_in_production"]:
+        logger.error("SECURITY ERROR: Default secret key detected!")
+        raise ValueError("Default secret key detected. Set SECRET_KEY environment variable.")
+
+    logger.info(f"Security settings: cookie_secure={settings.cookie_secure}, sql_echo={settings.sql_echo}")
+
+    await init_db()
+    logger.info("Database initialized successfully")
+
+    # Seed default foods and supplements on startup
+    async with async_session_maker() as session:
+        await seed_database(session)
+    logger.info("Default foods and supplements seeded")
+
+    # Clean up duplicate templates after seeding
+    async with async_session_maker() as session:
+        from app.cleanup_templates import cleanup_duplicate_templates
+        deleted_count = await cleanup_duplicate_templates(session)
+        if deleted_count > 0:
+            logger.info(f"Cleaned up {deleted_count} duplicate templates")
+        else:
+            logger.info("No duplicate templates found")
+
+    # Start notification scheduler
+    start_scheduler()
+    logger.info("Notification scheduler started")
+
+    yield  # Application is running
+
+    # Shutdown
+    logger.info("Shutting down Reptile Tracker API")
+
+    # Stop notification scheduler
+    stop_scheduler()
+    logger.info("Notification scheduler stopped")
+
+
 app = FastAPI(
     title="Reptile Tracker API",
     description="API for tracking reptile feeding schedules, health, and weight",
     version="2.0.1",  # Testing CI/CD with timestamp-based image tags
     redirect_slashes=False,  # Disable automatic slash redirects to avoid 307s that break auth cookies
+    lifespan=lifespan,  # Use lifespan context manager for startup/shutdown
 )
 
 # M-2 Fix: Add rate limiting
@@ -82,50 +132,6 @@ app.include_router(notification_channels.router, prefix="/api/notification-chann
 app.include_router(notification_templates.router)
 app.include_router(user_notifications.router)
 app.include_router(bulk.router, prefix="/api", tags=["Bulk Data"])
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database and log startup"""
-    logger.info(f"Starting Reptile Tracker API v2.0.0 in {settings.environment} mode")
-
-    # H-2 Fix: Validate secret key on startup
-    if settings.secret_key in ["your-secret-key-here-change-in-production", "dev_secret_key_change_in_production"]:
-        logger.error("SECURITY ERROR: Default secret key detected!")
-        raise ValueError("Default secret key detected. Set SECRET_KEY environment variable.")
-
-    logger.info(f"Security settings: cookie_secure={settings.cookie_secure}, sql_echo={settings.sql_echo}")
-
-    await init_db()
-    logger.info("Database initialized successfully")
-
-    # Seed default foods and supplements on startup
-    async with async_session_maker() as session:
-        await seed_database(session)
-    logger.info("Default foods and supplements seeded")
-
-    # Clean up duplicate templates after seeding
-    async with async_session_maker() as session:
-        from app.cleanup_templates import cleanup_duplicate_templates
-        deleted_count = await cleanup_duplicate_templates(session)
-        if deleted_count > 0:
-            logger.info(f"Cleaned up {deleted_count} duplicate templates")
-        else:
-            logger.info("No duplicate templates found")
-
-    # Start notification scheduler
-    start_scheduler()
-    logger.info("Notification scheduler started")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Log shutdown"""
-    logger.info("Shutting down Reptile Tracker API")
-
-    # Stop notification scheduler
-    stop_scheduler()
-    logger.info("Notification scheduler stopped")
 
 
 @app.get("/")
