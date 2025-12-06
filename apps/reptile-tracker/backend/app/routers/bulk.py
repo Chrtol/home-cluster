@@ -5,7 +5,7 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
-from datetime import date as py_date, datetime, timedelta
+from datetime import date as py_date, datetime, timedelta, time
 
 from app import models
 from app.database import get_db
@@ -13,6 +13,14 @@ from app.routers.auth import get_current_user
 from app.permissions import get_accessible_reptile_ids
 
 router = APIRouter(prefix="/bulk", tags=["bulk"])
+
+
+def time_encoder(obj):
+    """Custom encoder that handles time objects properly for JSON serialization"""
+    if isinstance(obj, time):
+        # Return time in HH:MM format to avoid JavaScript Date parsing issues
+        return obj.strftime("%H:%M")
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 
 @router.get("/dashboard")
@@ -243,7 +251,7 @@ async def get_dashboard_data(
         "weekly_feedings": weekly_feedings,
         "weekly_mistings": weekly_mistings,
         "weekly_instances": weekly_instances
-    })
+    }, custom_encoder={time: time_encoder})
 
 
 @router.get("/calendar")
@@ -369,4 +377,4 @@ async def get_calendar_data(
         "feedings": feedings,
         "mistings": mistings,
         "instances": instances
-    })
+    }, custom_encoder={time: time_encoder})
