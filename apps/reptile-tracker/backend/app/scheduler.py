@@ -195,12 +195,12 @@ async def execute_scheduled_notification(
         logger.error(f"Error executing scheduled notification job {job_id}: {e}", exc_info=True)
 
 
-async def schedule_notification_jobs_for_schedule(schedule: Schedule, days_ahead: int = 7):
+async def schedule_notification_jobs_for_schedule(schedule_id: int, days_ahead: int = 7):
     """
     Schedule notification jobs for a given schedule for the next N days
 
     Args:
-        schedule: The Schedule object
+        schedule_id: The Schedule ID
         days_ahead: How many days ahead to schedule (default 7)
     """
     global scheduler
@@ -211,8 +211,17 @@ async def schedule_notification_jobs_for_schedule(schedule: Schedule, days_ahead
 
     try:
         async with async_session_maker() as db:
-            # Reload schedule with relationships
-            await db.refresh(schedule, ["notification_channels"])
+            # Load schedule with relationships from database
+            result = await db.execute(
+                select(Schedule)
+                .options(selectinload(Schedule.notification_channels))
+                .where(Schedule.id == schedule_id)
+            )
+            schedule = result.scalars().first()
+
+            if not schedule:
+                logger.warning(f"Schedule {schedule_id} not found")
+                return
 
             if not schedule.enabled or not schedule.notifications_enabled:
                 logger.debug(f"Schedule {schedule.id} disabled, skipping job scheduling")
@@ -371,23 +380,11 @@ async def cancel_notification_jobs_for_schedule(schedule_id: int):
 
 async def reschedule_notification_jobs_for_schedule(schedule_id: int):
     """Reschedule notification jobs for a schedule (cancel old, create new)"""
-    schedule = None
-    try:
-        async with async_session_maker() as db:
-            schedule = await db.get(Schedule, schedule_id)
-            if not schedule:
-                logger.warning(f"Schedule {schedule_id} not found")
-                return
-
-    except Exception as e:
-        logger.error(f"Error fetching schedule {schedule_id}: {e}")
-        return
-
     # Cancel existing jobs
     await cancel_notification_jobs_for_schedule(schedule_id)
 
     # Schedule new jobs
-    await schedule_notification_jobs_for_schedule(schedule)
+    await schedule_notification_jobs_for_schedule(schedule_id)
 
 
 async def _perform_autocomplete(db: AsyncSession, instance_id: int):
@@ -779,7 +776,7 @@ async def daily_notification_maintenance():
             # Schedule jobs for each schedule
             for schedule in schedules:
                 try:
-                    await schedule_notification_jobs_for_schedule(schedule, days_ahead=7)
+                    await schedule_notification_jobs_for_schedule(schedule.id, days_ahead=7)
                 except Exception as e:
                     logger.error(f"Error scheduling jobs for schedule {schedule.id}: {e}")
                     continue
