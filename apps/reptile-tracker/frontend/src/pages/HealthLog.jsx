@@ -36,6 +36,7 @@ export default function HealthLog() {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [viewModeSuccess, setViewModeSuccess] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,6 +87,17 @@ export default function HealthLog() {
             setExistingLog(logRes.data);
             setMode('view');
             loadLogData(logRes.data, type);
+
+            // Check for success query parameter
+            const successParam = searchParams.get('success');
+            if (successParam === 'created') {
+              setViewModeSuccess(`${type === 'weight' ? 'Weight' : 'Health record'} logged successfully!`);
+              // Clear the query parameter from URL without reloading
+              const newUrl = window.location.pathname;
+              window.history.replaceState({}, '', newUrl);
+              // Auto-dismiss after 5 seconds
+              setTimeout(() => setViewModeSuccess(''), 5000);
+            }
           } catch (err) {
             console.error('Failed to load log:', err);
             setError('Failed to load log. It may not exist or you may not have permission.');
@@ -109,7 +121,7 @@ export default function HealthLog() {
 
               // Pre-fill date from instance
               if (instance.scheduled_date) {
-                setDate(instance.scheduled_date);
+                setLogDate(instance.scheduled_date);
               }
 
               // Pre-fill time from schedule
@@ -336,7 +348,7 @@ export default function HealthLog() {
             notes,
           });
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
-          setTimeout(() => navigate(`/health-log/weight/${response.data.id}`), 1500);
+          setTimeout(() => navigate(`/health-log/weight/${response.data.id}?success=created`), 1500);
         } else {
           const payload = {
             reptile_id: parseInt(selectedReptile),
@@ -350,7 +362,7 @@ export default function HealthLog() {
           }
           const response = await axios.post('/api/health', payload);
           setSuccess(`Health record logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
-          setTimeout(() => navigate(`/health-log/health/${response.data.id}`), 1500);
+          setTimeout(() => navigate(`/health-log/health/${response.data.id}?success=created`), 1500);
         }
       }
     } catch (err) {
@@ -379,6 +391,11 @@ export default function HealthLog() {
 
         {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
         {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
+        {viewModeSuccess && (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-green-800 dark:text-green-200">{viewModeSuccess}</p>
+          </div>
+        )}
 
         <div className="card space-y-6">
           <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
