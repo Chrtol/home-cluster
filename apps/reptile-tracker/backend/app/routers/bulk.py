@@ -256,8 +256,8 @@ async def get_dashboard_data(
     data = jsonable_encoder({
         "reptiles": reptiles,
         "recent_feedings": recent_feedings,
-        "weight_data": weight_data,
-        "last_activity": {},
+        "weight_data": {},  # Disabled for testing
+        "last_activity": last_activity,  # Re-enabled to test if this is the problem
         "schedules": schedules,
         "feeding_rotations": feeding_rotations,
         "weekly_feedings": weekly_feedings,
