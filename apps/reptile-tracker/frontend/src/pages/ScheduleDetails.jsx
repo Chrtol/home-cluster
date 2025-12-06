@@ -480,13 +480,17 @@ function ScheduleDetails() {
                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Trigger Time</div>
                     <div className="text-gray-700 dark:text-gray-300">
                       {schedule.time_window_enabled && schedule.latest_time ? (
-                        <span>{formatTime(schedule.latest_time)} + {schedule.auto_complete_hours_after || 2} hours</span>
+                        <span>{formatTime(schedule.latest_time)} + {schedule.auto_complete_hours_after || 2}h</span>
                       ) : (
-                        <span>23:59 + {schedule.auto_complete_hours_after || 2} hours</span>
+                        <span>23:59 + {schedule.auto_complete_hours_after || 2}h</span>
                       )}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Instances will auto-complete {schedule.auto_complete_hours_after || 2} hour{(schedule.auto_complete_hours_after || 2) !== 1 ? 's' : ''} after {schedule.time_window_enabled && schedule.latest_time ? 'the time window ends' : 'end of day'}
+                      {schedule.time_window_enabled && schedule.latest_time ? (
+                        <span>{schedule.auto_complete_hours_after || 2} hour{(schedule.auto_complete_hours_after || 2) !== 1 ? 's' : ''} after latest time ({formatTime(schedule.latest_time)})</span>
+                      ) : (
+                        <span>{schedule.auto_complete_hours_after || 2} hour{(schedule.auto_complete_hours_after || 2) !== 1 ? 's' : ''} after end of day (23:59)</span>
+                      )}
                     </div>
                   </div>
                 </div>
