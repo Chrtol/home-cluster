@@ -261,6 +261,34 @@ export default function FeedingLog() {
     refetchFoods();
   }, [selectedReptile]);
 
+  // Pre-select default foods when reptile is selected (only in create mode)
+  useEffect(() => {
+    if (!selectedReptile || mode === 'edit' || mode === 'view') return;
+
+    const selectedReptileData = reptiles.find(r => r.id === parseInt(selectedReptile));
+    if (!selectedReptileData) return;
+
+    // Set default insect if configured and insects are enabled
+    if (selectedReptileData.default_insect_id && includeInsects && insectItems.length === 0) {
+      setInsectItems([{
+        id: Date.now(),
+        food_id: selectedReptileData.default_insect_id,
+        quantity: 1,
+        supplement_ids: []
+      }]);
+    }
+
+    // Set default prepared food if configured and prepared is enabled
+    if (selectedReptileData.default_prepared_id && includePrepared && preparedItems.length === 0) {
+      setPreparedItems([{
+        id: Date.now(),
+        food_id: selectedReptileData.default_prepared_id,
+        quantity: 1,
+        supplement_ids: []
+      }]);
+    }
+  }, [selectedReptile, includeInsects, includePrepared, mode]);
+
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {
     const fetchSuggestion = async () => {
