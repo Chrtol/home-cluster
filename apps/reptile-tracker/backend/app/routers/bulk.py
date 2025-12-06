@@ -15,12 +15,16 @@ from app.permissions import get_accessible_reptile_ids
 router = APIRouter(prefix="/bulk", tags=["bulk"])
 
 
-def time_encoder(obj):
-    """Custom encoder that handles time objects properly for JSON serialization"""
-    if isinstance(obj, time):
-        # Return time in HH:MM format to avoid JavaScript Date parsing issues
+def convert_time_fields(obj):
+    """Recursively convert time objects to HH:MM strings to avoid JavaScript Date parsing issues"""
+    if isinstance(obj, dict):
+        return {k: convert_time_fields(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_time_fields(item) for item in obj]
+    elif isinstance(obj, time):
         return obj.strftime("%H:%M")
-    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+    else:
+        return obj
 
 
 @router.get("/dashboard")
@@ -241,7 +245,7 @@ async def get_dashboard_data(
     )
     weekly_instances = instances_result.scalars().all()
 
-    return jsonable_encoder({
+    data = jsonable_encoder({
         "reptiles": reptiles,
         "recent_feedings": recent_feedings,
         "weight_data": weight_data,
@@ -251,7 +255,8 @@ async def get_dashboard_data(
         "weekly_feedings": weekly_feedings,
         "weekly_mistings": weekly_mistings,
         "weekly_instances": weekly_instances
-    }, custom_encoder={time: time_encoder})
+    })
+    return convert_time_fields(data)
 
 
 @router.get("/calendar")
@@ -370,11 +375,12 @@ async def get_calendar_data(
     )
     instances = instances_result.scalars().all()
 
-    return jsonable_encoder({
+    data = jsonable_encoder({
         "reptiles": reptiles,
         "schedules": schedules,
         "feeding_rotations": feeding_rotations,
         "feedings": feedings,
         "mistings": mistings,
         "instances": instances
-    }, custom_encoder={time: time_encoder})
+    })
+    return convert_time_fields(data)
