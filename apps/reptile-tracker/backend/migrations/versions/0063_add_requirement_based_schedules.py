@@ -23,16 +23,26 @@ def upgrade() -> None:
     schedule_mode_enum = postgresql.ENUM('fixed', 'requirement', name='schedule_mode', create_type=True)
     schedule_mode_enum.create(op.get_bind(), checkfirst=True)
 
+    # Create enum type for quota_period
+    quota_period_enum = postgresql.ENUM('week', 'month', name='quota_period', create_type=True)
+    quota_period_enum.create(op.get_bind(), checkfirst=True)
+
     # Add schedule_mode column (default 'fixed' to maintain current behavior for existing schedules)
     op.add_column(
         'schedules',
         sa.Column('schedule_mode', sa.Enum('fixed', 'requirement', name='schedule_mode'), nullable=False, server_default='fixed')
     )
 
-    # Add frequency_per_week column (nullable for fixed mode schedules)
+    # Add quota_period column (week or month)
     op.add_column(
         'schedules',
-        sa.Column('frequency_per_week', sa.Integer(), nullable=True)
+        sa.Column('quota_period', sa.Enum('week', 'month', name='quota_period'), nullable=True)
+    )
+
+    # Add quota_frequency column (how many times per period)
+    op.add_column(
+        'schedules',
+        sa.Column('quota_frequency', sa.Integer(), nullable=True)
     )
 
     # Add min_days_between column (nullable for fixed mode schedules)
@@ -59,9 +69,13 @@ def downgrade() -> None:
     op.drop_column('schedules', 'suggested_days')
     op.drop_column('schedules', 'max_days_between')
     op.drop_column('schedules', 'min_days_between')
-    op.drop_column('schedules', 'frequency_per_week')
+    op.drop_column('schedules', 'quota_frequency')
+    op.drop_column('schedules', 'quota_period')
     op.drop_column('schedules', 'schedule_mode')
 
-    # Drop enum type
+    # Drop enum types
+    quota_period_enum = postgresql.ENUM('week', 'month', name='quota_period')
+    quota_period_enum.drop(op.get_bind(), checkfirst=True)
+
     schedule_mode_enum = postgresql.ENUM('fixed', 'requirement', name='schedule_mode')
     schedule_mode_enum.drop(op.get_bind(), checkfirst=True)

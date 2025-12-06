@@ -88,7 +88,13 @@ class NotificationType(str, PyEnum):
 class ScheduleMode(str, PyEnum):
     """Mode of schedule operation"""
     FIXED = "fixed"  # Fixed dates/days (current behavior)
-    REQUIREMENT = "requirement"  # Flexible weekly quota-based scheduling
+    REQUIREMENT = "requirement"  # Flexible quota-based scheduling (weekly or monthly)
+
+
+class QuotaPeriod(str, PyEnum):
+    """Period for requirement-based quotas"""
+    WEEK = "week"  # Weekly quotas (e.g., 2x per week)
+    MONTH = "month"  # Monthly quotas (e.g., 4x per month)
 
 
 # Association table for reptile access
@@ -396,8 +402,9 @@ class Schedule(Base):
     dependent_frequency = Column(Integer, nullable=True)  # For every_nth (e.g., every 2nd feeding)
     dependent_days = Column(String, nullable=True)  # For specific_days (e.g., '1,3' for Mon,Wed)
 
-    # For requirement-based schedules (flexible weekly quotas)
-    frequency_per_week = Column(Integer, nullable=True)  # Number of feedings per week (e.g., 2x per week)
+    # For requirement-based schedules (flexible quotas - weekly or monthly)
+    quota_period = Column(Enum(QuotaPeriod, values_callable=lambda x: [e.value for e in x]), nullable=True)  # "week" or "month"
+    quota_frequency = Column(Integer, nullable=True)  # Number of times per period (e.g., 2x per week or 4x per month)
     min_days_between = Column(Integer, nullable=True)  # Minimum days between feedings (e.g., 2 days)
     max_days_between = Column(Integer, nullable=True)  # Maximum days between feedings (optional, e.g., 4 days)
     suggested_days = Column(JSON, nullable=True)  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
@@ -495,16 +502,17 @@ class ScheduleInstance(Base):
     completions = relationship("ScheduleCompletion", back_populates="instance")
 
 
-class WeeklyQuota(Base):
-    """Tracks weekly feeding quotas for requirement-based schedules"""
-    __tablename__ = "weekly_quotas"
+class QuotaTracking(Base):
+    """Tracks quota progress for requirement-based schedules (weekly or monthly)"""
+    __tablename__ = "quota_tracking"
 
     id = Column(Integer, primary_key=True, index=True)
     schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
-    week_start_date = Column(Date, nullable=False, index=True)  # Monday of the week
-    feedings_count = Column(Integer, nullable=False, default=0)  # Number of feedings this week
-    last_feeding_date = Column(Date, nullable=True)  # Last feeding date (for min_days_between validation)
+    period_start_date = Column(Date, nullable=False, index=True)  # Start of the period (Monday for week, 1st for month)
+    period_type = Column(String(10), nullable=False)  # "week" or "month"
+    count = Column(Integer, nullable=False, default=0)  # Number of completions this period
+    last_completion_date = Column(Date, nullable=True)  # Last completion date (for min_days_between validation)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

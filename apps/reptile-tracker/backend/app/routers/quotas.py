@@ -12,7 +12,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import User, Schedule, ScheduleMode, AccessLevel
 from app.permissions import check_reptile_access
-from app.schemas import WeeklyQuota as WeeklyQuotaSchema
+from app.schemas import QuotaTracking as QuotaTrackingSchema
 from app.quota_tracker import (
     check_quota_status,
     validate_min_days_between,

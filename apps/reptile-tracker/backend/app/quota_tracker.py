@@ -1,74 +1,85 @@
 """
-Weekly quota tracking for requirement-based schedules.
+Quota tracking for requirement-based schedules (weekly and monthly).
 
-This module handles tracking weekly feeding quotas for schedules in "requirement" mode,
-which allow flexible feeding within quota constraints (e.g., "2x per week with 2+ days between").
+This module handles tracking quotas for schedules in "requirement" mode,
+which allow flexible feeding within quota constraints (e.g., "2x per week with 2+ days between"
+or "4x per month with 3+ days between").
 """
 from datetime import date, timedelta
 from typing import Optional, Dict, List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import WeeklyQuota, Schedule, ScheduleMode
-from app.schemas import WeeklyQuotaCreate
+from app.models import QuotaTracking, Schedule, ScheduleMode, QuotaPeriod
+from app.schemas import QuotaTrackingCreate
 
 
-def get_week_start_date(target_date: date, first_day_of_week: int = 0) -> date:
+def get_period_start_date(target_date: date, period_type: str, first_day_of_week: int = 0) -> date:
     """
-    Get the Monday (or configured first day) of the week for a given date.
+    Get the start of the period for a given date.
 
     Args:
-        target_date: The date to get the week start for
-        first_day_of_week: 0=Monday (default), 6=Sunday
+        target_date: The date to get the period start for
+        period_type: "week" or "month"
+        first_day_of_week: 0=Monday (default), 6=Sunday (only used for weekly periods)
 
     Returns:
-        date: The start of the week
+        date: The start of the period
     """
-    # Calculate days since the configured first day of week
-    days_since_week_start = (target_date.weekday() - first_day_of_week) % 7
-    week_start = target_date - timedelta(days=days_since_week_start)
-    return week_start
+    if period_type == "week":
+        # Calculate days since the configured first day of week
+        days_since_week_start = (target_date.weekday() - first_day_of_week) % 7
+        period_start = target_date - timedelta(days=days_since_week_start)
+        return period_start
+    elif period_type == "month":
+        # First day of the month
+        return target_date.replace(day=1)
+    else:
+        raise ValueError(f"Invalid period_type: {period_type}. Must be 'week' or 'month'.")
 
 
-async def get_or_create_weekly_quota(
+async def get_or_create_quota_tracking(
     db: AsyncSession,
     schedule_id: int,
     reptile_id: int,
-    feeding_date: date,
+    completion_date: date,
+    period_type: str,
     first_day_of_week: int = 0
-) -> WeeklyQuota:
+) -> QuotaTracking:
     """
-    Get or create a weekly quota record for a schedule and week.
+    Get or create a quota tracking record for a schedule and period.
 
     Args:
         db: Database session
         schedule_id: ID of the requirement schedule
         reptile_id: ID of the reptile
-        feeding_date: Date of the feeding (to determine the week)
+        completion_date: Date of the completion (to determine the period)
+        period_type: "week" or "month"
         first_day_of_week: 0=Monday (default), 6=Sunday
 
     Returns:
-        WeeklyQuota: The weekly quota record
+        QuotaTracking: The quota tracking record
     """
-    week_start = get_week_start_date(feeding_date, first_day_of_week)
+    period_start = get_period_start_date(completion_date, period_type, first_day_of_week)
 
-    # Try to find existing quota for this week
+    # Try to find existing quota for this period
     result = await db.execute(
-        select(WeeklyQuota).where(
-            WeeklyQuota.schedule_id == schedule_id,
-            WeeklyQuota.week_start_date == week_start
+        select(QuotaTracking).where(
+            QuotaTracking.schedule_id == schedule_id,
+            QuotaTracking.period_start_date == period_start
         )
     )
     quota = result.scalar_one_or_none()
 
     if not quota:
         # Create new quota record
-        quota = WeeklyQuota(
+        quota = QuotaTracking(
             schedule_id=schedule_id,
             reptile_id=reptile_id,
-            week_start_date=week_start,
-            feedings_count=0,
-            last_feeding_date=None
+            period_start_date=period_start,
+            period_type=period_type,
+            count=0,
+            last_completion_date=None
         )
         db.add(quota)
         await db.flush()
@@ -76,30 +87,34 @@ async def get_or_create_weekly_quota(
     return quota
 
 
-async def increment_weekly_quota(
+async def increment_quota(
     db: AsyncSession,
     schedule_id: int,
     reptile_id: int,
-    feeding_date: date,
+    completion_date: date,
+    period_type: str,
     first_day_of_week: int = 0
-) -> WeeklyQuota:
+) -> QuotaTracking:
     """
-    Increment the weekly quota for a requirement schedule.
+    Increment the quota for a requirement schedule.
 
     Args:
         db: Database session
         schedule_id: ID of the requirement schedule
         reptile_id: ID of the reptile
-        feeding_date: Date of the feeding
+        completion_date: Date of the completion
+        period_type: "week" or "month"
         first_day_of_week: 0=Monday (default), 6=Sunday
 
     Returns:
-        WeeklyQuota: The updated weekly quota record
+        QuotaTracking: The updated quota tracking record
     """
-    quota = await get_or_create_weekly_quota(db, schedule_id, reptile_id, feeding_date, first_day_of_week)
+    quota = await get_or_create_quota_tracking(
+        db, schedule_id, reptile_id, completion_date, period_type, first_day_of_week
+    )
 
-    quota.feedings_count += 1
-    quota.last_feeding_date = feeding_date
+    quota.count += 1
+    quota.last_completion_date = completion_date
 
     await db.flush()
     return quota
@@ -109,17 +124,17 @@ async def validate_min_days_between(
     db: AsyncSession,
     schedule: Schedule,
     reptile_id: int,
-    feeding_date: date,
+    completion_date: date,
     first_day_of_week: int = 0
 ) -> tuple[bool, Optional[str]]:
     """
-    Validate that the feeding respects the minimum days between constraint.
+    Validate that the completion respects the minimum days between constraint.
 
     Args:
         db: Database session
         schedule: The requirement schedule
         reptile_id: ID of the reptile
-        feeding_date: Date of the proposed feeding
+        completion_date: Date of the proposed completion
         first_day_of_week: 0=Monday (default), 6=Sunday
 
     Returns:
@@ -130,16 +145,20 @@ async def validate_min_days_between(
     if not schedule.min_days_between:
         return True, None
 
-    quota = await get_or_create_weekly_quota(db, schedule.id, reptile_id, feeding_date, first_day_of_week)
+    period_type = schedule.quota_period.value if schedule.quota_period else "week"
 
-    if quota.last_feeding_date:
-        days_since_last = (feeding_date - quota.last_feeding_date).days
+    quota = await get_or_create_quota_tracking(
+        db, schedule.id, reptile_id, completion_date, period_type, first_day_of_week
+    )
+
+    if quota.last_completion_date:
+        days_since_last = (completion_date - quota.last_completion_date).days
 
         if days_since_last < schedule.min_days_between:
             return False, (
                 f"Feeding too soon. Minimum {schedule.min_days_between} days required "
                 f"between feedings (last feeding was {days_since_last} days ago on "
-                f"{quota.last_feeding_date.strftime('%Y-%m-%d')})"
+                f"{quota.last_completion_date.strftime('%Y-%m-%d')})"
             )
 
     return True, None
@@ -164,27 +183,34 @@ async def check_quota_status(
 
     Returns:
         dict: Status information including:
-            - feedings_count: Number of feedings this week
-            - frequency_per_week: Target number of feedings
+            - count: Number of completions this period
+            - quota_frequency: Target number of completions
+            - period_type: "week" or "month"
             - quota_met: Boolean indicating if quota is met
             - quota_exceeded: Boolean indicating if quota is exceeded
-            - last_feeding_date: Date of last feeding (or None)
-            - days_since_last: Days since last feeding (or None)
+            - last_completion_date: Date of last completion (or None)
+            - days_since_last: Days since last completion (or None)
+            - period_start_date: Start date of the current period
     """
-    quota = await get_or_create_weekly_quota(db, schedule.id, reptile_id, current_date, first_day_of_week)
+    period_type = schedule.quota_period.value if schedule.quota_period else "week"
+
+    quota = await get_or_create_quota_tracking(
+        db, schedule.id, reptile_id, current_date, period_type, first_day_of_week
+    )
 
     days_since_last = None
-    if quota.last_feeding_date:
-        days_since_last = (current_date - quota.last_feeding_date).days
+    if quota.last_completion_date:
+        days_since_last = (current_date - quota.last_completion_date).days
 
     return {
-        "feedings_count": quota.feedings_count,
-        "frequency_per_week": schedule.frequency_per_week or 0,
-        "quota_met": quota.feedings_count >= (schedule.frequency_per_week or 0),
-        "quota_exceeded": quota.feedings_count > (schedule.frequency_per_week or 0),
-        "last_feeding_date": quota.last_feeding_date,
+        "count": quota.count,
+        "quota_frequency": schedule.quota_frequency or 0,
+        "period_type": period_type,
+        "quota_met": quota.count >= (schedule.quota_frequency or 0),
+        "quota_exceeded": quota.count > (schedule.quota_frequency or 0),
+        "last_completion_date": quota.last_completion_date,
         "days_since_last": days_since_last,
-        "week_start_date": quota.week_start_date,
+        "period_start_date": quota.period_start_date,
     }
 
 
@@ -226,7 +252,7 @@ async def process_feeding_for_requirement_schedules(
 ) -> List[Dict[str, any]]:
     """
     Process a feeding against all matching requirement schedules.
-    Updates weekly quotas and returns status for each.
+    Updates quota tracking and returns status for each.
 
     Args:
         db: Database session
@@ -249,8 +275,9 @@ async def process_feeding_for_requirement_schedules(
 
         if is_valid:
             # Increment quota
-            quota = await increment_weekly_quota(
-                db, schedule.id, reptile_id, feeding_date, first_day_of_week
+            period_type = schedule.quota_period.value if schedule.quota_period else "week"
+            quota = await increment_quota(
+                db, schedule.id, reptile_id, feeding_date, period_type, first_day_of_week
             )
 
             # Get updated status
