@@ -87,7 +87,9 @@ async def get_dashboard_data(
         .where(models.Feeding.reptile_id.in_(accessible_ids))
         .options(
             selectinload(models.Feeding.reptile),
-            selectinload(models.Feeding.user)
+            selectinload(models.Feeding.user),
+            selectinload(models.Feeding.foods),
+            selectinload(models.Feeding.supplements)
         )
         .order_by(models.Feeding.fed_at.desc())
         .limit(5)
@@ -113,7 +115,7 @@ async def get_dashboard_data(
 
         weight_data[weight.reptile_id].append({
             "id": weight.id,
-            "weight": float(weight.weight_grams) if weight.weight_grams else None,
+            "weight_grams": float(weight.weight_grams) if weight.weight_grams else None,
             "weighed_at": measured_at_iso,  # For recent activity display
             "measured_at": measured_at_iso,  # For weight charts
             "notes": weight.notes
@@ -212,7 +214,9 @@ async def get_dashboard_data(
         )
         .options(
             selectinload(models.Feeding.reptile),
-            selectinload(models.Feeding.user)
+            selectinload(models.Feeding.user),
+            selectinload(models.Feeding.foods),
+            selectinload(models.Feeding.supplements)
         )
     )
     weekly_feedings = weekly_feedings_result.scalars().all()
@@ -342,7 +346,9 @@ async def get_calendar_data(
         )
         .options(
             selectinload(models.Feeding.reptile),
-            selectinload(models.Feeding.user)
+            selectinload(models.Feeding.user),
+            selectinload(models.Feeding.foods),
+            selectinload(models.Feeding.supplements)
         )
     )
     feedings = feedings_result.scalars().all()
