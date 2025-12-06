@@ -7,6 +7,8 @@ resources:
   - ./secret.sops.yaml
   - ./ingress.yaml
   - ./receiver.yaml
+  - ./provider.yaml
+  - ./alerts.yaml
 configMapGenerator:
   - name: flux-instance-values
     files:
