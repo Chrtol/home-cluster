@@ -728,7 +728,7 @@ function Calendar() {
                   <Link to={`/schedules/${schedule.id}`} className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {schedule.reptile_name}
+                        {schedule.reptile?.name || 'Unknown'}
                       </span>
                       <span className={`px-2 py-0.5 text-xs rounded-full ${getScheduleTypeColor(schedule.schedule_type, false)}`}>
                         {schedule.schedule_type}
