@@ -94,27 +94,29 @@ async def get_dashboard_data(
     )
     recent_feedings = recent_feedings_result.scalars().all()
 
-    # Fetch weight dashboard data
+    # Fetch weight dashboard data (no eager loading - we manually serialize)
     weight_result = await db.execute(
         select(models.WeightLog)
         .where(models.WeightLog.reptile_id.in_(accessible_ids))
-        .options(
-            selectinload(models.WeightLog.reptile),
-            selectinload(models.WeightLog.logged_by)
-        )
         .order_by(models.WeightLog.measured_at.desc())
     )
     all_weights = weight_result.scalars().all()
 
-    # Group weights by reptile for dashboard
+    # Group weights by reptile for dashboard - manually create plain dicts
     weight_data = {}
     for weight in all_weights:
         if weight.reptile_id not in weight_data:
             weight_data[weight.reptile_id] = []
+
+        # Manually serialize to avoid any ORM issues
+        weighed_at = None
+        if weight.measured_at:
+            weighed_at = weight.measured_at.isoformat()
+
         weight_data[weight.reptile_id].append({
             "id": weight.id,
-            "weight": weight.weight_grams,
-            "weighed_at": weight.measured_at.isoformat() if weight.measured_at else None,
+            "weight": float(weight.weight_grams) if weight.weight_grams else None,
+            "weighed_at": weighed_at,
             "notes": weight.notes
         })
 
