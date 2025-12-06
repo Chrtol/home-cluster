@@ -65,7 +65,8 @@ async def find_instance_within_window(
             )
         ).order_by(
             # Prefer instances closer to the activity date
-            func.abs(func.julianday(ScheduleInstance.scheduled_date) - func.julianday(activity_date))
+            # PostgreSQL: date subtraction returns integer days, so we can use abs() directly
+            func.abs(ScheduleInstance.scheduled_date - activity_date)
         )
     )
     instances = result.scalars().all()
