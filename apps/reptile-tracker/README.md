@@ -14,6 +14,9 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
   - **Schedule Instances**: Pre-generated schedule occurrences with unique IDs for tracking
   - **Auto-Complete**: Automatically mark repetitive schedules as completed if not logged (configurable per schedule)
+    - Timezone-aware auto-completion using user's local timezone (not UTC)
+    - Runs every 5 minutes with immediate check on startup for reliability
+    - Resilient to pod restarts and deployments
   - Manual override to mark auto-completed instances as skipped or missed
   - "Log Now" buttons that pre-fill all form data from schedule instances
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
@@ -303,6 +306,10 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 
 ### Bulk Data (Performance Optimized)
 - `GET /api/bulk/dashboard` - Get all dashboard data in single request (reptiles, feedings, weight, schedules, instances, etc.)
+  - Optimized date range fetching based on calendar view (1-day, 3-day, or week)
+  - Proper eager loading for relationships to avoid N+1 queries
+  - Weight data includes reptile names for chart legends and multi-reptile support
+  - Time fields properly formatted as HH:MM for frontend compatibility
 - `GET /api/bulk/calendar` - Get all calendar data in single request (reptiles, schedules, feedings, mistings, instances for date range)
 
 ### Supplement Rotations
@@ -448,6 +455,8 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
   - Export/import settings as JSON
   - Reset functionality
   - **Calendar View Persistence**: Remembers your preferred view (1d/3d/7d for dashboard, 1d/3d/7d/30d for calendar) across sessions
+  - **Smart Date Range Fetching**: Dynamically fetches only the data needed for the current view (today for 1-day, today + 2 days for 3-day, full week for week view)
+  - Handles edge cases like Sunday in 3-day view (fetches Sunday, Monday, Tuesday across week boundary)
 - **Activity Tracking**:
   - Comprehensive activity log with all actions
   - User attribution for multi-user households
