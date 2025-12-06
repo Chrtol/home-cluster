@@ -108,15 +108,11 @@ async def get_dashboard_data(
         if weight.reptile_id not in weight_data:
             weight_data[weight.reptile_id] = []
 
-        # Format weighed_at as date only (YYYY-MM-DD) to avoid time parsing issues
-        weighed_at = None
-        if weight.measured_at:
-            weighed_at = weight.measured_at.date().isoformat()  # Just the date part
-
         weight_data[weight.reptile_id].append({
             "id": weight.id,
             "weight": float(weight.weight_grams) if weight.weight_grams else None,
-            "weighed_at": weighed_at,
+            # Temporarily removing weighed_at to test if it's causing the error
+            # "weighed_at": weighed_at,
             "notes": weight.notes
         })
 
