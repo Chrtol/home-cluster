@@ -22,6 +22,7 @@ from app.permissions import check_reptile_access
 from app.schemas import FeedingCreate, Feeding as FeedingSchema, FeedingWithUser
 from app.notifications import notify_feeding_logged
 from app.schedule_matcher import assign_feeding_to_schedule
+from app.quota_tracker import process_feeding_for_requirement_schedules
 
 router = APIRouter()
 
@@ -246,6 +247,33 @@ async def create_feeding(
 
     # Try to assign to a matching schedule
     await assign_feeding_to_schedule(db, new_feeding)
+
+    # Process requirement-based schedules (weekly quota tracking)
+    # Determine food category from the feeding
+    food_category = None
+    if feeding.is_salad:
+        food_category = "vegetable"
+    elif feeding.foods:
+        # Get the first food's category to determine schedule match
+        first_food_result = await db.execute(
+            select(Food).where(Food.id == feeding.foods[0].food_id)
+        )
+        first_food = first_food_result.scalar_one_or_none()
+        if first_food:
+            food_category = first_food.category.value if hasattr(first_food.category, 'value') else str(first_food.category)
+
+    # Process requirement schedules if we have a food category
+    if food_category:
+        feeding_date = new_feeding.fed_at.date() if new_feeding.fed_at else datetime.utcnow().date()
+        # Note: first_day_of_week should come from user settings (0=Monday is default)
+        # TODO: Get user's first_day_of_week preference from settings
+        await process_feeding_for_requirement_schedules(
+            db,
+            feeding.reptile_id,
+            feeding_date,
+            food_category,
+            first_day_of_week=0  # Default to Monday
+        )
 
     await db.commit()
 

@@ -29,6 +29,7 @@ function ScheduleForm() {
   const [reptileId, setReptileId] = useState("");
   const [name, setName] = useState("");
   const [scheduleType, setScheduleType] = useState("feeding");
+  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed" or "requirement"
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
   const [foodCategory, setFoodCategory] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
@@ -43,6 +44,12 @@ function ScheduleForm() {
   const [supplementId, setSupplementId] = useState("");
   const [notes, setNotes] = useState("");
   const [enabled, setEnabled] = useState(true);
+
+  // Requirement mode fields (for flexible weekly quotas)
+  const [frequencyPerWeek, setFrequencyPerWeek] = useState("");
+  const [minDaysBetween, setMinDaysBetween] = useState("");
+  const [maxDaysBetween, setMaxDaysBetween] = useState("");
+  const [suggestedDays, setSuggestedDays] = useState([]);
 
   // Time window fields
   const [timeWindowEnabled, setTimeWindowEnabled] = useState(false);
@@ -160,10 +167,17 @@ function ScheduleForm() {
       setReptileId(schedule.reptile_id);
       setName(schedule.name || "");
       setScheduleType(schedule.schedule_type);
+      setScheduleMode(schedule.schedule_mode || "fixed");
       setScheduleRule(schedule.schedule_rule);
       setFoodCategory(schedule.food_category || "");
       setTimeSlot(schedule.time_slot || "");
       setHealthCategory(schedule.health_category || "");
+
+      // Load requirement mode fields
+      setFrequencyPerWeek(schedule.frequency_per_week || "");
+      setMinDaysBetween(schedule.min_days_between || "");
+      setMaxDaysBetween(schedule.max_days_between || "");
+      setSuggestedDays(schedule.suggested_days || []);
       setFrequencyDays(schedule.frequency_days || "");
       setDaysOfWeek(schedule.days_of_week ? schedule.days_of_week.split(",").map(Number) : []);
       setDayOfMonth(schedule.day_of_month || "");
@@ -319,6 +333,14 @@ function ScheduleForm() {
     }
   };
 
+  const toggleSuggestedDay = (day) => {
+    if (suggestedDays.includes(day)) {
+      setSuggestedDays(suggestedDays.filter(d => d !== day));
+    } else {
+      setSuggestedDays([...suggestedDays, day]);
+    }
+  };
+
   const handleEarliestHoursChange = (value) => {
     const numValue = parseInt(value) || (userTimeFormat === '12h' ? 12 : 0);
     const maxHours = userTimeFormat === '12h' ? 12 : 23;
@@ -374,10 +396,19 @@ function ScheduleForm() {
         reptile_id: parseInt(reptileId),
         name: name || null,
         schedule_type: scheduleType,
+        schedule_mode: scheduleMode,
         schedule_rule: scheduleRule,
         enabled,
         notes,
       };
+
+      // Add requirement mode fields
+      if (scheduleMode === "requirement") {
+        scheduleData.frequency_per_week = parseInt(frequencyPerWeek) || null;
+        scheduleData.min_days_between = parseInt(minDaysBetween) || null;
+        scheduleData.max_days_between = maxDaysBetween ? parseInt(maxDaysBetween) : null;
+        scheduleData.suggested_days = suggestedDays.length > 0 ? suggestedDays : null;
+      }
 
       // Add type-specific fields
       if (scheduleType === "feeding" && foodCategory) {
@@ -524,6 +555,134 @@ function ScheduleForm() {
           </select>
         </div>
 
+        {/* Schedule Mode (Fixed vs Requirement) */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Schedule Mode *
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setScheduleMode("fixed")}
+              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                scheduleMode === "fixed"
+                  ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
+                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+              }`}
+            >
+              <div className="font-semibold">Fixed Schedule</div>
+              <div className="text-xs mt-1 opacity-75">
+                Specific dates/days
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleMode("requirement")}
+              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                scheduleMode === "requirement"
+                  ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
+                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+              }`}
+            >
+              <div className="font-semibold">Requirement</div>
+              <div className="text-xs mt-1 opacity-75">
+                Weekly quota
+              </div>
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            {scheduleMode === "fixed"
+              ? "Schedule occurs on specific dates or days of the week"
+              : "Set a weekly feeding quota (e.g., 2x per week with 2+ days between)"}
+          </p>
+        </div>
+
+        {/* Requirement Mode Fields */}
+        {scheduleMode === "requirement" && (
+          <>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Feedings Per Week *
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="7"
+                value={frequencyPerWeek}
+                onChange={(e) => setFrequencyPerWeek(e.target.value)}
+                required
+                placeholder="e.g., 2 for 2 feedings per week"
+                className="input-field"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                How many times per week should this feeding occur?
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Minimum Days Between Feedings *
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="6"
+                value={minDaysBetween}
+                onChange={(e) => setMinDaysBetween(e.target.value)}
+                required
+                placeholder="e.g., 2 for at least 2 days between feedings"
+                className="input-field"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Prevents feeding too soon after the last feeding
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Maximum Days Between Feedings (Optional)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="14"
+                value={maxDaysBetween}
+                onChange={(e) => setMaxDaysBetween(e.target.value)}
+                placeholder="e.g., 4 for feeding within 4 days"
+                className="input-field"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Optional: Maximum days allowed between feedings (will trigger alerts)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Suggested Days (Optional)
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {weekDays.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleSuggestedDay(day.value)}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                      suggestedDays.includes(day.value)
+                        ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                    }`}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                Optional: Suggest days for feeding (soft reminders). You can still feed on any day.
+              </p>
+            </div>
+          </>
+        )}
+
         {/* Food Category (only for feeding schedules) */}
         {scheduleType === "feeding" && (
           <div>
@@ -616,25 +775,29 @@ function ScheduleForm() {
           </div>
         )}
 
-        {/* Schedule Rule */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Schedule Rule *
-          </label>
-          <select
-            value={scheduleRule}
-            onChange={(e) => setScheduleRule(e.target.value)}
-            required
-            className="input-field"
-          >
-            <option value="days_of_week">Specific Days of Week</option>
-            <option value="every_x_days">Every X Days</option>
-            <option value="monthly">Monthly (Specific Day)</option>
-            <option value="dependent">Dependent on Another Schedule</option>
-          </select>
-        </div>
+        {/* Schedule Rule (only for fixed mode) */}
+        {scheduleMode === "fixed" && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Schedule Rule *
+            </label>
+            <select
+              value={scheduleRule}
+              onChange={(e) => setScheduleRule(e.target.value)}
+              required
+              className="input-field"
+            >
+              <option value="days_of_week">Specific Days of Week</option>
+              <option value="every_x_days">Every X Days</option>
+              <option value="monthly">Monthly (Specific Day)</option>
+              <option value="dependent">Dependent on Another Schedule</option>
+            </select>
+          </div>
+        )}
 
-        {/* Rule-specific fields */}
+        {/* Rule-specific fields (only for fixed mode) */}
+        {scheduleMode === "fixed" && (
+          <>
         {scheduleRule === "every_x_days" && (
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -805,6 +968,8 @@ function ScheduleForm() {
                 </p>
               </div>
             )}
+          </>
+        )}
           </>
         )}
 
