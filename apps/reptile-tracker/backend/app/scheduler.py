@@ -1559,10 +1559,10 @@ def start_scheduler():
         replace_existing=True
     )
 
-    # Check for auto-complete instances every 30 minutes
+    # Check for auto-complete instances every 5 minutes (more responsive than 30 min)
     scheduler.add_job(
         check_auto_complete_schedules,
-        trigger=IntervalTrigger(minutes=30),
+        trigger=IntervalTrigger(minutes=5),
         id="check_auto_complete",
         name="Check auto-complete schedules",
         replace_existing=True
@@ -1595,6 +1595,16 @@ def start_scheduler():
             loop.run_until_complete(daily_instance_maintenance())
     except Exception as e:
         logger.error(f"Error generating initial schedule instances: {e}", exc_info=True)
+
+    # Run auto-complete check immediately on startup to catch any missed completions
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(check_auto_complete_schedules())
+        else:
+            loop.run_until_complete(check_auto_complete_schedules())
+    except Exception as e:
+        logger.error(f"Error running initial auto-complete check: {e}", exc_info=True)
 
 
 def stop_scheduler():
