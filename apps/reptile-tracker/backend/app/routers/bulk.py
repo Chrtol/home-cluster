@@ -16,7 +16,7 @@ router = APIRouter(prefix="/bulk", tags=["bulk"])
 
 
 def convert_time_fields(obj):
-    """Recursively convert time strings from HH:MM:SS to HH:MM to avoid JavaScript Date parsing issues"""
+    """Recursively convert time strings to null to avoid JavaScript Date parsing issues"""
     import re
 
     if isinstance(obj, dict):
@@ -24,9 +24,10 @@ def convert_time_fields(obj):
     elif isinstance(obj, list):
         return [convert_time_fields(item) for item in obj]
     elif isinstance(obj, str):
-        # Check if string matches time pattern HH:MM:SS and convert to HH:MM
-        if re.match(r'^\d{2}:\d{2}:\d{2}$', obj):
-            return obj[:5]  # Return only HH:MM
+        # Check if string matches time pattern HH:MM:SS or HH:MM and convert to null
+        # Frontend is trying to parse these as dates which causes errors
+        if re.match(r'^\d{2}:\d{2}(:\d{2})?$', obj):
+            return None  # Return null to prevent frontend date parsing errors
         return obj
     else:
         return obj
