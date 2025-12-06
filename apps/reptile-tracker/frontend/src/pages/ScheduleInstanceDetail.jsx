@@ -371,6 +371,56 @@ export default function ScheduleInstanceDetail() {
               </div>
             )}
 
+            {schedule?.auto_complete_enabled && instance.status === 'pending' && (() => {
+              // Calculate autocomplete trigger time
+              const scheduledDate = new Date(instance.scheduled_date);
+              let triggerTime;
+
+              if (schedule.time_window_enabled && schedule.latest_time) {
+                // Use latest_time as base
+                const [hours, minutes] = schedule.latest_time.split(':');
+                triggerTime = new Date(scheduledDate);
+                triggerTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+              } else {
+                // Use end of day (23:59) as base
+                triggerTime = new Date(scheduledDate);
+                triggerTime.setHours(23, 59, 0, 0);
+              }
+
+              // Add autocomplete delay hours
+              triggerTime.setHours(triggerTime.getHours() + (schedule.auto_complete_hours_after || 2));
+
+              const now = new Date();
+              const timeUntil = triggerTime - now;
+              const hoursUntil = Math.floor(timeUntil / (1000 * 60 * 60));
+              const minutesUntil = Math.floor((timeUntil % (1000 * 60 * 60)) / (1000 * 60));
+
+              let displayText;
+              if (timeUntil < 0) {
+                displayText = 'Should have autocompleted';
+              } else if (hoursUntil > 24) {
+                const daysUntil = Math.floor(hoursUntil / 24);
+                displayText = `in ${daysUntil}d ${hoursUntil % 24}h`;
+              } else if (hoursUntil > 0) {
+                displayText = `in ${hoursUntil}h ${minutesUntil}m`;
+              } else {
+                displayText = `in ${minutesUntil}m`;
+              }
+
+              return (
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                    <Bot size={14} />
+                    Auto-complete
+                  </label>
+                  <div className="text-gray-900 dark:text-white">
+                    <div>{formatTime(triggerTime)}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{displayText}</div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {instance.feeding_sequence_number && (
               <div>
                 <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Edit, Calendar, Clock, Bell, CheckCircle, XCircle, FileText, Users, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, Clock, Bell, CheckCircle, XCircle, FileText, Users, User as UserIcon, Bot } from "lucide-react";
 import { getUserTimeFormat, getDayNames } from "../utils/dateFormatting";
 
 function ScheduleDetails() {
@@ -456,6 +456,39 @@ function ScheduleDetails() {
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Auto-complete */}
+            {schedule.auto_complete_enabled && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Bot size={20} />
+                  Auto-complete
+                </h2>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Status</div>
+                    <div className="font-medium text-green-600 dark:text-green-400">
+                      Enabled
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Trigger Time</div>
+                    <div className="text-gray-700 dark:text-gray-300">
+                      {schedule.time_window_enabled && schedule.latest_time ? (
+                        <span>{formatTime(schedule.latest_time)} + {schedule.auto_complete_hours_after || 2} hours</span>
+                      ) : (
+                        <span>23:59 + {schedule.auto_complete_hours_after || 2} hours</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Instances will auto-complete {schedule.auto_complete_hours_after || 2} hour{(schedule.auto_complete_hours_after || 2) !== 1 ? 's' : ''} after {schedule.time_window_enabled && schedule.latest_time ? 'the time window ends' : 'end of day'}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
