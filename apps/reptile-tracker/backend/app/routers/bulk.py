@@ -108,13 +108,14 @@ async def get_dashboard_data(
         if weight.reptile_id not in weight_data:
             weight_data[weight.reptile_id] = []
 
-        # Frontend expects weighed_at as ISO datetime string for new Date() parsing
-        weighed_at = weight.measured_at.isoformat() if weight.measured_at else None
+        # Frontend expects both weighed_at and measured_at (for different components)
+        measured_at_iso = weight.measured_at.isoformat() if weight.measured_at else None
 
         weight_data[weight.reptile_id].append({
             "id": weight.id,
             "weight": float(weight.weight_grams) if weight.weight_grams else None,
-            "weighed_at": weighed_at,
+            "weighed_at": measured_at_iso,  # For recent activity display
+            "measured_at": measured_at_iso,  # For weight charts
             "notes": weight.notes
         })
 
@@ -256,8 +257,8 @@ async def get_dashboard_data(
     data = jsonable_encoder({
         "reptiles": reptiles,
         "recent_feedings": recent_feedings,
-        "weight_data": {},  # Disabled for testing
-        "last_activity": last_activity,  # Re-enabled to test if this is the problem
+        "weight_data": weight_data,
+        "last_activity": last_activity,
         "schedules": schedules,
         "feeding_rotations": feeding_rotations,
         "weekly_feedings": weekly_feedings,
