@@ -195,7 +195,7 @@ export default function HealthLog() {
       }
     };
     fetchData();
-  }, [reptileId, id, type]);
+  }, [reptileId, id, type, searchParams]);
 
   const loadLogData = (log, logType) => {
     setSelectedReptile(log.reptile_id);
