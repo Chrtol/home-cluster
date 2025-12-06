@@ -210,6 +210,7 @@ class Feeding(BaseModel):
 class FeedingWithUser(Feeding):
     user: Optional[User] = None
     reptile: Optional["Reptile"] = None
+    schedule_completion: Optional["ScheduleCompletion"] = None
 
 
 # Weight log schemas
@@ -244,6 +245,7 @@ class WeightLog(WeightLogBase):
 class WeightLogWithReptile(WeightLog):
     """Weight log with reptile name for dashboard display"""
     reptile_name: Optional[str] = None
+    schedule_completion: Optional["ScheduleCompletion"] = None
 
 
 # Health record schemas
@@ -303,6 +305,7 @@ class MistingLog(MistingLogBase):
     reptile: Optional["Reptile"] = None
     logged_by_user_id: Optional[int] = None
     logged_by: Optional[UserSimple] = None
+    schedule_completion: Optional["ScheduleCompletion"] = None
 
     class Config:
         from_attributes = True
