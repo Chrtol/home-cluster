@@ -260,8 +260,8 @@ async def get_dashboard_data(
         "last_activity": {},
         "schedules": schedules,
         "feeding_rotations": feeding_rotations,
-        "weekly_feedings": [],
-        "weekly_mistings": [],
+        "weekly_feedings": weekly_feedings,
+        "weekly_mistings": weekly_mistings,
         "weekly_instances": []
     })
     return convert_time_fields(data)
