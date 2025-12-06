@@ -134,6 +134,16 @@ feeding_food_supplements = Table(
 )
 
 
+# Association table for reptile food favorites
+reptile_food_favorites = Table(
+    "reptile_food_favorites",
+    Base.metadata,
+    Column("reptile_id", Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), primary_key=True),
+    Column("food_id", Integer, ForeignKey("foods.id", ondelete="CASCADE"), primary_key=True),
+    Column("added_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -142,6 +152,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     timezone = Column(String(100), nullable=False, default="UTC")  # User's timezone (e.g., "Europe/Oslo")
+    show_favorites_first = Column(Boolean, default=True)  # Show favorite foods first when logging feedings
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -191,6 +202,7 @@ class Reptile(Base):
     health_records = relationship("HealthRecord", back_populates="reptile", cascade="all, delete-orphan")
     misting_logs = relationship("MistingLog", back_populates="reptile", cascade="all, delete-orphan")
     schedules = relationship("Schedule", back_populates="reptile", cascade="all, delete-orphan")
+    favorite_foods = relationship("Food", secondary=reptile_food_favorites)
 
 
 class Food(Base):
@@ -206,6 +218,7 @@ class Food(Base):
     nutritional_data = Column(JSON, nullable=True)  # {protein, fat, calcium, phosphorus, vitamins, etc.}
 
     is_default = Column(Boolean, default=False)  # System-provided vs user-added
+    is_favorite = Column(Boolean, default=False)  # User's favorite foods for quick access
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PlusCircle, Edit2, Trash2, X } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, X, Star } from 'lucide-react';
 
 export default function FoodManagement() {
   const [activeTab, setActiveTab] = useState('foods'); // foods, supplements
@@ -131,6 +131,20 @@ function FoodsTab() {
     }
   };
 
+  const handleToggleFavorite = async (food, e) => {
+    e.stopPropagation(); // Prevent row click
+    try {
+      await axios.patch(`/api/foods/${food.id}/toggle-favorite`);
+      // Update local state
+      setFoods(foods.map(f =>
+        f.id === food.id ? { ...f, is_favorite: !f.is_favorite } : f
+      ));
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      setError('Failed to update favorite status');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -205,6 +219,7 @@ function FoodsTab() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12"></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Size</th>
@@ -215,7 +230,7 @@ function FoodsTab() {
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredFoods.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                     No foods found
                   </td>
                 </tr>
@@ -226,6 +241,21 @@ function FoodsTab() {
                     onClick={() => setViewingFood(food)}
                     className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
                   >
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <button
+                        onClick={(e) => handleToggleFavorite(food, e)}
+                        className="transition-colors"
+                        title={food.is_favorite ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Star
+                          size={18}
+                          className={food.is_favorite
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300 dark:text-gray-600 hover:text-yellow-400 dark:hover:text-yellow-400"
+                          }
+                        />
+                      </button>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {food.name}
                     </td>

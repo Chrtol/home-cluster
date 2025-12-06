@@ -15,6 +15,7 @@ from app.schemas import (
     ReptileWithAccess,
     ReptileWithHousehold,
     GrantAccess,
+    Food as FoodSchema,
 )
 
 router = APIRouter()
@@ -261,6 +262,107 @@ async def revoke_access(
         delete(reptile_access).where(
             reptile_access.c.user_id == user_id,
             reptile_access.c.reptile_id == reptile_id,
+        )
+    )
+    await db.commit()
+
+
+@router.get("/{reptile_id}/favorite-foods", response_model=List[FoodSchema])
+async def get_reptile_favorite_foods(
+    reptile_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get list of favorite foods for a reptile"""
+    from app.models import Reptile, reptile_food_favorites, Food
+    from sqlalchemy.orm import selectinload
+
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+
+    # Get reptile with favorite foods
+    result = await db.execute(
+        select(Reptile)
+        .options(selectinload(Reptile.favorite_foods))
+        .where(Reptile.id == reptile_id)
+    )
+    reptile = result.scalar_one_or_none()
+
+    if not reptile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reptile not found",
+        )
+
+    return reptile.favorite_foods
+
+
+@router.post("/{reptile_id}/favorite-foods/{food_id}", response_model=dict)
+async def add_reptile_favorite_food(
+    reptile_id: int,
+    food_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Add a food to reptile's favorites"""
+    from app.models import Reptile, reptile_food_favorites, Food
+    from sqlalchemy import insert
+
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.CARETAKER)
+
+    # Check if reptile exists
+    reptile_result = await db.execute(select(Reptile).where(Reptile.id == reptile_id))
+    if not reptile_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reptile not found",
+        )
+
+    # Check if food exists
+    food_result = await db.execute(select(Food).where(Food.id == food_id))
+    if not food_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Food not found",
+        )
+
+    # Check if already favorited
+    existing = await db.execute(
+        select(reptile_food_favorites).where(
+            reptile_food_favorites.c.reptile_id == reptile_id,
+            reptile_food_favorites.c.food_id == food_id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        return {"message": "Food is already in favorites"}
+
+    # Add to favorites
+    await db.execute(
+        insert(reptile_food_favorites).values(
+            reptile_id=reptile_id,
+            food_id=food_id,
+        )
+    )
+    await db.commit()
+
+    return {"message": "Food added to favorites"}
+
+
+@router.delete("/{reptile_id}/favorite-foods/{food_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_reptile_favorite_food(
+    reptile_id: int,
+    food_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Remove a food from reptile's favorites"""
+    from app.models import reptile_food_favorites
+
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.CARETAKER)
+
+    await db.execute(
+        delete(reptile_food_favorites).where(
+            reptile_food_favorites.c.reptile_id == reptile_id,
+            reptile_food_favorites.c.food_id == food_id,
         )
     )
     await db.commit()

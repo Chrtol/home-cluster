@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     email: EmailStr
     name: str
     timezone: Optional[str] = "UTC"
+    show_favorites_first: bool = True
 
 
 class UserCreate(UserBase):
@@ -18,6 +19,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     timezone: Optional[str] = None
+    show_favorites_first: Optional[bool] = None
 
 
 class User(UserBase):
@@ -120,13 +122,28 @@ class FoodCreate(FoodBase):
     pass
 
 
+class FoodUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[FoodCategory] = None
+    insect_size: Optional[InsectSize] = None
+    animal_size: Optional[AnimalSize] = None
+    nutritional_data: Optional[dict] = None
+    is_favorite: Optional[bool] = None
+
+
 class Food(FoodBase):
     id: int
     is_default: bool
+    is_favorite: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class FoodWithReptileFavorite(Food):
+    """Food schema with reptile-specific favorite status"""
+    is_reptile_favorite: bool = False
 
 
 # Supplement schemas
