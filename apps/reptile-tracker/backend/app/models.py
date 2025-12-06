@@ -379,7 +379,7 @@ class Schedule(Base):
 
     name = Column(String, nullable=True)  # User-friendly name for the schedule
     schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
-    schedule_mode = Column(Enum(ScheduleMode, values_callable=lambda x: [e.value for e in x]), nullable=False, default=ScheduleMode.FIXED)  # "fixed" or "requirement"
+    schedule_mode = Column(Enum(ScheduleMode, values_callable=lambda x: [e.value for e in x], name='schedule_mode'), nullable=False, default=ScheduleMode.FIXED)  # "fixed" or "requirement"
     schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly", "dependent"
 
     # Additional details
@@ -403,7 +403,7 @@ class Schedule(Base):
     dependent_days = Column(String, nullable=True)  # For specific_days (e.g., '1,3' for Mon,Wed)
 
     # For requirement-based schedules (flexible quotas - weekly or monthly)
-    quota_period = Column(Enum(QuotaPeriod, values_callable=lambda x: [e.value for e in x]), nullable=True)  # "week" or "month"
+    quota_period = Column(Enum(QuotaPeriod, values_callable=lambda x: [e.value for e in x], name='quota_period'), nullable=True)  # "week" or "month"
     quota_frequency = Column(Integer, nullable=True)  # Number of times per period (e.g., 2x per week or 4x per month)
     min_days_between = Column(Integer, nullable=True)  # Minimum days between feedings (e.g., 2 days)
     max_days_between = Column(Integer, nullable=True)  # Maximum days between feedings (optional, e.g., 4 days)
