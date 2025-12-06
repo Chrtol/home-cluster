@@ -109,6 +109,7 @@ async def list_feedings(
                 "insect_size": food.insect_size,
                 "nutritional_data": food.nutritional_data,
                 "is_default": food.is_default,
+                "is_favorite": food.is_favorite,
                 "created_at": food.created_at,
                 "quantity": quantity,
                 "supplements": food_supplements,
@@ -142,6 +143,7 @@ async def list_feedings(
                     "insect_size": f.insect_size,
                     "nutritional_data": f.nutritional_data,
                     "is_default": f.is_default,
+                    "is_favorite": f.is_favorite,
                     "created_at": f.created_at,
                 }
                 for f in feeding.salad_components
@@ -293,6 +295,7 @@ async def create_feeding(
             "insect_size": food.insect_size,
             "nutritional_data": food.nutritional_data,
             "is_default": food.is_default,
+            "is_favorite": food.is_favorite,
             "created_at": food.created_at,
             "quantity": quantity,
             "supplements": food_supplements,
@@ -326,6 +329,7 @@ async def create_feeding(
                 "insect_size": f.insect_size,
                 "nutritional_data": f.nutritional_data,
                 "is_default": f.is_default,
+                "is_favorite": f.is_favorite,
                 "created_at": f.created_at,
             }
             for f in new_feeding.salad_components
@@ -417,6 +421,7 @@ async def get_feeding(
             "insect_size": food.insect_size,
             "nutritional_data": food.nutritional_data,
             "is_default": food.is_default,
+            "is_favorite": food.is_favorite,
             "created_at": food.created_at,
             "quantity": quantity,
             "supplements": food_supplements,
@@ -612,6 +617,7 @@ async def update_feeding(
             "insect_size": food.insect_size,
             "nutritional_data": food.nutritional_data,
             "is_default": food.is_default,
+            "is_favorite": food.is_favorite,
             "created_at": food.created_at,
             "quantity": quantity,
             "supplements": food_supplements,
@@ -645,6 +651,7 @@ async def update_feeding(
                 "insect_size": f.insect_size,
                 "nutritional_data": f.nutritional_data,
                 "is_default": f.is_default,
+                "is_favorite": f.is_favorite,
                 "created_at": f.created_at,
             }
             for f in updated_feeding.salad_components
