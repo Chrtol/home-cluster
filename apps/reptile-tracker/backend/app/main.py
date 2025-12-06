@@ -58,7 +58,9 @@ async def lifespan(app: FastAPI):
             logger.info("No duplicate templates found")
 
     # Start notification scheduler
+    print("DEBUG: About to call start_scheduler()", flush=True)
     await start_scheduler()
+    print("DEBUG: start_scheduler() returned successfully", flush=True)
     logger.info("Notification scheduler startup complete")
 
     yield  # Application is running

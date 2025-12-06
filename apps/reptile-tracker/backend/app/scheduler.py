@@ -1771,10 +1771,13 @@ async def start_scheduler():
     """Start the notification scheduler"""
     global scheduler
 
+    print("DEBUG: start_scheduler() called", flush=True)
     if scheduler is not None:
+        print(f"DEBUG: Scheduler already exists: {scheduler}", flush=True)
         logger.warning("Scheduler already started")
         return
 
+    print("DEBUG: Creating new scheduler", flush=True)
     logger.info("Starting notification scheduler")
 
     scheduler = AsyncIOScheduler(timezone="UTC")
