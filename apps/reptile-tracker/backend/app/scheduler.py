@@ -433,9 +433,20 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
     if existing_completion:
         # If completion exists but not linked to this instance, link it and update instance status
         if existing_completion.instance_id is None:
+            now = datetime.now(timezone.utc)
             existing_completion.instance_id = instance.id
+
+            # Fix orphaned completions with NULL or invalid completed_at timestamps
+            if existing_completion.completed_at is None:
+                # Use the scheduled date as completion time for old records
+                existing_completion.completed_at = datetime.combine(
+                    instance.scheduled_date,
+                    datetime.min.time()
+                ).replace(tzinfo=timezone.utc)
+                logger.info(f"Fixed NULL completed_at for orphaned completion {existing_completion.id}")
+
             instance.status = "completed"
-            instance.updated_at = datetime.now(timezone.utc)
+            instance.updated_at = now
             await db.commit()
             logger.info(f"Linked orphaned completion {existing_completion.id} to instance {instance_id}")
             return True
