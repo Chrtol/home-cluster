@@ -258,8 +258,8 @@ async def get_dashboard_data(
         "recent_feedings": [],
         "weight_data": {},
         "last_activity": {},
-        "schedules": [],
-        "feeding_rotations": [],
+        "schedules": schedules,
+        "feeding_rotations": feeding_rotations,
         "weekly_feedings": [],
         "weekly_mistings": [],
         "weekly_instances": []
