@@ -16,13 +16,18 @@ router = APIRouter(prefix="/bulk", tags=["bulk"])
 
 
 def convert_time_fields(obj):
-    """Recursively convert time objects to HH:MM strings to avoid JavaScript Date parsing issues"""
+    """Recursively convert time strings from HH:MM:SS to HH:MM to avoid JavaScript Date parsing issues"""
+    import re
+
     if isinstance(obj, dict):
         return {k: convert_time_fields(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_time_fields(item) for item in obj]
-    elif isinstance(obj, time):
-        return obj.strftime("%H:%M")
+    elif isinstance(obj, str):
+        # Check if string matches time pattern HH:MM:SS and convert to HH:MM
+        if re.match(r'^\d{2}:\d{2}:\d{2}$', obj):
+            return obj[:5]  # Return only HH:MM
+        return obj
     else:
         return obj
 
