@@ -417,12 +417,16 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         return False
 
     # Get the schedule
+    print(f"DEBUG: Getting schedule {instance.schedule_id} for instance {instance_id}", flush=True)
     schedule = await db.get(Schedule, instance.schedule_id)
+    print(f"DEBUG: Schedule found: {schedule is not None}", flush=True)
     if not schedule:
+        print(f"DEBUG: Schedule {instance.schedule_id} NOT FOUND for instance {instance_id}", flush=True)
         logger.warning(f"Schedule {instance.schedule_id} not found for instance {instance_id}")
         return False
 
     # Check if there's already a completion record
+    print(f"DEBUG: Checking for existing completion for instance {instance_id}", flush=True)
     existing_result = await db.execute(
         select(ScheduleCompletion).where(
             and_(
@@ -432,8 +436,10 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         )
     )
     existing_completion = existing_result.scalar_one_or_none()
+    print(f"DEBUG: Existing completion found: {existing_completion is not None}", flush=True)
 
     if existing_completion:
+        print(f"DEBUG: Instance {instance_id} ALREADY HAS completion record (id={existing_completion.id}), skipping", flush=True)
         logger.info(f"Instance {instance_id} already has completion record, skipping")
         return False
 
