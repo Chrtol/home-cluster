@@ -190,6 +190,7 @@ class FoodWithQuantity(BaseModel):
     insect_size: Optional[InsectSize] = None
     nutritional_data: Optional[dict] = None
     is_default: bool
+    is_favorite: bool
     created_at: datetime
     quantity: int  # From feeding_foods association table
     supplements: List[Supplement] = []  # Per-item supplements
