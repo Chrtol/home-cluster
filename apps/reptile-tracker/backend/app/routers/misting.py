@@ -125,25 +125,60 @@ async def delete_misting_log(
         )
     await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
 
-    # If this misting completed a schedule instance, reset the instance status to pending
+    # If this misting completed a schedule instance, reset the instance status to pending,
+    # delete the completion record, and try to re-match with other mistings from that day
     if log.schedule_completion_id:
-        from app.models import ScheduleCompletion, ScheduleInstance
-        # Get the completion to find the instance
+        from app.models import ScheduleCompletion, ScheduleInstance, Schedule
+        from app.schedule_matcher import assign_misting_to_schedule
+
+        # Get the completion to find the instance and schedule details
         completion_result = await db.execute(
             select(ScheduleCompletion).where(ScheduleCompletion.id == log.schedule_completion_id)
         )
         completion = completion_result.scalar_one_or_none()
 
-        if completion and completion.instance_id:
-            # Reset the instance to pending
-            instance_result = await db.execute(
-                select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+        if completion:
+            schedule_id = completion.schedule_id
+            scheduled_date = completion.scheduled_date
+
+            # Reset the instance to pending if it exists
+            if completion.instance_id:
+                instance_result = await db.execute(
+                    select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+                )
+                instance = instance_result.scalar_one_or_none()
+                if instance:
+                    instance.status = "pending"
+                    from datetime import datetime, timezone
+                    instance.updated_at = datetime.now(timezone.utc)
+
+            # Delete the completion record since the misting that fulfilled it is being deleted
+            await db.execute(delete(ScheduleCompletion).where(ScheduleCompletion.id == log.schedule_completion_id))
+
+            # Try to find another misting from the same day that could fulfill this schedule
+            # Look for other mistings for the same reptile on the scheduled date that aren't already assigned
+            other_mistings_result = await db.execute(
+                select(MistingLog).where(
+                    and_(
+                        MistingLog.reptile_id == log.reptile_id,
+                        MistingLog.id != log_id,
+                        func.date(MistingLog.misted_at) == scheduled_date,
+                        MistingLog.schedule_completion_id == None  # Not already assigned
+                    )
+                ).order_by(MistingLog.misted_at.asc())  # Try earliest misting first
             )
-            instance = instance_result.scalar_one_or_none()
-            if instance:
-                instance.status = "pending"
-                from datetime import datetime, timezone
-                instance.updated_at = datetime.now(timezone.utc)
+            other_mistings = other_mistings_result.scalars().all()
+
+            # Try to match the first unassigned misting to the schedule
+            if other_mistings:
+                # Get the schedule to pass to the matcher
+                schedule = await db.get(Schedule, schedule_id)
+                if schedule and schedule.enabled:
+                    for other_misting in other_mistings:
+                        # Try to assign this misting - it will check if it matches the schedule
+                        await assign_misting_to_schedule(db, other_misting)
+                        # Only need to assign one - the matcher will pick the best match
+                        break
 
     await db.execute(delete(MistingLog).where(MistingLog.id == log_id))
     await db.commit()
