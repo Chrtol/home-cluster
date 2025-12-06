@@ -103,7 +103,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-20251206144207 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
+              tag: main-20251206145801 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
               pullPolicy: Always
             probes:
               liveness:
