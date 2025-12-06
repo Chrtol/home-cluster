@@ -1741,20 +1741,26 @@ async def daily_instance_maintenance():
     Daily job to generate schedule instances and clean up old ones.
     Runs at 3 AM UTC to ensure instances exist for configured days ahead.
     """
+    print("DEBUG: daily_instance_maintenance() entered", flush=True)
     logger.info("Starting daily instance maintenance")
 
     try:
+        print("DEBUG: Importing instance_generator functions", flush=True)
         from app.instance_generator import generate_instances_for_all_schedules, cleanup_old_instances, schedule_autocomplete_jobs_for_instances
 
         # Generate instances (uses config value)
+        print("DEBUG: About to call generate_instances_for_all_schedules", flush=True)
         stats = await generate_instances_for_all_schedules()
+        print(f"DEBUG: generate_instances_for_all_schedules returned: {stats}", flush=True)
         logger.info(
             f"Generated instances: {stats['schedules_processed']} schedules processed, "
             f"{stats['instances_created']} instances created"
         )
 
         # Schedule autocomplete jobs for all pending instances with autocomplete enabled
+        print("DEBUG: About to call schedule_autocomplete_jobs_for_instances", flush=True)
         jobs_scheduled = await schedule_autocomplete_jobs_for_instances()
+        print(f"DEBUG: schedule_autocomplete_jobs_for_instances returned: {jobs_scheduled}", flush=True)
         logger.info(f"Scheduled {jobs_scheduled} autocomplete jobs")
 
         # Clean up instances older than 30 days
@@ -1848,23 +1854,31 @@ async def start_scheduler():
     #     replace_existing=True
     # )
 
+    print("DEBUG: About to start scheduler", flush=True)
     scheduler.start()
+    print("DEBUG: Scheduler.start() completed", flush=True)
 
     logger.info("Notification scheduler started successfully")
 
     # Rebuild notification jobs from database (for recovery after pod restarts)
     try:
+        print("DEBUG: About to rebuild notification jobs from DB", flush=True)
         await rebuild_notification_jobs_from_db()
+        print("DEBUG: rebuild_notification_jobs_from_db() completed", flush=True)
         logger.info("Notification jobs rebuilt successfully")
     except Exception as e:
+        print(f"DEBUG ERROR: rebuild_notification_jobs_from_db failed: {e}", flush=True)
         logger.error(f"Error rebuilding notification jobs: {e}", exc_info=True)
 
     # Generate initial schedule instances on startup
     # This also schedules autocomplete jobs for all pending instances
     try:
+        print("DEBUG: About to run daily_instance_maintenance", flush=True)
         await daily_instance_maintenance()
+        print("DEBUG: daily_instance_maintenance() completed", flush=True)
         logger.info("Initial instance maintenance completed successfully")
     except Exception as e:
+        print(f"DEBUG ERROR: daily_instance_maintenance failed: {e}", flush=True)
         logger.error(f"Error in initial instance maintenance: {e}", exc_info=True)
 
     # DEPRECATED: Startup autocomplete check no longer needed
