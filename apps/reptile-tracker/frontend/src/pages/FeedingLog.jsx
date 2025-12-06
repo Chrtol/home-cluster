@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2, Calendar } from 'lucide-react';
+import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2, Calendar, Heart, Star } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import DateInput from '../components/DateInput';
 
@@ -236,6 +236,21 @@ export default function FeedingLog() {
     };
     fetchData();
   }, [id, searchParams]);
+
+  // Refetch foods when selected reptile changes to include reptile-specific favorite status
+  useEffect(() => {
+    const refetchFoods = async () => {
+      if (selectedReptile) {
+        try {
+          const foodsRes = await axios.get(`/api/foods?reptile_id=${selectedReptile}`);
+          setFoods(foodsRes.data);
+        } catch (error) {
+          console.error('Failed to refetch foods:', error);
+        }
+      }
+    };
+    refetchFoods();
+  }, [selectedReptile]);
 
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {
@@ -669,15 +684,37 @@ export default function FeedingLog() {
     }
   };
 
-  const insectFoods = foods
-    .filter(f => f.category === 'insect' || f.category === 'worms')
-    .filter(f => !showOnlyFavoriteInsects || f.is_favorite);
-  const saladFoods = foods
-    .filter(f => f.category === 'vegetable' || f.category === 'fruit')
-    .filter(f => !showOnlyFavoriteSalad || f.is_favorite);
-  const preparedFoods = foods
-    .filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad')
-    .filter(f => !showOnlyFavoritePrepared || f.is_favorite);
+  // Helper function to sort foods by favorites
+  const sortByFavorites = (foodList) => {
+    return foodList.sort((a, b) => {
+      // Reptile favorites first (if is_reptile_favorite exists)
+      const aReptileFav = a.is_reptile_favorite || false;
+      const bReptileFav = b.is_reptile_favorite || false;
+      if (aReptileFav !== bReptileFav) return bReptileFav ? 1 : -1;
+
+      // Then global favorites
+      if (a.is_favorite !== b.is_favorite) return b.is_favorite ? 1 : -1;
+
+      // Then alphabetically
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  const insectFoods = sortByFavorites(
+    foods
+      .filter(f => f.category === 'insect' || f.category === 'worms')
+      .filter(f => !showOnlyFavoriteInsects || (f.is_reptile_favorite || f.is_favorite))
+  );
+  const saladFoods = sortByFavorites(
+    foods
+      .filter(f => f.category === 'vegetable' || f.category === 'fruit')
+      .filter(f => !showOnlyFavoriteSalad || (f.is_reptile_favorite || f.is_favorite))
+  );
+  const preparedFoods = sortByFavorites(
+    foods
+      .filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad')
+      .filter(f => !showOnlyFavoritePrepared || (f.is_reptile_favorite || f.is_favorite))
+  );
 
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;
@@ -1002,9 +1039,12 @@ export default function FeedingLog() {
                       onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
                       className="input w-full text-sm sm:text-base"
                     >
-                      {insectFoods.map(food => (
-                        <option key={food.id} value={food.id}>{food.name}</option>
-                      ))}
+                      {insectFoods.map(food => {
+                        const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                        return (
+                          <option key={food.id} value={food.id}>{prefix}{food.name}</option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div className="flex items-center justify-between sm:justify-start gap-2">
@@ -1089,7 +1129,11 @@ export default function FeedingLog() {
                     checked={saladComponents.includes(food.id)}
                     onChange={() => toggleSaladComponent(food.id)}
                   />
-                  <span className="text-sm">{food.name}</span>
+                  <span className="text-sm flex items-center gap-1">
+                    {food.is_reptile_favorite && <Heart size={14} className="fill-red-500 text-red-500" />}
+                    {!food.is_reptile_favorite && food.is_favorite && <Star size={14} className="fill-yellow-400 text-yellow-400" />}
+                    {food.name}
+                  </span>
                 </label>
               ))}
             </div>
@@ -1149,9 +1193,12 @@ export default function FeedingLog() {
                       onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
                       className="input w-full text-sm sm:text-base"
                     >
-                      {preparedFoods.map(food => (
-                        <option key={food.id} value={food.id}>{food.name}</option>
-                      ))}
+                      {preparedFoods.map(food => {
+                        const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                        return (
+                          <option key={food.id} value={food.id}>{prefix}{food.name}</option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div className="flex items-center justify-between sm:justify-start gap-2">
