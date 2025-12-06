@@ -151,25 +151,60 @@ async def delete_weight_log(
         )
     await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.MANAGER)
 
-    # If this weight log completed a schedule instance, reset the instance status to pending
+    # If this weight log completed a schedule instance, reset the instance status to pending,
+    # delete the completion record, and try to re-match with other weight logs from that day
     if log.schedule_completion_id:
-        from app.models import ScheduleCompletion, ScheduleInstance
-        # Get the completion to find the instance
+        from app.models import ScheduleCompletion, ScheduleInstance, Schedule
+        from app.schedule_matcher import assign_weighing_to_schedule
+
+        # Get the completion to find the instance and schedule details
         completion_result = await db.execute(
             select(ScheduleCompletion).where(ScheduleCompletion.id == log.schedule_completion_id)
         )
         completion = completion_result.scalar_one_or_none()
 
-        if completion and completion.instance_id:
-            # Reset the instance to pending
-            instance_result = await db.execute(
-                select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+        if completion:
+            schedule_id = completion.schedule_id
+            scheduled_date = completion.scheduled_date
+
+            # Reset the instance to pending if it exists
+            if completion.instance_id:
+                instance_result = await db.execute(
+                    select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+                )
+                instance = instance_result.scalar_one_or_none()
+                if instance:
+                    instance.status = "pending"
+                    from datetime import datetime, timezone
+                    instance.updated_at = datetime.now(timezone.utc)
+
+            # Delete the completion record since the weight log that fulfilled it is being deleted
+            await db.execute(delete(ScheduleCompletion).where(ScheduleCompletion.id == log.schedule_completion_id))
+
+            # Try to find another weight log from the same day that could fulfill this schedule
+            # Look for other weight logs for the same reptile on the scheduled date that aren't already assigned
+            other_weights_result = await db.execute(
+                select(WeightLog).where(
+                    and_(
+                        WeightLog.reptile_id == log.reptile_id,
+                        WeightLog.id != log_id,
+                        func.date(WeightLog.measured_at) == scheduled_date,
+                        WeightLog.schedule_completion_id == None  # Not already assigned
+                    )
+                ).order_by(WeightLog.measured_at.asc())  # Try earliest weight log first
             )
-            instance = instance_result.scalar_one_or_none()
-            if instance:
-                instance.status = "pending"
-                from datetime import datetime, timezone
-                instance.updated_at = datetime.now(timezone.utc)
+            other_weights = other_weights_result.scalars().all()
+
+            # Try to match the first unassigned weight log to the schedule
+            if other_weights:
+                # Get the schedule to pass to the matcher
+                schedule = await db.get(Schedule, schedule_id)
+                if schedule and schedule.enabled:
+                    for other_weight in other_weights:
+                        # Try to assign this weight log - it will check if it matches the schedule
+                        await assign_weighing_to_schedule(db, other_weight)
+                        # Only need to assign one - the matcher will pick the best match
+                        break
 
     await db.execute(delete(WeightLog).where(WeightLog.id == log_id))
     await db.commit()

@@ -682,25 +682,60 @@ async def delete_feeding(
             detail="You can only delete your own feedings unless you're a reptile manager or owner",
         )
 
-    # If this feeding completed a schedule instance, reset the instance status to pending
+    # If this feeding completed a schedule instance, reset the instance status to pending,
+    # delete the completion record, and try to re-match with other feedings from that day
     if feeding.schedule_completion_id:
-        from app.models import ScheduleCompletion, ScheduleInstance
-        # Get the completion to find the instance
+        from app.models import ScheduleCompletion, ScheduleInstance, Schedule
+        from app.schedule_matcher import assign_feeding_to_schedule
+
+        # Get the completion to find the instance and schedule details
         completion_result = await db.execute(
             select(ScheduleCompletion).where(ScheduleCompletion.id == feeding.schedule_completion_id)
         )
         completion = completion_result.scalar_one_or_none()
 
-        if completion and completion.instance_id:
-            # Reset the instance to pending
-            instance_result = await db.execute(
-                select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+        if completion:
+            schedule_id = completion.schedule_id
+            scheduled_date = completion.scheduled_date
+
+            # Reset the instance to pending if it exists
+            if completion.instance_id:
+                instance_result = await db.execute(
+                    select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+                )
+                instance = instance_result.scalar_one_or_none()
+                if instance:
+                    instance.status = "pending"
+                    from datetime import datetime, timezone
+                    instance.updated_at = datetime.now(timezone.utc)
+
+            # Delete the completion record since the feeding that fulfilled it is being deleted
+            await db.execute(delete(ScheduleCompletion).where(ScheduleCompletion.id == feeding.schedule_completion_id))
+
+            # Try to find another feeding from the same day that could fulfill this schedule
+            # Look for other feedings for the same reptile on the scheduled date that aren't already assigned
+            other_feedings_result = await db.execute(
+                select(Feeding).where(
+                    and_(
+                        Feeding.reptile_id == feeding.reptile_id,
+                        Feeding.id != feeding_id,
+                        func.date(Feeding.fed_at) == scheduled_date,
+                        Feeding.schedule_completion_id == None  # Not already assigned
+                    )
+                ).order_by(Feeding.fed_at.asc())  # Try earliest feeding first
             )
-            instance = instance_result.scalar_one_or_none()
-            if instance:
-                instance.status = "pending"
-                from datetime import datetime, timezone
-                instance.updated_at = datetime.now(timezone.utc)
+            other_feedings = other_feedings_result.scalars().all()
+
+            # Try to match the first unassigned feeding to the schedule
+            if other_feedings:
+                # Get the schedule to pass to the matcher
+                schedule = await db.get(Schedule, schedule_id)
+                if schedule and schedule.enabled:
+                    for other_feeding in other_feedings:
+                        # Try to assign this feeding - it will check if it matches the schedule
+                        await assign_feeding_to_schedule(db, other_feeding)
+                        # Only need to assign one - the matcher will pick the best match
+                        break
 
     await db.execute(delete(Feeding).where(Feeding.id == feeding_id))
     await db.commit()
