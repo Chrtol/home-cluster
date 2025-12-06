@@ -1163,49 +1163,51 @@ function ScheduleForm() {
           )}
         </div>
 
-        {/* Flexible Completion Window Settings */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              type="checkbox"
-              id="flexibleCompletionEnabled"
-              checked={flexibleCompletionEnabled}
-              onChange={(e) => setFlexibleCompletionEnabled(e.target.checked)}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="flexibleCompletionEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Enable Flexible Completion Window
-            </label>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Allow completing this schedule within a range of days (e.g., feeding 1 day early or late). Useful when your schedule varies slightly from day to day.
-          </p>
-
-          {flexibleCompletionEnabled && (
-            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Completion Window (±days)
-                </label>
-                <input
-                  type="number"
-                  value={flexibleCompletionDays}
-                  onChange={(e) => setFlexibleCompletionDays(e.target.value)}
-                  className="input-field w-32"
-                  min="1"
-                  max="7"
-                  required
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Activities can be logged {flexibleCompletionDays} day(s) before or after the scheduled date
-                </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                  Example: With ±{flexibleCompletionDays} days, a schedule on Wednesday can be completed Monday-Friday
-                </p>
-              </div>
+        {/* Flexible Completion Window Settings - Only for fixed schedules */}
+        {scheduleMode === "fixed" && (
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                type="checkbox"
+                id="flexibleCompletionEnabled"
+                checked={flexibleCompletionEnabled}
+                onChange={(e) => setFlexibleCompletionEnabled(e.target.checked)}
+                className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="flexibleCompletionEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Enable Flexible Completion Window
+              </label>
             </div>
-          )}
-        </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Allow completing this schedule within a range of days (e.g., feeding 1 day early or late). Useful when your schedule varies slightly from day to day.
+            </p>
+
+            {flexibleCompletionEnabled && (
+              <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Completion Window (±days)
+                  </label>
+                  <input
+                    type="number"
+                    value={flexibleCompletionDays}
+                    onChange={(e) => setFlexibleCompletionDays(e.target.value)}
+                    className="input-field w-32"
+                    min="1"
+                    max="7"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Activities can be logged {flexibleCompletionDays} day(s) before or after the scheduled date
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                    Example: With ±{flexibleCompletionDays} days, a schedule on Wednesday can be completed Monday-Friday
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Notification Settings */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">

@@ -407,7 +407,7 @@ class Schedule(Base):
     quota_frequency = Column(Integer, nullable=True)  # Number of times per period (e.g., 2x per week or 4x per month)
     min_days_between = Column(Integer, nullable=True)  # Minimum days between feedings (e.g., 2 days)
     max_days_between = Column(Integer, nullable=True)  # Maximum days between feedings (optional, e.g., 4 days)
-    suggested_days = Column(JSON, nullable=True)  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
+    suggested_days = Column(JSON(none_as_null=True), nullable=True)  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
 
     # For supplement schedules
     supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="SET NULL"), nullable=True)
