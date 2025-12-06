@@ -19,14 +19,11 @@
  *   - interpolationMode: 'linear' | 'step' | 'none' (only for weight-related charts)
  */
 const DEFAULT_DASHBOARD_CARDS = [
-  { id: 'need_feeding', label: 'Need Feeding', visible: true, order: 0, size: 'xs', type: 'summary' },
-  { id: 'fed_this_week', label: 'Fed This Week', visible: true, order: 1, size: 'xs', type: 'summary' },
-  { id: 'misted_today', label: 'Misted Today', visible: true, order: 2, size: 'xs', type: 'summary' },
-  { id: 'shed_this_month', label: 'Shed This Month', visible: true, order: 3, size: 'xs', type: 'summary' },
-  { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 4, size: 'large', type: 'content' },
-  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 5, size: 'large', type: 'content', interpolationMode: 'linear' },
-  { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 6, size: 'small', type: 'content' },
-  { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 7, size: 'medium', type: 'content' },
+  { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+  { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 1, size: 'large', type: 'content' },
+  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 2, size: 'large', type: 'content', interpolationMode: 'linear' },
+  { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 3, size: 'small', type: 'content' },
+  { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 4, size: 'medium', type: 'content' },
 ];
 
 export function getDashboardCardSettings() {

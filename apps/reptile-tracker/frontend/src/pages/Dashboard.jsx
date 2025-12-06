@@ -575,6 +575,38 @@ export default function Dashboard() {
     }
   };
 
+  // Get health status badge for reptile (only show if schedules exist)
+  const getHealthStatusBadge = (reptileId) => {
+    // Check if reptile has any schedules today
+    const today = new Date();
+    const reptileSchedules = weeklyEvents.filter(event =>
+      event.reptile_id === reptileId
+    );
+
+    // Don't show badge if no schedules
+    if (reptileSchedules.length === 0) {
+      return null;
+    }
+
+    // Check for overdue or missed schedules (any day, not just today)
+    const hasOverdue = reptileSchedules.some(e => e.status === 'missed');
+    if (hasOverdue) {
+      return { color: 'red', emoji: '🔴' };
+    }
+
+    // Check for pending schedules today
+    const todaySchedules = reptileSchedules.filter(event =>
+      event.date.toDateString() === today.toDateString()
+    );
+    const hasDueToday = todaySchedules.some(e => e.status === 'pending');
+    if (hasDueToday) {
+      return { color: 'yellow', emoji: '🟡' };
+    }
+
+    // All good
+    return { color: 'green', emoji: '🟢' };
+  };
+
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading dashboard...</div>;
   }
@@ -868,61 +900,47 @@ export default function Dashboard() {
     }
   };
 
+  // Calculate today's schedule stats
+  const todayScheduleStats = (() => {
+    const today = new Date();
+    const todayEvents = weeklyEvents.filter(event =>
+      event.date.toDateString() === today.toDateString() &&
+      calendarReptileFilter.has(event.reptile_id)
+    );
+
+    const due = todayEvents.filter(e => e.status === 'pending').length;
+    const overdue = todayEvents.filter(e => e.status === 'missed').length;
+    const completed = todayEvents.filter(e => e.status === 'completed').length;
+
+    return { due, overdue, completed };
+  })();
+
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
-      case 'need_feeding':
+      case 'today_summary':
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${reptilesNeedingFeeding > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-                <AlertCircle size={18} className={reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Today</h3>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Need Feeding</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{reptilesNeedingFeeding}</p>
-              </div>
-            </div>
-          </div>
-        );
-      case 'fed_this_week':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                <Utensils size={18} className="text-primary-600 dark:text-primary-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Fed This Week</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{feedingsThisWeek}</p>
-              </div>
-            </div>
-          </div>
-        );
-      case 'misted_today':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Droplets size={18} className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Misted Today</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{mistedToday}</p>
-              </div>
-            </div>
-          </div>
-        );
-      case 'shed_this_month':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Activity size={18} className="text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Shed This Month</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{shedThisMonth}</p>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-600 dark:text-gray-400">Due:</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{todayScheduleStats.due}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-600 dark:text-gray-400">Overdue:</span>
+                  <span className={`font-bold ${todayScheduleStats.overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>{todayScheduleStats.overdue}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-600 dark:text-gray-400">Done:</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1072,65 +1090,55 @@ export default function Dashboard() {
                           timeText = event.time_slot;
                         }
 
-                        // Enhanced display for day/3-day view
+                        // Enhanced display for day/3-day view - COMPACT SINGLE ROW
                         if (calendarView === 'day' || calendarView === 'three-day') {
                           return (
                             <div
                               key={idx}
-                              className={`px-2 py-1.5 rounded bg-white dark:bg-gray-800 border ${
+                              className={`px-2 py-1 rounded bg-white dark:bg-gray-800 border ${
                                 event.is_completed
                                   ? 'border-green-500 dark:border-green-600'
                                   : 'border-gray-200 dark:border-gray-600'
                               }`}
-                              title={event.name || event.reptile_name}
+                              title={event.notes || event.name || event.reptile_name}
                             >
-                              {/* First row: Reptile name and food category */}
-                              <div className="flex items-center gap-1.5 mb-0.5">
+                              <div className="flex items-center gap-1.5 text-xs">
                                 {event.is_completed && (
-                                  <span className="text-green-600 dark:text-green-400 text-sm font-bold flex-shrink-0">✓</span>
+                                  <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0">✓</span>
                                 )}
-                                <Icon size={14} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
-                                <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                                <span className="font-semibold text-gray-900 dark:text-white truncate">
                                   {event.reptile_name}
                                 </span>
                                 {event.notifications_enabled && (
-                                  <Bell size={12} className="flex-shrink-0 text-amber-600 dark:text-amber-400" title="Notifications enabled" />
+                                  <Bell size={10} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
+                                )}
+                                <span className="text-gray-400 dark:text-gray-500">•</span>
+                                {timeText && (
+                                  <>
+                                    <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{timeText}</span>
+                                    <span className="text-gray-400 dark:text-gray-500">•</span>
+                                  </>
                                 )}
                                 {foodCategory && (
-                                  <span className="text-xs text-gray-600 dark:text-gray-400 ml-auto flex-shrink-0">
-                                    {foodCategory}
-                                  </span>
-                                )}
-                              </div>
-                              {/* Second row: Time and supplements */}
-                              <div className="flex items-center gap-2 ml-5 text-xs">
-                                {timeText && (
-                                  <div className="text-gray-600 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
-                                    <Clock size={10} />
-                                    {timeText}
-                                  </div>
+                                  <>
+                                    <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{foodCategory}</span>
+                                  </>
                                 )}
                                 {event.suggested_supplements && event.suggested_supplements.length > 0 && (
-                                  <div className="flex gap-1 flex-wrap">
-                                    {event.suggested_supplements.map((supp, suppIdx) => (
-                                      <span key={suppIdx} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200">
-                                        +{supp.name}
-                                      </span>
-                                    ))}
-                                  </div>
+                                  <>
+                                    <span className="text-gray-400 dark:text-gray-500">•</span>
+                                    <span className="text-amber-600 dark:text-amber-400 flex-shrink-0">
+                                      +{event.suggested_supplements.map(s => s.name).join(', ')}
+                                    </span>
+                                  </>
                                 )}
                               </div>
-                              {/* Third row (optional): Notes if present */}
-                              {event.notes && (
-                                <div className="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-1 ml-5 mt-0.5">
-                                  {event.notes}
-                                </div>
-                              )}
                             </div>
                           );
                         }
 
-                        // Compact display for week view
+                        // Compact display for week view - SINGLE ROW
                         return (
                           <div
                             key={idx}
@@ -1139,32 +1147,28 @@ export default function Dashboard() {
                                 ? 'border-green-500 dark:border-green-600'
                                 : 'border-gray-200 dark:border-gray-600'
                             }`}
-                            title={event.name || event.reptile_name}
+                            title={`${event.reptile_name}${timeText ? ' • ' + timeText : ''}${foodCategory ? ' • ' + foodCategory : ''}${event.suggested_supplements?.length > 0 ? ' • +' + event.suggested_supplements.map(s => s.name).join(', ') : ''}${event.notes ? '\n' + event.notes : ''}`}
                           >
-                            <div className="flex items-center justify-between gap-1">
-                              <div className="flex items-center gap-1 min-w-0 flex-1">
-                                {event.is_completed && (
-                                  <span className="text-green-600 dark:text-green-400 text-[10px] font-bold flex-shrink-0">✓</span>
-                                )}
-                                <Icon size={10} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
-                                <span className="truncate text-gray-700 dark:text-gray-300">
-                                  {event.reptile_name}
-                                </span>
-                                {event.notifications_enabled && (
-                                  <Bell size={9} className="flex-shrink-0 text-amber-600 dark:text-amber-400" title="Notifications enabled" />
-                                )}
-                              </div>
+                            <div className="flex items-center gap-1 text-[10px]">
+                              {event.is_completed && (
+                                <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0">✓</span>
+                              )}
+                              <Icon size={9} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                              <span className="truncate text-gray-700 dark:text-gray-300 font-medium">
+                                {event.reptile_name}
+                              </span>
+                              {event.notifications_enabled && (
+                                <Bell size={8} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
+                              )}
+                              {(timeText || foodCategory) && <span className="text-gray-400 dark:text-gray-500">•</span>}
+                              {timeText && (
+                                <span className="text-gray-500 dark:text-gray-400 truncate">{timeText}</span>
+                              )}
+                              {foodCategory && timeText && <span className="text-gray-400 dark:text-gray-500">•</span>}
                               {foodCategory && (
-                                <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
-                                  {foodCategory}
-                                </span>
+                                <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
                               )}
                             </div>
-                            {timeText && (
-                              <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate ml-3.5">
-                                {timeText}
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -1347,12 +1351,16 @@ export default function Dashboard() {
                   const daysSinceMisting = mistingData[reptile.id] ? differenceInDays(new Date(), new Date(mistingData[reptile.id])) : null;
                   const daysSinceWeighing = weighingData[reptile.id] ? differenceInDays(new Date(), new Date(weighingData[reptile.id])) : null;
                   const daysSinceShed = healthData[reptile.id] ? differenceInDays(new Date(), new Date(healthData[reptile.id])) : null;
+                  const healthBadge = getHealthStatusBadge(reptile.id);
 
                   return (
                     <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
+                            {healthBadge && (
+                              <span className="text-xs" title={`Status: ${healthBadge.color}`}>{healthBadge.emoji}</span>
+                            )}
                             <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{reptile.name}</span>
                             <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{reptile.species}</span>
                           </div>
