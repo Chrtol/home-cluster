@@ -108,11 +108,13 @@ async def get_dashboard_data(
         if weight.reptile_id not in weight_data:
             weight_data[weight.reptile_id] = []
 
+        # Frontend expects weighed_at as ISO datetime string for new Date() parsing
+        weighed_at = weight.measured_at.isoformat() if weight.measured_at else None
+
         weight_data[weight.reptile_id].append({
             "id": weight.id,
             "weight": float(weight.weight_grams) if weight.weight_grams else None,
-            # Temporarily removing weighed_at to test if it's causing the error
-            # "weighed_at": weighed_at,
+            "weighed_at": weighed_at,
             "notes": weight.notes
         })
 
