@@ -400,33 +400,26 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
     Returns:
         True if autocomplete was successful, False otherwise
     """
-    print(f"DEBUG: _perform_autocomplete() called for instance {instance_id}", flush=True)
     from app.models import ScheduleInstance
 
     # Get the instance
     instance = await db.get(ScheduleInstance, instance_id)
-    print(f"DEBUG: Instance {instance_id} found: {instance is not None}, status: {instance.status if instance else 'N/A'}", flush=True)
     if not instance:
         logger.warning(f"Instance {instance_id} not found")
         return False
 
     # Check if instance is still pending
     if instance.status != "pending":
-        print(f"DEBUG: Instance {instance_id} already {instance.status}, skipping", flush=True)
         logger.info(f"Instance {instance_id} already {instance.status}, skipping autocomplete")
         return False
 
     # Get the schedule
-    print(f"DEBUG: Getting schedule {instance.schedule_id} for instance {instance_id}", flush=True)
     schedule = await db.get(Schedule, instance.schedule_id)
-    print(f"DEBUG: Schedule found: {schedule is not None}", flush=True)
     if not schedule:
-        print(f"DEBUG: Schedule {instance.schedule_id} NOT FOUND for instance {instance_id}", flush=True)
         logger.warning(f"Schedule {instance.schedule_id} not found for instance {instance_id}")
         return False
 
     # Check if there's already a completion record
-    print(f"DEBUG: Checking for existing completion for instance {instance_id}", flush=True)
     existing_result = await db.execute(
         select(ScheduleCompletion).where(
             and_(
@@ -436,11 +429,26 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         )
     )
     existing_completion = existing_result.scalar_one_or_none()
-    print(f"DEBUG: Existing completion found: {existing_completion is not None}", flush=True)
 
     if existing_completion:
-        print(f"DEBUG: Instance {instance_id} ALREADY HAS completion record (id={existing_completion.id}), skipping", flush=True)
+        # If completion exists but not linked to this instance, link it and update instance status
+        if existing_completion.instance_id is None:
+            existing_completion.instance_id = instance.id
+            instance.status = "completed"
+            instance.updated_at = datetime.now(timezone.utc)
+            await db.commit()
+            logger.info(f"Linked orphaned completion {existing_completion.id} to instance {instance_id}")
+            return True
+
+        # Completion already linked to this or another instance
         logger.info(f"Instance {instance_id} already has completion record, skipping")
+
+        # Ensure instance status is synced
+        if instance.status != "completed":
+            instance.status = "completed"
+            instance.updated_at = datetime.now(timezone.utc)
+            await db.commit()
+
         return False
 
     # Create auto-completion record
@@ -458,16 +466,12 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         auto_completed=True
     )
     db.add(completion)
-    print(f"DEBUG: Added completion record for instance {instance_id}", flush=True)
 
     # Update instance status
     instance.status = "completed"
     instance.updated_at = now
-    print(f"DEBUG: Updated instance {instance_id} status to completed", flush=True)
 
-    print(f"DEBUG: About to commit for instance {instance_id}", flush=True)
     await db.commit()
-    print(f"DEBUG: Committed successfully for instance {instance_id}", flush=True)
 
     logger.info(
         f"Auto-completed instance {instance_id} for schedule {schedule.id} "
@@ -557,16 +561,13 @@ async def schedule_autocomplete_for_instance(
 
             # Check if trigger time has already passed - execute immediately
             now_utc = datetime.now(timezone.utc)
-            print(f"DEBUG: Instance {instance.id}: trigger_time={trigger_datetime_utc}, now={now_utc}, overdue={trigger_datetime_utc < now_utc}", flush=True)
             if trigger_datetime_utc < now_utc:
-                print(f"DEBUG: Instance {instance.id} is OVERDUE, executing immediately", flush=True)
                 logger.info(
                     f"Autocomplete trigger for instance {instance.id} is overdue "
                     f"(was {trigger_datetime_utc}, now {now_utc}), executing immediately"
                 )
                 # Execute the autocomplete immediately without creating a scheduled job
-                success = await _perform_autocomplete(db, instance.id)
-                print(f"DEBUG: Instance {instance.id} immediate autocomplete result: {success}", flush=True)
+                await _perform_autocomplete(db, instance.id)
                 return
 
             # Check if job already exists
@@ -1757,26 +1758,20 @@ async def daily_instance_maintenance():
     Daily job to generate schedule instances and clean up old ones.
     Runs at 3 AM UTC to ensure instances exist for configured days ahead.
     """
-    print("DEBUG: daily_instance_maintenance() entered", flush=True)
     logger.info("Starting daily instance maintenance")
 
     try:
-        print("DEBUG: Importing instance_generator functions", flush=True)
         from app.instance_generator import generate_instances_for_all_schedules, cleanup_old_instances, schedule_autocomplete_jobs_for_instances
 
         # Generate instances (uses config value)
-        print("DEBUG: About to call generate_instances_for_all_schedules", flush=True)
         stats = await generate_instances_for_all_schedules()
-        print(f"DEBUG: generate_instances_for_all_schedules returned: {stats}", flush=True)
         logger.info(
             f"Generated instances: {stats['schedules_processed']} schedules processed, "
             f"{stats['instances_created']} instances created"
         )
 
         # Schedule autocomplete jobs for all pending instances with autocomplete enabled
-        print("DEBUG: About to call schedule_autocomplete_jobs_for_instances", flush=True)
         jobs_scheduled = await schedule_autocomplete_jobs_for_instances()
-        print(f"DEBUG: schedule_autocomplete_jobs_for_instances returned: {jobs_scheduled}", flush=True)
         logger.info(f"Scheduled {jobs_scheduled} autocomplete jobs")
 
         # Clean up instances older than 30 days
@@ -1793,13 +1788,10 @@ async def start_scheduler():
     """Start the notification scheduler"""
     global scheduler
 
-    print("DEBUG: start_scheduler() called", flush=True)
     if scheduler is not None:
-        print(f"DEBUG: Scheduler already exists: {scheduler}", flush=True)
         logger.warning("Scheduler already started")
         return
 
-    print("DEBUG: Creating new scheduler", flush=True)
     logger.info("Starting notification scheduler")
 
     scheduler = AsyncIOScheduler(timezone="UTC")
@@ -1870,31 +1862,23 @@ async def start_scheduler():
     #     replace_existing=True
     # )
 
-    print("DEBUG: About to start scheduler", flush=True)
     scheduler.start()
-    print("DEBUG: Scheduler.start() completed", flush=True)
 
     logger.info("Notification scheduler started successfully")
 
     # Rebuild notification jobs from database (for recovery after pod restarts)
     try:
-        print("DEBUG: About to rebuild notification jobs from DB", flush=True)
         await rebuild_notification_jobs_from_db()
-        print("DEBUG: rebuild_notification_jobs_from_db() completed", flush=True)
         logger.info("Notification jobs rebuilt successfully")
     except Exception as e:
-        print(f"DEBUG ERROR: rebuild_notification_jobs_from_db failed: {e}", flush=True)
         logger.error(f"Error rebuilding notification jobs: {e}", exc_info=True)
 
     # Generate initial schedule instances on startup
     # This also schedules autocomplete jobs for all pending instances
     try:
-        print("DEBUG: About to run daily_instance_maintenance", flush=True)
         await daily_instance_maintenance()
-        print("DEBUG: daily_instance_maintenance() completed", flush=True)
         logger.info("Initial instance maintenance completed successfully")
     except Exception as e:
-        print(f"DEBUG ERROR: daily_instance_maintenance failed: {e}", flush=True)
         logger.error(f"Error in initial instance maintenance: {e}", exc_info=True)
 
     # DEPRECATED: Startup autocomplete check no longer needed
