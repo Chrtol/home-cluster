@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_maker
-from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob
+from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 
 logger = logging.getLogger(__name__)
@@ -1359,26 +1359,54 @@ async def check_auto_complete_schedules():
                 try:
                     schedule = instance.schedule
 
-                    # Calculate the trigger time for auto-completion
+                    # Get the reptile and household to determine timezone
+                    reptile = await db.get(Reptile, schedule.reptile_id)
+                    if not reptile:
+                        logger.warning(f"Reptile {schedule.reptile_id} not found for instance {instance.id}")
+                        continue
+
+                    # Get household owner's timezone (or UTC if no household)
+                    user_tz = timezone.utc
+                    if reptile.household_id:
+                        # Get household owner or any admin/manager
+                        household_result = await db.execute(
+                            select(User)
+                            .join(household_members)
+                            .where(
+                                and_(
+                                    household_members.c.household_id == reptile.household_id,
+                                    household_members.c.access_level.in_([AccessLevel.OWNER, AccessLevel.ADMIN, AccessLevel.MANAGER])
+                                )
+                            )
+                            .limit(1)
+                        )
+                        household_user = household_result.scalars().first()
+                        if household_user and household_user.timezone:
+                            user_tz = ZoneInfo(household_user.timezone)
+
+                    # Calculate the trigger time for auto-completion in user's timezone
                     # If schedule has time window, use latest_time + delay hours
                     # Otherwise, use end of day (23:59) + delay hours
                     if schedule.time_window_enabled and schedule.latest_time:
-                        # Use latest_time as the base
-                        trigger_datetime = datetime.combine(
+                        # Use latest_time as the base (in user's timezone)
+                        trigger_datetime_local = datetime.combine(
                             instance.scheduled_date,
                             schedule.latest_time,
-                            tzinfo=timezone.utc
+                            tzinfo=user_tz
                         )
                     else:
-                        # Use end of day (23:59) as the base
-                        trigger_datetime = datetime.combine(
+                        # Use end of day (23:59) as the base (in user's timezone)
+                        trigger_datetime_local = datetime.combine(
                             instance.scheduled_date,
                             py_time(23, 59),
-                            tzinfo=timezone.utc
+                            tzinfo=user_tz
                         )
 
                     # Add the configured delay hours
-                    trigger_datetime += timedelta(hours=schedule.auto_complete_hours_after)
+                    trigger_datetime_local += timedelta(hours=schedule.auto_complete_hours_after)
+
+                    # Convert to UTC for comparison
+                    trigger_datetime = trigger_datetime_local.astimezone(timezone.utc)
 
                     # Check if we're past the trigger time
                     if now < trigger_datetime:

@@ -51,11 +51,25 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Calculate week range for bulk endpoint
+        // Calculate date range based on calendar view
         const today = new Date();
         const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
-        const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
-        const weekEnd = addDays(weekStart, 6);
+
+        let weekStart, weekEnd;
+
+        if (calendarView === 'day') {
+          // 1-day view: fetch only today
+          weekStart = today;
+          weekEnd = today;
+        } else if (calendarView === 'three-day') {
+          // 3-day view: fetch today + next 2 days
+          weekStart = today;
+          weekEnd = addDays(today, 2);
+        } else {
+          // Week view: fetch full week (Monday-Sunday or Sunday-Saturday)
+          weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+          weekEnd = addDays(weekStart, 6);
+        }
 
         const toLocalISODate = (date) => {
           const year = date.getFullYear();
@@ -232,7 +246,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, [calendarReptileFilter]);
+  }, [calendarReptileFilter, calendarView]);
 
   // Initialize reptile filter when reptiles are loaded
   useEffect(() => {
