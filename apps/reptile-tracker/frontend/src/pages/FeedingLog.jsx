@@ -50,6 +50,9 @@ export default function FeedingLog() {
   const [suggestedSupplements, setSuggestedSupplements] = useState([]);
   const [showSuggestion, setShowSuggestion] = useState(false);
 
+  // Track if supplements were pre-filled from a schedule instance
+  const [supplementsPreFilled, setSupplementsPreFilled] = useState(false);
+
   // Time input format state
   const [timeFormat, setTimeFormat] = useState('24h');
   const [hours, setHours] = useState(new Date().getHours());
@@ -58,6 +61,7 @@ export default function FeedingLog() {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [viewModeSuccess, setViewModeSuccess] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,6 +82,17 @@ export default function FeedingLog() {
             setExistingFeeding(feedingRes.data);
             setMode('view');
             loadFeedingData(feedingRes.data, foodsRes.data);
+
+            // Check for success query parameter
+            const successParam = searchParams.get('success');
+            if (successParam === 'created') {
+              setViewModeSuccess('Feeding logged successfully!');
+              // Clear the query parameter from URL without reloading
+              const newUrl = window.location.pathname;
+              window.history.replaceState({}, '', newUrl);
+              // Auto-dismiss after 5 seconds
+              setTimeout(() => setViewModeSuccess(''), 5000);
+            }
           } catch (err) {
             console.error('Failed to load feeding:', err);
             setError('Failed to load feeding. It may not exist or you may not have permission.');
@@ -101,7 +116,7 @@ export default function FeedingLog() {
 
               // Pre-fill date from instance
               if (instance.scheduled_date) {
-                setDate(instance.scheduled_date);
+                setFedDate(instance.scheduled_date);
               }
 
               // Pre-fill time from schedule
@@ -135,6 +150,7 @@ export default function FeedingLog() {
               if (instance.supplements && instance.supplements.length > 0) {
                 const suppIds = instance.supplements.map(s => s.id);
                 setSelectedSupplements(suppIds);
+                setSupplementsPreFilled(true); // Mark that supplements were pre-filled
               }
             } catch (instanceErr) {
               console.error('Failed to load instance for pre-fill:', instanceErr);
@@ -219,7 +235,8 @@ export default function FeedingLog() {
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {
     const fetchSuggestion = async () => {
-      if (!selectedReptile || mode === 'view' || mode === 'edit') return;
+      // Don't fetch suggestions if supplements were pre-filled from instance
+      if (!selectedReptile || mode === 'view' || mode === 'edit' || supplementsPreFilled) return;
 
       try {
         // Determine food category based on what's enabled
@@ -268,7 +285,7 @@ export default function FeedingLog() {
     };
 
     fetchSuggestion();
-  }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode, fedDate]);
+  }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode, fedDate, supplementsPreFilled]);
 
   const applyAllSuggestedSupplements = () => {
     const newSupplementIds = suggestedSupplements
@@ -639,7 +656,7 @@ export default function FeedingLog() {
       } else {
         const response = await axios.post('/api/feedings', payload);
         setSuccess('Feeding logged successfully!');
-        setTimeout(() => navigate(`/feed/${response.data.id}`), 1500);
+        setTimeout(() => navigate(`/feed/${response.data.id}?success=created`), 1500);
       }
     } catch (err) {
       console.error('Failed to log feeding:', err);
@@ -670,6 +687,12 @@ export default function FeedingLog() {
             </button>
           </div>
         </div>
+
+        {viewModeSuccess && (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-green-800 dark:text-green-200">{viewModeSuccess}</p>
+          </div>
+        )}
 
         <div className="card space-y-6">
           <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
@@ -1108,8 +1131,34 @@ export default function FeedingLog() {
           </div>
         )}
 
-        {/* SUPPLEMENT SUGGESTIONS */}
-        {showSuggestion && suggestedSupplements.length > 0 && (
+        {/* SUPPLEMENT SUGGESTIONS OR PRE-FILLED BANNER */}
+        {supplementsPreFilled && selectedSupplements.length > 0 ? (
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">ℹ️</span>
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-300">
+                    Supplements Pre-filled from Schedule
+                  </h4>
+                </div>
+                <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                  The following supplements have been automatically added based on your schedule's rotation rules:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedSupplements.map((suppId) => {
+                    const supp = supplements.find(s => s.id === suppId);
+                    return supp ? (
+                      <span key={suppId} className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded-lg font-medium">
+                        {supp.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : showSuggestion && suggestedSupplements.length > 0 ? (
           <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -1160,7 +1209,7 @@ export default function FeedingLog() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* GLOBAL SUPPLEMENTS */}
         <div>

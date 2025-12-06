@@ -592,6 +592,38 @@ export default function ScheduleInstanceDetail() {
                     </div>
                   )}
                 </div>
+              ) : completionRecord ? (
+                // Orphaned completion (from before instance system)
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <CheckCircle size={20} className="text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Completed
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Historical completion from before the instance system
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Completed At
+                    </label>
+                    <span className="text-gray-900 dark:text-white">
+                      {formatTime(new Date(completionRecord.completed_at))} on {formatDate(new Date(completionRecord.completed_at))}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      This completion was logged before the schedule instance system was implemented and has been automatically linked to this instance.
+                    </p>
+                  </div>
+                </div>
               ) : null}
             </div>
           )}
