@@ -1162,7 +1162,8 @@ export default function FeedingLog() {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
 
