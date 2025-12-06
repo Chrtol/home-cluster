@@ -1,5 +1,17 @@
 # Reptile Tracker - Todo List
 
+## 🔄 Future Improvements
+
+- [ ] **Persist auto-complete jobs to database** - Similar to notification reminders for better reliability
+  - Add job_type enum to ScheduledNotificationJob (or create separate table)
+  - Create auto-complete job scheduling function (~100 lines)
+  - Modify daily maintenance to schedule auto-complete jobs for next 7-14 days
+  - Create job execution function (~50 lines)
+  - Update rebuild function to also rebuild auto-complete jobs (~30 lines)
+  - Estimated: ~200-300 lines of code + 1 migration + testing
+  - **Current solution works fine** (5-minute check interval with startup check)
+  - Only implement if sub-minute precision needed or very frequent pod restarts
+
 ## 🚀 NEXT UP - Tier 1 Priorities
 
 1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
