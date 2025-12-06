@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 
@@ -49,24 +49,30 @@ export default function ReptileDetail() {
   const [mistingLogs, setMistingLogs] = useState([]);
   const [weightLogs, setWeightLogs] = useState([]);
   const [healthRecords, setHealthRecords] = useState([]);
+  const [favoriteFoods, setFavoriteFoods] = useState([]);
+  const [allFoods, setAllFoods] = useState([]);
   const [activeTab, setActiveTab] = useState('feedings');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [reptileRes, feedingsRes, mistingRes, weightRes, healthRes] = await Promise.all([
+        const [reptileRes, feedingsRes, mistingRes, weightRes, healthRes, favFoodsRes, allFoodsRes] = await Promise.all([
           axios.get(`/api/reptiles/${id}`),
           axios.get(`/api/feedings?reptile_id=${id}`),
           axios.get(`/api/misting/reptile/${id}`),
           axios.get(`/api/weight/reptile/${id}`),
-          axios.get(`/api/health/reptile/${id}`)
+          axios.get(`/api/health/reptile/${id}`),
+          axios.get(`/api/reptiles/${id}/favorite-foods`),
+          axios.get('/api/foods')
         ]);
         setReptile(reptileRes.data);
         setFeedings(feedingsRes.data);
         setMistingLogs(mistingRes.data);
         setWeightLogs(weightRes.data);
         setHealthRecords(healthRes.data);
+        setFavoriteFoods(favFoodsRes.data);
+        setAllFoods(allFoodsRes.data);
       } catch (error) {
         console.error('Failed to fetch reptile details:', error);
       } finally {
@@ -149,6 +155,26 @@ export default function ReptileDetail() {
         console.error('Error deleting health record:', error);
         alert('Failed to delete health record. You may not have permission.');
       }
+    }
+  };
+
+  const handleToggleFavoriteFood = async (foodId) => {
+    const isFavorite = favoriteFoods.some(f => f.id === foodId);
+
+    try {
+      if (isFavorite) {
+        await axios.delete(`/api/reptiles/${id}/favorite-foods/${foodId}`);
+        setFavoriteFoods(favoriteFoods.filter(f => f.id !== foodId));
+      } else {
+        await axios.post(`/api/reptiles/${id}/favorite-foods/${foodId}`);
+        const food = allFoods.find(f => f.id === foodId);
+        if (food) {
+          setFavoriteFoods([...favoriteFoods, food]);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite food:', error);
+      alert('Failed to update favorite food. You may not have permission.');
     }
   };
 
@@ -328,6 +354,71 @@ export default function ReptileDetail() {
             </div>
           </div>
         ))}
+      </div>
+    ),
+    favorites: (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Manage {reptile.name}'s Favorite Foods
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Select foods that {reptile.name} commonly eats. These will appear first when logging feedings.
+          </p>
+        </div>
+
+        {/* Group foods by category */}
+        {['insect', 'worms', 'vegetable', 'fruit', 'prepared', 'frozen_animal', 'live_rodent', 'fish_seafood', 'eggs', 'other'].map(category => {
+          const categoryFoods = allFoods.filter(f => f.category === category);
+          if (categoryFoods.length === 0) return null;
+
+          return (
+            <div key={category} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
+                {category.replace('_', ' ')}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {categoryFoods.map(food => {
+                  const isFavorite = favoriteFoods.some(f => f.id === food.id);
+                  return (
+                    <button
+                      key={food.id}
+                      onClick={() => handleToggleFavoriteFood(food.id)}
+                      className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
+                        isFavorite
+                          ? 'border-red-400 bg-red-50 dark:bg-red-900/20 dark:border-red-600'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
+                    >
+                      <Heart
+                        size={18}
+                        className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+                      />
+                      <span className={`text-sm ${isFavorite ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                        {food.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        {favoriteFoods.length > 0 && (
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+              {reptile.name}'s Favorites ({favoriteFoods.length})
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {favoriteFoods.map(food => (
+                <span key={food.id} className="px-3 py-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-full text-sm text-gray-700 dark:text-gray-300">
+                  {food.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     ),
   };
