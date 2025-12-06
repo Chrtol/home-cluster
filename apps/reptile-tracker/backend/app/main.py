@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import init_db, async_session_maker
 from app.rate_limit import limiter, rate_limit_exceeded_handler
-from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting, schedules, schedule_instances, feeding_rotations, schedule_templates, supplement_rotation_templates, measurements, bulk
+from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting, schedules, schedule_instances, feeding_rotations, schedule_templates, supplement_rotation_templates, measurements, bulk, quotas
 from app.routers import households, invitations, notification_settings, notification_channels, notification_templates, user_notifications
 from app.seed_data import seed_database
 from app.scheduler import start_scheduler, stop_scheduler
@@ -120,6 +120,7 @@ app.include_router(health.router, prefix="/api/health", tags=["Health Records"])
 app.include_router(misting.router, prefix="/api/misting", tags=["Misting Logs"])
 app.include_router(schedules.router, prefix="/api/schedules", tags=["Schedules"])
 app.include_router(schedule_instances.router, prefix="/api", tags=["Schedule Instances"])
+app.include_router(quotas.router, prefix="/api/quotas", tags=["Weekly Quotas"])
 app.include_router(feeding_rotations.router, prefix="/api/feeding-rotations", tags=["Feeding Rotations"])
 app.include_router(schedule_templates.router)
 app.include_router(schedule_templates.guidelines_router)
