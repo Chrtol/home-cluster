@@ -346,20 +346,6 @@
   - **Implementation complexity:** Major feature requiring significant database, backend, and frontend changes
   - **Alternative interim solution:** Flexible completion windows (already implemented) can partially address this
 
-- [ ] **Food Favorites System** - 🔧 MEDIUM PRIORITY
-  - Mark foods as favorites for quick access during feeding logs
-  - Per-food favorite status (star icon toggle)
-  - "Show favorites only" filter in food selection UIs
-  - Reduces cognitive load when logging with many food items
-  - **Database changes:**
-    - Add is_favorite boolean to foods table
-  - **Backend changes:**
-    - PATCH /api/foods/{id}/toggle-favorite endpoint
-  - **Frontend changes:**
-    - Star icon on left of each food row in FoodManagement page
-    - Toggle favorite status on click
-    - "Show favorites only" checkbox in feeding log food selectors
-    - Visual star indicator showing favorite status
 
 ## 📊 Statistics & Analytics
 
@@ -600,6 +586,35 @@
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### December 2025 - Food Favorites & Default Food Selection (2025-12-06)
+- [x] **Food Favorites System** - ✅ COMPLETED (2025-12-06)
+  - Two-tier favorites system: global favorites (star) and per-reptile favorites (heart)
+  - Database: Migration 0061 created reptile_food_favorites table for per-reptile favorites
+  - Database: Added is_favorite column to foods table for global favorites
+  - Database: Added show_favorites_first column to users table for user preference
+  - Backend: PATCH /api/foods/{id}/toggle-favorite endpoint for global favorites
+  - Backend: POST/DELETE /api/reptiles/{id}/favorite-foods/{food_id} for per-reptile favorites
+  - Backend: Foods list endpoint supports reptile_id query param to include is_reptile_favorite status
+  - Frontend: Smart sorting in food dropdowns (reptile favorites → global favorites → alphabetical)
+  - Frontend: Quick add/remove heart buttons in feeding log for instant favoriting
+  - Frontend: Star icons in Food Management page for global favorites
+  - Frontend: Visual indicators (❤️ emoji for reptile favorites, ⭐ for global favorites)
+  - Frontend: Per-reptile favorites management in ReptileDetail favorites tab
+  - User preference toggle to enable/disable automatic favorite sorting
+  - Reduces cognitive load when selecting from large food lists
+
+- [x] **Default Food Pre-Selection** - ✅ COMPLETED (2025-12-06)
+  - Set default foods per reptile for automatic pre-selection when logging feedings
+  - Database: Migration 0062 added default_insect_id and default_prepared_id to reptiles table
+  - Database: Foreign key constraints to foods table with SET NULL on delete
+  - Backend: Updated Reptile model with default food columns and relationships
+  - Backend: Updated schemas to include default_insect_id and default_prepared_id
+  - Frontend: Default food configuration UI in ReptileDetail favorites tab
+  - Frontend: Green-themed section with dropdowns for setting defaults per category
+  - Frontend: Auto-selection logic in FeedingLog useEffect when reptile is selected
+  - Only pre-selects if in create mode and food type toggle is enabled
+  - Streamlines repetitive feeding logs for reptiles with consistent diets
 
 ### December 2025 - Auto-Complete Schedules & UX Improvements (2025-12-05)
 - [x] **Auto-Complete Schedules** - ✅ COMPLETED (2025-12-05)
