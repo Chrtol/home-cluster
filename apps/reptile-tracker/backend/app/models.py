@@ -675,9 +675,11 @@ class ScheduledNotificationJob(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(String(255), unique=True, nullable=False, index=True)  # APScheduler job ID
+    job_type = Column(String(50), nullable=False, default="notification_reminder")  # notification_reminder or auto_complete
     schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="CASCADE"), nullable=False)
+    instance_id = Column(Integer, ForeignKey("schedule_instances.id", ondelete="CASCADE"), nullable=True, index=True)  # For auto_complete jobs
     scheduled_date = Column(Date, nullable=False)  # The date this notification is for
     scheduled_time_utc = Column(DateTime(timezone=True), nullable=False, index=True)  # When to send (UTC)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -687,6 +689,7 @@ class ScheduledNotificationJob(Base):
     schedule = relationship("Schedule")
     user = relationship("User")
     channel = relationship("NotificationChannel")
+    instance = relationship("ScheduleInstance", foreign_keys=[instance_id])
 
 
 # Household and Invitation models
