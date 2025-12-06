@@ -1,5 +1,6 @@
 """Bulk data API endpoints for optimized dashboard and calendar loading"""
 from fastapi import APIRouter, Depends, Query
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -232,7 +233,7 @@ async def get_dashboard_data(
     )
     weekly_instances = instances_result.scalars().all()
 
-    return {
+    return jsonable_encoder({
         "reptiles": reptiles,
         "recent_feedings": recent_feedings,
         "weight_data": weight_data,
@@ -242,7 +243,7 @@ async def get_dashboard_data(
         "weekly_feedings": weekly_feedings,
         "weekly_mistings": weekly_mistings,
         "weekly_instances": weekly_instances
-    }
+    })
 
 
 @router.get("/calendar")
@@ -361,11 +362,11 @@ async def get_calendar_data(
     )
     instances = instances_result.scalars().all()
 
-    return {
+    return jsonable_encoder({
         "reptiles": reptiles,
         "schedules": schedules,
         "feeding_rotations": feeding_rotations,
         "feedings": feedings,
         "mistings": mistings,
         "instances": instances
-    }
+    })
