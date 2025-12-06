@@ -108,15 +108,10 @@ async def get_dashboard_data(
         if weight.reptile_id not in weight_data:
             weight_data[weight.reptile_id] = []
 
-        # Manually serialize to avoid any ORM issues
-        weighed_at = None
-        if weight.measured_at:
-            weighed_at = weight.measured_at.isoformat()
-
+        # Don't include weighed_at - it causes JavaScript date parsing errors
         weight_data[weight.reptile_id].append({
             "id": weight.id,
             "weight": float(weight.weight_grams) if weight.weight_grams else None,
-            "weighed_at": weighed_at,
             "notes": weight.notes
         })
 
