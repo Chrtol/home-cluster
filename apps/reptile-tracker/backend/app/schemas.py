@@ -337,6 +337,7 @@ class MistingLog(MistingLogBase):
 class ScheduleBase(BaseModel):
     name: Optional[str] = None  # User-friendly name
     schedule_type: str  # "feeding", "misting", "weighing", "supplement"
+    schedule_mode: str = "fixed"  # "fixed" or "requirement"
     schedule_rule: str  # "every_x_days", "days_of_week", "monthly", "dependent"
     food_category: Optional[str] = None  # For feeding: "insects", "salad", "mixed"
     time_slot: Optional[str] = None  # For misting: "morning", "midday", "afternoon", "evening", "night"
@@ -348,6 +349,13 @@ class ScheduleBase(BaseModel):
     dependent_rule: Optional[str] = None  # "every_occurrence", "every_nth", "specific_days", "once_per_day"
     dependent_frequency: Optional[int] = None  # For every_nth
     dependent_days: Optional[str] = None  # For specific_days
+
+    # For requirement-based schedules (flexible weekly quotas)
+    frequency_per_week: Optional[int] = None  # Number of feedings per week (e.g., 2x per week)
+    min_days_between: Optional[int] = None  # Minimum days between feedings (e.g., 2 days)
+    max_days_between: Optional[int] = None  # Maximum days between feedings (optional, e.g., 4 days)
+    suggested_days: Optional[List[int]] = None  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
+
     supplement_id: Optional[int] = None  # For supplement schedules
 
     # Time window settings
@@ -381,6 +389,7 @@ class ScheduleUpdate(BaseModel):
     reptile_id: Optional[int] = None
     name: Optional[str] = None
     schedule_type: Optional[str] = None
+    schedule_mode: Optional[str] = None
     schedule_rule: Optional[str] = None
     food_category: Optional[str] = None
     time_slot: Optional[str] = None
@@ -392,6 +401,13 @@ class ScheduleUpdate(BaseModel):
     dependent_rule: Optional[str] = None
     dependent_frequency: Optional[int] = None
     dependent_days: Optional[str] = None
+
+    # For requirement-based schedules (flexible weekly quotas)
+    frequency_per_week: Optional[int] = None
+    min_days_between: Optional[int] = None
+    max_days_between: Optional[int] = None
+    suggested_days: Optional[List[int]] = None
+
     supplement_id: Optional[int] = None
 
     # Time window settings
@@ -464,6 +480,33 @@ class ScheduleCompletion(ScheduleCompletionBase):
     id: int
     reptile_id: int
     completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Weekly Quota schemas (for requirement-based schedules)
+class WeeklyQuotaBase(BaseModel):
+    schedule_id: int
+    reptile_id: int
+    week_start_date: date  # Monday of the week
+    feedings_count: int = 0
+    last_feeding_date: Optional[date] = None
+
+
+class WeeklyQuotaCreate(WeeklyQuotaBase):
+    pass
+
+
+class WeeklyQuotaUpdate(BaseModel):
+    feedings_count: Optional[int] = None
+    last_feeding_date: Optional[date] = None
+
+
+class WeeklyQuota(WeeklyQuotaBase):
+    id: int
     created_at: datetime
     updated_at: datetime
 
