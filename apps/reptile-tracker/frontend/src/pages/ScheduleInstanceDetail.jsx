@@ -580,6 +580,29 @@ export default function ScheduleInstanceDetail() {
                     </span>
                   </div>
 
+                  {/* Show flexible window indicator if completed on a different date */}
+                  {(() => {
+                    const scheduledDate = new Date(instance.scheduled_date);
+                    const completedDate = new Date(completionSummary.timestamp);
+                    const daysDiff = Math.round((completedDate.setHours(0,0,0,0) - scheduledDate.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+
+                    if (daysDiff !== 0) {
+                      const absDay = Math.abs(daysDiff);
+                      const dayText = absDay === 1 ? '1 day' : `${absDay} days`;
+                      const direction = daysDiff > 0 ? 'after' : 'before';
+
+                      return (
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                            <Calendar size={14} className="flex-shrink-0" />
+                            Completed {dayText} {direction} scheduled date (flexible ±2 day window)
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   {completionLink && (
                     <div className="pt-3">
                       <Link
