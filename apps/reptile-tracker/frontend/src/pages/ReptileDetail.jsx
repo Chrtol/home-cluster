@@ -178,6 +178,21 @@ export default function ReptileDetail() {
     }
   };
 
+  const handleUpdateDefaultFood = async (field, foodId) => {
+    try {
+      await axios.patch(`/api/reptiles/${id}`, {
+        [field]: foodId === '' ? null : parseInt(foodId)
+      });
+      setReptile({
+        ...reptile,
+        [field]: foodId === '' ? null : parseInt(foodId)
+      });
+    } catch (error) {
+      console.error('Error updating default food:', error);
+      alert('Failed to update default food. You may not have permission.');
+    }
+  };
+
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptile details...</div>;
   }
@@ -358,6 +373,60 @@ export default function ReptileDetail() {
     ),
     favorites: (
       <div className="space-y-6">
+        {/* Default Foods for Auto-Selection */}
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Default Foods for Auto-Selection
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            These foods will be automatically pre-selected when logging a new feeding for {reptile.name}.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Default Insect */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Default Insect
+              </label>
+              <select
+                value={reptile.default_insect_id || ''}
+                onChange={(e) => handleUpdateDefaultFood('default_insect_id', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">None</option>
+                {allFoods
+                  .filter(f => f.category === 'insect' || f.category === 'worms')
+                  .map(food => (
+                    <option key={food.id} value={food.id}>
+                      {food.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Default Prepared Food */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Default Prepared Food
+              </label>
+              <select
+                value={reptile.default_prepared_id || ''}
+                onChange={(e) => handleUpdateDefaultFood('default_prepared_id', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">None</option>
+                {allFoods
+                  .filter(f => f.category === 'prepared')
+                  .map(food => (
+                    <option key={food.id} value={food.id}>
+                      {food.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Manage {reptile.name}'s Favorite Foods

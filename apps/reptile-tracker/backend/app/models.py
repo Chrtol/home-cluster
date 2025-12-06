@@ -194,6 +194,10 @@ class Reptile(Base):
     # Household relation
     household_id = Column(Integer, ForeignKey("households.id", ondelete="SET NULL"), nullable=True)
 
+    # Default foods for auto-selection when logging feedings
+    default_insect_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
+    default_prepared_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
@@ -203,6 +207,8 @@ class Reptile(Base):
     misting_logs = relationship("MistingLog", back_populates="reptile", cascade="all, delete-orphan")
     schedules = relationship("Schedule", back_populates="reptile", cascade="all, delete-orphan")
     favorite_foods = relationship("Food", secondary=reptile_food_favorites)
+    default_insect_food = relationship("Food", foreign_keys=[default_insect_id])
+    default_prepared_food = relationship("Food", foreign_keys=[default_prepared_id])
 
 
 class Food(Base):

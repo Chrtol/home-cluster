@@ -56,6 +56,8 @@ class ReptileBase(BaseModel):
     has_uvb: Optional[bool] = None  # UVB lighting setup
     length: Optional[int] = None  # Length in centimeters
     age_category: Optional[str] = None  # hatchling, juvenile, adult, gravid
+    default_insect_id: Optional[int] = None  # Default insect food for auto-selection
+    default_prepared_id: Optional[int] = None  # Default prepared food for auto-selection
 
 
 class ReptileCreate(ReptileBase):
@@ -76,6 +78,8 @@ class ReptileUpdate(BaseModel):
     has_uvb: Optional[bool] = None
     length: Optional[int] = None
     age_category: Optional[str] = None
+    default_insect_id: Optional[int] = None
+    default_prepared_id: Optional[int] = None
 
 
 class Reptile(ReptileBase):
