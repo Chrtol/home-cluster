@@ -66,6 +66,23 @@
   - Mandatory before accessing app
   - Beautiful two-option interface
 
+- [ ] **Dashboard card improvements and optimization** - 🔧 MEDIUM PRIORITY
+  - Audit existing dashboard cards for usefulness and relevance
+  - Identify which cards provide the most value vs. which are redundant
+  - Consider removing or redesigning less useful cards
+  - Potential new card ideas:
+    - Upcoming schedules (next 3-7 days preview)
+    - Reptile health score/status indicators
+    - Quick actions (one-click feeding/misting for common tasks)
+    - Feeding cost tracking summary (if prices are tracked)
+    - Temperature/humidity trends (if environmental logging is added)
+  - Improve existing valuable cards:
+    - Better data visualization
+    - More actionable information
+    - Clearer hierarchy and layout
+  - User feedback: Some cards are "kind of useless"
+  - Goal: Every card should provide clear value or quick actions
+
 ### Food & Supplement Management
 - [x] **Food Management Page** - ✅ COMPLETED
   - Create/edit/delete food items
