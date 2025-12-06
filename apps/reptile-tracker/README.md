@@ -473,6 +473,18 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
   - Animal sizes (Pinkie, Fuzzy, Hopper, Small, Medium, Large)
   - Nutritional data tracking
   - Custom food creation
+  - **Food Favorites System**:
+    - Global favorites (star icon) for frequently used foods across all reptiles
+    - Per-reptile favorites (heart icon) for individual reptile preferences
+    - Smart sorting: reptile-specific favorites first, then global favorites, then alphabetical
+    - User preference to enable/disable automatic favorite sorting
+    - Quick add/remove buttons in feeding log for instant favoriting
+    - Visual indicators in dropdowns (❤️ emoji for reptile favorites, ⭐ for global)
+  - **Default Food Pre-Selection**:
+    - Set default insect and prepared food per reptile
+    - Automatically pre-selects configured defaults when logging feedings
+    - Reduces repetitive selection for consistent diets
+    - Configure in reptile detail page favorites tab
 - **Dark Mode**: Full theme support with localStorage persistence
 - **Mobile-First**: Responsive design optimized for one-handed feeding
 - **Archive/Hide**: Non-destructive hiding of inactive reptiles
