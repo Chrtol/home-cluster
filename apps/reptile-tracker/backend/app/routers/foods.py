@@ -1,23 +1,26 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Union
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import User, Food
-from app.schemas import Food as FoodSchema, FoodCreate
+from app.schemas import Food as FoodSchema, FoodCreate, FoodUpdate, FoodWithReptileFavorite
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[FoodSchema])
+@router.get("", response_model=List[Union[FoodWithReptileFavorite, FoodSchema]])
 async def list_foods(
     category: str | None = None,
+    reptile_id: int | None = Query(None, description="If provided, include is_reptile_favorite status"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all foods"""
+    """List all foods, optionally with reptile-specific favorite status"""
+    from app.models import reptile_food_favorites
+
     query = select(Food).order_by(Food.name)
 
     if category:
@@ -25,6 +28,33 @@ async def list_foods(
 
     result = await db.execute(query)
     foods = result.scalars().all()
+
+    # If reptile_id is provided, check which foods are favorites for that reptile
+    if reptile_id:
+        # Get favorite food IDs for this reptile
+        fav_result = await db.execute(
+            select(reptile_food_favorites.c.food_id).where(
+                reptile_food_favorites.c.reptile_id == reptile_id
+            )
+        )
+        favorite_food_ids = {row[0] for row in fav_result.all()}
+
+        # Return foods with reptile favorite status
+        return [
+            FoodWithReptileFavorite(
+                id=food.id,
+                name=food.name,
+                category=food.category,
+                insect_size=food.insect_size,
+                animal_size=food.animal_size,
+                nutritional_data=food.nutritional_data,
+                is_default=food.is_default,
+                is_favorite=food.is_favorite,
+                created_at=food.created_at,
+                is_reptile_favorite=food.id in favorite_food_ids,
+            )
+            for food in foods
+        ]
 
     return foods
 
@@ -142,3 +172,28 @@ async def delete_food(
     await db.commit()
 
     return None
+
+
+@router.patch("/{food_id}/toggle-favorite", response_model=FoodSchema)
+async def toggle_food_favorite(
+    food_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle the favorite status of a food"""
+    result = await db.execute(select(Food).where(Food.id == food_id))
+    food = result.scalar_one_or_none()
+
+    if not food:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Food not found",
+        )
+
+    # Toggle favorite status
+    food.is_favorite = not food.is_favorite
+
+    await db.commit()
+    await db.refresh(food)
+
+    return food

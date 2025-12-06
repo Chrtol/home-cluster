@@ -31,6 +31,11 @@ export default function FeedingLog() {
   const [includeSalad, setIncludeSalad] = useState(false);
   const [includePrepared, setIncludePrepared] = useState(false);
 
+  // Show favorites only filters
+  const [showOnlyFavoriteInsects, setShowOnlyFavoriteInsects] = useState(false);
+  const [showOnlyFavoriteSalad, setShowOnlyFavoriteSalad] = useState(false);
+  const [showOnlyFavoritePrepared, setShowOnlyFavoritePrepared] = useState(false);
+
   // Insect feeding items (array to support multiple different insects)
   const [insectItems, setInsectItems] = useState([]);
 
@@ -664,9 +669,15 @@ export default function FeedingLog() {
     }
   };
 
-  const insectFoods = foods.filter(f => f.category === 'insect' || f.category === 'worms');
-  const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
-  const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad');
+  const insectFoods = foods
+    .filter(f => f.category === 'insect' || f.category === 'worms')
+    .filter(f => !showOnlyFavoriteInsects || f.is_favorite);
+  const saladFoods = foods
+    .filter(f => f.category === 'vegetable' || f.category === 'fruit')
+    .filter(f => !showOnlyFavoriteSalad || f.is_favorite);
+  const preparedFoods = foods
+    .filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad')
+    .filter(f => !showOnlyFavoritePrepared || f.is_favorite);
 
   if (loading) {
     return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;
@@ -961,7 +972,18 @@ export default function FeedingLog() {
         {includeInsects && (
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-              <h3 className="font-medium text-gray-900 dark:text-white">Insects/Worms</h3>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-900 dark:text-white">Insects/Worms</h3>
+                <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showOnlyFavoriteInsects}
+                    onChange={(e) => setShowOnlyFavoriteInsects(e.target.checked)}
+                    className="rounded"
+                  />
+                  Show favorites only
+                </label>
+              </div>
               <button
                 type="button"
                 onClick={addInsectItem}
@@ -1047,7 +1069,18 @@ export default function FeedingLog() {
         {/* SALAD SECTION */}
         {includeSalad && (
           <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <h3 className="font-medium text-gray-900 dark:text-white">Salad Components</h3>
+            <div className="space-y-2">
+              <h3 className="font-medium text-gray-900 dark:text-white">Salad Components</h3>
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showOnlyFavoriteSalad}
+                  onChange={(e) => setShowOnlyFavoriteSalad(e.target.checked)}
+                  className="rounded"
+                />
+                Show favorites only
+              </label>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {saladFoods.map(food => (
                 <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700">
@@ -1086,7 +1119,18 @@ export default function FeedingLog() {
         {includePrepared && (
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-              <h3 className="font-medium text-gray-900 dark:text-white">Other Food</h3>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-900 dark:text-white">Other Food</h3>
+                <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showOnlyFavoritePrepared}
+                    onChange={(e) => setShowOnlyFavoritePrepared(e.target.checked)}
+                    className="rounded"
+                  />
+                  Show favorites only
+                </label>
+              </div>
               <button
                 type="button"
                 onClick={addPreparedItem}
