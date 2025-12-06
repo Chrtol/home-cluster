@@ -31,24 +31,29 @@ DATE_WINDOW_DAYS = 2
 
 async def find_instance_within_window(
     db: AsyncSession,
-    schedule_id: int,
+    schedule: Schedule,
     activity_date: date_type,
-    window_days: int = DATE_WINDOW_DAYS
 ) -> Optional[Tuple[object, int]]:
     """
-    Find a schedule instance within ±window_days of the activity date.
+    Find a schedule instance within the flexible completion window of the activity date.
+    Uses the schedule's flexible_completion_enabled and flexible_completion_days settings.
 
     Args:
         db: Database session
-        schedule_id: ID of the schedule
+        schedule: The schedule object (contains flexible_completion settings)
         activity_date: Date when the activity occurred
-        window_days: Number of days before/after to search (default: DATE_WINDOW_DAYS)
 
     Returns:
         Tuple of (ScheduleInstance, days_offset) or None if no match found.
         days_offset is the number of days between activity and instance (0 = exact match)
     """
     from app.models import ScheduleInstance
+
+    # Determine window size based on schedule settings
+    if schedule.flexible_completion_enabled:
+        window_days = schedule.flexible_completion_days or DATE_WINDOW_DAYS
+    else:
+        window_days = 0  # Exact date matching only
 
     # Calculate date range
     start_date = activity_date - timedelta(days=window_days)
@@ -58,7 +63,7 @@ async def find_instance_within_window(
     result = await db.execute(
         select(ScheduleInstance).where(
             and_(
-                ScheduleInstance.schedule_id == schedule_id,
+                ScheduleInstance.schedule_id == schedule.id,
                 ScheduleInstance.scheduled_date >= start_date,
                 ScheduleInstance.scheduled_date <= end_date,
                 ScheduleInstance.status == "pending"
@@ -323,7 +328,7 @@ async def assign_feeding_to_schedule(
     days_offset = 0
     instance_match = await find_instance_within_window(
         db=db,
-        schedule_id=schedule.id,
+        schedule=schedule,
         activity_date=feeding.fed_at.date()
     )
     if instance_match:
@@ -418,7 +423,7 @@ async def assign_misting_to_schedule(
     days_offset = 0
     instance_match = await find_instance_within_window(
         db=db,
-        schedule_id=schedule.id,
+        schedule=schedule,
         activity_date=misting.misted_at.date()
     )
     if instance_match:
@@ -513,7 +518,7 @@ async def assign_weighing_to_schedule(
     days_offset = 0
     instance_match = await find_instance_within_window(
         db=db,
-        schedule_id=schedule.id,
+        schedule=schedule,
         activity_date=weight_log.measured_at.date()
     )
     if instance_match:

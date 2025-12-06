@@ -56,6 +56,10 @@ function ScheduleForm() {
   const [autoCompleteEnabled, setAutoCompleteEnabled] = useState(false);
   const [autoCompleteHoursAfter, setAutoCompleteHoursAfter] = useState(2);
 
+  // Flexible completion window settings
+  const [flexibleCompletionEnabled, setFlexibleCompletionEnabled] = useState(false);
+  const [flexibleCompletionDays, setFlexibleCompletionDays] = useState(2);
+
   // Notification settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [availableChannels, setAvailableChannels] = useState([]);
@@ -234,6 +238,10 @@ function ScheduleForm() {
       // Auto-complete settings
       setAutoCompleteEnabled(schedule.auto_complete_enabled || false);
       setAutoCompleteHoursAfter(schedule.auto_complete_hours_after || 2);
+
+      // Flexible completion window settings
+      setFlexibleCompletionEnabled(schedule.flexible_completion_enabled || false);
+      setFlexibleCompletionDays(schedule.flexible_completion_days || 2);
     } catch (error) {
       console.error("Error fetching schedule:", error);
       alert("Failed to load schedule data");
@@ -415,6 +423,10 @@ function ScheduleForm() {
       // Add auto-complete settings
       scheduleData.auto_complete_enabled = autoCompleteEnabled;
       scheduleData.auto_complete_hours_after = parseInt(autoCompleteHoursAfter) || 2;
+
+      // Add flexible completion window settings
+      scheduleData.flexible_completion_enabled = flexibleCompletionEnabled;
+      scheduleData.flexible_completion_days = parseInt(flexibleCompletionDays) || 2;
 
       // Add notification settings
       scheduleData.notifications_enabled = notificationsEnabled;
@@ -955,6 +967,50 @@ function ScheduleForm() {
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                   Note: Auto-completed instances can be manually marked as "missed" or "skipped" if needed
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Flexible Completion Window Settings */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <input
+              type="checkbox"
+              id="flexibleCompletionEnabled"
+              checked={flexibleCompletionEnabled}
+              onChange={(e) => setFlexibleCompletionEnabled(e.target.checked)}
+              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="flexibleCompletionEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Enable Flexible Completion Window
+            </label>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Allow completing this schedule within a range of days (e.g., feeding 1 day early or late). Useful when your schedule varies slightly from day to day.
+          </p>
+
+          {flexibleCompletionEnabled && (
+            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Completion Window (±days)
+                </label>
+                <input
+                  type="number"
+                  value={flexibleCompletionDays}
+                  onChange={(e) => setFlexibleCompletionDays(e.target.value)}
+                  className="input-field w-32"
+                  min="1"
+                  max="7"
+                  required
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Activities can be logged {flexibleCompletionDays} day(s) before or after the scheduled date
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  Example: With ±{flexibleCompletionDays} days, a schedule on Wednesday can be completed Monday-Friday
                 </p>
               </div>
             </div>

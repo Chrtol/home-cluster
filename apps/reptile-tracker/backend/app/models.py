@@ -387,6 +387,10 @@ class Schedule(Base):
     auto_complete_enabled = Column(Boolean, default=False, nullable=False)  # Auto-complete after time window + delay
     auto_complete_hours_after = Column(Integer, default=2, nullable=False)  # Hours after time window (or end of day if no window)
 
+    # Flexible completion window settings
+    flexible_completion_enabled = Column(Boolean, default=False, nullable=False)  # Allow completing instances within ±N days
+    flexible_completion_days = Column(Integer, default=2, nullable=False)  # Number of days before/after scheduled date (default: ±2 days)
+
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
 

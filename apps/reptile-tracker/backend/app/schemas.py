@@ -339,6 +339,10 @@ class ScheduleBase(BaseModel):
     auto_complete_enabled: bool = False  # Auto-complete after time window + delay
     auto_complete_hours_after: int = 2  # Hours after time window (or end of day if no window)
 
+    # Flexible completion window settings
+    flexible_completion_enabled: bool = False  # Allow completing instances within ±N days
+    flexible_completion_days: int = 2  # Number of days before/after scheduled date (default: ±2 days)
+
     enabled: bool = True
     notes: Optional[str] = None
 
@@ -379,6 +383,10 @@ class ScheduleUpdate(BaseModel):
     # Auto-complete settings
     auto_complete_enabled: Optional[bool] = None
     auto_complete_hours_after: Optional[int] = None
+
+    # Flexible completion window settings
+    flexible_completion_enabled: Optional[bool] = None
+    flexible_completion_days: Optional[int] = None
 
     enabled: Optional[bool] = None
     notes: Optional[str] = None
