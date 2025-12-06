@@ -682,6 +682,26 @@ async def delete_feeding(
             detail="You can only delete your own feedings unless you're a reptile manager or owner",
         )
 
+    # If this feeding completed a schedule instance, reset the instance status to pending
+    if feeding.schedule_completion_id:
+        from app.models import ScheduleCompletion, ScheduleInstance
+        # Get the completion to find the instance
+        completion_result = await db.execute(
+            select(ScheduleCompletion).where(ScheduleCompletion.id == feeding.schedule_completion_id)
+        )
+        completion = completion_result.scalar_one_or_none()
+
+        if completion and completion.instance_id:
+            # Reset the instance to pending
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+            )
+            instance = instance_result.scalar_one_or_none()
+            if instance:
+                instance.status = "pending"
+                from datetime import datetime, timezone
+                instance.updated_at = datetime.now(timezone.utc)
+
     await db.execute(delete(Feeding).where(Feeding.id == feeding_id))
     await db.commit()
 
