@@ -13,6 +13,11 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
 - 🏥 **Health Records**: Track vet visits, medication, and observations
 - 📅 **Feeding Schedule**: Advanced scheduling with time windows and reminders
   - **Schedule Instances**: Pre-generated schedule occurrences with unique IDs for tracking
+  - **Flexible Completion Window**: Per-schedule date tolerance for completing schedules within ±X days
+    - Configure flexible completion days per schedule (0 for exact matching, 2-7 days for flexible)
+    - Allows completing Monday's feeding on Tuesday or Wednesday (within configured window)
+    - Visual indicators show when completion happened on different date with days offset
+    - Smart re-matching when activities are deleted (automatically finds alternative activities from same day)
   - **Auto-Complete**: Automatically mark repetitive schedules as completed if not logged (configurable per schedule)
     - Timezone-aware auto-completion using user's local timezone (not UTC)
     - Runs every 5 minutes with immediate check on startup for reliability

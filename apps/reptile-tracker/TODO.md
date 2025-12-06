@@ -314,6 +314,53 @@
   - Frontend: Export/import functionality
   - Frontend: Integration with supplement rotation templates
 
+- [ ] **Requirement-based Schedules** - 🎯 HIGH PRIORITY
+  - New schedule type: "Requirement" mode (alongside existing "Fixed" mode)
+  - Define feeding requirements instead of rigid calendar dates:
+    - Frequency per week (e.g., 2x per week)
+    - Minimum days between feedings (e.g., 2 days)
+    - Maximum days between feedings (e.g., 4 days, optional)
+    - Optional suggested days for soft reminders (e.g., Wed, Sun)
+  - **Problem solved:** Current system marks schedules as "missed" even when feeding happened on different days
+  - **Use case:** Leopard gecko needs 2 feedings/week with 2+ days between, but exact days (Mon/Thu vs Wed/Sun) don't matter
+  - **Features:**
+    - Weekly quota tracking: "2/2 feedings this week ✓" instead of instance-based completion
+    - Validation: prevent over-feeding (warn if trying to feed too soon based on min_days_between)
+    - Calendar display: weekly progress indicator, suggested days shown with dashed borders
+    - Notifications: remind on suggested days if quota not met, or remind if approaching max_days_between
+    - No "missed" status - only "requirement not met this week"
+    - Any feeding automatically checks requirement schedules and increments counters
+  - **Database changes:**
+    - Add to schedules table: schedule_mode ('fixed' or 'requirement'), frequency_per_week, min_days_between, max_days_between, suggested_days (JSON array)
+    - New completion tracking: weekly counters instead of instances for requirement schedules
+  - **Backend changes:**
+    - Modified schedule matching logic for requirement schedules
+    - Weekly quota tracking and reset system
+    - Validation logic for min/max days between feedings
+    - Updated notifications for quota-based reminders
+  - **Frontend changes:**
+    - Schedule form: radio toggle between "Fixed" and "Requirement" modes
+    - Requirement mode fields: frequency/week input, min/max days inputs, suggested days picker
+    - Calendar: weekly quota display for requirement schedules
+    - Different visual treatment: dashed borders for suggested days vs solid for fixed schedules
+  - **Implementation complexity:** Major feature requiring significant database, backend, and frontend changes
+  - **Alternative interim solution:** Flexible completion windows (already implemented) can partially address this
+
+- [ ] **Food Favorites System** - 🔧 MEDIUM PRIORITY
+  - Mark foods as favorites for quick access during feeding logs
+  - Per-food favorite status (star icon toggle)
+  - "Show favorites only" filter in food selection UIs
+  - Reduces cognitive load when logging with many food items
+  - **Database changes:**
+    - Add is_favorite boolean to foods table
+  - **Backend changes:**
+    - PATCH /api/foods/{id}/toggle-favorite endpoint
+  - **Frontend changes:**
+    - Star icon on left of each food row in FoodManagement page
+    - Toggle favorite status on click
+    - "Show favorites only" checkbox in feeding log food selectors
+    - Visual star indicator showing favorite status
+
 ## 📊 Statistics & Analytics
 
 ### Statistics Page - 🎯 CRITICAL PRIORITY (Tier 1)
@@ -581,6 +628,23 @@
   - Backend uses efficient database queries with eager loading to avoid N+1 queries
   - Frontend updated to use bulk endpoints with proper data transformation
   - Significant performance improvement especially on slower connections
+
+- [x] **Flexible Completion Window & Smart Re-matching** - ✅ COMPLETED (2025-12-06)
+  - Per-schedule flexible completion window settings for date tolerance
+  - Database migration 0059: Added `flexible_completion_enabled` and `flexible_completion_days` to schedules table
+  - Backend: Updated schedule_matcher.py to use schedule-specific window settings (defaults to 0 for exact matching)
+  - Backend: Replaces global DATE_WINDOW_DAYS constant with per-schedule configuration
+  - Frontend: Schedule form allows configuring flexible completion window per schedule
+  - Frontend: FeedingLog.jsx shows when activity completed a schedule with flexible window (e.g., "2 days after scheduled date")
+  - Frontend: ScheduleInstanceDetail.jsx displays flexible window indicator with days offset
+  - Smart re-matching on activity deletion:
+    - When deleting activity that completed a schedule, system searches for other activities from same day
+    - Automatically re-assigns found activities to the now-pending instance
+    - Prevents orphaned activities and maintains schedule completion accuracy
+    - Implemented for feedings, mistings, and weight logs
+  - Allows completing schedules within ±X days of scheduled date (e.g., feed on Monday for Tuesday's schedule)
+  - User-configurable per schedule: some schedules can be strict (0 days), others flexible (2-7 days)
+  - Calendar and instance views show when completion happened on different date with visual indicators
 
 ### December 2025 - Schedule Instance System (2025-12-05)
 - [x] **Schedule Instance System** - ✅ COMPLETED (2025-12-05)
