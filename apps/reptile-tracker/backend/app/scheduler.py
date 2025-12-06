@@ -566,11 +566,11 @@ async def schedule_autocomplete_for_instance(
 
             # Create database record
             # For autocomplete jobs, we use a placeholder channel_id (we don't send notifications)
-            # We'll use the first in-app channel, or create a special system channel
-            # For now, let's query for any channel owned by this user
+            # We'll use the first in-app channel, or any channel owned by this user
             channel_result = await db.execute(
                 select(NotificationChannel)
-                .where(NotificationChannel.user_id == household_user.id)
+                .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
+                .where(NotificationSettings.user_id == household_user.id)
                 .limit(1)
             )
             channel = channel_result.scalars().first()
