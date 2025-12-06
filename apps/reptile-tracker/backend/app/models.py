@@ -85,6 +85,12 @@ class NotificationType(str, PyEnum):
     SYSTEM = "system"
 
 
+class ScheduleMode(str, PyEnum):
+    """Mode of schedule operation"""
+    FIXED = "fixed"  # Fixed dates/days (current behavior)
+    REQUIREMENT = "requirement"  # Flexible weekly quota-based scheduling
+
+
 # Association table for reptile access
 reptile_access = Table(
     "reptile_access",
@@ -367,6 +373,7 @@ class Schedule(Base):
 
     name = Column(String, nullable=True)  # User-friendly name for the schedule
     schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
+    schedule_mode = Column(Enum(ScheduleMode, values_callable=lambda x: [e.value for e in x]), nullable=False, default=ScheduleMode.FIXED)  # "fixed" or "requirement"
     schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly", "dependent"
 
     # Additional details
@@ -388,6 +395,12 @@ class Schedule(Base):
     dependent_rule = Column(String, nullable=True)  # "every_occurrence", "every_nth", "specific_days"
     dependent_frequency = Column(Integer, nullable=True)  # For every_nth (e.g., every 2nd feeding)
     dependent_days = Column(String, nullable=True)  # For specific_days (e.g., '1,3' for Mon,Wed)
+
+    # For requirement-based schedules (flexible weekly quotas)
+    frequency_per_week = Column(Integer, nullable=True)  # Number of feedings per week (e.g., 2x per week)
+    min_days_between = Column(Integer, nullable=True)  # Minimum days between feedings (e.g., 2 days)
+    max_days_between = Column(Integer, nullable=True)  # Maximum days between feedings (optional, e.g., 4 days)
+    suggested_days = Column(JSON, nullable=True)  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
 
     # For supplement schedules
     supplement_id = Column(Integer, ForeignKey("supplements.id", ondelete="SET NULL"), nullable=True)
@@ -480,6 +493,25 @@ class ScheduleInstance(Base):
     # Relationships
     schedule = relationship("Schedule", back_populates="instances")
     completions = relationship("ScheduleCompletion", back_populates="instance")
+
+
+class WeeklyQuota(Base):
+    """Tracks weekly feeding quotas for requirement-based schedules"""
+    __tablename__ = "weekly_quotas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    week_start_date = Column(Date, nullable=False, index=True)  # Monday of the week
+    feedings_count = Column(Integer, nullable=False, default=0)  # Number of feedings this week
+    last_feeding_date = Column(Date, nullable=True)  # Last feeding date (for min_days_between validation)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    schedule = relationship("Schedule")
+    reptile = relationship("Reptile")
 
 
 class FeedingRotation(Base):
