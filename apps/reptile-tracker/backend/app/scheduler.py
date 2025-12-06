@@ -400,16 +400,19 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
     Returns:
         True if autocomplete was successful, False otherwise
     """
+    print(f"DEBUG: _perform_autocomplete() called for instance {instance_id}", flush=True)
     from app.models import ScheduleInstance
 
     # Get the instance
     instance = await db.get(ScheduleInstance, instance_id)
+    print(f"DEBUG: Instance {instance_id} found: {instance is not None}, status: {instance.status if instance else 'N/A'}", flush=True)
     if not instance:
         logger.warning(f"Instance {instance_id} not found")
         return False
 
     # Check if instance is still pending
     if instance.status != "pending":
+        print(f"DEBUG: Instance {instance_id} already {instance.status}, skipping", flush=True)
         logger.info(f"Instance {instance_id} already {instance.status}, skipping autocomplete")
         return False
 
@@ -449,12 +452,16 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         auto_completed=True
     )
     db.add(completion)
+    print(f"DEBUG: Added completion record for instance {instance_id}", flush=True)
 
     # Update instance status
     instance.status = "completed"
     instance.updated_at = now
+    print(f"DEBUG: Updated instance {instance_id} status to completed", flush=True)
 
+    print(f"DEBUG: About to commit for instance {instance_id}", flush=True)
     await db.commit()
+    print(f"DEBUG: Committed successfully for instance {instance_id}", flush=True)
 
     logger.info(
         f"Auto-completed instance {instance_id} for schedule {schedule.id} "
@@ -544,13 +551,16 @@ async def schedule_autocomplete_for_instance(
 
             # Check if trigger time has already passed - execute immediately
             now_utc = datetime.now(timezone.utc)
+            print(f"DEBUG: Instance {instance.id}: trigger_time={trigger_datetime_utc}, now={now_utc}, overdue={trigger_datetime_utc < now_utc}", flush=True)
             if trigger_datetime_utc < now_utc:
+                print(f"DEBUG: Instance {instance.id} is OVERDUE, executing immediately", flush=True)
                 logger.info(
                     f"Autocomplete trigger for instance {instance.id} is overdue "
                     f"(was {trigger_datetime_utc}, now {now_utc}), executing immediately"
                 )
                 # Execute the autocomplete immediately without creating a scheduled job
-                await _perform_autocomplete(db, instance.id)
+                success = await _perform_autocomplete(db, instance.id)
+                print(f"DEBUG: Instance {instance.id} immediate autocomplete result: {success}", flush=True)
                 return
 
             # Check if job already exists
