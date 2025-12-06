@@ -389,6 +389,233 @@ async def reschedule_notification_jobs_for_schedule(schedule_id: int):
     await schedule_notification_jobs_for_schedule(schedule)
 
 
+async def execute_autocomplete_job(
+    instance_id: int,
+    job_id: str
+):
+    """
+    Execute an autocomplete job (called by APScheduler at exact time).
+    This automatically completes a schedule instance that wasn't manually logged.
+    """
+    try:
+        async with async_session_maker() as db:
+            # Get the scheduled job record
+            job_record = await db.execute(
+                select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+            )
+            job_record = job_record.scalars().first()
+
+            if not job_record or job_record.status != "pending":
+                logger.warning(f"Autocomplete job {job_id} not found or already processed, skipping")
+                return
+
+            # Get the instance
+            from app.models import ScheduleInstance
+            instance = await db.get(ScheduleInstance, instance_id)
+            if not instance:
+                logger.warning(f"Instance {instance_id} not found for job {job_id}")
+                job_record.status = "failed"
+                await db.commit()
+                return
+
+            # Check if instance is still pending
+            if instance.status != "pending":
+                logger.info(f"Instance {instance_id} already {instance.status}, skipping autocomplete")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Get the schedule
+            schedule = await db.get(Schedule, instance.schedule_id)
+            if not schedule:
+                logger.warning(f"Schedule {instance.schedule_id} not found for instance {instance_id}")
+                job_record.status = "failed"
+                await db.commit()
+                return
+
+            # Check if there's already a completion record
+            existing_result = await db.execute(
+                select(ScheduleCompletion).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule.id,
+                        ScheduleCompletion.scheduled_date == instance.scheduled_date
+                    )
+                )
+            )
+            existing_completion = existing_result.scalar_one_or_none()
+
+            if existing_completion:
+                logger.info(f"Instance {instance_id} already has completion record, skipping")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Create auto-completion record
+            now = datetime.now(timezone.utc)
+            completion = ScheduleCompletion(
+                schedule_id=schedule.id,
+                instance_id=instance.id,
+                reptile_id=schedule.reptile_id,
+                scheduled_date=instance.scheduled_date,
+                completed_at=now,
+                completion_type=None,
+                completion_id=None,
+                within_time_window=False,
+                status=CompletionStatus.COMPLETED_ON_TIME,
+                auto_completed=True
+            )
+            db.add(completion)
+
+            # Update instance status
+            instance.status = "completed"
+            instance.updated_at = now
+
+            # Mark job as executed
+            job_record.status = "sent"
+
+            await db.commit()
+
+            logger.info(
+                f"Auto-completed instance {instance_id} for schedule {schedule.id} "
+                f"({schedule.schedule_type}) on {instance.scheduled_date}"
+            )
+
+    except Exception as e:
+        logger.error(f"Error executing autocomplete job {job_id}: {e}", exc_info=True)
+
+
+async def schedule_autocomplete_for_instance(
+    instance: "ScheduleInstance",
+    schedule: Schedule,
+    user_tz: ZoneInfo
+):
+    """
+    Schedule an autocomplete job for a specific schedule instance.
+
+    Args:
+        instance: The schedule instance to autocomplete
+        schedule: The schedule this instance belongs to
+        user_tz: Timezone of the household owner/manager
+    """
+    global scheduler
+
+    try:
+        async with async_session_maker() as db:
+            # Calculate the trigger time for auto-completion in user's timezone
+            if schedule.time_window_enabled and schedule.latest_time:
+                # Use latest_time as the base
+                trigger_datetime_local = datetime.combine(
+                    instance.scheduled_date,
+                    schedule.latest_time,
+                    tzinfo=user_tz
+                )
+            else:
+                # Use end of day (23:59) as the base
+                trigger_datetime_local = datetime.combine(
+                    instance.scheduled_date,
+                    py_time(23, 59),
+                    tzinfo=user_tz
+                )
+
+            # Add the configured delay hours
+            delay_hours = schedule.auto_complete_hours_after if schedule.auto_complete_hours_after else 2
+            trigger_datetime_local += timedelta(hours=delay_hours)
+
+            # Convert to UTC for storage and APScheduler
+            trigger_datetime_utc = trigger_datetime_local.astimezone(timezone.utc)
+
+            # Skip if in the past
+            if trigger_datetime_utc < datetime.now(timezone.utc):
+                logger.debug(f"Autocomplete trigger for instance {instance.id} is in the past, skipping")
+                return
+
+            # Generate unique job ID
+            job_id = f"autocomplete_{instance.id}_{instance.scheduled_date.isoformat()}"
+
+            # Check if job already exists
+            existing = await db.execute(
+                select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+            )
+            if existing.scalars().first():
+                logger.debug(f"Autocomplete job {job_id} already exists")
+                return
+
+            # Get household owner/manager for user_id
+            # (needed for the job record, even though autocomplete doesn't send notifications)
+            reptile = await db.get(Reptile, schedule.reptile_id)
+            if not reptile or not reptile.household_id:
+                logger.warning(f"Cannot schedule autocomplete: reptile {schedule.reptile_id} has no household")
+                return
+
+            # Get household owner or any admin/manager
+            household_result = await db.execute(
+                select(User)
+                .join(household_members)
+                .where(
+                    and_(
+                        household_members.c.household_id == reptile.household_id,
+                        household_members.c.access_level.in_([AccessLevel.OWNER, AccessLevel.ADMIN, AccessLevel.MANAGER])
+                    )
+                )
+                .limit(1)
+            )
+            household_user = household_result.scalars().first()
+            if not household_user:
+                logger.warning(f"No owner/admin/manager found for household {reptile.household_id}")
+                return
+
+            # Create database record
+            # For autocomplete jobs, we use a placeholder channel_id (we don't send notifications)
+            # We'll use the first in-app channel, or create a special system channel
+            # For now, let's query for any channel owned by this user
+            channel_result = await db.execute(
+                select(NotificationChannel)
+                .where(NotificationChannel.user_id == household_user.id)
+                .limit(1)
+            )
+            channel = channel_result.scalars().first()
+            if not channel:
+                # If no channel exists, we can't create the job
+                # This shouldn't happen in practice since users should have at least in-app channel
+                logger.warning(f"No notification channel found for user {household_user.id}, cannot schedule autocomplete")
+                return
+
+            job_record = ScheduledNotificationJob(
+                job_id=job_id,
+                job_type="auto_complete",
+                schedule_id=schedule.id,
+                user_id=household_user.id,
+                channel_id=channel.id,  # Placeholder, not actually used for autocomplete
+                instance_id=instance.id,
+                scheduled_date=instance.scheduled_date,
+                scheduled_time_utc=trigger_datetime_utc,
+                status="pending"
+            )
+            db.add(job_record)
+            await db.flush()
+
+            # Schedule APScheduler job
+            scheduler.add_job(
+                func=execute_autocomplete_job,
+                trigger='date',
+                run_date=trigger_datetime_utc,
+                args=[instance.id, job_id],
+                id=job_id,
+                replace_existing=True,
+                misfire_grace_time=3600  # Allow 1 hour grace for autocomplete
+            )
+
+            await db.commit()
+
+            logger.info(
+                f"Scheduled autocomplete job {job_id} for instance {instance.id} "
+                f"at {trigger_datetime_utc} UTC ({trigger_datetime_local} local)"
+            )
+
+    except Exception as e:
+        logger.error(f"Error scheduling autocomplete for instance {instance.id}: {e}", exc_info=True)
+
+
 async def rebuild_notification_jobs_from_db():
     """
     Rebuild APScheduler jobs from database on startup
@@ -419,34 +646,55 @@ async def rebuild_notification_jobs_from_db():
                 logger.info("No pending notification jobs to rebuild")
                 return
 
-            logger.info(f"Rebuilding {len(pending_jobs)} notification jobs from database")
+            logger.info(f"Rebuilding {len(pending_jobs)} jobs from database")
+
+            notification_count = 0
+            autocomplete_count = 0
 
             for job_record in pending_jobs:
                 try:
-                    # Recreate the APScheduler job
-                    scheduler.add_job(
-                        func=execute_scheduled_notification,
-                        trigger='date',
-                        run_date=job_record.scheduled_time_utc,
-                        args=[
-                            job_record.schedule_id,
-                            job_record.user_id,
-                            job_record.channel_id,
-                            job_record.scheduled_date,
-                            job_record.job_id
-                        ],
-                        id=job_record.job_id,
-                        replace_existing=True,
-                        misfire_grace_time=300
-                    )
-
-                    logger.debug(f"Rebuilt job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
+                    # Recreate the APScheduler job based on job_type
+                    if job_record.job_type == "auto_complete":
+                        # Rebuild autocomplete job
+                        scheduler.add_job(
+                            func=execute_autocomplete_job,
+                            trigger='date',
+                            run_date=job_record.scheduled_time_utc,
+                            args=[
+                                job_record.instance_id,
+                                job_record.job_id
+                            ],
+                            id=job_record.job_id,
+                            replace_existing=True,
+                            misfire_grace_time=3600  # 1 hour grace for autocomplete
+                        )
+                        autocomplete_count += 1
+                        logger.debug(f"Rebuilt autocomplete job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
+                    else:
+                        # Rebuild notification reminder job (default)
+                        scheduler.add_job(
+                            func=execute_scheduled_notification,
+                            trigger='date',
+                            run_date=job_record.scheduled_time_utc,
+                            args=[
+                                job_record.schedule_id,
+                                job_record.user_id,
+                                job_record.channel_id,
+                                job_record.scheduled_date,
+                                job_record.job_id
+                            ],
+                            id=job_record.job_id,
+                            replace_existing=True,
+                            misfire_grace_time=300  # 5 minutes grace for notifications
+                        )
+                        notification_count += 1
+                        logger.debug(f"Rebuilt notification job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
 
                 except Exception as e:
                     logger.error(f"Failed to rebuild job {job_record.job_id}: {e}")
                     continue
 
-            logger.info(f"Successfully rebuilt {len(pending_jobs)} notification jobs")
+            logger.info(f"Successfully rebuilt {notification_count} notification jobs and {autocomplete_count} autocomplete jobs")
 
     except Exception as e:
         logger.error(f"Error rebuilding notification jobs from database: {e}", exc_info=True)
@@ -1475,7 +1723,7 @@ async def daily_instance_maintenance():
     logger.info("Starting daily instance maintenance")
 
     try:
-        from app.instance_generator import generate_instances_for_all_schedules, cleanup_old_instances
+        from app.instance_generator import generate_instances_for_all_schedules, cleanup_old_instances, schedule_autocomplete_jobs_for_instances
 
         # Generate instances (uses config value)
         stats = await generate_instances_for_all_schedules()
@@ -1483,6 +1731,10 @@ async def daily_instance_maintenance():
             f"Generated instances: {stats['schedules_processed']} schedules processed, "
             f"{stats['instances_created']} instances created"
         )
+
+        # Schedule autocomplete jobs for all pending instances with autocomplete enabled
+        jobs_scheduled = await schedule_autocomplete_jobs_for_instances()
+        logger.info(f"Scheduled {jobs_scheduled} autocomplete jobs")
 
         # Clean up instances older than 30 days
         deleted_count = await cleanup_old_instances(days_to_keep=30)
@@ -1559,14 +1811,18 @@ def start_scheduler():
         replace_existing=True
     )
 
-    # Check for auto-complete instances every 5 minutes (more responsive than 30 min)
-    scheduler.add_job(
-        check_auto_complete_schedules,
-        trigger=IntervalTrigger(minutes=5),
-        id="check_auto_complete",
-        name="Check auto-complete schedules",
-        replace_existing=True
-    )
+    # DEPRECATED: Polling-based autocomplete check replaced by database-persisted jobs
+    # Autocomplete jobs are now scheduled as APScheduler jobs via daily_instance_maintenance
+    # and recovered on startup via rebuild_notification_jobs_from_db
+    # Uncomment below if you need to re-enable polling as a fallback:
+    #
+    # scheduler.add_job(
+    #     check_auto_complete_schedules,
+    #     trigger=IntervalTrigger(minutes=5),
+    #     id="check_auto_complete",
+    #     name="Check auto-complete schedules (DEPRECATED - POLLING FALLBACK)",
+    #     replace_existing=True
+    # )
 
     scheduler.start()
 
@@ -1585,6 +1841,7 @@ def start_scheduler():
         logger.error(f"Error rebuilding notification jobs: {e}", exc_info=True)
 
     # Generate initial schedule instances on startup
+    # This also schedules autocomplete jobs for all pending instances
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
@@ -1596,15 +1853,19 @@ def start_scheduler():
     except Exception as e:
         logger.error(f"Error generating initial schedule instances: {e}", exc_info=True)
 
-    # Run auto-complete check immediately on startup to catch any missed completions
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.create_task(check_auto_complete_schedules())
-        else:
-            loop.run_until_complete(check_auto_complete_schedules())
-    except Exception as e:
-        logger.error(f"Error running initial auto-complete check: {e}", exc_info=True)
+    # DEPRECATED: Startup autocomplete check no longer needed
+    # Autocomplete jobs are now rebuilt from database via rebuild_notification_jobs_from_db (above)
+    # and scheduled via daily_instance_maintenance (above)
+    # Uncomment below if you need polling fallback:
+    #
+    # try:
+    #     loop = asyncio.get_event_loop()
+    #     if loop.is_running():
+    #         asyncio.create_task(check_auto_complete_schedules())
+    #     else:
+    #         loop.run_until_complete(check_auto_complete_schedules())
+    # except Exception as e:
+    #     logger.error(f"Error running initial auto-complete check: {e}", exc_info=True)
 
 
 def stop_scheduler():

@@ -398,3 +398,91 @@ async def update_instance_status(
 
     logger.debug(f"Updated instance {instance_id} status to {status}")
     return True
+
+
+async def schedule_autocomplete_jobs_for_instances(days_ahead: Optional[int] = None) -> int:
+    """
+    Schedule autocomplete jobs for all pending instances with autocomplete enabled.
+    This should be run after instance generation to ensure autocomplete jobs are scheduled.
+
+    Args:
+        days_ahead: How many days ahead to look for instances (default from settings)
+
+    Returns:
+        Number of autocomplete jobs scheduled
+    """
+    from app.models import Reptile, User, household_members, AccessLevel
+    from app.scheduler import schedule_autocomplete_for_instance
+    from zoneinfo import ZoneInfo
+
+    if days_ahead is None:
+        days_ahead = settings.instance_generation_days_ahead
+
+    logger.info(f"Scheduling autocomplete jobs for instances ({days_ahead} days ahead)")
+
+    async with async_session_maker() as db:
+        # Get current date range
+        today = datetime.now(timezone.utc).date()
+        end_date = today + timedelta(days=days_ahead)
+
+        # Get all pending instances with autocomplete enabled
+        result = await db.execute(
+            select(ScheduleInstance)
+            .join(Schedule, ScheduleInstance.schedule_id == Schedule.id)
+            .where(
+                and_(
+                    Schedule.enabled == True,
+                    Schedule.auto_complete_enabled == True,
+                    ScheduleInstance.status == "pending",
+                    ScheduleInstance.scheduled_date >= today,
+                    ScheduleInstance.scheduled_date < end_date
+                )
+            )
+            .options(selectinload(ScheduleInstance.schedule))
+        )
+        instances = result.scalars().all()
+
+        logger.info(f"Found {len(instances)} pending instances with autocomplete enabled")
+
+        jobs_scheduled = 0
+
+        for instance in instances:
+            try:
+                schedule = instance.schedule
+
+                # Get the reptile and household to determine timezone
+                reptile = await db.get(Reptile, schedule.reptile_id)
+                if not reptile or not reptile.household_id:
+                    logger.debug(f"Reptile {schedule.reptile_id} has no household, skipping autocomplete scheduling")
+                    continue
+
+                # Get household owner or any admin/manager
+                household_result = await db.execute(
+                    select(User)
+                    .join(household_members)
+                    .where(
+                        and_(
+                            household_members.c.household_id == reptile.household_id,
+                            household_members.c.access_level.in_([AccessLevel.OWNER, AccessLevel.ADMIN, AccessLevel.MANAGER])
+                        )
+                    )
+                    .limit(1)
+                )
+                household_user = household_result.scalars().first()
+                if not household_user:
+                    logger.warning(f"No owner/admin/manager found for household {reptile.household_id}")
+                    continue
+
+                # Determine timezone
+                user_tz = ZoneInfo(household_user.timezone) if household_user.timezone else ZoneInfo("UTC")
+
+                # Schedule autocomplete job
+                await schedule_autocomplete_for_instance(instance, schedule, user_tz)
+                jobs_scheduled += 1
+
+            except Exception as e:
+                logger.error(f"Error scheduling autocomplete for instance {instance.id}: {e}", exc_info=True)
+                continue
+
+        logger.info(f"Scheduled {jobs_scheduled} autocomplete jobs")
+        return jobs_scheduled
