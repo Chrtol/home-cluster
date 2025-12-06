@@ -642,7 +642,11 @@ export default function ScheduleInstanceDetail() {
                       Completed At
                     </label>
                     <span className="text-gray-900 dark:text-white">
-                      {formatTime(new Date(completionRecord.completed_at))} on {formatDate(new Date(completionRecord.completed_at))}
+                      {completionRecord.completed_at ? (
+                        `${formatTime(new Date(completionRecord.completed_at))} on ${formatDate(new Date(completionRecord.completed_at))}`
+                      ) : (
+                        `${formatDate(new Date(completionRecord.scheduled_date))} (exact time not recorded)`
+                      )}
                     </span>
                   </div>
 

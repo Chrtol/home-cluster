@@ -124,6 +124,27 @@ async def delete_misting_log(
             status_code=status.HTTP_404_NOT_FOUND, detail="Misting log not found"
         )
     await check_reptile_access(db, current_user, log.reptile_id, AccessLevel.CARETAKER)
+
+    # If this misting completed a schedule instance, reset the instance status to pending
+    if log.schedule_completion_id:
+        from app.models import ScheduleCompletion, ScheduleInstance
+        # Get the completion to find the instance
+        completion_result = await db.execute(
+            select(ScheduleCompletion).where(ScheduleCompletion.id == log.schedule_completion_id)
+        )
+        completion = completion_result.scalar_one_or_none()
+
+        if completion and completion.instance_id:
+            # Reset the instance to pending
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(ScheduleInstance.id == completion.instance_id)
+            )
+            instance = instance_result.scalar_one_or_none()
+            if instance:
+                instance.status = "pending"
+                from datetime import datetime, timezone
+                instance.updated_at = datetime.now(timezone.utc)
+
     await db.execute(delete(MistingLog).where(MistingLog.id == log_id))
     await db.commit()
     return None
