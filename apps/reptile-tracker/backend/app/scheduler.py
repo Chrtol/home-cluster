@@ -1767,7 +1767,7 @@ async def daily_instance_maintenance():
         logger.error(f"Error in daily instance maintenance: {e}", exc_info=True)
 
 
-def start_scheduler():
+async def start_scheduler():
     """Start the notification scheduler"""
     global scheduler
 
@@ -1851,28 +1851,18 @@ def start_scheduler():
 
     # Rebuild notification jobs from database (for recovery after pod restarts)
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If event loop is already running, schedule as a task
-            asyncio.create_task(rebuild_notification_jobs_from_db())
-        else:
-            # If no event loop is running, run directly
-            loop.run_until_complete(rebuild_notification_jobs_from_db())
+        await rebuild_notification_jobs_from_db()
+        logger.info("Notification jobs rebuilt successfully")
     except Exception as e:
         logger.error(f"Error rebuilding notification jobs: {e}", exc_info=True)
 
     # Generate initial schedule instances on startup
     # This also schedules autocomplete jobs for all pending instances
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If event loop is already running, schedule as a task
-            asyncio.create_task(daily_instance_maintenance())
-        else:
-            # If no event loop is running, run directly
-            loop.run_until_complete(daily_instance_maintenance())
+        await daily_instance_maintenance()
+        logger.info("Initial instance maintenance completed successfully")
     except Exception as e:
-        logger.error(f"Error generating initial schedule instances: {e}", exc_info=True)
+        logger.error(f"Error in initial instance maintenance: {e}", exc_info=True)
 
     # DEPRECATED: Startup autocomplete check no longer needed
     # Autocomplete jobs are now rebuilt from database via rebuild_notification_jobs_from_db (above)
