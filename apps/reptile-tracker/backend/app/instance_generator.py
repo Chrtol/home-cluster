@@ -411,7 +411,6 @@ async def schedule_autocomplete_jobs_for_instances(days_ahead: Optional[int] = N
     Returns:
         Number of autocomplete jobs scheduled
     """
-    print("DEBUG: schedule_autocomplete_jobs_for_instances() entered", flush=True)
     from app.models import Reptile, User, household_members, AccessLevel
     from app.scheduler import schedule_autocomplete_for_instance
     from zoneinfo import ZoneInfo
@@ -419,7 +418,6 @@ async def schedule_autocomplete_jobs_for_instances(days_ahead: Optional[int] = N
     if days_ahead is None:
         days_ahead = settings.instance_generation_days_ahead
 
-    print(f"DEBUG: Looking for instances {days_ahead} days ahead", flush=True)
     logger.info(f"Scheduling autocomplete jobs for instances ({days_ahead} days ahead)")
 
     async with async_session_maker() as db:
@@ -443,14 +441,12 @@ async def schedule_autocomplete_jobs_for_instances(days_ahead: Optional[int] = N
             .options(selectinload(ScheduleInstance.schedule))
         )
         instances = result.scalars().all()
-        print(f"DEBUG: Found {len(instances)} instances with autocomplete enabled", flush=True)
 
         logger.info(f"Found {len(instances)} pending instances with autocomplete enabled")
 
         jobs_scheduled = 0
 
         for instance in instances:
-            print(f"DEBUG: Processing instance {instance.id} for schedule {instance.schedule_id}", flush=True)
             try:
                 schedule = instance.schedule
 
