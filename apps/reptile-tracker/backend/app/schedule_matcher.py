@@ -5,10 +5,10 @@ Automatically matches feedings, mistings, and weight logs to their corresponding
 Handles time window validation, completion tracking, and status determination.
 """
 
-from datetime import datetime, time as py_time, timedelta, timezone
+from datetime import datetime, time as py_time, timedelta, timezone, date as date_type
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 
 from app.models import (
     Schedule,
@@ -23,6 +23,61 @@ from app.models import (
 
 # Time tolerance for matching (e.g., 30 minutes before/after window is acceptable)
 TOLERANCE_MINUTES = 30
+
+# Date window for flexible completion (±X days)
+# This allows completing a schedule instance up to X days before or after its scheduled date
+DATE_WINDOW_DAYS = 2
+
+
+async def find_instance_within_window(
+    db: AsyncSession,
+    schedule_id: int,
+    activity_date: date_type,
+    window_days: int = DATE_WINDOW_DAYS
+) -> Optional[Tuple[object, int]]:
+    """
+    Find a schedule instance within ±window_days of the activity date.
+
+    Args:
+        db: Database session
+        schedule_id: ID of the schedule
+        activity_date: Date when the activity occurred
+        window_days: Number of days before/after to search (default: DATE_WINDOW_DAYS)
+
+    Returns:
+        Tuple of (ScheduleInstance, days_offset) or None if no match found.
+        days_offset is the number of days between activity and instance (0 = exact match)
+    """
+    from app.models import ScheduleInstance
+
+    # Calculate date range
+    start_date = activity_date - timedelta(days=window_days)
+    end_date = activity_date + timedelta(days=window_days)
+
+    # Find all pending instances for this schedule within the window
+    result = await db.execute(
+        select(ScheduleInstance).where(
+            and_(
+                ScheduleInstance.schedule_id == schedule_id,
+                ScheduleInstance.scheduled_date >= start_date,
+                ScheduleInstance.scheduled_date <= end_date,
+                ScheduleInstance.status == "pending"
+            )
+        ).order_by(
+            # Prefer instances closer to the activity date
+            func.abs(func.julianday(ScheduleInstance.scheduled_date) - func.julianday(activity_date))
+        )
+    )
+    instances = result.scalars().all()
+
+    if not instances:
+        return None
+
+    # Return the closest instance
+    best_instance = instances[0]
+    days_offset = abs((best_instance.scheduled_date - activity_date).days)
+
+    return (best_instance, days_offset)
 
 
 async def find_matching_schedule(
@@ -261,24 +316,18 @@ async def assign_feeding_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
-    # Look up the instance for this schedule and date
-    from app.models import ScheduleInstance
+    # Look up the instance for this schedule within the flexible date window
     instance = None
     instance_id = None
-    try:
-        instance_result = await db.execute(
-            select(ScheduleInstance).where(
-                and_(
-                    ScheduleInstance.schedule_id == schedule.id,
-                    ScheduleInstance.scheduled_date == feeding.fed_at.date()
-                )
-            )
-        )
-        instance = instance_result.scalars().first()
-        if instance:
-            instance_id = instance.id
-    except Exception:
-        pass  # Instance not found, continue without it
+    days_offset = 0
+    instance_match = await find_instance_within_window(
+        db=db,
+        schedule_id=schedule.id,
+        activity_date=feeding.fed_at.date()
+    )
+    if instance_match:
+        instance, days_offset = instance_match
+        instance_id = instance.id
 
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
@@ -362,24 +411,18 @@ async def assign_misting_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
-    # Look up the instance for this schedule and date
-    from app.models import ScheduleInstance
+    # Look up the instance for this schedule within the flexible date window
     instance = None
     instance_id = None
-    try:
-        instance_result = await db.execute(
-            select(ScheduleInstance).where(
-                and_(
-                    ScheduleInstance.schedule_id == schedule.id,
-                    ScheduleInstance.scheduled_date == misting.misted_at.date()
-                )
-            )
-        )
-        instance = instance_result.scalars().first()
-        if instance:
-            instance_id = instance.id
-    except Exception:
-        pass  # Instance not found, continue without it
+    days_offset = 0
+    instance_match = await find_instance_within_window(
+        db=db,
+        schedule_id=schedule.id,
+        activity_date=misting.misted_at.date()
+    )
+    if instance_match:
+        instance, days_offset = instance_match
+        instance_id = instance.id
 
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
@@ -463,24 +506,18 @@ async def assign_weighing_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
-    # Look up the instance for this schedule and date
-    from app.models import ScheduleInstance
+    # Look up the instance for this schedule within the flexible date window
     instance = None
     instance_id = None
-    try:
-        instance_result = await db.execute(
-            select(ScheduleInstance).where(
-                and_(
-                    ScheduleInstance.schedule_id == schedule.id,
-                    ScheduleInstance.scheduled_date == weight_log.measured_at.date()
-                )
-            )
-        )
-        instance = instance_result.scalars().first()
-        if instance:
-            instance_id = instance.id
-    except Exception:
-        pass  # Instance not found, continue without it
+    days_offset = 0
+    instance_match = await find_instance_within_window(
+        db=db,
+        schedule_id=schedule.id,
+        activity_date=weight_log.measured_at.date()
+    )
+    if instance_match:
+        instance, days_offset = instance_match
+        instance_id = instance.id
 
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
