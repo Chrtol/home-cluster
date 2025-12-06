@@ -16,16 +16,22 @@ router = APIRouter(prefix="/bulk", tags=["bulk"])
 
 
 def convert_time_fields(obj):
-    """Remove problematic time/date fields that cause frontend parsing errors"""
-    import re
+    """Convert time fields to HH:MM format for frontend compatibility"""
+    from datetime import time as time_type
 
     if isinstance(obj, dict):
-        # Remove specific problematic fields from schedules
         result = {}
         for k, v in obj.items():
-            # Skip time-related fields that cause parsing issues
-            if k in ('earliest_time', 'latest_time', 'reminder_time', 'reminder_minutes_before'):
-                result[k] = None
+            # Convert time objects to HH:MM string format
+            if k in ('earliest_time', 'latest_time', 'reminder_time') and v is not None:
+                if isinstance(v, time_type):
+                    # Convert time object to HH:MM format
+                    result[k] = v.strftime('%H:%M')
+                elif isinstance(v, str) and len(v) > 5:
+                    # If it's HH:MM:SS, convert to HH:MM
+                    result[k] = v[:5]
+                else:
+                    result[k] = v
             else:
                 result[k] = convert_time_fields(v)
         return result
@@ -96,10 +102,11 @@ async def get_dashboard_data(
     )
     recent_feedings = recent_feedings_result.scalars().all()
 
-    # Fetch weight dashboard data (no eager loading - we manually serialize)
+    # Fetch weight dashboard data with reptile information
     weight_result = await db.execute(
         select(models.WeightLog)
         .where(models.WeightLog.reptile_id.in_(accessible_ids))
+        .options(selectinload(models.WeightLog.reptile))
         .order_by(models.WeightLog.measured_at.desc())
     )
     all_weights = weight_result.scalars().all()
@@ -107,6 +114,10 @@ async def get_dashboard_data(
     # Group weights by reptile for dashboard - manually create plain dicts
     weight_data = {}
     for weight in all_weights:
+        # Skip entries with missing or zero weight values
+        if not weight.weight_grams or weight.weight_grams <= 0:
+            continue
+
         if weight.reptile_id not in weight_data:
             weight_data[weight.reptile_id] = []
 
@@ -115,7 +126,9 @@ async def get_dashboard_data(
 
         weight_data[weight.reptile_id].append({
             "id": weight.id,
-            "weight_grams": float(weight.weight_grams) if weight.weight_grams else None,
+            "reptile_id": weight.reptile_id,
+            "reptile_name": weight.reptile.name if weight.reptile else None,
+            "weight_grams": float(weight.weight_grams),
             "weighed_at": measured_at_iso,  # For recent activity display
             "measured_at": measured_at_iso,  # For weight charts
             "notes": weight.notes
