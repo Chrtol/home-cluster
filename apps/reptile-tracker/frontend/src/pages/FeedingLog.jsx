@@ -230,7 +230,7 @@ export default function FeedingLog() {
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, searchParams]);
 
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {

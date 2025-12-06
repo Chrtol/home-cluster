@@ -158,7 +158,7 @@ export default function MistingLog() {
       }
     };
     fetchData();
-  }, [reptileId, id]);
+  }, [reptileId, id, searchParams]);
 
   const loadLogData = (log) => {
     setSelectedReptile(log.reptile_id);
