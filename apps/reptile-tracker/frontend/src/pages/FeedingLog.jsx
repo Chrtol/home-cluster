@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2, Calendar } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import DateInput from '../components/DateInput';
 
@@ -691,6 +691,44 @@ export default function FeedingLog() {
         {viewModeSuccess && (
           <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <p className="text-green-800 dark:text-green-200">{viewModeSuccess}</p>
+          </div>
+        )}
+
+        {/* Show schedule completion info if this feeding completed a schedule */}
+        {existingFeeding.schedule_completion && (
+          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Calendar size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                  Schedule Completed
+                </h3>
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  This feeding completed a schedule for{' '}
+                  <span className="font-medium">
+                    {new Date(existingFeeding.schedule_completion.scheduled_date).toLocaleDateString()}
+                  </span>
+                  {(() => {
+                    const fedDate = new Date(existingFeeding.fed_at).toDateString();
+                    const scheduledDate = new Date(existingFeeding.schedule_completion.scheduled_date).toDateString();
+                    if (fedDate !== scheduledDate) {
+                      const fedDay = new Date(existingFeeding.fed_at);
+                      const scheduledDay = new Date(existingFeeding.schedule_completion.scheduled_date);
+                      const daysDiff = Math.round((fedDay.setHours(0,0,0,0) - scheduledDay.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+                      const absDay = Math.abs(daysDiff);
+                      const dayText = absDay === 1 ? '1 day' : `${absDay} days`;
+                      const direction = daysDiff > 0 ? 'after' : 'before';
+                      return (
+                        <span className="text-blue-700 dark:text-blue-300">
+                          {' '}({dayText} {direction} scheduled date - flexible completion)
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
