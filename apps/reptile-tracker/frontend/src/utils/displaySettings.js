@@ -32,27 +32,32 @@ export function getDashboardCardSettings() {
 
   try {
     const parsed = JSON.parse(stored);
-    // Merge with defaults to ensure any new cards are included
-    const storedIds = new Set(parsed.map(c => c.id));
-    const merged = [...parsed];
 
+    // Create a set of valid card IDs from defaults
+    const validCardIds = new Set(DEFAULT_DASHBOARD_CARDS.map(c => c.id));
+
+    // Filter out cards that no longer exist and update existing cards with missing properties
+    const validStoredCards = parsed
+      .filter(card => validCardIds.has(card.id))
+      .map(card => {
+        const defaultCard = DEFAULT_DASHBOARD_CARDS.find(c => c.id === card.id);
+        return {
+          ...card,
+          size: card.size || defaultCard.size,
+          type: card.type || defaultCard.type,
+          interpolationMode: card.interpolationMode || defaultCard.interpolationMode
+        };
+      });
+
+    // Add any new default cards that aren't in stored settings
+    const storedIds = new Set(validStoredCards.map(c => c.id));
     DEFAULT_DASHBOARD_CARDS.forEach(defaultCard => {
       if (!storedIds.has(defaultCard.id)) {
-        merged.push(defaultCard);
-      } else {
-        // Ensure stored cards have size, type, and interpolationMode properties
-        const storedCard = merged.find(c => c.id === defaultCard.id);
-        if (storedCard) {
-          if (!storedCard.size) storedCard.size = defaultCard.size;
-          if (!storedCard.type) storedCard.type = defaultCard.type;
-          if (!storedCard.interpolationMode && defaultCard.interpolationMode) {
-            storedCard.interpolationMode = defaultCard.interpolationMode;
-          }
-        }
+        validStoredCards.push(defaultCard);
       }
     });
 
-    return merged.sort((a, b) => a.order - b.order);
+    return validStoredCards.sort((a, b) => a.order - b.order);
   } catch (e) {
     console.error('Failed to parse dashboard card settings', e);
     return DEFAULT_DASHBOARD_CARDS;
