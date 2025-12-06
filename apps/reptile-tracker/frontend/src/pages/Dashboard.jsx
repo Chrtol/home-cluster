@@ -1113,11 +1113,13 @@ export default function Dashboard() {
                                 {event.notifications_enabled && (
                                   <Bell size={10} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
                                 )}
-                                <span className="text-gray-400 dark:text-gray-500">•</span>
+                                {(timeText || foodCategory) && (
+                                  <span className="text-gray-400 dark:text-gray-500">•</span>
+                                )}
                                 {timeText && (
                                   <>
                                     <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{timeText}</span>
-                                    <span className="text-gray-400 dark:text-gray-500">•</span>
+                                    {foodCategory && <span className="text-gray-400 dark:text-gray-500">•</span>}
                                   </>
                                 )}
                                 {foodCategory && (
