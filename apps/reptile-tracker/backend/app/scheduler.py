@@ -389,6 +389,81 @@ async def reschedule_notification_jobs_for_schedule(schedule_id: int):
     await schedule_notification_jobs_for_schedule(schedule)
 
 
+async def _perform_autocomplete(db: AsyncSession, instance_id: int):
+    """
+    Core autocomplete logic - completes a schedule instance.
+
+    Args:
+        db: Database session
+        instance_id: ID of the instance to autocomplete
+
+    Returns:
+        True if autocomplete was successful, False otherwise
+    """
+    from app.models import ScheduleInstance
+
+    # Get the instance
+    instance = await db.get(ScheduleInstance, instance_id)
+    if not instance:
+        logger.warning(f"Instance {instance_id} not found")
+        return False
+
+    # Check if instance is still pending
+    if instance.status != "pending":
+        logger.info(f"Instance {instance_id} already {instance.status}, skipping autocomplete")
+        return False
+
+    # Get the schedule
+    schedule = await db.get(Schedule, instance.schedule_id)
+    if not schedule:
+        logger.warning(f"Schedule {instance.schedule_id} not found for instance {instance_id}")
+        return False
+
+    # Check if there's already a completion record
+    existing_result = await db.execute(
+        select(ScheduleCompletion).where(
+            and_(
+                ScheduleCompletion.schedule_id == schedule.id,
+                ScheduleCompletion.scheduled_date == instance.scheduled_date
+            )
+        )
+    )
+    existing_completion = existing_result.scalar_one_or_none()
+
+    if existing_completion:
+        logger.info(f"Instance {instance_id} already has completion record, skipping")
+        return False
+
+    # Create auto-completion record
+    now = datetime.now(timezone.utc)
+    completion = ScheduleCompletion(
+        schedule_id=schedule.id,
+        instance_id=instance.id,
+        reptile_id=schedule.reptile_id,
+        scheduled_date=instance.scheduled_date,
+        completed_at=now,
+        completion_type=None,
+        completion_id=None,
+        within_time_window=False,
+        status=CompletionStatus.COMPLETED_ON_TIME,
+        auto_completed=True
+    )
+    db.add(completion)
+
+    # Update instance status
+    instance.status = "completed"
+    instance.updated_at = now
+
+    await db.commit()
+
+    logger.info(
+        f"Auto-completed instance {instance_id} for schedule {schedule.id} "
+        f"({schedule.schedule_type}) on {instance.scheduled_date}"
+    )
+
+    return True
+
+
 async def execute_autocomplete_job(
     instance_id: int,
     job_id: str
@@ -409,76 +484,16 @@ async def execute_autocomplete_job(
                 logger.warning(f"Autocomplete job {job_id} not found or already processed, skipping")
                 return
 
-            # Get the instance
-            from app.models import ScheduleInstance
-            instance = await db.get(ScheduleInstance, instance_id)
-            if not instance:
-                logger.warning(f"Instance {instance_id} not found for job {job_id}")
+            # Perform the autocomplete
+            success = await _perform_autocomplete(db, instance_id)
+
+            # Mark job as executed or failed
+            if success:
+                job_record.status = "sent"
+            else:
                 job_record.status = "failed"
-                await db.commit()
-                return
-
-            # Check if instance is still pending
-            if instance.status != "pending":
-                logger.info(f"Instance {instance_id} already {instance.status}, skipping autocomplete")
-                job_record.status = "cancelled"
-                await db.commit()
-                return
-
-            # Get the schedule
-            schedule = await db.get(Schedule, instance.schedule_id)
-            if not schedule:
-                logger.warning(f"Schedule {instance.schedule_id} not found for instance {instance_id}")
-                job_record.status = "failed"
-                await db.commit()
-                return
-
-            # Check if there's already a completion record
-            existing_result = await db.execute(
-                select(ScheduleCompletion).where(
-                    and_(
-                        ScheduleCompletion.schedule_id == schedule.id,
-                        ScheduleCompletion.scheduled_date == instance.scheduled_date
-                    )
-                )
-            )
-            existing_completion = existing_result.scalar_one_or_none()
-
-            if existing_completion:
-                logger.info(f"Instance {instance_id} already has completion record, skipping")
-                job_record.status = "cancelled"
-                await db.commit()
-                return
-
-            # Create auto-completion record
-            now = datetime.now(timezone.utc)
-            completion = ScheduleCompletion(
-                schedule_id=schedule.id,
-                instance_id=instance.id,
-                reptile_id=schedule.reptile_id,
-                scheduled_date=instance.scheduled_date,
-                completed_at=now,
-                completion_type=None,
-                completion_id=None,
-                within_time_window=False,
-                status=CompletionStatus.COMPLETED_ON_TIME,
-                auto_completed=True
-            )
-            db.add(completion)
-
-            # Update instance status
-            instance.status = "completed"
-            instance.updated_at = now
-
-            # Mark job as executed
-            job_record.status = "sent"
 
             await db.commit()
-
-            logger.info(
-                f"Auto-completed instance {instance_id} for schedule {schedule.id} "
-                f"({schedule.schedule_type}) on {instance.scheduled_date}"
-            )
 
     except Exception as e:
         logger.error(f"Error executing autocomplete job {job_id}: {e}", exc_info=True)
@@ -535,7 +550,7 @@ async def schedule_autocomplete_for_instance(
                     f"(was {trigger_datetime_utc}, now {now_utc}), executing immediately"
                 )
                 # Execute the autocomplete immediately without creating a scheduled job
-                await execute_autocomplete_job(instance.id, job_id)
+                await _perform_autocomplete(db, instance.id)
                 return
 
             # Check if job already exists
