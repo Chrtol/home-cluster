@@ -64,7 +64,10 @@ async def get_dashboard_data(
     recent_feedings_result = await db.execute(
         select(models.Feeding)
         .where(models.Feeding.reptile_id.in_(accessible_ids))
-        .options(selectinload(models.Feeding.reptile))
+        .options(
+            selectinload(models.Feeding.reptile),
+            selectinload(models.Feeding.user)
+        )
         .order_by(models.Feeding.fed_at.desc())
         .limit(5)
     )
@@ -187,7 +190,7 @@ async def get_dashboard_data(
         )
         .options(
             selectinload(models.Feeding.reptile),
-            selectinload(models.Feeding.logged_by)
+            selectinload(models.Feeding.user)
         )
     )
     weekly_feedings = weekly_feedings_result.scalars().all()
@@ -316,7 +319,7 @@ async def get_calendar_data(
         )
         .options(
             selectinload(models.Feeding.reptile),
-            selectinload(models.Feeding.logged_by)
+            selectinload(models.Feeding.user)
         )
     )
     feedings = feedings_result.scalars().all()
