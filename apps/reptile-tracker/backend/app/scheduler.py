@@ -524,13 +524,19 @@ async def schedule_autocomplete_for_instance(
             # Convert to UTC for storage and APScheduler
             trigger_datetime_utc = trigger_datetime_local.astimezone(timezone.utc)
 
-            # Skip if in the past
-            if trigger_datetime_utc < datetime.now(timezone.utc):
-                logger.debug(f"Autocomplete trigger for instance {instance.id} is in the past, skipping")
-                return
-
             # Generate unique job ID
             job_id = f"autocomplete_{instance.id}_{instance.scheduled_date.isoformat()}"
+
+            # Check if trigger time has already passed - execute immediately
+            now_utc = datetime.now(timezone.utc)
+            if trigger_datetime_utc < now_utc:
+                logger.info(
+                    f"Autocomplete trigger for instance {instance.id} is overdue "
+                    f"(was {trigger_datetime_utc}, now {now_utc}), executing immediately"
+                )
+                # Execute the autocomplete immediately without creating a scheduled job
+                await execute_autocomplete_job(instance.id, job_id)
+                return
 
             # Check if job already exists
             existing = await db.execute(
