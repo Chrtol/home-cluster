@@ -454,6 +454,28 @@ async def create_interval_schedule_instance(
         f"(last completion: {last_completion_date}, min_days: {schedule.min_days_between})"
     )
 
+    # Schedule notifications for this interval instance
+    if schedule.notifications_enabled and schedule.reminder_time:
+        from app.scheduler import schedule_notifications_for_interval_instance
+        from sqlalchemy.orm import selectinload
+        try:
+            # Reload schedule with notification_channels to ensure they're loaded
+            schedule_with_channels = await db.execute(
+                select(Schedule)
+                .options(selectinload(Schedule.notification_channels))
+                .where(Schedule.id == schedule.id)
+            )
+            schedule_loaded = schedule_with_channels.scalars().first()
+
+            if schedule_loaded and schedule_loaded.notification_channels:
+                await schedule_notifications_for_interval_instance(
+                    db=db,
+                    schedule=schedule_loaded,
+                    instance_date=next_date
+                )
+        except Exception as e:
+            logger.error(f"Failed to schedule notifications for interval instance {schedule.id} on {next_date}: {e}", exc_info=True)
+
     return instance
 
 
