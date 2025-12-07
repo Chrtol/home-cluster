@@ -7,7 +7,7 @@ or "4x per month with 3+ days between").
 """
 from datetime import date, timedelta
 from typing import Optional, Dict, List
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import QuotaTracking, Schedule, ScheduleMode, QuotaPeriod
@@ -237,7 +237,8 @@ async def get_requirement_schedules_for_feeding(
     )
 
     if food_category:
-        query = query.where(Schedule.food_category == food_category)
+        # Case-insensitive comparison for food category
+        query = query.where(func.lower(Schedule.food_category) == func.lower(food_category))
 
     result = await db.execute(query)
     return list(result.scalars().all())

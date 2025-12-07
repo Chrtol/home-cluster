@@ -520,26 +520,34 @@ export default function Dashboard() {
     return scheduledEvents;
   };
 
-  const getQuotaBadge = (scheduleId) => {
+  const getQuotaBadge = (scheduleId, format = 'compact') => {
     const quotaStatus = quotaStatuses[scheduleId];
     if (!quotaStatus) return null;
 
     const { count, quota_frequency, period_type, quota_met, quota_exceeded } = quotaStatus;
-    const periodLabel = period_type === 'week' ? 'wk' : 'mo';
+    const periodLabel = format === 'full'
+      ? (period_type === 'week' ? 'this week' : 'this month')
+      : (period_type === 'week' ? 'wk' : 'mo');
 
     if (quota_exceeded) {
       return {
-        text: `${count}/${quota_frequency}/${periodLabel} ⚠`,
+        text: format === 'full'
+          ? `${count}/${quota_frequency} ${periodLabel} ⚠`
+          : `${count}/${quota_frequency}/${periodLabel} ⚠`,
         className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700'
       };
     } else if (quota_met) {
       return {
-        text: `${count}/${quota_frequency}/${periodLabel} ✓`,
+        text: format === 'full'
+          ? `${count}/${quota_frequency} ${periodLabel} ✓`
+          : `${count}/${quota_frequency}/${periodLabel} ✓`,
         className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700'
       };
     } else {
       return {
-        text: `${count}/${quota_frequency}/${periodLabel}`,
+        text: format === 'full'
+          ? `${count}/${quota_frequency} ${periodLabel}`
+          : `${count}/${quota_frequency}/${periodLabel}`,
         className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
       };
     }
@@ -1181,7 +1189,7 @@ export default function Dashboard() {
                           );
                         }
 
-                        // Compact display for week view - SINGLE ROW
+                        // Compact display for week view
                         return (
                           <div
                             key={idx}
@@ -1211,18 +1219,17 @@ export default function Dashboard() {
                               {foodCategory && (
                                 <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
                               )}
-                              {event.schedule_mode === 'requirement' && (() => {
-                                const quotaBadge = getQuotaBadge(event.schedule_id);
-                                return quotaBadge ? (
-                                  <>
-                                    <span className="text-gray-400 dark:text-gray-500">•</span>
-                                    <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${quotaBadge.className}`}>
-                                      {quotaBadge.text}
-                                    </span>
-                                  </>
-                                ) : null;
-                              })()}
                             </div>
+                            {event.schedule_mode === 'requirement' && (() => {
+                              const quotaBadge = getQuotaBadge(event.schedule_id);
+                              return quotaBadge ? (
+                                <div className="mt-0.5 flex items-center gap-1">
+                                  <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${quotaBadge.className}`}>
+                                    {quotaBadge.text}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
                         );
                       })}
@@ -1586,21 +1593,20 @@ export default function Dashboard() {
                               {displayName}
                             </div>
                           </div>
-                          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                            {event.schedule_type}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {event.schedule_mode === 'requirement' && (() => {
+                              const quotaBadge = getQuotaBadge(event.schedule_id, 'full');
+                              return quotaBadge ? (
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>
+                                  {quotaBadge.text}
+                                </span>
+                              ) : null;
+                            })()}
+                            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                              {event.schedule_type}
+                            </span>
+                          </div>
                         </div>
-
-                        {event.schedule_mode === 'requirement' && (() => {
-                          const quotaBadge = getQuotaBadge(event.schedule_id);
-                          return quotaBadge ? (
-                            <div className="mb-2">
-                              <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>
-                                {quotaBadge.text}
-                              </div>
-                            </div>
-                          ) : null;
-                        })()}
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
                           <div className="flex flex-col min-w-0">

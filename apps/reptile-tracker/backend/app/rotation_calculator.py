@@ -271,9 +271,12 @@ async def get_rotation_preview(
     result = await db.execute(schedule_query)
     feeding_schedules = result.scalars().all()
 
-    # Filter by category if specified
+    # Filter by category if specified (case-insensitive)
     if food_category and food_category != "all":
-        feeding_schedules = [s for s in feeding_schedules if s.food_category == food_category]
+        feeding_schedules = [
+            s for s in feeding_schedules
+            if s.food_category and s.food_category.lower() == food_category.lower()
+        ]
 
     if not feeding_schedules:
         return []
