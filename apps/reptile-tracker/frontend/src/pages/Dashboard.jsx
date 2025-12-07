@@ -1158,17 +1158,6 @@ export default function Dashboard() {
                                     </span>
                                   </>
                                 )}
-                                {event.schedule_mode === 'interval' && (() => {
-                                  const quotaBadge = getQuotaBadge(event.schedule_id);
-                                  return quotaBadge ? (
-                                    <>
-                                      <span className="text-gray-400 dark:text-gray-500">•</span>
-                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${quotaBadge.className}`}>
-                                        {quotaBadge.text}
-                                      </span>
-                                    </>
-                                  ) : null;
-                                })()}
                               </div>
                             </div>
                           );
@@ -1205,16 +1194,6 @@ export default function Dashboard() {
                                 <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
                               )}
                             </div>
-                            {event.schedule_mode === 'interval' && (() => {
-                              const quotaBadge = getQuotaBadge(event.schedule_id);
-                              return quotaBadge ? (
-                                <div className="mt-0.5 flex items-center gap-1">
-                                  <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${quotaBadge.className}`}>
-                                    {quotaBadge.text}
-                                  </span>
-                                </div>
-                              ) : null;
-                            })()}
                           </div>
                         );
                       })}
@@ -1579,14 +1558,6 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {event.schedule_mode === 'interval' && (() => {
-                              const quotaBadge = getQuotaBadge(event.schedule_id, 'full');
-                              return quotaBadge ? (
-                                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>
-                                  {quotaBadge.text}
-                                </span>
-                              ) : null;
-                            })()}
                             <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                               {event.schedule_type}
                             </span>

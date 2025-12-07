@@ -23,11 +23,18 @@ def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bo
     Check if a schedule should occur on a given date based on its rule.
     This is the same logic used in scheduler.py but centralized here.
 
-    Note: Only FIXED schedules generate instances. INTERVAL and DEPENDENT schedules
-    use different mechanisms (event-based tracking and parent schedule triggers).
+    Note: FIXED schedules generate hard instances. INTERVAL schedules generate
+    suggestion instances if suggested_days are configured. DEPENDENT schedules
+    are triggered by parent schedule completions.
     """
-    # Interval schedules don't use pre-generated instances - they track based on actual events
+    # Interval schedules: generate instances on suggested days (as visual reminders)
     if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        if schedule.suggested_days:
+            # suggested_days is a list like [0, 3] for Sunday and Wednesday
+            # weekday() returns 0=Mon, 6=Sun, but we store 0=Sun, 6=Sat
+            weekday = (check_date.weekday() + 1) % 7  # Convert to 0=Sun format
+            return weekday in schedule.suggested_days
+        # No suggested days = no calendar instances (purely event-based)
         return False
 
     # Dependent schedules are triggered by parent schedule completions, not calendar dates
