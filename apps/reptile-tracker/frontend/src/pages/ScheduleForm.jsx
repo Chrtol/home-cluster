@@ -29,7 +29,7 @@ function ScheduleForm() {
   const [reptileId, setReptileId] = useState("");
   const [name, setName] = useState("");
   const [scheduleType, setScheduleType] = useState("feeding");
-  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed" or "interval"
+  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed", "interval", or "dependent"
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
   const [foodCategory, setFoodCategory] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
@@ -398,7 +398,7 @@ function ScheduleForm() {
         name: name || null,
         schedule_type: scheduleType,
         schedule_mode: scheduleMode,
-        schedule_rule: scheduleRule,
+        schedule_rule: scheduleMode === "dependent" ? "dependent" : scheduleRule,
         enabled,
         notes,
       };
@@ -409,6 +409,18 @@ function ScheduleForm() {
         scheduleData.min_days_between = parseInt(minDaysBetween) || null;
         scheduleData.max_days_between = maxDaysBetween ? parseInt(maxDaysBetween) : null;
         scheduleData.suggested_days = suggestedDays.length > 0 ? suggestedDays : null;
+      }
+
+      // Add dependent mode fields
+      if (scheduleMode === "dependent") {
+        scheduleData.parent_schedule_id = parseInt(parentScheduleId);
+        scheduleData.dependent_rule = dependentRule;
+
+        if (dependentRule === "every_nth") {
+          scheduleData.dependent_frequency = parseInt(dependentFrequency);
+        } else if (dependentRule === "specific_days") {
+          scheduleData.dependent_days = dependentDays.sort((a, b) => a - b).join(",");
+        }
       }
 
       // Add type-specific fields
@@ -429,15 +441,6 @@ function ScheduleForm() {
         scheduleData.days_of_week = daysOfWeek.sort((a, b) => a - b).join(",");
       } else if (scheduleRule === "monthly") {
         scheduleData.day_of_month = parseInt(dayOfMonth);
-      } else if (scheduleRule === "dependent") {
-        scheduleData.parent_schedule_id = parseInt(parentScheduleId);
-        scheduleData.dependent_rule = dependentRule;
-
-        if (dependentRule === "every_nth") {
-          scheduleData.dependent_frequency = parseInt(dependentFrequency);
-        } else if (dependentRule === "specific_days") {
-          scheduleData.dependent_days = dependentDays.sort((a, b) => a - b).join(",");
-        }
       }
 
       // Add supplement for supplement schedules
@@ -561,40 +564,56 @@ function ScheduleForm() {
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Schedule Mode *
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => setScheduleMode("fixed")}
-              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+              className={`px-3 py-3 rounded-lg border-2 transition-all ${
                 scheduleMode === "fixed"
                   ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
                   : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
               }`}
             >
-              <div className="font-semibold">Fixed Schedule</div>
+              <div className="font-semibold text-sm">Fixed</div>
               <div className="text-xs mt-1 opacity-75">
-                Specific dates/days
+                Calendar-based
               </div>
             </button>
             <button
               type="button"
               onClick={() => setScheduleMode("interval")}
-              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+              className={`px-3 py-3 rounded-lg border-2 transition-all ${
                 scheduleMode === "interval"
                   ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
                   : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
               }`}
             >
-              <div className="font-semibold">Interval</div>
+              <div className="font-semibold text-sm">Interval</div>
               <div className="text-xs mt-1 opacity-75">
-                Time-based intervals
+                Time-based
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleMode("dependent")}
+              className={`px-3 py-3 rounded-lg border-2 transition-all ${
+                scheduleMode === "dependent"
+                  ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
+                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+              }`}
+            >
+              <div className="font-semibold text-sm">Dependent</div>
+              <div className="text-xs mt-1 opacity-75">
+                Event-triggered
               </div>
             </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             {scheduleMode === "fixed"
-              ? "Schedule occurs on specific dates or days of the week (or dependent on another schedule)"
-              : "Time interval between events with min/max day constraints (e.g., every 3-4 days)"}
+              ? "Schedule occurs on specific dates or days of the week"
+              : scheduleMode === "interval"
+              ? "Time interval between events with min/max day constraints (e.g., every 3-4 days)"
+              : "Triggered when another schedule is completed (e.g., weigh after every 3rd feeding)"}
           </p>
         </div>
 
@@ -857,7 +876,8 @@ function ScheduleForm() {
           </div>
         )}
 
-        {scheduleRule === "dependent" && (
+        {/* Dependent Mode Fields */}
+        {scheduleMode === "dependent" && (
           <>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
