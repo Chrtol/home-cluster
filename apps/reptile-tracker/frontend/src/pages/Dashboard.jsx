@@ -524,33 +524,18 @@ export default function Dashboard() {
     const quotaStatus = quotaStatuses[scheduleId];
     if (!quotaStatus) return null;
 
-    const { count, quota_frequency, period_type, quota_met, quota_exceeded } = quotaStatus;
+    const { count, period_type } = quotaStatus;
     const periodLabel = format === 'full'
       ? (period_type === 'week' ? 'this week' : 'this month')
       : (period_type === 'week' ? 'wk' : 'mo');
 
-    if (quota_exceeded) {
-      return {
-        text: format === 'full'
-          ? `${count}/${quota_frequency} ${periodLabel} ⚠`
-          : `${count}/${quota_frequency}/${periodLabel} ⚠`,
-        className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700'
-      };
-    } else if (quota_met) {
-      return {
-        text: format === 'full'
-          ? `${count}/${quota_frequency} ${periodLabel} ✓`
-          : `${count}/${quota_frequency}/${periodLabel} ✓`,
-        className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700'
-      };
-    } else {
-      return {
-        text: format === 'full'
-          ? `${count}/${quota_frequency} ${periodLabel}`
-          : `${count}/${quota_frequency}/${periodLabel}`,
-        className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
-      };
-    }
+    // Simple informational badge (no enforcement colors)
+    return {
+      text: format === 'full'
+        ? `${count} ${periodLabel}`
+        : `${count}/${periodLabel}`,
+      className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
+    };
   };
 
   const getScheduleTypeIcon = (type) => {
@@ -1173,7 +1158,7 @@ export default function Dashboard() {
                                     </span>
                                   </>
                                 )}
-                                {event.schedule_mode === 'requirement' && (() => {
+                                {event.schedule_mode === 'interval' && (() => {
                                   const quotaBadge = getQuotaBadge(event.schedule_id);
                                   return quotaBadge ? (
                                     <>
@@ -1220,7 +1205,7 @@ export default function Dashboard() {
                                 <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
                               )}
                             </div>
-                            {event.schedule_mode === 'requirement' && (() => {
+                            {event.schedule_mode === 'interval' && (() => {
                               const quotaBadge = getQuotaBadge(event.schedule_id);
                               return quotaBadge ? (
                                 <div className="mt-0.5 flex items-center gap-1">
@@ -1594,7 +1579,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {event.schedule_mode === 'requirement' && (() => {
+                            {event.schedule_mode === 'interval' && (() => {
                               const quotaBadge = getQuotaBadge(event.schedule_id, 'full');
                               return quotaBadge ? (
                                 <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>

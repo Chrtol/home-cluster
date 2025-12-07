@@ -29,7 +29,7 @@ function ScheduleForm() {
   const [reptileId, setReptileId] = useState("");
   const [name, setName] = useState("");
   const [scheduleType, setScheduleType] = useState("feeding");
-  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed" or "requirement"
+  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed", "interval", or "dependent"
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
   const [foodCategory, setFoodCategory] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
@@ -174,9 +174,8 @@ function ScheduleForm() {
       setTimeSlot(schedule.time_slot || "");
       setHealthCategory(schedule.health_category || "");
 
-      // Load requirement mode fields
+      // Load interval mode fields
       setQuotaPeriod(schedule.quota_period || "week");
-      setQuotaFrequency(schedule.quota_frequency || "");
       setMinDaysBetween(schedule.min_days_between || "");
       setMaxDaysBetween(schedule.max_days_between || "");
       setSuggestedDays(schedule.suggested_days || []);
@@ -404,10 +403,9 @@ function ScheduleForm() {
         notes,
       };
 
-      // Add requirement mode fields
-      if (scheduleMode === "requirement") {
+      // Add interval mode fields
+      if (scheduleMode === "interval") {
         scheduleData.quota_period = quotaPeriod;
-        scheduleData.quota_frequency = parseInt(quotaFrequency) || null;
         scheduleData.min_days_between = parseInt(minDaysBetween) || null;
         scheduleData.max_days_between = maxDaysBetween ? parseInt(maxDaysBetween) : null;
         scheduleData.suggested_days = suggestedDays.length > 0 ? suggestedDays : null;
@@ -580,104 +578,93 @@ function ScheduleForm() {
             </button>
             <button
               type="button"
-              onClick={() => setScheduleMode("requirement")}
+              onClick={() => setScheduleMode("interval")}
               className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                scheduleMode === "requirement"
+                scheduleMode === "interval"
                   ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
                   : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
               }`}
             >
-              <div className="font-semibold">Requirement</div>
+              <div className="font-semibold">Interval</div>
               <div className="text-xs mt-1 opacity-75">
-                Weekly quota
+                Time-based intervals
+              </div>
+            </button>
+            <button
+              type="button"
+              disabled
+              className="px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
+            >
+              <div className="font-semibold">Dependent</div>
+              <div className="text-xs mt-1 opacity-75">
+                Coming Soon
               </div>
             </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             {scheduleMode === "fixed"
               ? "Schedule occurs on specific dates or days of the week"
-              : "Set a weekly feeding quota (e.g., 2x per week with 2+ days between)"}
+              : scheduleMode === "interval"
+              ? "Time interval between events with min/max day constraints (e.g., every 3-4 days)"
+              : "Triggered by another schedule (coming soon)"}
           </p>
         </div>
 
-        {/* Requirement Mode Fields */}
-        {scheduleMode === "requirement" && (
+        {/* Interval Mode Fields */}
+        {scheduleMode === "interval" && (
           <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Min Days Between *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={minDaysBetween}
+                  onChange={(e) => setMinDaysBetween(e.target.value)}
+                  required
+                  placeholder="e.g., 3"
+                  className="input-field"
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Minimum time to wait (HARD constraint)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Max Days Between *
+                </label>
+                <input
+                  type="number"
+                  min={minDaysBetween || "1"}
+                  value={maxDaysBetween}
+                onChange={(e) => setMaxDaysBetween(e.target.value)}
+                required
+                placeholder="e.g., 4"
+                className="input-field"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Maximum allowed time (HARD constraint)
+              </p>
+            </div>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Quota Period *
+                Period Tracking
               </label>
               <select
                 value={quotaPeriod}
                 onChange={(e) => setQuotaPeriod(e.target.value)}
-                required
                 className="input-field"
               >
-                <option value="week">Weekly</option>
-                <option value="month">Monthly</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
               </select>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {quotaPeriod === "week"
-                  ? "Track feedings per week (e.g., 2x per week)"
-                  : "Track feedings per month (e.g., 4x per month)"}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                {quotaPeriod === "week" ? "Feedings Per Week" : "Feedings Per Month"} *
-              </label>
-              <input
-                type="number"
-                min="1"
-                max={quotaPeriod === "week" ? "7" : "31"}
-                value={quotaFrequency}
-                onChange={(e) => setQuotaFrequency(e.target.value)}
-                required
-                placeholder={quotaPeriod === "week" ? "e.g., 2 for 2x per week" : "e.g., 4 for 4x per month"}
-                className="input-field"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {quotaPeriod === "week"
-                  ? "How many times per week should this feeding occur?"
-                  : "How many times per month should this feeding occur?"}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Minimum Days Between Feedings *
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="6"
-                value={minDaysBetween}
-                onChange={(e) => setMinDaysBetween(e.target.value)}
-                required
-                placeholder="e.g., 2 for at least 2 days between feedings"
-                className="input-field"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Prevents feeding too soon after the last feeding
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Maximum Days Between Feedings (Optional)
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="14"
-                value={maxDaysBetween}
-                onChange={(e) => setMaxDaysBetween(e.target.value)}
-                placeholder="e.g., 4 for feeding within 4 days"
-                className="input-field"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Optional: Maximum days allowed between feedings (will trigger alerts)
+                How to group feeding counts for display (informational only)
               </p>
             </div>
 
@@ -702,7 +689,7 @@ function ScheduleForm() {
                 ))}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Optional: Suggest days for feeding (soft reminders). You can still feed on any day.
+                Calendar instances will appear on these days (adapts to actual completion)
               </p>
             </div>
           </>
