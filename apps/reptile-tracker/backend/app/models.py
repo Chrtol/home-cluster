@@ -87,14 +87,15 @@ class NotificationType(str, PyEnum):
 
 class ScheduleMode(str, PyEnum):
     """Mode of schedule operation"""
-    FIXED = "fixed"  # Fixed dates/days (current behavior)
-    REQUIREMENT = "requirement"  # Flexible quota-based scheduling (weekly or monthly)
+    FIXED = "fixed"  # Fixed dates/days (calendar-based schedules)
+    INTERVAL = "interval"  # Time-based intervals with min/max days between events
+    REQUIREMENT = "requirement"  # DEPRECATED: Use INTERVAL instead (kept for migration compatibility)
 
 
 class QuotaPeriod(str, PyEnum):
-    """Period for requirement-based quotas"""
-    WEEK = "week"  # Weekly quotas (e.g., 2x per week)
-    MONTH = "month"  # Monthly quotas (e.g., 4x per month)
+    """Period for interval schedule tracking (informational only, no enforcement)"""
+    WEEK = "week"  # Group by week for display
+    MONTH = "month"  # Group by month for display
 
 
 # Association table for reptile access
@@ -402,11 +403,10 @@ class Schedule(Base):
     dependent_frequency = Column(Integer, nullable=True)  # For every_nth (e.g., every 2nd feeding)
     dependent_days = Column(String, nullable=True)  # For specific_days (e.g., '1,3' for Mon,Wed)
 
-    # For requirement-based schedules (flexible quotas - weekly or monthly)
-    quota_period = Column(Enum(QuotaPeriod, values_callable=lambda x: [e.value for e in x], name='quota_period'), nullable=True)  # "week" or "month"
-    quota_frequency = Column(Integer, nullable=True)  # Number of times per period (e.g., 2x per week or 4x per month)
-    min_days_between = Column(Integer, nullable=True)  # Minimum days between feedings (e.g., 2 days)
-    max_days_between = Column(Integer, nullable=True)  # Maximum days between feedings (optional, e.g., 4 days)
+    # For interval-based schedules (time-based with min/max days constraints)
+    quota_period = Column(Enum(QuotaPeriod, values_callable=lambda x: [e.value for e in x], name='quota_period'), nullable=True)  # "week" or "month" - for grouping display data only (no enforcement)
+    min_days_between = Column(Integer, nullable=True)  # Minimum days between events (HARD constraint - e.g., 2 days)
+    max_days_between = Column(Integer, nullable=True)  # Maximum days between events (HARD constraint - e.g., 4 days)
     suggested_days = Column(JSON(none_as_null=True), nullable=True)  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
 
     # For supplement schedules
@@ -503,7 +503,7 @@ class ScheduleInstance(Base):
 
 
 class QuotaTracking(Base):
-    """Tracks quota progress for requirement-based schedules (weekly or monthly)"""
+    """Tracks quota progress for interval-based schedules (informational only - no enforcement)"""
     __tablename__ = "quota_tracking"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -511,8 +511,8 @@ class QuotaTracking(Base):
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
     period_start_date = Column(Date, nullable=False, index=True)  # Start of the period (Monday for week, 1st for month)
     period_type = Column(String(10), nullable=False)  # "week" or "month"
-    count = Column(Integer, nullable=False, default=0)  # Number of completions this period
-    last_completion_date = Column(Date, nullable=True)  # Last completion date (for min_days_between validation)
+    count = Column(Integer, nullable=False, default=0)  # Number of completions this period (read-only tracking)
+    last_completion_date = Column(Date, nullable=True)  # Last completion date (for calculating days_since_last)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

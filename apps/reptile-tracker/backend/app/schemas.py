@@ -350,11 +350,10 @@ class ScheduleBase(BaseModel):
     dependent_frequency: Optional[int] = None  # For every_nth
     dependent_days: Optional[str] = None  # For specific_days
 
-    # For requirement-based schedules (flexible quotas - weekly or monthly)
-    quota_period: Optional[str] = None  # "week" or "month"
-    quota_frequency: Optional[int] = None  # Number of times per period (e.g., 2x per week or 4x per month)
-    min_days_between: Optional[int] = None  # Minimum days between feedings (e.g., 2 days)
-    max_days_between: Optional[int] = None  # Maximum days between feedings (optional, e.g., 4 days)
+    # For interval-based schedules (time-based intervals with min/max days constraints)
+    quota_period: Optional[str] = None  # "week" or "month" - for grouping display data only (no enforcement)
+    min_days_between: Optional[int] = None  # Minimum days between events (HARD constraint - e.g., 2 days)
+    max_days_between: Optional[int] = None  # Maximum days between events (HARD constraint - e.g., 4 days)
     suggested_days: Optional[List[int]] = None  # Optional suggested days array (e.g., [1, 4] for Mon, Thu)
 
     supplement_id: Optional[int] = None  # For supplement schedules
@@ -403,12 +402,11 @@ class ScheduleUpdate(BaseModel):
     dependent_frequency: Optional[int] = None
     dependent_days: Optional[str] = None
 
-    # For requirement-based schedules (flexible quotas - weekly or monthly)
-    quota_period: Optional[str] = None
-    quota_frequency: Optional[int] = None
-    min_days_between: Optional[int] = None
-    max_days_between: Optional[int] = None
-    suggested_days: Optional[List[int]] = None
+    # For interval-based schedules (time-based intervals with min/max days constraints)
+    quota_period: Optional[str] = None  # "week" or "month" - for grouping display data only
+    min_days_between: Optional[int] = None  # Minimum days between events (HARD constraint)
+    max_days_between: Optional[int] = None  # Maximum days between events (HARD constraint)
+    suggested_days: Optional[List[int]] = None  # Optional suggested days array
 
     supplement_id: Optional[int] = None
 

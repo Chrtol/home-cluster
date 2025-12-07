@@ -46,11 +46,11 @@ async def get_reptile_quota_status(
     # Default to today
     check_date = current_date or date.today()
 
-    # Get all requirement schedules for this reptile
+    # Get all interval schedules for this reptile
     result = await db.execute(
         select(Schedule).where(
             Schedule.reptile_id == reptile_id,
-            Schedule.schedule_mode == ScheduleMode.REQUIREMENT,
+            Schedule.schedule_mode == ScheduleMode.INTERVAL,
             Schedule.enabled == True
         )
     )
@@ -97,11 +97,11 @@ async def get_schedule_quota_status(
     # Check access
     await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.VIEWER)
 
-    # Check if it's a requirement schedule
-    if schedule.schedule_mode != ScheduleMode.REQUIREMENT:
+    # Check if it's an interval schedule
+    if schedule.schedule_mode != ScheduleMode.INTERVAL:
         raise HTTPException(
             status_code=400,
-            detail="This endpoint only works for requirement-based schedules"
+            detail="This endpoint only works for interval-based schedules"
         )
 
     # Default to today

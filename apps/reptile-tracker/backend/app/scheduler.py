@@ -1762,27 +1762,29 @@ async def check_auto_complete_schedules():
         logger.error(f"Error in check_auto_complete_schedules: {e}", exc_info=True)
 
 
-async def check_requirement_schedule_notifications():
+async def check_interval_schedule_notifications():
     """
-    Check requirement-based schedules and send quota-related notifications:
-    - Max days between warnings
-    - End-of-period reminders (for quota not yet met)
-    - Quota exceeded alerts
+    Check interval-based schedules and send max_days_between warnings:
+    - Max days approaching (1 day before max_days_between)
+    - Max days exceeded (reached or exceeded max_days_between)
+
+    Note: Quota enforcement warnings (period ending, quota exceeded) have been removed.
+    Only temporal (time-based) constraints are enforced.
     """
-    logger.info("Running requirement schedule notification check")
+    logger.info("Running interval schedule notification check")
 
     try:
         async with async_session_maker() as db:
             now = datetime.now(timezone.utc)
             today = now.date()
 
-            # Get all enabled requirement schedules with notifications enabled
+            # Get all enabled interval schedules with notifications enabled
             result = await db.execute(
                 select(Schedule).where(
                     and_(
                         Schedule.enabled == True,
                         Schedule.notifications_enabled == True,
-                        Schedule.schedule_mode == ScheduleMode.REQUIREMENT
+                        Schedule.schedule_mode == ScheduleMode.INTERVAL
                     )
                 ).options(
                     selectinload(Schedule.notification_channels)
@@ -1790,7 +1792,7 @@ async def check_requirement_schedule_notifications():
             )
             schedules = result.scalars().all()
 
-            logger.info(f"Found {len(schedules)} requirement schedules with notifications enabled")
+            logger.info(f"Found {len(schedules)} interval schedules with notifications enabled")
 
             for schedule in schedules:
                 try:
@@ -1805,13 +1807,13 @@ async def check_requirement_schedule_notifications():
                         db, schedule, schedule.reptile_id, today, first_day_of_week=0
                     )
 
-                    # Check max_days_between warning
+                    # Only check max_days_between warning (HARD constraint)
                     if schedule.max_days_between and quota_status.get("days_since_last") is not None:
                         days_since_last = quota_status["days_since_last"]
 
                         # Send warning if approaching max (1 day before max)
                         if days_since_last == schedule.max_days_between - 1:
-                            await send_quota_warning_notification(
+                            await send_interval_warning_notification(
                                 db=db,
                                 reptile=reptile,
                                 schedule=schedule,
@@ -1820,7 +1822,7 @@ async def check_requirement_schedule_notifications():
                             )
                         # Send alert if max exceeded
                         elif days_since_last >= schedule.max_days_between:
-                            await send_quota_warning_notification(
+                            await send_interval_warning_notification(
                                 db=db,
                                 reptile=reptile,
                                 schedule=schedule,
@@ -1828,53 +1830,15 @@ async def check_requirement_schedule_notifications():
                                 quota_status=quota_status
                             )
 
-                    # Check end-of-period reminder (send 1 day before period ends)
-                    if not quota_status.get("quota_met"):
-                        # Calculate period end date
-                        period_start = quota_status.get("period_start_date")
-                        if period_start:
-                            if period_type == "week":
-                                period_end = period_start + timedelta(days=6)
-                            else:  # month
-                                # Last day of month
-                                if period_start.month == 12:
-                                    next_month_start = period_start.replace(year=period_start.year + 1, month=1)
-                                else:
-                                    next_month_start = period_start.replace(month=period_start.month + 1)
-                                period_end = next_month_start - timedelta(days=1)
-
-                            # Send reminder if tomorrow is the last day
-                            if today == period_end - timedelta(days=1):
-                                await send_quota_warning_notification(
-                                    db=db,
-                                    reptile=reptile,
-                                    schedule=schedule,
-                                    warning_type="period_ending_soon",
-                                    quota_status=quota_status
-                                )
-
-                    # Check quota exceeded alert
-                    if quota_status.get("quota_exceeded"):
-                        # Only send once per period (check if we've already sent this period)
-                        # We'll use a simple check: only send on the day the quota was exceeded
-                        if quota_status["count"] == (schedule.quota_frequency or 0) + 1:
-                            await send_quota_warning_notification(
-                                db=db,
-                                reptile=reptile,
-                                schedule=schedule,
-                                warning_type="quota_exceeded",
-                                quota_status=quota_status
-                            )
-
                 except Exception as e:
-                    logger.error(f"Error checking requirement schedule {schedule.id}: {e}", exc_info=True)
+                    logger.error(f"Error checking interval schedule {schedule.id}: {e}", exc_info=True)
                     continue
 
     except Exception as e:
-        logger.error(f"Error in check_requirement_schedule_notifications: {e}", exc_info=True)
+        logger.error(f"Error in check_interval_schedule_notifications: {e}", exc_info=True)
 
 
-async def send_quota_warning_notification(
+async def send_interval_warning_notification(
     db: AsyncSession,
     reptile: Reptile,
     schedule: Schedule,
@@ -1882,7 +1846,9 @@ async def send_quota_warning_notification(
     quota_status: Dict
 ):
     """
-    Send quota warning notification to all channels for a requirement schedule
+    Send interval warning notification to all channels for an interval schedule.
+
+    Only sends max_days_between warnings (HARD constraint).
 
     Uses the notification template system to allow user customization.
 
@@ -2108,14 +2074,14 @@ async def start_scheduler():
         replace_existing=True
     )
 
-    # Check requirement schedule notifications once per day at 10 AM UTC
+    # Check interval schedule notifications once per day at 10 AM UTC
     scheduler.add_job(
-        check_requirement_schedule_notifications,
+        check_interval_schedule_notifications,
         trigger="cron",
         hour=10,
         minute=0,
-        id="check_requirement_notifications",
-        name="Check requirement schedule notifications",
+        id="check_interval_notifications",
+        name="Check interval schedule notifications",
         replace_existing=True
     )
 

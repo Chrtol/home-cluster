@@ -274,10 +274,10 @@ async def get_dashboard_data(
     )
     weekly_instances = instances_result.scalars().all()
 
-    # Fetch quota status for requirement schedules
+    # Fetch quota status for interval schedules (informational only - no enforcement)
     quota_statuses = {}
     for schedule in schedules:
-        if schedule.schedule_mode == ScheduleMode.REQUIREMENT:
+        if schedule.schedule_mode == ScheduleMode.INTERVAL:
             try:
                 quota_status = await check_quota_status(
                     db, schedule, schedule.reptile_id, py_date.today(), first_day_of_week=0
@@ -422,10 +422,10 @@ async def get_calendar_data(
     )
     instances = instances_result.scalars().all()
 
-    # Fetch quota status for requirement schedules
+    # Fetch quota status for interval schedules (informational only - no enforcement)
     quota_statuses = {}
     for schedule in schedules:
-        if schedule.schedule_mode == ScheduleMode.REQUIREMENT:
+        if schedule.schedule_mode == ScheduleMode.INTERVAL:
             try:
                 quota_status = await check_quota_status(
                     db, schedule, schedule.reptile_id, py_date.today(), first_day_of_week=0
