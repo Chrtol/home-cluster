@@ -147,7 +147,7 @@ async def create_schedule(
     # Schedule notification jobs for this schedule
     from app.scheduler import schedule_notification_jobs_for_schedule
     try:
-        await schedule_notification_jobs_for_schedule(new_schedule, days_ahead=7)
+        await schedule_notification_jobs_for_schedule(new_schedule.id, days_ahead=7)
     except Exception as e:
         # Log error but don't fail the schedule creation
         import logging
