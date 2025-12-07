@@ -279,7 +279,7 @@ async def schedule_notification_jobs_for_schedule(schedule_id: int, days_ahead: 
             await db.commit()
 
     except Exception as e:
-        logger.error(f"Error scheduling jobs for schedule {schedule.id}: {e}", exc_info=True)
+        logger.error(f"Error scheduling jobs for schedule {schedule_id}: {e}", exc_info=True)
 
 
 async def _schedule_single_notification_job(
