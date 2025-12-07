@@ -1023,7 +1023,7 @@ async def check_schedule_reminders():
                                 NotificationChannel.id.in_(channel_ids)
                             )
                         )
-                        .distinct()
+                        .distinct(Schedule.id)
                     )
                     schedules = schedules_result.scalars().all()
 

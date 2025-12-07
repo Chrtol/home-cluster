@@ -63,9 +63,9 @@ export default function Dashboard() {
           weekStart = today;
           weekEnd = today;
         } else if (calendarView === 'three-day') {
-          // 3-day view: fetch today + next 2 days
-          weekStart = today;
-          weekEnd = addDays(today, 2);
+          // 3-day view: fetch yesterday + today + tomorrow
+          weekStart = addDays(today, -1);
+          weekEnd = addDays(today, 1);
         } else {
           // Week view: fetch full week (Monday-Sunday or Sunday-Saturday)
           weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
@@ -982,7 +982,7 @@ export default function Dashboard() {
           startDate = today; // Start from today for 1-day view
         } else if (calendarView === 'three-day') {
           daysToShow = 3;
-          startDate = today; // Start from today for 3-day view
+          startDate = addDays(today, -1); // Start from yesterday for 3-day view (yesterday, today, tomorrow)
         }
 
         const weekDays = Array.from({ length: daysToShow }, (_, i) => addDays(startDate, i));

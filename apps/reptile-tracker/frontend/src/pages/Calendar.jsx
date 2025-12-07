@@ -274,11 +274,11 @@ function Calendar() {
   };
 
   const getDaysInThreeDays = () => {
-    // Show today + next 2 days (total of 3 days) - always starts from today
+    // Show yesterday + today + tomorrow (total of 3 days)
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset to start of day
     const days = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = -1; i <= 1; i++) {
       const day = new Date(today);
       day.setDate(today.getDate() + i);
       days.push(day);
