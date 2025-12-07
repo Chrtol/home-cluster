@@ -25,9 +25,9 @@ const DEFAULT_DASHBOARD_CARDS = [
   { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 3, size: 'small', type: 'content' },
   { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 4, size: 'medium', type: 'content' },
   // Additional summary cards (disabled by default) - TODO: Implement these in Dashboard.jsx
-  // { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 5, size: 'large', type: 'summary' },
-  // { id: 'health_summary', label: 'Health Summary', visible: false, order: 6, size: 'large', type: 'summary' },
-  // { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 7, size: 'large', type: 'summary' },
+  { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 5, size: 'large', type: 'summary' },
+  { id: 'health_summary', label: 'Health Summary', visible: false, order: 6, size: 'large', type: 'summary' },
+  { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 7, size: 'large', type: 'summary' },
 ];
 
 export function getDashboardCardSettings() {
