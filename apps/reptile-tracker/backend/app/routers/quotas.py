@@ -1,5 +1,5 @@
 """
-API endpoints for weekly quota tracking (requirement-based schedules)
+API endpoints for quota tracking (interval-based schedules)
 """
 from typing import List, Optional
 from datetime import date, datetime
@@ -16,7 +16,7 @@ from app.schemas import QuotaTracking as QuotaTrackingSchema
 from app.quota_tracker import (
     check_quota_status,
     validate_min_days_between,
-    get_requirement_schedules_for_feeding,
+    get_interval_schedules_for_feeding,
 )
 
 router = APIRouter()
@@ -145,8 +145,8 @@ async def validate_feeding(
     # Default to today
     proposed_date = feeding_date or date.today()
 
-    # Get matching requirement schedules
-    schedules = await get_requirement_schedules_for_feeding(db, reptile_id, food_category)
+    # Get matching interval schedules
+    schedules = await get_interval_schedules_for_feeding(db, reptile_id, food_category)
 
     # Validate each schedule
     results = []
