@@ -362,7 +362,7 @@ async def regenerate_instances_for_schedule(
 async def create_interval_schedule_instance(
     db: AsyncSession,
     schedule: Schedule,
-    last_completion_date: py_date
+    last_completion_date: Optional[py_date]
 ) -> ScheduleInstance:
     """
     Create next instance for interval schedule based on last completion.
@@ -375,7 +375,7 @@ async def create_interval_schedule_instance(
     Args:
         db: Database session
         schedule: The interval schedule
-        last_completion_date: Date of the last completion
+        last_completion_date: Date of the last completion (None for first instance)
 
     Returns:
         ScheduleInstance: The newly created instance
@@ -387,7 +387,11 @@ async def create_interval_schedule_instance(
         raise ValueError(f"Schedule {schedule.id} has no min_days_between set")
 
     # Calculate next date
-    next_date = last_completion_date + timedelta(days=schedule.min_days_between)
+    # If this is the first instance (no previous completion), start from today
+    if last_completion_date is None:
+        next_date = datetime.now(timezone.utc).date()
+    else:
+        next_date = last_completion_date + timedelta(days=schedule.min_days_between)
 
     # If suggested days specified, find nearest suggested day >= next_date
     if schedule.suggested_days:
