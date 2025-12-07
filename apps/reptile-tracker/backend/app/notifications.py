@@ -151,6 +151,12 @@ async def get_template_for_trigger(
         return None
 
 
+class SafeDict(dict):
+    """Dictionary that returns empty string for missing keys"""
+    def __missing__(self, key):
+        return ""
+
+
 def render_template(template_string: str, context: Dict[str, Any]) -> str:
     """
     Render a template string with context variables.
@@ -163,12 +169,12 @@ def render_template(template_string: str, context: Dict[str, Any]) -> str:
         Rendered string with variables substituted
     """
     try:
-        # Simple variable substitution using format_map
-        # Handles missing keys gracefully by leaving them unchanged
-        return template_string.format_map({
+        # Use SafeDict to handle missing keys gracefully (returns empty string)
+        safe_context = SafeDict({
             k: v if v is not None else ""
             for k, v in context.items()
         })
+        return template_string.format_map(safe_context)
     except Exception as e:
         logger.error(f"Error rendering template: {e}")
         return template_string

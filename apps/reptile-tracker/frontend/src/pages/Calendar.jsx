@@ -494,13 +494,14 @@ function Calendar() {
     return colors[color] || colors.gray;
   };
 
-  const handleDeleteSchedule = async (scheduleId) => {
-    if (!window.confirm("Are you sure you want to delete this schedule?")) {
+  const handleDeleteSchedule = async (schedule) => {
+    const scheduleName = schedule.name || schedule.schedule_type;
+    if (!window.confirm(`Are you sure you want to delete schedule "${scheduleName}"?`)) {
       return;
     }
 
     try {
-      const response = await axios.delete(`/api/schedules/${scheduleId}`, {
+      const response = await axios.delete(`/api/schedules/${schedule.id}`, {
         validateStatus: (status) => status >= 200 && status < 300, // Accept all 2xx as success
       });
 
@@ -845,7 +846,7 @@ function Calendar() {
                       <Edit size={18} />
                     </button>
                     <button
-                      onClick={() => handleDeleteSchedule(schedule.id)}
+                      onClick={() => handleDeleteSchedule(schedule)}
                       className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Delete schedule"
                     >
