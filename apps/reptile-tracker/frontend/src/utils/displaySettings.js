@@ -557,7 +557,25 @@ export function getDisplayProfiles() {
       profiles.splice(2, 0, mobileProfile); // Insert after compact
     }
 
-    if (!hasStandard || !hasCompact || !hasMobile) {
+    // Migration: Remove old "default" profile if "standard" exists
+    const hasOldDefault = profiles.find(p => p.id === 'default');
+    let needsSave = !hasStandard || !hasCompact || !hasMobile;
+
+    if (hasOldDefault && hasStandard) {
+      // Migrate active profile ID from old "default" to new "standard"
+      const oldActiveId = localStorage.getItem('active_profile_id');
+      if (oldActiveId === 'default') {
+        localStorage.setItem('active_desktop_profile_id', 'standard');
+        localStorage.removeItem('active_profile_id');
+      }
+
+      // Remove old default profile
+      const filtered = profiles.filter(p => p.id !== 'default');
+      localStorage.setItem('display_profiles', JSON.stringify(filtered));
+      return filtered;
+    }
+
+    if (needsSave) {
       localStorage.setItem('display_profiles', JSON.stringify(profiles));
     }
 
