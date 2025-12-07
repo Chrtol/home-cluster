@@ -34,6 +34,13 @@ Your current dashboard cards, statistics charts, chart appearance settings, and 
 
 All your dashboard and statistics settings will immediately change to match the selected profile.
 
+**Dual Profile System:**
+The system maintains separate active profiles for desktop and mobile views:
+- **Desktop Profile**: Active when screen width is 768px or wider (default: Standard)
+- **Mobile Profile**: Active when screen width is below 768px (default: Mobile)
+- Switching profiles automatically detects your current screen size and updates the appropriate profile
+- This allows you to have different optimized layouts for desktop and mobile without manual switching
+
 #### Updating a Profile
 
 When you make changes to your dashboard or statistics layout and want to save those changes to the currently active profile:
@@ -65,7 +72,7 @@ The profile will be updated with your current settings.
 2. Click the Trash icon
 3. Confirm deletion
 
-**Note:** Built-in profiles (Standard and Compact) cannot be deleted.
+**Note:** Built-in profiles (Standard, Compact, and Mobile) cannot be deleted.
 
 #### Exporting a Profile
 
@@ -107,8 +114,9 @@ All cards can be:
 ### Use Cases for Multiple Profiles
 
 **Built-in Profiles:**
-- **Standard**: Balanced layout for general use with full-width calendar and activity
-- **Compact**: Space-efficient for smaller screens or quick overview
+- **Standard**: Balanced layout for desktop use with full-width calendar and activity
+- **Compact**: Space-efficient layout prioritizing recent activity
+- **Mobile**: Optimized for mobile devices with full-width cards and 1-day calendar
 
 **Custom Profile Examples:**
 
@@ -156,7 +164,8 @@ Profiles are stored in `localStorage` with the following structure:
 
 **Storage Keys:**
 - `display_profiles` - Array of profile objects
-- `active_profile_id` - ID of currently active profile
+- `active_desktop_profile_id` - ID of active profile for desktop (≥768px width)
+- `active_mobile_profile_id` - ID of active profile for mobile (<768px width)
 
 **Profile Object Structure:**
 ```javascript
@@ -180,8 +189,12 @@ Profiles are stored in `localStorage` with the following structure:
 ```javascript
 // Profile Management
 getDisplayProfiles()                // Get all profiles
-getActiveProfileId()                // Get active profile ID
+getActiveProfileId()                // Get active profile ID (auto-detects desktop/mobile)
+getActiveDesktopProfileId()         // Get desktop profile ID
+getActiveMobileProfileId()          // Get mobile profile ID
 getActiveProfile()                  // Get active profile object
+setActiveProfileId(profileId, isMobile) // Set active profile for desktop or mobile
+isMobileScreen()                    // Check if screen width < 768px
 createProfileFromCurrent(name)      // Create new profile
 applyProfile(profileId)             // Switch to a profile
 updateProfileWithCurrent(profileId) // Update profile with current settings
@@ -189,15 +202,16 @@ updateProfileWithCurrent(profileId) // Update profile with current settings
 // Profile Operations
 renameProfile(profileId, newName)   // Rename a profile
 duplicateProfile(profileId, newName)// Duplicate a profile
-deleteProfile(profileId)            // Delete a profile (not Default)
+deleteProfile(profileId)            // Delete a profile (not built-in)
 
 // Import/Export
 exportProfile(profileId)            // Export single profile as JSON
 importProfile(data, customName)     // Import profile from JSON
 
-// Dashboard Cards (includes new optional cards)
+// Dashboard Cards
 getDashboardCardSettings()          // Get current dashboard cards
 saveDashboardCardSettings(cards)    // Save dashboard card configuration
+isCalendarExtraSmall()              // Check if weekly calendar card is XS size
 
 // Statistics Charts
 getStatisticsChartSettings(reptileId) // Get statistics charts (global or per-reptile)
@@ -206,10 +220,10 @@ saveStatisticsChartSettings(charts, reptileId) // Save charts configuration
 
 ### Built-in Profiles
 
-The system includes two built-in profiles that always exist:
+The system includes three built-in profiles that always exist:
 
-**Standard Profile:**
-- Balanced layout with full-width calendar and activity
+**Standard Profile** (Default Desktop):
+- Balanced layout for desktop use with full-width calendar and activity
 - Today Summary: Large
 - Weekly Calendar: Large
 - Weight Tracking: Medium
@@ -224,11 +238,20 @@ The system includes two built-in profiles that always exist:
 - Weight Tracking: Medium
 - Your Reptiles: Extra Small
 
-Both built-in profiles:
+**Mobile Profile** (Default Mobile):
+- Optimized for mobile devices with full-width cards
+- Today Summary: Large
+- Your Reptiles: Large
+- Recent Activity: Large
+- Weekly Calendar: Extra Small (1-day view only, 3d/7d buttons hidden)
+- Weight Tracking: Large
+
+All built-in profiles:
 - Created automatically on first use
 - Cannot be deleted (only custom profiles can be deleted)
 - Can be updated with Save button when active
-- Standard profile is the default active profile for new users
+- Standard profile is the default active desktop profile for new users
+- Mobile profile is the default active mobile profile for new users
 - Used as fallback if active profile is deleted
 
 ### Integration with Existing Features
@@ -283,15 +306,23 @@ Both built-in profiles:
 **Profile Switching Flow:**
 1. User clicks "Switch" on a profile
 2. `applyProfile(profileId)` is called
-3. Profile settings are loaded from `display_profiles` storage
-4. Settings are written to individual localStorage keys:
+3. System detects screen size using `isMobileScreen()` (checks if width < 768px)
+4. Profile settings are loaded from `display_profiles` storage
+5. Settings are written to individual localStorage keys:
    - `dashboard_cards`
    - `statistics_charts`
    - `chart_settings`
    - `weight_interpolation_mode`
-5. Active profile ID is updated in `active_profile_id`
-6. UI callback triggers component refresh
-7. Dashboard and Statistics pages automatically load new settings
+6. Active profile ID is updated in `active_desktop_profile_id` or `active_mobile_profile_id` based on screen size
+7. UI callback triggers component refresh
+8. Dashboard and Statistics pages automatically load new settings
+
+**Dual Profile System:**
+The system maintains separate active profiles for desktop and mobile:
+- `getActiveProfileId()` automatically returns the appropriate profile based on screen width
+- When switching profiles, the system updates the correct storage key (desktop or mobile)
+- If a profile is deleted and it's the active profile for either desktop or mobile, that platform falls back to its default (Standard for desktop, Mobile for mobile)
+- This allows seamless transitions when resizing browser window or switching devices
 
 ### ProfileManager Component
 
@@ -401,8 +432,11 @@ Users who have customized their dashboard/statistics before the profile system:
 - [ ] Duplicate a profile
 - [ ] Export a profile and verify JSON format
 - [ ] Import an exported profile
-- [ ] Delete a custom profile (verify Default cannot be deleted)
-- [ ] Delete active profile (verify switches to Default)
+- [ ] Delete a custom profile (verify built-in profiles cannot be deleted)
+- [ ] Delete active desktop profile (verify switches to Standard)
+- [ ] Delete active mobile profile (verify switches to Mobile)
+- [ ] Test profile switching on desktop and mobile screen sizes
+- [ ] Test calendar view button hiding when calendar is XS size
 - [ ] Verify profile settings persist after browser refresh
 - [ ] Test with new optional dashboard cards enabled
 - [ ] Test profile switching with per-reptile statistics settings
@@ -410,10 +444,30 @@ Users who have customized their dashboard/statistics before the profile system:
 ### Edge Cases
 
 1. **Empty profile name** - Validation prevents creation
-2. **Deleting active profile** - Auto-switches to Default
-3. **Corrupted localStorage** - Falls back to defaults
-4. **Missing Default profile** - Auto-created on load
-5. **Invalid import file** - Error message shown
+2. **Deleting active desktop profile** - Auto-switches to Standard
+3. **Deleting active mobile profile** - Auto-switches to Mobile
+4. **Corrupted localStorage** - Falls back to defaults
+5. **Missing built-in profiles** - Auto-created on load
+6. **Invalid import file** - Error message shown
+7. **Resizing window** - Automatically switches between desktop and mobile profiles
+
+## Responsive Features
+
+### Mobile Optimization
+
+**Calendar View Restrictions:**
+When the Weekly Calendar card is set to Extra Small (XS) size, the 3-day and 7-day view buttons are automatically hidden, leaving only the 1-day view. This prevents UI clutter and ensures optimal readability on compact layouts.
+
+Implementation:
+- `isCalendarExtraSmall()` function checks if calendar card size is 'xs'
+- Dashboard conditionally renders view buttons based on this check
+- Mobile profile defaults to XS calendar, automatically showing only 1-day view
+
+**Screen Size Detection:**
+- System uses 768px breakpoint (Tailwind's `md` breakpoint)
+- `window.innerWidth < 768` = mobile
+- `window.innerWidth >= 768` = desktop
+- Profiles automatically switch when window is resized across breakpoint
 
 ## Future Enhancements
 
@@ -422,9 +476,11 @@ Potential future improvements:
 1. **Cloud Sync** - Sync profiles across devices via backend API
 2. **Profile Templates** - Pre-built profiles for different use cases
 3. **Profile Sharing** - Share profiles with household members
-4. **Profile Scheduling** - Auto-switch profiles based on time/day
+4. **Profile Scheduling** - Auto-switch profiles based on time/day or location
 5. **Dashboard Themes** - Color schemes as part of profiles
 6. **Card Layouts** - More granular control over card positioning
+7. **Orientation Detection** - Separate profiles for portrait vs landscape on mobile
+8. **Per-Device Profiles** - Remember different profiles for different devices
 
 ## Troubleshooting
 
@@ -445,8 +501,13 @@ Potential future improvements:
 
 ### Built-in profiles missing
 
-**Symptom:** No profiles available or missing Standard/Compact profiles
-**Solution:** System auto-creates both built-in profiles, refresh page
+**Symptom:** No profiles available or missing Standard/Compact/Mobile profiles
+**Solution:** System auto-creates all three built-in profiles, refresh page
+
+### Profile not switching on mobile
+
+**Symptom:** Profile switches on desktop but not on mobile device
+**Solution:** Check browser width, system uses 768px breakpoint (Tailwind md). Clear localStorage and reload if issue persists.
 
 ## Developer Notes
 
