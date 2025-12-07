@@ -789,14 +789,6 @@ function Calendar() {
                     </div>
 
                     <div className="flex flex-wrap gap-3 mt-2">
-                      {schedule.schedule_mode === 'interval' && (() => {
-                        const quotaBadge = getQuotaBadge(schedule.id);
-                        return quotaBadge ? (
-                          <div className={`text-xs px-2 py-0.5 rounded-full font-medium ${quotaBadge.className}`}>
-                            {quotaBadge.text}
-                          </div>
-                        ) : null;
-                      })()}
                       {schedule.food_category && (
                         <div className="text-xs text-gray-500 dark:text-gray-500">
                           <span className="font-medium">Food:</span> {schedule.food_category}
@@ -898,21 +890,12 @@ function Calendar() {
 
                     const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
 
-                    const quotaBadge = event.schedule_mode === 'interval' ? getQuotaBadge(event.schedule_id) : null;
-
                     const EventContent = (
                       <div className={`px-4 py-3 rounded-lg border-2 ${
                         event.is_completed || event.is_actual
                           ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
                           : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                       }`}>
-                        {quotaBadge && (
-                          <div className="mb-2">
-                            <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${quotaBadge.className}`}>
-                              {quotaBadge.text}
-                            </div>
-                          </div>
-                        )}
                         <div className="flex items-center gap-3 mb-3">
                           <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
                             <TypeIcon size={20} />
@@ -1385,14 +1368,6 @@ function Calendar() {
                               </div>
 
                               <div className="text-xs space-y-1">
-                                {event.schedule_mode === 'interval' && (() => {
-                                  const quotaBadge = getQuotaBadge(event.schedule_id);
-                                  return quotaBadge ? (
-                                    <div className={`inline-block px-2 py-0.5 rounded-full font-medium ${quotaBadge.className}`}>
-                                      {quotaBadge.text}
-                                    </div>
-                                  ) : null;
-                                })()}
                                 {event.food_category && (
                                   <div className="text-xs opacity-90">Food: {event.food_category}</div>
                                 )}
@@ -1496,18 +1471,6 @@ function Calendar() {
                           {event.schedule_type}
                         </span>
                       </div>
-
-                      {/* Quota Badge for Interval Schedules */}
-                      {event.schedule_mode === 'interval' && (() => {
-                        const quotaBadge = getQuotaBadge(event.schedule_id);
-                        return quotaBadge ? (
-                          <div className="mb-3">
-                            <div className={`inline-block px-3 py-1.5 rounded-lg text-sm font-medium ${quotaBadge.className}`}>
-                              {quotaBadge.text}
-                            </div>
-                          </div>
-                        ) : null;
-                      })()}
 
                       {/* Details Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
