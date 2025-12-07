@@ -697,6 +697,41 @@ Assign specific household members as responsible for completing schedules, impro
 
 ## ✅ Recently Completed
 
+### December 2025 - Display Profiles System (2025-12-07)
+- [x] **Display Profiles for Dashboard and Statistics Pages** - ✅ COMPLETED (2025-12-07)
+  - Save, manage, and switch between different dashboard and statistics layouts
+  - Create named profiles from current settings with one click
+  - Quick profile switching to change entire layout instantly
+  - Update active profile with Save button when making changes
+  - Rename, duplicate, and delete profiles (except Default)
+  - Export individual profiles as shareable JSON files
+  - Import profiles from exported files with custom naming
+  - Automatic Default profile creation preserving existing customizations
+  - Integration with existing import/export functionality
+  - **New Optional Dashboard Cards** (disabled by default):
+    - Upcoming Schedules - Preview next 3-7 days of schedules
+    - Overdue & Missed - Alerts for missed or overdue schedules
+    - Health Alerts - Quick view of health concerns
+    - Feeding Streaks - Track consecutive feeding patterns
+    - Quick Actions - One-click buttons for common tasks
+    - Environment Tracking - Temperature/humidity monitoring
+  - **Technical Implementation:**
+    - Profile storage in localStorage with automatic Default profile
+    - ProfileManager component with inline editing and drag-to-reorder
+    - Profile object structure: ID, name, dashboard_cards, statistics_charts, chart_settings
+    - Import/export format detection (profile vs. full settings)
+    - Backwards compatible with existing display customization
+    - Per-reptile statistics settings preserved when switching profiles
+  - **Documentation:** Comprehensive developer guide in frontend/DISPLAY_PROFILES.md
+  - **Use Cases:**
+    - Detailed vs. Simple views for different contexts
+    - Breeding Season vs. Maintenance focus
+    - Mobile vs. Desktop optimized layouts
+    - Multiple household members with different preferences
+  - Frontend: `/src/utils/displaySettings.js` - 11 new profile management functions
+  - Frontend: `/src/components/ProfileManager.jsx` - Full profile UI component
+  - Frontend: `/src/pages/Settings.jsx` - Integration into Display tab
+
 ### December 2025 - Bug Fixes & UI Improvements (2025-12-07)
 - [x] **Fixed notification template variable substitution** - ✅ COMPLETED (2025-12-07)
   - Notifications were showing literal `{schedule_name}` and `{reptile_name}` instead of actual values

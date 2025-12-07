@@ -24,6 +24,13 @@ const DEFAULT_DASHBOARD_CARDS = [
   { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 2, size: 'large', type: 'content', interpolationMode: 'linear' },
   { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 3, size: 'small', type: 'content' },
   { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 4, size: 'medium', type: 'content' },
+  // New optional cards (disabled by default)
+  { id: 'upcoming_schedules', label: 'Upcoming Schedules', visible: false, order: 5, size: 'medium', type: 'content' },
+  { id: 'overdue_tasks', label: 'Overdue & Missed', visible: false, order: 6, size: 'small', type: 'content' },
+  { id: 'health_alerts', label: 'Health Alerts', visible: false, order: 7, size: 'small', type: 'content' },
+  { id: 'feeding_streaks', label: 'Feeding Streaks', visible: false, order: 8, size: 'xs', type: 'summary' },
+  { id: 'quick_actions', label: 'Quick Actions', visible: false, order: 9, size: 'small', type: 'content' },
+  { id: 'temperature_humidity', label: 'Environment Tracking', visible: false, order: 10, size: 'medium', type: 'content' },
 ];
 
 export function getDashboardCardSettings() {
@@ -379,4 +386,305 @@ export function resetAllDisplaySettings() {
   resetStatisticsChartSettings();
   resetChartSettings();
   localStorage.removeItem('weight_interpolation_mode');
+}
+
+// ============================================================================
+// DISPLAY PROFILES SYSTEM
+// ============================================================================
+
+/**
+ * Display profile structure:
+ * {
+ *   id: string (UUID)
+ *   name: string
+ *   dashboard_cards: array
+ *   statistics_charts: array (global only, per-reptile settings not included in profiles)
+ *   chart_settings: object
+ *   weight_interpolation_mode: string
+ *   created_at: ISO timestamp
+ *   updated_at: ISO timestamp
+ * }
+ */
+
+/**
+ * Generate a simple UUID for profile IDs
+ */
+function generateId() {
+  return 'profile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+}
+
+/**
+ * Get all saved display profiles
+ * @returns {Array} Array of profile objects
+ */
+export function getDisplayProfiles() {
+  const stored = localStorage.getItem('display_profiles');
+  if (!stored) {
+    // Create default profile if none exists
+    const defaultProfile = {
+      id: 'default',
+      name: 'Default',
+      dashboard_cards: DEFAULT_DASHBOARD_CARDS,
+      statistics_charts: DEFAULT_STATISTICS_CHARTS,
+      chart_settings: DEFAULT_CHART_SETTINGS,
+      weight_interpolation_mode: 'linear',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      isDefault: true
+    };
+    localStorage.setItem('display_profiles', JSON.stringify([defaultProfile]));
+    return [defaultProfile];
+  }
+
+  try {
+    const profiles = JSON.parse(stored);
+    // Ensure default profile exists
+    if (!profiles.find(p => p.id === 'default')) {
+      const defaultProfile = {
+        id: 'default',
+        name: 'Default',
+        dashboard_cards: DEFAULT_DASHBOARD_CARDS,
+        statistics_charts: DEFAULT_STATISTICS_CHARTS,
+        chart_settings: DEFAULT_CHART_SETTINGS,
+        weight_interpolation_mode: 'linear',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isDefault: true
+      };
+      profiles.unshift(defaultProfile);
+      localStorage.setItem('display_profiles', JSON.stringify(profiles));
+    }
+    return profiles;
+  } catch (e) {
+    console.error('Failed to parse display profiles', e);
+    return [];
+  }
+}
+
+/**
+ * Get the currently active profile ID
+ * @returns {string} Active profile ID
+ */
+export function getActiveProfileId() {
+  return localStorage.getItem('active_profile_id') || 'default';
+}
+
+/**
+ * Set the active profile ID
+ * @param {string} profileId - Profile ID to activate
+ */
+export function setActiveProfileId(profileId) {
+  localStorage.setItem('active_profile_id', profileId);
+}
+
+/**
+ * Get the currently active profile
+ * @returns {Object|null} Active profile object
+ */
+export function getActiveProfile() {
+  const profiles = getDisplayProfiles();
+  const activeId = getActiveProfileId();
+  return profiles.find(p => p.id === activeId) || profiles.find(p => p.id === 'default') || profiles[0];
+}
+
+/**
+ * Create a new profile from current settings
+ * @param {string} name - Profile name
+ * @returns {Object} Created profile object
+ */
+export function createProfileFromCurrent(name) {
+  const profiles = getDisplayProfiles();
+
+  const newProfile = {
+    id: generateId(),
+    name,
+    dashboard_cards: getDashboardCardSettings(),
+    statistics_charts: getStatisticsChartSettings(), // Global settings only
+    chart_settings: getChartSettings(),
+    weight_interpolation_mode: getWeightInterpolationMode(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    isDefault: false
+  };
+
+  profiles.push(newProfile);
+  localStorage.setItem('display_profiles', JSON.stringify(profiles));
+  return newProfile;
+}
+
+/**
+ * Update an existing profile with current settings
+ * @param {string} profileId - Profile ID to update
+ * @returns {boolean} Success status
+ */
+export function updateProfileWithCurrent(profileId) {
+  const profiles = getDisplayProfiles();
+  const profileIndex = profiles.findIndex(p => p.id === profileId);
+
+  if (profileIndex === -1) return false;
+
+  profiles[profileIndex] = {
+    ...profiles[profileIndex],
+    dashboard_cards: getDashboardCardSettings(),
+    statistics_charts: getStatisticsChartSettings(),
+    chart_settings: getChartSettings(),
+    weight_interpolation_mode: getWeightInterpolationMode(),
+    updated_at: new Date().toISOString()
+  };
+
+  localStorage.setItem('display_profiles', JSON.stringify(profiles));
+  return true;
+}
+
+/**
+ * Rename a profile
+ * @param {string} profileId - Profile ID to rename
+ * @param {string} newName - New profile name
+ * @returns {boolean} Success status
+ */
+export function renameProfile(profileId, newName) {
+  const profiles = getDisplayProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+
+  if (!profile) return false;
+
+  profile.name = newName;
+  profile.updated_at = new Date().toISOString();
+
+  localStorage.setItem('display_profiles', JSON.stringify(profiles));
+  return true;
+}
+
+/**
+ * Delete a profile
+ * @param {string} profileId - Profile ID to delete
+ * @returns {boolean} Success status
+ */
+export function deleteProfile(profileId) {
+  // Can't delete default profile
+  if (profileId === 'default') return false;
+
+  const profiles = getDisplayProfiles();
+  const filtered = profiles.filter(p => p.id !== profileId);
+
+  if (filtered.length === profiles.length) return false; // Profile not found
+
+  localStorage.setItem('display_profiles', JSON.stringify(filtered));
+
+  // If deleted profile was active, switch to default
+  if (getActiveProfileId() === profileId) {
+    setActiveProfileId('default');
+    applyProfile('default');
+  }
+
+  return true;
+}
+
+/**
+ * Apply a profile (load its settings into localStorage)
+ * @param {string} profileId - Profile ID to apply
+ * @returns {boolean} Success status
+ */
+export function applyProfile(profileId) {
+  const profiles = getDisplayProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+
+  if (!profile) return false;
+
+  // Apply settings to localStorage
+  saveDashboardCardSettings(profile.dashboard_cards);
+  saveStatisticsChartSettings(profile.statistics_charts);
+  saveChartSettings(profile.chart_settings);
+  saveWeightInterpolationMode(profile.weight_interpolation_mode);
+
+  // Set as active
+  setActiveProfileId(profileId);
+
+  return true;
+}
+
+/**
+ * Duplicate a profile
+ * @param {string} profileId - Profile ID to duplicate
+ * @param {string} newName - Name for the duplicated profile
+ * @returns {Object|null} Duplicated profile object or null if failed
+ */
+export function duplicateProfile(profileId, newName) {
+  const profiles = getDisplayProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+
+  if (!profile) return null;
+
+  const duplicated = {
+    ...profile,
+    id: generateId(),
+    name: newName || `${profile.name} (Copy)`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    isDefault: false
+  };
+
+  profiles.push(duplicated);
+  localStorage.setItem('display_profiles', JSON.stringify(profiles));
+  return duplicated;
+}
+
+/**
+ * Export a profile as JSON
+ * @param {string} profileId - Profile ID to export
+ * @returns {Object|null} Profile export data
+ */
+export function exportProfile(profileId) {
+  const profiles = getDisplayProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+
+  if (!profile) return null;
+
+  return {
+    version: '1.0',
+    type: 'display_profile',
+    exported_at: new Date().toISOString(),
+    profile: {
+      name: profile.name,
+      dashboard_cards: profile.dashboard_cards,
+      statistics_charts: profile.statistics_charts,
+      chart_settings: profile.chart_settings,
+      weight_interpolation_mode: profile.weight_interpolation_mode
+    }
+  };
+}
+
+/**
+ * Import a profile from JSON data
+ * @param {Object} data - Profile export data
+ * @param {string} customName - Optional custom name for imported profile
+ * @returns {Object|null} Imported profile object or null if failed
+ */
+export function importProfile(data, customName = null) {
+  try {
+    if (!data || !data.profile) {
+      throw new Error('Invalid profile data');
+    }
+
+    const profiles = getDisplayProfiles();
+
+    const importedProfile = {
+      id: generateId(),
+      name: customName || data.profile.name || 'Imported Profile',
+      dashboard_cards: data.profile.dashboard_cards || DEFAULT_DASHBOARD_CARDS,
+      statistics_charts: data.profile.statistics_charts || DEFAULT_STATISTICS_CHARTS,
+      chart_settings: data.profile.chart_settings || DEFAULT_CHART_SETTINGS,
+      weight_interpolation_mode: data.profile.weight_interpolation_mode || 'linear',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      isDefault: false
+    };
+
+    profiles.push(importedProfile);
+    localStorage.setItem('display_profiles', JSON.stringify(profiles));
+    return importedProfile;
+  } catch (e) {
+    console.error('Failed to import profile', e);
+    return null;
+  }
 }
