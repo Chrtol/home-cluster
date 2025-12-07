@@ -398,7 +398,7 @@ function ScheduleForm() {
         name: name || null,
         schedule_type: scheduleType,
         schedule_mode: scheduleMode,
-        schedule_rule: scheduleMode === "dependent" ? "dependent" : scheduleRule,
+        schedule_rule: scheduleMode === "dependent" ? "dependent" : (scheduleMode === "interval" ? null : scheduleRule),
         enabled,
         notes,
       };

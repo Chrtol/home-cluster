@@ -70,27 +70,35 @@ async def create_schedule(
     """Create a new schedule"""
     await check_reptile_access(db, current_user, schedule.reptile_id, AccessLevel.CARETAKER)
 
-    # Validate schedule data based on schedule_rule
-    if schedule.schedule_rule == "every_x_days" and not schedule.frequency_days:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="frequency_days is required for every_x_days schedule"
-        )
-    elif schedule.schedule_rule == "days_of_week" and not schedule.days_of_week:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="days_of_week is required for days_of_week schedule"
-        )
-    elif schedule.schedule_rule == "monthly" and not schedule.day_of_month:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="day_of_month is required for monthly schedule"
-        )
-    elif schedule.schedule_rule == "dependent" and not schedule.parent_schedule_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="parent_schedule_id is required for dependent schedule"
-        )
+    # Validate interval mode fields
+    if schedule.schedule_mode == "interval":
+        if not schedule.min_days_between:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="min_days_between is required for interval schedules"
+            )
+    # Validate fixed/dependent mode fields based on schedule_rule
+    elif schedule.schedule_rule:
+        if schedule.schedule_rule == "every_x_days" and not schedule.frequency_days:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="frequency_days is required for every_x_days schedule"
+            )
+        elif schedule.schedule_rule == "days_of_week" and not schedule.days_of_week:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="days_of_week is required for days_of_week schedule"
+            )
+        elif schedule.schedule_rule == "monthly" and not schedule.day_of_month:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="day_of_month is required for monthly schedule"
+            )
+        elif schedule.schedule_rule == "dependent" and not schedule.parent_schedule_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="parent_schedule_id is required for dependent schedule"
+            )
 
     # Extract channel_ids and validate them
     channel_ids = schedule.channel_ids or []

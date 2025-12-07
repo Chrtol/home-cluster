@@ -337,8 +337,8 @@ class MistingLog(MistingLogBase):
 class ScheduleBase(BaseModel):
     name: Optional[str] = None  # User-friendly name
     schedule_type: str  # "feeding", "misting", "weighing", "supplement"
-    schedule_mode: str = "fixed"  # "fixed" or "requirement"
-    schedule_rule: str  # "every_x_days", "days_of_week", "monthly", "dependent"
+    schedule_mode: str = "fixed"  # "fixed", "interval", or "dependent"
+    schedule_rule: Optional[str] = None  # "every_x_days", "days_of_week", "monthly", "dependent" (not used for interval mode)
     food_category: Optional[str] = None  # For feeding: "insects", "salad", "mixed"
     time_slot: Optional[str] = None  # For misting: "morning", "midday", "afternoon", "evening", "night"
     health_category: Optional[str] = None  # For weighing/health: "weight_check", "bathing", "shedding_check"
