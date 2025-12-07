@@ -713,9 +713,13 @@ Assign specific household members as responsible for completing schedules, impro
     - Input modals for rename and import with Enter key support
     - Warning/error modals with appropriate styling
     - Modal backdrop with click-outside-to-close disabled
+  - **Built-in Profiles:**
+    - Standard: Balanced layout (L, L, M, XS, L)
+    - Compact: Space-efficient with activity first (L, M, XS, M, XS)
+    - Both profiles auto-created and cannot be deleted
   - **Technical Implementation:**
-    - Profile storage in localStorage with automatic Default profile
-    - ProfileManager component with inline editing and drag-to-reorder
+    - Profile storage in localStorage with automatic built-in profiles
+    - ProfileManager component with inline editing and in-app modals
     - Profile object structure: ID, name, dashboard_cards, statistics_charts, chart_settings
     - Import/export format detection (profile vs. full settings)
     - Backwards compatible with existing display customization

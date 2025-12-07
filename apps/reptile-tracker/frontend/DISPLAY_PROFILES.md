@@ -65,7 +65,7 @@ The profile will be updated with your current settings.
 2. Click the Trash icon
 3. Confirm deletion
 
-**Note:** The Default profile cannot be deleted.
+**Note:** Built-in profiles (Standard and Compact) cannot be deleted.
 
 #### Exporting a Profile
 
@@ -106,17 +106,32 @@ All cards can be:
 
 ### Use Cases for Multiple Profiles
 
-**Example 1: Detailed vs. Simple View**
-- **Detailed Profile**: Shows all cards including health alerts, upcoming schedules, and environment tracking
-- **Simple Profile**: Shows only reptile cards and recent activity for quick daily checks
+**Built-in Profiles:**
+- **Standard**: Balanced layout for general use with full-width calendar and activity
+- **Compact**: Space-efficient for smaller screens or quick overview
 
-**Example 2: Breeding Season vs. Maintenance**
-- **Breeding Season Profile**: Emphasizes weight tracking, feeding streaks, and health alerts
-- **Maintenance Profile**: Focus on schedules, quick actions, and environment tracking
+**Custom Profile Examples:**
 
-**Example 3: Mobile vs. Desktop**
-- **Mobile Profile**: Fewer cards, larger sizes (full-width) for easier reading on small screens
-- **Desktop Profile**: More cards, mixed sizes to utilize screen space efficiently
+**Example 1: Minimal Profile**
+- Only Today Summary (L) and Reptile Cards (L)
+- Perfect for quick daily checks on mobile
+
+**Example 2: Weight Focus Profile**
+- Today Summary (L)
+- Weight Chart (L)
+- Reptile Cards (S)
+- Recent Activity (M)
+- Weekly Calendar hidden
+- Ideal during breeding season when monitoring weight closely
+
+**Example 3: Mobile Optimized**
+- All cards set to Large (full-width)
+- Cards reordered by priority for one-handed scrolling
+- Weight chart hidden to reduce scrolling
+
+**Example 4: Desktop Multi-Column**
+- Mix of XS, S, M sizes to create multi-column layout
+- Maximizes screen real estate on wide monitors
 
 ## Technical Implementation
 
@@ -189,13 +204,32 @@ getStatisticsChartSettings(reptileId) // Get statistics charts (global or per-re
 saveStatisticsChartSettings(charts, reptileId) // Save charts configuration
 ```
 
-### Default Profile
+### Built-in Profiles
 
-The system ensures a "Default" profile always exists:
+The system includes two built-in profiles that always exist:
+
+**Standard Profile:**
+- Balanced layout with full-width calendar and activity
+- Today Summary: Large
+- Weekly Calendar: Large
+- Weight Tracking: Medium
+- Your Reptiles: Extra Small
+- Recent Activity: Large
+
+**Compact Profile:**
+- Space-efficient layout prioritizing recent activity
+- Today Summary: Large
+- Recent Activity: Medium
+- Weekly Calendar: Extra Small
+- Weight Tracking: Medium
+- Your Reptiles: Extra Small
+
+Both built-in profiles:
 - Created automatically on first use
-- Cannot be deleted
+- Cannot be deleted (only custom profiles can be deleted)
+- Can be updated with Save button when active
+- Standard profile is the default active profile for new users
 - Used as fallback if active profile is deleted
-- Can be updated like any other profile
 
 ### Integration with Existing Features
 
@@ -409,10 +443,10 @@ Potential future improvements:
 **Symptom:** "Invalid file format" error when importing
 **Solution:** Verify JSON file structure matches export format, check for file corruption
 
-### Default profile missing
+### Built-in profiles missing
 
-**Symptom:** No profiles available
-**Solution:** System auto-creates Default profile, refresh page
+**Symptom:** No profiles available or missing Standard/Compact profiles
+**Solution:** System auto-creates both built-in profiles, refresh page
 
 ## Developer Notes
 

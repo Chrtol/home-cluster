@@ -417,11 +417,17 @@ function generateId() {
 export function getDisplayProfiles() {
   const stored = localStorage.getItem('display_profiles');
   if (!stored) {
-    // Create default profile if none exists
-    const defaultProfile = {
-      id: 'default',
-      name: 'Default',
-      dashboard_cards: DEFAULT_DASHBOARD_CARDS,
+    // Create default profiles if none exist
+    const standardProfile = {
+      id: 'standard',
+      name: 'Standard',
+      dashboard_cards: [
+        { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+        { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 1, size: 'large', type: 'content' },
+        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 2, size: 'medium', type: 'content', interpolationMode: 'linear' },
+        { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 3, size: 'xs', type: 'content' },
+        { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 4, size: 'large', type: 'content' },
+      ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
       weight_interpolation_mode: 'linear',
@@ -429,18 +435,47 @@ export function getDisplayProfiles() {
       updated_at: new Date().toISOString(),
       isDefault: true
     };
-    localStorage.setItem('display_profiles', JSON.stringify([defaultProfile]));
-    return [defaultProfile];
+
+    const compactProfile = {
+      id: 'compact',
+      name: 'Compact',
+      dashboard_cards: [
+        { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+        { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 1, size: 'medium', type: 'content' },
+        { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 2, size: 'xs', type: 'content' },
+        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'medium', type: 'content', interpolationMode: 'linear' },
+        { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 4, size: 'xs', type: 'content' },
+      ],
+      statistics_charts: DEFAULT_STATISTICS_CHARTS,
+      chart_settings: DEFAULT_CHART_SETTINGS,
+      weight_interpolation_mode: 'linear',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      isDefault: true
+    };
+
+    localStorage.setItem('display_profiles', JSON.stringify([standardProfile, compactProfile]));
+    return [standardProfile, compactProfile];
   }
 
   try {
     const profiles = JSON.parse(stored);
-    // Ensure default profile exists
-    if (!profiles.find(p => p.id === 'default')) {
-      const defaultProfile = {
-        id: 'default',
-        name: 'Default',
-        dashboard_cards: DEFAULT_DASHBOARD_CARDS,
+
+    // Ensure both default profiles exist
+    const hasStandard = profiles.find(p => p.id === 'standard');
+    const hasCompact = profiles.find(p => p.id === 'compact');
+
+    if (!hasStandard) {
+      const standardProfile = {
+        id: 'standard',
+        name: 'Standard',
+        dashboard_cards: [
+          { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+          { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 1, size: 'large', type: 'content' },
+          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 2, size: 'medium', type: 'content', interpolationMode: 'linear' },
+          { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 3, size: 'xs', type: 'content' },
+          { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 4, size: 'large', type: 'content' },
+        ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,
         weight_interpolation_mode: 'linear',
@@ -448,9 +483,34 @@ export function getDisplayProfiles() {
         updated_at: new Date().toISOString(),
         isDefault: true
       };
-      profiles.unshift(defaultProfile);
+      profiles.unshift(standardProfile);
+    }
+
+    if (!hasCompact) {
+      const compactProfile = {
+        id: 'compact',
+        name: 'Compact',
+        dashboard_cards: [
+          { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+          { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 1, size: 'medium', type: 'content' },
+          { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 2, size: 'xs', type: 'content' },
+          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'medium', type: 'content', interpolationMode: 'linear' },
+          { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 4, size: 'xs', type: 'content' },
+        ],
+        statistics_charts: DEFAULT_STATISTICS_CHARTS,
+        chart_settings: DEFAULT_CHART_SETTINGS,
+        weight_interpolation_mode: 'linear',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isDefault: true
+      };
+      profiles.splice(1, 0, compactProfile); // Insert after standard
+    }
+
+    if (!hasStandard || !hasCompact) {
       localStorage.setItem('display_profiles', JSON.stringify(profiles));
     }
+
     return profiles;
   } catch (e) {
     console.error('Failed to parse display profiles', e);
@@ -463,7 +523,7 @@ export function getDisplayProfiles() {
  * @returns {string} Active profile ID
  */
 export function getActiveProfileId() {
-  return localStorage.getItem('active_profile_id') || 'default';
+  return localStorage.getItem('active_profile_id') || 'standard';
 }
 
 /**
@@ -481,7 +541,7 @@ export function setActiveProfileId(profileId) {
 export function getActiveProfile() {
   const profiles = getDisplayProfiles();
   const activeId = getActiveProfileId();
-  return profiles.find(p => p.id === activeId) || profiles.find(p => p.id === 'default') || profiles[0];
+  return profiles.find(p => p.id === activeId) || profiles.find(p => p.id === 'standard') || profiles[0];
 }
 
 /**
@@ -558,8 +618,8 @@ export function renameProfile(profileId, newName) {
  * @returns {boolean} Success status
  */
 export function deleteProfile(profileId) {
-  // Can't delete default profile
-  if (profileId === 'default') return false;
+  // Can't delete default profiles
+  if (profileId === 'standard' || profileId === 'compact') return false;
 
   const profiles = getDisplayProfiles();
   const filtered = profiles.filter(p => p.id !== profileId);
@@ -568,10 +628,10 @@ export function deleteProfile(profileId) {
 
   localStorage.setItem('display_profiles', JSON.stringify(filtered));
 
-  // If deleted profile was active, switch to default
+  // If deleted profile was active, switch to standard
   if (getActiveProfileId() === profileId) {
-    setActiveProfileId('default');
-    applyProfile('default');
+    setActiveProfileId('standard');
+    applyProfile('standard');
   }
 
   return true;

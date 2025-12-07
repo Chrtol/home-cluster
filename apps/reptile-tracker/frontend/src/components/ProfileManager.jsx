@@ -387,7 +387,7 @@ export default function ProfileManager({ onProfileChange }) {
                             {profile.name}
                             {profile.isDefault && (
                               <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                                Default
+                                Built-in
                               </span>
                             )}
                             {isActive && (
