@@ -379,12 +379,20 @@ async def _schedule_single_notification_job(
         job_id = f"notif_{schedule.id}_{user.id}_{channel_id}_{scheduled_date.isoformat()}"
 
         # Check if job already exists
-        existing = await db.execute(
+        existing_result = await db.execute(
             select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
         )
-        if existing.scalars().first():
-            logger.info(f"Job {job_id} already exists, skipping")
-            return
+        existing_job = existing_result.scalars().first()
+        if existing_job:
+            # If the existing job has a different scheduled time or is cancelled/failed, delete it
+            if existing_job.scheduled_time_utc != reminder_time_utc or existing_job.status in ["cancelled", "failed"]:
+                logger.info(f"Deleting old job {job_id} (status={existing_job.status}, old_time={existing_job.scheduled_time_utc}, new_time={reminder_time_utc})")
+                await db.delete(existing_job)
+                await db.flush()
+            else:
+                # Job already exists with same time and is pending/sent
+                logger.info(f"Job {job_id} already exists with same time, skipping")
+                return
 
         # Create database record
         job_record = ScheduledNotificationJob(
@@ -417,35 +425,33 @@ async def _schedule_single_notification_job(
 
 
 async def cancel_notification_jobs_for_schedule(schedule_id: int):
-    """Cancel all pending notification jobs for a schedule"""
+    """Cancel and delete all notification jobs for a schedule"""
     global scheduler
 
     try:
         async with async_session_maker() as db:
-            # Get all pending jobs for this schedule
+            # Get ALL jobs for this schedule (pending, cancelled, or failed)
+            # We need to clean up everything to avoid duplicate job_ids
             result = await db.execute(
                 select(ScheduledNotificationJob).where(
-                    and_(
-                        ScheduledNotificationJob.schedule_id == schedule_id,
-                        ScheduledNotificationJob.status == "pending"
-                    )
+                    ScheduledNotificationJob.schedule_id == schedule_id
                 )
             )
             jobs = result.scalars().all()
 
             for job in jobs:
-                # Remove from APScheduler
+                # Remove from APScheduler if it's still there
                 try:
                     if scheduler and scheduler.get_job(job.job_id):
                         scheduler.remove_job(job.job_id)
                 except Exception as e:
-                    logger.warning(f"Failed to remove job {job.job_id} from scheduler: {e}")
+                    logger.debug(f"Job {job.job_id} not in scheduler (already executed or removed): {e}")
 
-                # Mark as cancelled
-                job.status = "cancelled"
+                # Delete from database
+                await db.delete(job)
 
             await db.commit()
-            logger.info(f"Cancelled {len(jobs)} jobs for schedule {schedule_id}")
+            logger.info(f"Deleted {len(jobs)} jobs for schedule {schedule_id}")
 
     except Exception as e:
         logger.error(f"Error cancelling jobs for schedule {schedule_id}: {e}", exc_info=True)
