@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Save, Copy, Trash2, Edit2, Download, Upload, Check, X, AlertCircle } from 'lucide-react';
+import { Save, Copy, Trash2, Edit2, Download, Upload, Check, X, AlertCircle, Monitor, Smartphone } from 'lucide-react';
 import {
   getDisplayProfiles,
   getActiveProfileId,
+  getActiveDesktopProfileId,
+  getActiveMobileProfileId,
+  setActiveProfileId,
   createProfileFromCurrent,
   applyProfile,
   renameProfile,
@@ -53,10 +56,12 @@ function Modal({ isOpen, onClose, title, children, type = 'info' }) {
 
 export default function ProfileManager({ onProfileChange }) {
   const [profiles, setProfiles] = useState([]);
-  const [activeProfileId, setActiveProfileId] = useState('default');
+  const [activeDesktopProfileId, setActiveDesktopProfileId] = useState('standard');
+  const [activeMobileProfileId, setActiveMobileProfileId] = useState('mobile');
   const [editingProfileId, setEditingProfileId] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [newProfileName, setNewProfileName] = useState('');
+  const [newProfileTarget, setNewProfileTarget] = useState('both'); // 'desktop', 'mobile', or 'both'
   const [showNewProfileForm, setShowNewProfileForm] = useState(false);
 
   // Modal state
@@ -79,7 +84,8 @@ export default function ProfileManager({ onProfileChange }) {
 
   const loadProfiles = () => {
     setProfiles(getDisplayProfiles());
-    setActiveProfileId(getActiveProfileId());
+    setActiveDesktopProfileId(getActiveDesktopProfileId());
+    setActiveMobileProfileId(getActiveMobileProfileId());
   };
 
   const openModal = (config) => {
@@ -120,20 +126,40 @@ export default function ProfileManager({ onProfileChange }) {
       return;
     }
 
-    createProfileFromCurrent(newProfileName.trim());
+    const newProfile = createProfileFromCurrent(newProfileName.trim());
+
+    // Set as active based on target selection
+    if (newProfileTarget === 'desktop' || newProfileTarget === 'both') {
+      setActiveProfileId(newProfile.id, false);
+      applyProfile(newProfile.id);
+    }
+    if (newProfileTarget === 'mobile' || newProfileTarget === 'both') {
+      setActiveProfileId(newProfile.id, true);
+    }
+
     setNewProfileName('');
+    setNewProfileTarget('both');
     setShowNewProfileForm(false);
     loadProfiles();
+
+    if (onProfileChange) {
+      onProfileChange(newProfile.id);
+    }
   };
 
-  const handleSwitchProfile = (profileId) => {
-    if (applyProfile(profileId)) {
-      setActiveProfileId(profileId);
-      loadProfiles();
-      if (onProfileChange) {
-        onProfileChange(profileId);
-      }
+  const handleSetAsDesktop = (profileId) => {
+    setActiveProfileId(profileId, false);
+    applyProfile(profileId);
+    loadProfiles();
+    if (onProfileChange) {
+      onProfileChange(profileId);
     }
+  };
+
+  const handleSetAsMobile = (profileId) => {
+    setActiveProfileId(profileId, true);
+    // Don't apply immediately if we're on desktop
+    loadProfiles();
   };
 
   const handleUpdateProfile = (profileId) => {
@@ -315,9 +341,20 @@ export default function ProfileManager({ onProfileChange }) {
         {showNewProfileForm && (
           <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
             <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Create New Profile</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              This will save your current dashboard and statistics settings as a new profile.
-            </p>
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                This will save your current dashboard and statistics settings as a new profile.
+              </p>
+              <select
+                value={newProfileTarget}
+                onChange={(e) => setNewProfileTarget(e.target.value)}
+                className="input text-sm py-1.5 px-2 flex-shrink-0"
+              >
+                <option value="both">Desktop & Mobile</option>
+                <option value="desktop">Desktop only</option>
+                <option value="mobile">Mobile only</option>
+              </select>
+            </div>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -338,7 +375,9 @@ export default function ProfileManager({ onProfileChange }) {
         {/* Profiles List */}
         <div className="space-y-2">
           {profiles.map((profile) => {
-            const isActive = profile.id === activeProfileId;
+            const isActiveDesktop = profile.id === activeDesktopProfileId;
+            const isActiveMobile = profile.id === activeMobileProfileId;
+            const isActive = isActiveDesktop || isActiveMobile;
             const isEditing = editingProfileId === profile.id;
 
             return (
@@ -382,20 +421,27 @@ export default function ProfileManager({ onProfileChange }) {
                       </div>
                     ) : (
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className={`font-semibold ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
                             {profile.name}
-                            {profile.isDefault && (
-                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                                Built-in
-                              </span>
-                            )}
-                            {isActive && (
-                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-blue-500 text-white">
-                                Active
-                              </span>
-                            )}
                           </h3>
+                          {profile.isDefault && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                              Built-in
+                            </span>
+                          )}
+                          {isActiveDesktop && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-500 text-white flex items-center gap-1">
+                              <Monitor size={12} />
+                              Desktop
+                            </span>
+                          )}
+                          {isActiveMobile && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-green-500 text-white flex items-center gap-1">
+                              <Smartphone size={12} />
+                              Mobile
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           Last updated: {new Date(profile.updated_at).toLocaleString()}
@@ -404,17 +450,28 @@ export default function ProfileManager({ onProfileChange }) {
                     )}
                   </div>
 
-                  <div className="flex gap-1">
-                    {!isActive && (
+                  <div className="flex gap-1 flex-wrap">
+                    {!isActiveDesktop && (
                       <button
-                        onClick={() => handleSwitchProfile(profile.id)}
-                        className="btn-secondary text-sm px-3 py-1.5"
-                        title="Switch to this profile"
+                        onClick={() => handleSetAsDesktop(profile.id)}
+                        className="btn-secondary text-xs px-2 py-1.5 flex items-center gap-1"
+                        title="Set as desktop profile"
                       >
-                        Switch
+                        <Monitor size={14} />
+                        Desktop
                       </button>
                     )}
-                    {isActive && (
+                    {!isActiveMobile && (
+                      <button
+                        onClick={() => handleSetAsMobile(profile.id)}
+                        className="btn-secondary text-xs px-2 py-1.5 flex items-center gap-1"
+                        title="Set as mobile profile"
+                      >
+                        <Smartphone size={14} />
+                        Mobile
+                      </button>
+                    )}
+                    {(isActiveDesktop || isActiveMobile) && (
                       <button
                         onClick={() => handleUpdateProfile(profile.id)}
                         className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"

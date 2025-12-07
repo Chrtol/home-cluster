@@ -5,7 +5,7 @@ import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } f
 import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall } from '../utils/displaySettings';
+import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId } from '../utils/displaySettings';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -38,8 +38,13 @@ export default function Dashboard() {
     return saved || 'week'; // 'day', 'three-day', 'week'
   });
 
-  // Load display settings on mount
+  // Load display settings on mount and apply correct profile for screen size
   useEffect(() => {
+    // Apply the appropriate profile for the current screen size
+    const activeProfileId = getActiveProfileId();
+    applyProfile(activeProfileId);
+
+    // Load the settings
     setDashboardCards(getDashboardCardSettings());
     setChartSettings(getChartSettings());
   }, []);
