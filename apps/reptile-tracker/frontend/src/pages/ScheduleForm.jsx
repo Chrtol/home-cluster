@@ -1196,7 +1196,14 @@ function ScheduleForm() {
                     Activities can be logged {flexibleCompletionDays} day(s) before or after the scheduled date
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                    Example: With ±{flexibleCompletionDays} days, a schedule on Wednesday can be completed Monday-Friday
+                    Example: With ±{flexibleCompletionDays} days, a schedule on Wednesday can be completed {(() => {
+                      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                      const wednesday = 3;
+                      const offset = parseInt(flexibleCompletionDays) || 1;
+                      const startDay = Math.max(0, wednesday - offset);
+                      const endDay = Math.min(6, wednesday + offset);
+                      return `${days[startDay]}-${days[endDay]}`;
+                    })()}
                   </p>
                 </div>
               </div>
