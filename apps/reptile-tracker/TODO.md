@@ -734,6 +734,40 @@ Assign specific household members as responsible for completing schedules, impro
   - Frontend: `/src/components/ProfileManager.jsx` - Full profile UI component
   - Frontend: `/src/pages/Settings.jsx` - Integration into Display tab
 
+### December 2025 - Mobile UI Optimizations (2025-12-07)
+- [x] **Mobile-optimized Settings Display tab** - ✅ COMPLETED (2025-12-07)
+  - Dashboard and Statistics layout configuration sections fully optimized for mobile
+  - **Two-row responsive layout** for card/chart configuration:
+    - Row 1: Reorder controls + visibility toggle + label
+    - Row 2: Interpolation dropdown (when applicable) + size buttons (XS, S, M, L)
+  - **Mobile-friendly reordering** with up/down arrow buttons:
+    - Replaces drag-and-drop on mobile (which conflicts with page scrolling)
+    - Stacked ChevronUp/ChevronDown buttons for each item
+    - Buttons auto-disable at list boundaries (top/bottom)
+    - Desktop retains drag-and-drop with GripVertical handle
+  - **Optimized responsive headers** for all sections:
+    - Dashboard Layout: Header + Reset button stack on mobile
+    - Statistics Layout: Dropdown + Reset button stack/wrap on mobile
+    - Per-reptile settings info box stacks vertically on mobile
+  - **Compact mobile controls**:
+    - Smaller icons and buttons on mobile (16px vs 18px)
+    - Reduced padding and gaps for better space efficiency
+    - Interpolation dropdown narrower on mobile (w-24 vs sm:min-w-[100px])
+    - Hidden dividers on mobile to save space
+    - "Dots Only" shortened to "Dots" for space
+  - **Updated instructions** to clarify drag (desktop) vs arrows (mobile)
+  - Fixes horizontal overflow and makes all settings accessible on mobile
+  - Frontend: `/src/pages/Settings.jsx` - Full mobile responsive redesign
+
+- [x] **Restored disabled-by-default dashboard cards** - ✅ COMPLETED (2025-12-07)
+  - Weekly Summary, Health Summary, and Schedule Summary cards restored
+  - Cards appear in Settings > Display > Dashboard Layout
+  - All cards disabled by default (visible: false)
+  - Users can enable them via visibility toggle in settings
+  - Cards automatically merged into existing users' settings
+  - Frontend: `/src/utils/displaySettings.js` - Uncommented default cards
+  - Note: Card implementations still TODO in Dashboard.jsx
+
 ### December 2025 - Bug Fixes & UI Improvements (2025-12-07)
 - [x] **Fixed notification template variable substitution** - ✅ COMPLETED (2025-12-07)
   - Notifications were showing literal `{schedule_name}` and `{reptile_name}` instead of actual values

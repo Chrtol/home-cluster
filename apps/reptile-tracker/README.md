@@ -454,12 +454,17 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
   - Forward/backward extrapolation with visual distinction
   - Per-chart interpolation mode settings
 - **Display Customization**:
-  - Drag-and-drop card management (Dashboard & Statistics)
+  - **Display Profiles**: Save and switch between multiple dashboard/statistics layouts
+    - Dual active profiles (separate desktop and mobile profiles)
+    - Built-in profiles (Standard, Compact, Mobile) optimized for different use cases
+    - Create custom profiles with dropdown target selection (Desktop & Mobile, Desktop only, Mobile only)
+    - Profile badges showing active status for desktop (blue) and mobile (green)
+    - Export/import individual profiles or all settings as JSON
+  - Drag-and-drop card management on desktop, up/down arrows on mobile
   - Show/hide individual cards/charts
   - Resize (XS/S/M/L sizes)
   - Chart appearance settings (grid, legend, axis labels, height)
   - Per-reptile custom layouts
-  - Export/import settings as JSON
   - Reset functionality
   - **Calendar View Persistence**: Remembers your preferred view (1d/3d/7d for dashboard, 1d/3d/7d/30d for calendar) across sessions
   - **Smart Date Range Fetching**: Dynamically fetches only the data needed for the current view (today for 1-day, today + 2 days for 3-day, full week for week view)
@@ -498,9 +503,18 @@ The application is deployed to Kubernetes using Flux CD. See `/kubernetes/apps/r
 4. **Export**: Chart image export (PNG/SVG/PDF)
 
 ### Mobile-First Design
-- ✅ Responsive layout using Tailwind CSS
-- ✅ Touch-friendly buttons (large tap targets)
+- ✅ Responsive layout using Tailwind CSS with 768px mobile breakpoint
+- ✅ Touch-friendly buttons (large tap targets) and mobile-optimized controls
 - ✅ Optimized for one-handed use during feeding
+- ✅ Mobile-specific display profile (automatically activated on mobile devices)
+- ✅ Settings page fully optimized for mobile:
+  - Two-row responsive layout for card/chart configuration
+  - Up/down arrow reordering instead of drag-and-drop (prevents scrolling conflicts)
+  - Compact controls with smaller icons and narrower dropdowns
+- ✅ Dashboard cards optimized for mobile:
+  - Recent Activity card with responsive layout and inline timestamps
+  - Calendar supplement text with proper truncation and overflow handling
+  - All cards use proper flex truncation techniques
 - ❌ Progressive Web App (PWA) capabilities (planned)
 
 ## Webhook Notifications

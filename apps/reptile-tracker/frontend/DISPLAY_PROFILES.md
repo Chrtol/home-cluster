@@ -22,7 +22,11 @@ The Display Profiles system allows users to save, manage, and switch between dif
 2. Go to Settings > Display > Display Profiles section
 3. Click "Create Profile" button
 4. Enter a name for your profile
-5. Click "Create"
+5. Select target from dropdown:
+   - **Desktop & Mobile** - Set as active for both platforms
+   - **Desktop only** - Set as active desktop profile
+   - **Mobile only** - Set as active mobile profile
+6. Click "Create"
 
 Your current dashboard cards, statistics charts, chart appearance settings, and weight interpolation mode will be saved to the new profile.
 
@@ -30,7 +34,10 @@ Your current dashboard cards, statistics charts, chart appearance settings, and 
 
 1. Go to Settings > Display > Display Profiles section
 2. Find the profile you want to use
-3. Click "Switch" button
+3. Click "Desktop" button to set as desktop profile, or "Mobile" button to set as mobile profile
+   - Active profiles are indicated with colored badges:
+     - **Blue badge with Monitor icon** - Active for desktop (≥768px)
+     - **Green badge with Smartphone icon** - Active for mobile (<768px)
 
 All your dashboard and statistics settings will immediately change to match the selected profile.
 
@@ -38,7 +45,8 @@ All your dashboard and statistics settings will immediately change to match the 
 The system maintains separate active profiles for desktop and mobile views:
 - **Desktop Profile**: Active when screen width is 768px or wider (default: Standard)
 - **Mobile Profile**: Active when screen width is below 768px (default: Mobile)
-- Switching profiles automatically detects your current screen size and updates the appropriate profile
+- You can configure both desktop and mobile profiles independently from any device
+- When you set a profile as mobile, its settings are applied so you can configure it from desktop
 - This allows you to have different optimized layouts for desktop and mobile without manual switching
 
 #### Updating a Profile
@@ -105,11 +113,16 @@ The system includes the following dashboard cards that can be shown/hidden and r
 **Card Customization:**
 All cards can be:
 - Shown or hidden using the eye icon
-- Reordered via drag-and-drop
+- Reordered via drag-and-drop on desktop (≥768px), or up/down arrows on mobile (<768px)
 - Resized (XS, S, M, L sizes)
 - Saved to different profiles
 
-**Note:** Additional cards planned for future releases (weekly summary, health summary, schedule summary).
+**Additional Dashboard Cards (disabled by default):**
+- **Weekly Summary** - Weekly activity summary statistics (type: summary)
+- **Health Summary** - Health-focused summary across reptiles (type: summary)
+- **Schedule Summary** - Upcoming and overdue schedule items (type: summary)
+
+These additional cards can be enabled in Settings > Display > Dashboard Layout.
 
 ### Use Cases for Multiple Profiles
 
@@ -330,8 +343,11 @@ The system maintains separate active profiles for desktop and mobile:
 - `onProfileChange(profileId)` - Callback when profile is switched
 
 **Features:**
-- Profile list with active indicator
-- Create new profile form
+- Profile list with dual active indicators:
+  - **Blue badge with Monitor icon** - Active desktop profile (≥768px)
+  - **Green badge with Smartphone icon** - Active mobile profile (<768px)
+- Separate "Desktop" and "Mobile" buttons to set active profiles for each platform
+- Create new profile form with dropdown to select target (Desktop & Mobile, Desktop only, or Mobile only)
 - Inline rename with Enter/Escape support
 - In-app modal dialogs for all operations (no browser popups)
 - File input for profile import
@@ -455,6 +471,25 @@ Users who have customized their dashboard/statistics before the profile system:
 
 ### Mobile Optimization
 
+**Settings Page Mobile Controls:**
+The Display tab in Settings has been fully optimized for mobile devices (<768px):
+
+- **Two-row responsive layout** for dashboard cards and statistics charts configuration:
+  - **First row:** Drag handle (desktop) or up/down arrows (mobile), visibility toggle, and card/chart label
+  - **Second row:** Interpolation dropdown (if applicable) and size buttons (XS/S/M/L)
+- **Mobile-friendly reordering:**
+  - **Desktop (≥768px):** Drag-and-drop with grip handle icon
+  - **Mobile (<768px):** Up/down arrow buttons (ChevronUp/ChevronDown icons)
+  - Touch-optimized buttons prevent conflict with page scrolling
+  - First item has disabled up arrow, last item has disabled down arrow
+- **Compact mobile controls:**
+  - Reduced icon sizes (16px on mobile, 18px on desktop)
+  - Smaller padding on buttons (`px-1.5` on mobile vs `px-2` on desktop)
+  - Narrower interpolation dropdown on mobile (`w-24` vs `sm:min-w-[100px]` on desktop)
+  - Shortened "Dots Only" to "Dots" for space efficiency
+  - Controls aligned with `pl-6` on mobile for visual hierarchy
+  - Hidden divider between controls on mobile
+
 **Calendar View Restrictions:**
 When the Weekly Calendar card is set to Extra Small (XS) size, the 3-day and 7-day view buttons are automatically hidden, leaving only the 1-day view. This prevents UI clutter and ensures optimal readability on compact layouts.
 
@@ -463,11 +498,17 @@ Implementation:
 - Dashboard conditionally renders view buttons based on this check
 - Mobile profile defaults to XS calendar, automatically showing only 1-day view
 
+**Dashboard Card Mobile Optimizations:**
+- Recent Activity card uses responsive layout with inline timestamps and multi-line text clamping
+- Calendar supplement text uses truncation with proper overflow handling
+- All cards use responsive sizing classes and proper `min-w-0` for flex truncation
+
 **Screen Size Detection:**
 - System uses 768px breakpoint (Tailwind's `md` breakpoint)
 - `window.innerWidth < 768` = mobile
 - `window.innerWidth >= 768` = desktop
 - Profiles automatically switch when window is resized across breakpoint
+- Reordering method (drag vs arrows) determined by window width check
 
 ## Future Enhancements
 
