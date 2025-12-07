@@ -4,6 +4,7 @@ import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, D
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import NotificationsTab from '../components/NotificationsTab_new';
 import NotificationTemplatesTab from '../components/NotificationTemplatesTab';
+import ProfileManager from '../components/ProfileManager';
 import {
   getDashboardCardSettings,
   saveDashboardCardSettings,
@@ -564,6 +565,14 @@ function DisplayTab() {
     return <div>Loading...</div>;
   }
 
+  const handleProfileChange = (profileId) => {
+    // Reload all settings after profile switch
+    setDashboardCards(getDashboardCardSettings());
+    setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
+    setChartSettings(getChartSettings());
+    showSuccess('Profile switched successfully!');
+  };
+
   return (
     <div className="space-y-6">
       {success && (
@@ -571,6 +580,9 @@ function DisplayTab() {
           {success}
         </div>
       )}
+
+      {/* Profile Manager */}
+      <ProfileManager onProfileChange={handleProfileChange} />
 
       {/* Export/Import Controls */}
       <div className="card">
