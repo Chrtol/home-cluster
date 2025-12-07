@@ -5,7 +5,7 @@ import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } f
 import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getDashboardCardSettings, getChartSettings } from '../utils/displaySettings';
+import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall } from '../utils/displaySettings';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -1008,28 +1008,32 @@ export default function Dashboard() {
                   >
                     1d
                   </button>
-                  <button
-                    onClick={() => setCalendarView('three-day')}
-                    className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
-                      calendarView === 'three-day'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    title="3 day view"
-                  >
-                    3d
-                  </button>
-                  <button
-                    onClick={() => setCalendarView('week')}
-                    className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
-                      calendarView === 'week'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    title="Week view"
-                  >
-                    7d
-                  </button>
+                  {!isCalendarExtraSmall() && (
+                    <>
+                      <button
+                        onClick={() => setCalendarView('three-day')}
+                        className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                          calendarView === 'three-day'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                        title="3 day view"
+                      >
+                        3d
+                      </button>
+                      <button
+                        onClick={() => setCalendarView('week')}
+                        className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                          calendarView === 'week'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                        title="Week view"
+                      >
+                        7d
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="relative">
                   <button
@@ -1118,31 +1122,31 @@ export default function Dashboard() {
                           return (
                             <div
                               key={idx}
-                              className={`px-2 py-1 rounded bg-white dark:bg-gray-800 border ${
+                              className={`px-2 py-1 rounded bg-white dark:bg-gray-800 border overflow-hidden ${
                                 event.is_completed
                                   ? 'border-green-500 dark:border-green-600'
                                   : 'border-gray-200 dark:border-gray-600'
                               }`}
                               title={event.notes || event.name || event.reptile_name}
                             >
-                              <div className="flex items-center gap-1.5 text-xs">
+                              <div className="flex items-center gap-1.5 text-xs overflow-hidden min-w-0">
                                 {event.is_completed && (
                                   <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0">✓</span>
                                 )}
                                 <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
-                                <span className="font-semibold text-gray-900 dark:text-white truncate">
+                                <span className="font-semibold text-gray-900 dark:text-white truncate min-w-0">
                                   {event.reptile_name}
                                 </span>
                                 {event.notifications_enabled && (
                                   <Bell size={10} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
                                 )}
                                 {(timeText || foodCategory) && (
-                                  <span className="text-gray-400 dark:text-gray-500">•</span>
+                                  <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
                                 )}
                                 {timeText && (
                                   <>
                                     <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{timeText}</span>
-                                    {foodCategory && <span className="text-gray-400 dark:text-gray-500">•</span>}
+                                    {foodCategory && <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>}
                                   </>
                                 )}
                                 {foodCategory && (
@@ -1152,8 +1156,8 @@ export default function Dashboard() {
                                 )}
                                 {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                                   <>
-                                    <span className="text-gray-400 dark:text-gray-500">•</span>
-                                    <span className="text-amber-600 dark:text-amber-400 flex-shrink-0">
+                                    <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
+                                    <span className="text-amber-600 dark:text-amber-400 truncate min-w-0">
                                       +{event.suggested_supplements.map(s => s.name).join(', ')}
                                     </span>
                                   </>

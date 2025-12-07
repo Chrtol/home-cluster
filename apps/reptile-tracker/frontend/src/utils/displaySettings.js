@@ -385,6 +385,16 @@ export function resetAllDisplaySettings() {
   localStorage.removeItem('weight_interpolation_mode');
 }
 
+/**
+ * Check if weekly calendar card is XS size
+ * @returns {boolean} True if calendar is XS
+ */
+export function isCalendarExtraSmall() {
+  const cards = getDashboardCardSettings();
+  const calendarCard = cards.find(c => c.id === 'weekly_calendar');
+  return calendarCard?.size === 'xs';
+}
+
 // ============================================================================
 // DISPLAY PROFILES SYSTEM
 // ============================================================================
@@ -454,16 +464,35 @@ export function getDisplayProfiles() {
       isDefault: true
     };
 
-    localStorage.setItem('display_profiles', JSON.stringify([standardProfile, compactProfile]));
-    return [standardProfile, compactProfile];
+    const mobileProfile = {
+      id: 'mobile',
+      name: 'Mobile',
+      dashboard_cards: [
+        { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+        { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 1, size: 'large', type: 'content' },
+        { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 2, size: 'large', type: 'content' },
+        { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 3, size: 'xs', type: 'content' },
+        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 4, size: 'large', type: 'content', interpolationMode: 'linear' },
+      ],
+      statistics_charts: DEFAULT_STATISTICS_CHARTS,
+      chart_settings: DEFAULT_CHART_SETTINGS,
+      weight_interpolation_mode: 'linear',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      isDefault: true
+    };
+
+    localStorage.setItem('display_profiles', JSON.stringify([standardProfile, compactProfile, mobileProfile]));
+    return [standardProfile, compactProfile, mobileProfile];
   }
 
   try {
     const profiles = JSON.parse(stored);
 
-    // Ensure both default profiles exist
+    // Ensure all default profiles exist
     const hasStandard = profiles.find(p => p.id === 'standard');
     const hasCompact = profiles.find(p => p.id === 'compact');
+    const hasMobile = profiles.find(p => p.id === 'mobile');
 
     if (!hasStandard) {
       const standardProfile = {
@@ -507,7 +536,28 @@ export function getDisplayProfiles() {
       profiles.splice(1, 0, compactProfile); // Insert after standard
     }
 
-    if (!hasStandard || !hasCompact) {
+    if (!hasMobile) {
+      const mobileProfile = {
+        id: 'mobile',
+        name: 'Mobile',
+        dashboard_cards: [
+          { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+          { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 1, size: 'large', type: 'content' },
+          { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 2, size: 'large', type: 'content' },
+          { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 3, size: 'xs', type: 'content' },
+          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 4, size: 'large', type: 'content', interpolationMode: 'linear' },
+        ],
+        statistics_charts: DEFAULT_STATISTICS_CHARTS,
+        chart_settings: DEFAULT_CHART_SETTINGS,
+        weight_interpolation_mode: 'linear',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isDefault: true
+      };
+      profiles.splice(2, 0, mobileProfile); // Insert after compact
+    }
+
+    if (!hasStandard || !hasCompact || !hasMobile) {
       localStorage.setItem('display_profiles', JSON.stringify(profiles));
     }
 
@@ -519,23 +569,54 @@ export function getDisplayProfiles() {
 }
 
 /**
- * Get the currently active profile ID
+ * Check if current screen is mobile (< 768px)
+ * @returns {boolean} True if mobile
+ */
+export function isMobileScreen() {
+  return window.innerWidth < 768; // Tailwind's md breakpoint
+}
+
+/**
+ * Get the currently active profile ID for desktop
+ * @returns {string} Active desktop profile ID
+ */
+export function getActiveDesktopProfileId() {
+  return localStorage.getItem('active_desktop_profile_id') || 'standard';
+}
+
+/**
+ * Get the currently active profile ID for mobile
+ * @returns {string} Active mobile profile ID
+ */
+export function getActiveMobileProfileId() {
+  return localStorage.getItem('active_mobile_profile_id') || 'mobile';
+}
+
+/**
+ * Get the currently active profile ID based on screen size
  * @returns {string} Active profile ID
  */
 export function getActiveProfileId() {
-  return localStorage.getItem('active_profile_id') || 'standard';
+  return isMobileScreen() ? getActiveMobileProfileId() : getActiveDesktopProfileId();
 }
 
 /**
- * Set the active profile ID
+ * Set the active profile ID for desktop or mobile
  * @param {string} profileId - Profile ID to activate
+ * @param {boolean} isMobile - Whether to set mobile profile (default: auto-detect)
  */
-export function setActiveProfileId(profileId) {
-  localStorage.setItem('active_profile_id', profileId);
+export function setActiveProfileId(profileId, isMobile = null) {
+  const mobile = isMobile !== null ? isMobile : isMobileScreen();
+
+  if (mobile) {
+    localStorage.setItem('active_mobile_profile_id', profileId);
+  } else {
+    localStorage.setItem('active_desktop_profile_id', profileId);
+  }
 }
 
 /**
- * Get the currently active profile
+ * Get the currently active profile based on screen size
  * @returns {Object|null} Active profile object
  */
 export function getActiveProfile() {
@@ -618,8 +699,8 @@ export function renameProfile(profileId, newName) {
  * @returns {boolean} Success status
  */
 export function deleteProfile(profileId) {
-  // Can't delete default profiles
-  if (profileId === 'standard' || profileId === 'compact') return false;
+  // Can't delete built-in profiles
+  if (profileId === 'standard' || profileId === 'compact' || profileId === 'mobile') return false;
 
   const profiles = getDisplayProfiles();
   const filtered = profiles.filter(p => p.id !== profileId);
@@ -628,10 +709,22 @@ export function deleteProfile(profileId) {
 
   localStorage.setItem('display_profiles', JSON.stringify(filtered));
 
-  // If deleted profile was active, switch to standard
-  if (getActiveProfileId() === profileId) {
-    setActiveProfileId('standard');
-    applyProfile('standard');
+  // If deleted profile was active, switch to appropriate default
+  const desktopActive = getActiveDesktopProfileId();
+  const mobileActive = getActiveMobileProfileId();
+
+  if (desktopActive === profileId) {
+    setActiveProfileId('standard', false);
+    if (!isMobileScreen()) {
+      applyProfile('standard');
+    }
+  }
+
+  if (mobileActive === profileId) {
+    setActiveProfileId('mobile', true);
+    if (isMobileScreen()) {
+      applyProfile('mobile');
+    }
   }
 
   return true;
