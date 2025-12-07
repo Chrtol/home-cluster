@@ -158,8 +158,12 @@ export default function ProfileManager({ onProfileChange }) {
 
   const handleSetAsMobile = (profileId) => {
     setActiveProfileId(profileId, true);
-    // Don't apply immediately if we're on desktop
+    // Apply the profile so you can configure it even from desktop
+    applyProfile(profileId);
     loadProfiles();
+    if (onProfileChange) {
+      onProfileChange(profileId);
+    }
   };
 
   const handleUpdateProfile = (profileId) => {
