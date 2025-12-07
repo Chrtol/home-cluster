@@ -473,6 +473,116 @@
   - Household selector dropdown for multi-household users
   - Create and join household forms integrated
 
+### Schedule Assignment to Household Members - 🎯 HIGH PRIORITY (Tier 2)
+**Complexity:** MEDIUM (1-2 weeks) | **Value:** High for multi-user households
+
+Assign specific household members as responsible for completing schedules, improving accountability and workload distribution.
+
+**Database Changes:**
+- [ ] Migration: Add `assigned_to_user_id` column to schedules table (nullable, foreign key to users, SET NULL on delete)
+- [ ] Migration: Add index on assigned_to_user_id for fast filtering
+- [ ] Consider: Add `completed_by_user_id` to track who actually completed (or use existing activity logs)
+
+**Backend Implementation:**
+- [ ] Update Schedule model with `assigned_to` relationship (User model)
+- [ ] Update ScheduleCreate/ScheduleUpdate schemas to include `assigned_to_user_id`
+- [ ] Add ScheduleWithAssignment schema including assigned user details (name, email)
+- [ ] Add filtering endpoints:
+  - GET /api/schedules/assigned-to-me (current user's assigned schedules)
+  - GET /api/schedules/assigned-to/{user_id} (admin only)
+  - Query param: `?assigned_to={user_id}` on existing schedule list endpoints
+- [ ] Validation: Ensure assigned user is member of household
+- [ ] Handle edge case: User leaving household (SET NULL on assignment)
+- [ ] Handle edge case: User losing reptile access (validation on assignment)
+
+**Frontend - Schedule Management:**
+- [ ] Add "Assigned To" dropdown in ScheduleForm (create/edit)
+  - Options: "No one (household-wide)", current user (Me), or any household member
+  - Only show household members with appropriate permissions (Caretaker+)
+  - Show user name and role badge
+- [ ] Display assigned user in ScheduleDetails view
+  - Show avatar/initials and name
+  - Show "Assigned to: [Name]" badge
+  - If completed by different user, show both: "Assigned to: Alice, Completed by: Bob"
+- [ ] Show assigned user in Calendar schedule list (active schedules section)
+  - User initials badge next to schedule name
+  - Tooltip on hover showing full name
+
+**Frontend - Calendar & Dashboard:**
+- [ ] Visual indicators in calendar views
+  - Add small user initials badge on calendar events
+  - Optional: Different border colors per user
+  - Tooltip showing "Assigned to: [Name]"
+- [ ] Add "My Schedules" filter toggle in Calendar header
+  - Button: "Show My Schedules Only" vs "Show All Schedules"
+  - Filter state persisted in localStorage
+  - Works alongside existing reptile and category filters
+- [ ] Dashboard: "My Upcoming Schedules" section
+  - Card showing next 3-7 schedules assigned to current user
+  - Quick links to "Log Now" for pending schedules
+  - Shows time remaining until deadline
+
+**Frontend - Assignment Management:**
+- [ ] Bulk assignment interface (optional, lower priority)
+  - Select multiple schedules from list
+  - "Assign To" dropdown to assign all at once
+  - Useful for dividing workload when setting up new schedules
+- [ ] Template-level assignment
+  - When applying schedule templates, option to assign all to specific user
+  - "Assign these schedules to:" dropdown in apply modal
+  - Simplifies bulk setup for specific caretaker
+
+**Notifications Integration:**
+- [ ] Add assignment notification option in NotificationSettings
+  - Checkbox: "Notify me when a schedule is assigned to me"
+  - Send in-app notification when schedule assigned/reassigned
+- [ ] Add "assigned user only" notification mode
+  - Per-schedule toggle: "Only notify assigned user"
+  - When enabled, only assigned user receives reminders
+  - Useful for preventing notification spam in large households
+  - If no one assigned, notify all household members (fallback)
+- [ ] Notification for non-completion (optional, lower priority)
+  - If assigned user doesn't complete by deadline, notify admin/owner
+  - Configurable per-schedule or globally
+  - Helps identify workload issues
+
+**Statistics & Reporting:**
+- [ ] Add "Assignments" section in Settings > Household > Users tab
+  - Show current assignment count per user
+  - "Active Assignments This Week" count
+  - Visual workload distribution (e.g., pie chart or bar graph)
+- [ ] Completion rate per user (optional)
+  - Track completion rate: assigned schedules vs completed on time
+  - Show in household member list
+  - Helps identify who needs reminders or support
+
+**Use Cases:**
+1. **Split feeding responsibilities:** Alice feeds on Mon/Wed, Bob feeds on Tue/Thu
+2. **Specialized tasks:** Expert handler assigned to difficult feedings
+3. **Workload visibility:** See who has too many assignments this week
+4. **Accountability:** Clear responsibility for each task
+5. **Targeted notifications:** Only relevant person gets reminded
+6. **Training:** Assign simple tasks to new household members, complex tasks to experienced ones
+
+**Edge Cases & Validation:**
+- ✅ User leaving household: SET NULL on assigned_to_user_id (schedule becomes household-wide)
+- ✅ User losing reptile access: Validate on assignment, prevent assignment to users without access
+- ✅ Anyone can complete: Any household member can complete assigned schedules (flexibility)
+- ✅ Assignment visibility: All members see assignments (transparency)
+- ❌ Restricted completion: Don't implement "only assigned user can complete" (too restrictive)
+
+**Implementation Priority:**
+1. **Phase 1 (Core):** Database, backend API, schedule form assignment UI
+2. **Phase 2 (Visibility):** Calendar indicators, "My Schedules" filter, assigned user display
+3. **Phase 3 (Advanced):** Bulk assignment, notifications, workload statistics
+
+**Estimated Effort:**
+- Database & Backend: 2-3 days
+- Frontend Core (Phase 1-2): 4-5 days
+- Frontend Advanced (Phase 3): 3-4 days
+- Testing & Edge Cases: 2 days
+- **Total: 1.5-2 weeks**
+
 ### Settings - OIDC Configuration
 - [ ] **OIDC settings UI** (Advanced)
   - Currently configured via environment variables
@@ -1384,18 +1494,19 @@ The Reptile Tracker currently provides:
 **Tier 2 - HIGH VALUE (Next 1-2 months):**
 4. **Photo Upload & Gallery** - Visual health tracking and progress photos (backend ready)
 5. **Complete Backup & Restore System** - Full household export/import for data portability
-6. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export charts
+6. **Schedule Assignment to Household Members** - Assign schedules to specific users, workload distribution, targeted notifications
+7. **Statistics Page Phase 3** - Advanced analytics, supplement adherence, export charts
 
 **Tier 3 - IMPORTANT (Next 2-3 months):**
-7. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges, UVB bulb tracking
-8. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
-9. **Data Export & Reports** - PDF export for vet visits
+8. **Environmental Data Tracking** - Temperature/humidity logging with ideal ranges, UVB bulb tracking
+9. **Enhanced Vet Records** - Medical documentation, medication tracking with reminders
+10. **Data Export & Reports** - PDF export for vet visits
 
 **Tier 4 - ADVANCED (Future - 3+ months):**
-10. **Species Care Sheets** - Built-in educational resources
-11. **Statistics Phase 4** - Predictive analytics, growth projections
-12. **Breeding Tracker** - If requested by user base
-13. **PWA Features** - Offline mode, push notifications, install prompt
+11. **Species Care Sheets** - Built-in educational resources
+12. **Statistics Phase 4** - Predictive analytics, growth projections
+13. **Breeding Tracker** - If requested by user base
+14. **PWA Features** - Offline mode, push notifications, install prompt
 
 **Completed in December 2025:**
 - ✅ **Care Schedules & Recommendations** - Species-based feeding/supplement guidelines
@@ -1409,6 +1520,7 @@ The Reptile Tracker currently provides:
 - **Feeder Animal Care:** Unique feature that complements reptile tracking perfectly
 - **Photo Upload:** Backend ready, high user engagement, visual proof of care
 - **Backup/Export:** Critical for data portability and disaster recovery
+- **Schedule Assignment:** Addresses real pain point for multi-user households, improves accountability and workload distribution
 
 ---
 
