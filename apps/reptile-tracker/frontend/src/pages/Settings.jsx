@@ -617,12 +617,12 @@ function DisplayTab() {
 
       {/* Dashboard Customization */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <Layout size={20} />
             Dashboard Layout
           </h2>
-          <button onClick={handleResetDashboard} className="btn-secondary text-sm">
+          <button onClick={handleResetDashboard} className="btn-secondary text-sm whitespace-nowrap">
             Reset Dashboard
           </button>
         </div>
@@ -637,26 +637,31 @@ function DisplayTab() {
               onDragStart={(e) => handleDragStart(e, index, 'dashboard')}
               onDragOver={(e) => handleDragOver(e, index, 'dashboard')}
               onDragEnd={handleDragEnd}
-              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-move ${
+              className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all cursor-move ${
                 card.visible
                   ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
                   : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
               } ${draggedItem?.index === index && draggedItem?.type === 'dashboard' ? 'opacity-50' : ''}`}
             >
-              <GripVertical size={20} className="text-gray-400 flex-shrink-0" />
-              <button
-                onClick={() => handleDashboardCardToggle(card.id)}
-                className="flex items-center gap-2"
-              >
-                {card.visible ? <Eye size={18} className="text-blue-600 dark:text-blue-400" /> : <EyeOff size={18} className="text-gray-400" />}
-              </button>
-              <div className="flex-1">
-                <span className={`font-medium ${card.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                  {card.label}
-                </span>
+              {/* Top row on mobile: drag handle, visibility toggle, label */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <GripVertical size={18} className="text-gray-400 flex-shrink-0 sm:hidden" />
+                <GripVertical size={20} className="text-gray-400 flex-shrink-0 hidden sm:block" />
+                <button
+                  onClick={() => handleDashboardCardToggle(card.id)}
+                  className="flex items-center gap-2 flex-shrink-0"
+                >
+                  {card.visible ? <Eye size={16} className="text-blue-600 dark:text-blue-400 sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <span className={`font-medium text-sm sm:text-base ${card.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {card.label}
+                  </span>
+                </div>
               </div>
+              {/* Bottom row on mobile: controls (interpolation + size buttons) */}
               {card.visible && (
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap pl-6 sm:pl-0">
                   {/* Interpolation dropdown for weight charts */}
                   {card.interpolationMode !== undefined && (
                     <>
@@ -664,22 +669,22 @@ function DisplayTab() {
                         value={card.interpolationMode || 'linear'}
                         onChange={(e) => { e.stopPropagation(); handleDashboardCardInterpolationChange(card.id, e.target.value); }}
                         onClick={(e) => e.stopPropagation()}
-                        className="input py-1 px-2 text-xs min-w-[100px]"
+                        className="input py-1 px-2 text-xs w-24 sm:min-w-[100px]"
                         title="Weight interpolation mode"
                       >
                         <option value="linear">Linear</option>
                         <option value="step">Step</option>
-                        <option value="none">Dots Only</option>
+                        <option value="none">Dots</option>
                       </select>
-                      {/* Divider */}
-                      <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                      {/* Divider - hidden on mobile */}
+                      <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
                     </>
                   )}
                   {/* Size buttons */}
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'xs'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'xs'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -690,7 +695,7 @@ function DisplayTab() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'small'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'small'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -701,7 +706,7 @@ function DisplayTab() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'medium'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'medium'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -712,7 +717,7 @@ function DisplayTab() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'large'); }}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'large'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -731,16 +736,16 @@ function DisplayTab() {
 
       {/* Statistics Customization */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <Layout size={20} />
             Statistics Layout
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
             <select
               value={selectedReptileId || ''}
               onChange={(e) => setSelectedReptileId(e.target.value ? parseInt(e.target.value) : null)}
-              className="input text-sm py-1 px-2 min-w-[200px]"
+              className="input text-sm py-1 px-2 min-w-[150px] sm:min-w-[200px] flex-1 sm:flex-initial"
               title="Select reptile to customize"
             >
               <option value="">All Reptiles (Global)</option>
@@ -751,8 +756,8 @@ function DisplayTab() {
                 </option>
               ))}
             </select>
-            {/* Divider */}
-            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            {/* Divider - hidden on mobile */}
+            <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
             <button onClick={handleResetStatistics} className="btn-secondary text-sm whitespace-nowrap">
               {selectedReptileId ? 'Reset to Default' : 'Reset Statistics'}
             </button>
@@ -761,7 +766,7 @@ function DisplayTab() {
 
         {/* Per-Reptile Settings Info */}
         {selectedReptileId && (
-          <div className="mb-4 flex gap-2">
+          <div className="mb-4 flex flex-col sm:flex-row gap-2">
             {hasCustomStatisticsSettings(selectedReptileId) ? (
               <div className="flex-1 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-blue-900 dark:text-blue-100">
@@ -775,7 +780,7 @@ function DisplayTab() {
                 </p>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex gap-2 sm:flex-shrink-0">
               {hasCustomStatisticsSettings(selectedReptileId) ? (
                 <button onClick={handleUseGlobal} className="btn-secondary text-sm whitespace-nowrap">
                   Use Global
@@ -810,30 +815,35 @@ function DisplayTab() {
                 onDragStart={(e) => !isChild && handleDragStart(e, index, 'statistics')}
                 onDragOver={(e) => !isChild && handleDragOver(e, index, 'statistics')}
                 onDragEnd={!isChild ? handleDragEnd : undefined}
-                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all ${
                   !isChild ? 'cursor-move' : ''
                 } ${
                   chart.visible
                     ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
                     : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
                 } ${draggedItem?.index === index && draggedItem?.type === 'statistics' && !isChild ? 'opacity-50' : ''} ${
-                  isChild ? 'ml-8' : ''
+                  isChild ? 'ml-6 sm:ml-8' : ''
                 }`}
               >
-                {!isChild && <GripVertical size={20} className="text-gray-400 flex-shrink-0" />}
-                <button
-                  onClick={() => handleStatisticsChartToggle(chart.id)}
-                  className="flex items-center gap-2"
-                >
-                  {chart.visible ? <Eye size={18} className="text-green-600 dark:text-green-400" /> : <EyeOff size={18} className="text-gray-400" />}
-                </button>
-                <div className="flex-1">
-                  <span className={`${isChild ? 'text-sm' : 'font-medium'} ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {chart.label}
-                  </span>
+                {/* Top row on mobile: drag handle, visibility toggle, label */}
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  {!isChild && <GripVertical size={18} className="text-gray-400 flex-shrink-0 sm:hidden" />}
+                  {!isChild && <GripVertical size={20} className="text-gray-400 flex-shrink-0 hidden sm:block" />}
+                  <button
+                    onClick={() => handleStatisticsChartToggle(chart.id)}
+                    className="flex items-center gap-2 flex-shrink-0"
+                  >
+                    {chart.visible ? <Eye size={16} className="text-green-600 dark:text-green-400 sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <span className={`${isChild ? 'text-sm' : 'font-medium text-sm sm:text-base'} ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {chart.label}
+                    </span>
+                  </div>
                 </div>
+                {/* Bottom row on mobile: controls (interpolation + size buttons) */}
                 {chart.visible && !isChild && (
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap pl-6 sm:pl-0">
                     {/* Interpolation dropdown for weight charts */}
                     {chart.interpolationMode !== undefined && (
                       <>
@@ -841,22 +851,22 @@ function DisplayTab() {
                           value={chart.interpolationMode || 'linear'}
                           onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
                           onClick={(e) => e.stopPropagation()}
-                          className="input py-1 px-2 text-xs min-w-[100px]"
+                          className="input py-1 px-2 text-xs w-24 sm:min-w-[100px]"
                           title="Weight interpolation mode"
                         >
                           <option value="linear">Linear</option>
                           <option value="step">Step</option>
-                          <option value="none">Dots Only</option>
+                          <option value="none">Dots</option>
                         </select>
-                        {/* Divider */}
-                        <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                        {/* Divider - hidden on mobile */}
+                        <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
                       </>
                     )}
                     {/* Size buttons - only show for non-child items */}
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-shrink-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'xs'); }}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'xs'
                             ? 'bg-green-500 text-white'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -867,7 +877,7 @@ function DisplayTab() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'small'); }}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'small'
                             ? 'bg-green-500 text-white'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -878,7 +888,7 @@ function DisplayTab() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'medium'); }}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'medium'
                             ? 'bg-green-500 text-white'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -889,7 +899,7 @@ function DisplayTab() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'large'); }}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'large'
                             ? 'bg-green-500 text-white'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
