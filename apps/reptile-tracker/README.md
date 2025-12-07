@@ -33,7 +33,9 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
   - In-app notification center with bell icon and history
   - Quiet hours with critical notification override
   - Variable insertion and markdown support in templates
+  - Graceful template variable handling (missing variables render as empty strings)
   - Bell icon indicators throughout calendar views showing notification status
+  - Reliable template rendering across all notification channel types
 - 📈 **Statistics**: Comprehensive analytics with customizable charts and layouts
 - ⚙️ **Display Customization**: Drag-and-drop card management and chart settings
 

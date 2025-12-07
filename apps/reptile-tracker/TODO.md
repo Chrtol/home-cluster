@@ -587,6 +587,44 @@
 
 ## ✅ Recently Completed
 
+### December 2025 - Bug Fixes & UI Improvements (2025-12-07)
+- [x] **Fixed notification template variable substitution** - ✅ COMPLETED (2025-12-07)
+  - Notifications were showing literal `{schedule_name}` and `{reptile_name}` instead of actual values
+  - Root cause: Python's `format_map()` raised KeyError for missing template variables
+  - Created `SafeDict` class that returns empty string for missing keys instead of raising KeyError
+  - Templates now gracefully handle optional variables (e.g., `{food_category}` only in feeding schedules)
+  - Fixes Discord, Pushover, Generic webhooks, and In-App notifications
+
+- [x] **Fixed schedule deletion UI issues** - ✅ COMPLETED (2025-12-07)
+  - Users saw "Failed to delete schedule" popup even though deletion succeeded
+  - Schedule remained visible until manual page refresh
+  - Root cause: Axios treated 204 No Content response as error, preventing UI refresh
+  - Added `validateStatus` to axios config to accept all 2xx responses as success
+  - UI now refreshes immediately after deletion without manual refresh
+  - Added schedule name to confirmation dialog: "Are you sure you want to delete schedule 'XXX'?"
+  - Shows success confirmation after deletion
+
+- [x] **Fixed default food pre-selection** - ✅ COMPLETED (2025-12-07)
+  - Default food wasn't filling when opening feeding page or changing reptile dropdown
+  - Root cause 1: useEffect missing `reptiles` dependency, didn't run when data loaded
+  - Root cause 2: `insectItems.length === 0` check prevented re-filling when changing reptiles
+  - Removed length check, added `reptiles` to dependencies
+  - Added logic to clear items if no default is configured
+  - Fixes both opening feed page (from URL or schedule instance) and changing reptile
+
+- [x] **Fixed interval schedule instance creation** - ✅ COMPLETED (2025-12-07)
+  - Creating new interval schedule crashed with "NoneType + timedelta" error
+  - Root cause: Trying to add timedelta to `None` for first instance (no previous completion)
+  - Updated `create_interval_schedule_instance()` to handle `None` as `last_completion_date`
+  - Uses today's date as starting point for new interval schedules
+  - Fixed type hint to `Optional[py_date]` for clarity
+
+- [x] **Fixed datetime shadowing bug** - ✅ COMPLETED (2025-12-07)
+  - Schedule creation crashed with UnboundLocalError for datetime variable
+  - Root cause: Redundant `from datetime import datetime, timezone` inside function shadowed module import
+  - Removed redundant import (already imported at module level)
+  - Schedule creation now works correctly
+
 ### December 2025 - Food Favorites & Default Food Selection (2025-12-06)
 - [x] **Food Favorites System** - ✅ COMPLETED (2025-12-06)
   - Two-tier favorites system: global favorites (star) and per-reptile favorites (heart)
