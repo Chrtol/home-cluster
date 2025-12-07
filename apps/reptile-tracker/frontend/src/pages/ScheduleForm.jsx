@@ -29,7 +29,7 @@ function ScheduleForm() {
   const [reptileId, setReptileId] = useState("");
   const [name, setName] = useState("");
   const [scheduleType, setScheduleType] = useState("feeding");
-  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed", "interval", or "dependent"
+  const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed" or "interval"
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
   const [foodCategory, setFoodCategory] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
@@ -590,23 +590,11 @@ function ScheduleForm() {
                 Time-based intervals
               </div>
             </button>
-            <button
-              type="button"
-              disabled
-              className="px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
-            >
-              <div className="font-semibold">Dependent</div>
-              <div className="text-xs mt-1 opacity-75">
-                Coming Soon
-              </div>
-            </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             {scheduleMode === "fixed"
-              ? "Schedule occurs on specific dates or days of the week"
-              : scheduleMode === "interval"
-              ? "Time interval between events with min/max day constraints (e.g., every 3-4 days)"
-              : "Triggered by another schedule (coming soon)"}
+              ? "Schedule occurs on specific dates or days of the week (or dependent on another schedule)"
+              : "Time interval between events with min/max day constraints (e.g., every 3-4 days)"}
           </p>
         </div>
 
