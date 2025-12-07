@@ -772,14 +772,11 @@ function Calendar() {
                     </div>
 
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {schedule.schedule_mode === 'requirement' ? (
+                      {schedule.schedule_mode === 'interval' ? (
                         <>
-                          Requirement-based
-                          {schedule.quota_frequency && schedule.quota_period && (
-                            <span className="ml-2">• {schedule.quota_frequency}x per {schedule.quota_period}</span>
-                          )}
-                          {schedule.min_days_between && (
-                            <span className="ml-2">• {schedule.min_days_between}+ days between</span>
+                          Interval-based
+                          {schedule.min_days_between && schedule.max_days_between && (
+                            <span className="ml-2">• Every {schedule.min_days_between}-{schedule.max_days_between} days</span>
                           )}
                           {schedule.name && <span className="ml-2">• {schedule.name}</span>}
                         </>
@@ -792,7 +789,7 @@ function Calendar() {
                     </div>
 
                     <div className="flex flex-wrap gap-3 mt-2">
-                      {schedule.schedule_mode === 'requirement' && (() => {
+                      {schedule.schedule_mode === 'interval' && (() => {
                         const quotaBadge = getQuotaBadge(schedule.id);
                         return quotaBadge ? (
                           <div className={`text-xs px-2 py-0.5 rounded-full font-medium ${quotaBadge.className}`}>
@@ -901,7 +898,7 @@ function Calendar() {
 
                     const { Icon: TypeIcon, color: typeColor } = getScheduleTypeIcon(event.schedule_type);
 
-                    const quotaBadge = event.schedule_mode === 'requirement' ? getQuotaBadge(event.schedule_id) : null;
+                    const quotaBadge = event.schedule_mode === 'interval' ? getQuotaBadge(event.schedule_id) : null;
 
                     const EventContent = (
                       <div className={`px-4 py-3 rounded-lg border-2 ${
@@ -1388,7 +1385,7 @@ function Calendar() {
                               </div>
 
                               <div className="text-xs space-y-1">
-                                {event.schedule_mode === 'requirement' && (() => {
+                                {event.schedule_mode === 'interval' && (() => {
                                   const quotaBadge = getQuotaBadge(event.schedule_id);
                                   return quotaBadge ? (
                                     <div className={`inline-block px-2 py-0.5 rounded-full font-medium ${quotaBadge.className}`}>
@@ -1500,8 +1497,8 @@ function Calendar() {
                         </span>
                       </div>
 
-                      {/* Quota Badge for Requirement Schedules */}
-                      {event.schedule_mode === 'requirement' && (() => {
+                      {/* Quota Badge for Interval Schedules */}
+                      {event.schedule_mode === 'interval' && (() => {
                         const quotaBadge = getQuotaBadge(event.schedule_id);
                         return quotaBadge ? (
                           <div className="mb-3">
