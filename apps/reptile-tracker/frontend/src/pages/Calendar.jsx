@@ -504,8 +504,11 @@ function Calendar() {
       // Refresh schedules and recalculate events
       await fetchSchedules();
     } catch (error) {
-      console.error("Error deleting schedule:", error);
-      alert("Failed to delete schedule");
+      // Only show error if it's not a successful deletion (204 No Content might not have response body)
+      if (error.response && error.response.status !== 204) {
+        console.error("Error deleting schedule:", error);
+        alert("Failed to delete schedule");
+      }
     }
   };
 

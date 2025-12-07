@@ -154,9 +154,34 @@ async def create_schedule(
         logging.getLogger(__name__).error(f"Failed to schedule notification jobs for schedule {new_schedule.id}: {e}")
 
     # Generate schedule instances for this schedule
-    from app.instance_generator import generate_instances_for_schedule
+    from app.instance_generator import generate_instances_for_schedule, create_interval_schedule_instance
+    from app.models import ScheduleMode
+    from datetime import datetime, timezone
+
     try:
-        await generate_instances_for_schedule(db, new_schedule)
+        # For interval schedules, create the first instance manually since they don't have a fixed schedule
+        if new_schedule.schedule_mode == ScheduleMode.INTERVAL:
+            # Create the first instance starting from today
+            await create_interval_schedule_instance(
+                db=db,
+                schedule=new_schedule,
+                last_completion_date=None  # No previous completion for new schedule
+            )
+            await db.commit()  # Commit the instance before scheduling notifications
+
+            # Reload the schedule with notification channels
+            await db.refresh(new_schedule, ["notification_channels"])
+
+            # Now schedule notifications for the created instance
+            from app.scheduler import schedule_notification_jobs_for_schedule
+            try:
+                await schedule_notification_jobs_for_schedule(new_schedule.id, days_ahead=7)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to schedule notifications after creating interval instance: {e}")
+        else:
+            # For fixed/dependent schedules, use normal instance generation
+            await generate_instances_for_schedule(db, new_schedule)
     except Exception as e:
         # Log error but don't fail the schedule creation
         import logging
