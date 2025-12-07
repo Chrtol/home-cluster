@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import NotificationsTab from '../components/NotificationsTab_new';
 import NotificationTemplatesTab from '../components/NotificationTemplatesTab';
@@ -443,6 +443,27 @@ function DisplayTab() {
     showSuccess();
   };
 
+  // Mobile-friendly reorder functions
+  const handleDashboardCardMoveUp = (index) => {
+    if (index === 0) return; // Already at top
+    handleDashboardCardReorder(index, index - 1);
+  };
+
+  const handleDashboardCardMoveDown = (index) => {
+    if (index === dashboardCards.length - 1) return; // Already at bottom
+    handleDashboardCardReorder(index, index + 1);
+  };
+
+  const handleStatisticsChartMoveUp = (index) => {
+    if (index === 0) return; // Already at top
+    handleStatisticsChartReorder(index, index - 1);
+  };
+
+  const handleStatisticsChartMoveDown = (index) => {
+    if (index === statisticsCharts.length - 1) return; // Already at bottom
+    handleStatisticsChartReorder(index, index + 1);
+  };
+
   const handleChartSettingChange = (key, value) => {
     const updated = { ...chartSettings, [key]: value };
     setChartSettings(updated);
@@ -627,25 +648,44 @@ function DisplayTab() {
           </button>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Show/hide cards, drag to reorder, and adjust card sizes on the Dashboard page.
+          Show/hide cards, reorder (drag on desktop, use arrows on mobile), and adjust card sizes on the Dashboard page.
         </p>
         <div className="space-y-2">
           {dashboardCards.map((card, index) => (
             <div
               key={card.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index, 'dashboard')}
-              onDragOver={(e) => handleDragOver(e, index, 'dashboard')}
-              onDragEnd={handleDragEnd}
-              className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all cursor-move ${
+              draggable={window.innerWidth >= 768} // Only draggable on desktop
+              onDragStart={(e) => window.innerWidth >= 768 && handleDragStart(e, index, 'dashboard')}
+              onDragOver={(e) => window.innerWidth >= 768 && handleDragOver(e, index, 'dashboard')}
+              onDragEnd={window.innerWidth >= 768 ? handleDragEnd : undefined}
+              className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all sm:cursor-move ${
                 card.visible
                   ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
                   : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
               } ${draggedItem?.index === index && draggedItem?.type === 'dashboard' ? 'opacity-50' : ''}`}
             >
-              {/* Top row on mobile: drag handle, visibility toggle, label */}
+              {/* Top row on mobile: reorder buttons (mobile) / drag handle (desktop), visibility toggle, label */}
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <GripVertical size={18} className="text-gray-400 flex-shrink-0 sm:hidden" />
+                {/* Mobile reorder buttons */}
+                <div className="flex flex-col gap-0.5 sm:hidden flex-shrink-0">
+                  <button
+                    onClick={() => handleDashboardCardMoveUp(index)}
+                    disabled={index === 0}
+                    className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    title="Move up"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDashboardCardMoveDown(index)}
+                    disabled={index === dashboardCards.length - 1}
+                    className={`p-0.5 rounded ${index === dashboardCards.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    title="Move down"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
+                {/* Desktop drag handle */}
                 <GripVertical size={20} className="text-gray-400 flex-shrink-0 hidden sm:block" />
                 <button
                   onClick={() => handleDashboardCardToggle(card.id)}
@@ -796,8 +836,8 @@ function DisplayTab() {
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           {selectedReptileId
-            ? 'Customize the statistics layout for this specific reptile.'
-            : 'Configure the default statistics layout for all reptiles (unless they have custom settings).'}
+            ? 'Customize the statistics layout for this specific reptile. Reorder using drag (desktop) or arrows (mobile).'
+            : 'Configure the default statistics layout for all reptiles (unless they have custom settings). Reorder using drag (desktop) or arrows (mobile).'}
         </p>
         <div className="space-y-2">
           {statisticsCharts.map((chart, index) => {
@@ -811,12 +851,12 @@ function DisplayTab() {
             return (
               <div
                 key={chart.id}
-                draggable={!isChild}
-                onDragStart={(e) => !isChild && handleDragStart(e, index, 'statistics')}
-                onDragOver={(e) => !isChild && handleDragOver(e, index, 'statistics')}
-                onDragEnd={!isChild ? handleDragEnd : undefined}
+                draggable={!isChild && window.innerWidth >= 768} // Only draggable on desktop and not child
+                onDragStart={(e) => !isChild && window.innerWidth >= 768 && handleDragStart(e, index, 'statistics')}
+                onDragOver={(e) => !isChild && window.innerWidth >= 768 && handleDragOver(e, index, 'statistics')}
+                onDragEnd={!isChild && window.innerWidth >= 768 ? handleDragEnd : undefined}
                 className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all ${
-                  !isChild ? 'cursor-move' : ''
+                  !isChild ? 'sm:cursor-move' : ''
                 } ${
                   chart.visible
                     ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
@@ -825,9 +865,30 @@ function DisplayTab() {
                   isChild ? 'ml-6 sm:ml-8' : ''
                 }`}
               >
-                {/* Top row on mobile: drag handle, visibility toggle, label */}
+                {/* Top row on mobile: reorder buttons (mobile) / drag handle (desktop), visibility toggle, label */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  {!isChild && <GripVertical size={18} className="text-gray-400 flex-shrink-0 sm:hidden" />}
+                  {/* Mobile reorder buttons (only for parent items) */}
+                  {!isChild && (
+                    <div className="flex flex-col gap-0.5 sm:hidden flex-shrink-0">
+                      <button
+                        onClick={() => handleStatisticsChartMoveUp(index)}
+                        disabled={index === 0}
+                        className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                        title="Move up"
+                      >
+                        <ChevronUp size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleStatisticsChartMoveDown(index)}
+                        disabled={index === statisticsCharts.length - 1}
+                        className={`p-0.5 rounded ${index === statisticsCharts.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                        title="Move down"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
+                  )}
+                  {/* Desktop drag handle (only for parent items) */}
                   {!isChild && <GripVertical size={20} className="text-gray-400 flex-shrink-0 hidden sm:block" />}
                   <button
                     onClick={() => handleStatisticsChartToggle(chart.id)}
