@@ -156,7 +156,6 @@ async def create_schedule(
     # Generate schedule instances for this schedule
     from app.instance_generator import generate_instances_for_schedule, create_interval_schedule_instance
     from app.models import ScheduleMode
-    from datetime import datetime, timezone
 
     try:
         # For interval schedules, create the first instance manually since they don't have a fixed schedule

@@ -503,9 +503,13 @@ function Calendar() {
       await axios.delete(`/api/schedules/${scheduleId}`);
       // Refresh schedules and recalculate events
       await fetchSchedules();
+      alert("Schedule deleted successfully");
     } catch (error) {
-      // Only show error if it's not a successful deletion (204 No Content might not have response body)
-      if (error.response && error.response.status !== 204) {
+      // 204 No Content is also a successful deletion
+      if (error.response && error.response.status === 204) {
+        await fetchSchedules();
+        alert("Schedule deleted successfully");
+      } else {
         console.error("Error deleting schedule:", error);
         alert("Failed to delete schedule");
       }
