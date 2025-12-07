@@ -89,6 +89,7 @@ class ScheduleMode(str, PyEnum):
     """Mode of schedule operation"""
     FIXED = "fixed"  # Fixed dates/days (calendar-based schedules)
     INTERVAL = "interval"  # Time-based intervals with min/max days between events
+    DEPENDENT = "dependent"  # Triggered by another schedule's completion
     REQUIREMENT = "requirement"  # DEPRECATED: Use INTERVAL instead (kept for migration compatibility)
 
 

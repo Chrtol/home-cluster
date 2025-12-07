@@ -11,7 +11,7 @@ from sqlalchemy import select, and_, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Schedule, ScheduleInstance, FeedingRotation, Supplement
+from app.models import Schedule, ScheduleInstance, FeedingRotation, Supplement, ScheduleMode
 from app.database import async_session_maker
 from app.config import settings
 
@@ -22,7 +22,19 @@ def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bo
     """
     Check if a schedule should occur on a given date based on its rule.
     This is the same logic used in scheduler.py but centralized here.
+
+    Note: Only FIXED schedules generate instances. INTERVAL and DEPENDENT schedules
+    use different mechanisms (event-based tracking and parent schedule triggers).
     """
+    # Interval schedules don't use pre-generated instances - they track based on actual events
+    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        return False
+
+    # Dependent schedules are triggered by parent schedule completions, not calendar dates
+    if schedule.schedule_mode == ScheduleMode.DEPENDENT:
+        return False
+
+    # Fixed schedules use schedule_rule to determine occurrence dates
     if schedule.schedule_rule == "every_x_days":
         if not schedule.frequency_days:
             return False
@@ -44,11 +56,6 @@ def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bo
         if not schedule.day_of_month:
             return False
         return check_date.day == schedule.day_of_month
-
-    # Dependent schedules are not directly scheduled - they depend on parent schedule
-    # We'll handle those separately when generating instances
-    elif schedule.schedule_rule == "dependent":
-        return False
 
     return False
 
