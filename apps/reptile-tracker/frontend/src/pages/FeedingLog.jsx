@@ -269,25 +269,33 @@ export default function FeedingLog() {
     if (!selectedReptileData) return;
 
     // Set default insect if configured and insects are enabled
-    if (selectedReptileData.default_insect_id && includeInsects && insectItems.length === 0) {
+    if (selectedReptileData.default_insect_id && includeInsects) {
+      // Only set if no items exist or reptile just changed (clear and set default)
       setInsectItems([{
         id: Date.now(),
         food_id: selectedReptileData.default_insect_id,
         quantity: 1,
         supplement_ids: []
       }]);
+    } else if (!selectedReptileData.default_insect_id && includeInsects) {
+      // Clear items if no default is configured
+      setInsectItems([]);
     }
 
     // Set default prepared food if configured and prepared is enabled
-    if (selectedReptileData.default_prepared_id && includePrepared && preparedItems.length === 0) {
+    if (selectedReptileData.default_prepared_id && includePrepared) {
+      // Only set if no items exist or reptile just changed (clear and set default)
       setPreparedItems([{
         id: Date.now(),
         food_id: selectedReptileData.default_prepared_id,
         quantity: 1,
         supplement_ids: []
       }]);
+    } else if (!selectedReptileData.default_prepared_id && includePrepared) {
+      // Clear items if no default is configured
+      setPreparedItems([]);
     }
-  }, [selectedReptile, includeInsects, includePrepared, mode]);
+  }, [selectedReptile, includeInsects, includePrepared, mode, reptiles]);
 
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {
