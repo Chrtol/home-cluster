@@ -239,8 +239,8 @@ export default function ReptileDetail() {
                 to={`/feed/${f.id}`}
                 className={`block p-3 border-l-4 border-green-500 dark:border-green-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-gray-700/50'
-                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-50 dark:hover:bg-gray-700/50'
+                    ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -308,8 +308,8 @@ export default function ReptileDetail() {
                 to={`/misting/${m.id}`}
                 className={`block p-3 border-l-4 border-blue-500 dark:border-blue-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700/50'
-                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-blue-50 dark:hover:bg-gray-700/50'
+                    ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -362,8 +362,8 @@ export default function ReptileDetail() {
                         to={`/health-log/weight/${w.id}`}
                         className={`block p-3 border-l-4 border-orange-500 dark:border-orange-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                           idx % 2 === 0
-                            ? 'bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-gray-700/50'
-                            : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-orange-50 dark:hover:bg-gray-700/50'
+                            ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
+                            : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-4">
@@ -415,8 +415,8 @@ export default function ReptileDetail() {
                 to={`/health-log/health/${h.id}`}
                 className={`block p-3 border-l-4 border-red-500 dark:border-red-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-gray-700/50'
-                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-red-50 dark:hover:bg-gray-700/50'
+                    ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
