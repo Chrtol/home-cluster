@@ -366,8 +366,13 @@ async def _schedule_single_notification_job(
         reminder_time_local = datetime.combine(scheduled_date, schedule.reminder_time, tzinfo=user_tz)
         reminder_time_utc = reminder_time_local.astimezone(timezone.utc)
 
+        # Log the calculated time
+        now_utc = datetime.now(timezone.utc)
+        logger.info(f"Attempting to schedule job for schedule {schedule.id} on {scheduled_date}: reminder_time_utc={reminder_time_utc}, now_utc={now_utc}, user_tz={user.timezone}")
+
         # Skip if in the past
-        if reminder_time_utc < datetime.now(timezone.utc):
+        if reminder_time_utc < now_utc:
+            logger.info(f"Skipping job for schedule {schedule.id} on {scheduled_date} - reminder time {reminder_time_utc} is in the past (now is {now_utc})")
             return
 
         # Generate unique job ID
@@ -378,7 +383,7 @@ async def _schedule_single_notification_job(
             select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
         )
         if existing.scalars().first():
-            logger.debug(f"Job {job_id} already exists")
+            logger.info(f"Job {job_id} already exists, skipping")
             return
 
         # Create database record
