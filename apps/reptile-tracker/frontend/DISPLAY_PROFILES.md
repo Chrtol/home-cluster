@@ -88,27 +88,21 @@ The profile will be added to your list of available profiles.
 
 The system includes the following dashboard cards that can be shown/hidden and reordered:
 
-**Default Cards (visible by default):**
-- **Today Summary** - Summary statistics for today's activities
-- **Weekly Calendar** - Calendar view with schedules and completed activities
-- **Weight Tracking** - Weight chart with feeding data overlay
-- **Your Reptiles** - Cards for each reptile with quick stats
-- **Recent Activity** - Timeline of recent feedings, health records, etc.
+**Current Dashboard Cards:**
+- **Today Summary** - Summary statistics for today's activities (type: summary)
+- **Weekly Calendar** - Calendar view with schedules and completed activities (type: content)
+- **Weight Tracking** - Weight chart with feeding data overlay (type: content)
+- **Your Reptiles** - Cards for each reptile with quick stats (type: content)
+- **Recent Activity** - Timeline of recent feedings, health records, etc. (type: content)
 
-**Optional Cards (hidden by default):**
-- **Upcoming Schedules** - Preview of schedules for the next 3-7 days
-- **Overdue & Missed** - Alerts for missed or overdue schedules
-- **Health Alerts** - Quick view of health concerns or upcoming vet visits
-- **Feeding Streaks** - Track consecutive feeding patterns
-- **Quick Actions** - One-click buttons for common logging tasks
-- **Environment Tracking** - Temperature and humidity monitoring (if enabled)
+**Card Customization:**
+All cards can be:
+- Shown or hidden using the eye icon
+- Reordered via drag-and-drop
+- Resized (XS, S, M, L sizes)
+- Saved to different profiles
 
-To enable optional cards:
-1. Go to Settings > Display
-2. Find the card in the Dashboard Layout section
-3. Click the eye icon to make it visible
-4. Drag to reorder and adjust size as needed
-5. Click the Save icon on your active profile to save the changes
+**Note:** Additional cards planned for future releases (weekly summary, health summary, schedule summary).
 
 ### Use Cases for Multiple Profiles
 
@@ -274,9 +268,19 @@ The system ensures a "Default" profile always exists:
 - Profile list with active indicator
 - Create new profile form
 - Inline rename with Enter/Escape support
-- Confirmation dialogs for destructive actions
+- In-app modal dialogs for all operations (no browser popups)
 - File input for profile import
 - Responsive design with mobile support
+
+**Modal System:**
+The ProfileManager uses a custom Modal component that replaces browser alert/confirm/prompt dialogs:
+- **Confirmation modals** for delete, update operations
+- **Input modals** for rename and import with auto-focus and Enter key support
+- **Warning modals** for validation errors and file type mismatches
+- **Danger styling** for destructive actions (red buttons for delete)
+- **Type-based styling** (info, warning, danger, success) with colored icons
+- Click outside modal does NOT close it (must use Cancel/X button)
+- Keyboard support: Enter to confirm, Escape handled by child components
 
 ### Adding New Dashboard Cards
 

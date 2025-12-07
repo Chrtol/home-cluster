@@ -708,13 +708,11 @@ Assign specific household members as responsible for completing schedules, impro
   - Import profiles from exported files with custom naming
   - Automatic Default profile creation preserving existing customizations
   - Integration with existing import/export functionality
-  - **New Optional Dashboard Cards** (disabled by default):
-    - Upcoming Schedules - Preview next 3-7 days of schedules
-    - Overdue & Missed - Alerts for missed or overdue schedules
-    - Health Alerts - Quick view of health concerns
-    - Feeding Streaks - Track consecutive feeding patterns
-    - Quick Actions - One-click buttons for common tasks
-    - Environment Tracking - Temperature/humidity monitoring
+  - **In-app modal dialogs** for all profile operations (no browser popups)
+    - Confirmation dialogs for delete, update, duplicate operations
+    - Input modals for rename and import with Enter key support
+    - Warning/error modals with appropriate styling
+    - Modal backdrop with click-outside-to-close disabled
   - **Technical Implementation:**
     - Profile storage in localStorage with automatic Default profile
     - ProfileManager component with inline editing and drag-to-reorder

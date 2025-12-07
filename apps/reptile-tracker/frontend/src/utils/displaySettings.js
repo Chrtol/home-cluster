@@ -24,13 +24,10 @@ const DEFAULT_DASHBOARD_CARDS = [
   { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 2, size: 'large', type: 'content', interpolationMode: 'linear' },
   { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 3, size: 'small', type: 'content' },
   { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 4, size: 'medium', type: 'content' },
-  // New optional cards (disabled by default)
-  { id: 'upcoming_schedules', label: 'Upcoming Schedules', visible: false, order: 5, size: 'medium', type: 'content' },
-  { id: 'overdue_tasks', label: 'Overdue & Missed', visible: false, order: 6, size: 'small', type: 'content' },
-  { id: 'health_alerts', label: 'Health Alerts', visible: false, order: 7, size: 'small', type: 'content' },
-  { id: 'feeding_streaks', label: 'Feeding Streaks', visible: false, order: 8, size: 'xs', type: 'summary' },
-  { id: 'quick_actions', label: 'Quick Actions', visible: false, order: 9, size: 'small', type: 'content' },
-  { id: 'temperature_humidity', label: 'Environment Tracking', visible: false, order: 10, size: 'medium', type: 'content' },
+  // Additional summary cards (disabled by default) - TODO: Implement these in Dashboard.jsx
+  // { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 5, size: 'large', type: 'summary' },
+  // { id: 'health_summary', label: 'Health Summary', visible: false, order: 6, size: 'large', type: 'summary' },
+  // { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 7, size: 'large', type: 'summary' },
 ];
 
 export function getDashboardCardSettings() {
