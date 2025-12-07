@@ -500,19 +500,16 @@ function Calendar() {
     }
 
     try {
-      await axios.delete(`/api/schedules/${scheduleId}`);
+      const response = await axios.delete(`/api/schedules/${scheduleId}`, {
+        validateStatus: (status) => status >= 200 && status < 300, // Accept all 2xx as success
+      });
+
       // Refresh schedules and recalculate events
       await fetchSchedules();
       alert("Schedule deleted successfully");
     } catch (error) {
-      // 204 No Content is also a successful deletion
-      if (error.response && error.response.status === 204) {
-        await fetchSchedules();
-        alert("Schedule deleted successfully");
-      } else {
-        console.error("Error deleting schedule:", error);
-        alert("Failed to delete schedule");
-      }
+      console.error("Error deleting schedule:", error);
+      alert("Failed to delete schedule");
     }
   };
 
