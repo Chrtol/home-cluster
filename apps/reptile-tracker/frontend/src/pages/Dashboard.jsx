@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [dashboardCards, setDashboardCards] = useState([]);
   const [chartSettings, setChartSettings] = useState(null);
+  const [hideSupplements, setHideSupplements] = useState(false); // Hide supplements when calendar is XS
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -47,6 +48,13 @@ export default function Dashboard() {
     // Load the settings
     setDashboardCards(getDashboardCardSettings());
     setChartSettings(getChartSettings());
+
+    // Check if calendar is XS to hide supplements and force 1-day view
+    const calendarIsXS = isCalendarExtraSmall();
+    setHideSupplements(calendarIsXS);
+    if (calendarIsXS && calendarView !== 'day') {
+      setCalendarView('day');
+    }
   }, []);
 
   // Save calendar view to localStorage when it changes
@@ -1000,46 +1008,44 @@ export default function Dashboard() {
                 <h2 className="text-base font-bold text-gray-900 dark:text-white">Schedule Calendar</h2>
               </div>
               <div className="flex items-center gap-2">
-                {/* View switcher */}
-                <div className="flex rounded border border-gray-200 dark:border-gray-600 overflow-hidden">
-                  <button
-                    onClick={() => setCalendarView('day')}
-                    className={`px-2 py-1 text-xs font-medium transition-colors ${
-                      calendarView === 'day'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    title="1 day view"
-                  >
-                    1d
-                  </button>
-                  {!isCalendarExtraSmall() && (
-                    <>
-                      <button
-                        onClick={() => setCalendarView('three-day')}
-                        className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
-                          calendarView === 'three-day'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }`}
-                        title="3 day view"
-                      >
-                        3d
-                      </button>
-                      <button
-                        onClick={() => setCalendarView('week')}
-                        className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
-                          calendarView === 'week'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }`}
-                        title="Week view"
-                      >
-                        7d
-                      </button>
-                    </>
-                  )}
-                </div>
+                {/* View switcher - hidden when calendar is XS */}
+                {!hideSupplements && (
+                  <div className="flex rounded border border-gray-200 dark:border-gray-600 overflow-hidden">
+                    <button
+                      onClick={() => setCalendarView('day')}
+                      className={`px-2 py-1 text-xs font-medium transition-colors ${
+                        calendarView === 'day'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                      title="1 day view"
+                    >
+                      1d
+                    </button>
+                    <button
+                      onClick={() => setCalendarView('three-day')}
+                      className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                        calendarView === 'three-day'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                      title="3 day view"
+                    >
+                      3d
+                    </button>
+                    <button
+                      onClick={() => setCalendarView('week')}
+                      className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                        calendarView === 'week'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                      title="Week view"
+                    >
+                      7d
+                    </button>
+                  </div>
+                )}
                 <div className="relative">
                   <button
                     onClick={() => setShowReptileFilter(!showReptileFilter)}
@@ -1159,7 +1165,7 @@ export default function Dashboard() {
                                     <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{foodCategory}</span>
                                   </>
                                 )}
-                                {event.suggested_supplements && event.suggested_supplements.length > 0 && (
+                                {!hideSupplements && event.suggested_supplements && event.suggested_supplements.length > 0 && (
                                   <>
                                     <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
                                     <span className="text-amber-600 dark:text-amber-400 truncate min-w-0">
@@ -1181,7 +1187,7 @@ export default function Dashboard() {
                                 ? 'border-green-500 dark:border-green-600'
                                 : 'border-gray-200 dark:border-gray-600'
                             }`}
-                            title={`${event.reptile_name}${timeText ? ' • ' + timeText : ''}${foodCategory ? ' • ' + foodCategory : ''}${event.suggested_supplements?.length > 0 ? ' • +' + event.suggested_supplements.map(s => s.name).join(', ') : ''}${event.notes ? '\n' + event.notes : ''}`}
+                            title={`${event.reptile_name}${timeText ? ' • ' + timeText : ''}${foodCategory ? ' • ' + foodCategory : ''}${!hideSupplements && event.suggested_supplements?.length > 0 ? ' • +' + event.suggested_supplements.map(s => s.name).join(', ') : ''}${event.notes ? '\n' + event.notes : ''}`}
                           >
                             <div className="flex items-center gap-1 text-[10px]">
                               {event.is_completed && (
