@@ -1476,16 +1476,20 @@ export default function Dashboard() {
                   }
                   return (
                     <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <Icon size={18} className={`flex-shrink-0 mt-0.5 ${colorClasses[activity.color]}`} />
-                        <div className="flex-shrink-0 w-24 text-center">{prominentValue && <span className="text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>}</div>
-                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
-                          <p className="font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
-                          <div className="min-w-0">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{summary}</p>
-                            {details && <p className="text-xs text-gray-500 dark:text-gray-500 truncate italic mt-0.5">"{details}"</p>}
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <Icon size={16} className={`flex-shrink-0 mt-0.5 sm:mt-1 ${colorClasses[activity.color]}`} />
+                        {prominentValue && (
+                          <div className="flex-shrink-0 text-center sm:w-20">
+                            <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap sm:text-right">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2 mb-0.5">
+                            <p className="font-medium text-sm text-gray-900 dark:text-white">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 sm:truncate">{summary}</p>
+                          {details && <p className="text-xs text-gray-500 dark:text-gray-500 line-clamp-1 italic mt-0.5">"{details}"</p>}
                         </div>
                       </div>
                     </Link>
