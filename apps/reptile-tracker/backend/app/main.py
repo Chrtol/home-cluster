@@ -57,6 +57,49 @@ async def lifespan(app: FastAPI):
         else:
             logger.info("No duplicate templates found")
 
+    # Create initial instances for interval schedules that don't have any yet
+    async with async_session_maker() as session:
+        from app.models import Schedule, ScheduleMode, ScheduleInstance
+        from app.instance_generator import create_interval_schedule_instance
+        from sqlalchemy import select, func
+        from sqlalchemy.orm import selectinload
+
+        # Find all interval schedules
+        result = await session.execute(
+            select(Schedule)
+            .options(selectinload(Schedule.notification_channels))
+            .where(Schedule.schedule_mode == ScheduleMode.INTERVAL, Schedule.enabled == True)
+        )
+        interval_schedules = result.scalars().all()
+
+        instances_created = 0
+        for schedule in interval_schedules:
+            # Check if this schedule has any instances
+            instance_count_result = await session.execute(
+                select(func.count(ScheduleInstance.id))
+                .where(ScheduleInstance.schedule_id == schedule.id)
+            )
+            instance_count = instance_count_result.scalar()
+
+            if instance_count == 0:
+                # No instances, create the first one
+                try:
+                    await create_interval_schedule_instance(
+                        db=session,
+                        schedule=schedule,
+                        last_completion_date=None
+                    )
+                    instances_created += 1
+                    logger.info(f"Created initial instance for interval schedule {schedule.id}")
+                except Exception as e:
+                    logger.error(f"Failed to create initial instance for schedule {schedule.id}: {e}")
+
+        if instances_created > 0:
+            await session.commit()
+            logger.info(f"Created {instances_created} initial instances for interval schedules")
+        else:
+            logger.info("No interval schedules needed initial instances")
+
     # Start notification scheduler
     await start_scheduler()
     logger.info("Notification scheduler startup complete")
