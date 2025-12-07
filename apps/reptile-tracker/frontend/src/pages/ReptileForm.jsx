@@ -107,7 +107,8 @@ export default function ReptileForm() {
             notes: notes || null,
             has_uvb: hasUvb === '' ? null : hasUvb === 'yes',
             length: length ? parseInt(length) : null,
-            age_category: ageCategory || null
+            // Only save age_category if manually set (not auto mode)
+            age_category: ageCategoryAuto ? null : (ageCategory || null)
         };
 
         try {
