@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 
@@ -206,115 +206,160 @@ export default function ReptileDetail() {
       <FeedingRotationManager reptileId={reptile.id} reptileName={reptile.name} />
     ),
     feedings: (
-      <div className="space-y-4">
-        {feedings.map(f => (
-          <div key={f.id} className="relative group">
-            <Link
-              to={`/feed/${f.id}`}
-              className="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 pr-20">
-                  <p className="text-gray-900 dark:text-white">
-                    <strong>{formatDateTime(f.fed_at)}</strong> by {f.user?.name}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{f.notes || 'No notes'}</p>
-                  {f.foods && f.foods.length > 0 && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Foods: {f.foods.map(food => `${food.name} (${food.quantity || 1})`).join(', ')}
-                    </p>
-                  )}
-                  {f.supplements && f.supplements.length > 0 && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Supplements: {f.supplements.map(s => s.name).join(', ')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Link>
-            <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      <div className="space-y-3">
+        {feedings.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No feeding records yet</p>
+        ) : (
+          feedings.map((f, idx) => (
+            <div key={f.id} className="relative group">
               <Link
                 to={`/feed/${f.id}`}
-                className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                title="View/Edit feeding"
-                onClick={(e) => e.stopPropagation()}
+                className={`block p-4 border-l-4 border-green-500 dark:border-green-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                  idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-gray-750'
+                    : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-green-50 dark:hover:bg-gray-750'
+                }`}
               >
-                <Edit2 size={18} />
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 pr-20">
+                    <p className="text-gray-900 dark:text-white font-medium">
+                      {formatDateTime(f.fed_at)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">by {f.user?.name}</p>
+                    {f.foods && f.foods.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {f.foods.map((food, foodIdx) => (
+                          <span
+                            key={foodIdx}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200"
+                          >
+                            {food.name} ×{food.quantity || 1}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {f.supplements && f.supplements.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {f.supplements.map((sup, supIdx) => (
+                          <span
+                            key={supIdx}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+                          >
+                            {sup.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {f.notes && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 italic">{f.notes}</p>
+                    )}
+                  </div>
+                </div>
               </Link>
-              <button
-                onClick={(e) => { e.preventDefault(); handleDeleteFeeding(f.id); }}
-                className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                title="Delete feeding"
-              >
-                <Trash2 size={18} />
-              </button>
+              <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <Link
+                  to={`/feed/${f.id}`}
+                  className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                  title="View/Edit feeding"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Edit2 size={18} />
+                </Link>
+                <button
+                  onClick={(e) => { e.preventDefault(); handleDeleteFeeding(f.id); }}
+                  className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                  title="Delete feeding"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     ),
     misting: (
-      <div className="space-y-4">
-        {mistingLogs.map(m => (
-          <div key={m.id} className="relative group">
-            <Link
-              to={`/misting/${m.id}`}
-              className="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 pr-20">
-                  <p className="text-gray-900 dark:text-white">
-                    <strong>{formatDateTime(m.misted_at)}</strong>
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{m.notes || 'No notes'}</p>
-                </div>
-              </div>
-            </Link>
-            <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      <div className="space-y-3">
+        {mistingLogs.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No misting records yet</p>
+        ) : (
+          mistingLogs.map((m, idx) => (
+            <div key={m.id} className="relative group">
               <Link
                 to={`/misting/${m.id}`}
-                className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                title="View/Edit misting"
-                onClick={(e) => e.stopPropagation()}
+                className={`block p-4 border-l-4 border-blue-500 dark:border-blue-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                  idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-750'
+                    : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-gray-750'
+                }`}
               >
-                <Edit2 size={18} />
+                <div className="flex items-start gap-3">
+                  <Droplet size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 pr-20">
+                    <p className="text-gray-900 dark:text-white font-medium">
+                      {formatDateTime(m.misted_at)}
+                    </p>
+                    {m.notes && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">{m.notes}</p>
+                    )}
+                  </div>
+                </div>
               </Link>
-              <button
-                onClick={(e) => { e.preventDefault(); handleDeleteMisting(m.id); }}
-                className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                title="Delete misting"
-              >
-                <Trash2 size={18} />
-              </button>
+              <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <Link
+                  to={`/misting/${m.id}`}
+                  className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                  title="View/Edit misting"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Edit2 size={18} />
+                </Link>
+                <button
+                  onClick={(e) => { e.preventDefault(); handleDeleteMisting(m.id); }}
+                  className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                  title="Delete misting"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     ),
     weight: (
         <div>
             <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Weight History</h3>
             <WeightChart data={weightLogs} />
-            <div className="space-y-4 mt-6">
-                {weightLogs.map(w => (
+            <div className="space-y-3 mt-6">
+                {weightLogs.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-8">No weight records yet</p>
+                ) : (
+                  weightLogs.map((w, idx) => (
                     <div key={w.id} className="relative group">
                       <Link
                         to={`/health-log/weight/${w.id}`}
-                        className="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
+                        className={`block p-4 border-l-4 border-orange-500 dark:border-orange-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                          idx % 2 === 0
+                            ? 'bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-gray-750'
+                            : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-orange-50 dark:hover:bg-gray-750'
+                        }`}
                       >
-                        <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                          <Scale size={20} className="text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
                           <div className="flex-1 pr-20">
-                            <p className="text-gray-900 dark:text-white">
-                              <strong>{w.weight_grams}g</strong> on {formatDate(w.measured_at)}
+                            <p className="text-gray-900 dark:text-white font-medium">
+                              {w.weight_grams}g
                             </p>
-                            {w.notes && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{w.notes}</p>}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(w.measured_at)}</p>
+                            {w.notes && <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 italic">{w.notes}</p>}
                           </div>
                         </div>
                       </Link>
                       <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <Link
                           to={`/health-log/weight/${w.id}`}
-                          className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
                           title="View/Edit weight"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -322,53 +367,69 @@ export default function ReptileDetail() {
                         </Link>
                         <button
                           onClick={(e) => { e.preventDefault(); handleDeleteWeight(w.id); }}
-                          className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
                           title="Delete weight"
                         >
                           <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
-                ))}
+                  ))
+                )}
             </div>
         </div>
     ),
     health: (
-      <div className="space-y-4">
-        {healthRecords.map(h => (
-          <div key={h.id} className="relative group">
-            <Link
-              to={`/health-log/health/${h.id}`}
-              className="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 pr-20">
-                  <p className="text-gray-900 dark:text-white">
-                    <strong>{h.title}</strong> ({h.record_type}) on {formatDate(h.date)}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{h.description}</p>
-                </div>
-              </div>
-            </Link>
-            <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      <div className="space-y-3">
+        {healthRecords.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No health records yet</p>
+        ) : (
+          healthRecords.map((h, idx) => (
+            <div key={h.id} className="relative group">
               <Link
                 to={`/health-log/health/${h.id}`}
-                className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                title="View/Edit health record"
-                onClick={(e) => e.stopPropagation()}
+                className={`block p-4 border-l-4 border-red-500 dark:border-red-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                  idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-gray-750'
+                    : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-red-50 dark:hover:bg-gray-750'
+                }`}
               >
-                <Edit2 size={18} />
+                <div className="flex items-start gap-3">
+                  <Activity size={20} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 pr-20">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-gray-900 dark:text-white font-medium">{h.title}</p>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 capitalize">
+                        {h.record_type}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(h.date)}</p>
+                    {h.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{h.description}</p>
+                    )}
+                  </div>
+                </div>
               </Link>
-              <button
-                onClick={(e) => { e.preventDefault(); handleDeleteHealth(h.id); }}
-                className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                title="Delete health record"
-              >
-                <Trash2 size={18} />
-              </button>
+              <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <Link
+                  to={`/health-log/health/${h.id}`}
+                  className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                  title="View/Edit health record"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Edit2 size={18} />
+                </Link>
+                <button
+                  onClick={(e) => { e.preventDefault(); handleDeleteHealth(h.id); }}
+                  className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                  title="Delete health record"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     ),
     favorites: (
@@ -528,19 +589,71 @@ export default function ReptileDetail() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">Details</h2>
-        <p className="text-gray-900 dark:text-white"><strong>Date of Birth:</strong> {reptile.date_of_birth ? formatDate(reptile.date_of_birth) : 'N/A'}</p>
-        {reptile.length && (
-          <p className="text-gray-900 dark:text-white"><strong>Length:</strong> {reptile.length} cm</p>
-        )}
-        {reptile.age_category && (
-          <p className="text-gray-900 dark:text-white"><strong>Age Category:</strong> {reptile.age_category.charAt(0).toUpperCase() + reptile.age_category.slice(1)}</p>
-        )}
-        {reptile.has_uvb !== null && (
-          <p className="text-gray-900 dark:text-white"><strong>UVB Lighting:</strong> {reptile.has_uvb ? 'Yes' : 'No'}</p>
-        )}
+        <h2 className="text-lg sm:text-xl font-bold mb-4 text-gray-900 dark:text-white">Details</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Date of Birth */}
+          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <Calendar size={20} className="text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Date of Birth</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                {reptile.date_of_birth ? formatDate(reptile.date_of_birth) : 'Not set'}
+              </p>
+            </div>
+          </div>
+
+          {/* Age Category */}
+          {reptile.age_category && (
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <Activity size={20} className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Life Stage</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                  {reptile.age_category}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Length */}
+          {reptile.length && (
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <Ruler size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Length</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {reptile.length} cm
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* UVB Lighting */}
+          {reptile.has_uvb !== null && (
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <Sun size={20} className="text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">UVB Lighting</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {reptile.has_uvb ? 'Yes' : 'No'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Notes - Full Width */}
         {reptile.notes && (
-          <p className="text-gray-900 dark:text-white"><strong>Notes:</strong> {reptile.notes}</p>
+          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg mt-4">
+            <FileText size={20} className="text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+              <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                {reptile.notes}
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
