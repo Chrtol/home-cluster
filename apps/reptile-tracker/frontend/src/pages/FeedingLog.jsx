@@ -116,6 +116,9 @@ export default function FeedingLog() {
           const scheduleId = searchParams.get('schedule_id');
           const instanceId = searchParams.get('instance_id');
 
+          // Track if we pre-filled from a schedule
+          let reptilePreFilled = false;
+
           // Check if we have an instance_id query parameter (preferred over schedule_id)
           if (instanceId) {
             try {
@@ -126,6 +129,7 @@ export default function FeedingLog() {
               // Pre-fill reptile
               if (schedule?.reptile_id) {
                 setSelectedReptile(schedule.reptile_id);
+                reptilePreFilled = true;
               }
 
               // Pre-fill date from instance
@@ -133,15 +137,7 @@ export default function FeedingLog() {
                 setFedDate(instance.scheduled_date);
               }
 
-              // Pre-fill time from schedule
-              if (schedule?.reminder_time || (schedule?.time_window_enabled && schedule?.earliest_time)) {
-                const timeStr = schedule.reminder_time || schedule.earliest_time;
-                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
-                setHours(timeHours);
-                setMinutes(timeMinutes);
-                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
-                setFedTime(timeStr);
-              }
+              // Don't pre-fill time - always use current time as default
 
               // Pre-fill food category toggles based on schedule
               if (schedule?.food_category) {
@@ -179,17 +175,10 @@ export default function FeedingLog() {
               // Pre-fill reptile
               if (schedule.reptile_id) {
                 setSelectedReptile(schedule.reptile_id);
+                reptilePreFilled = true;
               }
 
-              // Pre-fill time from schedule
-              if (schedule.reminder_time || (schedule.time_window_enabled && schedule.earliest_time)) {
-                const timeStr = schedule.reminder_time || schedule.earliest_time;
-                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
-                setHours(timeHours);
-                setMinutes(timeMinutes);
-                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
-                setFedTime(timeStr);
-              }
+              // Don't pre-fill time - always use current time as default
 
               // Pre-fill food category toggles based on schedule
               if (schedule.food_category) {
@@ -213,8 +202,8 @@ export default function FeedingLog() {
             }
           }
 
-          // Initialize with default values if no schedule or after pre-fill
-          if (!selectedReptile) {
+          // Initialize with default reptile only if we didn't pre-fill from a schedule
+          if (!reptilePreFilled) {
             const initialReptileId = reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '';
             setSelectedReptile(initialReptileId);
           }
