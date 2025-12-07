@@ -322,18 +322,73 @@ async def assign_feeding_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
-    # Look up the instance for this schedule within the flexible date window
+    # Look up the instance for this schedule
     instance = None
     instance_id = None
     days_offset = 0
-    instance_match = await find_instance_within_window(
-        db=db,
-        schedule=schedule,
-        activity_date=feeding.fed_at.date()
-    )
-    if instance_match:
-        instance, days_offset = instance_match
-        instance_id = instance.id
+
+    # For interval schedules, validate against min/max days and move instance to actual date
+    from app.models import ScheduleMode
+    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        # Find the pending instance (should only be one for interval schedules)
+        result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.status == "pending"
+                )
+            ).limit(1)
+        )
+        instance = result.scalars().first()
+
+        if instance:
+            # Validate that completion is within min/max days from last completion
+            # Get the last completion date
+            last_completion_result = await db.execute(
+                select(ScheduleCompletion.completed_at).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule.id,
+                        ScheduleCompletion.status != CompletionStatus.PENDING
+                    )
+                ).order_by(ScheduleCompletion.completed_at.desc()).limit(1)
+            )
+            last_completion_datetime = last_completion_result.scalar()
+
+            if last_completion_datetime:
+                last_completion_date = last_completion_datetime.date()
+                days_since_last = (feeding.fed_at.date() - last_completion_date).days
+
+                # Validate min_days_between
+                if schedule.min_days_between and days_since_last < schedule.min_days_between:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Feeding on {feeding.fed_at.date()} is too soon for interval schedule {schedule.id} "
+                        f"(only {days_since_last} days since last, min is {schedule.min_days_between})"
+                    )
+                    return None
+
+                # Validate max_days_between
+                if schedule.max_days_between and days_since_last > schedule.max_days_between:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Feeding on {feeding.fed_at.date()} is too late for interval schedule {schedule.id} "
+                        f"(already {days_since_last} days since last, max is {schedule.max_days_between})"
+                    )
+                    # Still allow it, but log warning - user might be catching up
+
+            # Move the instance to the actual completion date
+            instance.scheduled_date = feeding.fed_at.date()
+            instance_id = instance.id
+    else:
+        # For fixed schedules, use flexible completion window
+        instance_match = await find_instance_within_window(
+            db=db,
+            schedule=schedule,
+            activity_date=feeding.fed_at.date()
+        )
+        if instance_match:
+            instance, days_offset = instance_match
+            instance_id = instance.id
 
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
@@ -365,6 +420,23 @@ async def assign_feeding_to_schedule(
     if instance:
         instance.status = "completed"
         instance.updated_at = datetime.now(timezone.utc)
+
+        # For interval schedules, generate the next instance dynamically
+        from app.models import ScheduleMode
+        if schedule.schedule_mode == ScheduleMode.INTERVAL:
+            from app.instance_generator import create_interval_schedule_instance
+            try:
+                await create_interval_schedule_instance(
+                    db=db,
+                    schedule=schedule,
+                    last_completion_date=feeding.fed_at.date()
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(
+                    f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                    exc_info=True
+                )
 
     # Link feeding to completion
     feeding.schedule_completion_id = completion.id
@@ -417,18 +489,73 @@ async def assign_misting_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
-    # Look up the instance for this schedule within the flexible date window
+    # Look up the instance for this schedule
     instance = None
     instance_id = None
     days_offset = 0
-    instance_match = await find_instance_within_window(
-        db=db,
-        schedule=schedule,
-        activity_date=misting.misted_at.date()
-    )
-    if instance_match:
-        instance, days_offset = instance_match
-        instance_id = instance.id
+
+    # For interval schedules, validate against min/max days and move instance to actual date
+    from app.models import ScheduleMode
+    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        # Find the pending instance (should only be one for interval schedules)
+        result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.status == "pending"
+                )
+            ).limit(1)
+        )
+        instance = result.scalars().first()
+
+        if instance:
+            # Validate that completion is within min/max days from last completion
+            # Get the last completion date
+            last_completion_result = await db.execute(
+                select(ScheduleCompletion.completed_at).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule.id,
+                        ScheduleCompletion.status != CompletionStatus.PENDING
+                    )
+                ).order_by(ScheduleCompletion.completed_at.desc()).limit(1)
+            )
+            last_completion_datetime = last_completion_result.scalar()
+
+            if last_completion_datetime:
+                last_completion_date = last_completion_datetime.date()
+                days_since_last = (misting.misted_at.date() - last_completion_date).days
+
+                # Validate min_days_between
+                if schedule.min_days_between and days_since_last < schedule.min_days_between:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Misting on {misting.misted_at.date()} is too soon for interval schedule {schedule.id} "
+                        f"(only {days_since_last} days since last, min is {schedule.min_days_between})"
+                    )
+                    return None
+
+                # Validate max_days_between
+                if schedule.max_days_between and days_since_last > schedule.max_days_between:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Misting on {misting.misted_at.date()} is too late for interval schedule {schedule.id} "
+                        f"(already {days_since_last} days since last, max is {schedule.max_days_between})"
+                    )
+                    # Still allow it, but log warning - user might be catching up
+
+            # Move the instance to the actual completion date
+            instance.scheduled_date = misting.misted_at.date()
+            instance_id = instance.id
+    else:
+        # For fixed schedules, use flexible completion window
+        instance_match = await find_instance_within_window(
+            db=db,
+            schedule=schedule,
+            activity_date=misting.misted_at.date()
+        )
+        if instance_match:
+            instance, days_offset = instance_match
+            instance_id = instance.id
 
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
@@ -460,6 +587,23 @@ async def assign_misting_to_schedule(
     if instance:
         instance.status = "completed"
         instance.updated_at = datetime.now(timezone.utc)
+
+        # For interval schedules, generate the next instance dynamically
+        from app.models import ScheduleMode
+        if schedule.schedule_mode == ScheduleMode.INTERVAL:
+            from app.instance_generator import create_interval_schedule_instance
+            try:
+                await create_interval_schedule_instance(
+                    db=db,
+                    schedule=schedule,
+                    last_completion_date=misting.misted_at.date()
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(
+                    f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                    exc_info=True
+                )
 
     # Link misting to completion
     misting.schedule_completion_id = completion.id
@@ -512,18 +656,73 @@ async def assign_weighing_to_schedule(
     )
     existing_completion = existing_result.scalar_one_or_none()
 
-    # Look up the instance for this schedule within the flexible date window
+    # Look up the instance for this schedule
     instance = None
     instance_id = None
     days_offset = 0
-    instance_match = await find_instance_within_window(
-        db=db,
-        schedule=schedule,
-        activity_date=weight_log.measured_at.date()
-    )
-    if instance_match:
-        instance, days_offset = instance_match
-        instance_id = instance.id
+
+    # For interval schedules, validate against min/max days and move instance to actual date
+    from app.models import ScheduleMode
+    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        # Find the pending instance (should only be one for interval schedules)
+        result = await db.execute(
+            select(ScheduleInstance).where(
+                and_(
+                    ScheduleInstance.schedule_id == schedule.id,
+                    ScheduleInstance.status == "pending"
+                )
+            ).limit(1)
+        )
+        instance = result.scalars().first()
+
+        if instance:
+            # Validate that completion is within min/max days from last completion
+            # Get the last completion date
+            last_completion_result = await db.execute(
+                select(ScheduleCompletion.completed_at).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule.id,
+                        ScheduleCompletion.status != CompletionStatus.PENDING
+                    )
+                ).order_by(ScheduleCompletion.completed_at.desc()).limit(1)
+            )
+            last_completion_datetime = last_completion_result.scalar()
+
+            if last_completion_datetime:
+                last_completion_date = last_completion_datetime.date()
+                days_since_last = (weight_log.measured_at.date() - last_completion_date).days
+
+                # Validate min_days_between
+                if schedule.min_days_between and days_since_last < schedule.min_days_between:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Weight log on {weight_log.measured_at.date()} is too soon for interval schedule {schedule.id} "
+                        f"(only {days_since_last} days since last, min is {schedule.min_days_between})"
+                    )
+                    return None
+
+                # Validate max_days_between
+                if schedule.max_days_between and days_since_last > schedule.max_days_between:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Weight log on {weight_log.measured_at.date()} is too late for interval schedule {schedule.id} "
+                        f"(already {days_since_last} days since last, max is {schedule.max_days_between})"
+                    )
+                    # Still allow it, but log warning - user might be catching up
+
+            # Move the instance to the actual completion date
+            instance.scheduled_date = weight_log.measured_at.date()
+            instance_id = instance.id
+    else:
+        # For fixed schedules, use flexible completion window
+        instance_match = await find_instance_within_window(
+            db=db,
+            schedule=schedule,
+            activity_date=weight_log.measured_at.date()
+        )
+        if instance_match:
+            instance, days_offset = instance_match
+            instance_id = instance.id
 
     if existing_completion:
         # Update existing PENDING completion instead of creating a new one
@@ -555,6 +754,23 @@ async def assign_weighing_to_schedule(
     if instance:
         instance.status = "completed"
         instance.updated_at = datetime.now(timezone.utc)
+
+        # For interval schedules, generate the next instance dynamically
+        from app.models import ScheduleMode
+        if schedule.schedule_mode == ScheduleMode.INTERVAL:
+            from app.instance_generator import create_interval_schedule_instance
+            try:
+                await create_interval_schedule_instance(
+                    db=db,
+                    schedule=schedule,
+                    last_completion_date=weight_log.measured_at.date()
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(
+                    f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                    exc_info=True
+                )
 
     # Link weight log to completion
     weight_log.schedule_completion_id = completion.id

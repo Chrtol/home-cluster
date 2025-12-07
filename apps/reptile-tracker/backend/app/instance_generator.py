@@ -359,6 +359,104 @@ async def regenerate_instances_for_schedule(
     return instances_created
 
 
+async def create_interval_schedule_instance(
+    db: AsyncSession,
+    schedule: Schedule,
+    last_completion_date: py_date
+) -> ScheduleInstance:
+    """
+    Create next instance for interval schedule based on last completion.
+
+    This implements dynamic instance generation for INTERVAL mode schedules:
+    - Calculate next date: last_completion_date + min_days_between
+    - If suggested_days specified, find nearest suggested day >= next_date
+    - If no suggested days, place exactly on calculated date
+
+    Args:
+        db: Database session
+        schedule: The interval schedule
+        last_completion_date: Date of the last completion
+
+    Returns:
+        ScheduleInstance: The newly created instance
+    """
+    if schedule.schedule_mode != ScheduleMode.INTERVAL:
+        raise ValueError(f"Schedule {schedule.id} is not an interval schedule")
+
+    if not schedule.min_days_between:
+        raise ValueError(f"Schedule {schedule.id} has no min_days_between set")
+
+    # Calculate next date
+    next_date = last_completion_date + timedelta(days=schedule.min_days_between)
+
+    # If suggested days specified, find nearest suggested day >= next_date
+    if schedule.suggested_days:
+        # suggested_days is a list like [0, 3] for Sunday and Wednesday
+        # weekday() returns 0=Mon, 6=Sun, but we store 0=Sun, 6=Sat
+        max_search_days = 7  # Don't search more than a week ahead
+        days_searched = 0
+
+        while days_searched < max_search_days:
+            weekday = (next_date.weekday() + 1) % 7  # Convert to 0=Sun format
+            if weekday in schedule.suggested_days:
+                break
+            next_date += timedelta(days=1)
+            days_searched += 1
+
+    # Check if instance already exists for this date
+    existing = await db.execute(
+        select(ScheduleInstance).where(
+            and_(
+                ScheduleInstance.schedule_id == schedule.id,
+                ScheduleInstance.scheduled_date == next_date
+            )
+        )
+    )
+    if existing.scalars().first():
+        logger.debug(f"Instance already exists for schedule {schedule.id} on {next_date}")
+        return existing.scalars().first()
+
+    # Get the current maximum feeding sequence number
+    max_seq_result = await db.execute(
+        select(func.max(ScheduleInstance.feeding_sequence_number))
+        .where(ScheduleInstance.schedule_id == schedule.id)
+    )
+    current_max_sequence = max_seq_result.scalar() or 0
+
+    # Increment for feeding schedules
+    feeding_sequence_number = None
+    if schedule.schedule_type == "feeding":
+        feeding_sequence_number = current_max_sequence + 1
+
+    # Calculate supplements for this instance
+    supplements = await calculate_supplements_for_instance(
+        db=db,
+        reptile_id=schedule.reptile_id,
+        schedule_type=schedule.schedule_type,
+        scheduled_date=next_date,
+        feeding_sequence_number=feeding_sequence_number,
+        food_category=schedule.food_category
+    )
+
+    # Create the instance
+    instance = ScheduleInstance(
+        schedule_id=schedule.id,
+        scheduled_date=next_date,
+        status="pending",
+        feeding_sequence_number=feeding_sequence_number,
+        supplements=supplements if supplements else None
+    )
+    db.add(instance)
+    await db.flush()
+
+    logger.info(
+        f"Created next interval instance for schedule {schedule.id} on {next_date} "
+        f"(last completion: {last_completion_date}, min_days: {schedule.min_days_between})"
+    )
+
+    return instance
+
+
 async def cleanup_old_instances(days_to_keep: int = 30) -> int:
     """
     Clean up old instances that are past their scheduled date.
