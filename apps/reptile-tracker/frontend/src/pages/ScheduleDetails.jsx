@@ -130,6 +130,31 @@ function ScheduleDetails() {
   const formatScheduleRule = () => {
     if (!schedule) return '';
 
+    // Handle interval schedules
+    if (schedule.schedule_mode === 'interval') {
+      const min = schedule.min_days_between;
+      const max = schedule.max_days_between;
+
+      let frequency = '';
+      if (min && max && min !== max) {
+        frequency = `Every ${min}-${max} days`;
+      } else if (min) {
+        frequency = `Every ${min} day${min > 1 ? 's' : ''}`;
+      } else {
+        frequency = 'Interval schedule';
+      }
+
+      // Add suggested days if configured
+      if (schedule.suggested_days && schedule.suggested_days.length > 0) {
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const selectedDays = schedule.suggested_days.map(num => dayNames[num]);
+        frequency += ` (${selectedDays.join(', ')})`;
+      }
+
+      return frequency;
+    }
+
+    // Handle fixed and dependent schedules
     switch (schedule.schedule_rule) {
       case 'every_x_days':
         return `Every ${schedule.frequency_days} day${schedule.frequency_days > 1 ? 's' : ''}`;
@@ -164,6 +189,19 @@ function ScheduleDetails() {
       default:
         return schedule.schedule_rule;
     }
+  };
+
+  const getScheduleModeDisplay = () => {
+    if (!schedule) return null;
+
+    const mode = schedule.schedule_mode || 'fixed';
+    const modeMap = {
+      'fixed': { label: 'Fixed Schedule', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+      'interval': { label: 'Interval Schedule', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
+      'dependent': { label: 'Dependent Schedule', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' }
+    };
+
+    return modeMap[mode] || modeMap['fixed'];
   };
 
   const getScheduleTypeDisplay = (type) => {
@@ -293,8 +331,8 @@ function ScheduleDetails() {
         </div>
       </div>
 
-      {/* Status Badge */}
-      <div className="mb-6">
+      {/* Status Badges */}
+      <div className="mb-6 flex gap-2">
         {schedule.enabled ? (
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-sm">
             <CheckCircle size={16} />
@@ -306,6 +344,20 @@ function ScheduleDetails() {
             Disabled
           </span>
         )}
+
+        {/* Schedule Mode Badge */}
+        {(() => {
+          const modeDisplay = getScheduleModeDisplay();
+          if (modeDisplay) {
+            return (
+              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${modeDisplay.color}`}>
+                <Calendar size={16} />
+                {modeDisplay.label}
+              </span>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {/* Main Content */}
