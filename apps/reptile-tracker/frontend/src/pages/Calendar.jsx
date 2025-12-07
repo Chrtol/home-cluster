@@ -1185,11 +1185,6 @@ function Calendar() {
                                   {detail && <span className="opacity-75">{detail}</span>}
                                 </span>
                                 {event.notifications_enabled && <Bell size={10} className="flex-shrink-0" />}
-                                {supplements.length > 0 && (
-                                  <span className="ml-1 text-amber-700 dark:text-amber-300 font-medium">
-                                    +{supplements.map(s => s.name).join(' +')}
-                                  </span>
-                                )}
                               </div>
                             );
                           })}
