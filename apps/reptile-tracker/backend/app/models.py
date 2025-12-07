@@ -382,7 +382,7 @@ class Schedule(Base):
     name = Column(String, nullable=True)  # User-friendly name for the schedule
     schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
     schedule_mode = Column(Enum(ScheduleMode, values_callable=lambda x: [e.value for e in x], name='schedule_mode'), nullable=False, default=ScheduleMode.FIXED)  # "fixed" or "requirement"
-    schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly", "dependent"
+    schedule_rule = Column(String, nullable=True)  # "every_x_days", "days_of_week", "monthly", "dependent" (nullable for interval mode)
 
     # Additional details
     food_category = Column(String, nullable=True)  # For feeding schedules: "insects", "salad", "mixed", etc.
