@@ -41,5 +41,9 @@
       "level": "INFO",
       "propagate": false
     }
+  },
+  "root": {
+    "level": "INFO",
+    "handlers": ["default"]
   }
 }
