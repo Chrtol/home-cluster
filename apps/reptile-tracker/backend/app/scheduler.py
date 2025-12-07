@@ -224,41 +224,47 @@ async def schedule_notification_jobs_for_schedule(schedule_id: int, days_ahead: 
                 return
 
             if not schedule.enabled or not schedule.notifications_enabled:
-                logger.debug(f"Schedule {schedule.id} disabled, skipping job scheduling")
+                logger.info(f"Schedule {schedule.id} disabled (enabled={schedule.enabled}, notifications_enabled={schedule.notifications_enabled}), skipping job scheduling")
                 return
 
             if not schedule.notification_channels:
-                logger.debug(f"Schedule {schedule.id} has no notification channels")
+                logger.info(f"Schedule {schedule.id} has no notification channels")
                 return
 
             if not schedule.reminder_time:
-                logger.debug(f"Schedule {schedule.id} has no reminder_time set")
+                logger.info(f"Schedule {schedule.id} has no reminder_time set")
                 return
 
             today = datetime.now(timezone.utc).date()
 
             # Get all users with channels for this schedule
+            logger.info(f"Processing {len(schedule.notification_channels)} channels for schedule {schedule.id}, reminder_time={schedule.reminder_time}")
             channel_user_map = {}
             for channel in schedule.notification_channels:
                 if not channel.enabled:
+                    logger.info(f"  Channel {channel.id} ({channel.name}) is disabled, skipping")
                     continue
 
                 notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
                 if not notif_settings or not notif_settings.notify_schedule_reminders:
+                    logger.info(f"  Channel {channel.id} ({channel.name}) has notify_schedule_reminders=False, skipping")
                     continue
 
                 user = await db.get(User, notif_settings.user_id)
                 if not user:
+                    logger.warning(f"  Channel {channel.id} ({channel.name}) user not found, skipping")
                     continue
 
                 if channel.id not in channel_user_map:
                     channel_user_map[channel.id] = user
+                    logger.info(f"  Channel {channel.id} ({channel.name}, type={channel.webhook_type}) added for user {user.email}")
 
             if not channel_user_map:
-                logger.debug(f"No valid channels/users for schedule {schedule.id}")
+                logger.info(f"No valid channels/users for schedule {schedule.id} (checked {len(schedule.notification_channels)} channels)")
                 return
 
             # Schedule jobs for next N days
+            jobs_scheduled = 0
             for days_offset in range(days_ahead):
                 check_date = today + timedelta(days=days_offset)
 
@@ -275,11 +281,73 @@ async def schedule_notification_jobs_for_schedule(schedule_id: int, days_ahead: 
                         channel_id=channel_id,
                         scheduled_date=check_date
                     )
+                    jobs_scheduled += 1
 
             await db.commit()
+            logger.info(f"Scheduled {jobs_scheduled} notification jobs for schedule {schedule.id}")
 
     except Exception as e:
         logger.error(f"Error scheduling jobs for schedule {schedule_id}: {e}", exc_info=True)
+
+
+async def schedule_notifications_for_interval_instance(
+    db: AsyncSession,
+    schedule: Schedule,
+    instance_date: py_date
+):
+    """
+    Schedule notification jobs for a specific interval schedule instance.
+    This is called when an interval instance is dynamically created after completion.
+
+    Args:
+        db: Database session
+        schedule: The interval schedule (must be loaded with notification_channels)
+        instance_date: The date of the interval instance to schedule notifications for
+    """
+    global scheduler
+
+    if not scheduler:
+        logger.warning("Scheduler not initialized, cannot schedule notifications")
+        return
+
+    try:
+        # Get all users with channels for this schedule
+        channel_user_map = {}
+        for channel in schedule.notification_channels:
+            if not channel.enabled:
+                continue
+
+            notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
+            if not notif_settings or not notif_settings.notify_schedule_reminders:
+                continue
+
+            user = await db.get(User, notif_settings.user_id)
+            if not user:
+                continue
+
+            if channel.id not in channel_user_map:
+                channel_user_map[channel.id] = user
+
+        if not channel_user_map:
+            logger.debug(f"No valid channels/users for interval instance on {instance_date}")
+            return
+
+        # Schedule notification for this instance date
+        jobs_scheduled = 0
+        for channel_id, user in channel_user_map.items():
+            await _schedule_single_notification_job(
+                db=db,
+                schedule=schedule,
+                user=user,
+                channel_id=channel_id,
+                scheduled_date=instance_date
+            )
+            jobs_scheduled += 1
+
+        logger.info(f"Scheduled {jobs_scheduled} notification jobs for interval schedule {schedule.id} on {instance_date}")
+
+    except Exception as e:
+        logger.error(f"Error scheduling notifications for interval instance: {e}", exc_info=True)
 
 
 async def _schedule_single_notification_job(
