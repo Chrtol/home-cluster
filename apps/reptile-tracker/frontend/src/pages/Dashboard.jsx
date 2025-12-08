@@ -971,6 +971,12 @@ export default function Dashboard() {
     return { due, overdue, completed };
   })();
 
+  // Helper to check if a card is XS sized
+  const isCardXS = (cardId) => {
+    const card = dashboardCards.find(c => c.id === cardId);
+    return card?.size === 'xs';
+  };
+
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
@@ -998,53 +1004,58 @@ export default function Dashboard() {
             </div>
           </div>
         );
-      case 'health_summary':
+      case 'health_summary': {
+        const isXS = isCardXS('health_summary');
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Activity size={18} className="text-gray-700 dark:text-gray-300" />
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Health Summary</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white whitespace-nowrap">Health Summary</h3>
               </div>
-              <div className="flex items-center gap-4 text-sm">
+              <div className={`flex items-center ${isXS ? 'gap-2' : 'gap-4'} text-sm flex-shrink-0`}>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-gray-600 dark:text-gray-400">Sheds (30d):</span>
+                  <Activity size={14} className="text-green-600 dark:text-green-400 flex-shrink-0" />
+                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Sheds:</span>}
                   <span className="font-bold text-green-600 dark:text-green-400">{shedThisMonth}</span>
                 </div>
                 <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
                 <div className="flex items-center gap-1.5">
-                  <Scale size={14} className="text-purple-600 dark:text-purple-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Weight logs:</span>
+                  <Scale size={14} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Logs:</span>}
                   <span className="font-bold text-purple-600 dark:text-purple-400">{weightData.length}</span>
                 </div>
               </div>
             </div>
           </div>
         );
-      case 'schedule_summary':
+      }
+      case 'schedule_summary': {
+        const isXS = isCardXS('schedule_summary');
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Schedule Status</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white whitespace-nowrap">Schedule Status</h3>
               </div>
-              <div className="flex items-center gap-4 text-sm">
+              <div className={`flex items-center ${isXS ? 'gap-2' : 'gap-4'} text-sm flex-shrink-0`}>
                 <div className="flex items-center gap-1.5">
-                  <AlertCircle size={14} className="text-red-600 dark:text-red-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Need feeding:</span>
+                  <AlertCircle size={14} className="text-red-600 dark:text-red-400 flex-shrink-0" />
+                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Need:</span>}
                   <span className={`font-bold ${reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>{reptilesNeedingFeeding}</span>
                 </div>
                 <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle size={14} className="text-green-600 dark:text-green-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Done today:</span>
+                  <CheckCircle size={14} className="text-green-600 dark:text-green-400 flex-shrink-0" />
+                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Done:</span>}
                   <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
                 </div>
               </div>
             </div>
           </div>
         );
+      }
       case 'today_summary':
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
