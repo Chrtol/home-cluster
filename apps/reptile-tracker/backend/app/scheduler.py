@@ -1417,15 +1417,7 @@ async def send_schedule_reminder(
     config: dict = None
 ):
     """Send a schedule reminder notification"""
-    # Get template for this trigger
-    template = await get_template_for_trigger(
-        db=db,
-        trigger_type="schedule_reminder",
-        user_id=user.id,
-        channel_type=webhook_type
-    )
-
-    # Build context for template rendering
+    # Build context for template matching and rendering
     schedule_type_emoji = {
         "feeding": "🍽️",
         "misting": "💧",
@@ -1526,6 +1518,20 @@ async def send_schedule_reminder(
         if supplement:
             context["supplement_name"] = supplement.name
 
+    # Add IDs for template matching
+    context["reptile_id"] = reptile.id
+    context["schedule_id"] = schedule.id
+    # food_category key already added for feeding schedules
+
+    # Get template for this trigger with context for matching
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type="schedule_reminder",
+        user_id=user.id,
+        channel_type=webhook_type,
+        context=context
+    )
+
     # Render template or use fallback
     if template:
         message = render_template(template.message_template, context)
@@ -1575,14 +1581,6 @@ async def send_overdue_alert(
     config: dict = None
 ):
     """Send an overdue schedule alert"""
-    # Get template for this trigger
-    template = await get_template_for_trigger(
-        db=db,
-        trigger_type="overdue_alert",
-        user_id=user.id,
-        channel_type=webhook_type
-    )
-
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
     # Build schedule URL for links - use instance if available
@@ -1657,6 +1655,20 @@ async def send_overdue_alert(
         supplement = await db.get(Supplement, schedule.supplement_id)
         if supplement:
             context["supplement_name"] = supplement.name
+
+    # Add IDs for template matching
+    context["reptile_id"] = reptile.id
+    context["schedule_id"] = schedule.id
+    # food_category key already added for feeding schedules
+
+    # Get template for this trigger with context for matching
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type="overdue_alert",
+        user_id=user.id,
+        channel_type=webhook_type,
+        context=context
+    )
 
     # Render template or use fallback
     if template:
@@ -1953,13 +1965,14 @@ async def send_interval_warning_notification(
         # Calculate remaining feedings for period_ending_soon
         remaining = quota_status['quota_frequency'] - quota_status['count'] if warning_type == "period_ending_soon" else 0
 
-        # Build context for template rendering
+        # Build context for template matching and rendering
         context = {
+            "reptile_id": reptile.id,
             "reptile_name": reptile.name,
+            "schedule_id": schedule.id,
             "schedule_name": schedule.name or "Requirement Schedule",
             "schedule_type": schedule.schedule_type,
             "schedule_url": schedule_url,
-            "schedule_id": schedule.id,
             "quota_count": quota_status["count"],
             "quota_frequency": quota_status["quota_frequency"],
             "period_type": period_type,
@@ -2003,7 +2016,8 @@ async def send_interval_warning_notification(
                 db=db,
                 trigger_type="schedule_reminder",
                 user_id=user.id,
-                channel_type=channel.webhook_type
+                channel_type=channel.webhook_type,
+                context=context
             )
 
             # Render template or use fallback based on warning_type

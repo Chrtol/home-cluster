@@ -998,6 +998,18 @@ class NotificationTemplateBase(BaseModel):
     discord_config: Optional[dict] = None  # Discord-specific embed configuration
     is_active: bool = True
 
+    # Matching criteria (all optional - None means applies to all)
+    reptile_id: Optional[int] = None
+    schedule_id: Optional[int] = None
+    schedule_type_filter: Optional[str] = None  # 'feeding', 'misting', 'weighing', 'health'
+    food_category_filter: Optional[str] = None  # 'insects', 'salad', 'prepared', 'supplements'
+
+    # Priority for resolution (lower = higher priority)
+    priority: int = 100
+
+    # Optional description of when this template applies
+    applies_to_description: Optional[str] = None
+
 
 class NotificationTemplateCreate(NotificationTemplateBase):
     template_type: str = "custom"  # system templates can only be created via migration
@@ -1010,6 +1022,14 @@ class NotificationTemplateUpdate(BaseModel):
     channel_type: Optional[str] = None
     discord_config: Optional[dict] = None
     is_active: Optional[bool] = None
+
+    # Matching criteria (all optional)
+    reptile_id: Optional[int] = None
+    schedule_id: Optional[int] = None
+    schedule_type_filter: Optional[str] = None
+    food_category_filter: Optional[str] = None
+    priority: Optional[int] = None
+    applies_to_description: Optional[str] = None
 
 
 class NotificationTemplate(NotificationTemplateBase):

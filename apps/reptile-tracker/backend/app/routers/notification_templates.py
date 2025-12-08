@@ -70,6 +70,37 @@ async def create_template(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new custom template"""
+    # Validate reptile_id and schedule_id if provided
+    if template_data.reptile_id:
+        from app.models import Reptile
+        from app.permissions import check_reptile_access
+        try:
+            await check_reptile_access(db, current_user, template_data.reptile_id)
+        except:
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have access to this reptile"
+            )
+
+    if template_data.schedule_id:
+        from app.models import Schedule
+        result = await db.execute(
+            select(Schedule).where(Schedule.id == template_data.schedule_id)
+        )
+        schedule = result.scalars().first()
+        if not schedule:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+
+        # Verify user has access to the schedule's reptile
+        from app.permissions import check_reptile_access
+        try:
+            await check_reptile_access(db, current_user, schedule.reptile_id)
+        except:
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have access to this schedule's reptile"
+            )
+
     # Create new template (always custom type for user-created templates)
     template = NotificationTemplate(
         user_id=current_user.id,
@@ -109,8 +140,41 @@ async def update_template(
             detail="Cannot modify system templates or other users' templates"
         )
 
+    # Validate reptile_id and schedule_id if being updated
+    update_data = template_data.model_dump(exclude_unset=True)
+
+    if "reptile_id" in update_data and update_data["reptile_id"]:
+        from app.models import Reptile
+        from app.permissions import check_reptile_access
+        try:
+            await check_reptile_access(db, current_user, update_data["reptile_id"])
+        except:
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have access to this reptile"
+            )
+
+    if "schedule_id" in update_data and update_data["schedule_id"]:
+        from app.models import Schedule
+        result = await db.execute(
+            select(Schedule).where(Schedule.id == update_data["schedule_id"])
+        )
+        schedule = result.scalars().first()
+        if not schedule:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+
+        # Verify user has access to the schedule's reptile
+        from app.permissions import check_reptile_access
+        try:
+            await check_reptile_access(db, current_user, schedule.reptile_id)
+        except:
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have access to this schedule's reptile"
+            )
+
     # Update fields
-    for key, value in template_data.model_dump(exclude_unset=True).items():
+    for key, value in update_data.items():
         setattr(template, key, value)
 
     await db.commit()
@@ -140,23 +204,7 @@ async def copy_template(
     if not source_template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    # Check if user already has a custom template for this trigger/channel combination
-    existing_result = await db.execute(
-        select(NotificationTemplate).where(
-            NotificationTemplate.user_id == current_user.id,
-            NotificationTemplate.trigger_type == source_template.trigger_type,
-            NotificationTemplate.channel_type == source_template.channel_type
-        )
-    )
-    existing_template = existing_result.scalars().first()
-
-    if existing_template:
-        raise HTTPException(
-            status_code=400,
-            detail="You already have a custom template for this trigger type and channel"
-        )
-
-    # Create copy
+    # Create copy (removed duplicate check - users can now have multiple templates)
     new_template = NotificationTemplate(
         user_id=current_user.id,
         name=f"{source_template.name} (Custom)",
@@ -203,3 +251,71 @@ async def delete_template(
     await db.commit()
 
     return {"message": "Template deleted successfully"}
+
+
+@router.post("/validate-context")
+async def validate_template_context(
+    trigger_type: str,
+    channel_type: str = None,
+    reptile_id: int = None,
+    schedule_id: int = None,
+    food_category: str = None,
+    schedule_type: str = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Show which template would be used for given context.
+    Useful for preview/debugging when creating templates with filters.
+    """
+    from app.notifications import get_template_for_trigger
+
+    context = {}
+    if reptile_id:
+        context["reptile_id"] = reptile_id
+    if schedule_id:
+        context["schedule_id"] = schedule_id
+    if food_category:
+        context["food_category"] = food_category
+    if schedule_type:
+        context["schedule_type"] = schedule_type
+
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type=trigger_type,
+        user_id=current_user.id,
+        channel_type=channel_type,
+        context=context if context else None
+    )
+
+    if template:
+        # Determine specificity level
+        specificity = []
+        if template.schedule_id:
+            specificity.append(f"schedule-specific (ID: {template.schedule_id})")
+        if template.reptile_id:
+            specificity.append(f"reptile-specific (ID: {template.reptile_id})")
+        if template.food_category_filter:
+            specificity.append(f"food category: {template.food_category_filter}")
+        if template.schedule_type_filter:
+            specificity.append(f"schedule type: {template.schedule_type_filter}")
+        if not specificity:
+            specificity.append("generic (no filters)")
+
+        return {
+            "template_id": template.id,
+            "template_name": template.name,
+            "template_type": template.template_type,
+            "specificity": ", ".join(specificity),
+            "priority": template.priority,
+            "matched": True
+        }
+    else:
+        return {
+            "template_id": None,
+            "template_name": None,
+            "template_type": None,
+            "specificity": None,
+            "priority": None,
+            "matched": False
+        }
