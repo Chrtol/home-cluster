@@ -3,6 +3,8 @@ import axios from 'axios';
 
 const NotificationTemplatesTab = () => {
   const [templates, setTemplates] = useState([]);
+  const [reptiles, setReptiles] = useState([]);
+  const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -18,6 +20,14 @@ const NotificationTemplatesTab = () => {
   const [channelType, setChannelType] = useState('');
   const [isActive, setIsActive] = useState(true);
 
+  // New filter fields
+  const [reptileFilter, setReptileFilter] = useState('');
+  const [scheduleFilter, setScheduleFilter] = useState('');
+  const [scheduleTypeFilter, setScheduleTypeFilter] = useState('');
+  const [foodCategoryFilter, setFoodCategoryFilter] = useState('');
+  const [priority, setPriority] = useState(100);
+  const [appliesToDescription, setAppliesToDescription] = useState('');
+
   // Discord config state
   const [discordColor, setDiscordColor] = useState('#2E5BFF'); // Default blue
   const [discordIncludeFields, setDiscordIncludeFields] = useState(['scheduled_date', 'schedule_type', 'notes']);
@@ -28,6 +38,8 @@ const NotificationTemplatesTab = () => {
 
   useEffect(() => {
     fetchTemplates();
+    fetchReptiles();
+    fetchSchedules();
   }, []);
 
   const fetchTemplates = async () => {
@@ -44,6 +56,41 @@ const NotificationTemplatesTab = () => {
     }
   };
 
+  const fetchReptiles = async () => {
+    try {
+      const response = await axios.get('/api/reptiles/');
+      setReptiles(response.data);
+    } catch (err) {
+      console.error('Error fetching reptiles:', err);
+    }
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      // Fetch schedules from all reptiles
+      const reptilesResponse = await axios.get('/api/reptiles/');
+      const allSchedules = [];
+
+      for (const reptile of reptilesResponse.data) {
+        try {
+          const schedulesResponse = await axios.get(`/api/schedules/reptile/${reptile.id}`);
+          schedulesResponse.data.forEach(schedule => {
+            allSchedules.push({
+              ...schedule,
+              reptile_name: reptile.name
+            });
+          });
+        } catch (err) {
+          console.error(`Error fetching schedules for reptile ${reptile.id}:`, err);
+        }
+      }
+
+      setSchedules(allSchedules);
+    } catch (err) {
+      console.error('Error fetching schedules:', err);
+    }
+  };
+
   const handleAddTemplate = () => {
     setEditingTemplate(null);
     setTemplateName('');
@@ -52,6 +99,13 @@ const NotificationTemplatesTab = () => {
     setTitleTemplate('');
     setChannelType('');
     setIsActive(true);
+    // Reset filter fields
+    setReptileFilter('');
+    setScheduleFilter('');
+    setScheduleTypeFilter('');
+    setFoodCategoryFilter('');
+    setPriority(100);
+    setAppliesToDescription('');
     // Reset Discord config to defaults
     setDiscordColor('#2E5BFF');
     setDiscordIncludeFields(['scheduled_date', 'schedule_type', 'notes']);
@@ -73,6 +127,14 @@ const NotificationTemplatesTab = () => {
     setTitleTemplate(template.title_template || '');
     setChannelType(template.channel_type || '');
     setIsActive(template.is_active);
+
+    // Load filter fields
+    setReptileFilter(template.reptile_id ? String(template.reptile_id) : '');
+    setScheduleFilter(template.schedule_id ? String(template.schedule_id) : '');
+    setScheduleTypeFilter(template.schedule_type_filter || '');
+    setFoodCategoryFilter(template.food_category_filter || '');
+    setPriority(template.priority || 100);
+    setAppliesToDescription(template.applies_to_description || '');
 
     // Load Discord config if present
     if (template.discord_config) {
@@ -100,7 +162,14 @@ const NotificationTemplatesTab = () => {
         message_template: messageTemplate.trim(),
         title_template: titleTemplate.trim() || null,
         channel_type: channelType.trim() || null,
-        is_active: isActive
+        is_active: isActive,
+        // Add filter fields
+        reptile_id: reptileFilter ? parseInt(reptileFilter) : null,
+        schedule_id: scheduleFilter ? parseInt(scheduleFilter) : null,
+        schedule_type_filter: scheduleTypeFilter || null,
+        food_category_filter: foodCategoryFilter || null,
+        priority: priority,
+        applies_to_description: appliesToDescription.trim() || null
       };
 
       // Add Discord config if channel type is discord or all channels
@@ -231,6 +300,62 @@ const NotificationTemplatesTab = () => {
     }
   };
 
+  const getReptileName = (reptileId) => {
+    const reptile = reptiles.find(r => r.id === reptileId);
+    return reptile ? reptile.name : `ID: ${reptileId}`;
+  };
+
+  const getScheduleName = (scheduleId) => {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    return schedule ? `${schedule.name} (${schedule.reptile_name})` : `ID: ${scheduleId}`;
+  };
+
+  const renderFilterBadges = (template) => {
+    const badges = [];
+
+    if (template.reptile_id) {
+      badges.push(
+        <span key="reptile" className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
+          Reptile: {getReptileName(template.reptile_id)}
+        </span>
+      );
+    }
+
+    if (template.schedule_id) {
+      badges.push(
+        <span key="schedule" className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+          Schedule: {getScheduleName(template.schedule_id)}
+        </span>
+      );
+    }
+
+    if (template.schedule_type_filter) {
+      badges.push(
+        <span key="type" className="px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded">
+          Type: {template.schedule_type_filter}
+        </span>
+      );
+    }
+
+    if (template.food_category_filter) {
+      badges.push(
+        <span key="food" className="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded">
+          Food: {template.food_category_filter}
+        </span>
+      );
+    }
+
+    if (template.priority !== 100) {
+      badges.push(
+        <span key="priority" className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+          Priority: {template.priority}
+        </span>
+      );
+    }
+
+    return badges;
+  };
+
   const insertVariable = (variable) => {
     const textarea = messageTemplateRef.current;
     if (!textarea) {
@@ -296,6 +421,29 @@ const NotificationTemplatesTab = () => {
           {error}
         </div>
       )}
+
+      {/* Help Section */}
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-200">How Template Matching Works</h3>
+        <p className="text-sm mb-2 text-blue-800 dark:text-blue-300">
+          When sending a notification, the system finds the <strong>most specific</strong> template that matches:
+        </p>
+        <ol className="text-sm space-y-1 ml-4 list-decimal text-blue-800 dark:text-blue-300">
+          <li>Templates you create take priority over system templates</li>
+          <li>More specific filters win (schedule-specific &gt; reptile-specific &gt; type-specific &gt; generic)</li>
+          <li>Within same specificity, lower priority number wins</li>
+        </ol>
+
+        <div className="mt-3">
+          <p className="text-sm font-medium mb-1 text-blue-900 dark:text-blue-200">Examples:</p>
+          <ul className="text-sm space-y-1 ml-4 list-disc text-blue-800 dark:text-blue-300">
+            <li>Template for "Luna" + "Morning Feeding" = Used only for that specific schedule</li>
+            <li>Template for "Luna" + "feeding type" = Used for all of Luna's feeding schedules</li>
+            <li>Template for "feeding type" = Used for all feeding schedules (any reptile)</li>
+            <li>Generic template = Used when nothing more specific matches</li>
+          </ul>
+        </div>
+      </div>
 
       {/* System Templates */}
       <div className="mb-8">
@@ -399,7 +547,13 @@ const NotificationTemplatesTab = () => {
                           Inactive
                         </span>
                       )}
+                      {renderFilterBadges(template)}
                     </div>
+                    {template.applies_to_description && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400 italic mt-1">
+                        {template.applies_to_description}
+                      </p>
+                    )}
                     <div className="mt-2 text-sm">
                       <div className="text-gray-600 dark:text-gray-400">
                         <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
@@ -488,6 +642,109 @@ const NotificationTemplatesTab = () => {
                   <option value="pushover">Pushover Only</option>
                   <option value="generic">Generic Webhook Only</option>
                 </select>
+              </div>
+
+              {/* Template Matching Filters */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h4 className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Template Filters (Optional)</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  Apply this template only to specific reptiles, schedules, or types. More specific filters = higher priority.
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Specific Reptile</label>
+                    <select
+                      value={reptileFilter}
+                      onChange={(e) => setReptileFilter(e.target.value)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="">All Reptiles</option>
+                      {reptiles.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Specific Schedule</label>
+                    <select
+                      value={scheduleFilter}
+                      onChange={(e) => setScheduleFilter(e.target.value)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="">All Schedules</option>
+                      {schedules.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.reptile_name})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Schedule Type Filter</label>
+                    <select
+                      value={scheduleTypeFilter}
+                      onChange={(e) => setScheduleTypeFilter(e.target.value)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="">All Schedule Types</option>
+                      <option value="feeding">Feeding</option>
+                      <option value="misting">Misting</option>
+                      <option value="weighing">Weighing</option>
+                      <option value="health">Health</option>
+                      <option value="supplement">Supplement</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Food Category Filter</label>
+                    <select
+                      value={foodCategoryFilter}
+                      onChange={(e) => setFoodCategoryFilter(e.target.value)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="">All Food Categories</option>
+                      <option value="insects">Insects/Worms</option>
+                      <option value="salad">Salad/Greens</option>
+                      <option value="frozen">Frozen Prey (Rodents)</option>
+                      <option value="prepared">Prepared Foods</option>
+                      <option value="mixed">Mixed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Priority (Lower = Higher Priority)
+                    </label>
+                    <input
+                      type="number"
+                      value={priority}
+                      onChange={(e) => setPriority(parseInt(e.target.value) || 100)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      min="0"
+                      max="999"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Use to control which template wins when multiple match. Default: 100
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Description (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={appliesToDescription}
+                      onChange={(e) => setAppliesToDescription(e.target.value)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      placeholder="e.g., 'Urgent alerts for Luna'"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Friendly description of when this template applies
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div>
