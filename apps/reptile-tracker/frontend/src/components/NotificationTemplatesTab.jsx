@@ -453,11 +453,11 @@ const NotificationTemplatesTab = () => {
         </p>
         <div className="space-y-3">
           {groupedTemplates.system.map(template => {
-            // Check if user already has a custom version of this template
-            const hasCustomVersion = groupedTemplates.custom.some(
+            // Count how many custom templates exist for this trigger type
+            const customCount = groupedTemplates.custom.filter(
               t => t.trigger_type === template.trigger_type &&
-                   t.channel_type === template.channel_type
-            );
+                   (t.channel_type === template.channel_type || (!t.channel_type && !template.channel_type))
+            ).length;
 
             return (
               <div
@@ -476,9 +476,9 @@ const NotificationTemplatesTab = () => {
                           {template.channel_type}
                         </span>
                       )}
-                      {hasCustomVersion && (
+                      {customCount > 0 && (
                         <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
-                          Customized
+                          {customCount} custom {customCount === 1 ? 'version' : 'versions'}
                         </span>
                       )}
                     </div>
@@ -500,13 +500,8 @@ const NotificationTemplatesTab = () => {
                     </button>
                     <button
                       onClick={() => handleCopyTemplate(template)}
-                      disabled={hasCustomVersion}
-                      className={`px-3 py-1 text-sm rounded ${
-                        hasCustomVersion
-                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
-                      }`}
-                      title={hasCustomVersion ? 'You already have a custom version of this template' : 'Create a customizable copy'}
+                      className="px-3 py-1 text-sm rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
+                      title="Create a customizable copy of this template"
                     >
                       Customize
                     </button>
