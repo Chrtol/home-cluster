@@ -39,6 +39,27 @@
   - Backend: Template copy endpoint in notification_templates.py
   - Frontend: Template editor in Settings > Templates tab with variable insertion
 
+- [x] **Priority-based template matching** - ✅ COMPLETED (2025-12-08)
+  - Create multiple templates per trigger type with automatic selection based on specificity
+  - Filter templates by specific reptiles, schedules, schedule types, or food categories
+  - Priority scoring ensures most specific template is always used (schedule > reptile > food category > schedule type > generic)
+  - Database: Migration 0070 added filter columns to notification_templates table
+  - Backend: New template matching algorithm with 6-level specificity scoring
+  - Frontend: Filter form fields in template creation/edit with visual priority explanation
+
+- [x] **Custom template groups** - ✅ COMPLETED (2025-12-08)
+  - Organize templates into user-defined collections (e.g., "Luna's Templates", "Critical Alerts")
+  - Group-level settings apply to all templates in the group:
+    - **enabled**: Master on/off switch for entire group
+    - **default_priority**: Modifier added to all template priorities (can be negative for higher priority)
+    - **ignore_quiet_hours**: Bypass quiet hours for critical alert groups
+    - **default_channel_ids**: Default notification channels for group
+  - Visual group badges on templates with custom colors
+  - Database: Migration 0071 created template_groups table and group_id column
+  - Backend: Complete CRUD API at /api/template-groups/
+  - Frontend: Group management modal with full CRUD, color picker, icons, and settings
+  - Frontend: Collapsible help section explaining template matching priority system
+
 - [ ] **Advanced notification features** - 🎯 HIGH PRIORITY
   - Notification grouping/digest (combine multiple reminders into single message)
   - Snooze functionality for reminders (15min, 30min, 1hr, 2hr options)
@@ -696,6 +717,42 @@ Assign specific household members as responsible for completing schedules, impro
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### December 2025 - Notification Template Enhancements (2025-12-08)
+- [x] **Priority-based template matching system** - ✅ COMPLETED (2025-12-08)
+  - Create unlimited templates per trigger type with automatic intelligent selection
+  - Filter templates by specific reptiles, schedules, schedule types, or food categories
+  - 6-level specificity scoring ensures most specific template is always used
+  - Example: "Luna's Morning Feeding" template > "Luna's feeding templates" > "All feeding templates" > "Generic template"
+  - Database: Migration 0070 added `reptile_id`, `schedule_id`, `schedule_type_filter`, `food_category_filter`, `priority`, `applies_to_description` columns
+  - Backend: New template matching functions with priority-based selection algorithm
+  - Backend: Updated all notification sender functions to pass context for filter matching
+  - Frontend: Filter form fields in template creation/edit modal
+  - Frontend: Visual filter badges on templates (color-coded: green=reptile, blue=schedule, yellow=type, orange=food)
+  - Frontend: Help section explaining template matching priority system
+
+- [x] **Custom template groups** - ✅ COMPLETED (2025-12-08)
+  - Organize notification templates into user-defined collections for better management
+  - Create groups with custom names, icons, colors, and sort order
+  - Group-level settings apply to all templates in the group:
+    - **enabled**: Master on/off switch for entire group (disable all templates at once)
+    - **default_priority**: Modifier added to all template priorities (negative values = higher priority)
+    - **ignore_quiet_hours**: Bypass quiet hours for critical alert groups
+    - **default_channel_ids**: Default notification channels for group templates
+  - Database: Migration 0071 created `template_groups` table with group settings
+  - Database: Added `group_id` column to `notification_templates` (nullable, SET NULL on delete)
+  - Backend: Complete CRUD API at `/api/template-groups/` with validation
+  - Backend: TemplateGroup model with relationships to templates and users
+  - Frontend: "Manage Groups" button opens group management modal
+  - Frontend: Full CRUD interface for creating/editing groups with color picker and settings
+  - Frontend: Group selection dropdown in template creation/edit modal
+  - Frontend: Color-coded group badges on templates showing group assignment
+  - Frontend: Collapsible help section with show/hide button
+  - **Use Cases:**
+    - Reptile-specific groups: "Luna's Templates" with custom icon and color
+    - Priority-based groups: "Critical Alerts" with -50 priority modifier and quiet hours bypass
+    - Organizational groups: "Weekly Reminders", "Emergency Alerts", etc.
+  - Comprehensive documentation in NOTIFICATION_SYSTEM.md and NOTIFICATION_TEMPLATE_REFACTOR_PLAN.md
 
 ### December 2025 - Display Profiles System (2025-12-07)
 - [x] **Display Profiles for Dashboard and Statistics Pages** - ✅ COMPLETED (2025-12-07)
