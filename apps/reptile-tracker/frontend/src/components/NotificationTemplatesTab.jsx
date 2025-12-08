@@ -19,6 +19,7 @@ const NotificationTemplatesTab = () => {
   const [expandedGroups, setExpandedGroups] = useState({});
   const [systemTemplatesExpanded, setSystemTemplatesExpanded] = useState(true);
   const [customGroupsExpanded, setCustomGroupsExpanded] = useState({});
+  const [helpSectionExpanded, setHelpSectionExpanded] = useState(false);
 
   // Form state
   const [templateName, setTemplateName] = useState('');
@@ -420,6 +421,24 @@ const NotificationTemplatesTab = () => {
   const renderFilterBadges = (template) => {
     const badges = [];
 
+    if (template.group_id) {
+      const group = groups.find(g => g.id === template.group_id);
+      if (group) {
+        badges.push(
+          <span
+            key="group"
+            className="px-2 py-0.5 text-xs rounded font-medium"
+            style={{
+              backgroundColor: group.color || '#3B82F6',
+              color: '#FFFFFF'
+            }}
+          >
+            {group.icon ? `${group.icon} ` : '📁 '}{group.name}
+          </span>
+        );
+      }
+    }
+
     if (template.reptile_id) {
       badges.push(
         <span key="reptile" className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
@@ -515,12 +534,20 @@ const NotificationTemplatesTab = () => {
             Customize notification messages with variables. System templates are read-only.
           </p>
         </div>
-        <button
-          onClick={handleAddTemplate}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-        >
-          + Add Custom Template
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleAddGroup}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
+          >
+            📁 Manage Groups
+          </button>
+          <button
+            onClick={handleAddTemplate}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          >
+            + Add Custom Template
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -531,25 +558,38 @@ const NotificationTemplatesTab = () => {
 
       {/* Help Section */}
       <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-200">How Template Matching Works</h3>
-        <p className="text-sm mb-2 text-blue-800 dark:text-blue-300">
-          When sending a notification, the system finds the <strong>most specific</strong> template that matches:
-        </p>
-        <ol className="text-sm space-y-1 ml-4 list-decimal text-blue-800 dark:text-blue-300">
-          <li>Templates you create take priority over system templates</li>
-          <li>More specific filters win (schedule-specific &gt; reptile-specific &gt; type-specific &gt; generic)</li>
-          <li>Within same specificity, lower priority number wins</li>
-        </ol>
-
-        <div className="mt-3">
-          <p className="text-sm font-medium mb-1 text-blue-900 dark:text-blue-200">Examples:</p>
-          <ul className="text-sm space-y-1 ml-4 list-disc text-blue-800 dark:text-blue-300">
-            <li>Template for "Luna" + "Morning Feeding" = Used only for that specific schedule</li>
-            <li>Template for "Luna" + "feeding type" = Used for all of Luna's feeding schedules</li>
-            <li>Template for "feeding type" = Used for all feeding schedules (any reptile)</li>
-            <li>Generic template = Used when nothing more specific matches</li>
-          </ul>
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold text-blue-900 dark:text-blue-200">How Template Matching Works</h3>
+          <button
+            onClick={() => setHelpSectionExpanded(!helpSectionExpanded)}
+            className="px-3 py-1 text-sm bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600"
+          >
+            {helpSectionExpanded ? 'Hide' : 'Show'}
+          </button>
         </div>
+
+        {helpSectionExpanded && (
+          <>
+            <p className="text-sm mb-2 mt-3 text-blue-800 dark:text-blue-300">
+              When sending a notification, the system finds the <strong>most specific</strong> template that matches:
+            </p>
+            <ol className="text-sm space-y-1 ml-4 list-decimal text-blue-800 dark:text-blue-300">
+              <li>Templates you create take priority over system templates</li>
+              <li>More specific filters win (schedule-specific &gt; reptile-specific &gt; type-specific &gt; generic)</li>
+              <li>Within same specificity, lower priority number wins</li>
+            </ol>
+
+            <div className="mt-3">
+              <p className="text-sm font-medium mb-1 text-blue-900 dark:text-blue-200">Examples:</p>
+              <ul className="text-sm space-y-1 ml-4 list-disc text-blue-800 dark:text-blue-300">
+                <li>Template for "Luna" + "Morning Feeding" = Used only for that specific schedule</li>
+                <li>Template for "Luna" + "feeding type" = Used for all of Luna's feeding schedules</li>
+                <li>Template for "feeding type" = Used for all feeding schedules (any reptile)</li>
+                <li>Generic template = Used when nothing more specific matches</li>
+              </ul>
+            </div>
+          </>
+        )}
       </div>
 
       {/* System Templates */}
@@ -807,6 +847,27 @@ const NotificationTemplatesTab = () => {
                   <option value="pushover">Pushover Only</option>
                   <option value="generic">Generic Webhook Only</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Group (Optional)</label>
+                <select
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">No Group</option>
+                  {groups
+                    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+                    .map(g => (
+                      <option key={g.id} value={g.id}>
+                        {g.icon ? `${g.icon} ` : ''}{g.name}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Organize templates into custom groups for easier management
+                </p>
               </div>
 
               {/* Template Matching Filters */}
@@ -1113,6 +1174,206 @@ const NotificationTemplatesTab = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Management Modal */}
+      {showGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+              {editingGroup ? 'Edit Group' : 'Create Group'}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Group Name</label>
+                <input
+                  type="text"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Luna's Templates"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Description (Optional)</label>
+                <textarea
+                  value={groupDescription}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                  rows={2}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="All notification templates for Luna"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Icon (Optional)</label>
+                  <input
+                    type="text"
+                    value={groupIcon}
+                    onChange={(e) => setGroupIcon(e.target.value)}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="🦎"
+                    maxLength={4}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Emoji or symbol</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Color</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={groupColor}
+                      onChange={(e) => setGroupColor(e.target.value)}
+                      className="h-10 w-16 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={groupColor}
+                      onChange={(e) => setGroupColor(e.target.value)}
+                      className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="#3B82F6"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Sort Order</label>
+                <input
+                  type="number"
+                  value={groupSortOrder}
+                  onChange={(e) => setGroupSortOrder(parseInt(e.target.value) || 0)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="0"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Lower numbers appear first</p>
+              </div>
+
+              {/* Group Settings */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Group Settings</h4>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Enabled</label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Master on/off switch for all templates in this group</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={groupEnabled}
+                      onChange={(e) => setGroupEnabled(e.target.checked)}
+                      className="h-5 w-5"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Default Priority Modifier</label>
+                    <input
+                      type="number"
+                      value={groupDefaultPriority}
+                      onChange={(e) => setGroupDefaultPriority(parseInt(e.target.value) || 0)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Added to each template's priority. Negative values = higher priority. (e.g., -50 for critical alerts)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Ignore Quiet Hours</label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Send notifications even during quiet hours</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={groupIgnoreQuietHours}
+                      onChange={(e) => setGroupIgnoreQuietHours(e.target.checked)}
+                      className="h-5 w-5"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-between items-center">
+              <div>
+                {editingGroup && (
+                  <button
+                    onClick={() => {
+                      handleDeleteGroup(editingGroup.id);
+                      setShowGroupModal(false);
+                    }}
+                    className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded hover:bg-red-700 dark:hover:bg-red-600"
+                  >
+                    Delete Group
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowGroupModal(false)}
+                  className="px-4 py-2 bg-gray-600 dark:bg-gray-500 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveGroup}
+                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600"
+                >
+                  {editingGroup ? 'Update Group' : 'Create Group'}
+                </button>
+              </div>
+            </div>
+
+            {/* List of Existing Groups */}
+            {!editingGroup && groups.length > 0 && (
+              <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Existing Groups</h4>
+                <div className="space-y-2">
+                  {groups
+                    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+                    .map(group => (
+                      <div
+                        key={group.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-4 h-4 rounded"
+                            style={{ backgroundColor: group.color || '#3B82F6' }}
+                          />
+                          {group.icon && <span className="text-lg">{group.icon}</span>}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{group.name}</div>
+                            {group.description && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">{group.description}</div>
+                            )}
+                          </div>
+                          {!group.enabled && (
+                            <span className="text-xs px-2 py-0.5 bg-gray-300 dark:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
+                              Disabled
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleEditGroup(group)}
+                          className="px-3 py-1 text-sm bg-gray-600 dark:bg-gray-500 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

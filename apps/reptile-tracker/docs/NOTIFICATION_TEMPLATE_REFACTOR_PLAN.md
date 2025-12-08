@@ -973,3 +973,88 @@ The downgrade will:
 ---
 
 **Implementation completed successfully with full feature parity to the original plan.**
+
+## Post-Refactor Enhancement: Custom Template Groups
+
+**Completion Date**: December 8, 2025
+**Migration**: 0071_add_template_groups.py
+
+After completing the original template refactor, custom template groups were added to improve organization and management of multiple templates.
+
+### What Was Added
+
+#### ✅ Database Layer (Migration 0071)
+- **TemplateGroup table**: New table for user-defined template groups
+  - `name`, `description`, `color`, `icon`, `sort_order` for organization
+  - Group-level settings: `enabled`, `default_priority`, `ignore_quiet_hours`, `default_channel_ids`
+- **group_id column**: Added to `notification_templates` table (nullable, SET NULL on delete)
+- Foreign key constraints and partial indexes for performance
+
+#### ✅ Backend Models & Schemas
+- **TemplateGroup model**: Full model with relationships to templates and users
+- **Schemas**: Create, Update, and Response schemas for template groups
+- **Router**: Complete CRUD API at `/api/template-groups/`
+
+#### ✅ Frontend UI
+- **"Manage Groups" button**: Opens group management modal
+- **Group Management Modal**: Full CRUD interface for creating/editing groups
+  - Name, description, icon, color, sort order
+  - Group settings: enabled, default_priority, ignore_quiet_hours
+  - List of existing groups with edit buttons
+- **Group Selection**: Dropdown in template creation/edit modal
+- **Group Badges**: Colored badges showing group assignment on templates
+- **Collapsible Help**: "How Template Matching Works" section now has show/hide button
+
+#### ✅ Documentation
+- **NOTIFICATION_SYSTEM.md**: Added "Template Groups" section with API endpoints, examples, and group settings impact
+- **Migration 0071** added to migration history
+
+### Group-Level Settings
+
+**enabled** (boolean, default: true)
+Master on/off switch for all templates in the group. Useful for temporarily disabling entire template collections.
+
+**default_priority** (integer, default: 0)
+Priority modifier added to all templates in the group. Can be negative for higher priority.
+
+Example:
+- Template priority: 100
+- Group default_priority: -50
+- Effective priority: 50 (higher priority)
+
+**ignore_quiet_hours** (boolean, default: false)
+If true, all templates in the group bypass user's quiet hours settings. Useful for critical alerts.
+
+**default_channel_ids** (JSON array, nullable)
+Default notification channels for all templates in the group.
+
+### Use Cases
+
+**Reptile-Specific Groups:**
+Create a "Luna's Templates" group with custom icon and color for easy visual identification.
+
+**Priority-Based Groups:**
+Create a "Critical Alerts" group with `default_priority=-50` and `ignore_quiet_hours=true` for urgent notifications.
+
+**Organizational Groups:**
+Create "Weekly Reminders", "Daily Schedules", "Emergency Alerts" groups for better template organization.
+
+### Files Modified
+
+**Backend:**
+- `backend/migrations/versions/0071_add_template_groups.py` (new)
+- `backend/app/models.py` (added TemplateGroup model and group relationship)
+- `backend/app/schemas.py` (added TemplateGroup schemas and group_id to template schemas)
+- `backend/app/routers/template_groups.py` (new)
+- `backend/app/main.py` (registered template_groups router)
+
+**Frontend:**
+- `frontend/src/components/NotificationTemplatesTab.jsx` (added group management UI, group selection, and group badges)
+
+**Documentation:**
+- `docs/NOTIFICATION_SYSTEM.md` (added Template Groups section)
+- `docs/NOTIFICATION_TEMPLATE_REFACTOR_PLAN.md` (this section)
+
+---
+
+**All features successfully implemented with full CRUD functionality for custom template groups.**
