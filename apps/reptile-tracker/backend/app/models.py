@@ -695,6 +695,33 @@ class NotificationChannel(Base):
     settings = relationship("NotificationSettings", back_populates="channels")
 
 
+class TemplateGroup(Base):
+    """User-defined groups for organizing notification templates"""
+    __tablename__ = "template_groups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    color = Column(String(20), nullable=True)  # For UI color coding (e.g., "blue", "green", "#FF5733")
+    icon = Column(String(50), nullable=True)  # Optional emoji or icon identifier
+    sort_order = Column(Integer, default=0, nullable=False)  # For custom ordering
+
+    # Group-level settings
+    enabled = Column(Boolean, default=True, nullable=False)  # Master on/off switch for all templates in group
+    default_priority = Column(Integer, default=0, nullable=False)  # Priority modifier added to all templates (can be negative)
+    ignore_quiet_hours = Column(Boolean, default=False, nullable=False)  # If true, bypass user's quiet hours settings
+    default_channel_ids = Column(JSON, nullable=True)  # Array of default channel IDs for templates in this group
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", backref="template_groups")
+    templates = relationship("NotificationTemplate", back_populates="group")
+
+
 class NotificationTemplate(Base):
     __tablename__ = "notification_templates"
 
@@ -727,6 +754,9 @@ class NotificationTemplate(Base):
     # Optional description of when this template applies
     applies_to_description = Column(Text, nullable=True)
 
+    # Optional grouping for organization
+    group_id = Column(Integer, ForeignKey("template_groups.id", ondelete="SET NULL"), nullable=True)
+
     is_active = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -736,6 +766,7 @@ class NotificationTemplate(Base):
     user = relationship("User", backref="notification_templates")
     reptile = relationship("Reptile", backref="notification_templates")
     schedule = relationship("Schedule", backref="notification_templates")
+    group = relationship("TemplateGroup", back_populates="templates")
 
 
 # Association table for Schedule <-> NotificationChannel many-to-many relationship
