@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId } from '../utils/displaySettings';
@@ -39,6 +39,9 @@ export default function Dashboard() {
     return saved || 'week'; // 'day', 'three-day', 'week'
   });
 
+  // Current date for calendar navigation (defaults to today)
+  const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
+
   // Load display settings on mount and apply correct profile for screen size
   useEffect(() => {
     // Apply the appropriate profile for the current screen size
@@ -62,26 +65,43 @@ export default function Dashboard() {
     localStorage.setItem('dashboard_calendar_view', calendarView);
   }, [calendarView]);
 
+  // Navigation functions for calendar
+  const navigateCalendar = (direction) => {
+    const newDate = new Date(currentWeekDate);
+    if (calendarView === 'day') {
+      newDate.setDate(newDate.getDate() + direction);
+    } else if (calendarView === 'three-day') {
+      newDate.setDate(newDate.getDate() + (direction * 3));
+    } else {
+      // week view
+      newDate.setDate(newDate.getDate() + (direction * 7));
+    }
+    setCurrentWeekDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCurrentWeekDate(new Date());
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Calculate date range based on calendar view
-        const today = new Date();
         const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
 
         let weekStart, weekEnd;
 
         if (calendarView === 'day') {
-          // 1-day view: fetch only today
-          weekStart = today;
-          weekEnd = today;
+          // 1-day view: fetch only the current day
+          weekStart = currentWeekDate;
+          weekEnd = currentWeekDate;
         } else if (calendarView === 'three-day') {
-          // 3-day view: fetch yesterday + today + tomorrow
-          weekStart = addDays(today, -1);
-          weekEnd = addDays(today, 1);
+          // 3-day view: fetch yesterday + today + tomorrow relative to currentWeekDate
+          weekStart = addDays(currentWeekDate, -1);
+          weekEnd = addDays(currentWeekDate, 1);
         } else {
           // Week view: fetch full week (Monday-Sunday or Sunday-Saturday)
-          weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+          weekStart = startOfWeek(currentWeekDate, { weekStartsOn: firstDayOfWeek });
           weekEnd = addDays(weekStart, 6);
         }
 
@@ -264,7 +284,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, [calendarReptileFilter, calendarView]);
+  }, [calendarReptileFilter, calendarView, currentWeekDate]);
 
   // Initialize reptile filter when reptiles are loaded
   useEffect(() => {
@@ -954,6 +974,77 @@ export default function Dashboard() {
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
+      case 'weekly_summary':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={18} className="text-gray-700 dark:text-gray-300" />
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">This Week</h3>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <Utensils size={14} className="text-primary-600 dark:text-primary-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Feedings:</span>
+                  <span className="font-bold text-primary-600 dark:text-primary-400">{feedingsThisWeek}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="flex items-center gap-1.5">
+                  <Droplets size={14} className="text-blue-600 dark:text-blue-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Misted today:</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{mistedToday}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'health_summary':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Activity size={18} className="text-gray-700 dark:text-gray-300" />
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Health Summary</h3>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-600 dark:text-gray-400">Sheds (30d):</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">{shedThisMonth}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="flex items-center gap-1.5">
+                  <Scale size={14} className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Weight logs:</span>
+                  <span className="font-bold text-purple-600 dark:text-purple-400">{weightData.length}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'schedule_summary':
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Schedule Status</h3>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle size={14} className="text-red-600 dark:text-red-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Need feeding:</span>
+                  <span className={`font-bold ${reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>{reptilesNeedingFeeding}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle size={14} className="text-green-600 dark:text-green-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Done today:</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       case 'today_summary':
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
@@ -984,7 +1075,7 @@ export default function Dashboard() {
       case 'weekly_calendar': {
         const today = new Date();
         const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
-        const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
+        const weekStart = startOfWeek(currentWeekDate, { weekStartsOn: firstDayOfWeek });
 
         // Calculate days based on view
         let daysToShow = 7;
@@ -992,13 +1083,28 @@ export default function Dashboard() {
 
         if (calendarView === 'day') {
           daysToShow = 1;
-          startDate = today; // Start from today for 1-day view
+          startDate = currentWeekDate; // Start from current date for 1-day view
         } else if (calendarView === 'three-day') {
           daysToShow = 3;
-          startDate = addDays(today, -1); // Start from yesterday for 3-day view (yesterday, today, tomorrow)
+          startDate = addDays(currentWeekDate, -1); // Start from day before current date for 3-day view
         }
 
         const weekDays = Array.from({ length: daysToShow }, (_, i) => addDays(startDate, i));
+
+        // Helper to get title for current view
+        const getCalendarTitle = () => {
+          if (calendarView === 'day') {
+            return format(currentWeekDate, 'EEEE, MMM d, yyyy');
+          } else if (calendarView === 'three-day') {
+            const start = addDays(currentWeekDate, -1);
+            const end = addDays(currentWeekDate, 1);
+            return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+          } else {
+            const weekStart = startOfWeek(currentWeekDate, { weekStartsOn: firstDayOfWeek });
+            const weekEnd = addDays(weekStart, 6);
+            return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+          }
+        };
 
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
@@ -1008,6 +1114,29 @@ export default function Dashboard() {
                 <h2 className="text-base font-bold text-gray-900 dark:text-white">Schedule Calendar</h2>
               </div>
               <div className="flex items-center gap-2">
+                {/* Navigation arrows and Today button */}
+                <button
+                  onClick={() => navigateCalendar(-1)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  title="Previous"
+                >
+                  <ChevronLeft size={18} className="text-gray-600 dark:text-gray-400" />
+                </button>
+                <button
+                  onClick={goToToday}
+                  className="px-2 py-1 text-xs font-medium rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+                  title="Go to today"
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => navigateCalendar(1)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  title="Next"
+                >
+                  <ChevronRight size={18} className="text-gray-600 dark:text-gray-400" />
+                </button>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
                 {/* View switcher - hidden when calendar is XS */}
                 {!hideSupplements && (
                   <div className="flex rounded border border-gray-200 dark:border-gray-600 overflow-hidden">
