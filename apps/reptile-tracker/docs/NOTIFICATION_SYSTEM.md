@@ -654,6 +654,87 @@ if not validate_webhook_url(webhook_url):
 4. **Timezone awareness**: Always use UTC internally, convert for display
 5. **Job recovery**: Use `ScheduledNotificationJob` table for persistent scheduling
 
+## Template Groups
+
+**Migration**: 0071_add_template_groups.py
+
+Template groups allow users to organize their notification templates into custom collections for easier management. Groups also support settings that apply to all templates within the group.
+
+### Group Features
+
+**Organization:**
+- Create custom groups (e.g., "Luna's Templates", "Critical Alerts", "Weekly Reminders")
+- Assign templates to groups via `group_id` field (optional, nullable)
+- Sort groups with custom `sort_order`
+- Add icons and colors for visual identification
+
+**Group-Level Settings:**
+- **enabled** (boolean, default: true): Master on/off switch for all templates in group
+- **default_priority** (integer, default: 0): Priority modifier added to all templates in group (can be negative)
+- **ignore_quiet_hours** (boolean, default: false): If true, templates in group bypass user's quiet hours settings
+- **default_channel_ids** (JSON array): Default notification channels for templates in this group
+
+### Creating a Group
+
+```python
+from app.models import TemplateGroup
+
+group = TemplateGroup(
+    user_id=user.id,
+    name="Critical Alerts",
+    description="High-priority notifications that require immediate attention",
+    color="#FF5733",
+    icon="🚨",
+    sort_order=0,
+    enabled=True,
+    default_priority=-50,  # Higher priority
+    ignore_quiet_hours=True
+)
+db.add(group)
+await db.commit()
+```
+
+### Assigning Templates to Groups
+
+```python
+from app.models import NotificationTemplate
+
+template = NotificationTemplate(
+    user_id=user.id,
+    name="Luna's Urgent Feeding Reminder",
+    trigger_type="schedule_reminder",
+    message_template="{emoji} URGENT: {reptile_name} needs feeding NOW!",
+    group_id=group.id,  # Assign to group
+    priority=50  # Effective priority = 50 + (-50) = 0 (very high)
+)
+db.add(template)
+await db.commit()
+```
+
+### Group Settings Impact
+
+**Effective Priority Calculation:**
+```python
+effective_priority = template.priority + (group.default_priority if template.group_id else 0)
+```
+
+**Example:**
+- Template priority: 100 (default)
+- Group default_priority: -50
+- Effective priority: 50 (higher than ungrouped templates)
+
+**Quiet Hours Bypass:**
+If a template is in a group with `ignore_quiet_hours=True`, notifications will send even during quiet hours, regardless of user settings.
+
+### API Endpoints
+
+- `GET /api/template-groups/` - List all groups for current user
+- `GET /api/template-groups/{id}` - Get specific group
+- `POST /api/template-groups/` - Create new group
+- `PUT /api/template-groups/{id}` - Update group
+- `DELETE /api/template-groups/{id}` - Delete group (templates become ungrouped)
+- `GET /api/template-groups/{id}/templates` - Get all templates in group
+
 ## Debugging
 
 ### Check Template Resolution
@@ -699,6 +780,7 @@ Relevant migrations:
 - **0063**: Added requirement-based schedule fields
 - **0064**: Added quota tracking table
 - **0070**: Added template matching criteria (`reptile_id`, `schedule_id`, `schedule_type_filter`, `food_category_filter`, `priority`, `applies_to_description`) for priority-based template resolution
+- **0071**: Added `TemplateGroup` model and `group_id` column to templates for custom template organization with group-level settings (`enabled`, `default_priority`, `ignore_quiet_hours`, `default_channel_ids`)
 
 ## Related Files
 
