@@ -1,8 +1,37 @@
 # Photo Upload Feature - Implementation Plan
 
-**Status**: Planning Phase
+**Status**: Ready for Implementation
 **Priority**: Tier 2 - High Priority
 **Estimated Duration**: 3 weeks
+
+## Configuration Decisions ✅
+
+### Storage Backend
+- **Multi-backend support**: Ceph PVC + S3 + NAS NFS (all three from the start)
+- **Strategy**: Configurable per deployment, with hybrid option for thumbnails vs full-size
+- **Initial allocation**: 50Gi Ceph PVC (sufficient for ~120,000 photos)
+
+### File Limits & Processing
+- **Max upload size**: 10MB per photo
+- **Max width**: 2000px (downscaled automatically)
+- **JPEG quality**: 85% (visually lossless)
+- **Thumbnail size**: 300x300px
+- **Photos per household**: Unlimited
+- **Photos per log entry**: 3 maximum
+
+### Permissions
+- **Upload**: CARETAKER+ role can upload
+- **Delete**: Uploader OR ADMIN+ (Caretakers cannot delete others' photos)
+- **Privacy**: Household-only (future: configurable public sharing)
+
+### Mobile Camera
+- **Default**: Rear camera (`capture="environment"`)
+- **User control**: Native phone UI allows easy camera switching
+
+### Image Quality
+- **Compression**: Automatic downscaling and compression on upload
+- **EXIF data**: Preserved (stored with metadata)
+- **Format support**: JPEG, PNG, WebP
 
 ---
 
@@ -158,9 +187,16 @@ ADD COLUMN avatar_photo_id UUID REFERENCES photos(id) ON DELETE SET NULL;
 
 ---
 
-## Storage Backend Options
+## Storage Backend Architecture
 
-### Option A: Kubernetes PersistentVolume (Ceph RBD) ⭐ Recommended
+### Multi-Backend Storage Abstraction ⭐ Implemented
+
+The application supports **all three storage backends** from the start with a unified abstraction layer. This provides maximum flexibility and allows choosing the best storage for different use cases.
+
+### Supported Backends:
+
+#### 1. Ceph PVC (Local Filesystem)
+**Use Case**: Fast access for thumbnails, general-purpose storage
 
 ```yaml
 # kubernetes/apps/default/reptile-tracker/app/pvc.yaml
@@ -170,54 +206,41 @@ metadata:
   name: reptile-tracker-photos
 spec:
   accessModes:
-    - ReadWriteMany  # Both backend pods can write
-  storageClassName: ceph-filesystem  # Your existing Ceph
+    - ReadWriteMany
+  storageClassName: ceph-filesystem
   resources:
     requests:
-      storage: 50Gi  # Adjust based on needs
+      storage: 50Gi
 ```
 
 **Pros:**
-- Integrates with existing Ceph infrastructure
 - Kubernetes-native
-- Automatic backup via Ceph
-- Shared across multiple pods (RWX)
+- Fast access (local filesystem)
+- Automatic Ceph backup
+- Shared across pods (RWX)
 
-**Cons:**
-- Ceph storage might be more expensive than NAS for large files
-- Need to manage path-based storage
-
-### Option B: S3-Compatible Storage (MinIO on NAS)
-
-Set up MinIO on NAS, then use S3-compatible APIs:
+#### 2. S3-Compatible (NAS S3)
+**Use Case**: Cheap bulk storage for full-size images
 
 ```python
-# backend/app/storage.py
-from minio import Minio
-
-client = Minio(
-    os.getenv("S3_ENDPOINT"),
-    access_key=os.getenv("S3_ACCESS_KEY"),
-    secret_key=os.getenv("S3_SECRET_KEY"),
-    secure=True
-)
+# S3 configuration
+S3_ENDPOINT=https://your-nas-s3.local
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...
+S3_BUCKET=reptile-photos
 ```
 
 **Pros:**
-- Object storage semantics (easier URLs, metadata)
-- Can use NAS for cheaper bulk storage
-- Built-in thumbnailing/CDN options
+- Cheap storage on NAS
+- Object storage semantics
+- Built-in HTTP serving
 - Industry standard (portable)
 
-**Cons:**
-- Additional infrastructure (MinIO deployment)
-- More moving parts
-
-### Option C: Hybrid (Ceph for DB, NAS NFS for photos)
-
-Mount NAS NFS volume to Kubernetes pods:
+#### 3. NAS NFS Mount
+**Use Case**: Direct NAS access for maximum storage capacity
 
 ```yaml
+# kubernetes/apps/default/reptile-tracker/app/pv-nfs.yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -233,15 +256,137 @@ spec:
 ```
 
 **Pros:**
-- Cheap bulk storage on NAS
-- Direct NFS access (fast)
+- Massive capacity on NAS
+- Direct file access
 - No object storage overhead
+- Can be accessed outside k8s
 
-**Cons:**
-- Need to configure NFS exports
-- Path-based (not URL-based) storage
+### Unified Storage Abstraction Layer
 
-**Recommendation:** Start with **Option A (Ceph PVC)** since it's simplest with existing setup. Can migrate to NAS/S3 later if storage costs become an issue.
+```python
+# backend/app/storage.py
+from abc import ABC, abstractmethod
+from enum import Enum
+from pathlib import Path
+import boto3
+from typing import Tuple, Optional
+
+class StorageBackend(Enum):
+    LOCAL = "local"      # Ceph PVC or any local filesystem
+    S3 = "s3"           # S3-compatible (NAS S3, MinIO, AWS S3)
+    NFS = "nfs"         # NAS NFS mount
+    HYBRID = "hybrid"   # Thumbnails on local, full-size on S3/NFS
+
+class PhotoStorageBackend(ABC):
+    @abstractmethod
+    async def save_photo(self, path: str, data: bytes) -> str:
+        """Save photo and return access URL"""
+        pass
+
+    @abstractmethod
+    async def get_photo(self, path: str) -> bytes:
+        """Retrieve photo data"""
+        pass
+
+    @abstractmethod
+    async def delete_photo(self, path: str) -> bool:
+        """Delete photo"""
+        pass
+
+class LocalStorage(PhotoStorageBackend):
+    """Ceph PVC or local filesystem"""
+    def __init__(self, base_path: str):
+        self.base_path = Path(base_path)
+
+    async def save_photo(self, path: str, data: bytes) -> str:
+        file_path = self.base_path / path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(data)
+        return f"/api/photos/serve/{path}"
+
+class S3Storage(PhotoStorageBackend):
+    """S3-compatible storage (NAS, MinIO, AWS)"""
+    def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket: str):
+        self.s3_client = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key
+        )
+        self.bucket = bucket
+
+    async def save_photo(self, path: str, data: bytes) -> str:
+        self.s3_client.put_object(
+            Bucket=self.bucket,
+            Key=path,
+            Body=data,
+            ContentType='image/jpeg'
+        )
+        return f"{self.endpoint}/{self.bucket}/{path}"
+
+class NFSStorage(PhotoStorageBackend):
+    """NAS NFS mount (behaves like local filesystem)"""
+    def __init__(self, mount_path: str):
+        self.mount_path = Path(mount_path)
+
+    async def save_photo(self, path: str, data: bytes) -> str:
+        file_path = self.mount_path / path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(data)
+        return f"/api/photos/serve/{path}"
+
+class HybridStorage:
+    """Thumbnails on local/Ceph, full-size on S3/NFS"""
+    def __init__(self, thumbnail_backend: PhotoStorageBackend, fullsize_backend: PhotoStorageBackend):
+        self.thumbnail_backend = thumbnail_backend
+        self.fullsize_backend = fullsize_backend
+
+    async def save_photo(self, photo_id: str, full_data: bytes, thumb_data: bytes) -> Tuple[str, str]:
+        # Save full-size to cheap storage (S3 or NFS)
+        full_path = f"photos/full/{photo_id}.jpg"
+        full_url = await self.fullsize_backend.save_photo(full_path, full_data)
+
+        # Save thumbnail to fast storage (Ceph PVC)
+        thumb_path = f"photos/thumbs/{photo_id}_thumb.jpg"
+        thumb_url = await self.thumbnail_backend.save_photo(thumb_path, thumb_data)
+
+        return full_url, thumb_url
+
+# Factory function
+def get_storage_backend() -> PhotoStorageBackend:
+    backend_type = os.getenv("PHOTO_STORAGE_BACKEND", "local")
+
+    if backend_type == "local":
+        return LocalStorage(os.getenv("LOCAL_STORAGE_PATH", "/app/photos"))
+
+    elif backend_type == "s3":
+        return S3Storage(
+            endpoint=os.getenv("S3_ENDPOINT"),
+            access_key=os.getenv("S3_ACCESS_KEY"),
+            secret_key=os.getenv("S3_SECRET_KEY"),
+            bucket=os.getenv("S3_BUCKET", "reptile-photos")
+        )
+
+    elif backend_type == "nfs":
+        return NFSStorage(os.getenv("NFS_MOUNT_PATH", "/mnt/nas-photos"))
+
+    elif backend_type == "hybrid":
+        local = LocalStorage(os.getenv("LOCAL_STORAGE_PATH", "/app/photos"))
+        s3 = S3Storage(...)  # or NFS
+        return HybridStorage(local, s3)
+
+    else:
+        raise ValueError(f"Unknown storage backend: {backend_type}")
+```
+
+### Deployment Flexibility
+
+With this architecture, you can:
+- ✅ Start with **Ceph PVC only** (set `PHOTO_STORAGE_BACKEND=local`)
+- ✅ Switch to **S3 only** (set `PHOTO_STORAGE_BACKEND=s3`)
+- ✅ Use **NFS only** (set `PHOTO_STORAGE_BACKEND=nfs`)
+- ✅ Use **Hybrid** (thumbnails on Ceph, full-size on S3/NFS)
+- ✅ Change backends **without code changes** (just env vars)
 
 ---
 
@@ -852,45 +997,74 @@ const PhotoLightbox = ({ photos, currentIndex, onClose, onDelete }) => {
 
 ### Backend Environment Variables
 ```env
-# Storage
-PHOTO_STORAGE_PATH=/app/photos
-MAX_PHOTO_SIZE_MB=10
-THUMBNAIL_SIZE=300
-PHOTO_QUALITY=85
+# Storage Backend Selection
+PHOTO_STORAGE_BACKEND=local  # Options: local, s3, nfs, hybrid
 
-# Optional: S3 if using MinIO
-S3_ENDPOINT=minio.example.com
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
-S3_BUCKET_NAME=reptile-photos
+# Local/Ceph PVC Storage
+LOCAL_STORAGE_PATH=/app/photos
+
+# S3 Storage (NAS S3, MinIO, AWS)
+S3_ENDPOINT=https://your-nas-s3.local:9000
+S3_ACCESS_KEY=your_access_key
+S3_SECRET_KEY=your_secret_key
+S3_BUCKET=reptile-photos
+S3_REGION=us-east-1  # Optional, defaults to us-east-1
+
+# NFS Storage
+NFS_MOUNT_PATH=/mnt/nas-photos
+
+# Image Processing
+MAX_PHOTO_SIZE_MB=10
+MAX_PHOTO_WIDTH=2000
+JPEG_QUALITY=85
+THUMBNAIL_SIZE=300
+
+# Limits
+MAX_PHOTOS_PER_LOG=3
+ALLOW_CARETAKER_DELETE_OTHERS=false
 ```
 
 ### Kubernetes Resources
+
+**Note**: Existing PVC already configured in helmrelease at 5Gi.
+
+#### Option A: Use Existing 5Gi PVC (for initial testing)
+- **Capacity**: ~12,000 photos (sufficient for most users)
+- **No changes needed**: Use existing PVC mount
+- **Upgrade later**: Expand PVC to 50Gi when needed
+
+#### Option B: Expand Existing PVC to 50Gi
 ```yaml
-# PersistentVolumeClaim
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: reptile-tracker-photos
-  namespace: default
+# In kubernetes/apps/default/reptile-tracker/app/helmrelease.yaml
+# Update existing PVC size:
 spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ceph-filesystem
   resources:
     requests:
-      storage: 50Gi
+      storage: 50Gi  # Increase from 5Gi
+```
 
-# Update deployment to mount PVC
+#### Option C: Add Additional PVCs for Multi-Backend
+```yaml
+# Add to helmrelease for S3 or NFS storage if using hybrid mode
 volumes:
-  - name: photos
+  - name: photos-local  # Existing 5Gi for thumbnails
     persistentVolumeClaim:
-      claimName: reptile-tracker-photos
+      claimName: reptile-tracker-pvc
+
+  - name: photos-nas    # Optional: NAS NFS for full-size
+    nfs:
+      server: your-nas-ip
+      path: /mnt/reptile-photos
 
 volumeMounts:
-  - name: photos
+  - name: photos-local
     mountPath: /app/photos
+
+  - name: photos-nas
+    mountPath: /mnt/nas-photos
 ```
+
+**Recommendation**: Start with **Option A** (use existing 5Gi), then expand to 50Gi or add S3/NFS when needed.
 
 ### Python Dependencies
 ```txt
@@ -901,27 +1075,37 @@ python-multipart==0.0.6
 
 ---
 
-## Open Questions / Decisions Needed
+## Python Dependencies
 
-### Storage Backend
-- [ ] **Decision needed**: Ceph PVC vs MinIO vs NAS NFS?
-- [ ] **Decision needed**: Storage allocation (50Gi, 100Gi, 200Gi)?
+Add to `backend/requirements.txt`:
+```txt
+Pillow==10.2.0
+python-multipart==0.0.6
+boto3==1.34.34  # For S3 storage
+```
 
-### File Limits
-- [ ] **Decision needed**: Max file size per photo (5MB, 10MB)?
-- [ ] **Decision needed**: Max photos per household (unlimited, 1000, 10000)?
+---
 
-### Permissions
-- [ ] **Decision needed**: Can household CARETAKER delete others' photos?
-- [ ] **Decision needed**: Photo privacy - household-only or allow public sharing?
+## Storage Capacity Estimates
 
-### Mobile Camera
-- [ ] **Confirm**: Use rear camera by default (`capture="environment"`)?
-- [ ] **Confirm**: Allow front camera option for morph/pattern documentation?
+With the decided configuration (10MB upload → ~400KB stored):
 
-### Image Quality
-- [ ] **Confirm**: Auto-compress to 2000px width @ 85% quality?
-- [ ] **Confirm**: Store original EXIF data or strip for privacy?
+### Per Photo Storage:
+- **Upload size**: 3-8MB (typical phone photo)
+- **Stored full-size**: ~400KB (after compression to 2000px @ 85% quality)
+- **Stored thumbnail**: ~20KB (300x300px)
+- **Total per photo**: ~420KB
+
+### 50Gi Ceph PVC Capacity:
+- **Full-size + thumbnails**: ~120,000 photos
+- **Thumbnails only** (with S3/NFS for full-size): ~2.5 million photos
+
+### Usage Projections:
+- **Light use** (10 reptiles, 10 photos/year each): 100 photos/year = ~42MB/year
+- **Medium use** (20 reptiles, 20 photos/year each): 400 photos/year = ~168MB/year
+- **Heavy use** (50 reptiles, 50 photos/year each): 2,500 photos/year = ~1GB/year
+
+**Conclusion**: 50Gi Ceph PVC provides ample storage for years of usage, even for large households.
 
 ---
 
@@ -984,14 +1168,62 @@ python-multipart==0.0.6
 
 ---
 
+## Implementation Summary
+
+### Decisions Finalized ✅
+
+All key decisions have been made and documented:
+
+1. **Storage**: Multi-backend support (Ceph PVC + S3 + NFS) with flexible configuration
+2. **File Limits**: 10MB upload, 2000px max width, 85% JPEG quality, 3 photos per log
+3. **Permissions**: CARETAKER+ can upload, only uploader/ADMIN+ can delete
+4. **Mobile**: Rear camera default with native phone switching
+5. **Capacity**: Existing 5Gi PVC sufficient for ~12,000 photos (expandable to 50Gi)
+
+### Architecture Highlights
+
+- ✅ **Standalone photos** not tied to log entries
+- ✅ **Avatar system** integrated throughout UI
+- ✅ **Multi-category support** (health, weight, feeding, enclosure, general)
+- ✅ **Storage abstraction** allows switching backends via env vars
+- ✅ **Automatic image processing** (compression, thumbnails, EXIF handling)
+- ✅ **Mobile-first** photo capture workflow
+
+### Ready to Implement
+
+The plan is complete and ready for Phase 1A implementation:
+1. Database migration for `photos` table
+2. Storage abstraction layer (local/S3/NFS)
+3. Backend upload/retrieval endpoints
+4. Frontend photo upload components
+5. Avatar integration across UI
+
+---
+
+## Next Steps
+
+**Start with Phase 1A**: Core infrastructure (Week 1)
+- Create Alembic migration for photos table
+- Implement storage abstraction layer
+- Build image processing pipeline
+- Create upload/retrieval API endpoints
+
+See **Implementation Phases** section above for detailed breakdown.
+
+---
+
 ## Notes
 
 - All photos are household-scoped for data isolation
 - Photos can exist independently of log entries
-- Soft delete considered for photo retention
-- Consider GDPR compliance for photo storage
+- Soft delete recommended for photo retention (allow recovery)
+- EXIF data preserved for metadata (taken_at, orientation)
 - Mobile-first design for photo capture workflow
 - Avatar system provides visual hierarchy throughout app
+- Storage backend configurable via environment variables only (no code changes)
+- Image processing is computationally cheap (~100-300ms per photo)
+- Unlimited photos per household with automatic compression
 
-**Document Version**: 1.0
-**Last Updated**: 2025-01-08
+**Document Version**: 2.0
+**Last Updated**: 2025-12-09
+**Status**: Ready for Implementation

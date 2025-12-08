@@ -212,6 +212,9 @@ class Reptile(Base):
     default_insect_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
     default_prepared_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
 
+    # Avatar photo (profile picture)
+    avatar_photo_id = Column(String, ForeignKey("photos.id", ondelete="SET NULL"), nullable=True)
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
@@ -220,6 +223,8 @@ class Reptile(Base):
     health_records = relationship("HealthRecord", back_populates="reptile", cascade="all, delete-orphan")
     misting_logs = relationship("MistingLog", back_populates="reptile", cascade="all, delete-orphan")
     schedules = relationship("Schedule", back_populates="reptile", cascade="all, delete-orphan")
+    photos = relationship("Photo", back_populates="reptile", cascade="all, delete-orphan")
+    avatar_photo = relationship("Photo", foreign_keys=[avatar_photo_id], post_update=True)
     favorite_foods = relationship("Food", secondary=reptile_food_favorites)
     default_insect_food = relationship("Food", foreign_keys=[default_insect_id])
     default_prepared_food = relationship("Food", foreign_keys=[default_prepared_id])
@@ -371,6 +376,45 @@ class MistingLog(Base):
     reptile = relationship("Reptile", back_populates="misting_logs")
     logged_by = relationship("User", foreign_keys=[logged_by_user_id])
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
+
+
+class Photo(Base):
+    """Photo model for reptile photos (standalone or attached to logs)."""
+    __tablename__ = "photos"
+
+    # UUID for photos (better for public exposure than auto-incrementing IDs)
+    id = Column(String, primary_key=True)  # UUID as string
+    household_id = Column(Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    uploaded_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Storage paths
+    file_path = Column(String, nullable=False)
+    thumbnail_path = Column(String, nullable=True)
+    file_size_bytes = Column(Integer, nullable=True)
+    mime_type = Column(String(50), nullable=True)
+
+    # Categorization
+    category = Column(String(50), nullable=False, index=True)  # 'health', 'weight', 'feeding', 'enclosure', 'general'
+    tags = Column(JSON, nullable=True)  # Array of tags for future use
+
+    # Metadata
+    caption = Column(Text, nullable=True)
+    taken_at = Column(DateTime(timezone=True), nullable=True)
+    uploaded_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Relationships to logs (nullable - photos can exist standalone)
+    health_record_id = Column(Integer, ForeignKey("health_records.id", ondelete="SET NULL"), nullable=True, index=True)
+    feeding_log_id = Column(Integer, ForeignKey("feeding_logs.id", ondelete="SET NULL"), nullable=True, index=True)
+    weight_log_id = Column(Integer, ForeignKey("weight_logs.id", ondelete="SET NULL"), nullable=True, index=True)
+    misting_log_id = Column(Integer, ForeignKey("misting_logs.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # Relationships
+    household = relationship("Household")
+    reptile = relationship("Reptile", back_populates="photos")
+    uploaded_by = relationship("User", foreign_keys=[uploaded_by_user_id])
+    health_record = relationship("HealthRecord", foreign_keys=[health_record_id])
+    # Note: feeding_log, weight_log, misting_log relationships can be added when needed
 
 
 class Schedule(Base):
