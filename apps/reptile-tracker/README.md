@@ -543,6 +543,19 @@ The application supports flexible per-schedule notification channels with the fo
 
 **Template Customization:**
 - Customize notification message templates for different trigger types (schedule_reminder, overdue_alert)
+- **Priority-based template matching**: Create multiple templates per trigger type with automatic selection based on specificity
+  - Filter templates by specific reptiles, schedules, schedule types, or food categories
+  - Priority scoring ensures most specific template is always used
+  - Example: "Luna's Morning Feeding" template > "Luna's feeding templates" > "All feeding templates" > "Generic template"
+- **Custom Template Groups**: Organize templates into user-defined collections (Migration 0071)
+  - Create groups with custom names, icons, colors, and sort order
+  - Group-level settings apply to all templates in the group:
+    - **enabled**: Master on/off switch for entire group
+    - **default_priority**: Modifier added to all template priorities (can be negative)
+    - **ignore_quiet_hours**: Bypass quiet hours for critical alert groups
+    - **default_channel_ids**: Default notification channels for group
+  - Visual group badges on templates for easy identification
+  - Manage groups via "Manage Groups" button in notification settings
 - Preview templates with sample data before saving (with variable substitution and markdown rendering)
 - Template variables: reptile_name, schedule_name, schedule_type, food_category, supplement_name, time_window, notes, scheduled_date, missed_date, schedule_url
 - Per-channel template overrides (e.g., shorter messages for Pushover)
@@ -554,6 +567,7 @@ The application supports flexible per-schedule notification channels with the fo
   - Smart content deduplication (brief description when fields are used)
 - Green-styled variable buttons with click-to-insert at cursor position
 - Markdown support: **bold** and *italic* formatting
+- Collapsible help section explaining template matching priority system
 
 **Supported Types:**
 
