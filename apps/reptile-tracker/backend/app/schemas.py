@@ -333,6 +333,70 @@ class MistingLog(MistingLogBase):
         from_attributes = True
 
 
+# Photo schemas
+class PhotoBase(BaseModel):
+    """Base photo schema."""
+    category: str  # 'health', 'weight', 'feeding', 'enclosure', 'general'
+    caption: Optional[str] = None
+    taken_at: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+
+
+class PhotoCreate(PhotoBase):
+    """Schema for creating a photo (used with multipart form data)."""
+    reptile_id: int
+    # Optional log associations
+    health_record_id: Optional[int] = None
+    feeding_log_id: Optional[int] = None
+    weight_log_id: Optional[int] = None
+    misting_log_id: Optional[int] = None
+
+
+class PhotoUpdate(BaseModel):
+    """Schema for updating photo metadata."""
+    caption: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = None
+    taken_at: Optional[datetime] = None
+
+
+class Photo(PhotoBase):
+    """Full photo schema with all fields."""
+    id: str  # UUID
+    household_id: int
+    reptile_id: int
+    uploaded_by_user_id: Optional[int] = None
+    file_path: str
+    thumbnail_path: Optional[str] = None
+    file_size_bytes: Optional[int] = None
+    mime_type: Optional[str] = None
+    uploaded_at: datetime
+
+    # Log associations
+    health_record_id: Optional[int] = None
+    feeding_log_id: Optional[int] = None
+    weight_log_id: Optional[int] = None
+    misting_log_id: Optional[int] = None
+
+    # Relationships (optional, for expanded responses)
+    uploaded_by: Optional[UserSimple] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PhotoWithUrls(Photo):
+    """Photo schema with serving URLs."""
+    file_url: str  # Full-size photo URL
+    thumbnail_url: str  # Thumbnail URL
+
+
+class PhotoUploadResponse(BaseModel):
+    """Response after uploading photos."""
+    photos: List[Photo]
+    count: int
+
+
 # Schedule schemas
 class ScheduleBase(BaseModel):
     name: Optional[str] = None  # User-friendly name

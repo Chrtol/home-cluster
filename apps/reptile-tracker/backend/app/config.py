@@ -26,6 +26,33 @@ class Settings(BaseSettings):
     # Schedule instance generation settings
     instance_generation_days_ahead: int = 60  # How many days ahead to generate schedule instances
 
+    # Photo storage settings
+    photo_storage_backend: str = "local"  # Options: local, s3, nfs, hybrid
+    local_storage_path: str = "/app/photos"
+
+    # S3 storage settings (for S3 or hybrid backends)
+    s3_endpoint: str | None = None
+    s3_access_key: str | None = None
+    s3_secret_key: str | None = None
+    s3_bucket: str = "reptile-photos"
+    s3_region: str = "us-east-1"
+
+    # NFS storage settings (for NFS or hybrid backends)
+    nfs_mount_path: str = "/mnt/nas-photos"
+
+    # Hybrid storage settings
+    hybrid_fullsize_backend: str = "s3"  # Options: s3, nfs
+
+    # Image processing settings
+    max_photo_size_mb: int = 10
+    max_photo_width: int = 2000
+    jpeg_quality: int = 85
+    thumbnail_size: int = 300
+
+    # Photo limits
+    max_photos_per_log: int = 3
+    allow_caretaker_delete_others: bool = False
+
     class Config:
         env_file = ".env"
         case_sensitive = False
