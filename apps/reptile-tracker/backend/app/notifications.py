@@ -2,9 +2,9 @@ import httpx
 import logging
 import ipaddress
 from datetime import datetime, timezone, date as py_date
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from urllib.parse import urlparse
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
@@ -89,66 +89,189 @@ def validate_webhook_url(url: str) -> bool:
         return False
 
 
-async def get_template_for_trigger(
+async def get_matching_templates(
     db: AsyncSession,
     trigger_type: str,
-    user_id: Optional[int] = None,
-    channel_type: Optional[str] = None
-) -> Optional[NotificationTemplate]:
+    user_id: int,
+    channel_type: Optional[str] = None,
+    context: Optional[Dict[str, Any]] = None
+) -> List[NotificationTemplate]:
     """
-    Get the best matching template for a trigger type.
-    Prioritizes user templates over system templates.
+    Get ALL templates that match the criteria.
 
     Args:
         db: Database session
         trigger_type: Type of trigger (schedule_reminder, overdue_alert, etc.)
         user_id: User ID for custom templates
         channel_type: Optional channel type filter
+        context: Dictionary with current notification context:
+            - reptile_id: int
+            - schedule_id: int
+            - schedule_type: str ('feeding', 'misting', etc.)
+            - food_category: str ('insects', 'salad', etc.)
 
     Returns:
-        NotificationTemplate or None if no template found
+        List of matching templates, unsorted
     """
     try:
-        # First try to get user's custom template
-        if user_id:
-            query = select(NotificationTemplate).where(
+        # Build query
+        query = select(NotificationTemplate).where(
+            NotificationTemplate.trigger_type == trigger_type,
+            NotificationTemplate.is_active == True
+        )
+
+        # User templates OR system templates
+        query = query.where(
+            or_(
                 NotificationTemplate.user_id == user_id,
+                NotificationTemplate.user_id.is_(None)
+            )
+        )
+
+        # Channel type filter
+        if channel_type:
+            query = query.where(
+                or_(
+                    NotificationTemplate.channel_type == channel_type,
+                    NotificationTemplate.channel_type.is_(None)
+                )
+            )
+        else:
+            query = query.where(NotificationTemplate.channel_type.is_(None))
+
+        result = await db.execute(query)
+        all_templates = result.scalars().all()
+
+        # Filter by context criteria
+        if not context:
+            return all_templates
+
+        matching = []
+        for template in all_templates:
+            # Check if template matches context
+            if template.reptile_id and template.reptile_id != context.get('reptile_id'):
+                continue
+            if template.schedule_id and template.schedule_id != context.get('schedule_id'):
+                continue
+            if template.schedule_type_filter and template.schedule_type_filter != context.get('schedule_type'):
+                continue
+            if template.food_category_filter and template.food_category_filter != context.get('food_category'):
+                continue
+
+            matching.append(template)
+
+        return matching
+
+    except Exception as e:
+        logger.error(f"Error fetching matching templates for trigger {trigger_type}: {e}")
+        return []
+
+
+def select_best_template(
+    templates: List[NotificationTemplate],
+    user_id: int
+) -> Optional[NotificationTemplate]:
+    """
+    Select the most specific template from a list of matching templates.
+
+    Priority order (higher specificity = higher priority):
+    1. User templates > System templates
+    2. Schedule ID match (highest specificity)
+    3. Reptile ID match
+    4. Food category filter
+    5. Schedule type filter
+    6. Generic (no filters)
+
+    Within each specificity level, sort by template.priority (lower = higher priority)
+
+    Args:
+        templates: List of matching templates
+        user_id: User ID to prioritize user templates
+
+    Returns:
+        Most specific template, or None if list is empty
+    """
+    if not templates:
+        return None
+
+    def get_specificity_score(template: NotificationTemplate) -> tuple:
+        """
+        Return tuple for sorting. Higher values = more specific.
+        Format: (is_user_template, has_schedule_id, has_reptile_id,
+                 has_food_filter, has_schedule_type_filter, -priority)
+        """
+        return (
+            1 if template.user_id == user_id else 0,  # User > System
+            1 if template.schedule_id else 0,           # Schedule ID
+            1 if template.reptile_id else 0,            # Reptile ID
+            1 if template.food_category_filter else 0,  # Food category
+            1 if template.schedule_type_filter else 0,  # Schedule type
+            -template.priority  # Lower priority number = higher priority (negate for sorting)
+        )
+
+    # Sort by specificity (descending)
+    sorted_templates = sorted(templates, key=get_specificity_score, reverse=True)
+
+    return sorted_templates[0]
+
+
+async def get_template_for_trigger(
+    db: AsyncSession,
+    trigger_type: str,
+    user_id: Optional[int] = None,
+    channel_type: Optional[str] = None,
+    context: Optional[Dict[str, Any]] = None
+) -> Optional[NotificationTemplate]:
+    """
+    Get the best matching template for a trigger.
+    Uses the new priority-based template resolution system.
+
+    Args:
+        db: Database session
+        trigger_type: Type of trigger (schedule_reminder, overdue_alert, etc.)
+        user_id: User ID for custom templates
+        channel_type: Optional channel type filter
+        context: Notification context with reptile_id, schedule_id,
+                 schedule_type, food_category, etc.
+
+    Returns:
+        Most specific matching template, or None if no match
+    """
+    if not user_id:
+        # If no user_id, fall back to old behavior (system templates only)
+        try:
+            query = select(NotificationTemplate).where(
+                NotificationTemplate.user_id.is_(None),
                 NotificationTemplate.trigger_type == trigger_type,
+                NotificationTemplate.template_type == "system",
                 NotificationTemplate.is_active == True
             )
 
             if channel_type:
                 query = query.where(
-                    (NotificationTemplate.channel_type == channel_type) |
-                    (NotificationTemplate.channel_type.is_(None))
+                    or_(
+                        NotificationTemplate.channel_type == channel_type,
+                        NotificationTemplate.channel_type.is_(None)
+                    )
                 )
 
             result = await db.execute(query)
-            template = result.scalars().first()
+            return result.scalars().first()
 
-            if template:
-                return template
+        except Exception as e:
+            logger.error(f"Error fetching template for trigger {trigger_type}: {e}")
+            return None
 
-        # Fall back to system template
-        query = select(NotificationTemplate).where(
-            NotificationTemplate.user_id.is_(None),
-            NotificationTemplate.trigger_type == trigger_type,
-            NotificationTemplate.template_type == "system",
-            NotificationTemplate.is_active == True
-        )
+    # Use new template resolution logic
+    matching_templates = await get_matching_templates(
+        db=db,
+        trigger_type=trigger_type,
+        user_id=user_id,
+        channel_type=channel_type,
+        context=context
+    )
 
-        if channel_type:
-            query = query.where(
-                (NotificationTemplate.channel_type == channel_type) |
-                (NotificationTemplate.channel_type.is_(None))
-            )
-
-        result = await db.execute(query)
-        return result.scalars().first()
-
-    except Exception as e:
-        logger.error(f"Error fetching template for trigger {trigger_type}: {e}")
-        return None
+    return select_best_template(matching_templates, user_id)
 
 
 class SafeDict(dict):

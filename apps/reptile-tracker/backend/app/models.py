@@ -715,6 +715,18 @@ class NotificationTemplate(Base):
     # Discord-specific configuration (color, fields, footer, etc.)
     discord_config = Column(JSON, nullable=True)
 
+    # Matching criteria (all optional - NULL means applies to all)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=True)
+    schedule_type_filter = Column(String(50), nullable=True)  # 'feeding', 'misting', 'weighing', 'health'
+    food_category_filter = Column(String(50), nullable=True)  # 'insects', 'salad', 'prepared', 'supplements'
+
+    # Priority for resolution (lower = higher priority)
+    priority = Column(Integer, default=100, nullable=False)
+
+    # Optional description of when this template applies
+    applies_to_description = Column(Text, nullable=True)
+
     is_active = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -722,6 +734,8 @@ class NotificationTemplate(Base):
 
     # Relationships
     user = relationship("User", backref="notification_templates")
+    reptile = relationship("Reptile", backref="notification_templates")
+    schedule = relationship("Schedule", backref="notification_templates")
 
 
 # Association table for Schedule <-> NotificationChannel many-to-many relationship
