@@ -39,7 +39,7 @@ The Reptile Tracker notification system provides customizable, multi-channel not
 
 ### 1. Template Resolution
 
-When a notification needs to be sent:
+When a notification needs to be sent, the system uses a **priority-based matching algorithm** to select the most specific template:
 
 ```python
 # Get the best matching template for this trigger
@@ -47,11 +47,38 @@ template = await get_template_for_trigger(
     db=db,
     trigger_type="schedule_reminder",  # or other trigger types
     user_id=user.id,
-    channel_type=webhook_type  # "discord", "pushover", etc.
+    channel_type=webhook_type,  # "discord", "pushover", etc.
+    context={  # NEW: Context for matching filters
+        "reptile_id": 123,
+        "schedule_id": 456,
+        "schedule_type": "feeding",
+        "food_category": "insects"
+    }
 )
 ```
 
-**Priority**: User custom template > System default template
+**Template Matching Priority** (highest to lowest specificity):
+1. **User templates** always take priority over system templates
+2. **Schedule-specific** templates (template has `schedule_id` matching the notification)
+3. **Reptile-specific** templates (template has `reptile_id` matching the notification)
+4. **Food category filter** (template has `food_category_filter` matching the schedule)
+5. **Schedule type filter** (template has `schedule_type_filter` matching the schedule)
+6. **Generic templates** (no filters applied)
+7. Within the same specificity level, **lower `priority` number wins** (default: 100)
+
+**Example Scenarios:**
+- Notification for "Luna's Morning Feeding":
+  - If template exists with `schedule_id=456` → **Uses this (most specific)**
+  - Else if template exists with `reptile_id=123` → **Uses this**
+  - Else if template exists with `schedule_type_filter="feeding"` → **Uses this**
+  - Else if generic user template exists → **Uses this**
+  - Else uses system default template
+
+This allows users to create:
+- Ultra-specific templates for individual schedules (e.g., "Luna's urgent morning reminder")
+- Reptile-specific templates (e.g., "All notifications for Spike use formal tone")
+- Type-specific templates (e.g., "All feeding reminders are extra detailed")
+- Generic fallback templates
 
 ### 2. Context Building
 
@@ -468,14 +495,17 @@ Create a migration to insert default system templates:
 ```python
 op.execute("""
     INSERT INTO notification_templates
-    (user_id, name, template_type, trigger_type, message_template, title_template, is_active)
+    (user_id, name, template_type, trigger_type, message_template, title_template,
+     is_active, reptile_id, schedule_id, schedule_type_filter, food_category_filter, priority)
     VALUES
     (NULL, 'New Feature Reminder', 'system', 'new_feature_reminder',
      '{emoji} **{reptile_name}** needs attention for {feature_name}!',
      'New Feature Reminder - {reptile_name}',
-     true)
+     true, NULL, NULL, NULL, NULL, 100)
 """)
 ```
+
+**Note**: The new filter fields (`reptile_id`, `schedule_id`, `schedule_type_filter`, `food_category_filter`, `priority`) are typically NULL for generic system templates. Set them only when creating specific templates.
 
 ### 3. Implement Notification Sender Function
 
@@ -490,21 +520,23 @@ async def send_new_feature_notification(
 ):
     """Send new feature notification"""
 
-    # Get template
-    template = await get_template_for_trigger(
-        db=db,
-        trigger_type="new_feature_reminder",
-        user_id=user.id,
-        channel_type=webhook_type
-    )
-
-    # Build context
+    # Build context for template matching and rendering
     context = {
+        "reptile_id": reptile.id,  # For template matching
         "reptile_name": reptile.name,
         "feature_name": "Example Feature",
         "emoji": "🔔",
         # ... more variables
     }
+
+    # Get template with context for matching
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type="new_feature_reminder",
+        user_id=user.id,
+        channel_type=webhook_type,
+        context=context  # NEW: Pass context for filter matching
+    )
 
     # Render template or use fallback
     if template:
@@ -666,6 +698,7 @@ Relevant migrations:
 - **0050**: Added `discord_config` to templates
 - **0063**: Added requirement-based schedule fields
 - **0064**: Added quota tracking table
+- **0070**: Added template matching criteria (`reptile_id`, `schedule_id`, `schedule_type_filter`, `food_category_filter`, `priority`, `applies_to_description`) for priority-based template resolution
 
 ## Related Files
 
