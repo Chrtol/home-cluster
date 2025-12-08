@@ -79,7 +79,7 @@ const NotificationTemplatesTab = () => {
 
   const fetchReptiles = async () => {
     try {
-      const response = await axios.get('/api/reptiles/');
+      const response = await axios.get('/api/reptiles/?include_inactive=true');
       setReptiles(response.data);
     } catch (err) {
       console.error('Error fetching reptiles:', err);
@@ -88,8 +88,8 @@ const NotificationTemplatesTab = () => {
 
   const fetchSchedules = async () => {
     try {
-      // Fetch schedules from all reptiles
-      const reptilesResponse = await axios.get('/api/reptiles/');
+      // Fetch schedules from all reptiles (including inactive ones)
+      const reptilesResponse = await axios.get('/api/reptiles/?include_inactive=true');
       const allSchedules = [];
 
       for (const reptile of reptilesResponse.data) {
