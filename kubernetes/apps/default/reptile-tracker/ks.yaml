@@ -14,9 +14,15 @@ spec:
       namespace: database
     - name: authentik
       namespace: security
+    - name: volsync
+      namespace: volsync-system
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
   path: ./kubernetes/apps/default/reptile-tracker/app
   components:
     - ../../../../components/gatus/external
+    - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
   prune: true
   sourceRef:
     kind: GitRepository
@@ -29,6 +35,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      CEPH_RBD_CAPACITY: 5Gi
     substituteFrom:
     - name: cluster-secrets
       kind: Secret
