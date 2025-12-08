@@ -988,6 +988,49 @@ class NotificationChannel(NotificationChannelBase):
         from_attributes = True
 
 
+# Template Group schemas
+class TemplateGroupBase(BaseModel):
+    name: str = Field(..., max_length=100)
+    description: Optional[str] = None
+    color: Optional[str] = Field(None, max_length=20)  # e.g., "blue", "green", "#FF5733"
+    icon: Optional[str] = Field(None, max_length=50)  # emoji or icon identifier
+    sort_order: int = 0
+
+    # Group-level settings
+    enabled: bool = True  # Master on/off switch
+    default_priority: int = 0  # Priority modifier for all templates in group
+    ignore_quiet_hours: bool = False  # Bypass quiet hours settings
+    default_channel_ids: Optional[List[int]] = None  # Default channel IDs for templates
+
+
+class TemplateGroupCreate(TemplateGroupBase):
+    pass
+
+
+class TemplateGroupUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = None
+    color: Optional[str] = Field(None, max_length=20)
+    icon: Optional[str] = Field(None, max_length=50)
+    sort_order: Optional[int] = None
+
+    # Group-level settings
+    enabled: Optional[bool] = None
+    default_priority: Optional[int] = None
+    ignore_quiet_hours: Optional[bool] = None
+    default_channel_ids: Optional[List[int]] = None
+
+
+class TemplateGroup(TemplateGroupBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Notification Template schemas
 class NotificationTemplateBase(BaseModel):
     name: str
@@ -1010,6 +1053,9 @@ class NotificationTemplateBase(BaseModel):
     # Optional description of when this template applies
     applies_to_description: Optional[str] = None
 
+    # Optional grouping for organization
+    group_id: Optional[int] = None
+
 
 class NotificationTemplateCreate(NotificationTemplateBase):
     template_type: str = "custom"  # system templates can only be created via migration
@@ -1030,6 +1076,9 @@ class NotificationTemplateUpdate(BaseModel):
     food_category_filter: Optional[str] = None
     priority: Optional[int] = None
     applies_to_description: Optional[str] = None
+
+    # Optional grouping for organization
+    group_id: Optional[int] = None
 
 
 class NotificationTemplate(NotificationTemplateBase):

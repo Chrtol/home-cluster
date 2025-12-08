@@ -9,7 +9,7 @@ from app.config import settings
 from app.database import init_db, async_session_maker
 from app.rate_limit import limiter, rate_limit_exceeded_handler
 from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting, schedules, schedule_instances, feeding_rotations, schedule_templates, supplement_rotation_templates, measurements, bulk, quotas
-from app.routers import households, invitations, notification_settings, notification_channels, notification_templates, user_notifications
+from app.routers import households, invitations, notification_settings, notification_channels, notification_templates, template_groups, user_notifications
 from app.seed_data import seed_database
 from app.scheduler import start_scheduler, stop_scheduler
 
@@ -174,6 +174,7 @@ app.include_router(invitations.router)
 app.include_router(notification_settings.router)
 app.include_router(notification_channels.router, prefix="/api/notification-channels", tags=["Notification Channels"])
 app.include_router(notification_templates.router)
+app.include_router(template_groups.router)
 app.include_router(user_notifications.router)
 app.include_router(bulk.router, prefix="/api", tags=["Bulk Data"])
 

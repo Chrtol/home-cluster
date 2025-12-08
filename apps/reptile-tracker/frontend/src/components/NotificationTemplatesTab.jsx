@@ -5,16 +5,20 @@ const NotificationTemplatesTab = () => {
   const [templates, setTemplates] = useState([]);
   const [reptiles, setReptiles] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [editingGroup, setEditingGroup] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState(null);
 
   // Accordion state for collapsible sections
   const [expandedGroups, setExpandedGroups] = useState({});
   const [systemTemplatesExpanded, setSystemTemplatesExpanded] = useState(true);
+  const [customGroupsExpanded, setCustomGroupsExpanded] = useState({});
 
   // Form state
   const [templateName, setTemplateName] = useState('');
@@ -31,6 +35,17 @@ const NotificationTemplatesTab = () => {
   const [foodCategoryFilter, setFoodCategoryFilter] = useState('');
   const [priority, setPriority] = useState(100);
   const [appliesToDescription, setAppliesToDescription] = useState('');
+  const [groupId, setGroupId] = useState('');
+
+  // Group form state
+  const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [groupColor, setGroupColor] = useState('#3B82F6');
+  const [groupIcon, setGroupIcon] = useState('');
+  const [groupSortOrder, setGroupSortOrder] = useState(0);
+  const [groupEnabled, setGroupEnabled] = useState(true);
+  const [groupDefaultPriority, setGroupDefaultPriority] = useState(0);
+  const [groupIgnoreQuietHours, setGroupIgnoreQuietHours] = useState(false);
 
   // Discord config state
   const [discordColor, setDiscordColor] = useState('#2E5BFF'); // Default blue
@@ -44,6 +59,7 @@ const NotificationTemplatesTab = () => {
     fetchTemplates();
     fetchReptiles();
     fetchSchedules();
+    fetchGroups();
   }, []);
 
   const fetchTemplates = async () => {
@@ -95,6 +111,83 @@ const NotificationTemplatesTab = () => {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const response = await axios.get('/api/template-groups/');
+      setGroups(response.data);
+    } catch (err) {
+      console.error('Error fetching template groups:', err);
+    }
+  };
+
+  const handleAddGroup = () => {
+    setEditingGroup(null);
+    setGroupName('');
+    setGroupDescription('');
+    setGroupColor('#3B82F6');
+    setGroupIcon('');
+    setGroupSortOrder(0);
+    setGroupEnabled(true);
+    setGroupDefaultPriority(0);
+    setGroupIgnoreQuietHours(false);
+    setShowGroupModal(true);
+  };
+
+  const handleEditGroup = (group) => {
+    setEditingGroup(group);
+    setGroupName(group.name);
+    setGroupDescription(group.description || '');
+    setGroupColor(group.color || '#3B82F6');
+    setGroupIcon(group.icon || '');
+    setGroupSortOrder(group.sort_order || 0);
+    setGroupEnabled(group.enabled !== undefined ? group.enabled : true);
+    setGroupDefaultPriority(group.default_priority || 0);
+    setGroupIgnoreQuietHours(group.ignore_quiet_hours || false);
+    setShowGroupModal(true);
+  };
+
+  const handleSaveGroup = async () => {
+    try {
+      const groupData = {
+        name: groupName,
+        description: groupDescription,
+        color: groupColor,
+        icon: groupIcon,
+        sort_order: groupSortOrder,
+        enabled: groupEnabled,
+        default_priority: groupDefaultPriority,
+        ignore_quiet_hours: groupIgnoreQuietHours,
+      };
+
+      if (editingGroup) {
+        await axios.put(`/api/template-groups/${editingGroup.id}`, groupData);
+      } else {
+        await axios.post('/api/template-groups/', groupData);
+      }
+
+      await fetchGroups();
+      setShowGroupModal(false);
+    } catch (err) {
+      console.error('Error saving group:', err);
+      setError(err.response?.data?.detail || 'Failed to save group');
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!confirm('Are you sure? Templates in this group will not be deleted, but will become ungrouped.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/template-groups/${groupId}`);
+      await fetchGroups();
+      await fetchTemplates(); // Refresh templates to update group assignments
+    } catch (err) {
+      console.error('Error deleting group:', err);
+      setError(err.response?.data?.detail || 'Failed to delete group');
+    }
+  };
+
   const handleAddTemplate = () => {
     setEditingTemplate(null);
     setTemplateName('');
@@ -110,6 +203,7 @@ const NotificationTemplatesTab = () => {
     setFoodCategoryFilter('');
     setPriority(100);
     setAppliesToDescription('');
+    setGroupId('');
     // Reset Discord config to defaults
     setDiscordColor('#2E5BFF');
     setDiscordIncludeFields(['scheduled_date', 'schedule_type', 'notes']);
@@ -139,6 +233,7 @@ const NotificationTemplatesTab = () => {
     setFoodCategoryFilter(template.food_category_filter || '');
     setPriority(template.priority || 100);
     setAppliesToDescription(template.applies_to_description || '');
+    setGroupId(template.group_id ? String(template.group_id) : '');
 
     // Load Discord config if present
     if (template.discord_config) {
@@ -173,7 +268,8 @@ const NotificationTemplatesTab = () => {
         schedule_type_filter: scheduleTypeFilter || null,
         food_category_filter: foodCategoryFilter || null,
         priority: priority,
-        applies_to_description: appliesToDescription.trim() || null
+        applies_to_description: appliesToDescription.trim() || null,
+        group_id: groupId ? parseInt(groupId) : null
       };
 
       // Add Discord config if channel type is discord or all channels
