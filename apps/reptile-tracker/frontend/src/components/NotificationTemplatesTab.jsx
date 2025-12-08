@@ -12,6 +12,10 @@ const NotificationTemplatesTab = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState(null);
 
+  // Accordion state for collapsible sections
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [systemTemplatesExpanded, setSystemTemplatesExpanded] = useState(true);
+
   // Form state
   const [templateName, setTemplateName] = useState('');
   const [triggerType, setTriggerType] = useState('schedule_reminder');
@@ -300,6 +304,13 @@ const NotificationTemplatesTab = () => {
     }
   };
 
+  const toggleGroup = (triggerType) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [triggerType]: !prev[triggerType]
+    }));
+  };
+
   const getReptileName = (reptileId) => {
     const reptile = reptiles.find(r => r.id === reptileId);
     return reptile ? reptile.name : `ID: ${reptileId}`;
@@ -447,11 +458,29 @@ const NotificationTemplatesTab = () => {
 
       {/* System Templates */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">System Templates</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-          These are default templates. Click "Customize" to create your own editable version.
-        </p>
-        <div className="space-y-3">
+        <button
+          onClick={() => setSystemTemplatesExpanded(!systemTemplatesExpanded)}
+          className="w-full flex items-center justify-between p-3 mb-3 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">
+              {systemTemplatesExpanded ? '▼' : '▶'}
+            </span>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              System Templates
+            </h3>
+            <span className="px-2 py-0.5 text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded">
+              {groupedTemplates.system.length} templates
+            </span>
+          </div>
+        </button>
+
+        {systemTemplatesExpanded && (
+          <>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              These are default templates. Click "Customize" to create your own editable version.
+            </p>
+            <div className="space-y-3">
           {groupedTemplates.system.map(template => {
             // Count how many custom templates exist for this trigger type
             const customCount = groupedTemplates.custom.filter(
@@ -510,7 +539,9 @@ const NotificationTemplatesTab = () => {
               </div>
             );
           })}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Custom Templates */}
@@ -520,73 +551,116 @@ const NotificationTemplatesTab = () => {
           <p className="text-gray-500 dark:text-gray-400 italic">No custom templates yet. Create one to get started!</p>
         ) : (
           <div className="space-y-3">
-            {groupedTemplates.custom.map(template => (
-              <div
-                key={template.id}
-                className={`p-4 border border-gray-200 dark:border-gray-700 rounded ${template.is_active ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900 opacity-60'}`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
-                      <span className="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">
-                        {template.trigger_type.replace('_', ' ')}
+            {/* Group custom templates by trigger_type */}
+            {Object.entries(
+              groupedTemplates.custom.reduce((groups, template) => {
+                const key = template.trigger_type;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(template);
+                return groups;
+              }, {})
+            ).map(([triggerType, templates]) => {
+              const isExpanded = expandedGroups[triggerType] !== false; // Default to expanded
+              const activeCount = templates.filter(t => t.is_active).length;
+              const triggerLabel = triggerType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+              return (
+                <div key={triggerType} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  {/* Group Header */}
+                  <button
+                    onClick={() => toggleGroup(triggerType)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">
+                        {isExpanded ? '▼' : '▶'}
                       </span>
-                      {template.channel_type && (
-                        <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
-                          {template.channel_type}
-                        </span>
-                      )}
-                      {!template.is_active && (
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {triggerLabel}
+                      </h4>
+                      <span className="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">
+                        {templates.length} {templates.length === 1 ? 'template' : 'templates'}
+                      </span>
+                      {activeCount < templates.length && (
                         <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                          Inactive
+                          {templates.length - activeCount} inactive
                         </span>
                       )}
-                      {renderFilterBadges(template)}
                     </div>
-                    {template.applies_to_description && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 italic mt-1">
-                        {template.applies_to_description}
-                      </p>
-                    )}
-                    <div className="mt-2 text-sm">
-                      <div className="text-gray-600 dark:text-gray-400">
-                        <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
-                      </div>
-                      <div className="text-gray-600 dark:text-gray-400 mt-1">
-                        <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
-                      </div>
+                  </button>
+
+                  {/* Group Content */}
+                  {isExpanded && (
+                    <div className="p-3 space-y-3 bg-white dark:bg-gray-900">
+                      {templates.map(template => (
+                        <div
+                          key={template.id}
+                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded ${template.is_active ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900 opacity-60'}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h5 className="font-semibold text-gray-900 dark:text-white">{template.name}</h5>
+                                {template.channel_type && (
+                                  <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+                                    {template.channel_type}
+                                  </span>
+                                )}
+                                {!template.is_active && (
+                                  <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                                    Inactive
+                                  </span>
+                                )}
+                                {renderFilterBadges(template)}
+                              </div>
+                              {template.applies_to_description && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 italic mt-1">
+                                  {template.applies_to_description}
+                                </p>
+                              )}
+                              <div className="mt-2 text-sm">
+                                <div className="text-gray-600 dark:text-gray-400">
+                                  <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
+                                </div>
+                                <div className="text-gray-600 dark:text-gray-400 mt-1">
+                                  <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <button
+                                onClick={() => handlePreviewTemplate(template)}
+                                className="px-3 py-1 text-sm rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800"
+                              >
+                                Preview
+                              </button>
+                              <button
+                                onClick={() => handleToggleActive(template)}
+                                className={`px-3 py-1 text-sm rounded ${template.is_active ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'}`}
+                              >
+                                {template.is_active ? 'Disable' : 'Enable'}
+                              </button>
+                              <button
+                                onClick={() => handleEditTemplate(template)}
+                                className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTemplate(template.id)}
+                                className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => handlePreviewTemplate(template)}
-                      className="px-3 py-1 text-sm rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800"
-                    >
-                      Preview
-                    </button>
-                    <button
-                      onClick={() => handleToggleActive(template)}
-                      className={`px-3 py-1 text-sm rounded ${template.is_active ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'}`}
-                    >
-                      {template.is_active ? 'Disable' : 'Enable'}
-                    </button>
-                    <button
-                      onClick={() => handleEditTemplate(template)}
-                      className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTemplate(template.id)}
-                      className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
