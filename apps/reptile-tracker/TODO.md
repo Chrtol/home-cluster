@@ -182,23 +182,49 @@
   - Improved UI organization with better styling and dark mode support
   - Record types: General Observation, Shedding, Bowel Movement, Vet Visit, Medication
 
-- [ ] **Photo Upload & Gallery** - 🎯 HIGH PRIORITY (Tier 2)
-  - Upload photos for health records, feedings, weight checks, shedding
-  - Photo gallery per reptile sorted by date and event type
+- [x] **Photo Upload & Gallery - Phase 1: Upload & Avatar** - ✅ COMPLETED (2025-12-10)
+  - Backend: Photo model with UUID primary keys and household organization
+  - Backend: Multiple storage backends (local, S3, NFS, hybrid) with configurable selection
+  - Backend: Original image quality preservation - no re-encoding for JPEG/PNG without rotation
+  - Backend: Format-aware processing (JPEG/PNG/WEBP) with automatic mime type detection
+  - Backend: High-quality thumbnail generation (300px) with JPEG compression
+  - Backend: Photo upload endpoint with file validation (max 10MB, JPEG/PNG/WebP)
+  - Backend: Avatar system with set/get avatar endpoints for reptiles
+  - Backend: Proper UUID handling across models, schemas, and database
+  - Frontend: PhotoUpload component with file selection and camera capture
+  - Frontend: ReptileAvatar component with fallback to initials
+  - Frontend: Integration into ReptileDetail page (Photos tab)
+  - Database: photos table with UUID primary key, household/reptile relationships
+  - Database: avatar_photo_id on reptiles table with proper UUID foreign key
+  - Storage: Organized by household and reptile (photos/household_{id}/reptile_{id}/)
+
+- [x] **Photo Upload & Gallery - Phase 2: Gallery & Management** - ✅ COMPLETED (2025-12-10)
+  - Frontend: PhotoGallery component with grid layout and category filtering
+  - Frontend: PhotoLightbox component for full-screen viewing with keyboard navigation
+  - Frontend: Photo management features (set avatar, edit caption, delete, download)
+  - Frontend: Category filtering (All Photos, General, Health, Weight, Feeding, Enclosure)
+  - Frontend: Refresh trigger system for immediate photo appearance after upload
+  - Frontend: Download button in gallery grid (top right) and lightbox
+  - Frontend: Upload date display (top left) with hover visibility
+  - Frontend: Empty state with friendly messaging
+  - Backend: Photo CRUD endpoints (list, get, update caption, delete)
+  - Backend: Photo filtering by category with pagination support
+  - Backend: Set avatar endpoint with reptile photo validation
+  - Quality: Original image bytes preserved (no re-compression for JPEG/PNG)
+  - Quality: Format-specific handling (JPEG quality=100, PNG lossless, WebP lossless)
+  - Quality: Only rotation triggers re-encoding with minimal quality loss
+  - Visual: Photo grid with hover overlay showing actions and metadata
+  - Visual: Full-size lightbox with prev/next navigation and action buttons
+  - Mobile: Touch-friendly controls and responsive grid layout
+
+- [ ] **Photo Upload & Gallery - Phase 3: Advanced Features** - 🔧 MEDIUM PRIORITY (Future)
+  - Link photos to specific events (health records, feedings, weight logs, shedding)
   - Before/after shed comparison view
   - Growth timeline with photo progression
   - Visual health tracking (scale rot, stuck shed, injuries)
   - Thumbnail previews in activity logs
-  - Full-size photo viewer with zoom
-  - Multiple photos per event
-  - Implementation:
-    - Backend: File upload endpoint with image validation and compression
-    - Storage: S3-compatible or local file storage with path references
-    - Database: health_records.photo_url already exists, extend to multiple photos
-    - Database: feeding_logs, weight_logs, misting_logs photo support
-    - Frontend: Image upload component with drag-drop
-    - Frontend: Photo gallery page per reptile
-    - Frontend: Lightbox viewer for full-size images
+  - Zoom functionality in lightbox
+  - Batch photo operations (multi-select delete, category change)
 
 ### Humidity & Environment
 - [x] **Misting logs** - ✅ COMPLETED
@@ -717,6 +743,49 @@ Assign specific household members as responsible for completing schedules, impro
 - [ ] **Push notifications** (optional)
 
 ## ✅ Recently Completed
+
+### December 2025 - Photo Upload & Gallery System (2025-12-10)
+- [x] **Photo Upload & Gallery - Phase 1 & 2** - ✅ COMPLETED (2025-12-10)
+  - **Backend Implementation:**
+    - Photo model with UUID primary keys for robust identification
+    - Multiple storage backends: local, S3, NFS, and hybrid configurations
+    - Original image quality preservation - no re-encoding for JPEG/PNG without EXIF rotation
+    - Format-aware processing with automatic mime type detection (JPEG/PNG/WebP)
+    - High-quality thumbnail generation (300px) with JPEG compression
+    - Photo upload endpoint with file validation (max 10MB, supported formats)
+    - Complete CRUD API: list, get, update caption, delete photos
+    - Photo filtering by category with pagination support
+    - Avatar system with set/get endpoints and validation
+    - Proper UUID handling across models, schemas, and database layers
+    - Storage organized by household and reptile (photos/household_{id}/reptile_{id}/)
+  - **Frontend Implementation:**
+    - PhotoUpload component with file selection and camera capture (mobile-friendly)
+    - PhotoGallery component with responsive grid layout and category filtering
+    - PhotoLightbox component for full-screen viewing with keyboard navigation (arrows, ESC)
+    - ReptileAvatar component with automatic fallback to name initials
+    - Photo management features: set avatar, edit caption, download, delete
+    - Category filtering: All Photos, General, Health, Weight, Feeding, Enclosure
+    - Refresh trigger system for immediate photo appearance after upload
+    - Download button in gallery grid (top right) and lightbox
+    - Upload date display (top left) with hover visibility
+    - Empty state with friendly messaging and visual design
+    - Integration into ReptileDetail page (Photos tab)
+  - **Quality & Performance:**
+    - Original image bytes preserved for JPEG/PNG (no re-compression)
+    - Format-specific handling: JPEG quality=100, PNG lossless, WebP lossless
+    - Only EXIF rotation triggers re-encoding with subsampling=0 for minimal quality loss
+    - Efficient thumbnail generation with caching
+  - **Database Schema:**
+    - photos table with UUID primary key and comprehensive metadata
+    - Household and reptile relationships with proper foreign keys
+    - avatar_photo_id on reptiles table with UUID foreign key constraint
+    - Category field for filtering and organization
+  - **User Experience:**
+    - Photo grid with hover overlay showing actions and metadata
+    - Full-size lightbox with prev/next navigation and action buttons
+    - Mobile-optimized touch controls and responsive layout
+    - Immediate feedback with loading states and error handling
+    - Smooth transitions and animations throughout
 
 ### December 2025 - Notification Template Enhancements (2025-12-08)
 - [x] **Priority-based template matching system** - ✅ COMPLETED (2025-12-08)
