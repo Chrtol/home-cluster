@@ -21,6 +21,20 @@ from app.schemas import (
 router = APIRouter()
 
 
+def populate_avatar_url(reptile: Reptile) -> None:
+    """
+    Populate avatar_photo_url on a reptile instance.
+
+    If reptile has an avatar_photo_id, sets avatar_photo_url to the thumbnail URL.
+    Modifies the reptile object in-place by setting the computed field.
+    """
+    if hasattr(reptile, 'avatar_photo_id') and reptile.avatar_photo_id:
+        # Set the computed field directly on the object
+        reptile.avatar_photo_url = f"/api/photos/{reptile.avatar_photo_id}/thumbnail"
+    else:
+        reptile.avatar_photo_url = None
+
+
 @router.get("/species", response_model=List[str])
 async def list_species(
     current_user: User = Depends(get_current_user),
@@ -56,6 +70,9 @@ async def list_reptiles(
         # Filter inactive reptiles unless explicitly requested
         if not include_inactive and not reptile.is_active:
             continue
+
+        # Populate avatar URL
+        populate_avatar_url(reptile)
 
         # Load household relationship if not already loaded
         # Use __dict__ to avoid triggering lazy load via hasattr
@@ -127,6 +144,9 @@ async def create_reptile(
     await db.commit()
     await db.refresh(new_reptile)
 
+    # Populate avatar URL before returning
+    populate_avatar_url(new_reptile)
+
     return new_reptile
 
 
@@ -138,6 +158,10 @@ async def get_reptile(
 ):
     """Get a specific reptile"""
     reptile = await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+
+    # Populate avatar URL before returning
+    populate_avatar_url(reptile)
+
     return reptile
 
 
@@ -160,6 +184,9 @@ async def update_reptile(
         )
         await db.commit()
         await db.refresh(reptile)
+
+    # Populate avatar URL before returning
+    populate_avatar_url(reptile)
 
     return reptile
 

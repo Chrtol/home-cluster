@@ -6,6 +6,7 @@ import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale,
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId } from '../utils/displaySettings';
+import ReptileAvatar from '../components/ReptileAvatar';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -1535,7 +1536,8 @@ export default function Dashboard() {
 
                   return (
                     <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <ReptileAvatar reptile={reptile} size="sm" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             {healthBadge && (

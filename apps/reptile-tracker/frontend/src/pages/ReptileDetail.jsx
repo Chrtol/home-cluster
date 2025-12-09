@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
+import ReptileAvatar from '../components/ReptileAvatar';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -583,9 +584,12 @@ export default function ReptileDetail() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
-          <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
+        <div className="flex items-start gap-4">
+          <ReptileAvatar reptile={reptile} size="xl" className="flex-shrink-0" />
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>

@@ -47,7 +47,7 @@ class ReptileBase(BaseModel):
     species: str
     date_of_birth: Optional[datetime] = None
     notes: Optional[str] = None
-    photo_url: Optional[str] = None
+    photo_url: Optional[str] = None  # Legacy field - deprecated in favor of avatar_photo_id
     feeding_schedule_enabled: bool = False
     feeding_frequency_days: Optional[int] = None
     reminder_enabled: bool = False
@@ -58,6 +58,7 @@ class ReptileBase(BaseModel):
     age_category: Optional[str] = None  # hatchling, juvenile, adult, gravid
     default_insect_id: Optional[int] = None  # Default insect food for auto-selection
     default_prepared_id: Optional[int] = None  # Default prepared food for auto-selection
+    avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
 
 
 class ReptileCreate(ReptileBase):
@@ -69,7 +70,7 @@ class ReptileUpdate(BaseModel):
     species: Optional[str] = None
     date_of_birth: Optional[datetime] = None
     notes: Optional[str] = None
-    photo_url: Optional[str] = None
+    photo_url: Optional[str] = None  # Legacy field
     feeding_schedule_enabled: Optional[bool] = None
     feeding_frequency_days: Optional[int] = None
     reminder_enabled: Optional[bool] = None
@@ -80,12 +81,14 @@ class ReptileUpdate(BaseModel):
     age_category: Optional[str] = None
     default_insect_id: Optional[int] = None
     default_prepared_id: Optional[int] = None
+    avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
 
 
 class Reptile(ReptileBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    avatar_photo_url: Optional[str] = None  # Computed field - populated by endpoint
 
     class Config:
         from_attributes = True
