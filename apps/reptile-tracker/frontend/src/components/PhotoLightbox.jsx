@@ -193,7 +193,7 @@ const PhotoLightbox = ({
 
       {/* Main Image Area */}
       <div
-        className="flex-1 flex items-center justify-center p-4 relative"
+        className="flex-1 flex items-center justify-center p-4 relative overflow-hidden"
         onClick={(e) => {
           // Close on background click
           if (e.target === e.currentTarget) {
@@ -213,7 +213,7 @@ const PhotoLightbox = ({
         )}
 
         {/* Image */}
-        <div className="relative max-w-full max-h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center">
           {imageLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-white text-lg">Loading...</div>
@@ -222,7 +222,7 @@ const PhotoLightbox = ({
           <img
             src={`/api/photos/${currentPhoto.id}/file`}
             alt={currentPhoto.caption || 'Photo'}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full w-auto h-auto object-contain"
             onLoad={() => setImageLoading(false)}
           />
         </div>
