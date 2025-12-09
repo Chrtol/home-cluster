@@ -223,7 +223,7 @@ class Reptile(Base):
     health_records = relationship("HealthRecord", back_populates="reptile", cascade="all, delete-orphan")
     misting_logs = relationship("MistingLog", back_populates="reptile", cascade="all, delete-orphan")
     schedules = relationship("Schedule", back_populates="reptile", cascade="all, delete-orphan")
-    photos = relationship("Photo", back_populates="reptile", cascade="all, delete-orphan")
+    photos = relationship("Photo", foreign_keys="Photo.reptile_id", back_populates="reptile", cascade="all, delete-orphan")
     avatar_photo = relationship("Photo", foreign_keys=[avatar_photo_id], post_update=True)
     favorite_foods = relationship("Food", secondary=reptile_food_favorites)
     default_insect_food = relationship("Food", foreign_keys=[default_insect_id])
