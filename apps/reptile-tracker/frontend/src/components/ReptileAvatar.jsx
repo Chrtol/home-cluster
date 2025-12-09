@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lizard } from 'lucide-react';
+import { Circle } from 'lucide-react';
 
 /**
  * ReptileAvatar component
@@ -22,22 +22,17 @@ const ReptileAvatar = ({
 
   // Size mappings
   const sizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16',
-    xl: 'w-24 h-24',
-  };
-
-  const iconSizes = {
-    sm: 16,
-    md: 24,
-    lg: 32,
-    xl: 48,
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-12 h-12 text-sm',
+    lg: 'w-16 h-16 text-base',
+    xl: 'w-24 h-24 text-2xl',
   };
 
   const hasAvatar = reptile?.avatar_photo_url && !imageError;
   const sizeClass = sizeClasses[size] || sizeClasses.md;
-  const iconSize = iconSizes[size] || iconSizes.md;
+
+  // Get first letter of reptile name for fallback
+  const initial = reptile?.name?.charAt(0)?.toUpperCase() || '?';
 
   return (
     <div
@@ -52,10 +47,9 @@ const ReptileAvatar = ({
           onError={() => setImageError(true)}
         />
       ) : showFallbackIcon ? (
-        <Lizard
-          className="text-white opacity-80"
-          size={iconSize}
-        />
+        <span className="font-bold text-white select-none">
+          {initial}
+        </span>
       ) : null}
     </div>
   );
