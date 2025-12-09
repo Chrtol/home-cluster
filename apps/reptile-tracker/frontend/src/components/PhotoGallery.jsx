@@ -64,9 +64,16 @@ const PhotoGallery = ({
       const response = await axios.get(`/api/photos/reptile/${reptileId}`, { params });
       setPhotos(response.data);
 
-      // Notify parent of photos if callback provided
-      if (onPhotosLoaded && selectedCategory === 'all') {
-        onPhotosLoaded(response.data);
+      // Also fetch all photos for lightbox navigation (parent needs full array)
+      if (onPhotosLoaded) {
+        if (selectedCategory === 'all') {
+          // Already have all photos
+          onPhotosLoaded(response.data);
+        } else {
+          // Fetch all photos separately for lightbox
+          const allPhotosResponse = await axios.get(`/api/photos/reptile/${reptileId}`);
+          onPhotosLoaded(allPhotosResponse.data);
+        }
       }
     } catch (err) {
       console.error('Error fetching photos:', err);
@@ -224,8 +231,8 @@ const PhotoGallery = ({
             )}
 
             {/* Actions Overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-end opacity-0 group-hover:opacity-100">
-              <div className="w-full p-2 space-y-1">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-end opacity-0 group-hover:opacity-100 pointer-events-none">
+              <div className="w-full p-2 space-y-1 pointer-events-auto">
                 {/* Action Buttons */}
                 <div className="flex gap-1">
                   {photo.id !== currentAvatarId && (

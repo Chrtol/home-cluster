@@ -25,8 +25,6 @@ const PhotoLightbox = ({
   onPhotoDeleted,
   onPhotoUpdated,
 }) => {
-  console.log('PhotoLightbox rendered with:', { photos, initialPhotoId });
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionText, setCaptionText] = useState('');
