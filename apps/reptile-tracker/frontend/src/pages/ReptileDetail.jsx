@@ -651,6 +651,7 @@ export default function ReptileDetail() {
           onSetAvatar={handleSetAvatar}
           onPhotoDeleted={handlePhotoDeleted}
           onPhotoUpdated={handlePhotoUpdated}
+          onPhotosLoaded={setPhotos}
           refreshTrigger={photoRefreshTrigger}
         />
       </div>
