@@ -91,6 +91,11 @@ class Reptile(ReptileBase):
     updated_at: datetime
     avatar_photo_url: Optional[str] = None  # Computed field - populated by endpoint
 
+    @field_serializer('avatar_photo_id')
+    def serialize_avatar_id(self, value: Optional[UUID]) -> Optional[str]:
+        """Serialize UUID to string for JSON responses."""
+        return str(value) if value else None
+
     class Config:
         from_attributes = True
 
