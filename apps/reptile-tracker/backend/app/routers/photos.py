@@ -24,8 +24,8 @@ from datetime import datetime, timezone
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, Photo, Reptile, Household, AccessLevel
-from app.permissions import check_reptile_access, check_household_access
+from app.models import User, Photo, Reptile, AccessLevel
+from app.permissions import check_reptile_access
 from app.schemas import (
     Photo as PhotoSchema,
     PhotoWithUrls,
@@ -413,11 +413,17 @@ async def delete_photo(
     # Check if user is uploader
     is_uploader = photo.uploaded_by_user_id == current_user.id
 
-    # Check household access level
-    try:
-        household_access = await check_household_access(db, current_user, photo.household_id)
-    except Exception:
-        household_access = None
+    # Check household access level (if user is not uploader)
+    household_access = None
+    if not is_uploader and photo.household_id:
+        from app.models import household_members
+        household_check = await db.execute(
+            select(household_members.c.access_level).where(
+                household_members.c.user_id == current_user.id,
+                household_members.c.household_id == photo.household_id,
+            )
+        )
+        household_access = household_check.scalar_one_or_none()
 
     # Determine if user can delete
     can_delete = False
