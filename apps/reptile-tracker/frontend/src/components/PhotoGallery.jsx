@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Camera, Image as ImageIcon, Trash2, Star, Edit2, Upload } from 'lucide-react';
+import { Camera, Image as ImageIcon, Trash2, Star, Edit2, Upload, Download } from 'lucide-react';
 import axios from 'axios';
 
 /**
@@ -14,6 +14,8 @@ import axios from 'axios';
  * - onSetAvatar: Callback when set avatar is clicked (receives photo ID)
  * - onPhotoDeleted: Callback when photo is deleted
  * - onPhotoUpdated: Callback when photo is updated
+ * - onPhotosLoaded: Callback when photos are loaded (receives photos array)
+ * - refreshTrigger: Number that triggers refetch when changed
  * - className: Additional CSS classes
  */
 const PhotoGallery = ({
@@ -23,6 +25,7 @@ const PhotoGallery = ({
   onSetAvatar,
   onPhotoDeleted,
   onPhotoUpdated,
+  onPhotosLoaded,
   refreshTrigger = 0,
   className = ''
 }) => {
@@ -60,6 +63,11 @@ const PhotoGallery = ({
 
       const response = await axios.get(`/api/photos/reptile/${reptileId}`, { params });
       setPhotos(response.data);
+
+      // Notify parent of photos if callback provided
+      if (onPhotosLoaded && selectedCategory === 'all') {
+        onPhotosLoaded(response.data);
+      }
     } catch (err) {
       console.error('Error fetching photos:', err);
       setError('Failed to load photos');
@@ -289,12 +297,29 @@ const PhotoGallery = ({
               </div>
             </div>
 
-            {/* Uploaded Date - Top Right */}
-            <div className="absolute top-2 right-2 bg-black/75 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Uploaded Date - Top Left */}
+            <div className="absolute top-2 left-2 bg-black/75 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="text-white text-xs">
                 {new Date(photo.uploaded_at).toLocaleDateString()}
               </p>
             </div>
+
+            {/* Download Button - Top Right */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const link = document.createElement('a');
+                link.href = `/api/photos/${photo.id}/file`;
+                link.download = `photo-${photo.id}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="absolute top-2 right-2 bg-black/75 hover:bg-black/90 text-white p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Download photo"
+            >
+              <Download size={16} />
+            </button>
           </div>
         ))}
       </div>

@@ -37,60 +37,93 @@ def compress_image(
     quality: Optional[int] = None
 ) -> Tuple[bytes, int, int]:
     """
-    Process image while preserving quality.
+    Process image while preserving original quality and format.
+
+    For JPEG images that don't need rotation, returns original bytes to avoid
+    quality loss from re-encoding. For other cases, processes with maximum quality.
 
     Process:
     1. Load image from bytes
-    2. Auto-rotate based on EXIF orientation
-    3. Convert to RGB if necessary
-    4. Keep original size (no resizing)
-    5. Convert to JPEG with maximum quality
+    2. Check if rotation needed (EXIF orientation)
+    3. If JPEG and no rotation needed: return original bytes
+    4. Otherwise: process and save in original format with maximum quality
+    5. Keep original size (no resizing)
 
     Args:
         image_bytes: Original image binary data
         max_width: Maximum width in pixels (ignored, kept for compatibility)
-        quality: JPEG quality 1-100 (default: 100 for maximum quality)
+        quality: JPEG quality 1-100 (only used for JPEG, default: 100)
 
     Returns:
-        Tuple of (compressed_bytes, width, height)
+        Tuple of (image_bytes, width, height)
 
     Raises:
         ValueError: If image cannot be processed
     """
-    # Use maximum quality to preserve original image
-    if quality is None:
-        quality = 100
-
     try:
         # Load image
         img = Image.open(io.BytesIO(image_bytes))
-
-        # Auto-rotate based on EXIF orientation
-        img = ImageOps.exif_transpose(img)
-
-        # Convert RGBA to RGB if necessary (for transparent PNGs)
-        if img.mode == 'RGBA':
-            # Create white background
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            background.paste(img, mask=img.split()[3])  # Use alpha channel as mask
-            img = background
-        elif img.mode != 'RGB':
-            img = img.convert('RGB')
-
-        # Keep original dimensions - no resizing
+        original_format = img.format  # Preserve original format (JPEG, PNG, WEBP)
         width, height = img.size
 
-        # Save as JPEG with maximum quality, no optimization to preserve quality
+        # Check if image needs rotation
+        exif = img.getexif()
+        orientation = exif.get(274) if exif else 1  # 274 is the orientation tag
+        needs_rotation = orientation and orientation != 1
+
+        # For JPEG images that don't need rotation, return original bytes
+        # This avoids quality loss from re-encoding
+        if original_format == 'JPEG' and not needs_rotation:
+            logger.debug(
+                f"Preserved original JPEG: {len(image_bytes)} bytes (size={width}x{height})"
+            )
+            return image_bytes, width, height
+
+        # For PNG images that don't need rotation, return original bytes
+        if original_format == 'PNG' and not needs_rotation:
+            logger.debug(
+                f"Preserved original PNG: {len(image_bytes)} bytes (size={width}x{height})"
+            )
+            return image_bytes, width, height
+
+        # Auto-rotate based on EXIF orientation if needed
+        if needs_rotation:
+            img = ImageOps.exif_transpose(img)
+            width, height = img.size  # Update dimensions after rotation
+
+        # Save in original format with maximum quality
         output = io.BytesIO()
-        img.save(output, format='JPEG', quality=quality, optimize=False)
-        compressed_bytes = output.getvalue()
+
+        if original_format == 'JPEG':
+            # For JPEG, use maximum quality with minimal subsampling
+            if quality is None:
+                quality = 100
+            img.save(output, format='JPEG', quality=quality, optimize=False, subsampling=0)
+        elif original_format == 'PNG':
+            # For PNG, use lossless compression
+            img.save(output, format='PNG', compress_level=0)  # 0 = no compression for max quality
+        elif original_format == 'WEBP':
+            # For WebP, use lossless mode
+            img.save(output, format='WEBP', lossless=True, quality=100)
+        else:
+            # Fallback to JPEG for other formats
+            if img.mode == 'RGBA':
+                # Create white background for transparency
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[3])
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.save(output, format='JPEG', quality=100, optimize=False, subsampling=0)
+
+        processed_bytes = output.getvalue()
 
         logger.debug(
-            f"Processed image: {len(image_bytes)} bytes → {len(compressed_bytes)} bytes "
-            f"(quality={quality}, size={width}x{height})"
+            f"Processed image: {len(image_bytes)} bytes → {len(processed_bytes)} bytes "
+            f"(format={original_format}, size={width}x{height}, rotation={needs_rotation})"
         )
 
-        return compressed_bytes, width, height
+        return processed_bytes, width, height
 
     except Exception as e:
         logger.error(f"Failed to process image: {e}")

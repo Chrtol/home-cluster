@@ -129,14 +129,30 @@ async def upload_photos(
             # Get image info
             image_info = get_image_info(contents)
 
-            # Process image
+            # Determine file extension and mime type from original format
+            original_format = image_info.get('format', 'JPEG').upper()
+            if original_format == 'JPEG':
+                file_ext = 'jpg'
+                mime_type = 'image/jpeg'
+            elif original_format == 'PNG':
+                file_ext = 'png'
+                mime_type = 'image/png'
+            elif original_format == 'WEBP':
+                file_ext = 'webp'
+                mime_type = 'image/webp'
+            else:
+                # Default to JPEG for unknown formats
+                file_ext = 'jpg'
+                mime_type = 'image/jpeg'
+
+            # Process image (preserves original format and quality)
             compressed_data, width, height = compress_image(
                 contents,
                 max_width=settings.max_photo_width,
                 quality=settings.jpeg_quality
             )
 
-            # Create thumbnail
+            # Create thumbnail (always JPEG for consistency)
             thumbnail_data = create_thumbnail(
                 compressed_data,
                 size=settings.thumbnail_size
@@ -145,8 +161,8 @@ async def upload_photos(
             # Generate UUID for photo
             photo_id = uuid.uuid4()
 
-            # Define storage paths
-            file_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{str(photo_id)}.jpg"
+            # Define storage paths with correct extension
+            file_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{str(photo_id)}.{file_ext}"
             thumbnail_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{str(photo_id)}_thumb.jpg"
 
             # Save to storage
