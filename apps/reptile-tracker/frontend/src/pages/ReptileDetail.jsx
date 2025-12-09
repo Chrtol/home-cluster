@@ -85,6 +85,7 @@ export default function ReptileDetail() {
   const [photos, setPhotos] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [photoRefreshTrigger, setPhotoRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -255,6 +256,7 @@ export default function ReptileDetail() {
   const handleUploadSuccess = (photo) => {
     setPhotos([photo, ...photos]);
     setShowUploadModal(false);
+    setPhotoRefreshTrigger(prev => prev + 1); // Trigger gallery refresh
   };
 
   if (loading) {
@@ -649,6 +651,7 @@ export default function ReptileDetail() {
           onSetAvatar={handleSetAvatar}
           onPhotoDeleted={handlePhotoDeleted}
           onPhotoUpdated={handlePhotoUpdated}
+          refreshTrigger={photoRefreshTrigger}
         />
       </div>
     ),

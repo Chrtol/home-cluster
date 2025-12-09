@@ -45,8 +45,8 @@ class Settings(BaseSettings):
 
     # Image processing settings
     max_photo_size_mb: int = 10
-    max_photo_width: int = 2000
-    jpeg_quality: int = 85
+    max_photo_width: int = 4000  # Allow larger photos for better quality
+    jpeg_quality: int = 95  # High quality JPEG compression
     thumbnail_size: int = 300
 
     # Photo limits

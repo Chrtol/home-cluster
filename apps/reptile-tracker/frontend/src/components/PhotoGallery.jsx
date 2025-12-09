@@ -23,6 +23,7 @@ const PhotoGallery = ({
   onSetAvatar,
   onPhotoDeleted,
   onPhotoUpdated,
+  refreshTrigger = 0,
   className = ''
 }) => {
   const [photos, setPhotos] = useState([]);
@@ -45,7 +46,7 @@ const PhotoGallery = ({
     if (reptileId) {
       fetchPhotos();
     }
-  }, [reptileId, selectedCategory]);
+  }, [reptileId, selectedCategory, refreshTrigger]);
 
   const fetchPhotos = async () => {
     try {
@@ -137,34 +138,9 @@ const PhotoGallery = ({
     );
   }
 
-  if (error) {
-    return (
-      <div className={`bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 ${className}`}>
-        <p className="text-red-600 dark:text-red-400">{error}</p>
-      </div>
-    );
-  }
-
-  if (photos.length === 0) {
-    return (
-      <div className={`text-center py-12 ${className}`}>
-        <Camera className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          No photos yet
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          {selectedCategory === 'all'
-            ? 'Start building your reptile\'s photo gallery!'
-            : `No ${selectedCategory} photos yet.`
-          }
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className={className}>
-      {/* Category Filter */}
+      {/* Category Filter - Always visible */}
       <div className="mb-4 flex flex-wrap gap-2">
         {categories.map(cat => (
           <button
@@ -181,7 +157,31 @@ const PhotoGallery = ({
         ))}
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!error && photos.length === 0 && (
+        <div className="text-center py-12">
+          <Camera className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No photos yet
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {selectedCategory === 'all'
+              ? 'Start building your reptile\'s photo gallery!'
+              : `No ${selectedCategory} photos yet.`
+            }
+          </p>
+        </div>
+      )}
+
       {/* Photo Grid */}
+      {!error && photos.length > 0 && (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {photos.map(photo => (
           <div
@@ -289,8 +289,8 @@ const PhotoGallery = ({
               </div>
             </div>
 
-            {/* Uploaded Date */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Uploaded Date - Bottom Right */}
+            <div className="absolute bottom-2 right-2 bg-black/75 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="text-white text-xs">
                 {new Date(photo.uploaded_at).toLocaleDateString()}
               </p>
@@ -298,6 +298,7 @@ const PhotoGallery = ({
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 };
