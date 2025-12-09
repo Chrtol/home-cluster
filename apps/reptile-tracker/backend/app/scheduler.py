@@ -2134,6 +2134,9 @@ async def start_scheduler():
 
     logger.info("Starting notification scheduler")
 
+    # Reduce APScheduler's logging verbosity
+    logging.getLogger('apscheduler').setLevel(logging.WARNING)
+
     scheduler = AsyncIOScheduler(timezone="UTC")
 
     # Create pending completions once per day at midnight UTC
