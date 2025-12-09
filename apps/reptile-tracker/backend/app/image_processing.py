@@ -175,9 +175,9 @@ def create_thumbnail(
         # Resize maintaining aspect ratio (fit within size x size box)
         img.thumbnail((size, size), Image.Resampling.LANCZOS)
 
-        # Save as JPEG
+        # Save as JPEG with high quality for better appearance at 300px size
         output = io.BytesIO()
-        img.save(output, format='JPEG', quality=85, optimize=True)
+        img.save(output, format='JPEG', quality=92, optimize=True)
         thumbnail_bytes = output.getvalue()
 
         logger.debug(
