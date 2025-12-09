@@ -228,6 +228,9 @@ export default function ReptileDetail() {
 
   // Photo handlers
   const handlePhotoClick = (photo) => {
+    console.log('Photo clicked:', photo);
+    console.log('Photos array length:', photos.length);
+    console.log('Setting lightboxPhoto to:', photo);
     setLightboxPhoto(photo);
   };
 
