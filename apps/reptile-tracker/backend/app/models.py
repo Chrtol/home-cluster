@@ -214,7 +214,7 @@ class Reptile(Base):
     default_prepared_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
 
     # Avatar photo (profile picture)
-    avatar_photo_id = Column(String, ForeignKey("photos.id", ondelete="SET NULL"), nullable=True)
+    avatar_photo_id = Column(UUID(as_uuid=True), ForeignKey("photos.id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")

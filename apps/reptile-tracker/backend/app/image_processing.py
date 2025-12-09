@@ -37,19 +37,19 @@ def compress_image(
     quality: Optional[int] = None
 ) -> Tuple[bytes, int, int]:
     """
-    Compress and resize image to reasonable size.
+    Process image while preserving quality.
 
     Process:
     1. Load image from bytes
     2. Auto-rotate based on EXIF orientation
-    3. Resize if width exceeds max_width (maintaining aspect ratio)
-    4. Convert to JPEG with specified quality
-    5. Optimize for smaller file size
+    3. Convert to RGB if necessary
+    4. Keep original size (no resizing)
+    5. Convert to JPEG with maximum quality
 
     Args:
         image_bytes: Original image binary data
-        max_width: Maximum width in pixels (default: from config)
-        quality: JPEG quality 1-100 (default: from config)
+        max_width: Maximum width in pixels (ignored, kept for compatibility)
+        quality: JPEG quality 1-100 (default: 100 for maximum quality)
 
     Returns:
         Tuple of (compressed_bytes, width, height)
@@ -57,10 +57,9 @@ def compress_image(
     Raises:
         ValueError: If image cannot be processed
     """
-    if max_width is None:
-        max_width = MAX_PHOTO_WIDTH
+    # Use maximum quality to preserve original image
     if quality is None:
-        quality = JPEG_QUALITY
+        quality = 100
 
     try:
         # Load image
@@ -78,35 +77,23 @@ def compress_image(
         elif img.mode != 'RGB':
             img = img.convert('RGB')
 
-        # Resize if too large
-        original_width, original_height = img.size
-
-        if original_width > max_width:
-            ratio = max_width / original_width
-            new_height = int(original_height * ratio)
-            img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
-            logger.debug(
-                f"Resized image from {original_width}x{original_height} "
-                f"to {max_width}x{new_height}"
-            )
-
-        # Get final dimensions
+        # Keep original dimensions - no resizing
         width, height = img.size
 
-        # Save as JPEG with compression
+        # Save as JPEG with maximum quality, no optimization to preserve quality
         output = io.BytesIO()
-        img.save(output, format='JPEG', quality=quality, optimize=True)
+        img.save(output, format='JPEG', quality=quality, optimize=False)
         compressed_bytes = output.getvalue()
 
         logger.debug(
-            f"Compressed image: {len(image_bytes)} bytes → {len(compressed_bytes)} bytes "
-            f"({len(compressed_bytes) / len(image_bytes) * 100:.1f}%)"
+            f"Processed image: {len(image_bytes)} bytes → {len(compressed_bytes)} bytes "
+            f"(quality={quality}, size={width}x{height})"
         )
 
         return compressed_bytes, width, height
 
     except Exception as e:
-        logger.error(f"Failed to compress image: {e}")
+        logger.error(f"Failed to process image: {e}")
         raise ValueError(f"Invalid image file: {e}")
 
 
