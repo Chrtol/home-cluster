@@ -262,6 +262,7 @@ export default function Dashboard() {
               quota_frequency: instance.schedule.quota_frequency,
               reptile_name: instance.schedule.reptile.name,
               reptile_id: instance.schedule.reptile_id,
+              reptile: instance.schedule.reptile, // Include full reptile object for avatar
               name: instance.schedule.name,
               food_category: instance.schedule.food_category,
               time_slot: instance.schedule.time_slot,
@@ -1285,6 +1286,11 @@ export default function Dashboard() {
                                 {event.is_completed && (
                                   <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0">✓</span>
                                 )}
+                                {event.reptile && (
+                                  <div className="flex-shrink-0">
+                                    <ReptileAvatar reptile={event.reptile} size="sm" className="w-5 h-5 text-[8px]" />
+                                  </div>
+                                )}
                                 <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
                                 <span className="font-semibold text-gray-900 dark:text-white truncate min-w-0">
                                   {event.reptile_name}
@@ -1624,7 +1630,8 @@ export default function Dashboard() {
                   }
                   return (
                     <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
-                      <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="flex items-start gap-2">
+                        {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="sm" className="flex-shrink-0" />}
                         <Icon size={16} className={`flex-shrink-0 mt-0.5 sm:mt-1 ${colorClasses[activity.color]}`} />
                         {prominentValue && (
                           <div className="flex-shrink-0 text-center sm:w-20">
