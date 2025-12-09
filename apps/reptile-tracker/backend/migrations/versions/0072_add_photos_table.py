@@ -55,7 +55,7 @@ def upgrade() -> None:
 
         # Relationships to logs (nullable - photos can exist standalone)
         sa.Column('health_record_id', sa.Integer(), sa.ForeignKey('health_records.id', ondelete='SET NULL'), nullable=True),
-        sa.Column('feeding_log_id', sa.Integer(), sa.ForeignKey('feeding_logs.id', ondelete='SET NULL'), nullable=True),
+        sa.Column('feeding_log_id', sa.Integer(), sa.ForeignKey('feedings.id', ondelete='SET NULL'), nullable=True),
         sa.Column('weight_log_id', sa.Integer(), sa.ForeignKey('weight_logs.id', ondelete='SET NULL'), nullable=True),
         sa.Column('misting_log_id', sa.Integer(), sa.ForeignKey('misting_logs.id', ondelete='SET NULL'), nullable=True),
     )

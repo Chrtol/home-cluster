@@ -405,7 +405,7 @@ class Photo(Base):
 
     # Relationships to logs (nullable - photos can exist standalone)
     health_record_id = Column(Integer, ForeignKey("health_records.id", ondelete="SET NULL"), nullable=True, index=True)
-    feeding_log_id = Column(Integer, ForeignKey("feeding_logs.id", ondelete="SET NULL"), nullable=True, index=True)
+    feeding_log_id = Column(Integer, ForeignKey("feedings.id", ondelete="SET NULL"), nullable=True, index=True)
     weight_log_id = Column(Integer, ForeignKey("weight_logs.id", ondelete="SET NULL"), nullable=True, index=True)
     misting_log_id = Column(Integer, ForeignKey("misting_logs.id", ondelete="SET NULL"), nullable=True, index=True)
 
