@@ -15,6 +15,7 @@ from sqlalchemy import (
     Table,
     JSON,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -383,7 +384,7 @@ class Photo(Base):
     __tablename__ = "photos"
 
     # UUID for photos (better for public exposure than auto-incrementing IDs)
-    id = Column(String, primary_key=True)  # UUID as string
+    id = Column(UUID(as_uuid=True), primary_key=True)  # UUID type
     household_id = Column(Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
     uploaded_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

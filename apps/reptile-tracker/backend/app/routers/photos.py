@@ -143,11 +143,11 @@ async def upload_photos(
             )
 
             # Generate UUID for photo
-            photo_id = str(uuid.uuid4())
+            photo_id = uuid.uuid4()
 
             # Define storage paths
-            file_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{photo_id}.jpg"
-            thumbnail_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{photo_id}_thumb.jpg"
+            file_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{str(photo_id)}.jpg"
+            thumbnail_path = f"photos/household_{reptile.household_id}/reptile_{reptile_id}/{str(photo_id)}_thumb.jpg"
 
             # Save to storage
             await storage.save_photo(file_path, compressed_data)
