@@ -1,5 +1,6 @@
 from datetime import datetime, time, date
 from typing import Optional, List, Dict
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_serializer
 from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType
 
@@ -365,7 +366,7 @@ class PhotoUpdate(BaseModel):
 
 class Photo(PhotoBase):
     """Full photo schema with all fields."""
-    id: str  # UUID
+    id: UUID  # UUID type
     household_id: int
     reptile_id: int
     uploaded_by_user_id: Optional[int] = None
@@ -383,6 +384,11 @@ class Photo(PhotoBase):
 
     # Relationships (optional, for expanded responses)
     uploaded_by: Optional[UserSimple] = None
+
+    @field_serializer('id')
+    def serialize_id(self, value: UUID) -> str:
+        """Serialize UUID to string for JSON responses."""
+        return str(value)
 
     class Config:
         from_attributes = True
