@@ -3,10 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
+import PhotoGallery from '../components/PhotoGallery';
+import PhotoLightbox from '../components/PhotoLightbox';
+import PhotoUpload from '../components/PhotoUpload';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -77,6 +80,11 @@ export default function ReptileDetail() {
   const [allFoods, setAllFoods] = useState([]);
   const [activeTab, setActiveTab] = useState('feedings');
   const [loading, setLoading] = useState(true);
+
+  // Photo states
+  const [photos, setPhotos] = useState([]);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -215,6 +223,38 @@ export default function ReptileDetail() {
       console.error('Error updating default food:', error);
       alert('Failed to update default food. You may not have permission.');
     }
+  };
+
+  // Photo handlers
+  const handlePhotoClick = (photo) => {
+    setLightboxPhoto(photo);
+  };
+
+  const handleSetAvatar = async (photoId) => {
+    try {
+      await axios.patch(`/api/reptiles/${id}`, {
+        avatar_photo_id: photoId
+      });
+      setReptile({ ...reptile, avatar_photo_id: photoId });
+    } catch (error) {
+      console.error('Error setting avatar:', error);
+    }
+  };
+
+  const handlePhotoDeleted = (photoId) => {
+    setPhotos(photos.filter(p => p.id !== photoId));
+    if (reptile.avatar_photo_id === photoId) {
+      setReptile({ ...reptile, avatar_photo_id: null });
+    }
+  };
+
+  const handlePhotoUpdated = (updatedPhoto) => {
+    setPhotos(photos.map(p => p.id === updatedPhoto.id ? updatedPhoto : p));
+  };
+
+  const handleUploadSuccess = (photo) => {
+    setPhotos([photo, ...photos]);
+    setShowUploadModal(false);
   };
 
   if (loading) {
@@ -579,6 +619,39 @@ export default function ReptileDetail() {
         )}
       </div>
     ),
+    photos: (
+      <div className="space-y-4">
+        {/* Upload Button */}
+        {showUploadModal ? (
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/30">
+            <PhotoUpload
+              reptileId={parseInt(id)}
+              category="general"
+              onUploadSuccess={handleUploadSuccess}
+              onCancel={() => setShowUploadModal(false)}
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+          >
+            <UploadIcon size={20} />
+            Upload Photos
+          </button>
+        )}
+
+        {/* Photo Gallery */}
+        <PhotoGallery
+          reptileId={parseInt(id)}
+          currentAvatarId={reptile?.avatar_photo_id}
+          onPhotoClick={handlePhotoClick}
+          onSetAvatar={handleSetAvatar}
+          onPhotoDeleted={handlePhotoDeleted}
+          onPhotoUpdated={handlePhotoUpdated}
+        />
+      </div>
+    ),
   };
 
   return (
@@ -709,6 +782,19 @@ export default function ReptileDetail() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
         {tabs[activeTab]}
       </div>
+
+      {/* Photo Lightbox */}
+      {lightboxPhoto && (
+        <PhotoLightbox
+          photos={photos}
+          initialPhotoId={lightboxPhoto.id}
+          currentAvatarId={reptile?.avatar_photo_id}
+          onClose={() => setLightboxPhoto(null)}
+          onSetAvatar={handleSetAvatar}
+          onPhotoDeleted={handlePhotoDeleted}
+          onPhotoUpdated={handlePhotoUpdated}
+        />
+      )}
     </div>
   );
 }
