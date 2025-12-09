@@ -238,29 +238,29 @@ async def schedule_notification_jobs_for_schedule(schedule_id: int, days_ahead: 
             today = datetime.now(timezone.utc).date()
 
             # Get all users with channels for this schedule
-            logger.info(f"Processing {len(schedule.notification_channels)} channels for schedule {schedule.id}, reminder_time={schedule.reminder_time}")
+            logger.debug(f"Processing {len(schedule.notification_channels)} channels for schedule {schedule.id}, reminder_time={schedule.reminder_time}")
             channel_user_map = {}
             for channel in schedule.notification_channels:
                 if not channel.enabled:
-                    logger.info(f"  Channel {channel.id} ({channel.name}) is disabled, skipping")
+                    logger.debug(f"  Channel {channel.id} ({channel.name}) is disabled, skipping")
                     continue
 
                 notif_settings = await db.get(NotificationSettings, channel.notification_settings_id)
                 if not notif_settings or not notif_settings.notify_schedule_reminders:
-                    logger.info(f"  Channel {channel.id} ({channel.name}) has notify_schedule_reminders=False, skipping")
+                    logger.debug(f"  Channel {channel.id} ({channel.name}) has notify_schedule_reminders=False, skipping")
                     continue
 
                 user = await db.get(User, notif_settings.user_id)
                 if not user:
-                    logger.warning(f"  Channel {channel.id} ({channel.name}) user not found, skipping")
+                    logger.debug(f"  Channel {channel.id} ({channel.name}) user not found, skipping")
                     continue
 
                 if channel.id not in channel_user_map:
                     channel_user_map[channel.id] = user
-                    logger.info(f"  Channel {channel.id} ({channel.name}, type={channel.webhook_type}) added for user {user.email}")
+                    logger.debug(f"  Channel {channel.id} ({channel.name}, type={channel.webhook_type}) added for user {user.email}")
 
             if not channel_user_map:
-                logger.info(f"No valid channels/users for schedule {schedule.id} (checked {len(schedule.notification_channels)} channels)")
+                logger.debug(f"No valid channels/users for schedule {schedule.id} (checked {len(schedule.notification_channels)} channels)")
                 return
 
             # Schedule jobs for next N days
@@ -368,11 +368,11 @@ async def _schedule_single_notification_job(
 
         # Log the calculated time
         now_utc = datetime.now(timezone.utc)
-        logger.info(f"Attempting to schedule job for schedule {schedule.id} on {scheduled_date}: reminder_time_utc={reminder_time_utc}, now_utc={now_utc}, user_tz={user.timezone}")
+        logger.debug(f"Attempting to schedule job for schedule {schedule.id} on {scheduled_date}: reminder_time_utc={reminder_time_utc}, now_utc={now_utc}, user_tz={user.timezone}")
 
         # Skip if in the past
         if reminder_time_utc < now_utc:
-            logger.info(f"Skipping job for schedule {schedule.id} on {scheduled_date} - reminder time {reminder_time_utc} is in the past (now is {now_utc})")
+            logger.debug(f"Skipping job for schedule {schedule.id} on {scheduled_date} - reminder time {reminder_time_utc} is in the past (now is {now_utc})")
             return
 
         # Generate unique job ID
@@ -386,12 +386,12 @@ async def _schedule_single_notification_job(
         if existing_job:
             # If the existing job has a different scheduled time or is cancelled/failed, delete it
             if existing_job.scheduled_time_utc != reminder_time_utc or existing_job.status in ["cancelled", "failed"]:
-                logger.info(f"Deleting old job {job_id} (status={existing_job.status}, old_time={existing_job.scheduled_time_utc}, new_time={reminder_time_utc})")
+                logger.debug(f"Deleting old job {job_id} (status={existing_job.status}, old_time={existing_job.scheduled_time_utc}, new_time={reminder_time_utc})")
                 await db.delete(existing_job)
                 await db.flush()
             else:
                 # Job already exists with same time and is pending/sent
-                logger.info(f"Job {job_id} already exists with same time, skipping")
+                logger.debug(f"Job {job_id} already exists with same time, skipping")
                 return
 
         # Create database record
@@ -418,7 +418,7 @@ async def _schedule_single_notification_job(
             misfire_grace_time=300  # Allow 5 minutes grace if scheduler was down
         )
 
-        logger.info(f"Scheduled notification job {job_id} for {reminder_time_utc} UTC ({reminder_time_local} local)")
+        logger.debug(f"Scheduled notification job {job_id} for {reminder_time_utc} UTC ({reminder_time_local} local)")
 
     except Exception as e:
         logger.error(f"Error scheduling single job: {e}", exc_info=True)
@@ -733,7 +733,7 @@ async def schedule_autocomplete_for_instance(
 
             await db.commit()
 
-            logger.info(
+            logger.debug(
                 f"Scheduled autocomplete job {job_id} for instance {instance.id} "
                 f"at {trigger_datetime_utc} UTC ({trigger_datetime_local} local)"
             )
