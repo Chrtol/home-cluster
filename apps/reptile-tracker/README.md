@@ -24,6 +24,19 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
     - Resilient to pod restarts and deployments
   - Manual override to mark auto-completed instances as skipped or missed
   - "Log Now" buttons that pre-fill all form data from schedule instances
+- 📷 **Photo Upload & Gallery**: Complete photo management system
+  - Upload photos via file selection or camera capture (mobile)
+  - Set reptile avatar from uploaded photos with initial fallback
+  - Photo gallery with category filtering (All, General, Health, Weight, Feeding, Enclosure)
+  - Full-screen lightbox viewer with keyboard navigation (arrow keys, ESC)
+  - Photo management: edit captions, set as avatar, download, delete
+  - Original image quality preservation (no re-compression for JPEG/PNG)
+  - Format-aware processing (JPEG/PNG/WebP) with automatic detection
+  - Multiple storage backend support (local, S3, NFS, hybrid)
+  - Organized storage structure by household and reptile
+  - High-quality thumbnails (300px) for grid display
+  - Immediate photo appearance after upload with refresh triggers
+  - Touch-friendly mobile interface with responsive grid
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
   - Supplement display in schedule details view with frequency notes
   - Calculated from feeding rotations matching food categories
