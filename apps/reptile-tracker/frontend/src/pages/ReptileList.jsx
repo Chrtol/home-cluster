@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Eye, EyeOff, Home } from 'lucide-react';
+import ReptileAvatar from '../components/ReptileAvatar';
 
 export default function ReptileList() {
   const [reptiles, setReptiles] = useState([]);
@@ -143,13 +144,18 @@ export default function ReptileList() {
                       key={reptile.id}
                       className="card group relative hover:shadow-lg hover:border-primary-500/50 transition-all"
                     >
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{reptile.name}</h3>
-                      <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
-                      {reptile.date_of_birth && (
-                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                          Age: {calculateAge(reptile.date_of_birth)}
-                        </p>
-                      )}
+                      <div className="flex items-start gap-4">
+                        <ReptileAvatar reptile={reptile} size="lg" className="flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{reptile.name}</h3>
+                          <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
+                          {reptile.date_of_birth && (
+                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                              Age: {calculateAge(reptile.date_of_birth)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </Link>
                   ))}
                 </div>
