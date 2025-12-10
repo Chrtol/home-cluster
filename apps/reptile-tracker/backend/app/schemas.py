@@ -89,6 +89,7 @@ class Reptile(ReptileBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    avatar_photo_id: Optional[UUID] = None  # Override to UUID type for DB model
     avatar_photo_url: Optional[str] = None  # Computed field - populated by endpoint
 
     @field_serializer('avatar_photo_id')
