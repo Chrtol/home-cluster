@@ -111,6 +111,7 @@ const PhotoLightbox = ({
       formData.append('crop_y', cropData.y);
       formData.append('crop_width', cropData.width);
       formData.append('crop_height', cropData.height);
+      formData.append('zoom', cropData.zoom);
       formData.append('border_color', cropData.borderColor);
 
       await axios.post(`/api/photos/reptiles/${currentPhoto.reptile_id}/avatar`, formData);
@@ -385,6 +386,11 @@ const PhotoLightbox = ({
           initialCrop={
             currentPhoto.id === currentAvatarId && avatarCropSettings?.crop
               ? avatarCropSettings.crop
+              : undefined
+          }
+          initialZoom={
+            currentPhoto.id === currentAvatarId && avatarCropSettings?.zoom
+              ? avatarCropSettings.zoom
               : undefined
           }
           initialBorderColor={

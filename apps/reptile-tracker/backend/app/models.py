@@ -221,6 +221,7 @@ class Reptile(Base):
     avatar_crop_y = Column(Integer, nullable=True)
     avatar_crop_width = Column(Integer, nullable=True)
     avatar_crop_height = Column(Integer, nullable=True)
+    avatar_crop_zoom = Column(Float, nullable=True)  # Zoom level (1.0 to 3.0)
 
     # Avatar border color (hex color code)
     avatar_border_color = Column(String(7), nullable=True)  # e.g., "#FF5733"

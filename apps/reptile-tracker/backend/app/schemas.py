@@ -93,6 +93,11 @@ class Reptile(ReptileBase):
     updated_at: datetime
     avatar_photo_id: Optional[UUID] = None  # Override to UUID type for DB model
     avatar_photo_url: Optional[str] = None  # Computed field - populated by endpoint
+    avatar_crop_x: Optional[int] = None  # Crop coordinates in pixels
+    avatar_crop_y: Optional[int] = None
+    avatar_crop_width: Optional[int] = None
+    avatar_crop_height: Optional[int] = None
+    avatar_crop_zoom: Optional[float] = None  # Zoom level (1.0 to 3.0)
 
     @field_serializer('avatar_photo_id')
     def serialize_avatar_id(self, value: Optional[UUID]) -> Optional[str]:

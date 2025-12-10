@@ -712,6 +712,7 @@ export default function ReptileDetail() {
             !isNaN(reptile.avatar_crop_y)
               ? {
                   crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
+                  zoom: reptile.avatar_crop_zoom,
                   borderColor: reptile.avatar_border_color
                 }
               : undefined
@@ -876,6 +877,7 @@ export default function ReptileDetail() {
             !isNaN(reptile.avatar_crop_y)
               ? {
                   crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
+                  zoom: reptile.avatar_crop_zoom,
                   borderColor: reptile.avatar_border_color
                 }
               : undefined

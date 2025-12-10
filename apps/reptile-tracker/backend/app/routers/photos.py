@@ -483,6 +483,7 @@ async def set_reptile_avatar(
     crop_y: Optional[int] = Form(None),
     crop_width: Optional[int] = Form(None),
     crop_height: Optional[int] = Form(None),
+    zoom: Optional[float] = Form(None),
     border_color: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -496,6 +497,7 @@ async def set_reptile_avatar(
 
     Optional parameters:
     - crop_x, crop_y, crop_width, crop_height: Crop coordinates in pixels
+    - zoom: Zoom level (1.0 to 3.0)
     - border_color: Hex color code for avatar border (e.g., "#FF5733")
     """
     # Check access (CARETAKER+ can set avatar)
@@ -549,13 +551,18 @@ async def set_reptile_avatar(
                 reptile.avatar_crop_y = crop_y
                 reptile.avatar_crop_width = crop_width
                 reptile.avatar_crop_height = crop_height
-                logger.info(f"Applied crop: ({crop_x}, {crop_y}, {crop_width}, {crop_height})")
+                # Also save zoom if provided and column exists
+                if hasattr(reptile, 'avatar_crop_zoom') and zoom is not None:
+                    reptile.avatar_crop_zoom = zoom
+                logger.info(f"Applied crop: ({crop_x}, {crop_y}, {crop_width}, {crop_height}, zoom={zoom})")
             else:
                 # Clear crop coordinates if none provided
                 reptile.avatar_crop_x = None
                 reptile.avatar_crop_y = None
                 reptile.avatar_crop_width = None
                 reptile.avatar_crop_height = None
+                if hasattr(reptile, 'avatar_crop_zoom'):
+                    reptile.avatar_crop_zoom = None
         elif crop_x is not None:
             # Crop requested but database not migrated yet
             logger.warning("Avatar crop coordinates provided but database columns don't exist yet. Run migration 0073.")
