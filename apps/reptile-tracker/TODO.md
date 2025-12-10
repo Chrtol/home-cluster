@@ -217,11 +217,12 @@
   - Visual: Full-size lightbox with prev/next navigation and action buttons
   - Mobile: Touch-friendly controls and responsive grid layout
 
-- [ ] **Fix avatar display showing initials instead of photos** - 🐛 BUG FIX (High Priority)
-  - Avatar photos are being set correctly in database (avatar_photo_id)
-  - ReptileAvatar component still shows initials fallback instead of actual photo
-  - Issue may be in avatar_photo_url population or frontend component logic
-  - Need to investigate why avatars don't update after selection
+- [x] **Fix avatar display showing initials instead of photos** - ✅ COMPLETED (2025-12-10)
+  - Root cause: Frontend only updated avatar_photo_id but not avatar_photo_url when setting avatar
+  - ReptileAvatar component depends on avatar_photo_url to display the image
+  - Fix: Updated handleSetAvatar to set both avatar_photo_id and avatar_photo_url
+  - Fix: Updated handlePhotoDeleted to clear both fields when avatar is deleted
+  - Frontend: Modified ReptileDetail.jsx to properly maintain avatar state
 
 - [ ] **Photo Upload & Gallery - Phase 3: Advanced Features** - 🔧 MEDIUM PRIORITY (Future)
   - Link photos to specific events (health records, feedings, weight logs, shedding)
