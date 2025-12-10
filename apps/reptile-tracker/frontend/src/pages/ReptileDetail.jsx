@@ -711,22 +711,20 @@ export default function ReptileDetail() {
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
         <div className="flex items-start gap-4">
-          <div className="relative w-24 h-24 overflow-visible">
-            <ReptileAvatar reptile={reptile} size="xl" />
-            <button
-              onClick={handleEditAvatar}
-              className="absolute -bottom-1 -right-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors z-20 border-2 border-white dark:border-gray-900"
-              title="Edit avatar"
-            >
-              <Edit2 size={14} />
-            </button>
-          </div>
+          <ReptileAvatar reptile={reptile} size="xl" />
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
             <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          <button
+            onClick={handleEditAvatar}
+            className="btn-secondary text-sm sm:text-base flex items-center gap-2"
+          >
+            <Edit2 size={16} />
+            Edit Avatar
+          </button>
           <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
           <Link to={`/measurements/${id}`} className="btn-secondary text-sm sm:text-base whitespace-nowrap">Measurements</Link>
           <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
