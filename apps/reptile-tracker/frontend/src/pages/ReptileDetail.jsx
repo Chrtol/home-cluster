@@ -706,7 +706,10 @@ export default function ReptileDetail() {
           reptileId={parseInt(id)}
           currentAvatarId={reptile?.avatar_photo_id}
           avatarCropSettings={
-            reptile?.avatar_crop_x !== null && reptile?.avatar_crop_y !== null
+            reptile?.avatar_crop_x != null &&
+            reptile?.avatar_crop_y != null &&
+            !isNaN(reptile.avatar_crop_x) &&
+            !isNaN(reptile.avatar_crop_y)
               ? {
                   crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
                   borderColor: reptile.avatar_border_color
@@ -867,7 +870,10 @@ export default function ReptileDetail() {
           initialPhotoId={lightboxPhoto.id}
           currentAvatarId={reptile?.avatar_photo_id}
           avatarCropSettings={
-            reptile?.avatar_crop_x !== null && reptile?.avatar_crop_y !== null
+            reptile?.avatar_crop_x != null &&
+            reptile?.avatar_crop_y != null &&
+            !isNaN(reptile.avatar_crop_x) &&
+            !isNaN(reptile.avatar_crop_y)
               ? {
                   crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
                   borderColor: reptile.avatar_border_color

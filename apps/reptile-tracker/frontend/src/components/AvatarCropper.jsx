@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, ZoomIn, ZoomOut, Check } from 'lucide-react';
 
@@ -21,7 +21,23 @@ import { X, ZoomIn, ZoomOut, Check } from 'lucide-react';
  * - initialBorderColor: Initial border color hex (optional)
  */
 const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, initialBorderColor }) => {
-  const [crop, setCrop] = useState(initialCrop || { x: 0, y: 0 });
+  // Validate initial crop values - reject if NaN or invalid
+  const validInitialCrop = initialCrop &&
+    !isNaN(initialCrop.x) &&
+    !isNaN(initialCrop.y) &&
+    typeof initialCrop.x === 'number' &&
+    typeof initialCrop.y === 'number'
+      ? initialCrop
+      : { x: 0, y: 0 };
+
+  console.log('AvatarCropper initialized with:', {
+    initialCrop,
+    validInitialCrop,
+    initialZoom,
+    initialBorderColor
+  });
+
+  const [crop, setCrop] = useState(validInitialCrop);
   const [zoom, setZoom] = useState(initialZoom || 1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [croppedArea, setCroppedArea] = useState(null);
@@ -45,11 +61,17 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   ];
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
-    console.log('onCropComplete called with:', {
+    console.log('onCropComplete called with full details:', {
       croppedArea,
       croppedAreaPixels,
-      croppedAreaKeys: croppedArea ? Object.keys(croppedArea) : null,
-      croppedAreaPixelsKeys: croppedAreaPixels ? Object.keys(croppedAreaPixels) : null
+      'croppedArea.x': croppedArea?.x,
+      'croppedArea.y': croppedArea?.y,
+      'croppedArea.width': croppedArea?.width,
+      'croppedArea.height': croppedArea?.height,
+      'croppedAreaPixels.x': croppedAreaPixels?.x,
+      'croppedAreaPixels.y': croppedAreaPixels?.y,
+      'croppedAreaPixels.width': croppedAreaPixels?.width,
+      'croppedAreaPixels.height': croppedAreaPixels?.height,
     });
     setCroppedArea(croppedArea);
     setCroppedAreaPixels(croppedAreaPixels);
@@ -59,6 +81,11 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
     console.log('Media loaded with size:', mediaSize);
     setImageSize(mediaSize);
   }, []);
+
+  // Debug: Monitor zoom changes
+  useEffect(() => {
+    console.log('Zoom state changed to:', zoom);
+  }, [zoom]);
 
   const handleSave = () => {
     if (!croppedAreaPixels && !croppedArea) {
@@ -128,11 +155,19 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   };
 
   const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.1, 3));
+    setZoom(prev => {
+      const newZoom = Math.min(prev + 0.1, 3);
+      console.log('Zoom increased from', prev, 'to', newZoom);
+      return newZoom;
+    });
   };
 
   const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.1, 1));
+    setZoom(prev => {
+      const newZoom = Math.max(prev - 0.1, 1);
+      console.log('Zoom decreased from', prev, 'to', newZoom);
+      return newZoom;
+    });
   };
 
   // Memoize the cropper style to ensure it updates when borderColor changes
