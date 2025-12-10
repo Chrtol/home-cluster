@@ -21,6 +21,20 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [borderColor, setBorderColor] = useState('#10b981'); // Default green
+
+  // Preset color options
+  const colorOptions = [
+    { color: '#10b981', label: 'Green' },
+    { color: '#3b82f6', label: 'Blue' },
+    { color: '#ef4444', label: 'Red' },
+    { color: '#f59e0b', label: 'Orange' },
+    { color: '#8b5cf6', label: 'Purple' },
+    { color: '#ec4899', label: 'Pink' },
+    { color: '#14b8a6', label: 'Teal' },
+    { color: '#f97316', label: 'Amber' },
+    { color: '#64748b', label: 'Gray' },
+  ];
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -33,7 +47,8 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel }) => {
         y: croppedAreaPixels.y,
         width: croppedAreaPixels.width,
         height: croppedAreaPixels.height,
-        zoom
+        zoom,
+        borderColor
       });
     }
   };
@@ -124,6 +139,29 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel }) => {
           >
             <ZoomIn className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Color Picker */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-white mb-2 text-center">
+            Avatar Border Color
+          </label>
+          <div className="flex justify-center gap-2 flex-wrap">
+            {colorOptions.map(option => (
+              <button
+                key={option.color}
+                onClick={() => setBorderColor(option.color)}
+                className={`w-10 h-10 rounded-full border-4 transition-all ${
+                  borderColor === option.color
+                    ? 'border-white scale-110'
+                    : 'border-gray-600 hover:border-gray-400'
+                }`}
+                style={{ backgroundColor: option.color }}
+                title={option.label}
+                aria-label={`Select ${option.label} border`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Action Buttons */}

@@ -483,18 +483,20 @@ async def set_reptile_avatar(
     crop_y: Optional[int] = Form(None),
     crop_width: Optional[int] = Form(None),
     crop_height: Optional[int] = Form(None),
+    border_color: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Set reptile avatar (profile picture) with optional cropping.
+    Set reptile avatar (profile picture) with optional cropping and border color.
 
     Can either:
     - Select existing photo by photo_id (Form field)
     - Upload new photo (File field)
 
-    Optional crop parameters:
+    Optional parameters:
     - crop_x, crop_y, crop_width, crop_height: Crop coordinates in pixels
+    - border_color: Hex color code for avatar border (e.g., "#FF5733")
     """
     # Check access (CARETAKER+ can set avatar)
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.CARETAKER)
@@ -557,6 +559,14 @@ async def set_reptile_avatar(
         elif crop_x is not None:
             # Crop requested but database not migrated yet
             logger.warning("Avatar crop coordinates provided but database columns don't exist yet. Run migration 0073.")
+
+        # Save border color if provided (check hasattr for backwards compatibility)
+        if hasattr(reptile, 'avatar_border_color'):
+            reptile.avatar_border_color = border_color  # Can be None to clear
+            if border_color:
+                logger.info(f"Set avatar border color: {border_color}")
+        elif border_color is not None:
+            logger.warning("Avatar border color provided but database column doesn't exist yet. Run migration 0073.")
 
         await db.commit()
         await db.refresh(photo)

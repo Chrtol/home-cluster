@@ -222,6 +222,9 @@ class Reptile(Base):
     avatar_crop_width = Column(Integer, nullable=True)
     avatar_crop_height = Column(Integer, nullable=True)
 
+    # Avatar border color (hex color code)
+    avatar_border_color = Column(String(7), nullable=True)  # e.g., "#FF5733"
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")

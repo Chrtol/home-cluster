@@ -101,6 +101,7 @@ const PhotoGallery = ({
       formData.append('crop_y', cropData.y);
       formData.append('crop_width', cropData.width);
       formData.append('crop_height', cropData.height);
+      formData.append('border_color', cropData.borderColor);
 
       await axios.post(`/api/photos/reptiles/${reptileId}/avatar`, formData);
 
