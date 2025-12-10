@@ -73,70 +73,8 @@ async def create_misting_log(
     db.add(new_log)
     await db.flush()
 
-    # If instance_id provided, directly link to that instance
-    if log.instance_id:
-        from app.models import ScheduleInstance, ScheduleCompletion, CompletionStatus, CompletionType, ScheduleMode
-        from sqlalchemy.orm import selectinload
-
-        # Get the instance
-        instance_result = await db.execute(
-            select(ScheduleInstance)
-            .where(ScheduleInstance.id == log.instance_id)
-            .options(selectinload(ScheduleInstance.schedule))
-        )
-        instance = instance_result.scalar_one_or_none()
-
-        if instance and instance.schedule:
-            # Determine if within time window
-            within_window = True
-            if instance.schedule.time_window_enabled:
-                from app.schedule_matcher import is_within_time_window
-                within_window = is_within_time_window(
-                    new_log.misted_at.time(),
-                    instance.schedule.earliest_time,
-                    instance.schedule.latest_time
-                )
-
-            # Create completion record
-            completion = ScheduleCompletion(
-                schedule_id=instance.schedule_id,
-                instance_id=instance.id,
-                scheduled_date=instance.scheduled_date,
-                completed_at=new_log.misted_at,
-                completion_type=CompletionType.MISTING,
-                completion_id=new_log.id,
-                within_time_window=within_window,
-                status=CompletionStatus.COMPLETED_ON_TIME if within_window else CompletionStatus.COMPLETED_LATE,
-                reptile_id=log.reptile_id,
-            )
-            db.add(completion)
-            await db.flush()
-
-            # Link misting to completion
-            new_log.schedule_completion_id = completion.id
-
-            # Mark instance as completed
-            instance.status = "completed"
-            instance.updated_at = datetime.now(timezone.utc)
-
-            # For interval schedules, generate next instance
-            if instance.schedule.schedule_mode == ScheduleMode.INTERVAL:
-                from app.instance_generator import create_interval_schedule_instance
-                try:
-                    await create_interval_schedule_instance(
-                        db=db,
-                        schedule=instance.schedule,
-                        last_completion_date=new_log.misted_at.date()
-                    )
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).error(
-                        f"Failed to create next interval instance for schedule {instance.schedule.id}: {e}",
-                        exc_info=True
-                    )
-    else:
-        # Try to assign to a matching schedule via auto-matching
-        await assign_misting_to_schedule(db, new_log)
+    # Try to assign to a matching schedule
+    await assign_misting_to_schedule(db, new_log)
 
     await db.commit()
     await db.refresh(new_log)
