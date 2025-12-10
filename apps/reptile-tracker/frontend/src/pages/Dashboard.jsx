@@ -278,19 +278,6 @@ export default function Dashboard() {
             };
           });
 
-        // Debug: Log instances to help diagnose badge status issues
-        console.log('[Dashboard] Weekly instances received:', data.weekly_instances.length);
-        const today = new Date();
-        const todayStr = today.toDateString();
-        const todayInstances = instanceEvents.filter(e => e.date.toDateString() === todayStr);
-        console.log(`[Dashboard] Today's instances (${todayStr}):`, todayInstances.map(e => ({
-          id: e.instance_id,
-          reptile: e.reptile_name,
-          type: e.schedule_type,
-          status: e.status,
-          name: e.name
-        })));
-
         setWeeklyEvents(instanceEvents);
 
       } catch (error) {
@@ -685,18 +672,6 @@ export default function Dashboard() {
       event.date.toDateString() === today.toDateString()
     );
     const hasDueToday = todaySchedules.some(e => e.status === 'pending');
-
-    // Debug: Log badge decision for this reptile
-    if (todaySchedules.length > 0) {
-      console.log(`[Badge] Reptile ${reptileId} today's schedules:`, todaySchedules.map(s => ({
-        id: s.instance_id,
-        type: s.schedule_type,
-        name: s.name,
-        status: s.status
-      })));
-      console.log(`[Badge] Reptile ${reptileId} hasDueToday:`, hasDueToday, '-> Badge:', hasDueToday ? 'YELLOW' : 'GREEN');
-    }
-
     if (hasDueToday) {
       return { color: 'yellow', emoji: '🟡', tooltip: 'Has tasks due today' };
     }
