@@ -718,6 +718,13 @@ Assign specific household members as responsible for completing schedules, impro
   - Should they be consolidated into one?
   - Document reasoning or refactor
 
+- [ ] **Update frontend container to run as non-root** - 🔒 SECURITY (Low Priority)
+  - Currently runs as root (user 0) due to nginx cache directory permissions
+  - Temporary workaround in place with container-level security context override
+  - Proper solution: Update Dockerfile to use non-root nginx configuration
+  - Options: Use nginx-unprivileged base image or configure nginx to use non-privileged ports
+  - Reference: https://hub.docker.com/r/nginxinc/nginx-unprivileged
+
 - [x] **Review Kubernetes setup** - ✅ SIMPLIFIED (2025-10-25)
   - Why 2 kustomizations (db + app)?
   - Using cloudnative-pg17 cluster - is separate DB kustomization needed?
