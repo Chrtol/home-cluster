@@ -10,6 +10,7 @@ from datetime import date as py_date, datetime, timedelta, time
 from app import models
 from app.database import get_db
 from app.routers.auth import get_current_user
+from app.routers.reptiles import populate_avatar_url
 from app.permissions import get_accessible_reptile_ids
 from app.quota_tracker import check_quota_status
 from app.models import ScheduleMode
@@ -89,6 +90,10 @@ async def get_dashboard_data(
         .options(selectinload(models.Reptile.household))
     )
     reptiles = reptiles_result.scalars().all()
+
+    # Populate avatar URLs for each reptile
+    for reptile in reptiles:
+        populate_avatar_url(reptile)
 
     # Fetch recent feedings (last 5)
     recent_feedings_result = await db.execute(
@@ -346,6 +351,10 @@ async def get_calendar_data(
         .options(selectinload(models.Reptile.household))
     )
     reptiles = reptiles_result.scalars().all()
+
+    # Populate avatar URLs for each reptile
+    for reptile in reptiles:
+        populate_avatar_url(reptile)
 
     # Fetch schedules for all accessible reptiles
     schedules_result = await db.execute(

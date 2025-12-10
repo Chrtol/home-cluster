@@ -10,6 +10,7 @@ import ReptileAvatar from '../components/ReptileAvatar';
 import PhotoGallery from '../components/PhotoGallery';
 import PhotoLightbox from '../components/PhotoLightbox';
 import PhotoUpload from '../components/PhotoUpload';
+import AvatarCropper from '../components/AvatarCropper';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -86,6 +87,8 @@ export default function ReptileDetail() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [photoRefreshTrigger, setPhotoRefreshTrigger] = useState(0);
+  const [showAvatarCropper, setShowAvatarCropper] = useState(false);
+  const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -261,6 +264,48 @@ export default function ReptileDetail() {
     setPhotos([photo, ...photos]);
     setShowUploadModal(false);
     setPhotoRefreshTrigger(prev => prev + 1); // Trigger gallery refresh
+  };
+
+  const handleEditAvatar = async () => {
+    if (!reptile.avatar_photo_id) return;
+
+    try {
+      // Fetch the full-size photo URL for cropping
+      const response = await axios.get(`/api/photos/${reptile.avatar_photo_id}`);
+      setAvatarPhotoUrl(`/api/photos/${reptile.avatar_photo_id}/fullsize`);
+      setShowAvatarCropper(true);
+    } catch (error) {
+      console.error('Error loading avatar photo:', error);
+      alert('Failed to load avatar photo');
+    }
+  };
+
+  const handleSaveAvatarCrop = async (cropData) => {
+    try {
+      const formData = new FormData();
+      formData.append('photo_id', reptile.avatar_photo_id);
+      formData.append('crop_x', cropData.x);
+      formData.append('crop_y', cropData.y);
+      formData.append('crop_width', cropData.width);
+      formData.append('crop_height', cropData.height);
+      formData.append('border_color', cropData.borderColor);
+
+      await axios.post(`/api/photos/reptiles/${id}/avatar`, formData);
+
+      // Refresh reptile data to get updated avatar
+      const reptileResponse = await axios.get(`/api/reptiles/${id}`);
+      setReptile(reptileResponse.data);
+
+      setShowAvatarCropper(false);
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      alert('Failed to update avatar');
+    }
+  };
+
+  const handleCloseCropper = () => {
+    setShowAvatarCropper(false);
+    setAvatarPhotoUrl(null);
   };
 
   if (loading) {
@@ -666,7 +711,19 @@ export default function ReptileDetail() {
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
         <div className="flex items-start gap-4">
-          <ReptileAvatar reptile={reptile} size="xl" className="flex-shrink-0" />
+          <div className="relative flex-shrink-0">
+            <ReptileAvatar reptile={reptile} size="xl" />
+            {reptile.avatar_photo_id && (
+              <button
+                onClick={handleEditAvatar}
+                className="absolute -bottom-1 -right-1 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-lg border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                title="Edit avatar crop and border"
+                aria-label="Edit avatar"
+              >
+                <Edit2 size={14} className="text-gray-700 dark:text-gray-300" />
+              </button>
+            )}
+          </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
             <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
@@ -801,6 +858,15 @@ export default function ReptileDetail() {
           onSetAvatar={handleSetAvatar}
           onPhotoDeleted={handlePhotoDeleted}
           onPhotoUpdated={handlePhotoUpdated}
+        />
+      )}
+
+      {/* Avatar Cropper Modal */}
+      {showAvatarCropper && avatarPhotoUrl && (
+        <AvatarCropper
+          imageUrl={avatarPhotoUrl}
+          onSave={handleSaveAvatarCrop}
+          onCancel={handleCloseCropper}
         />
       )}
     </div>
