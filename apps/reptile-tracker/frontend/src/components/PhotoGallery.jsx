@@ -234,7 +234,7 @@ const PhotoGallery = ({
 
             {/* Avatar Badge */}
             {photo.id === currentAvatarId && (
-              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 z-20">
                 <Star size={12} fill="currentColor" />
                 Avatar
               </div>
@@ -321,8 +321,8 @@ const PhotoGallery = ({
               </div>
             </div>
 
-            {/* Uploaded Date - Top Left */}
-            <div className="absolute top-2 left-2 bg-black/75 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Uploaded Date - Top Center */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/75 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="text-white text-xs">
                 {new Date(photo.uploaded_at).toLocaleDateString()}
               </p>

@@ -1657,7 +1657,7 @@ export default function Dashboard() {
                   }
                   return (
                     <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-3">
                         {/* Avatar + Reptile Name (always together) */}
                         {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="lg" className="flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
@@ -1673,8 +1673,8 @@ export default function Dashboard() {
                         </div>
                         {/* Prominent value (for weight, feeding count, etc.) */}
                         {prominentValue && (
-                          <div className="flex-shrink-0 text-center">
-                            <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>
+                          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30">
+                            <span className="text-lg font-bold text-primary-700 dark:text-primary-300">{prominentValue}</span>
                           </div>
                         )}
                       </div>

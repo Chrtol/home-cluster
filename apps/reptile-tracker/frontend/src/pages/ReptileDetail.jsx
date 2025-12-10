@@ -711,18 +711,16 @@ export default function ReptileDetail() {
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
         <div className="flex items-start gap-4">
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 pb-3 pr-3">
             <ReptileAvatar reptile={reptile} size="xl" />
-            {reptile.avatar_photo_id && (
-              <button
-                onClick={handleEditAvatar}
-                className="absolute -bottom-1 -right-1 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-lg border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                title="Edit avatar crop and border"
-                aria-label="Edit avatar"
-              >
-                <Edit2 size={14} className="text-gray-700 dark:text-gray-300" />
-              </button>
-            )}
+            <button
+              onClick={reptile.avatar_photo_id ? handleEditAvatar : () => console.log('No avatar_photo_id:', reptile)}
+              className="absolute -bottom-1 -right-1 p-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-xl border-2 border-white dark:border-gray-900 transition-all hover:scale-110 z-20"
+              title={reptile.avatar_photo_id ? "Edit avatar crop and border" : "Set avatar (no avatar_photo_id)"}
+              aria-label="Edit avatar"
+            >
+              <Edit2 size={18} />
+            </button>
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
