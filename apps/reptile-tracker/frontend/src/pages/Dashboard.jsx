@@ -1286,8 +1286,8 @@ export default function Dashboard() {
                                 {/* Avatar + Reptile Name (always together) */}
                                 {event.reptile && (
                                   <div className="flex-shrink-0">
-                                    {/* Avatar sized to fit: target 20px total, minus 6px for borders = 14px base */}
-                                    <ReptileAvatar reptile={event.reptile} size="sm" className="w-[14px] h-[14px] text-[6px]" />
+                                    {/* Avatar sized to fit: 2px border = 4px total, base 12px = 16px total */}
+                                    <ReptileAvatar reptile={event.reptile} size="sm" className="w-[12px] h-[12px] text-[6px]" />
                                   </div>
                                 )}
                                 <span className="font-semibold text-gray-900 dark:text-white truncate min-w-0">
@@ -1350,8 +1350,8 @@ export default function Dashboard() {
                               {/* Avatar + Reptile Name (always together) */}
                               {event.reptile && (
                                 <div className="flex-shrink-0">
-                                  {/* Avatar sized to fit: target 16px total, minus 6px for borders = 10px base */}
-                                  <ReptileAvatar reptile={event.reptile} size="sm" className="w-[10px] h-[10px] text-[5px]" />
+                                  {/* Avatar sized to fit: 2px border = 4px total, base 8px = 12px total */}
+                                  <ReptileAvatar reptile={event.reptile} size="sm" className="w-[8px] h-[8px] text-[5px]" />
                                 </div>
                               )}
                               <span className="truncate text-gray-700 dark:text-gray-300 font-medium">
@@ -1659,7 +1659,7 @@ export default function Dashboard() {
                     <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
                       <div className="flex items-start gap-2">
                         {/* Avatar + Reptile Name (always together) */}
-                        {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="sm" className="flex-shrink-0" />}
+                        {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="lg" className="flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2 mb-0.5">
                             <p className="font-medium text-sm text-gray-900 dark:text-white">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
