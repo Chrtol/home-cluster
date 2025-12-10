@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Trash2, Star, Edit2, Upload, Download } from 'lucide-react';
 import axios from 'axios';
+import AvatarCropper from './AvatarCropper';
 
 /**
  * PhotoGallery component
@@ -35,6 +36,7 @@ const PhotoGallery = ({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [editingCaption, setEditingCaption] = useState(null);
   const [captionText, setCaptionText] = useState('');
+  const [cropperPhoto, setCropperPhoto] = useState(null);
 
   const categories = [
     { value: 'all', label: 'All Photos' },
@@ -83,16 +85,30 @@ const PhotoGallery = ({
     }
   };
 
-  const handleSetAvatar = async (photoId) => {
+  const handleOpenCropper = (photo) => {
+    setCropperPhoto(photo);
+  };
+
+  const handleCloseCropper = () => {
+    setCropperPhoto(null);
+  };
+
+  const handleSaveCroppedAvatar = async (cropData) => {
     try {
       const formData = new FormData();
-      formData.append('photo_id', photoId);
+      formData.append('photo_id', cropperPhoto.id);
+      formData.append('crop_x', cropData.x);
+      formData.append('crop_y', cropData.y);
+      formData.append('crop_width', cropData.width);
+      formData.append('crop_height', cropData.height);
 
       await axios.post(`/api/photos/reptiles/${reptileId}/avatar`, formData);
 
       if (onSetAvatar) {
-        onSetAvatar(photoId);
+        onSetAvatar(cropperPhoto.id);
       }
+
+      handleCloseCropper();
     } catch (err) {
       console.error('Error setting avatar:', err);
       alert('Failed to set avatar');
@@ -239,7 +255,7 @@ const PhotoGallery = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleSetAvatar(photo.id);
+                        handleOpenCropper(photo);
                       }}
                       className="flex-1 px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded flex items-center justify-center gap-1 transition-colors"
                       title="Set as avatar"
@@ -330,6 +346,15 @@ const PhotoGallery = ({
           </div>
         ))}
       </div>
+      )}
+
+      {/* Avatar Cropper Modal */}
+      {cropperPhoto && (
+        <AvatarCropper
+          imageUrl={`/api/photos/${cropperPhoto.id}/file`}
+          onSave={handleSaveCroppedAvatar}
+          onCancel={handleCloseCropper}
+        />
       )}
     </div>
   );

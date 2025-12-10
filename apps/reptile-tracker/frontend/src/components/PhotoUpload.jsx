@@ -31,7 +31,16 @@ const PhotoUpload = ({
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(category);
   const [error, setError] = useState(null);
+
+  const categories = [
+    { value: 'general', label: 'General' },
+    { value: 'health', label: 'Health' },
+    { value: 'weight', label: 'Weight' },
+    { value: 'feeding', label: 'Feeding' },
+    { value: 'enclosure', label: 'Enclosure' },
+  ];
 
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -82,7 +91,7 @@ const PhotoUpload = ({
       const formData = new FormData();
       formData.append('files', selectedFile);
       formData.append('reptile_id', reptileId);
-      formData.append('category', category);
+      formData.append('category', selectedCategory);
       if (caption) {
         formData.append('caption', caption);
       }
@@ -115,6 +124,7 @@ const PhotoUpload = ({
     setSelectedFile(null);
     setPreviewUrl(null);
     setCaption('');
+    setSelectedCategory(category);
     setError(null);
     if (onCancel) {
       onCancel();
@@ -183,6 +193,24 @@ const PhotoUpload = ({
             >
               <X size={20} />
             </button>
+          </div>
+
+          {/* Category selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Category
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              {categories.map(cat => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Caption input */}

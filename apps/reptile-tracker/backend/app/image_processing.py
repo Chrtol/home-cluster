@@ -132,21 +132,27 @@ def compress_image(
 
 def create_thumbnail(
     image_bytes: bytes,
-    size: Optional[int] = None
+    size: Optional[int] = None,
+    crop_box: Optional[Tuple[int, int, int, int]] = None,
+    square_crop: bool = False
 ) -> bytes:
     """
-    Create square thumbnail preserving aspect ratio.
+    Create thumbnail with optional cropping.
 
     Process:
     1. Load image from bytes
     2. Auto-rotate based on EXIF orientation
-    3. Resize to fit within size x size box (maintaining aspect ratio)
-    4. Convert to JPEG with high quality
-    5. Optimize for smaller file size
+    3. Apply crop if crop_box provided
+    4. If square_crop, center-crop to square
+    5. Resize to fit within size x size box (maintaining aspect ratio)
+    6. Convert to JPEG with high quality
+    7. Optimize for smaller file size
 
     Args:
         image_bytes: Original image binary data
         size: Thumbnail size in pixels (default: from config)
+        crop_box: Optional crop box as (left, top, right, bottom) in pixels
+        square_crop: If True, center-crop to square before resizing
 
     Returns:
         Thumbnail image binary data (JPEG)
@@ -164,6 +170,30 @@ def create_thumbnail(
         # Auto-rotate based on EXIF orientation
         img = ImageOps.exif_transpose(img)
 
+        # Apply custom crop if provided
+        if crop_box:
+            left, top, right, bottom = crop_box
+            # Ensure crop box is within image bounds
+            left = max(0, min(left, img.width))
+            top = max(0, min(top, img.height))
+            right = max(left, min(right, img.width))
+            bottom = max(top, min(bottom, img.height))
+            img = img.crop((left, top, right, bottom))
+            logger.debug(f"Applied crop: ({left}, {top}, {right}, {bottom})")
+
+        # Center-crop to square if requested
+        if square_crop and img.width != img.height:
+            # Calculate square crop (center crop)
+            if img.width > img.height:
+                # Landscape - crop width
+                left = (img.width - img.height) // 2
+                img = img.crop((left, 0, left + img.height, img.height))
+            else:
+                # Portrait - crop height
+                top = (img.height - img.width) // 2
+                img = img.crop((0, top, img.width, top + img.width))
+            logger.debug(f"Center-cropped to square: {img.width}x{img.height}")
+
         # Convert RGBA to RGB if necessary
         if img.mode == 'RGBA':
             background = Image.new('RGB', img.size, (255, 255, 255))
@@ -175,9 +205,9 @@ def create_thumbnail(
         # Resize maintaining aspect ratio (fit within size x size box)
         img.thumbnail((size, size), Image.Resampling.LANCZOS)
 
-        # Save as JPEG with high quality for better appearance at 300px size
+        # Save as JPEG with higher quality (95) for less graininess
         output = io.BytesIO()
-        img.save(output, format='JPEG', quality=92, optimize=True)
+        img.save(output, format='JPEG', quality=95, optimize=True)
         thumbnail_bytes = output.getvalue()
 
         logger.debug(

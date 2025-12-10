@@ -216,6 +216,12 @@ class Reptile(Base):
     # Avatar photo (profile picture)
     avatar_photo_id = Column(UUID(as_uuid=True), ForeignKey("photos.id", ondelete="SET NULL"), nullable=True)
 
+    # Avatar crop coordinates (for custom avatar cropping)
+    avatar_crop_x = Column(Integer, nullable=True)
+    avatar_crop_y = Column(Integer, nullable=True)
+    avatar_crop_width = Column(Integer, nullable=True)
+    avatar_crop_height = Column(Integer, nullable=True)
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
