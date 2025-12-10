@@ -1285,7 +1285,7 @@ export default function Dashboard() {
                               <div className="flex items-center gap-1.5 text-xs overflow-hidden min-w-0">
                                 {/* Avatar + Reptile Name (always together) */}
                                 {event.reptile && (
-                                  <div className="flex-shrink-0">
+                                  <div className="flex-shrink-0 ml-0.5">
                                     {/* Avatar sized to fit: 2px border = 4px total, base 12px = 16px total */}
                                     <ReptileAvatar reptile={event.reptile} size="sm" className="w-[12px] h-[12px] text-[6px]" />
                                   </div>
@@ -1349,7 +1349,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-1 text-[10px]">
                               {/* Avatar + Reptile Name (always together) */}
                               {event.reptile && (
-                                <div className="flex-shrink-0">
+                                <div className="flex-shrink-0 ml-0.5">
                                   {/* Avatar sized to fit: 2px border = 4px total, base 8px = 12px total */}
                                   <ReptileAvatar reptile={event.reptile} size="sm" className="w-[8px] h-[8px] text-[5px]" />
                                 </div>
@@ -1567,7 +1567,7 @@ export default function Dashboard() {
 
                   return (
                     <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2">
                         {/* Avatar + Reptile Name (always together) */}
                         <ReptileAvatar reptile={reptile} size="sm" />
                         <div className="flex-1 min-w-0">
