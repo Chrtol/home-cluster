@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Star, Edit2, Trash2, Download } from 'lucide-react';
 import axios from 'axios';
+import AvatarCropper from './AvatarCropper';
 
 /**
  * PhotoLightbox component
@@ -29,6 +30,7 @@ const PhotoLightbox = ({
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionText, setCaptionText] = useState('');
   const [imageLoading, setImageLoading] = useState(true);
+  const [showCropper, setShowCropper] = useState(false);
 
   const currentPhoto = photos[currentIndex];
 
@@ -77,18 +79,32 @@ const PhotoLightbox = ({
     setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
   };
 
-  const handleSetAvatar = async () => {
+  const handleOpenCropper = () => {
+    setShowCropper(true);
+  };
+
+  const handleCloseCropper = () => {
+    setShowCropper(false);
+  };
+
+  const handleSaveCroppedAvatar = async (cropData) => {
     if (!currentPhoto) return;
 
     try {
       const formData = new FormData();
       formData.append('photo_id', currentPhoto.id);
+      formData.append('crop_x', cropData.x);
+      formData.append('crop_y', cropData.y);
+      formData.append('crop_width', cropData.width);
+      formData.append('crop_height', cropData.height);
 
       await axios.post(`/api/photos/reptiles/${currentPhoto.reptile_id}/avatar`, formData);
 
       if (onSetAvatar) {
         onSetAvatar(currentPhoto.id);
       }
+
+      handleCloseCropper();
     } catch (err) {
       console.error('Error setting avatar:', err);
       alert('Failed to set avatar');
@@ -289,7 +305,7 @@ const PhotoLightbox = ({
           <div className="flex flex-wrap gap-2">
             {currentPhoto.id !== currentAvatarId && (
               <button
-                onClick={handleSetAvatar}
+                onClick={handleOpenCropper}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
                 <Star size={16} />
@@ -320,6 +336,15 @@ const PhotoLightbox = ({
           </div>
         </div>
       </div>
+
+      {/* Avatar Cropper Modal */}
+      {showCropper && currentPhoto && (
+        <AvatarCropper
+          imageUrl={`/api/photos/${currentPhoto.id}/file`}
+          onSave={handleSaveCroppedAvatar}
+          onCancel={handleCloseCropper}
+        />
+      )}
     </div>
   );
 };
