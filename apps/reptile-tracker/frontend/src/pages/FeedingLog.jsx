@@ -57,6 +57,8 @@ export default function FeedingLog() {
 
   // Track if supplements were pre-filled from a schedule instance
   const [supplementsPreFilled, setSupplementsPreFilled] = useState(false);
+  // Store the original pre-filled supplements to display in the banner
+  const [originalPreFilledSupplements, setOriginalPreFilledSupplements] = useState([]);
 
   // Time input format state
   const [timeFormat, setTimeFormat] = useState('24h');
@@ -160,6 +162,7 @@ export default function FeedingLog() {
               if (instance.supplements && instance.supplements.length > 0) {
                 const suppIds = instance.supplements.map(s => s.id);
                 setSelectedSupplements(suppIds);
+                setOriginalPreFilledSupplements(suppIds); // Store original pre-filled supplements
                 setSupplementsPreFilled(true); // Mark that supplements were pre-filled
               }
             } catch (instanceErr) {
@@ -1365,7 +1368,7 @@ export default function FeedingLog() {
         )}
 
         {/* SUPPLEMENT SUGGESTIONS OR PRE-FILLED BANNER */}
-        {supplementsPreFilled && selectedSupplements.length > 0 ? (
+        {supplementsPreFilled && originalPreFilledSupplements.length > 0 ? (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
             <div className="flex items-start gap-3">
               <div className="flex-1">
@@ -1379,7 +1382,7 @@ export default function FeedingLog() {
                   The following supplements have been automatically added based on your schedule's rotation rules:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {selectedSupplements.map((suppId) => {
+                  {originalPreFilledSupplements.map((suppId) => {
                     const supp = supplements.find(s => s.id === suppId);
                     return supp ? (
                       <span key={suppId} className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded-lg font-medium">

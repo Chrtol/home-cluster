@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [dashboardCards, setDashboardCards] = useState([]);
   const [chartSettings, setChartSettings] = useState(null);
   const [hideSupplements, setHideSupplements] = useState(false); // Hide supplements when calendar is XS
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force data refresh
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -286,7 +287,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, [calendarReptileFilter, calendarView, currentWeekDate]);
+  }, [calendarReptileFilter, calendarView, currentWeekDate, refreshTrigger]);
 
   // Initialize reptile filter when reptiles are loaded
   useEffect(() => {
@@ -294,6 +295,20 @@ export default function Dashboard() {
       setCalendarReptileFilter(new Set(reptiles.map(r => r.id)));
     }
   }, [reptiles]);
+
+  // Refresh data when page becomes visible (e.g., user returns from completing a task)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const calculateWeeklyEvents = (scheduleList, rotationsList = []) => {
     const calculatedEvents = [];
@@ -1656,26 +1671,23 @@ export default function Dashboard() {
                       break;
                   }
                   return (
-                    <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
-                      <div className="flex items-start gap-3">
+                    <Link key={activity.id} to={detailLink} className="block p-2 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+                      <div className="flex items-center gap-2">
                         {/* Avatar + Reptile Name (always together) */}
-                        {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="lg" className="flex-shrink-0" />}
+                        {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="sm" className="flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2 mb-0.5">
                             <p className="font-medium text-sm text-gray-900 dark:text-white">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
                           </div>
-                          <div className="flex items-center gap-2 mb-0.5">
+                          <div className="flex items-center gap-2">
                             <Icon size={14} className={`flex-shrink-0 ${colorClasses[activity.color]}`} />
-                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 sm:truncate">{summary}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{summary}</p>
                           </div>
-                          {details && <p className="text-xs text-gray-500 dark:text-gray-500 line-clamp-1 italic mt-0.5">"{details}"</p>}
                         </div>
                         {/* Prominent value (for weight, feeding count, etc.) */}
                         {prominentValue && (
-                          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30">
-                            <span className="text-lg font-bold text-primary-700 dark:text-primary-300">{prominentValue}</span>
-                          </div>
+                          <span className="flex-shrink-0 text-lg font-bold text-primary-600 dark:text-primary-400 tabular-nums">{prominentValue}</span>
                         )}
                       </div>
                     </Link>
