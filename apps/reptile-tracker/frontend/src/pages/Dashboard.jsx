@@ -649,7 +649,7 @@ export default function Dashboard() {
     // Check for overdue or missed schedules (any day, not just today)
     const hasOverdue = reptileSchedules.some(e => e.status === 'missed');
     if (hasOverdue) {
-      return { color: 'red', emoji: '🔴' };
+      return { color: 'red', emoji: '🔴', tooltip: 'Has overdue or missed tasks' };
     }
 
     // Check for pending schedules today
@@ -658,11 +658,11 @@ export default function Dashboard() {
     );
     const hasDueToday = todaySchedules.some(e => e.status === 'pending');
     if (hasDueToday) {
-      return { color: 'yellow', emoji: '🟡' };
+      return { color: 'yellow', emoji: '🟡', tooltip: 'Has tasks due today' };
     }
 
     // All good
-    return { color: 'green', emoji: '🟢' };
+    return { color: 'green', emoji: '🟢', tooltip: 'All tasks on track' };
   };
 
   if (loading) {
@@ -1283,21 +1283,26 @@ export default function Dashboard() {
                               title={event.notes || event.name || event.reptile_name}
                             >
                               <div className="flex items-center gap-1.5 text-xs overflow-hidden min-w-0">
-                                {event.is_completed && (
-                                  <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0">✓</span>
-                                )}
+                                {/* Avatar + Reptile Name (always together) */}
                                 {event.reptile && (
                                   <div className="flex-shrink-0">
-                                    <ReptileAvatar reptile={event.reptile} size="sm" className="w-5 h-5 text-[8px]" />
+                                    {/* Avatar sized to fit: target 20px total, minus 6px for borders = 14px base */}
+                                    <ReptileAvatar reptile={event.reptile} size="sm" className="w-[14px] h-[14px] text-[6px]" />
                                   </div>
                                 )}
-                                <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
                                 <span className="font-semibold text-gray-900 dark:text-white truncate min-w-0">
                                   {event.reptile_name}
                                 </span>
+
+                                {/* Category Icon */}
+                                <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+
+                                {/* Notification Bell */}
                                 {event.notifications_enabled && (
                                   <Bell size={10} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
                                 )}
+
+                                {/* Details */}
                                 {(timeText || foodCategory) && (
                                   <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
                                 )}
@@ -1320,6 +1325,11 @@ export default function Dashboard() {
                                     </span>
                                   </>
                                 )}
+
+                                {/* Checkmark (right-aligned) */}
+                                {event.is_completed && (
+                                  <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0 ml-auto">✓</span>
+                                )}
                               </div>
                             </div>
                           );
@@ -1337,16 +1347,26 @@ export default function Dashboard() {
                             title={`${event.reptile_name}${timeText ? ' • ' + timeText : ''}${foodCategory ? ' • ' + foodCategory : ''}${!hideSupplements && event.suggested_supplements?.length > 0 ? ' • +' + event.suggested_supplements.map(s => s.name).join(', ') : ''}${event.notes ? '\n' + event.notes : ''}`}
                           >
                             <div className="flex items-center gap-1 text-[10px]">
-                              {event.is_completed && (
-                                <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0">✓</span>
+                              {/* Avatar + Reptile Name (always together) */}
+                              {event.reptile && (
+                                <div className="flex-shrink-0">
+                                  {/* Avatar sized to fit: target 16px total, minus 6px for borders = 10px base */}
+                                  <ReptileAvatar reptile={event.reptile} size="sm" className="w-[10px] h-[10px] text-[5px]" />
+                                </div>
                               )}
-                              <Icon size={9} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
                               <span className="truncate text-gray-700 dark:text-gray-300 font-medium">
                                 {event.reptile_name}
                               </span>
+
+                              {/* Category Icon */}
+                              <Icon size={9} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+
+                              {/* Notification Bell */}
                               {event.notifications_enabled && (
                                 <Bell size={8} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
                               )}
+
+                              {/* Details */}
                               {(timeText || foodCategory) && <span className="text-gray-400 dark:text-gray-500">•</span>}
                               {timeText && (
                                 <span className="text-gray-500 dark:text-gray-400 truncate">{timeText}</span>
@@ -1354,6 +1374,11 @@ export default function Dashboard() {
                               {foodCategory && timeText && <span className="text-gray-400 dark:text-gray-500">•</span>}
                               {foodCategory && (
                                 <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
+                              )}
+
+                              {/* Checkmark (right-aligned) */}
+                              {event.is_completed && (
+                                <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0 ml-auto">✓</span>
                               )}
                             </div>
                           </div>
@@ -1543,12 +1568,10 @@ export default function Dashboard() {
                   return (
                     <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700">
                       <div className="flex items-start gap-2">
+                        {/* Avatar + Reptile Name (always together) */}
                         <ReptileAvatar reptile={reptile} size="sm" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            {healthBadge && (
-                              <span className="text-xs" title={`Status: ${healthBadge.color}`}>{healthBadge.emoji}</span>
-                            )}
                             <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{reptile.name}</span>
                             <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{reptile.species}</span>
                           </div>
@@ -1577,6 +1600,10 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
+                        {/* Health Status Badge (right side) */}
+                        {healthBadge && (
+                          <span className="text-base flex-shrink-0" title={healthBadge.tooltip}>{healthBadge.emoji}</span>
+                        )}
                       </div>
                     </Link>
                   );
@@ -1631,21 +1658,25 @@ export default function Dashboard() {
                   return (
                     <Link key={activity.id} to={detailLink} className="block p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
                       <div className="flex items-start gap-2">
+                        {/* Avatar + Reptile Name (always together) */}
                         {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="sm" className="flex-shrink-0" />}
-                        <Icon size={16} className={`flex-shrink-0 mt-0.5 sm:mt-1 ${colorClasses[activity.color]}`} />
-                        {prominentValue && (
-                          <div className="flex-shrink-0 text-center sm:w-20">
-                            <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>
-                          </div>
-                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2 mb-0.5">
                             <p className="font-medium text-sm text-gray-900 dark:text-white">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 sm:truncate">{summary}</p>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Icon size={14} className={`flex-shrink-0 ${colorClasses[activity.color]}`} />
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 sm:truncate">{summary}</p>
+                          </div>
                           {details && <p className="text-xs text-gray-500 dark:text-gray-500 line-clamp-1 italic mt-0.5">"{details}"</p>}
                         </div>
+                        {/* Prominent value (for weight, feeding count, etc.) */}
+                        {prominentValue && (
+                          <div className="flex-shrink-0 text-center">
+                            <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{prominentValue}</span>
+                          </div>
+                        )}
                       </div>
                     </Link>
                   );
