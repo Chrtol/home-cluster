@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Star, Edit2, Trash2, Download } from 'lucide-react';
 import axios from 'axios';
 import AvatarCropper from './AvatarCropper';
+import { formatDateTime } from '../utils/dateFormatting';
 
 /**
  * PhotoLightbox component
@@ -29,10 +30,19 @@ const PhotoLightbox = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionText, setCaptionText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('general');
   const [imageLoading, setImageLoading] = useState(true);
   const [showCropper, setShowCropper] = useState(false);
 
   const currentPhoto = photos[currentIndex];
+
+  const categories = [
+    { value: 'general', label: 'General' },
+    { value: 'health', label: 'Health' },
+    { value: 'weight', label: 'Weight' },
+    { value: 'feeding', label: 'Feeding' },
+    { value: 'enclosure', label: 'Enclosure' },
+  ];
 
   useEffect(() => {
     // Find initial photo index
@@ -144,6 +154,7 @@ const PhotoLightbox = ({
   const handleStartEditCaption = () => {
     setEditingCaption(true);
     setCaptionText(currentPhoto?.caption || '');
+    setSelectedCategory(currentPhoto?.category || 'general');
   };
 
   const handleSaveCaption = async () => {
@@ -151,7 +162,8 @@ const PhotoLightbox = ({
 
     try {
       const response = await axios.patch(`/api/photos/${currentPhoto.id}`, {
-        caption: captionText
+        caption: captionText,
+        category: selectedCategory
       });
 
       setEditingCaption(false);
@@ -160,8 +172,8 @@ const PhotoLightbox = ({
         onPhotoUpdated(response.data);
       }
     } catch (err) {
-      console.error('Error updating caption:', err);
-      alert('Failed to update caption');
+      console.error('Error updating photo:', err);
+      alert('Failed to update photo');
     }
   };
 
@@ -260,27 +272,40 @@ const PhotoLightbox = ({
       <div className="bg-black/50 p-4 space-y-3">
         {/* Caption */}
         {editingCaption ? (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={captionText}
-              onChange={(e) => setCaptionText(e.target.value)}
-              placeholder="Add caption..."
-              className="flex-1 px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
-              autoFocus
-            />
-            <button
-              onClick={handleSaveCaption}
-              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditingCaption(false)}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={captionText}
+                onChange={(e) => setCaptionText(e.target.value)}
+                placeholder="Add caption..."
+                className="flex-1 px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
+              >
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveCaption}
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditingCaption(false)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         ) : (
           <div className="text-white">
@@ -296,15 +321,15 @@ const PhotoLightbox = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Metadata */}
           <div className="text-gray-300 text-sm space-y-1">
-            <p>Uploaded: {new Date(currentPhoto.uploaded_at).toLocaleString()}</p>
+            <p>Uploaded: {formatDateTime(currentPhoto.uploaded_at)}</p>
             {currentPhoto.taken_at && (
-              <p>Taken: {new Date(currentPhoto.taken_at).toLocaleString()}</p>
+              <p>Taken: {formatDateTime(currentPhoto.taken_at)}</p>
             )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
-            {currentPhoto.id !== currentAvatarId && (
+            {currentPhoto.id !== currentAvatarId ? (
               <button
                 onClick={handleOpenCropper}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
@@ -312,13 +337,21 @@ const PhotoLightbox = ({
                 <Star size={16} />
                 Set as Avatar
               </button>
+            ) : (
+              <button
+                onClick={handleOpenCropper}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              >
+                <Star size={16} />
+                Edit Avatar
+              </button>
             )}
             <button
               onClick={handleStartEditCaption}
               className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
             >
               <Edit2 size={16} />
-              Edit Caption
+              Edit
             </button>
             <button
               onClick={handleDownload}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Trash2, Star, Edit2, Upload, Download } from 'lucide-react';
 import axios from 'axios';
 import AvatarCropper from './AvatarCropper';
+import { formatDate } from '../utils/dateFormatting';
 
 /**
  * PhotoGallery component
@@ -36,6 +37,7 @@ const PhotoGallery = ({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [editingCaption, setEditingCaption] = useState(null);
   const [captionText, setCaptionText] = useState('');
+  const [editingCategory, setEditingCategory] = useState('general');
   const [cropperPhoto, setCropperPhoto] = useState(null);
 
   const categories = [
@@ -137,12 +139,14 @@ const PhotoGallery = ({
   const handleStartEditCaption = (photo) => {
     setEditingCaption(photo.id);
     setCaptionText(photo.caption || '');
+    setEditingCategory(photo.category || 'general');
   };
 
   const handleSaveCaption = async (photoId) => {
     try {
       const response = await axios.patch(`/api/photos/${photoId}`, {
-        caption: captionText
+        caption: captionText,
+        category: editingCategory
       });
 
       setPhotos(photos.map(p => p.id === photoId ? response.data : p));
@@ -152,14 +156,15 @@ const PhotoGallery = ({
         onPhotoUpdated(response.data);
       }
     } catch (err) {
-      console.error('Error updating caption:', err);
-      alert('Failed to update caption');
+      console.error('Error updating photo:', err);
+      alert('Failed to update photo');
     }
   };
 
   const handleCancelEdit = () => {
     setEditingCaption(null);
     setCaptionText('');
+    setEditingCategory('general');
   };
 
   if (loading) {
@@ -271,7 +276,7 @@ const PhotoGallery = ({
                       handleStartEditCaption(photo);
                     }}
                     className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded flex items-center justify-center gap-1 transition-colors"
-                    title="Edit caption"
+                    title="Edit"
                   >
                     <Edit2 size={12} />
                   </button>
@@ -298,6 +303,15 @@ const PhotoGallery = ({
                       className="w-full px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded border border-gray-300 dark:border-gray-600"
                       autoFocus
                     />
+                    <select
+                      value={editingCategory}
+                      onChange={(e) => setEditingCategory(e.target.value)}
+                      className="w-full px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded border border-gray-300 dark:border-gray-600"
+                    >
+                      {categories.filter(c => c.value !== 'all').map(cat => (
+                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                      ))}
+                    </select>
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleSaveCaption(photo.id)}
@@ -324,7 +338,7 @@ const PhotoGallery = ({
             {/* Uploaded Date - Top Center */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/75 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="text-white text-xs">
-                {new Date(photo.uploaded_at).toLocaleDateString()}
+                {formatDate(photo.uploaded_at)}
               </p>
             </div>
 
