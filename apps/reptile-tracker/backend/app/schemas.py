@@ -203,7 +203,6 @@ class FeedingCreate(BaseModel):
     is_salad: bool = False
     salad_components: List[int] = []  # List of food IDs for salad
     notes: Optional[str] = None
-    instance_id: Optional[int] = None  # Schedule instance to link this feeding to
 
 
 class FoodWithQuantity(BaseModel):
@@ -264,7 +263,6 @@ class WeightLogBase(BaseModel):
 
 class WeightLogCreate(WeightLogBase):
     reptile_id: int
-    instance_id: Optional[int] = None  # Schedule instance to link this weight log to
 
 
 class WeightLogUpdate(BaseModel):
@@ -333,7 +331,6 @@ class MistingLogBase(BaseModel):
 
 class MistingLogCreate(MistingLogBase):
     reptile_id: int
-    instance_id: Optional[int] = None  # Schedule instance to link this misting to
 
 
 class MistingLogUpdate(BaseModel):
@@ -1220,7 +1217,6 @@ class MeasurementBase(BaseModel):
 class MeasurementCreate(MeasurementBase):
     reptile_id: int
     schedule_completion_id: Optional[int] = None
-    instance_id: Optional[int] = None  # Schedule instance to link this measurement to
 
 
 class MeasurementUpdate(BaseModel):

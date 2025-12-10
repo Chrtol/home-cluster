@@ -341,15 +341,11 @@ export default function HealthLog() {
       } else {
         // Create new log
         if (logType === 'weight') {
-          // Get instance_id from URL if present (for direct linking to schedule instances)
-          const instanceId = searchParams.get('instance_id');
-
           const response = await axios.post('/api/weight', {
             reptile_id: parseInt(selectedReptile),
             weight_grams: parseFloat(weight),
             measured_at: new Date(dateTimeString).toISOString(),
-            notes,
-            ...(instanceId && { instance_id: parseInt(instanceId) }) // Include instance_id if present
+            notes
           });
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
           setTimeout(() => navigate(`/health-log/weight/${response.data.id}?success=created`), 1500);
