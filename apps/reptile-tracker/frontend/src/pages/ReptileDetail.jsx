@@ -290,6 +290,7 @@ export default function ReptileDetail() {
       formData.append('crop_y', cropData.y);
       formData.append('crop_width', cropData.width);
       formData.append('crop_height', cropData.height);
+      formData.append('zoom', cropData.zoom);
       formData.append('border_color', cropData.borderColor);
 
       // Log FormData contents
@@ -900,6 +901,7 @@ export default function ReptileDetail() {
               ? { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y }
               : undefined
           }
+          initialZoom={reptile.avatar_crop_zoom}
           initialBorderColor={reptile.avatar_border_color}
         />
       )}
