@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, ZoomIn, ZoomOut, Check } from 'lucide-react';
 
@@ -26,17 +26,20 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [borderColor, setBorderColor] = useState(initialBorderColor || '#10b981'); // Default green
 
-  // Preset color options
+  // Preset color options (matches backend palette)
   const colorOptions = [
-    { color: '#10b981', label: 'Green' },
+    { color: '#10b981', label: 'Emerald' },
     { color: '#3b82f6', label: 'Blue' },
-    { color: '#ef4444', label: 'Red' },
-    { color: '#f59e0b', label: 'Orange' },
+    { color: '#f59e0b', label: 'Amber' },
     { color: '#8b5cf6', label: 'Purple' },
     { color: '#ec4899', label: 'Pink' },
+    { color: '#06b6d4', label: 'Cyan' },
+    { color: '#f97316', label: 'Orange' },
     { color: '#14b8a6', label: 'Teal' },
-    { color: '#f97316', label: 'Amber' },
-    { color: '#64748b', label: 'Gray' },
+    { color: '#a855f7', label: 'Violet' },
+    { color: '#84cc16', label: 'Lime' },
+    { color: '#ef4444', label: 'Red' },
+    { color: '#6366f1', label: 'Indigo' },
   ];
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
@@ -44,16 +47,26 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   }, []);
 
   const handleSave = () => {
-    if (croppedAreaPixels) {
-      onSave({
-        x: croppedAreaPixels.x,
-        y: croppedAreaPixels.y,
-        width: croppedAreaPixels.width,
-        height: croppedAreaPixels.height,
-        zoom,
-        borderColor
-      });
+    if (!croppedAreaPixels) {
+      console.error('Cropped area pixels not set yet');
+      alert('Please wait for the image to load completely');
+      return;
     }
+
+    console.log('Saving avatar with:', {
+      croppedAreaPixels,
+      zoom,
+      borderColor
+    });
+
+    onSave({
+      x: Math.round(croppedAreaPixels.x),
+      y: Math.round(croppedAreaPixels.y),
+      width: Math.round(croppedAreaPixels.width),
+      height: Math.round(croppedAreaPixels.height),
+      zoom,
+      borderColor
+    });
   };
 
   const handleZoomIn = () => {
@@ -64,8 +77,20 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
     setZoom(prev => Math.max(prev - 0.1, 1));
   };
 
+  // Memoize the cropper style to ensure it updates when borderColor changes
+  const cropperStyle = useMemo(() => ({
+    containerStyle: {
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    },
+    mediaStyle: {},
+    cropAreaStyle: {
+      border: `2px solid ${borderColor}`,
+      boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
+    }
+  }), [borderColor]);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-90 z-[60] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-700">
         <h2 className="text-xl font-semibold text-white">Crop Avatar</h2>
@@ -90,18 +115,7 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}
-          style={{
-            containerStyle: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            },
-            mediaStyle: {
-              // Add a subtle filter to make the non-cropped area appear dimmer
-            },
-            cropAreaStyle: {
-              border: '2px solid #10b981',
-              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
-            }
-          }}
+          style={cropperStyle}
         />
       </div>
 

@@ -20,6 +20,23 @@ from app.schemas import (
 
 router = APIRouter()
 
+# Default avatar border color palette
+# These colors are carefully selected for good contrast and visual distinction
+AVATAR_BORDER_COLORS = [
+    "#10b981",  # Green (emerald)
+    "#3b82f6",  # Blue
+    "#f59e0b",  # Amber/Orange
+    "#8b5cf6",  # Purple
+    "#ec4899",  # Pink
+    "#06b6d4",  # Cyan
+    "#f97316",  # Orange
+    "#14b8a6",  # Teal
+    "#a855f7",  # Violet
+    "#84cc16",  # Lime
+    "#ef4444",  # Red
+    "#6366f1",  # Indigo
+]
+
 
 def populate_avatar_url(reptile: Reptile) -> None:
     """
@@ -123,9 +140,18 @@ async def create_reptile(
             detail="You must be a member of a household to create reptiles. Please create or join a household first.",
         )
 
+    # Count existing reptiles in household to assign next color from palette
+    count_result = await db.execute(
+        select(func.count(Reptile.id))
+        .where(Reptile.household_id == household_id)
+    )
+    reptile_count = count_result.scalar() or 0
+    default_border_color = AVATAR_BORDER_COLORS[reptile_count % len(AVATAR_BORDER_COLORS)]
+
     new_reptile = Reptile(
         **reptile.model_dump(),
         household_id=household_id,  # Automatically assign to user's household
+        avatar_border_color=default_border_color,  # Assign default color from palette
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
