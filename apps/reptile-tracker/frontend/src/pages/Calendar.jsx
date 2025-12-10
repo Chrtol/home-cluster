@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale, Bell } from "lucide-react";
 import { formatTime, getDayNames, getUserFirstDayOfWeek, toLocalISODate } from "../utils/dateFormatting";
+import ReptileAvatar from "../components/ReptileAvatar";
 
 function Calendar() {
   const navigate = useNavigate();
@@ -763,6 +764,10 @@ function Calendar() {
                 >
                   <Link to={`/schedules/${schedule.id}`} className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2 mb-1">
+                      {/* Avatar + Reptile Name (always together) */}
+                      {schedule.reptile && (
+                        <ReptileAvatar reptile={schedule.reptile} size="sm" className="flex-shrink-0" />
+                      )}
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {schedule.reptile?.name || 'Unknown'}
                       </span>
