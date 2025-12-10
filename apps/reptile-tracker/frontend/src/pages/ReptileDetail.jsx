@@ -272,7 +272,7 @@ export default function ReptileDetail() {
     try {
       // Fetch the full-size photo URL for cropping
       const response = await axios.get(`/api/photos/${reptile.avatar_photo_id}`);
-      setAvatarPhotoUrl(`/api/photos/${reptile.avatar_photo_id}/fullsize`);
+      setAvatarPhotoUrl(`/api/photos/${reptile.avatar_photo_id}/file`);
       setShowAvatarCropper(true);
     } catch (error) {
       console.error('Error loading avatar photo:', error);
