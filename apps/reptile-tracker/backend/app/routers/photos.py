@@ -505,10 +505,19 @@ async def set_reptile_avatar(
 
     # If photo_id provided, use existing photo
     if photo_id:
+        # Convert photo_id string to UUID
+        try:
+            photo_uuid = uuid.UUID(photo_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid photo ID format"
+            )
+
         result = await db.execute(
             select(Photo).where(
                 and_(
-                    Photo.id == photo_id,
+                    Photo.id == photo_uuid,
                     Photo.reptile_id == reptile_id
                 )
             )
@@ -521,11 +530,11 @@ async def set_reptile_avatar(
                 detail="Photo not found for this reptile"
             )
 
-        reptile.avatar_photo_id = photo_id
+        reptile.avatar_photo_id = photo_uuid
         await db.commit()
         await db.refresh(photo)
 
-        logger.info(f"Set avatar for reptile {reptile_id} to photo {photo_id}")
+        logger.info(f"Set avatar for reptile {reptile_id} to photo {photo_uuid}")
         return photo
 
     # If file provided, upload new photo
