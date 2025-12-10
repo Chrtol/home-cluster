@@ -242,7 +242,7 @@ export default function ReptileDetail() {
       setReptile({
         ...reptile,
         avatar_photo_id: photoId,
-        avatar_photo_url: `/api/photos/${photoId}/thumbnail`
+        avatar_photo_url: `/api/photos/reptiles/${id}/avatar`
       });
     } catch (error) {
       console.error('Error setting avatar:', error);
@@ -718,6 +718,8 @@ export default function ReptileDetail() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
+          <Link to={`/measurements/${id}`} className="btn-secondary text-sm sm:text-base whitespace-nowrap">Measurements</Link>
           <button
             onClick={handleEditAvatar}
             className="btn-secondary text-sm sm:text-base flex items-center gap-2"
@@ -725,8 +727,6 @@ export default function ReptileDetail() {
             <Edit2 size={16} />
             Edit Avatar
           </button>
-          <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
-          <Link to={`/measurements/${id}`} className="btn-secondary text-sm sm:text-base whitespace-nowrap">Measurements</Link>
           <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
           <button
             onClick={handleToggleActive}
