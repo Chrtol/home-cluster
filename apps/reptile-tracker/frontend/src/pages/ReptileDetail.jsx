@@ -236,7 +236,11 @@ export default function ReptileDetail() {
       await axios.patch(`/api/reptiles/${id}`, {
         avatar_photo_id: photoId
       });
-      setReptile({ ...reptile, avatar_photo_id: photoId });
+      setReptile({
+        ...reptile,
+        avatar_photo_id: photoId,
+        avatar_photo_url: `/api/photos/${photoId}/thumbnail`
+      });
     } catch (error) {
       console.error('Error setting avatar:', error);
     }
@@ -245,7 +249,7 @@ export default function ReptileDetail() {
   const handlePhotoDeleted = (photoId) => {
     setPhotos(photos.filter(p => p.id !== photoId));
     if (reptile.avatar_photo_id === photoId) {
-      setReptile({ ...reptile, avatar_photo_id: null });
+      setReptile({ ...reptile, avatar_photo_id: null, avatar_photo_url: null });
     }
   };
 
