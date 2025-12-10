@@ -217,6 +217,12 @@
   - Visual: Full-size lightbox with prev/next navigation and action buttons
   - Mobile: Touch-friendly controls and responsive grid layout
 
+- [ ] **Fix avatar display showing initials instead of photos** - 🐛 BUG FIX (High Priority)
+  - Avatar photos are being set correctly in database (avatar_photo_id)
+  - ReptileAvatar component still shows initials fallback instead of actual photo
+  - Issue may be in avatar_photo_url population or frontend component logic
+  - Need to investigate why avatars don't update after selection
+
 - [ ] **Photo Upload & Gallery - Phase 3: Advanced Features** - 🔧 MEDIUM PRIORITY (Future)
   - Link photos to specific events (health records, feedings, weight logs, shedding)
   - Before/after shed comparison view
