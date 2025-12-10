@@ -99,6 +99,8 @@ const PhotoGallery = ({
 
   const handleSaveCroppedAvatar = async (cropData) => {
     try {
+      console.log('PhotoGallery sending crop data:', cropData);
+
       const formData = new FormData();
       formData.append('photo_id', cropperPhoto.id);
       formData.append('crop_x', cropData.x);
@@ -116,7 +118,8 @@ const PhotoGallery = ({
       handleCloseCropper();
     } catch (err) {
       console.error('Error setting avatar:', err);
-      alert('Failed to set avatar');
+      console.error('Backend error details:', err.response?.data);
+      alert(`Failed to set avatar: ${err.response?.data?.detail || err.message}`);
     }
   };
 

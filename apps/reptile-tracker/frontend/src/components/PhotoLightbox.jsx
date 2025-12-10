@@ -103,6 +103,8 @@ const PhotoLightbox = ({
     if (!currentPhoto) return;
 
     try {
+      console.log('PhotoLightbox sending crop data:', cropData);
+
       const formData = new FormData();
       formData.append('photo_id', currentPhoto.id);
       formData.append('crop_x', cropData.x);
@@ -120,7 +122,8 @@ const PhotoLightbox = ({
       handleCloseCropper();
     } catch (err) {
       console.error('Error setting avatar:', err);
-      alert('Failed to set avatar');
+      console.error('Backend error details:', err.response?.data);
+      alert(`Failed to set avatar: ${err.response?.data?.detail || err.message}`);
     }
   };
 

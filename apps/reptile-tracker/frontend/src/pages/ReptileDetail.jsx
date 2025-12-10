@@ -282,6 +282,8 @@ export default function ReptileDetail() {
 
   const handleSaveAvatarCrop = async (cropData) => {
     try {
+      console.log('Sending crop data to backend:', cropData);
+
       const formData = new FormData();
       formData.append('photo_id', reptile.avatar_photo_id);
       formData.append('crop_x', cropData.x);
@@ -289,6 +291,12 @@ export default function ReptileDetail() {
       formData.append('crop_width', cropData.width);
       formData.append('crop_height', cropData.height);
       formData.append('border_color', cropData.borderColor);
+
+      // Log FormData contents
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value}`);
+      }
 
       await axios.post(`/api/photos/reptiles/${id}/avatar`, formData);
 
@@ -299,7 +307,8 @@ export default function ReptileDetail() {
       setShowAvatarCropper(false);
     } catch (error) {
       console.error('Error updating avatar:', error);
-      alert('Failed to update avatar');
+      console.error('Backend error details:', error.response?.data);
+      alert(`Failed to update avatar: ${error.response?.data?.detail || error.message}`);
     }
   };
 
