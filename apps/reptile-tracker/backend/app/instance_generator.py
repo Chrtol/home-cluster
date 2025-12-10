@@ -27,14 +27,9 @@ def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bo
     suggestion instances if suggested_days are configured. DEPENDENT schedules
     are triggered by parent schedule completions.
     """
-    # Interval schedules: generate instances on suggested days (as visual reminders)
+    # Interval schedules: never pre-generate instances - they are created dynamically after completions
+    # (via create_interval_schedule_instance in schedule_matcher.py)
     if schedule.schedule_mode == ScheduleMode.INTERVAL:
-        if schedule.suggested_days:
-            # suggested_days is a list like [0, 3] for Sunday and Wednesday
-            # weekday() returns 0=Mon, 6=Sun, but we store 0=Sun, 6=Sat
-            weekday = (check_date.weekday() + 1) % 7  # Convert to 0=Sun format
-            return weekday in schedule.suggested_days
-        # No suggested days = no calendar instances (purely event-based)
         return False
 
     # Dependent schedules are triggered by parent schedule completions, not calendar dates
