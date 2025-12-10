@@ -259,10 +259,14 @@ export default function MistingLog() {
         // Redirect to read-only view
         setTimeout(() => navigate(`/misting/${id}`), 1500);
       } else {
+        // Get instance_id from URL if present (for direct linking to schedule instances)
+        const instanceId = searchParams.get('instance_id');
+
         const response = await axios.post('/api/misting', {
           reptile_id: parseInt(selectedReptile),
           misted_at: new Date(dateTimeString).toISOString(),
           notes,
+          ...(instanceId && { instance_id: parseInt(instanceId) }) // Include instance_id if present
         });
         setSuccess(`Misting logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
         // Redirect to read-only view
