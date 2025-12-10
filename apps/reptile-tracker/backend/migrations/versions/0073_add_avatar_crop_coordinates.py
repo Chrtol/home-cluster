@@ -1,4 +1,4 @@
-"""add avatar crop coordinates and border color
+"""add avatar crop coordinates
 
 Revision ID: 0073
 Revises: 0072
@@ -23,14 +23,8 @@ def upgrade():
     op.add_column('reptiles', sa.Column('avatar_crop_width', sa.Integer(), nullable=True))
     op.add_column('reptiles', sa.Column('avatar_crop_height', sa.Integer(), nullable=True))
 
-    # Add avatar border color column
-    op.add_column('reptiles', sa.Column('avatar_border_color', sa.String(7), nullable=True))
-
 
 def downgrade():
-    # Remove avatar border color column
-    op.drop_column('reptiles', 'avatar_border_color')
-
     # Remove avatar crop coordinate columns from reptiles table
     op.drop_column('reptiles', 'avatar_crop_height')
     op.drop_column('reptiles', 'avatar_crop_width')
