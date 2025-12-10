@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Check, CheckCheck, ExternalLink, Bell } from 'lucide-react';
 import axios from 'axios';
 
-const NotificationDropdown = ({ onClose, onNotificationRead }) => {
+const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -85,7 +85,13 @@ const NotificationDropdown = ({ onClose, onNotificationRead }) => {
   };
 
   return (
-    <div className="absolute right-0 mx-4 mt-2 md:left-0 md:right-auto md:mx-0 md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[9999]">
+    <div
+      className="fixed left-4 right-4 md:left-auto md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[9999]"
+      style={{
+        top: `${position.top}px`,
+        right: window.innerWidth >= 768 ? `${position.right}px` : undefined,
+      }}
+    >
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

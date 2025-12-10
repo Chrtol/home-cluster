@@ -6,7 +6,9 @@ import NotificationDropdown from './NotificationDropdown';
 const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState(null);
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -44,6 +46,15 @@ const NotificationBell = () => {
   };
 
   const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      // Get button position when opening
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonPosition({
+        top: rect.bottom + 8, // 8px below the button
+        left: rect.left,
+        right: window.innerWidth - rect.right,
+      });
+    }
     setIsOpen(!isOpen);
   };
 
@@ -55,6 +66,7 @@ const NotificationBell = () => {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={handleToggle}
         className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
         aria-label="Notifications"
@@ -67,10 +79,11 @@ const NotificationBell = () => {
         )}
       </button>
 
-      {isOpen && (
+      {isOpen && buttonPosition && (
         <NotificationDropdown
           onClose={() => setIsOpen(false)}
           onNotificationRead={handleNotificationRead}
+          position={buttonPosition}
         />
       )}
     </div>
