@@ -673,6 +673,9 @@ export default function FeedingLog() {
       finalISO: fedAtISO
     });
 
+    // Get instance_id from URL if present (for direct linking to schedule instances)
+    const instanceId = searchParams.get('instance_id');
+
     let payload = {
       reptile_id: parseInt(selectedReptile),
       fed_at: fedAtISO,
@@ -680,7 +683,8 @@ export default function FeedingLog() {
       is_salad: includeSalad,
       foods: [],
       supplements: selectedSupplements,
-      salad_components: []
+      salad_components: [],
+      ...(instanceId && { instance_id: parseInt(instanceId) }) // Include instance_id if present
     };
 
     // Add insect foods with per-item supplements
