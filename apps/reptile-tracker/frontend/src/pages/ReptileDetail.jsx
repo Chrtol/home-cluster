@@ -711,15 +711,14 @@ export default function ReptileDetail() {
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
         <div className="flex items-start gap-4">
-          <div className="relative flex-shrink-0 pb-3 pr-3">
+          <div className="relative inline-block">
             <ReptileAvatar reptile={reptile} size="xl" />
             <button
-              onClick={reptile.avatar_photo_id ? handleEditAvatar : () => console.log('No avatar_photo_id:', reptile)}
-              className="absolute -bottom-1 -right-1 p-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-xl border-2 border-white dark:border-gray-900 transition-all hover:scale-110 z-20"
-              title={reptile.avatar_photo_id ? "Edit avatar crop and border" : "Set avatar (no avatar_photo_id)"}
-              aria-label="Edit avatar"
+              onClick={handleEditAvatar}
+              className="absolute -bottom-2 -right-2 p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg border-2 border-white dark:border-gray-900 transition-colors"
+              title="Edit avatar"
             >
-              <Edit2 size={18} />
+              <Edit2 size={16} />
             </button>
           </div>
           <div>
