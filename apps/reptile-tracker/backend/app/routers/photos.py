@@ -539,19 +539,23 @@ async def set_reptile_avatar(
 
         reptile.avatar_photo_id = photo_uuid
 
-        # Save crop coordinates if provided
-        if crop_x is not None and crop_y is not None and crop_width is not None and crop_height is not None:
-            reptile.avatar_crop_x = crop_x
-            reptile.avatar_crop_y = crop_y
-            reptile.avatar_crop_width = crop_width
-            reptile.avatar_crop_height = crop_height
-            logger.info(f"Applied crop: ({crop_x}, {crop_y}, {crop_width}, {crop_height})")
-        else:
-            # Clear crop coordinates if none provided
-            reptile.avatar_crop_x = None
-            reptile.avatar_crop_y = None
-            reptile.avatar_crop_width = None
-            reptile.avatar_crop_height = None
+        # Save crop coordinates if provided (check hasattr for backwards compatibility)
+        if hasattr(reptile, 'avatar_crop_x'):
+            if crop_x is not None and crop_y is not None and crop_width is not None and crop_height is not None:
+                reptile.avatar_crop_x = crop_x
+                reptile.avatar_crop_y = crop_y
+                reptile.avatar_crop_width = crop_width
+                reptile.avatar_crop_height = crop_height
+                logger.info(f"Applied crop: ({crop_x}, {crop_y}, {crop_width}, {crop_height})")
+            else:
+                # Clear crop coordinates if none provided
+                reptile.avatar_crop_x = None
+                reptile.avatar_crop_y = None
+                reptile.avatar_crop_width = None
+                reptile.avatar_crop_height = None
+        elif crop_x is not None:
+            # Crop requested but database not migrated yet
+            logger.warning("Avatar crop coordinates provided but database columns don't exist yet. Run migration 0073.")
 
         await db.commit()
         await db.refresh(photo)
@@ -624,8 +628,16 @@ async def get_reptile_avatar(
         thumbnail_path = photo.thumbnail_path or photo.file_path
         file_data = await storage.get_photo(thumbnail_path)
 
-        # Apply crop if coordinates are set
-        if (reptile.avatar_crop_x is not None and
+        # Apply crop if coordinates are set (check hasattr for backwards compatibility)
+        has_crop_coords = (
+            hasattr(reptile, 'avatar_crop_x') and
+            hasattr(reptile, 'avatar_crop_y') and
+            hasattr(reptile, 'avatar_crop_width') and
+            hasattr(reptile, 'avatar_crop_height')
+        )
+
+        if (has_crop_coords and
+            reptile.avatar_crop_x is not None and
             reptile.avatar_crop_y is not None and
             reptile.avatar_crop_width is not None and
             reptile.avatar_crop_height is not None):
