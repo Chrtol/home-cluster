@@ -711,7 +711,7 @@ export default function ReptileDetail() {
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
         <div className="flex items-start gap-4">
-          <div className="relative">
+          <div className="relative w-24 h-24 overflow-visible">
             <ReptileAvatar reptile={reptile} size="xl" />
             <button
               onClick={handleEditAvatar}
