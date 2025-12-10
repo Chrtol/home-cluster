@@ -24,19 +24,25 @@ A comprehensive web application for tracking reptile feeding schedules, weight, 
     - Resilient to pod restarts and deployments
   - Manual override to mark auto-completed instances as skipped or missed
   - "Log Now" buttons that pre-fill all form data from schedule instances
-- 📷 **Photo Upload & Gallery**: Complete photo management system
-  - Upload photos via file selection or camera capture (mobile)
-  - Set reptile avatar from uploaded photos with initial fallback
-  - Photo gallery with category filtering (All, General, Health, Weight, Feeding, Enclosure)
-  - Full-screen lightbox viewer with keyboard navigation (arrow keys, ESC)
-  - Photo management: edit captions, set as avatar, download, delete
-  - Original image quality preservation (no re-compression for JPEG/PNG)
-  - Format-aware processing (JPEG/PNG/WebP) with automatic detection
-  - Multiple storage backend support (local, S3, NFS, hybrid)
-  - Organized storage structure by household and reptile
-  - High-quality thumbnails (300px) for grid display
-  - Immediate photo appearance after upload with refresh triggers
-  - Touch-friendly mobile interface with responsive grid
+- 📷 **Photo Upload & Gallery**: Complete photo management system (Phases 1 & 2 ✅ COMPLETED 2025-12-10)
+  - **Upload:** File selection or camera capture (mobile), drag-and-drop support
+  - **Avatar System:**
+    - Set reptile avatar from uploaded photos
+    - Interactive circular cropping with zoom (1.0x-3.0x)
+    - Custom border colors (12 preset colors)
+    - Crop position persistence for re-editing
+    - Automatic fallback to name initials if no avatar
+  - **Gallery:** Responsive grid layout with category filtering (All, General, Health, Weight, Feeding, Enclosure)
+  - **Lightbox:** Full-screen viewer with keyboard navigation (arrow keys, ESC) and photo counter
+  - **Management:** Edit captions, set as avatar, download original, delete
+  - **Quality Preservation:**
+    - Original JPEG/PNG saved without re-encoding (100% quality)
+    - Format-aware processing (JPEG/PNG/WebP)
+    - Only re-encodes when EXIF rotation needed (subsampling=0 for max quality)
+  - **Storage:** Multiple backends (local, S3, NFS, hybrid), organized by household/reptile
+  - **Thumbnails:** High-quality 300px JPEG (quality=85) for efficient gallery display
+  - **Performance:** Refresh triggers for immediate appearance, touch-optimized mobile interface
+  - **Documentation:** See `/docs/PHOTO_UPLOAD_SYSTEM.md` for detailed technical documentation
 - 🔄 **Supplement Rotations**: Automated rotation schedules for supplements and foods with species-specific templates
   - Supplement display in schedule details view with frequency notes
   - Calculated from feeding rotations matching food categories

@@ -182,40 +182,53 @@
   - Improved UI organization with better styling and dark mode support
   - Record types: General Observation, Shedding, Bowel Movement, Vet Visit, Medication
 
-- [x] **Photo Upload & Gallery - Phase 1: Upload & Avatar** - ✅ COMPLETED (2025-12-10)
-  - Backend: Photo model with UUID primary keys and household organization
-  - Backend: Multiple storage backends (local, S3, NFS, hybrid) with configurable selection
-  - Backend: Original image quality preservation - no re-encoding for JPEG/PNG without rotation
-  - Backend: Format-aware processing (JPEG/PNG/WEBP) with automatic mime type detection
-  - Backend: High-quality thumbnail generation (300px) with JPEG compression
-  - Backend: Photo upload endpoint with file validation (max 10MB, JPEG/PNG/WebP)
-  - Backend: Avatar system with set/get avatar endpoints for reptiles
-  - Backend: Proper UUID handling across models, schemas, and database
-  - Frontend: PhotoUpload component with file selection and camera capture
-  - Frontend: ReptileAvatar component with fallback to initials
-  - Frontend: Integration into ReptileDetail page (Photos tab)
-  - Database: photos table with UUID primary key, household/reptile relationships
-  - Database: avatar_photo_id on reptiles table with proper UUID foreign key
-  - Storage: Organized by household and reptile (photos/household_{id}/reptile_{id}/)
-
-- [x] **Photo Upload & Gallery - Phase 2: Gallery & Management** - ✅ COMPLETED (2025-12-10)
-  - Frontend: PhotoGallery component with grid layout and category filtering
-  - Frontend: PhotoLightbox component for full-screen viewing with keyboard navigation
-  - Frontend: Photo management features (set avatar, edit caption, delete, download)
-  - Frontend: Category filtering (All Photos, General, Health, Weight, Feeding, Enclosure)
-  - Frontend: Refresh trigger system for immediate photo appearance after upload
-  - Frontend: Download button in gallery grid (top right) and lightbox
-  - Frontend: Upload date display (top left) with hover visibility
-  - Frontend: Empty state with friendly messaging
-  - Backend: Photo CRUD endpoints (list, get, update caption, delete)
-  - Backend: Photo filtering by category with pagination support
-  - Backend: Set avatar endpoint with reptile photo validation
-  - Quality: Original image bytes preserved (no re-compression for JPEG/PNG)
-  - Quality: Format-specific handling (JPEG quality=100, PNG lossless, WebP lossless)
-  - Quality: Only rotation triggers re-encoding with minimal quality loss
-  - Visual: Photo grid with hover overlay showing actions and metadata
-  - Visual: Full-size lightbox with prev/next navigation and action buttons
-  - Mobile: Touch-friendly controls and responsive grid layout
+- [x] **Photo Upload & Gallery - Phases 1 & 2** - ✅ COMPLETED (2025-12-10)
+  - **Backend Implementation:**
+    - Photo model with UUID primary keys for robust identification
+    - Multiple storage backends: local, S3, NFS, and hybrid configurations
+    - Original image quality preservation - no re-encoding for JPEG/PNG without EXIF rotation
+    - Format-aware processing with automatic mime type detection (JPEG/PNG/WebP)
+    - High-quality thumbnail generation (300px) with JPEG compression
+    - Photo upload endpoint with file validation (max 10MB, supported formats)
+    - Complete CRUD API: list, get, update caption, delete photos
+    - Photo filtering by category with pagination support
+    - Avatar system with set/get endpoints and validation
+    - Proper UUID handling across models, schemas, and database layers
+    - Storage organized by household and reptile (photos/household_{id}/reptile_{id}/)
+  - **Frontend Implementation:**
+    - PhotoUpload component with file selection and camera capture (mobile-friendly)
+    - PhotoGallery component with responsive grid layout and category filtering
+    - PhotoLightbox component for full-screen viewing with keyboard navigation (arrows, ESC)
+    - AvatarCropper component with circular cropping, zoom (1.0x-3.0x), and color picker (12 colors)
+    - ReptileAvatar component with automatic fallback to name initials
+    - Photo management features: set avatar, edit caption, download, delete
+    - Category filtering: All Photos, General, Health, Weight, Feeding, Enclosure
+    - Refresh trigger system for immediate photo appearance after upload
+    - Download button in gallery grid (top right) and lightbox
+    - Upload date display (top left) with hover visibility
+    - Empty state with friendly messaging and visual design
+    - Integration into ReptileDetail page (Photos tab)
+  - **Quality & Performance:**
+    - Original image bytes preserved for JPEG/PNG (no re-compression)
+    - Format-specific handling: JPEG quality=100, PNG lossless, WebP lossless
+    - Only EXIF rotation triggers re-encoding with subsampling=0 for minimal quality loss
+    - Efficient thumbnail generation with caching
+  - **Database Schema:**
+    - photos table with UUID primary key and comprehensive metadata
+    - Household and reptile relationships with proper foreign keys
+    - avatar_photo_id on reptiles table with UUID foreign key constraint
+    - Category field for filtering and organization
+    - Migration 0075: Added avatar_crop_zoom column (zoom level 1.0-3.0)
+    - Migration 0076: Added avatar_image_pos_x/y columns (crop position persistence)
+    - Migration 0077: Added avatar_border_color column (hex color codes)
+  - **User Experience:**
+    - Photo grid with hover overlay showing actions and metadata
+    - Full-size lightbox with prev/next navigation and action buttons
+    - Mobile-optimized touch controls and responsive layout
+    - Immediate feedback with loading states and error handling
+    - Smooth transitions and animations throughout
+    - Crop settings persistence allows re-editing avatar with previous settings intact
+  - **Documentation:** Complete technical documentation in `/docs/PHOTO_UPLOAD_SYSTEM.md`
 
 - [x] **Fix avatar display showing initials instead of photos** - ✅ COMPLETED (2025-12-10)
   - Root cause: Frontend only updated avatar_photo_id but not avatar_photo_url when setting avatar
@@ -223,6 +236,17 @@
   - Fix: Updated handleSetAvatar to set both avatar_photo_id and avatar_photo_url
   - Fix: Updated handlePhotoDeleted to clear both fields when avatar is deleted
   - Frontend: Modified ReptileDetail.jsx to properly maintain avatar state
+
+- [x] **Fix interval schedule instance pre-generation bug** - ✅ COMPLETED (2025-12-10)
+  - Root cause: Interval schedules were pre-generating instances like fixed schedules, creating dozens when there should be 0-1
+  - Bug impact: Schedule matcher found random pending instances instead of correct ones, causing wrong instances to be marked completed
+  - Example: Schedule 4 had 17 pending instances when it should have had 0-1, causing Dec 7 instance to be completed for Dec 10 feeding
+  - Fix: Updated instance_generator.py to never pre-generate interval schedule instances (return False immediately)
+  - Fix: Deleted 52 bogus pre-generated instances across 3 interval schedules from database
+  - Fix: Fixed today's instance (682) to be correctly marked completed and linked to completion record
+  - Result: Interval schedules now only create instances dynamically after completions (as documented)
+  - Documentation: Verified fix aligns with SCHEDULING_SYSTEM.md documentation (lines 136-139)
+  - This was causing status badges to show yellow when all tasks were actually completed
 
 - [ ] **Photo Upload & Gallery - Phase 3: Advanced Features** - 🔧 MEDIUM PRIORITY (Future)
   - Link photos to specific events (health records, feedings, weight logs, shedding)
