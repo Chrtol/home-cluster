@@ -24,7 +24,9 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   const [crop, setCrop] = useState(initialCrop || { x: 0, y: 0 });
   const [zoom, setZoom] = useState(initialZoom || 1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [croppedArea, setCroppedArea] = useState(null);
   const [borderColor, setBorderColor] = useState(initialBorderColor || '#10b981'); // Default green
+  const [imageSize, setImageSize] = useState(null);
 
   // Preset color options (matches backend palette)
   const colorOptions = [
@@ -43,30 +45,79 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   ];
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    console.log('onCropComplete called with:', {
+      croppedArea,
+      croppedAreaPixels,
+      croppedAreaKeys: croppedArea ? Object.keys(croppedArea) : null,
+      croppedAreaPixelsKeys: croppedAreaPixels ? Object.keys(croppedAreaPixels) : null
+    });
+    setCroppedArea(croppedArea);
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
+  const onMediaLoaded = useCallback((mediaSize) => {
+    console.log('Media loaded with size:', mediaSize);
+    setImageSize(mediaSize);
+  }, []);
+
   const handleSave = () => {
-    if (!croppedAreaPixels) {
-      console.error('Cropped area pixels not set yet');
-      alert('Please wait for the image to load completely');
+    if (!croppedAreaPixels && !croppedArea) {
+      console.error('Crop data not set yet');
+      alert('Please wait for the image to load completely and adjust the crop area');
       return;
     }
 
-    console.log('Saving avatar with:', {
+    // Validate croppedAreaPixels has all required properties
+    const hasValidPixels = croppedAreaPixels &&
+      typeof croppedAreaPixels.x === 'number' &&
+      typeof croppedAreaPixels.y === 'number' &&
+      typeof croppedAreaPixels.width === 'number' &&
+      typeof croppedAreaPixels.height === 'number';
+
+    console.log('Validation check:', {
       croppedAreaPixels,
-      zoom,
-      borderColor
+      croppedArea,
+      imageSize,
+      hasValidPixels,
+      xType: typeof croppedAreaPixels?.x,
+      yType: typeof croppedAreaPixels?.y
     });
 
-    onSave({
-      x: Math.round(croppedAreaPixels.x),
-      y: Math.round(croppedAreaPixels.y),
-      width: Math.round(croppedAreaPixels.width),
-      height: Math.round(croppedAreaPixels.height),
-      zoom,
-      borderColor
-    });
+    let finalCropData;
+
+    if (hasValidPixels) {
+      // Use pixel data directly
+      finalCropData = {
+        x: Math.round(croppedAreaPixels.x),
+        y: Math.round(croppedAreaPixels.y),
+        width: Math.round(croppedAreaPixels.width),
+        height: Math.round(croppedAreaPixels.height),
+        zoom,
+        borderColor
+      };
+    } else if (croppedArea && imageSize) {
+      // Calculate pixel coordinates from percentage-based crop area
+      console.log('Calculating pixels from percentages...');
+      finalCropData = {
+        x: Math.round((croppedArea.x * imageSize.width) / 100),
+        y: Math.round((croppedArea.y * imageSize.height) / 100),
+        width: Math.round((croppedArea.width * imageSize.width) / 100),
+        height: Math.round((croppedArea.height * imageSize.height) / 100),
+        zoom,
+        borderColor
+      };
+    } else {
+      console.error('Unable to determine crop coordinates', {
+        croppedAreaPixels,
+        croppedArea,
+        imageSize
+      });
+      alert('Unable to save crop settings. Please try adjusting the crop area again.');
+      return;
+    }
+
+    console.log('Saving avatar with final crop data:', finalCropData);
+    onSave(finalCropData);
   };
 
   const handleZoomIn = () => {
@@ -115,6 +166,7 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}
+          onMediaLoaded={onMediaLoaded}
           style={cropperStyle}
         />
       </div>
