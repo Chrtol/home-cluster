@@ -112,6 +112,8 @@ const PhotoLightbox = ({
       formData.append('crop_width', cropData.width);
       formData.append('crop_height', cropData.height);
       formData.append('zoom', cropData.zoom);
+      formData.append('image_pos_x', cropData.imagePosX);
+      formData.append('image_pos_y', cropData.imagePosY);
       formData.append('border_color', cropData.borderColor);
 
       await axios.post(`/api/photos/reptiles/${currentPhoto.reptile_id}/avatar`, formData);

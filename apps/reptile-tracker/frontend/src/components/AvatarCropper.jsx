@@ -126,6 +126,8 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
         width: Math.round(croppedAreaPixels.width),
         height: Math.round(croppedAreaPixels.height),
         zoom,
+        imagePosX: crop.x,
+        imagePosY: crop.y,
         borderColor
       };
     } else if (croppedArea && imageSize) {
@@ -138,6 +140,8 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
         width: Math.round((croppedArea.width * imageSize.naturalWidth) / 100),
         height: Math.round((croppedArea.height * imageSize.naturalHeight) / 100),
         zoom,
+        imagePosX: crop.x,
+        imagePosY: crop.y,
         borderColor
       };
     } else {

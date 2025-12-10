@@ -223,6 +223,11 @@ class Reptile(Base):
     avatar_crop_height = Column(Integer, nullable=True)
     avatar_crop_zoom = Column(Float, nullable=True)  # Zoom level (1.0 to 3.0)
 
+    # Avatar image position (for re-initializing the cropper UI)
+    # These are percentage-based coordinates representing where the image is positioned
+    avatar_image_pos_x = Column(Float, nullable=True)
+    avatar_image_pos_y = Column(Float, nullable=True)
+
     # Avatar border color (hex color code)
     avatar_border_color = Column(String(7), nullable=True)  # e.g., "#FF5733"
 
