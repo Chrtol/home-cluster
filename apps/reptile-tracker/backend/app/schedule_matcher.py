@@ -12,6 +12,7 @@ from sqlalchemy import select, and_, func
 
 from app.models import (
     Schedule,
+    ScheduleInstance,
     ScheduleCompletion,
     Feeding,
     MistingLog,
