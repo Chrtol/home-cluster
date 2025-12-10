@@ -862,6 +862,12 @@ export default function ReptileDetail() {
           imageUrl={avatarPhotoUrl}
           onSave={handleSaveAvatarCrop}
           onCancel={handleCloseCropper}
+          initialCrop={
+            reptile.avatar_crop_x !== null && reptile.avatar_crop_y !== null
+              ? { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y }
+              : undefined
+          }
+          initialBorderColor={reptile.avatar_border_color}
         />
       )}
     </div>

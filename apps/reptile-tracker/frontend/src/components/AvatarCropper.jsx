@@ -16,12 +16,15 @@ import { X, ZoomIn, ZoomOut, Check } from 'lucide-react';
  * - imageUrl: URL of the image to crop
  * - onSave: Callback with crop data { x, y, width, height, zoom }
  * - onCancel: Callback when user cancels
+ * - initialCrop: Initial crop position { x, y } (optional)
+ * - initialZoom: Initial zoom level (optional)
+ * - initialBorderColor: Initial border color hex (optional)
  */
-const AvatarCropper = ({ imageUrl, onSave, onCancel }) => {
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, initialBorderColor }) => {
+  const [crop, setCrop] = useState(initialCrop || { x: 0, y: 0 });
+  const [zoom, setZoom] = useState(initialZoom || 1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [borderColor, setBorderColor] = useState('#10b981'); // Default green
+  const [borderColor, setBorderColor] = useState(initialBorderColor || '#10b981'); // Default green
 
   // Preset color options
   const colorOptions = [

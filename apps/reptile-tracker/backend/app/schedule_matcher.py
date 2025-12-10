@@ -377,8 +377,8 @@ async def assign_feeding_to_schedule(
                     )
                     # Still allow it, but log warning - user might be catching up
 
-            # Move the instance to the actual completion date
-            instance.scheduled_date = feeding.fed_at.date()
+            # Use the existing instance without modifying its scheduled_date
+            # The actual completion date is tracked in the ScheduleCompletion record
             instance_id = instance.id
     else:
         # For fixed schedules, use flexible completion window
