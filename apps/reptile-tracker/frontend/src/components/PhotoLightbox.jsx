@@ -13,6 +13,7 @@ import { formatDateTime } from '../utils/dateFormatting';
  * - photos: Array of photo objects
  * - initialPhotoId: ID of photo to show initially
  * - currentAvatarId: Current avatar photo ID
+ * - avatarCropSettings: Object with crop and borderColor for avatar
  * - onClose: Callback when lightbox is closed
  * - onSetAvatar: Callback when set avatar is clicked
  * - onPhotoDeleted: Callback when photo is deleted
@@ -22,6 +23,7 @@ const PhotoLightbox = ({
   photos,
   initialPhotoId,
   currentAvatarId,
+  avatarCropSettings,
   onClose,
   onSetAvatar,
   onPhotoDeleted,
@@ -377,6 +379,16 @@ const PhotoLightbox = ({
           imageUrl={`/api/photos/${currentPhoto.id}/file`}
           onSave={handleSaveCroppedAvatar}
           onCancel={handleCloseCropper}
+          initialCrop={
+            currentPhoto.id === currentAvatarId && avatarCropSettings?.crop
+              ? avatarCropSettings.crop
+              : undefined
+          }
+          initialBorderColor={
+            currentPhoto.id === currentAvatarId && avatarCropSettings?.borderColor
+              ? avatarCropSettings.borderColor
+              : undefined
+          }
         />
       )}
     </div>

@@ -12,6 +12,7 @@ import { formatDate } from '../utils/dateFormatting';
  * Props:
  * - reptileId: ID of the reptile
  * - currentAvatarId: Current avatar photo ID
+ * - avatarCropSettings: Object with crop and borderColor for avatar
  * - onPhotoClick: Callback when photo is clicked (receives photo object)
  * - onSetAvatar: Callback when set avatar is clicked (receives photo ID)
  * - onPhotoDeleted: Callback when photo is deleted
@@ -23,6 +24,7 @@ import { formatDate } from '../utils/dateFormatting';
 const PhotoGallery = ({
   reptileId,
   currentAvatarId,
+  avatarCropSettings,
   onPhotoClick,
   onSetAvatar,
   onPhotoDeleted,
@@ -369,6 +371,16 @@ const PhotoGallery = ({
           imageUrl={`/api/photos/${cropperPhoto.id}/file`}
           onSave={handleSaveCroppedAvatar}
           onCancel={handleCloseCropper}
+          initialCrop={
+            cropperPhoto.id === currentAvatarId && avatarCropSettings?.crop
+              ? avatarCropSettings.crop
+              : undefined
+          }
+          initialBorderColor={
+            cropperPhoto.id === currentAvatarId && avatarCropSettings?.borderColor
+              ? avatarCropSettings.borderColor
+              : undefined
+          }
         />
       )}
     </div>
