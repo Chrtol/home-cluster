@@ -696,6 +696,14 @@ export default function ReptileDetail() {
         <PhotoGallery
           reptileId={parseInt(id)}
           currentAvatarId={reptile?.avatar_photo_id}
+          avatarCropSettings={
+            reptile?.avatar_crop_x !== null && reptile?.avatar_crop_y !== null
+              ? {
+                  crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
+                  borderColor: reptile.avatar_border_color
+                }
+              : undefined
+          }
           onPhotoClick={handlePhotoClick}
           onSetAvatar={handleSetAvatar}
           onPhotoDeleted={handlePhotoDeleted}
@@ -849,6 +857,14 @@ export default function ReptileDetail() {
           photos={photos}
           initialPhotoId={lightboxPhoto.id}
           currentAvatarId={reptile?.avatar_photo_id}
+          avatarCropSettings={
+            reptile?.avatar_crop_x !== null && reptile?.avatar_crop_y !== null
+              ? {
+                  crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
+                  borderColor: reptile.avatar_border_color
+                }
+              : undefined
+          }
           onClose={() => setLightboxPhoto(null)}
           onSetAvatar={handleSetAvatar}
           onPhotoDeleted={handlePhotoDeleted}
