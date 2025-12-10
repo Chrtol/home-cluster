@@ -264,6 +264,7 @@ class WeightLogBase(BaseModel):
 
 class WeightLogCreate(WeightLogBase):
     reptile_id: int
+    instance_id: Optional[int] = None  # Schedule instance to link this weight log to
 
 
 class WeightLogUpdate(BaseModel):
