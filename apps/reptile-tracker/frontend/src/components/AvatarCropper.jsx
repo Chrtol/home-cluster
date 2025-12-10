@@ -67,20 +67,26 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
       return;
     }
 
-    // Validate croppedAreaPixels has all required properties
+    // Validate croppedAreaPixels has all required properties and they're valid numbers (not NaN)
     const hasValidPixels = croppedAreaPixels &&
       typeof croppedAreaPixels.x === 'number' &&
       typeof croppedAreaPixels.y === 'number' &&
       typeof croppedAreaPixels.width === 'number' &&
-      typeof croppedAreaPixels.height === 'number';
+      typeof croppedAreaPixels.height === 'number' &&
+      !isNaN(croppedAreaPixels.x) &&
+      !isNaN(croppedAreaPixels.y) &&
+      !isNaN(croppedAreaPixels.width) &&
+      !isNaN(croppedAreaPixels.height);
 
     console.log('Validation check:', {
       croppedAreaPixels,
       croppedArea,
       imageSize,
       hasValidPixels,
-      xType: typeof croppedAreaPixels?.x,
-      yType: typeof croppedAreaPixels?.y
+      xValue: croppedAreaPixels?.x,
+      yValue: croppedAreaPixels?.y,
+      xIsNaN: isNaN(croppedAreaPixels?.x),
+      yIsNaN: isNaN(croppedAreaPixels?.y)
     });
 
     let finalCropData;
@@ -97,12 +103,13 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
       };
     } else if (croppedArea && imageSize) {
       // Calculate pixel coordinates from percentage-based crop area
-      console.log('Calculating pixels from percentages...');
+      console.log('Calculating pixels from percentages because pixel data is invalid');
+      console.log('Using naturalWidth and naturalHeight for accurate conversion');
       finalCropData = {
-        x: Math.round((croppedArea.x * imageSize.width) / 100),
-        y: Math.round((croppedArea.y * imageSize.height) / 100),
-        width: Math.round((croppedArea.width * imageSize.width) / 100),
-        height: Math.round((croppedArea.height * imageSize.height) / 100),
+        x: Math.round((croppedArea.x * imageSize.naturalWidth) / 100),
+        y: Math.round((croppedArea.y * imageSize.naturalHeight) / 100),
+        width: Math.round((croppedArea.width * imageSize.naturalWidth) / 100),
+        height: Math.round((croppedArea.height * imageSize.naturalHeight) / 100),
         zoom,
         borderColor
       };
