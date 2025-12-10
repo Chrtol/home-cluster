@@ -89,7 +89,7 @@ const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
       className="fixed left-4 right-4 md:left-auto md:right-auto md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[9999]"
       style={{
         top: `${position.top}px`,
-        right: window.innerWidth >= 768 ? `${position.right}px` : undefined,
+        left: window.innerWidth >= 768 ? `${position.left}px` : undefined,
       }}
     >
       {/* Header */}
