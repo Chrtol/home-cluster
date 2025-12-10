@@ -75,6 +75,9 @@ spec:
               COOKIE_SAMESITE: "lax"
               ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
               REFRESH_TOKEN_EXPIRE_DAYS: "7"
+              # Photo storage configuration
+              PHOTO_STORAGE_BACKEND: "local"
+              LOCAL_STORAGE_PATH: "/app/data/photos"
             probes:
               liveness:
                 enabled: true
@@ -214,6 +217,15 @@ spec:
                 memory: 256Mi
               limits:
                 memory: 512Mi
+    persistence:
+      photos:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: reptile-tracker
+        advancedMounts:
+          reptile-tracker:
+            backend:
+              - path: /app/data/photos
     service:
       backend:
         controller: reptile-tracker
