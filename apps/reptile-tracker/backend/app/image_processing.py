@@ -28,7 +28,8 @@ def get_config_int(key: str, default: int) -> int:
 # Configuration (from environment variables)
 MAX_PHOTO_WIDTH = get_config_int("MAX_PHOTO_WIDTH", 2000)
 JPEG_QUALITY = get_config_int("JPEG_QUALITY", 85)
-THUMBNAIL_SIZE = get_config_int("THUMBNAIL_SIZE", 300)
+THUMBNAIL_LONGEST_SIDE = get_config_int("THUMBNAIL_LONGEST_SIDE", 1200)  # Gallery thumbnails: longest side in pixels
+AVATAR_SIZE = get_config_int("AVATAR_SIZE", 300)  # Square avatars for profile pictures
 
 
 def compress_image(
@@ -143,14 +144,17 @@ def create_thumbnail(
     1. Load image from bytes
     2. Auto-rotate based on EXIF orientation
     3. Apply crop if crop_box provided
-    4. If square_crop, center-crop to square
-    5. Resize to fit within size x size box (maintaining aspect ratio)
+    4. If square_crop, center-crop to square, then resize to size x size
+    5. Otherwise, resize longest side to size (maintaining aspect ratio)
     6. Convert to JPEG with high quality
     7. Optimize for smaller file size
 
     Args:
         image_bytes: Original image binary data
-        size: Thumbnail size in pixels (default: from config)
+        size: Target size in pixels
+            - If square_crop=True: final size will be size x size
+            - If square_crop=False: longest side will be size, aspect ratio maintained
+            - Default: THUMBNAIL_LONGEST_SIDE from config (1200px)
         crop_box: Optional crop box as (left, top, right, bottom) in pixels
         square_crop: If True, center-crop to square before resizing
 
@@ -161,7 +165,7 @@ def create_thumbnail(
         ValueError: If image cannot be processed
     """
     if size is None:
-        size = THUMBNAIL_SIZE
+        size = THUMBNAIL_LONGEST_SIDE
 
     try:
         # Load image
@@ -202,12 +206,30 @@ def create_thumbnail(
         elif img.mode != 'RGB':
             img = img.convert('RGB')
 
-        # Resize maintaining aspect ratio (fit within size x size box)
-        img.thumbnail((size, size), Image.Resampling.LANCZOS)
+        # Resize based on mode
+        if square_crop:
+            # For square images (avatars): resize to exact size x size
+            img.thumbnail((size, size), Image.Resampling.LANCZOS)
+            logger.debug(f"Resized square to {size}x{size}, actual: {img.width}x{img.height}")
+        else:
+            # For gallery thumbnails: resize longest side to size, maintain aspect ratio
+            width, height = img.size
+            if width > height:
+                # Landscape: width is longest side
+                new_width = size
+                new_height = int(height * (size / width))
+            else:
+                # Portrait or square: height is longest side
+                new_height = size
+                new_width = int(width * (size / height))
 
-        # Save as JPEG with higher quality (95) for less graininess
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            logger.debug(f"Resized gallery thumbnail: {width}x{height} -> {new_width}x{new_height} (longest side={size})")
+
+        # Save as JPEG with very high quality (98) to minimize graininess
+        # Using quality=98 with optimize=False to prioritize quality over file size
         output = io.BytesIO()
-        img.save(output, format='JPEG', quality=95, optimize=True)
+        img.save(output, format='JPEG', quality=98, optimize=False, subsampling=0)
         thumbnail_bytes = output.getvalue()
 
         logger.debug(

@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     max_photo_size_mb: int = 10
     max_photo_width: int = 4000  # Allow larger photos for better quality
     jpeg_quality: int = 95  # High quality JPEG compression
-    thumbnail_size: int = 300
+    thumbnail_longest_side: int = 1200  # Gallery thumbnails: longest side in pixels (maintains aspect ratio)
 
     # Photo limits
     max_photos_per_log: int = 3
