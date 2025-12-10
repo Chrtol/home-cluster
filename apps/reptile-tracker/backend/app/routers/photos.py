@@ -153,9 +153,10 @@ async def upload_photos(
             )
 
             # Create thumbnail (always JPEG for consistency)
+            # Gallery thumbnails maintain aspect ratio with longest side at configured size
             thumbnail_data = create_thumbnail(
                 compressed_data,
-                size=settings.thumbnail_size
+                size=settings.thumbnail_longest_side
             )
 
             # Generate UUID for photo
@@ -625,10 +626,15 @@ async def get_reptile_avatar(
 
     try:
         photo = reptile.avatar_photo
-        thumbnail_path = photo.thumbnail_path or photo.file_path
-        file_data = await storage.get_photo(thumbnail_path)
 
-        # Apply crop if coordinates are set (check hasattr for backwards compatibility)
+        # Always regenerate avatar from original image for best quality
+        # Avatars are separate from gallery thumbnails (300px square vs 600px aspect-ratio)
+        from app.image_processing import create_thumbnail, AVATAR_SIZE
+
+        # Get the original full-size image
+        original_file_data = await storage.get_photo(photo.file_path)
+
+        # Check if custom crop coordinates are set
         has_crop_coords = (
             hasattr(reptile, 'avatar_crop_x') and
             hasattr(reptile, 'avatar_crop_y') and
@@ -642,9 +648,7 @@ async def get_reptile_avatar(
             reptile.avatar_crop_width is not None and
             reptile.avatar_crop_height is not None):
 
-            # Apply custom crop to create avatar thumbnail
-            from app.image_processing import create_thumbnail
-
+            # Apply custom crop coordinates from user selection
             crop_box = (
                 reptile.avatar_crop_x,
                 reptile.avatar_crop_y,
@@ -652,17 +656,24 @@ async def get_reptile_avatar(
                 reptile.avatar_crop_y + reptile.avatar_crop_height
             )
 
-            # Get the original full-size image for better crop quality
-            original_file_data = await storage.get_photo(photo.file_path)
-
-            # Create cropped thumbnail with square crop for circular avatar display
+            # Create avatar with custom crop + square crop
             file_data = create_thumbnail(
                 original_file_data,
+                size=AVATAR_SIZE,  # Use avatar size (300px) not gallery thumbnail size (600px)
                 crop_box=crop_box,
                 square_crop=True  # Ensure avatar is square for circular display
             )
 
-            logger.debug(f"Applied avatar crop for reptile {reptile_id}: {crop_box}")
+            logger.debug(f"Created custom avatar crop for reptile {reptile_id}: {crop_box}")
+        else:
+            # No custom crop - create square avatar from center of image
+            file_data = create_thumbnail(
+                original_file_data,
+                size=AVATAR_SIZE,  # Use avatar size (300px)
+                square_crop=True  # Center-crop to square
+            )
+
+            logger.debug(f"Created center-cropped square avatar for reptile {reptile_id}")
 
         return Response(
             content=file_data,
