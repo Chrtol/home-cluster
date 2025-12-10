@@ -25,13 +25,13 @@ def populate_avatar_url(reptile: Reptile) -> None:
     """
     Populate avatar_photo_url on a reptile instance.
 
-    If reptile has an avatar_photo_id, sets avatar_photo_url to the reptile-specific avatar URL.
-    This URL will apply any custom crop coordinates set for the avatar.
+    If reptile has an avatar_photo_id, sets avatar_photo_url to the avatar endpoint.
+    Uses the photos/reptiles/{id}/avatar endpoint which applies crop coordinates.
     Modifies the reptile object in-place by setting the computed field.
     """
     if hasattr(reptile, 'avatar_photo_id') and reptile.avatar_photo_id:
-        # Use reptile-specific avatar endpoint which applies crop coordinates
-        reptile.avatar_photo_url = f"/api/reptiles/{reptile.id}/avatar"
+        # Use the photos router's reptile avatar endpoint which applies crop coordinates
+        reptile.avatar_photo_url = f"/api/photos/reptiles/{reptile.id}/avatar"
     else:
         reptile.avatar_photo_url = None
 
