@@ -34,9 +34,15 @@ const ReptileAvatar = ({
   // Get first letter of reptile name for fallback
   const initial = reptile?.name?.charAt(0)?.toUpperCase() || '?';
 
+  // Get border color if available
+  const borderColor = reptile?.avatar_border_color || '#10b981'; // Default green
+
   return (
     <div
       className={`${sizeClass} rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 ${className}`}
+      style={hasAvatar ? {
+        boxShadow: `0 0 0 3px ${borderColor}`
+      } : undefined}
       title={reptile?.name}
     >
       {hasAvatar ? (

@@ -60,6 +60,7 @@ class ReptileBase(BaseModel):
     default_insect_id: Optional[int] = None  # Default insect food for auto-selection
     default_prepared_id: Optional[int] = None  # Default prepared food for auto-selection
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
+    avatar_border_color: Optional[str] = None  # Hex color code for avatar border
 
 
 class ReptileCreate(ReptileBase):
@@ -83,6 +84,7 @@ class ReptileUpdate(BaseModel):
     default_insect_id: Optional[int] = None
     default_prepared_id: Optional[int] = None
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
+    avatar_border_color: Optional[str] = None  # Hex color code for avatar border
 
 
 class Reptile(ReptileBase):
