@@ -291,6 +291,8 @@ export default function ReptileDetail() {
       formData.append('crop_width', cropData.width);
       formData.append('crop_height', cropData.height);
       formData.append('zoom', cropData.zoom);
+      formData.append('image_pos_x', cropData.imagePosX);
+      formData.append('image_pos_y', cropData.imagePosY);
       formData.append('border_color', cropData.borderColor);
 
       // Log FormData contents
@@ -707,12 +709,12 @@ export default function ReptileDetail() {
           reptileId={parseInt(id)}
           currentAvatarId={reptile?.avatar_photo_id}
           avatarCropSettings={
-            reptile?.avatar_crop_x != null &&
-            reptile?.avatar_crop_y != null &&
-            !isNaN(reptile.avatar_crop_x) &&
-            !isNaN(reptile.avatar_crop_y)
+            reptile?.avatar_image_pos_x != null &&
+            reptile?.avatar_image_pos_y != null &&
+            !isNaN(reptile.avatar_image_pos_x) &&
+            !isNaN(reptile.avatar_image_pos_y)
               ? {
-                  crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
+                  crop: { x: reptile.avatar_image_pos_x, y: reptile.avatar_image_pos_y },
                   zoom: reptile.avatar_crop_zoom,
                   borderColor: reptile.avatar_border_color
                 }
@@ -872,12 +874,12 @@ export default function ReptileDetail() {
           initialPhotoId={lightboxPhoto.id}
           currentAvatarId={reptile?.avatar_photo_id}
           avatarCropSettings={
-            reptile?.avatar_crop_x != null &&
-            reptile?.avatar_crop_y != null &&
-            !isNaN(reptile.avatar_crop_x) &&
-            !isNaN(reptile.avatar_crop_y)
+            reptile?.avatar_image_pos_x != null &&
+            reptile?.avatar_image_pos_y != null &&
+            !isNaN(reptile.avatar_image_pos_x) &&
+            !isNaN(reptile.avatar_image_pos_y)
               ? {
-                  crop: { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y },
+                  crop: { x: reptile.avatar_image_pos_x, y: reptile.avatar_image_pos_y },
                   zoom: reptile.avatar_crop_zoom,
                   borderColor: reptile.avatar_border_color
                 }
@@ -897,9 +899,9 @@ export default function ReptileDetail() {
           onSave={handleSaveAvatarCrop}
           onCancel={handleCloseCropper}
           initialCrop={
-            reptile.avatar_crop_x !== null && reptile.avatar_crop_y !== null
-              ? { x: reptile.avatar_crop_x, y: reptile.avatar_crop_y }
-              : undefined
+            reptile.avatar_image_pos_x != null && reptile.avatar_image_pos_y != null
+              ? { x: reptile.avatar_image_pos_x, y: reptile.avatar_image_pos_y }
+              : { x: 0, y: 0 }
           }
           initialZoom={reptile.avatar_crop_zoom}
           initialBorderColor={reptile.avatar_border_color}

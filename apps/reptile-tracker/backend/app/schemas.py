@@ -98,6 +98,8 @@ class Reptile(ReptileBase):
     avatar_crop_width: Optional[int] = None
     avatar_crop_height: Optional[int] = None
     avatar_crop_zoom: Optional[float] = None  # Zoom level (1.0 to 3.0)
+    avatar_image_pos_x: Optional[float] = None  # Image position in percentages (for UI)
+    avatar_image_pos_y: Optional[float] = None  # Image position in percentages (for UI)
 
     @field_serializer('avatar_photo_id')
     def serialize_avatar_id(self, value: Optional[UUID]) -> Optional[str]:
