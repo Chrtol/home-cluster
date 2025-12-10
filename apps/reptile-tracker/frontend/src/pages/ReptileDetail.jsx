@@ -711,14 +711,14 @@ export default function ReptileDetail() {
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
         <div className="flex items-start gap-4">
-          <div className="relative inline-block">
+          <div className="relative">
             <ReptileAvatar reptile={reptile} size="xl" />
             <button
               onClick={handleEditAvatar}
-              className="absolute -bottom-2 -right-2 p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg border-2 border-white dark:border-gray-900 transition-colors"
+              className="absolute -bottom-1 -right-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors z-20 border-2 border-white dark:border-gray-900"
               title="Edit avatar"
             >
-              <Edit2 size={16} />
+              <Edit2 size={14} />
             </button>
           </div>
           <div>
