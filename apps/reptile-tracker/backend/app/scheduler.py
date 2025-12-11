@@ -1262,15 +1262,14 @@ async def check_overdue_schedules():
             for schedule in schedules:
                 try:
                     # Check if yesterday's occurrence was missed
+                    # Only check PENDING status to prevent duplicate alerts
+                    # (once marked MISSED, alert has already been sent)
                     completion_result = await db.execute(
                         select(ScheduleCompletion).where(
                             and_(
                                 ScheduleCompletion.schedule_id == schedule.id,
                                 ScheduleCompletion.scheduled_date == yesterday,
-                                ScheduleCompletion.status.in_([
-                                    CompletionStatus.PENDING,
-                                    CompletionStatus.MISSED
-                                ])
+                                ScheduleCompletion.status == CompletionStatus.PENDING
                             )
                         )
                     )
