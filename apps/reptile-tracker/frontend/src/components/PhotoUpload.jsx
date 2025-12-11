@@ -135,43 +135,56 @@ const PhotoUpload = ({
     <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
       {/* Upload buttons */}
       {!selectedFile && (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-          >
-            <Upload size={20} />
-            Choose Photo
-          </button>
-
-          {allowCamera && (
+        <div className="space-y-2">
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => cameraInputRef.current?.click()}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
             >
-              <Camera size={20} />
-              Take Photo
+              <Upload size={20} />
+              Choose Photo
+            </button>
+
+            {allowCamera && (
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              >
+                <Camera size={20} />
+                Take Photo
+              </button>
+            )}
+
+            {/* Hidden file inputs */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Cancel button */}
+          {onCancel && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="w-full px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm"
+            >
+              Cancel
             </button>
           )}
-
-          {/* Hidden file inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
         </div>
       )}
 
