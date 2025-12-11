@@ -693,24 +693,13 @@ export default function ReptileDetail() {
     photos: (
       <div className="space-y-4">
         {/* Upload Button */}
-        {showUploadModal ? (
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/30">
-            <PhotoUpload
-              reptileId={parseInt(id)}
-              category="general"
-              onUploadSuccess={handleUploadSuccess}
-              onCancel={() => setShowUploadModal(false)}
-            />
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-          >
-            <UploadIcon size={20} />
-            Upload Photos
-          </button>
-        )}
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+        >
+          <UploadIcon size={20} />
+          Upload Photos
+        </button>
 
         {/* Photo Gallery */}
         <PhotoGallery
@@ -887,6 +876,20 @@ export default function ReptileDetail() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
         {tabs[activeTab]}
       </div>
+
+      {/* Photo Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <PhotoUpload
+              reptileId={parseInt(id)}
+              category="general"
+              onUploadSuccess={handleUploadSuccess}
+              onCancel={() => setShowUploadModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Photo Lightbox */}
       {lightboxPhoto && (
