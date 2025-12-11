@@ -89,6 +89,7 @@ export default function ReptileDetail() {
   const [photoRefreshTrigger, setPhotoRefreshTrigger] = useState(0);
   const [showAvatarCropper, setShowAvatarCropper] = useState(false);
   const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(null);
+  const [autoOpenCropperAfterUpload, setAutoOpenCropperAfterUpload] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -264,6 +265,13 @@ export default function ReptileDetail() {
     setPhotos([photo, ...photos]);
     setShowUploadModal(false);
     setPhotoRefreshTrigger(prev => prev + 1); // Trigger gallery refresh
+
+    // If we should auto-open the cropper (e.g., from "Add Avatar" button)
+    if (autoOpenCropperAfterUpload && photo.id) {
+      setAvatarPhotoUrl(`/api/photos/${photo.id}/file`);
+      setShowAvatarCropper(true);
+      setAutoOpenCropperAfterUpload(false); // Reset flag
+    }
   };
 
   const handleEditAvatar = async () => {
@@ -744,13 +752,26 @@ export default function ReptileDetail() {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
           <Link to={`/measurements/${id}`} className="btn-secondary text-sm sm:text-base whitespace-nowrap">Measurements</Link>
-          <button
-            onClick={handleEditAvatar}
-            className="btn-secondary text-sm sm:text-base flex items-center gap-2"
-          >
-            <Edit2 size={16} />
-            Edit Avatar
-          </button>
+          {!reptile.avatar_photo_id && !reptile.avatar_photo_url ? (
+            <button
+              onClick={() => {
+                setAutoOpenCropperAfterUpload(true);
+                setShowUploadModal(true);
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm sm:text-base flex items-center gap-2 transition-colors"
+            >
+              <Edit2 size={16} />
+              Add Avatar
+            </button>
+          ) : (
+            <button
+              onClick={handleEditAvatar}
+              className="btn-secondary text-sm sm:text-base flex items-center gap-2"
+            >
+              <Edit2 size={16} />
+              Edit Avatar
+            </button>
+          )}
           <Link to={`/reptiles/${id}/edit`} className="btn-secondary text-sm sm:text-base">Edit</Link>
           <button
             onClick={handleToggleActive}
