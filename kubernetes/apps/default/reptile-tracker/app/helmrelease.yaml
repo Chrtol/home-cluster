@@ -261,7 +261,6 @@ spec:
         className: external
         annotations:
           nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-          nginx.ingress.kubernetes.io/proxy-body-size: "10m"
           hajimari.io/enable: "true"
           hajimari.io/icon: mdi:snake
           hajimari.io/group: apps
