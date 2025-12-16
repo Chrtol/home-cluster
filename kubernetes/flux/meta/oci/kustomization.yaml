@@ -14,3 +14,4 @@ resources:
   - ./promtail.yaml
   - ./mariadb.yaml
   - ./opnsense-exporter.yaml
+  - ./tuppr.yaml
