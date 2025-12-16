@@ -508,7 +508,7 @@ async def send_webhook_notification(
     context: Optional[Dict[str, Any]] = None,
     trigger_type: Optional[str] = None,
     template: Optional['NotificationTemplate'] = None,
-):
+) -> bool:
     """
     Send notification via webhook or API
     M-3 Fix: Added SSRF protection
@@ -523,6 +523,9 @@ async def send_webhook_notification(
         context: Optional context dict for rich formatting (Discord embeds with fields)
         trigger_type: Type of notification (schedule_reminder, overdue_alert, etc.)
         template: Optional NotificationTemplate with discord_config for Discord embeds
+
+    Returns:
+        bool: True if notification was sent successfully, False on failure
     """
 
     try:
@@ -554,6 +557,7 @@ async def send_webhook_notification(
                 response = await client.post(webhook_url, json=payload)
                 response.raise_for_status()
                 logger.info(f"Discord notification sent successfully")
+                return True
 
             elif webhook_type == "pushover":
                 # Pushover uses API, not webhooks
@@ -608,6 +612,7 @@ async def send_webhook_notification(
                 response = await client.post("https://api.pushover.net/1/messages.json", data=payload)
                 response.raise_for_status()
                 logger.info(f"Pushover notification sent successfully")
+                return True
 
             else:  # generic webhook
                 # M-3 Fix: Validate URL before making request
@@ -623,19 +628,20 @@ async def send_webhook_notification(
                 response = await client.post(webhook_url, json=payload)
                 response.raise_for_status()
                 logger.info(f"Generic webhook notification sent successfully")
+                return True
 
     except httpx.TimeoutException:
         logger.error(f"Webhook notification timeout")
-        # Don't raise - notifications are not critical
+        return False
     except httpx.HTTPStatusError as e:
         logger.error(f"Webhook notification failed with HTTP {e.response.status_code}")
-        # Don't raise - notifications are not critical
+        return False
     except httpx.RequestError as e:
         logger.error(f"Webhook notification request error: {e}")
-        # Don't raise - notifications are not critical
+        return False
     except Exception as e:
         logger.error(f"Unexpected error sending webhook notification: {e}")
-        # Don't raise - notifications are not critical
+        return False
 
 
 async def notify_feeding_due(reptile: Reptile, webhook_url: str, webhook_type: str):

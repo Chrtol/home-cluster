@@ -1297,21 +1297,32 @@ async def check_overdue_schedules():
 
             for schedule in schedules:
                 try:
-                    # Check if yesterday's occurrence was missed
-                    # Only check PENDING status to prevent duplicate alerts
-                    # (once marked MISSED, alert has already been sent)
+                    # Check if yesterday's occurrence was missed and notification not sent yet
+                    # Query for MISSED status with overdue_notification_sent = False
+                    # This allows retry if notification failed previously
                     completion_result = await db.execute(
                         select(ScheduleCompletion).where(
                             and_(
                                 ScheduleCompletion.schedule_id == schedule.id,
                                 ScheduleCompletion.scheduled_date == yesterday,
-                                ScheduleCompletion.status == CompletionStatus.PENDING
+                                or_(
+                                    ScheduleCompletion.status == CompletionStatus.PENDING,
+                                    and_(
+                                        ScheduleCompletion.status == CompletionStatus.MISSED,
+                                        ScheduleCompletion.overdue_notification_sent == False
+                                    )
+                                )
                             )
                         )
                     )
                     completion = completion_result.scalars().first()
 
                     if completion:
+                        # Mark as MISSED if still pending
+                        if completion.status == CompletionStatus.PENDING:
+                            completion.status = CompletionStatus.MISSED
+                            await db.commit()
+
                         # Get reptile
                         reptile = await db.get(Reptile, schedule.reptile_id)
                         if not reptile:
@@ -1322,10 +1333,10 @@ async def check_overdue_schedules():
 
                         if not schedule.notification_channels:
                             logger.debug(f"No channels selected for schedule {schedule.id}, skipping overdue alert")
-                            # Still mark as MISSED even if no channels
-                            completion.status = CompletionStatus.MISSED
-                            await db.commit()
                             continue
+
+                        # Track if any notification succeeded
+                        any_notification_sent = False
 
                         # Send overdue alert to each selected channel
                         for channel in schedule.notification_channels:
@@ -1359,8 +1370,8 @@ async def check_overdue_schedules():
                             except:
                                 continue
 
-                            # Send the overdue alert
-                            await send_overdue_alert(
+                            # Send the overdue alert and track success
+                            success = await send_overdue_alert(
                                 db=db,
                                 reptile=reptile,
                                 schedule=schedule,
@@ -1371,14 +1382,27 @@ async def check_overdue_schedules():
                                 config=channel.config
                             )
 
-                            logger.info(
-                                f"Sent overdue alert for schedule {schedule.id} "
-                                f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
-                            )
+                            if success:
+                                any_notification_sent = True
+                                logger.info(
+                                    f"Sent overdue alert for schedule {schedule.id} "
+                                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                                )
+                            else:
+                                logger.warning(
+                                    f"Failed to send overdue alert for schedule {schedule.id} "
+                                    f"to user {user.email} via channel '{channel.name}'"
+                                )
 
-                        # Mark as MISSED
-                        completion.status = CompletionStatus.MISSED
-                        await db.commit()
+                        # After trying all channels, mark notification as sent if any succeeded
+                        # This prevents retrying on next check if at least one notification got through
+                        if any_notification_sent:
+                            completion.overdue_notification_sent = True
+                            await db.commit()
+                            logger.info(
+                                f"Marked overdue notification as sent for completion {completion.id} "
+                                f"(schedule {schedule.id}, date {yesterday})"
+                            )
 
                 except Exception as e:
                     logger.error(f"Error processing schedule {schedule.id}: {e}", exc_info=True)
@@ -1614,8 +1638,13 @@ async def send_overdue_alert(
     webhook_url: str,
     webhook_type: str,
     config: dict = None
-):
-    """Send an overdue schedule alert"""
+) -> bool:
+    """
+    Send an overdue schedule alert
+
+    Returns:
+        bool: True if notification was sent successfully, False on failure
+    """
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
     # Build schedule URL for links - use instance if available
@@ -1714,7 +1743,8 @@ async def send_overdue_alert(
         message = f"⚠️ **Overdue Alert:** {schedule_name} for **{reptile.name}** was not completed on {missed_date.strftime('%Y-%m-%d')}"
         title = f"Overdue Schedule - {reptile.name}"
 
-    await send_webhook_notification(
+    # Send webhook notification and track success
+    webhook_success = await send_webhook_notification(
         webhook_url=webhook_url,
         webhook_type=webhook_type,
         message=message,
@@ -1741,6 +1771,8 @@ async def send_overdue_alert(
             "missed_date": missed_date.isoformat()
         }
     )
+
+    return webhook_success
 
 
 async def check_auto_complete_schedules():
@@ -1944,15 +1976,26 @@ async def check_interval_schedule_notifications():
                     if not reptile:
                         continue
 
-                    # Get quota status
-                    period_type = schedule.quota_period.value if schedule.quota_period else "week"
-                    quota_status = await check_quota_status(
-                        db, schedule, schedule.reptile_id, today, first_day_of_week=0
+                    # For interval schedules, get days since last completion directly
+                    # (no quota tracking needed - just min/max days between)
+                    last_completion_result = await db.execute(
+                        select(ScheduleCompletion.completed_at).where(
+                            and_(
+                                ScheduleCompletion.schedule_id == schedule.id,
+                                ScheduleCompletion.status != CompletionStatus.PENDING
+                            )
+                        ).order_by(ScheduleCompletion.completed_at.desc()).limit(1)
                     )
+                    last_completion_datetime = last_completion_result.scalar()
+
+                    days_since_last = None
+                    if last_completion_datetime:
+                        last_completion_date = last_completion_datetime.date()
+                        days_since_last = (today - last_completion_date).days
 
                     # Only check max_days_between warning (HARD constraint)
-                    if schedule.max_days_between and quota_status.get("days_since_last") is not None:
-                        days_since_last = quota_status["days_since_last"]
+                    if schedule.max_days_between and days_since_last is not None:
+
 
                         # Send warning if approaching max (1 day before max)
                         if days_since_last == schedule.max_days_between - 1:
@@ -1961,7 +2004,7 @@ async def check_interval_schedule_notifications():
                                 reptile=reptile,
                                 schedule=schedule,
                                 warning_type="max_days_approaching",
-                                quota_status=quota_status
+                                days_since_last=days_since_last
                             )
                         # Send alert if max exceeded
                         elif days_since_last >= schedule.max_days_between:
@@ -1970,7 +2013,7 @@ async def check_interval_schedule_notifications():
                                 reptile=reptile,
                                 schedule=schedule,
                                 warning_type="max_days_exceeded",
-                                quota_status=quota_status
+                                days_since_last=days_since_last
                             )
 
                 except Exception as e:
@@ -1986,7 +2029,7 @@ async def send_interval_warning_notification(
     reptile: Reptile,
     schedule: Schedule,
     warning_type: str,
-    quota_status: Dict
+    days_since_last: int
 ):
     """
     Send interval warning notification to all channels for an interval schedule.
@@ -1998,42 +2041,31 @@ async def send_interval_warning_notification(
     warning_type can be:
     - max_days_approaching: Approaching max_days_between limit
     - max_days_exceeded: Exceeded max_days_between limit
-    - period_ending_soon: Period ending soon and quota not met
-    - quota_exceeded: Quota has been exceeded this period
     """
     try:
         # Get schedule's notification channels
         await db.refresh(schedule, ["notification_channels"])
 
         if not schedule.notification_channels:
-            logger.debug(f"No channels for schedule {schedule.id}, skipping quota notification")
+            logger.debug(f"No channels for schedule {schedule.id}, skipping interval warning")
             return
-
-        period_type = schedule.quota_period.value if schedule.quota_period else "week"
-        period_label = "this week" if period_type == "week" else "this month"
 
         schedule_url = f"/schedules/{schedule.id}"
 
-        # Calculate remaining feedings for period_ending_soon
-        remaining = quota_status['quota_frequency'] - quota_status['count'] if warning_type == "period_ending_soon" else 0
-
         # Build context for template matching and rendering
+        # Note: Interval schedules don't use quotas, only min/max days between
         context = {
             "reptile_id": reptile.id,
             "reptile_name": reptile.name,
             "schedule_id": schedule.id,
-            "schedule_name": schedule.name or "Requirement Schedule",
+            "schedule_name": schedule.name or f"{schedule.schedule_type.title()} Schedule",
             "schedule_type": schedule.schedule_type,
             "schedule_url": schedule_url,
-            "quota_count": quota_status["count"],
-            "quota_frequency": quota_status["quota_frequency"],
-            "period_type": period_type,
-            "period_label": period_label,
-            "days_since_last": quota_status.get("days_since_last"),
+            "days_since_last": days_since_last,
+            "min_days_between": schedule.min_days_between,
             "max_days_between": schedule.max_days_between,
             "warning_type": warning_type,
-            "remaining_feedings": remaining,
-            "emoji": "📊",  # Default emoji for quota warnings
+            "emoji": "⏰",  # Default emoji for interval warnings
         }
 
         # Send to each channel
@@ -2074,7 +2106,7 @@ async def send_interval_warning_notification(
 
             # Render template or use fallback based on warning_type
             if template:
-                # User has a custom template - use it with quota warning context
+                # User has a custom template - use it with interval warning context
                 message = render_template(template.message_template, context)
                 title = render_template(template.title_template, context) if template.title_template else f"Schedule Reminder - {reptile.name}"
             else:
@@ -2082,26 +2114,14 @@ async def send_interval_warning_notification(
                 if warning_type == "max_days_approaching":
                     title = f"Feeding Reminder - {reptile.name}"
                     message = (
-                        f"⏰ **Reminder:** It's been {quota_status['days_since_last']} days since you fed **{reptile.name}**.\n"
+                        f"⏰ **Reminder:** It's been {days_since_last} days since you fed **{reptile.name}**.\n"
                         f"The maximum time between feedings is {schedule.max_days_between} days."
                     )
                 elif warning_type == "max_days_exceeded":
                     title = f"Feeding Overdue - {reptile.name}"
                     message = (
-                        f"⚠️ **Alert:** It's been {quota_status['days_since_last']} days since you fed **{reptile.name}**!\n"
+                        f"⚠️ **Alert:** It's been {days_since_last} days since you fed **{reptile.name}**!\n"
                         f"The maximum time between feedings is {schedule.max_days_between} days. Please feed soon."
-                    )
-                elif warning_type == "period_ending_soon":
-                    title = f"Quota Reminder - {reptile.name}"
-                    message = (
-                        f"📊 **Reminder:** **{reptile.name}** still needs {remaining} more feeding(s) {period_label}.\n"
-                        f"Current progress: {quota_status['count']}/{quota_status['quota_frequency']}"
-                    )
-                elif warning_type == "quota_exceeded":
-                    title = f"Quota Exceeded - {reptile.name}"
-                    message = (
-                        f"⚠️ **Notice:** **{reptile.name}** has been fed {quota_status['count']} times {period_label}.\n"
-                        f"Target quota: {quota_status['quota_frequency']} times {period_label}"
                     )
                 else:
                     return  # Unknown warning type
@@ -2130,19 +2150,20 @@ async def send_interval_warning_notification(
                     "reptile_id": reptile.id,
                     "reptile_name": reptile.name,
                     "schedule_id": schedule.id,
-                    "schedule_name": schedule.name or "Requirement Schedule",
+                    "schedule_name": schedule.name or f"{schedule.schedule_type.title()} Schedule",
                     "warning_type": warning_type,
-                    "quota_status": quota_status
+                    "days_since_last": days_since_last,
+                    "max_days_between": schedule.max_days_between
                 }
             )
 
             logger.info(
-                f"Sent quota {warning_type} notification for schedule {schedule.id} "
+                f"Sent interval {warning_type} notification for schedule {schedule.id} "
                 f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
             )
 
     except Exception as e:
-        logger.error(f"Error sending quota warning notification: {e}", exc_info=True)
+        logger.error(f"Error sending interval warning notification: {e}", exc_info=True)
 
 
 async def daily_instance_maintenance():

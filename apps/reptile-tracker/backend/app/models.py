@@ -523,6 +523,7 @@ class ScheduleCompletion(Base):
     within_time_window = Column(Boolean, nullable=True)  # True if completed within earliest/latest times
     status = Column(Enum(CompletionStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     auto_completed = Column(Boolean, default=False, nullable=False)  # True if auto-completed by system (not manually logged)
+    overdue_notification_sent = Column(Boolean, default=False, nullable=False)  # True if overdue notification was sent for this MISSED completion
 
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
 
