@@ -1,0 +1,11 @@
+---
+# Allow tuppr controller to access Talos API from system-upgrade namespace
+- op: add
+  path: /machine/features
+  value:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:admin
+      allowedKubernetesNamespaces:
+        - system-upgrade
