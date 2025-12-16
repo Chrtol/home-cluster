@@ -22,7 +22,7 @@ spec:
         - operator: Exists
       containers:
         - name: network-monitor
-          image: quay.io/prometheus/blackbox-exporter:v0.27.0
+          image: quay.io/prometheus/blackbox-exporter:v0.28.0
           ports:
             - containerPort: 9115
               name: http
