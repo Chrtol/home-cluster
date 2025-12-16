@@ -648,18 +648,12 @@ export default function Dashboard() {
     }
   };
 
-  // Get health status badge for reptile (only show if schedules exist)
+  // Get health status badge for reptile
   const getHealthStatusBadge = (reptileId) => {
-    // Check if reptile has any schedules today
     const today = new Date();
     const reptileSchedules = weeklyEvents.filter(event =>
       event.reptile_id === reptileId
     );
-
-    // Don't show badge if no schedules
-    if (reptileSchedules.length === 0) {
-      return null;
-    }
 
     // Check for overdue or missed schedules (any day, not just today)
     const hasOverdue = reptileSchedules.some(e => e.status === 'missed');
@@ -676,8 +670,8 @@ export default function Dashboard() {
       return { color: 'yellow', emoji: '🟡', tooltip: 'Has tasks due today' };
     }
 
-    // All good
-    return { color: 'green', emoji: '🟢', tooltip: 'All tasks on track' };
+    // All good - no overdue tasks and nothing due today
+    return { color: 'green', emoji: '🟢', tooltip: 'No tasks due today' };
   };
 
   if (loading) {
