@@ -90,6 +90,7 @@ export default function ReptileDetail() {
   const [showAvatarCropper, setShowAvatarCropper] = useState(false);
   const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(null);
   const [autoOpenCropperAfterUpload, setAutoOpenCropperAfterUpload] = useState(false);
+  const [croppingPhotoId, setCroppingPhotoId] = useState(null); // Track which photo we're cropping
 
   useEffect(() => {
     const fetchData = async () => {
@@ -268,6 +269,7 @@ export default function ReptileDetail() {
 
     // If we should auto-open the cropper (e.g., from "Add Avatar" button)
     if (autoOpenCropperAfterUpload && photo.id) {
+      setCroppingPhotoId(photo.id); // Track which photo we're cropping
       setAvatarPhotoUrl(`/api/photos/${photo.id}/file`);
       setShowAvatarCropper(true);
       setAutoOpenCropperAfterUpload(false); // Reset flag
@@ -280,6 +282,7 @@ export default function ReptileDetail() {
     try {
       // Fetch the full-size photo URL for cropping
       const response = await axios.get(`/api/photos/${reptile.avatar_photo_id}`);
+      setCroppingPhotoId(reptile.avatar_photo_id); // Track which photo we're cropping
       setAvatarPhotoUrl(`/api/photos/${reptile.avatar_photo_id}/file`);
       setShowAvatarCropper(true);
     } catch (error) {
@@ -293,7 +296,7 @@ export default function ReptileDetail() {
       console.log('Sending crop data to backend:', cropData);
 
       const formData = new FormData();
-      formData.append('photo_id', reptile.avatar_photo_id);
+      formData.append('photo_id', croppingPhotoId); // Use the tracked photo ID
       formData.append('crop_x', cropData.x);
       formData.append('crop_y', cropData.y);
       formData.append('crop_width', cropData.width);
@@ -316,6 +319,7 @@ export default function ReptileDetail() {
       setReptile(reptileResponse.data);
 
       setShowAvatarCropper(false);
+      setCroppingPhotoId(null); // Clear the cropping photo ID
     } catch (error) {
       console.error('Error updating avatar:', error);
       console.error('Backend error details:', error.response?.data);
@@ -326,6 +330,7 @@ export default function ReptileDetail() {
   const handleCloseCropper = () => {
     setShowAvatarCropper(false);
     setAvatarPhotoUrl(null);
+    setCroppingPhotoId(null); // Clear the cropping photo ID
   };
 
   if (loading) {
