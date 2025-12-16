@@ -14,9 +14,38 @@
 
 ## 🚀 NEXT UP - Tier 1 Priorities
 
-1. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
-2. **Advanced Notification Features** - Notification grouping, snooze, per-reptile preferences, email notifications (see [🔔 Notifications & Reminders](#notifications--reminders))
-3. **Live Feeder Animal Care** - Track feeder insect colonies, gut loading schedules, hydration (see [🔧 Core Features](#-core-features))
+1. **Scheduled Reports & Daily Planners** - NEW notification type for automated reports
+   - Daily activity planner (morning summary of scheduled tasks)
+   - Weekly summary reports (all reptiles or specific ones)
+   - Monthly health summaries (weight tracking, shed cycles, feeding patterns)
+   - Customizable report content and frequency
+   - Per-reptile or household-wide report configuration
+   - Multiple delivery channels (Discord, email, webhooks)
+
+2. **Data Export System** - Export all tracker data to JSON/ZIP
+   - Modular export by feature (feedings, schedules, health logs, photos, etc.)
+   - Per-reptile or full household export
+   - Optional filters: date ranges, specific reptiles, food types
+   - Export includes all associated media (photos compressed in ZIP)
+   - JSON format with schema versioning for future imports
+
+3. **Data Import & Migration Wizard** - Import data from exports or other sources
+   - Step-by-step wizard for importing JSON exports
+   - Conflict resolution for duplicate reptiles/schedules
+   - Preview changes before committing
+   - Rollback functionality for failed imports
+   - Support for partial imports (select which data types to import)
+
+4. **PDF Report Generation** - Professional reports for vet visits and records
+   - "At-a-glance" report: basic stats, recent weight/feeding, current schedules
+   - Detailed health report: complete history, charts, photos
+   - Customizable report templates
+   - Export individual reptile or household summary
+   - Include photos, weight charts, feeding logs, health records
+
+5. **Statistics Page Phase 2** - Health analytics (shed tracking, weight change rate, timeline) (see [📊 Statistics & Analytics](#-statistics--analytics))
+6. **Advanced Notification Features** - Notification grouping, snooze, per-reptile preferences, email notifications (see [🔔 Notifications & Reminders](#notifications--reminders))
+7. **Live Feeder Animal Care** - Track feeder insect colonies, gut loading schedules, hydration (see [🔧 Core Features](#-core-features))
 
 ---
 

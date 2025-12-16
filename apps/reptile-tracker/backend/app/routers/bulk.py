@@ -102,13 +102,60 @@ async def get_dashboard_data(
         .options(
             selectinload(models.Feeding.reptile),
             selectinload(models.Feeding.user),
-            selectinload(models.Feeding.foods),
             selectinload(models.Feeding.supplements)
         )
         .order_by(models.Feeding.fed_at.desc())
         .limit(5)
     )
-    recent_feedings = recent_feedings_result.scalars().all()
+    recent_feedings_raw = recent_feedings_result.scalars().all()
+
+    # Manually serialize feedings with quantities from association table
+    recent_feedings = []
+    for feeding in recent_feedings_raw:
+        # Load foods with quantities
+        foods_result = await db.execute(
+            select(models.Food, models.feeding_foods.c.quantity)
+            .join(models.feeding_foods, models.Food.id == models.feeding_foods.c.food_id)
+            .where(models.feeding_foods.c.feeding_id == feeding.id)
+        )
+        foods_with_qty = []
+        for food, quantity in foods_result:
+            foods_with_qty.append({
+                "id": food.id,
+                "name": food.name,
+                "category": food.category,
+                "insect_size": food.insect_size,
+                "nutritional_data": food.nutritional_data,
+                "is_default": food.is_default,
+                "is_favorite": food.is_favorite,
+                "created_at": food.created_at,
+                "quantity": quantity,
+                "supplements": []
+            })
+
+        feeding_dict = {
+            "id": feeding.id,
+            "reptile_id": feeding.reptile_id,
+            "user_id": feeding.user_id,
+            "fed_at": feeding.fed_at,
+            "notes": feeding.notes,
+            "is_salad": feeding.is_salad,
+            "foods": foods_with_qty,
+            "supplements": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "nutritional_data": s.nutritional_data,
+                    "is_default": s.is_default,
+                    "created_at": s.created_at
+                }
+                for s in feeding.supplements
+            ],
+            "created_at": feeding.created_at,
+            "reptile": feeding.reptile,
+            "user": feeding.user
+        }
+        recent_feedings.append(feeding_dict)
 
     # Fetch weight dashboard data with reptile information
     weight_result = await db.execute(

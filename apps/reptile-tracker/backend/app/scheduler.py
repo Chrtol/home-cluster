@@ -524,6 +524,25 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
 
             instance.status = "completed"
             instance.updated_at = now
+
+            # For interval schedules, create the next instance
+            from app.models import ScheduleMode
+            if schedule.schedule_mode == ScheduleMode.INTERVAL:
+                from app.instance_generator import create_interval_schedule_instance
+                try:
+                    completion_date = existing_completion.completed_at.date() if existing_completion.completed_at else instance.scheduled_date
+                    await create_interval_schedule_instance(
+                        db=db,
+                        schedule=schedule,
+                        last_completion_date=completion_date
+                    )
+                    logger.info(f"Created next interval instance for schedule {schedule.id} after linking orphaned completion")
+                except Exception as e:
+                    logger.error(
+                        f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                        exc_info=True
+                    )
+
             await db.commit()
             logger.info(f"Linked orphaned completion {existing_completion.id} to instance {instance_id}")
             return True
@@ -558,6 +577,23 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
     # Update instance status
     instance.status = "completed"
     instance.updated_at = now
+
+    # For interval schedules, create the next instance
+    from app.models import ScheduleMode
+    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        from app.instance_generator import create_interval_schedule_instance
+        try:
+            await create_interval_schedule_instance(
+                db=db,
+                schedule=schedule,
+                last_completion_date=instance.scheduled_date
+            )
+            logger.info(f"Created next interval instance for schedule {schedule.id} after auto-completion")
+        except Exception as e:
+            logger.error(
+                f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                exc_info=True
+            )
 
     await db.commit()
 
@@ -1833,6 +1869,23 @@ async def check_auto_complete_schedules():
                     instance.updated_at = now
 
                     await db.flush()
+
+                    # For interval schedules, create the next instance
+                    from app.models import ScheduleMode
+                    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+                        from app.instance_generator import create_interval_schedule_instance
+                        try:
+                            await create_interval_schedule_instance(
+                                db=db,
+                                schedule=schedule,
+                                last_completion_date=instance.scheduled_date
+                            )
+                            logger.info(f"Created next interval instance for schedule {schedule.id} after auto-completion")
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                                exc_info=True
+                            )
 
                     auto_completed_count += 1
                     logger.info(
