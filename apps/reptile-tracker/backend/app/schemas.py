@@ -57,6 +57,7 @@ class ReptileBase(BaseModel):
     has_uvb: Optional[bool] = None  # UVB lighting setup
     length: Optional[int] = None  # Length in centimeters
     age_category: Optional[str] = None  # hatchling, juvenile, adult, gravid
+    sex: Optional[str] = None  # male, female, unknown
     default_insect_id: Optional[int] = None  # Default insect food for auto-selection
     default_prepared_id: Optional[int] = None  # Default prepared food for auto-selection
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
@@ -81,6 +82,7 @@ class ReptileUpdate(BaseModel):
     has_uvb: Optional[bool] = None
     length: Optional[int] = None
     age_category: Optional[str] = None
+    sex: Optional[str] = None
     default_insect_id: Optional[int] = None
     default_prepared_id: Optional[int] = None
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar

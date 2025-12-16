@@ -16,6 +16,7 @@ export default function ReptileForm() {
     const [length, setLength] = useState('');
     const [ageCategory, setAgeCategory] = useState('');
     const [ageCategoryAuto, setAgeCategoryAuto] = useState(true); // Toggle for auto/manual age category
+    const [sex, setSex] = useState('');
     const [error, setError] = useState('');
     const [speciesList, setSpeciesList] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -78,6 +79,7 @@ export default function ReptileForm() {
                     setHasUvb(res.data.has_uvb === null ? '' : res.data.has_uvb ? 'yes' : 'no');
                     setLength(res.data.length || '');
                     setAgeCategory(res.data.age_category || '');
+                    setSex(res.data.sex || '');
                     // If age_category is set, assume manual mode
                     setAgeCategoryAuto(!res.data.age_category);
                 })
@@ -108,7 +110,8 @@ export default function ReptileForm() {
             has_uvb: hasUvb === '' ? null : hasUvb === 'yes',
             length: length ? parseInt(length) : null,
             // Only save age_category if manually set (not auto mode)
-            age_category: ageCategoryAuto ? null : (ageCategory || null)
+            age_category: ageCategoryAuto ? null : (ageCategory || null),
+            sex: sex || null
         };
 
         try {
@@ -254,6 +257,23 @@ export default function ReptileForm() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Track your reptile's length for growth monitoring. For Bearded Dragons, age category is based on size ({`<25cm = juvenile, >25cm = adult`}).
                     </p>
+                </div>
+
+                <div>
+                    <label htmlFor="sex" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        Sex <span className="text-xs text-gray-500 dark:text-gray-400">(optional)</span>
+                    </label>
+                    <select
+                        id="sex"
+                        value={sex}
+                        onChange={(e) => setSex(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                        <option value="">Not specified</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
                 </div>
 
                 <div>

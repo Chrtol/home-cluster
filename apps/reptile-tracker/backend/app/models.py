@@ -206,6 +206,9 @@ class Reptile(Base):
     # Age category (can be set automatically or manually)
     age_category = Column(String, nullable=True)  # hatchling, juvenile, adult, gravid
 
+    # Sex (biological sex)
+    sex = Column(String, nullable=True)  # male, female, unknown
+
     # Household relation
     household_id = Column(Integer, ForeignKey("households.id", ondelete="SET NULL"), nullable=True)
 
