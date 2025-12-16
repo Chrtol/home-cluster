@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -809,6 +809,19 @@ export default function ReptileDetail() {
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Life Stage</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
                   {reptile.age_category || calculateAgeCategory(reptile.date_of_birth)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Sex */}
+          {reptile.sex && (
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <Users size={20} className="text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Sex</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                  {reptile.sex}
                 </p>
               </div>
             </div>
