@@ -83,6 +83,13 @@ const PhotoUpload = ({
       return;
     }
 
+    // Validate reptileId
+    if (!reptileId || isNaN(reptileId)) {
+      console.error('Invalid reptileId:', reptileId);
+      setError(`Invalid reptile ID: ${reptileId}`);
+      return;
+    }
+
     setUploading(true);
     setError(null);
 
@@ -96,12 +103,22 @@ const PhotoUpload = ({
         formData.append('caption', caption);
       }
 
+      console.log('Uploading photo:', {
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        reptileId,
+        category: selectedCategory,
+        caption
+      });
+
       // Upload to backend
       const response = await axios.post('/api/photos/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+
+      console.log('Upload successful:', response.data);
 
       // Call success callback with the uploaded photo data
       if (onUploadSuccess && response.data.photos.length > 0) {
@@ -114,7 +131,10 @@ const PhotoUpload = ({
       setCaption('');
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.response?.data?.detail || 'Failed to upload photo');
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      console.error('Error message:', err.message);
+      setError(err.response?.data?.detail || err.message || 'Failed to upload photo');
     } finally {
       setUploading(false);
     }
