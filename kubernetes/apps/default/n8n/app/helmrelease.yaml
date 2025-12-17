@@ -51,7 +51,11 @@ spec:
               # Task runner configuration for n8n 2.1+
               N8N_RUNNERS_ENABLED: "true"
               N8N_RUNNERS_MODE: "external"
-              N8N_RUNNERS_TASK_BROKER_URI: "http://127.0.0.1:5679"
+              N8N_RUNNERS_AUTH_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: n8n-secret
+                    key: N8N_RUNNERS_AUTH_TOKEN
             resources:
               requests:
                 cpu: 15m
@@ -61,11 +65,14 @@ spec:
 
           task-runner:
             image:
-              repository: ghcr.io/n8n-io/n8n
-              tag: 2.1.0
-            args:
-              - task-runner
+              repository: n8nio/runners
+              tag: latest
             env:
+              N8N_RUNNERS_AUTH_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: n8n-secret
+                    key: N8N_RUNNERS_AUTH_TOKEN
               N8N_RUNNERS_TASK_BROKER_URI: "http://127.0.0.1:5679"
               N8N_RUNNERS_MAX_CONCURRENCY: "5"
             resources:
