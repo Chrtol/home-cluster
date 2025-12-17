@@ -4,8 +4,6 @@ kind: Service
 metadata:
   name: vps-node-exporter
   namespace: observability
-  labels:
-    app.kubernetes.io/name: vps-node-exporter
 spec:
   type: ClusterIP
   clusterIP: None
