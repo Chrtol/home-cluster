@@ -4,8 +4,10 @@ kind: Service
 metadata:
   name: prometheus-remote-write
   namespace: observability
+  annotations:
+    io.cilium/lb-ipam-ips: "10.0.30.91"
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app.kubernetes.io/name: prometheus
     prometheus: kube-prometheus-stack-prometheus
@@ -13,5 +15,4 @@ spec:
     - name: remote-write
       port: 9090
       targetPort: 9090
-      nodePort: 30090
       protocol: TCP
