@@ -99,7 +99,7 @@
           "refId": "A"
         }
       ],
-      "title": "Tunnel Status",
+      "title": "VPS Tunnel Status",
       "type": "stat"
     },
     {
@@ -778,7 +778,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Wireguard VPN Monitoring",
+  "title": "VPS Wireguard Monitoring",
   "uid": "wireguard-monitoring",
   "version": 1,
   "weekStart": ""
