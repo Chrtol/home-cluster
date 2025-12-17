@@ -165,12 +165,12 @@ spec:
           gnetId: 11454
           revision: 14
           datasource: Prometheus
-        # node-exporter-full:
-        #   # renovate: depName="Node Exporter Full"
-        #   gnetId: 1860
-        #   revision: 40
-        #   datasource:
-        #     - { name: DS_PROMETHEUS, value: Prometheus }
+        node-exporter-full:
+          # renovate: depName="Node Exporter Full"
+          gnetId: 1860
+          revision: 40
+          datasource:
+            - { name: DS_PROMETHEUS, value: Prometheus }
         prometheus:
           # renovate: depName="Prometheus"
           gnetId: 19105
