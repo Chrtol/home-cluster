@@ -23,15 +23,31 @@
   "panels": [
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -40,16 +56,11 @@
                 "value": null
               },
               {
-                "color": "yellow",
-                "value": 10
-              },
-              {
                 "color": "red",
-                "value": 50
+                "value": 0
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
@@ -61,8 +72,8 @@
       },
       "id": 1,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -74,29 +85,27 @@
           "fields": ""
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"media\", pod=~\"plex-.*\"} |~ \"(?i)(error|fail|timeout|unable|cannot)\" [$__range]))",
-          "queryType": "range",
+          "expr": "(rate(wireguard_sent_bytes_total{job=\"wireguard-exporter\"}[1m]) > 0 or rate(wireguard_received_bytes_total{job=\"wireguard-exporter\"}[1m]) > 0) * 1",
           "refId": "A"
         }
       ],
-      "title": "Plex Errors (Last $__range)",
+      "title": "Tunnel Status",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -110,14 +119,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 100
-              },
-              {
-                "color": "red",
-                "value": 500
               }
             ]
           },
@@ -134,7 +135,7 @@
       "id": 2,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -153,22 +154,20 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | status >= 400 [$__range]))",
-          "queryType": "range",
+          "expr": "count(wireguard_sent_bytes_total{job=\"wireguard-exporter\"})",
           "refId": "A"
         }
       ],
-      "title": "HTTP 4xx/5xx Errors (Last $__range)",
+      "title": "Active Peers",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -185,15 +184,15 @@
               },
               {
                 "color": "yellow",
-                "value": 1
+                "value": 300
               },
               {
                 "color": "red",
-                "value": 10
+                "value": 600
               }
             ]
           },
-          "unit": "short"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -225,22 +224,20 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | request_time > 2 [$__range]))",
-          "queryType": "range",
+          "expr": "time() - wireguard_latest_handshake_seconds{job=\"wireguard-exporter\"}",
           "refId": "A"
         }
       ],
-      "title": "Slow Requests >2s (Last $__range)",
+      "title": "Last Handshake",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -257,7 +254,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -289,22 +286,20 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | http_user_agent !~ \"(?i)(gatus|blackbox|prometheus)\" [$__range]))",
-          "queryType": "range",
+          "expr": "sum(rate(wireguard_sent_bytes_total{job=\"wireguard-exporter\"}[5m]) + rate(wireguard_received_bytes_total{job=\"wireguard-exporter\"}[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Total User Requests (Last $__range)",
+      "title": "Total Throughput",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -354,51 +349,18 @@
               }
             ]
           },
-          "unit": "reqps"
+          "unit": "binBps"
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "2xx"
+              "options": "Received"
             },
             "properties": [
               {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "4xx"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "5xx"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
+                "id": "custom.transform",
+                "value": "negative-Y"
               }
             ]
           }
@@ -415,7 +377,8 @@
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -430,47 +393,30 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "sum by (status) (rate({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | status =~ \"2..\" [$__auto]))",
-          "legendFormat": "2xx",
-          "queryType": "range",
+          "expr": "sum(rate(wireguard_sent_bytes_total{job=\"wireguard-exporter\"}[5m]))",
+          "legendFormat": "Sent",
           "refId": "A"
         },
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "sum by (status) (rate({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | status =~ \"4..\" [$__auto]))",
-          "hide": false,
-          "legendFormat": "4xx",
-          "queryType": "range",
+          "expr": "sum(rate(wireguard_received_bytes_total{job=\"wireguard-exporter\"}[5m]))",
+          "legendFormat": "Received",
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "editorMode": "code",
-          "expr": "sum by (status) (rate({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | status =~ \"5..\" [$__auto]))",
-          "hide": false,
-          "legendFormat": "5xx",
-          "queryType": "range",
-          "refId": "C"
         }
       ],
-      "title": "HTTP Status Codes Over Time",
+      "title": "Tunnel Traffic (Sent/Received)",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -520,7 +466,7 @@
               },
               {
                 "color": "red",
-                "value": 2
+                "value": 600
               }
             ]
           },
@@ -555,47 +501,73 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "quantile_over_time(0.50, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | unwrap request_time [$__auto]) by ()",
-          "legendFormat": "p50 (median)",
-          "queryType": "range",
+          "expr": "time() - wireguard_latest_handshake_seconds{job=\"wireguard-exporter\"}",
+          "legendFormat": "{{public_key}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "editorMode": "code",
-          "expr": "quantile_over_time(0.95, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | unwrap request_time [$__auto]) by ()",
-          "hide": false,
-          "legendFormat": "p95",
-          "queryType": "range",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "editorMode": "code",
-          "expr": "quantile_over_time(0.99, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | unwrap request_time [$__auto]) by ()",
-          "hide": false,
-          "legendFormat": "p99",
-          "queryType": "range",
-          "refId": "C"
         }
       ],
-      "title": "Response Time Percentiles",
+      "title": "Time Since Last Handshake",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -605,34 +577,109 @@
       },
       "id": 7,
       "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "{namespace=\"media\", pod=~\"plex-.*\"} |~ \"(?i)(error|fail|timeout|unable|cannot|warn)\"",
-          "queryType": "range",
+          "expr": "wireguard_sent_bytes_total{job=\"wireguard-exporter\"}",
+          "legendFormat": "Sent - {{public_key}}",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "wireguard_received_bytes_total{job=\"wireguard-exporter\"}",
+          "legendFormat": "Received - {{public_key}}",
+          "refId": "B"
         }
       ],
-      "title": "Plex Application Errors & Warnings",
-      "type": "logs"
+      "title": "Total Bytes Transferred",
+      "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Last Handshake"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Received"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -642,143 +689,85 @@
       },
       "id": 8,
       "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "editorMode": "code",
-          "expr": "{namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | status >= 400 | line_format \"{{.time}} [{{.status}}] {{.method}} {{.path}} - {{.http_user_agent}} ({{.request_time}}s)\"",
-          "queryType": "range",
-          "refId": "A"
-        }
-      ],
-      "title": "HTTP 4xx/5xx Error Requests",
-      "type": "logs"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "loki"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 20
-      },
-      "id": 9,
-      "options": {
-        "displayLabels": [
-          "percent"
-        ],
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "values": [
-            "value"
-          ]
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
           ],
-          "fields": ""
+          "show": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "showHeader": true
       },
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "topk(10, sum by (http_user_agent) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | http_user_agent !~ \"(?i)(gatus|blackbox|prometheus)\" [$__range])))",
-          "legendFormat": "{{http_user_agent}}",
-          "queryType": "range",
+          "expr": "wireguard_latest_handshake_seconds{job=\"wireguard-exporter\"} * 1000",
+          "format": "table",
+          "instant": true,
           "refId": "A"
-        }
-      ],
-      "title": "Top 10 User Agents",
-      "type": "piechart"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "loki"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "id": 10,
-      "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
-      },
-      "targets": [
+        },
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "editorMode": "code",
-          "expr": "{namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | request_time > 2 | line_format \"{{.time}} [{{.status}}] {{.method}} {{.path}} took {{.request_time}}s - {{.http_user_agent}}\"",
-          "queryType": "range",
-          "refId": "A"
+          "expr": "wireguard_sent_bytes_total{job=\"wireguard-exporter\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "wireguard_received_bytes_total{job=\"wireguard-exporter\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
         }
       ],
-      "title": "Slow Requests (>2 seconds)",
-      "type": "logs"
+      "title": "Peer Details",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "instance": true,
+              "job": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #A": "Last Handshake",
+              "Value #B": "Sent",
+              "Value #C": "Received",
+              "device": "Device",
+              "public_key": "Public Key"
+            }
+          }
+        }
+      ],
+      "type": "table"
     }
   ],
   "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
-    "plex",
-    "media",
-    "monitoring"
+    "wireguard",
+    "vpn",
+    "networking"
   ],
   "templating": {
     "list": []
@@ -789,8 +778,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Plex Monitoring",
-  "uid": "plex-monitoring",
+  "title": "Wireguard VPN Monitoring",
+  "uid": "wireguard-monitoring",
   "version": 1,
   "weekStart": ""
 }
