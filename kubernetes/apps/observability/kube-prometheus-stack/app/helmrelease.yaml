@@ -89,6 +89,8 @@ spec:
               sectionName: https
       prometheusSpec:
         priorityClassName: control-plane-priority
+        enableRemoteWriteReceiver: true
+        remoteWriteDashboards: true
         image:
           registry: docker.io
           repository: prompp/prompp

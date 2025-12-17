@@ -7,4 +7,5 @@ resources:
   - ./externalsecret.yaml
   - ./gatus.yaml
   - ./helmrelease.yaml
+  - ./prometheus-remote-write-service.yaml
   - ./scrapeconfig.yaml
