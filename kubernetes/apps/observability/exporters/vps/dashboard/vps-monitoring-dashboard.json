@@ -76,7 +76,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "time() - node_boot_time_seconds{instance=\"10.100.0.1:9100\"}",
+          "expr": "time() - node_boot_time_seconds{instance=\"vps\"}",
           "refId": "A"
         }
       ],
@@ -146,7 +146,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "node_load1{instance=\"10.100.0.1:9100\"}",
+          "expr": "node_load1{instance=\"vps\"}",
           "refId": "A"
         }
       ],
@@ -216,7 +216,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 - (avg(rate(node_cpu_seconds_total{instance=\"10.100.0.1:9100\",mode=\"idle\"}[5m])) * 100)",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{instance=\"vps\",mode=\"idle\"}[5m])) * 100)",
           "refId": "A"
         }
       ],
@@ -286,7 +286,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 - ((node_memory_MemAvailable_bytes{instance=\"10.100.0.1:9100\"} / node_memory_MemTotal_bytes{instance=\"10.100.0.1:9100\"}) * 100)",
+          "expr": "100 - ((node_memory_MemAvailable_bytes{instance=\"vps\"} / node_memory_MemTotal_bytes{instance=\"vps\"}) * 100)",
           "refId": "A"
         }
       ],
@@ -381,7 +381,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 - (avg(rate(node_cpu_seconds_total{instance=\"10.100.0.1:9100\",mode=\"idle\"}[5m])) * 100)",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{instance=\"vps\",mode=\"idle\"}[5m])) * 100)",
           "legendFormat": "CPU Usage",
           "refId": "A"
         }
@@ -476,7 +476,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=\"10.100.0.1:9100\"} - node_memory_MemAvailable_bytes{instance=\"10.100.0.1:9100\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=\"vps\"} - node_memory_MemAvailable_bytes{instance=\"vps\"}",
           "legendFormat": "Used",
           "refId": "A"
         },
@@ -485,7 +485,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "node_memory_MemAvailable_bytes{instance=\"10.100.0.1:9100\"}",
+          "expr": "node_memory_MemAvailable_bytes{instance=\"vps\"}",
           "legendFormat": "Available",
           "refId": "B"
         }
@@ -556,7 +556,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 - ((node_filesystem_avail_bytes{instance=\"10.100.0.1:9100\",mountpoint=\"/\"} / node_filesystem_size_bytes{instance=\"10.100.0.1:9100\",mountpoint=\"/\"}) * 100)",
+          "expr": "100 - ((node_filesystem_avail_bytes{instance=\"vps\",mountpoint=\"/\"} / node_filesystem_size_bytes{instance=\"vps\",mountpoint=\"/\"}) * 100)",
           "refId": "A"
         }
       ],
@@ -618,7 +618,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "node_filesystem_avail_bytes{instance=\"10.100.0.1:9100\",mountpoint=\"/\"}",
+          "expr": "node_filesystem_avail_bytes{instance=\"vps\",mountpoint=\"/\"}",
           "legendFormat": "Available",
           "refId": "A"
         }
@@ -726,7 +726,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(node_disk_read_bytes_total{instance=\"10.100.0.1:9100\"}[5m])",
+          "expr": "rate(node_disk_read_bytes_total{instance=\"vps\"}[5m])",
           "legendFormat": "Read",
           "refId": "A"
         },
@@ -735,7 +735,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(node_disk_written_bytes_total{instance=\"10.100.0.1:9100\"}[5m])",
+          "expr": "rate(node_disk_written_bytes_total{instance=\"vps\"}[5m])",
           "legendFormat": "Write",
           "refId": "B"
         }
@@ -843,7 +843,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(node_network_receive_bytes_total{instance=\"10.100.0.1:9100\",device!~\"lo|veth.*\"}[5m]) * 8",
+          "expr": "rate(node_network_receive_bytes_total{instance=\"vps\",device!~\"lo|veth.*\"}[5m]) * 8",
           "legendFormat": "Receive - {{device}}",
           "refId": "A"
         },
@@ -852,7 +852,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(node_network_transmit_bytes_total{instance=\"10.100.0.1:9100\",device!~\"lo|veth.*\"}[5m]) * 8",
+          "expr": "rate(node_network_transmit_bytes_total{instance=\"vps\",device!~\"lo|veth.*\"}[5m]) * 8",
           "legendFormat": "Transmit - {{device}}",
           "refId": "B"
         }
@@ -960,7 +960,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "node_filesystem_size_bytes{instance=\"10.100.0.1:9100\",fstype!~\"tmpfs|fuse.*\"}",
+          "expr": "node_filesystem_size_bytes{instance=\"vps\",fstype!~\"tmpfs|fuse.*\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -970,7 +970,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "node_filesystem_avail_bytes{instance=\"10.100.0.1:9100\",fstype!~\"tmpfs|fuse.*\"}",
+          "expr": "node_filesystem_avail_bytes{instance=\"vps\",fstype!~\"tmpfs|fuse.*\"}",
           "format": "table",
           "instant": true,
           "refId": "B"
