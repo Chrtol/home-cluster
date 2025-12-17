@@ -25,14 +25,39 @@ else
     exit 1
 fi
 
-# Install wireguard-exporter
+# Install wireguard-exporter from GitHub releases
 echo "Installing prometheus-wireguard-exporter..."
-sudo apt-get install -y prometheus-wireguard-exporter
+WIREGUARD_EXPORTER_VERSION="3.6.6"
+wget -q https://github.com/MindFlavor/prometheus_wireguard_exporter/releases/download/${WIREGUARD_EXPORTER_VERSION}/prometheus_wireguard_exporter_${WIREGUARD_EXPORTER_VERSION}_linux_amd64.tar.gz -O /tmp/wireguard-exporter.tar.gz
+sudo tar -xzf /tmp/wireguard-exporter.tar.gz -C /usr/local/bin/
+sudo chmod +x /usr/local/bin/prometheus_wireguard_exporter
+rm /tmp/wireguard-exporter.tar.gz
 
-# Enable and start wireguard-exporter
-echo "Enabling and starting wireguard-exporter..."
+# Create systemd service
+echo "Creating wireguard-exporter systemd service..."
+sudo tee /etc/systemd/system/prometheus-wireguard-exporter.service > /dev/null <<'SERVICE'
+[Unit]
+Description=Prometheus Wireguard Exporter
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/prometheus_wireguard_exporter -n /etc/wireguard/wg0.conf
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+# Reload systemd and enable the service
+sudo systemctl daemon-reload
 sudo systemctl enable prometheus-wireguard-exporter
 sudo systemctl restart prometheus-wireguard-exporter
+
+# Wait for service to start
+sleep 2
 
 # Verify wireguard-exporter is running
 echo "Verifying wireguard-exporter is running..."
@@ -40,6 +65,7 @@ if curl -s http://localhost:9586/metrics | grep -q wireguard; then
     echo "✓ wireguard-exporter is running"
 else
     echo "⚠ wireguard-exporter may not be running correctly"
+    echo "Check logs with: sudo journalctl -u prometheus-wireguard-exporter -n 20"
 fi
 
 # Create Alloy configuration
@@ -99,15 +125,15 @@ prometheus.remote_write "home_cluster" {
   endpoint {
     url = "http://10.0.30.91:9090/api/v1/write"
 
-    // Retry settings for reliable delivery
+    // Retry settings for reliable delivery over Wireguard (reduced batch size for MTU)
     queue_config {
-      capacity             = 10000
-      max_shards           = 10
+      capacity             = 2500
+      max_shards           = 2
       min_shards           = 1
-      max_samples_per_send = 5000
+      max_samples_per_send = 100
       batch_send_deadline  = "5s"
-      min_backoff          = "30ms"
-      max_backoff          = "5s"
+      min_backoff          = "1s"
+      max_backoff          = "30s"
     }
   }
 }
