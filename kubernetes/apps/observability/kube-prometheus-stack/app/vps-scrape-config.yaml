@@ -1,0 +1,52 @@
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: vps-metrics
+  namespace: observability
+  labels:
+    prometheus: kube-prometheus-stack
+spec:
+  staticConfigs:
+    - labels:
+        job: vps-node-exporter
+        instance: vps
+      targets:
+        - vps.cftollefsen.com
+  metricsPath: /metrics/node
+  scheme: https
+  basicAuth:
+    username:
+      name: vps-metrics-secret
+      key: PROMETHEUS_USER
+    password:
+      name: vps-metrics-secret
+      key: PROMETHEUS_PASS
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: vps-wireguard
+  namespace: observability
+  labels:
+    prometheus: kube-prometheus-stack
+spec:
+  staticConfigs:
+    - labels:
+        job: wireguard-exporter
+        instance: vps
+      targets:
+        - vps.cftollefsen.com
+  metricsPath: /metrics/wireguard
+  scheme: https
+  basicAuth:
+    username:
+      name: vps-metrics-secret
+      key: PROMETHEUS_USER
+    password:
+      name: vps-metrics-secret
+      key: PROMETHEUS_PASS
+  scrapeInterval: 30s
+  scrapeTimeout: 10s

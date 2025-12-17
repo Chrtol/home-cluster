@@ -9,3 +9,4 @@ resources:
   - ./helmrelease.yaml
   - ./prometheus-remote-write-service.yaml
   - ./scrapeconfig.yaml
+  - ./vps-scrape-config.yaml
