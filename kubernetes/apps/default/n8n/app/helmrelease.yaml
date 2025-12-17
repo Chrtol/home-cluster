@@ -51,6 +51,7 @@ spec:
               # Task runner configuration for n8n 2.1+
               N8N_RUNNERS_ENABLED: "true"
               N8N_RUNNERS_MODE: "external"
+              N8N_RUNNERS_INSECURE_MODE: "true"
               N8N_RUNNERS_AUTH_TOKEN:
                 valueFrom:
                   secretKeyRef:
