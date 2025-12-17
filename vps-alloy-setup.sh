@@ -25,6 +25,23 @@ else
     exit 1
 fi
 
+# Install wireguard-exporter
+echo "Installing prometheus-wireguard-exporter..."
+sudo apt-get install -y prometheus-wireguard-exporter
+
+# Enable and start wireguard-exporter
+echo "Enabling and starting wireguard-exporter..."
+sudo systemctl enable prometheus-wireguard-exporter
+sudo systemctl restart prometheus-wireguard-exporter
+
+# Verify wireguard-exporter is running
+echo "Verifying wireguard-exporter is running..."
+if curl -s http://localhost:9586/metrics | grep -q wireguard; then
+    echo "✓ wireguard-exporter is running"
+else
+    echo "⚠ wireguard-exporter may not be running correctly"
+fi
+
 # Create Alloy configuration
 echo "Creating Alloy configuration..."
 sudo tee /etc/alloy/config.alloy > /dev/null <<'EOF'
@@ -34,10 +51,47 @@ prometheus.scrape "vps_node" {
     __address__ = "localhost:9100",
   }]
 
-  forward_to = [prometheus.remote_write.home_cluster.receiver]
+  forward_to = [prometheus.relabel.add_node_labels.receiver]
 
   scrape_interval = "30s"
   scrape_timeout  = "10s"
+}
+
+// Scrape wireguard-exporter locally
+prometheus.scrape "vps_wireguard" {
+  targets = [{
+    __address__ = "localhost:9586",
+  }]
+
+  forward_to = [prometheus.relabel.add_wireguard_labels.receiver]
+
+  scrape_interval = "30s"
+  scrape_timeout  = "10s"
+}
+
+// Relabel node-exporter metrics to set proper instance and job labels
+prometheus.relabel "add_node_labels" {
+  forward_to = [prometheus.remote_write.home_cluster.receiver]
+
+  rule {
+    target_label = "instance"
+    replacement  = "vps"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "vps-node-exporter"
+  }
+}
+
+// Relabel wireguard metrics to set proper job label
+prometheus.relabel "add_wireguard_labels" {
+  forward_to = [prometheus.remote_write.home_cluster.receiver]
+
+  rule {
+    target_label = "job"
+    replacement  = "wireguard-exporter"
+  }
 }
 
 // Remote write to home cluster Prometheus via dedicated LoadBalancer
@@ -55,11 +109,6 @@ prometheus.remote_write "home_cluster" {
       min_backoff          = "30ms"
       max_backoff          = "5s"
     }
-  }
-
-  external_labels = {
-    instance = "vps",
-    job      = "vps-node-exporter",
   }
 }
 EOF
