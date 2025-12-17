@@ -318,6 +318,10 @@ export default function ReptileDetail() {
       const reptileResponse = await axios.get(`/api/reptiles/${id}`);
       setReptile(reptileResponse.data);
 
+      // Show success notification
+      alert('Avatar updated successfully!');
+
+      // Close the cropper modal
       setShowAvatarCropper(false);
       setCroppingPhotoId(null); // Clear the cropping photo ID
     } catch (error) {
