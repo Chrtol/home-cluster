@@ -50,15 +50,30 @@ spec:
                     key: N8N_ENCRYPTION_KEY
               # Task runner configuration for n8n 2.1+
               N8N_RUNNERS_ENABLED: "true"
-              N8N_RUNNERS_MODE: "internal"
-              N8N_RUNNERS_TASK_REQUEST_TIMEOUT: "120"
-              N8N_RUNNERS_MAX_CONCURRENCY: "5"
+              N8N_RUNNERS_MODE: "external"
+              N8N_RUNNERS_TASK_BROKER_URI: "http://127.0.0.1:5679"
             resources:
               requests:
                 cpu: 15m
                 memory: 512Mi
               limits:
                 memory: 2Gi
+
+          task-runner:
+            image:
+              repository: ghcr.io/n8n-io/n8n
+              tag: 2.1.0
+            args:
+              - task-runner
+            env:
+              N8N_RUNNERS_TASK_BROKER_URI: "http://127.0.0.1:5679"
+              N8N_RUNNERS_MAX_CONCURRENCY: "5"
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
 
     service:
       app:
