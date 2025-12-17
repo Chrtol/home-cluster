@@ -92,21 +92,32 @@ spec:
               - -c
               - |
                 from http.server import HTTPServer, BaseHTTPRequestHandler
+                import sys
                 class TokenHandler(BaseHTTPRequestHandler):
                     def do_GET(self):
-                        if self.path == '/token':
-                            with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as f:
-                                token = f.read().strip()
-                            self.send_response(200)
-                            self.send_header('Content-Type', 'text/plain')
-                            self.end_headers()
-                            self.wfile.write(token.encode())
-                        else:
-                            self.send_response(404)
+                        try:
+                            if self.path == '/token':
+                                with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as f:
+                                    token = f.read().strip()
+                                self.send_response(200)
+                                self.send_header('Content-Type', 'text/plain')
+                                self.end_headers()
+                                self.wfile.write(token.encode())
+                            else:
+                                self.send_response(404)
+                                self.end_headers()
+                        except Exception as e:
+                            print(f"ERROR: {e}", file=sys.stderr, flush=True)
+                            self.send_response(500)
                             self.end_headers()
                     def log_message(self, format, *args):
-                        pass  # Suppress logs
-                HTTPServer(('127.0.0.1', 8888), TokenHandler).serve_forever()
+                        pass  # Suppress access logs
+                print("Token server starting on port 8888...", flush=True)
+                try:
+                    HTTPServer(('::', 8888), TokenHandler).serve_forever()
+                except Exception as e:
+                    print(f"FATAL: Server failed to start: {e}", file=sys.stderr, flush=True)
+                    sys.exit(1)
             resources:
               requests:
                 cpu: 5m
