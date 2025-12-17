@@ -112,9 +112,9 @@ spec:
                             self.end_headers()
                     def log_message(self, format, *args):
                         pass  # Suppress access logs
-                print("Token server starting on port 8888...", flush=True)
+                print("Token server starting on 127.0.0.1:8888...", flush=True)
                 try:
-                    HTTPServer(('::', 8888), TokenHandler).serve_forever()
+                    HTTPServer(('127.0.0.1', 8888), TokenHandler).serve_forever()
                 except Exception as e:
                     print(f"FATAL: Server failed to start: {e}", file=sys.stderr, flush=True)
                     sys.exit(1)
