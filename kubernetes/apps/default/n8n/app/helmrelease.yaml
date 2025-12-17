@@ -56,12 +56,6 @@ spec:
                   secretKeyRef:
                     name: n8n-secret
                     key: N8N_RUNNERS_AUTH_TOKEN
-              # Expose token server auth to workflows
-              TOKEN_SERVER_AUTH:
-                valueFrom:
-                  secretKeyRef:
-                    name: n8n-secret
-                    key: N8N_TOKEN_SERVER_AUTH
             resources:
               requests:
                 cpu: 15m
@@ -98,18 +92,9 @@ spec:
               - -c
               - |
                 from http.server import HTTPServer, BaseHTTPRequestHandler
-                import os
-                AUTH_TOKEN = os.getenv('TOKEN_SERVER_AUTH', '')
                 class TokenHandler(BaseHTTPRequestHandler):
                     def do_GET(self):
                         if self.path == '/token':
-                            # Optional: Check auth header if TOKEN_SERVER_AUTH is set
-                            if AUTH_TOKEN:
-                                auth_header = self.headers.get('Authorization', '')
-                                if auth_header != f'Bearer {AUTH_TOKEN}':
-                                    self.send_response(401)
-                                    self.end_headers()
-                                    return
                             with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as f:
                                 token = f.read().strip()
                             self.send_response(200)
@@ -122,12 +107,6 @@ spec:
                     def log_message(self, format, *args):
                         pass  # Suppress logs
                 HTTPServer(('127.0.0.1', 8888), TokenHandler).serve_forever()
-            env:
-              TOKEN_SERVER_AUTH:
-                valueFrom:
-                  secretKeyRef:
-                    name: n8n-secret
-                    key: N8N_TOKEN_SERVER_AUTH
             resources:
               requests:
                 cpu: 5m
