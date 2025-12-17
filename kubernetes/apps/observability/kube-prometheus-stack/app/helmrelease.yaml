@@ -92,9 +92,9 @@ spec:
         enableRemoteWriteReceiver: true
         remoteWriteDashboards: true
         image:
-          registry: docker.io
-          repository: prompp/prompp
-          tag: 2.53.2-0.2.5
+          registry: quay.io
+          repository: prometheus/prometheus
+          tag: v2.55.1
         securityContext:
           runAsNonRoot: true
           runAsUser: 64535
