@@ -10,7 +10,7 @@ spec:
   type: LoadBalancer
   selector:
     app.kubernetes.io/name: prometheus
-    prometheus: kube-prometheus-stack-prometheus
+    prometheus: kube-prometheus-stack
   ports:
     - name: remote-write
       port: 9090
