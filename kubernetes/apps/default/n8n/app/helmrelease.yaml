@@ -48,6 +48,11 @@ spec:
                   secretKeyRef:
                     name: n8n-secret
                     key: N8N_ENCRYPTION_KEY
+              # Task runner configuration for n8n 2.1+
+              N8N_RUNNERS_ENABLED: "true"
+              N8N_RUNNERS_MODE: "internal"
+              N8N_RUNNERS_TASK_REQUEST_TIMEOUT: "120"
+              N8N_RUNNERS_MAX_CONCURRENCY: "5"
             resources:
               requests:
                 cpu: 15m
