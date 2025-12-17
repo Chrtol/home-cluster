@@ -95,7 +95,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up{job=\"wireguard-exporter\"}",
+          "expr": "up{job=\"wireguard-exporter\",instance=\"vps\"}",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
