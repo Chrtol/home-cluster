@@ -40,11 +40,10 @@ prometheus.scrape "vps_node" {
   scrape_timeout  = "10s"
 }
 
-// Remote write to home cluster Prometheus via Wireguard tunnel
-// Using NodePort on cluster node IPs
+// Remote write to home cluster Prometheus via dedicated LoadBalancer
 prometheus.remote_write "home_cluster" {
   endpoint {
-    url = "http://10.0.30.100:30090/api/v1/write"
+    url = "http://10.100.0.2:9090/api/v1/write"
 
     // Retry settings for reliable delivery
     queue_config {
@@ -68,7 +67,6 @@ EOF
 # Validate configuration
 echo "Validating Alloy configuration..."
 sudo alloy fmt /etc/alloy/config.alloy
-sudo alloy run /etc/alloy/config.alloy --dry-run
 
 # Enable and start Alloy service
 echo "Enabling and starting Alloy service..."
