@@ -43,7 +43,7 @@ prometheus.scrape "vps_node" {
 // Remote write to home cluster Prometheus via dedicated LoadBalancer
 prometheus.remote_write "home_cluster" {
   endpoint {
-    url = "http://10.100.0.2:9090/api/v1/write"
+    url = "http://10.0.30.91:9090/api/v1/write"
 
     // Retry settings for reliable delivery
     queue_config {
