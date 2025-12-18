@@ -85,7 +85,7 @@ spec:
           token-server:
             image:
               repository: python
-              tag: 3.12-alpine
+              tag: 3.14-alpine
             command:
               - python3
               - -u
