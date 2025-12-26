@@ -25,7 +25,7 @@ spec:
 
       IMPERSONATE_SA_RULES: "overwritten from existing secret"
     existingSecret:
-      name: capacitor-secret
+      name: capacitor
 
     service:
       enabled: true
