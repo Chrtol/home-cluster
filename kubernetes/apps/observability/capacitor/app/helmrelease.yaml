@@ -12,6 +12,8 @@ spec:
     namespace: flux-system
   values:
     env:
+      CAPACITOR_LICENSE_KEY: ""
+
       AUTH: "overwritten from existing secret"
       AUTH_DEBUG: "overwritten from existing secret"
       OIDC_ISSUER: "overwritten from existing secret"
