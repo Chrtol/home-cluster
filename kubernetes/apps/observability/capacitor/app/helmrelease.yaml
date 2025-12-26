@@ -1,0 +1,33 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: capacitor
+spec:
+  interval: 15m
+  timeout: 1m
+  chartRef:
+    kind: OCIRepository
+    name: capacitor-next-helm
+    namespace: flux-system
+  values:
+    env:
+      AUTH: "overwritten from existing secret"
+      AUTH_DEBUG: "overwritten from existing secret"
+      OIDC_ISSUER: "overwritten from existing secret"
+      OIDC_CLIENT_ID: "overwritten from existing secret"
+      OIDC_CLIENT_SECRET:  "overwritten from existing secret"
+      OIDC_REDIRECT_URL: "overwritten from existing secret"
+      OIDC_SCOPES: "overwritten from existing secret"
+
+      SESSION_HASH_KEY: "overwritten from existing secret"
+      SESSION_BLOCK_KEY: "overwritten from existing secret"
+
+      IMPERSONATE_SA_RULES: "overwritten from existing secret"
+    existingSecret:
+      name: capacitor-secret
+
+    service:
+      enabled: true
+      type: ClusterIP
+      port: 9000
