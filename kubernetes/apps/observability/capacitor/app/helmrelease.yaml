@@ -22,8 +22,8 @@ spec:
       OIDC_REDIRECT_URL: "overwritten from existing secret"
       OIDC_SCOPES: "overwritten from existing secret"
 
-      SESSION_HASH_KEY: "overwritten from existing secret"
-      SESSION_BLOCK_KEY: "overwritten from existing secret"
+      # SESSION_HASH_KEY: "overwritten from existing secret"
+      # SESSION_BLOCK_KEY: "overwritten from existing secret"
 
       IMPERSONATE_SA_RULES: "overwritten from existing secret"
     existingSecret:
