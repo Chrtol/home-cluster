@@ -21,6 +21,8 @@ spec:
       OIDC_CLIENT_SECRET:  "overwritten from existing secret"
       OIDC_REDIRECT_URL: "overwritten from existing secret"
       OIDC_SCOPES: "overwritten from existing secret"
+      AUTHORIZED_EMAILS: "overwritten from existing secret"
+
 
       SESSION_HASH_KEY: "overwritten from existing secret"
       SESSION_BLOCK_KEY: "overwritten from existing secret"
