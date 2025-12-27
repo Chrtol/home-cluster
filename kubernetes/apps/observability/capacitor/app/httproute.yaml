@@ -13,5 +13,5 @@ spec:
     - capacitor.${SECRET_DOMAIN}
   rules:
     - backendRefs:
-        - name: capacitor-next
+        - name: capacitor
           port: 9000
