@@ -559,7 +559,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "quantile_over_time(0.50, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | unwrap request_time [$__auto]) by ()",
+          "expr": "quantile_over_time(0.50, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path !~ \".*/websockets/.*|.*/video/.*|.*/music/.*|.*/photo/.*|.*/transcode/.*|.*/library/parts/.*\" | request_time < 60 | unwrap request_time [$__auto]) by ()",
           "legendFormat": "p50 (median)",
           "queryType": "range",
           "refId": "A"
@@ -570,7 +570,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "quantile_over_time(0.95, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | unwrap request_time [$__auto]) by ()",
+          "expr": "quantile_over_time(0.95, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path !~ \".*/websockets/.*|.*/video/.*|.*/music/.*|.*/photo/.*|.*/transcode/.*|.*/library/parts/.*\" | request_time < 60 | unwrap request_time [$__auto]) by ()",
           "hide": false,
           "legendFormat": "p95",
           "queryType": "range",
@@ -582,14 +582,14 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "quantile_over_time(0.99, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | unwrap request_time [$__auto]) by ()",
+          "expr": "quantile_over_time(0.99, {namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path !~ \".*/websockets/.*|.*/video/.*|.*/music/.*|.*/photo/.*|.*/transcode/.*|.*/library/parts/.*\" | request_time < 60 | unwrap request_time [$__auto]) by ()",
           "hide": false,
           "legendFormat": "p99",
           "queryType": "range",
           "refId": "C"
         }
       ],
-      "title": "Response Time Percentiles",
+      "title": "API Response Time Percentiles (excludes streaming)",
       "type": "timeseries"
     },
     {
@@ -764,13 +764,704 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | request_time > 2 | line_format \"{{.time}} [{{.status}}] {{.method}} {{.path}} took {{.request_time}}s - {{.http_user_agent}}\"",
+          "expr": "{namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path !~ \".*/websockets/.*|.*/video/.*|.*/music/.*|.*/photo/.*|.*/transcode/.*|.*/library/parts/.*\" | request_time > 2 | line_format \"{{.time}} [{{.status}}] {{.method}} {{.path}} took {{.request_time}}s - {{.http_user_agent}}\"",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Slow Requests (>2 seconds)",
+      "title": "Slow API Requests (>2s, excludes streaming)",
       "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (path) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/websockets/.*\" [$__auto]))",
+          "legendFormat": "WebSocket Connections",
+          "queryType": "range",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (path) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/video/.*|.*/transcode/.*\" | request_time > 30 [$__auto]))",
+          "legendFormat": "Active Streams (>30s)",
+          "queryType": "range",
+          "refId": "B"
+        }
+      ],
+      "title": "Active Streaming Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/video/.*|.*/music/.*|.*/photo/.*|.*/transcode/.*|.*/library/parts/.*\" | unwrap bytes_sent [$__auto]))",
+          "legendFormat": "Total Streaming Bandwidth",
+          "queryType": "range",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/transcode/.*\" | unwrap bytes_sent [$__auto]))",
+          "legendFormat": "Transcode Bandwidth",
+          "queryType": "range",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/library/parts/.*\" | unwrap bytes_sent [$__auto]))",
+          "legendFormat": "Direct Play Bandwidth",
+          "queryType": "range",
+          "refId": "C"
+        }
+      ],
+      "title": "Streaming Bandwidth Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Transcode %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 34
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "count(sum by (session) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/transcode/universal/session/[^/]+\" | regexp \"session/(?P<session>[^/]+)\" [1m])))",
+          "legendFormat": "Concurrent Streams",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Current Active Streams",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 34
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "(sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/transcode/.*\" [5m])) / (sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/transcode/.*\" [5m])) + sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/library/parts/.*\" [5m])))) * 100",
+          "legendFormat": "Transcode %",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Transcode Ratio (5m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 15,
+      "options": {
+        "displayLabels": ["name", "percent"],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": ["value"]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "sum"
+          ],
+          "fields": ""
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (http_user_agent) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/video/.*|.*/music/.*\" | http_user_agent != \"\" | http_user_agent != \"-\" [$__range]))",
+          "legendFormat": "{{http_user_agent}}",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Streaming Clients (Last $__range)",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg Segment Size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Data"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requests"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
+      "id": 16,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "topk(10, sum by (session) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/transcode/universal/session/.*\" | regexp \"session/(?P<session>[^/]+)\" [1h])))",
+          "format": "table",
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Transcode Sessions",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "session": "Session ID",
+              "Value": "Requests"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 44
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | status = 206 | path =~ \".*/video/.*|.*/music/.*\" | bytes_sent < 50000 [$__auto]))",
+          "legendFormat": "Potential Buffering (partial content <50KB)",
+          "queryType": "range",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/transcode/.*\" | status >= 500 [$__auto]))",
+          "legendFormat": "Transcode Failures (5xx errors)",
+          "queryType": "range",
+          "refId": "B"
+        }
+      ],
+      "title": "Streaming Quality Issues",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
