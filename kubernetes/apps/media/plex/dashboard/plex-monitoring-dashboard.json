@@ -1341,13 +1341,98 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (client) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/video/.*|.*/music/.*|.*/transcode/.*\" | http_user_agent != \"\" | http_user_agent != \"-\" | regexp \"(?P<client>[^/\\\\(]+)\" [$__range]))",
+          "expr": "topk(10, sum by (http_user_agent) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/video/.*|.*/music/.*|.*/transcode/.*\" | http_user_agent != \"\" | http_user_agent != \"-\" | http_user_agent !~ \"(?i)(blackbox|gatus|prometheus)\" [$__range])))",
+          "legendFormat": "{{http_user_agent}}",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Streaming Clients (Last $__range)",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "DASH": {
+                  "text": "DASH Client (TV)"
+                },
+                "PlexMediaPlayer": {
+                  "text": "Plex Media Player"
+                },
+                "Samsung": {
+                  "text": "Samsung TV"
+                },
+                "AppleTV": {
+                  "text": "Apple TV"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 20,
+      "options": {
+        "displayLabels": ["name", "percent"],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": ["value"]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "sum"
+          ],
+          "fields": ""
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "topk(5, sum by (client) (count_over_time({namespace=\"network\", pod=~\"external-ingress-nginx-controller.*\"} | json | vhost=\"plex.cftollefsen.com\" | path =~ \".*/video/.*|.*/music/.*|.*/transcode/.*\" | http_user_agent != \"\" | http_user_agent != \"-\" | http_user_agent !~ \"(?i)(blackbox|gatus|prometheus)\" | regexp \"(?P<client>PlexMediaPlayer|Roku|Samsung|Chrome|Firefox|AppleTV|iPhone|Android|Safari|Edge|DASH)\" [$__range])))",
           "legendFormat": "{{client}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
-      "title": "Streaming Clients (Last $__range)",
+      "title": "Client Types (Simplified)",
       "type": "piechart"
     },
     {
