@@ -34,8 +34,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/getmydia/mydia-pg
-              tag: 0.6.0@sha256:39d06a8baa80a58ee54756b449057bc19dfc9e4cd1f8cd2b046176fc2762cd61
+              repository: ghcr.io/getmydia/mydia
+              tag: 0.7.4-pg@sha256:014b64d251a1bf6a6df2c6e066b8bee7d635232fa22031a981a36293a7278bdb
             env:
               PUID: &puid 1000
               PGID: &pgid 1000
