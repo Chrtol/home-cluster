@@ -36,6 +36,18 @@ spec:
             image:
               repository: ghcr.io/getmydia/mydia
               tag: 0.7.4-pg@sha256:014b64d251a1bf6a6df2c6e066b8bee7d635232fa22031a981a36293a7278bdb
+            command:
+              - /bin/sh
+              - -c
+              - |
+                # Skip chown on mounted volumes, only run on /app
+                echo "Starting Mydia (skipping chown on mounted volumes)..."
+                mkdir -p /config /data /media 2>/dev/null || true
+                chown -R 1000:1000 /app 2>/dev/null || true
+                if [ -n "$TZ" ] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
+                  ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime
+                fi
+                exec /app/bin/mydia start
             env:
               PUID: &puid 1000
               PGID: &pgid 1000
