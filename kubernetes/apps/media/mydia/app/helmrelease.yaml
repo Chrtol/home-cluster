@@ -52,7 +52,7 @@ spec:
               PUID: &puid 1000
               PGID: &pgid 1000
               TZ: ${SECRET_TIMEZONE}
-              PHX_HOST: ${SECRET_DOMAIN}
+              PHX_HOST: mydia.${SECRET_DOMAIN}
               PORT: &port 4000
               MOVIES_PATH: &moviePath /data/media/movies
               TV_PATH: &tvPath /data/media/movies
