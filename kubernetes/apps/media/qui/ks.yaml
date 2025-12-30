@@ -13,7 +13,7 @@ spec:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   interval: 1h
-  path: ./kubernetes/apps/media/qui
+  path: ./kubernetes/apps/media/qui/app
   components:
     - ../../../../components/gatus/guarded
   postBuild:
