@@ -54,8 +54,8 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               PHX_HOST: mydia.${SECRET_DOMAIN}
               PORT: &port 4000
-              MOVIES_PATH: &moviePath /data/media/movies
-              TV_PATH: &tvPath /data/media/movies
+              MOVIES_PATH: /data/media/movies
+              TV_PATH: /data/media/tv
             envFrom: *envFrom
             probes:
               liveness: &probes
