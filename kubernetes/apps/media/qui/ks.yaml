@@ -16,9 +16,11 @@ spec:
   path: ./kubernetes/apps/media/qui/app
   components:
     - ../../../../components/gatus/guarded
+    - ../../../../components/ceph-rbd
   postBuild:
     substitute:
       APP: *app
+      CEPH_RBD_CAPACITY: 2Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
