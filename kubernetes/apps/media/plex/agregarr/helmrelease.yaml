@@ -41,7 +41,6 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        controller: mydia
         ports:
           http:
             port: &port 7171
