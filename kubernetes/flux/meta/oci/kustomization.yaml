@@ -16,3 +16,4 @@ resources:
   - ./opnsense-exporter.yaml
   - ./tuppr.yaml
   - ./capacitor-next.yaml
+  - ./qui.yaml
