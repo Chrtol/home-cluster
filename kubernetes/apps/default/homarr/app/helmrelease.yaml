@@ -106,7 +106,7 @@ spec:
             paths:
               - path: /
                 service:
-                  identifier: server
+                  identifier: app
                   port: http
         tls:
           - hosts:
