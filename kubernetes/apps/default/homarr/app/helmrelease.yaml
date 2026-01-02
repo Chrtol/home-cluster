@@ -54,10 +54,6 @@ spec:
       REDIS_PORT: "6379"
       REDIS_DATABASE_INDEX: "2"
 
-    # Add envFrom to load all env vars from the secret
-    envFrom:
-      - secretRef:
-          name: homarr-secret
     ingress:
       enabled: false
     podSecurityContext:
@@ -87,14 +83,10 @@ spec:
     database:
       type: postgresql
 
-    envSecrets:
-      # Removed authSecrets as it's causing issues - using envFrom instead
-      dbCredentials:
-        existingSecret: homarr-secret
-        dbUrlKey: DATABASE_URL
-      dbEncryption:
-        existingSecret: homarr-secret
-        key: SECRET_ENCRYPTION_KEY
+    # Secrets are automatically picked up by the chart with their standard names:
+    # - auth-oidc-secret (OIDC authentication)
+    # - db-secret (Database connection)
+    # - db-encryption (Database encryption key)
 
     persistence:
       homarrDatabase:
