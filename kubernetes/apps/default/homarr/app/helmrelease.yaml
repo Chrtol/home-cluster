@@ -51,6 +51,7 @@ spec:
       AUTH_OIDC_GROUPS_ATTRIBUTE: groups
       AUTH_LOGOUT_REDIRECT_URL: https://sso.${SECRET_DOMAIN}/application/o/homarr/end-session/
       AUTH_OIDC_AUTO_LOGIN: true
+      HOSTNAME: "0.0.0.0"
       PORT: 7575
       NODE_ENV: production
       NEXTAUTH_URL: https://start.${SECRET_DOMAIN}
