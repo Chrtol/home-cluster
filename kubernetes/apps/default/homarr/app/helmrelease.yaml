@@ -51,11 +51,8 @@ spec:
       AUTH_OIDC_GROUPS_ATTRIBUTE: groups
       AUTH_LOGOUT_REDIRECT_URL: https://sso.${SECRET_DOMAIN}/application/o/homarr/end-session/
       AUTH_OIDC_AUTO_LOGIN: true
-      HOSTNAME: "0.0.0.0"
-      PORT: 7575
       NODE_ENV: production
       NEXTAUTH_URL: https://start.${SECRET_DOMAIN}
-      # Redis configuration - put directly in env since chart might not support it in envSecrets
       REDIS_IS_EXTERNAL: true
       REDIS_HOST: dragonfly.database.svc.cluster.local
       REDIS_PORT: "6379"
@@ -66,22 +63,10 @@ spec:
     strategyType: Recreate
 
     livenessProbe:
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 1
-      failureThreshold: 3
-      httpGet:
-        path: /api/health/live
-        port: 7575
+      enabled: false
 
     readinessProbe:
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 1
-      failureThreshold: 3
-      httpGet:
-        path: /api/health/ready
-        port: 7575
+      enabled: false
 
     lifecycle:
       preStop:
