@@ -6,7 +6,6 @@ metadata:
   name: homarr
 spec:
   interval: 30m
-  timeout: 20m
   chartRef:
     kind: OCIRepository
     name: homarr-labs
