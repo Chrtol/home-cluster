@@ -32,6 +32,10 @@ spec:
                               name: homarr-secret
 
   values:
+    image:
+      repository: ghcr.io/ajnart/homarr
+      tag: 0.15.4
+
     rbac:
       enabled: true
     env:
