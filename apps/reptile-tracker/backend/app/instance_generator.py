@@ -388,19 +388,60 @@ async def create_interval_schedule_instance(
     else:
         next_date = last_completion_date + timedelta(days=schedule.min_days_between)
 
-    # If suggested days specified, find nearest suggested day >= next_date
+    # If suggested days specified, try to find a suggested day within reason
     if schedule.suggested_days:
         # suggested_days is a list like [0, 3] for Sunday and Wednesday
         # weekday() returns 0=Mon, 6=Sun, but we store 0=Sun, 6=Sat
-        max_search_days = 7  # Don't search more than a week ahead
+
+        original_next_date = next_date
+        max_allowed_date = None
+        if last_completion_date and schedule.max_days_between:
+            max_allowed_date = last_completion_date + timedelta(days=schedule.max_days_between)
+
+        # Determine how far to search based on schedule configuration
+        # Search up to the difference between min and max days, but cap at 7 days (one week)
+        if schedule.max_days_between and schedule.min_days_between:
+            # Search within the flexibility window (max - min), but not more than a week
+            max_search_days = min(
+                schedule.max_days_between - schedule.min_days_between,
+                7
+            )
+        else:
+            # No max specified, search up to 7 days (full week) to find suggested day
+            max_search_days = 7
+
         days_searched = 0
+        found_suggested_day = False
 
         while days_searched < max_search_days:
             weekday = (next_date.weekday() + 1) % 7  # Convert to 0=Sun format
             if weekday in schedule.suggested_days:
+                # Check if this would exceed max_days_between
+                if max_allowed_date and next_date > max_allowed_date:
+                    # This suggested day is too far out
+                    logger.debug(
+                        f"Suggested day {next_date} would exceed max_days_between ({schedule.max_days_between}), "
+                        f"using original date {original_next_date}"
+                    )
+                    next_date = original_next_date
+                    break
+                # Found a good suggested day within limits
+                found_suggested_day = True
+                logger.debug(
+                    f"Adjusted from {original_next_date} to suggested day {next_date} "
+                    f"({days_searched} days adjustment)"
+                )
                 break
             next_date += timedelta(days=1)
             days_searched += 1
+
+        # If we didn't find a suggested day within the search window, use the original
+        if not found_suggested_day and days_searched >= max_search_days:
+            next_date = original_next_date
+            logger.debug(
+                f"No suggested day found within {max_search_days} days "
+                f"(flexibility window), using original date {original_next_date}"
+            )
 
     # Check if instance already exists for this date
     existing = await db.execute(
