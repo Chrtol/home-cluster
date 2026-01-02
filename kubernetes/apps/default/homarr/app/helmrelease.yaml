@@ -50,6 +50,7 @@ spec:
       AUTH_OIDC_SCOPE_OVERWRITE: "openid email profile groups"
       AUTH_OIDC_GROUPS_ATTRIBUTE: groups
       AUTH_LOGOUT_REDIRECT_URL: https://sso.${SECRET_DOMAIN}/application/o/homarr/end-session/
+      AUTH_OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/homarr/
       AUTH_OIDC_AUTO_LOGIN: true
       NODE_ENV: production
       NEXTAUTH_URL: https://start.${SECRET_DOMAIN}
