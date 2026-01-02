@@ -75,22 +75,34 @@ spec:
           command: ["/bin/sh", "-c", "sleep 10"]
 
     ingress:
-      enabled: false
+      enabled: true
+      ingressClassName: external
+      annotations:
+        external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+      hosts:
+        - host: &host "start.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+      tls:
+        - hosts:
+          - *host
+
     podSecurityContext:
       fsGroup: 0
     securityContext:
       runAsUser: 0
       runAsGroup: 0
       allowPrivilegeEscalation: false
+
     httproute:
       enabled: true
       parentRefs:
           - name: internal
             namespace: network
             sectionName: https
-
       hostnames:
-        - start.${SECRET_DOMAIN}
+        - homarr.${SECRET_DOMAIN}
       rules:
         - matches:
             - path:
