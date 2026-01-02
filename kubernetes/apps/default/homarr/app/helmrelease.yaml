@@ -53,6 +53,11 @@ spec:
       REDIS_HOST: dragonfly.database.svc.cluster.local
       REDIS_PORT: "6379"
       REDIS_DATABASE_INDEX: "2"
+
+    # Add envFrom to load all env vars from the secret
+    envFrom:
+      - secretRef:
+          name: homarr-secret
     ingress:
       enabled: false
     podSecurityContext:
@@ -83,10 +88,7 @@ spec:
       type: postgresql
 
     envSecrets:
-      authSecrets:
-        existingSecret: homarr-secret
-        oidcIdKey: AUTH_OIDC_CLIENT_ID
-        oidcSecretKey: AUTH_OIDC_CLIENT_SECRET
+      # Removed authSecrets as it's causing issues - using envFrom instead
       dbCredentials:
         existingSecret: homarr-secret
         dbUrlKey: DATABASE_URL
