@@ -17,3 +17,4 @@ resources:
   - ./tuppr.yaml
   - ./capacitor-next.yaml
   - ./qui.yaml
+  - ./homarr.yaml
