@@ -49,7 +49,11 @@ spec:
       PORT: 7575
       NODE_ENV: production
       NEXTAUTH_URL: https://start.${SECRET_DOMAIN}
+      # Redis configuration - put directly in env since chart might not support it in envSecrets
       REDIS_IS_EXTERNAL: true
+      REDIS_HOST: dragonfly.database.svc.cluster.local
+      REDIS_PORT: "6379"
+      REDIS_DATABASE_INDEX: "2"
     ingress:
       enabled: false
     podSecurityContext:
@@ -80,6 +84,10 @@ spec:
       type: postgresql
 
     envSecrets:
+      authSecrets:
+        existingSecret: homarr-secret
+        oidcIdKey: AUTH_OIDC_CLIENT_ID
+        oidcSecretKey: AUTH_OIDC_CLIENT_SECRET
       dbCredentials:
         existingSecret: homarr-secret
         dbUrlKey: DATABASE_URL
@@ -89,10 +97,19 @@ spec:
 
     persistence:
       homarrDatabase:
-        enabled: false
+        enabled: false  # Using external PostgreSQL
       homarrImages:
         enabled: true
-        storageClassName: ceph-filesystem
-        accessMode: ReadWriteMany
-        size: 1Gi
+        existingClaim: homarr
         mountPath: /images
+        subPath: images
+      homarrConfigs:
+        enabled: true
+        existingClaim: homarr
+        mountPath: /app/data/configs
+        subPath: configs
+      homarrIcons:
+        enabled: true
+        existingClaim: homarr
+        mountPath: /app/public/icons
+        subPath: icons
