@@ -39,7 +39,8 @@ spec:
               tag: 0.15.4
             env:
               TZ: ${SECRET_TIMEZONE}
-              DATABASE_TYPE: postgresql
+              DB_DIALECT: postgresql
+              DB_DRIVER: node-postgres  # Some versions check this
               AUTH_PROVIDER: oidc
               AUTH_OIDC_URI: https://sso.${SECRET_DOMAIN}/application/o/homarr/.well-known/openid-configuration
               AUTH_OIDC_CLIENT_NAME: Authentik
@@ -47,6 +48,10 @@ spec:
               AUTH_OIDC_SCOPE_OVERWRITE: "openid email profile groups"
               HOSTNAME: 0.0.0.0
               PORT: &port 7575
+              NODE_ENV: production
+              # SKIP_MIGRATION: "false"  # Explicitly run migrations
+              NEXTAUTH_URL: https://start.${SECRET_DOMAIN}
+              REDIS_IS_EXTERNAL: true
             envFrom: *envFrom
             probes:
               liveness: &probes
