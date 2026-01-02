@@ -82,10 +82,10 @@ spec:
     envSecrets:
       dbCredentials:
         existingSecret: homarr-secret
-        dbUrlKey: db-url
+        dbUrlKey: DATABASE_URL
       dbEncryption:
         existingSecret: homarr-secret
-        key: db-encryption-key
+        key: SECRET_ENCRYPTION_KEY
 
     persistence:
       homarrDatabase:
