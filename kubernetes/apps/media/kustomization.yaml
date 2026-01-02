@@ -33,3 +33,4 @@ resources:
   - ./recommendarr/ks.yaml
   - ./mydia/ks.yaml
   - ./qui/ks.yaml
+  - ./tracearr/ks.yaml
