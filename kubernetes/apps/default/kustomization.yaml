@@ -28,3 +28,4 @@ resources:
   - ./smtp-relay/ks.yaml
   - ./reptile-tracker/ks.yaml
   - ./bentopdf/ks.yaml
+  - ./homarr/ks.yaml
