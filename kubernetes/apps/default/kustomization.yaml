@@ -10,7 +10,6 @@ resources:
   - ./echo/ks.yaml
   - ./hajimari/ks.yaml
   - ./homepage/ks.yaml
-  - ./stirling-pdf/ks.yaml
   - ./mealie/ks.yaml
   - ./it-tools/ks.yaml
   - ./mosquitto/ks.yaml
