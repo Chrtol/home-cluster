@@ -40,7 +40,7 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               DB_DIALECT: postgresql
-              DB_DRIVER: node-postgres  # Some versions check this
+              DB_DRIVER: node-postgres
               AUTH_PROVIDER: oidc
               AUTH_OIDC_URI: https://sso.${SECRET_DOMAIN}/application/o/homarr/.well-known/openid-configuration
               AUTH_OIDC_CLIENT_NAME: Authentik
