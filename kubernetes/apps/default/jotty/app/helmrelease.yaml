@@ -31,6 +31,7 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               NODE_ENV: production
+              APP_URL: jotty.${SECRET_DOMAIN}
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false  # Changed to false as the app needs to write to cache
@@ -53,7 +54,7 @@ spec:
         controller: jotty
         ports:
           http:
-            port: &port 3000
+            port: 3000
     ingress:
       app:
         className: external
@@ -81,7 +82,7 @@ spec:
       config:
         enabled: true
         type: persistentVolumeClaim
-        storageClass: ceph-csi-rbd
+        storageClass: csi-rbd-sc
         accessMode: ReadWriteOnce
         size: 1Gi
         retain: true
