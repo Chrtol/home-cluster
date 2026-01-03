@@ -30,8 +30,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/it-tools
-              tag: 2024.10.22@sha256:7f26ae8d7a4a58b8d70b685cba5cbaa54d7df876d9f8bae702207f45b06d9b7c
+              repository: ghcr.io/sharevb/it-tools
+              tag: 2025.12.7@sha256:da4738f667288bd9ce2cd964d843231d65b5569bf0e74246a48c4e161ddc2e02
             resources:
               requests:
                 cpu: 15m
