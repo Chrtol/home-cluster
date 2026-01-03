@@ -1,0 +1,169 @@
+---
+# This Job creates the Garage bucket and access key for Outline
+# and stores the credentials in a Kubernetes secret
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garage-outline-bucket-setup
+  namespace: database
+  annotations:
+    # This ensures the job only runs once, even after cluster rebuilds
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  # Clean up after success
+  ttlSecondsAfterFinished: 300  # 5 minutes
+  template:
+    spec:
+      serviceAccountName: garage-bucket-creator
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: dxflrs/garage:v1.3.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              # Install kubectl
+              echo "Installing kubectl..."
+              apt-get update && apt-get install -y curl
+              curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+              chmod +x kubectl
+              mv kubectl /usr/local/bin/
+
+              # Configure garage CLI
+              export GARAGE_RPC_HOST=garage.database.svc.cluster.local:3901
+
+              echo "========================================="
+              echo "Garage Outline Bucket Setup"
+              echo "========================================="
+              echo ""
+              echo "Waiting for Garage to be ready..."
+
+              # Wait for Garage to be ready
+              for i in {1..30}; do
+                if garage status 2>/dev/null; then
+                  echo "Garage is ready!"
+                  break
+                fi
+                echo "Attempt $i/30: Garage not ready yet..."
+                sleep 5
+              done
+
+              echo ""
+              echo "Creating outline bucket..."
+              if ! garage bucket info outline 2>/dev/null; then
+                garage bucket create outline
+                echo "✓ Bucket 'outline' created"
+              else
+                echo "✓ Bucket 'outline' already exists"
+              fi
+
+              echo ""
+              echo "Checking for existing outline-app key..."
+              if garage key info outline-app 2>/dev/null; then
+                echo "Key 'outline-app' already exists. Deleting old key..."
+                garage key delete outline-app --yes
+              fi
+
+              echo "Creating new outline-app access key..."
+              # Create the key and capture the full output
+              KEY_OUTPUT=$(garage key create outline-app 2>&1)
+              echo "$KEY_OUTPUT"
+
+              # Extract credentials using more reliable parsing
+              ACCESS_KEY=$(garage key info outline-app | grep "Key ID" | awk '{print $3}')
+              SECRET_KEY=$(garage key info outline-app --show-secret | grep "Secret key" | awk '{print $3}')
+
+              echo ""
+              echo "✓ Key 'outline-app' created"
+              echo "  Access Key: $ACCESS_KEY"
+              echo "  Secret Key: [hidden]"
+
+              echo ""
+              echo "Granting permissions to outline bucket..."
+              garage bucket allow outline --read --write --owner --key outline-app
+              echo "✓ Permissions granted"
+
+              echo ""
+              echo "Creating Kubernetes secret..."
+
+              # Check if secret already exists
+              if kubectl get secret garage-outline-credentials -n default 2>/dev/null; then
+                echo "Secret already exists, updating it..."
+                kubectl delete secret garage-outline-credentials -n default
+              fi
+
+              # Create the secret in the default namespace (where Outline runs)
+              kubectl create secret generic garage-outline-credentials \
+                --namespace=default \
+                --from-literal=AWS_ACCESS_KEY_ID="$ACCESS_KEY" \
+                --from-literal=AWS_SECRET_ACCESS_KEY="$SECRET_KEY" \
+                --from-literal=AWS_REGION="homelab" \
+                --from-literal=AWS_S3_UPLOAD_BUCKET_NAME="outline" \
+                --from-literal=AWS_S3_UPLOAD_BUCKET_URL="https://s3.${SECRET_DOMAIN}" \
+                --from-literal=AWS_S3_FORCE_PATH_STYLE="true" \
+                --from-literal=AWS_S3_ACL="private" \
+                --from-literal=FILE_STORAGE="s3"
+
+              echo "✓ Secret 'garage-outline-credentials' created in namespace 'default'"
+
+              echo ""
+              echo "========================================="
+              echo "Setup Complete!"
+              echo "========================================="
+              echo "Bucket 'outline' and credentials have been created."
+              echo "The secret 'garage-outline-credentials' is ready to use."
+              echo ""
+              echo "Outline can now use the S3 storage!"
+              echo "========================================="
+          env:
+            - name: GARAGE_RPC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: garage-secret
+                  key: SECRET_GARAGE_RPC_SECRET
+          volumeMounts:
+            - name: config
+              mountPath: /etc/garage.toml
+              subPath: config.toml
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: config.toml
+---
+# ServiceAccount for the job to create secrets
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: garage-bucket-creator
+  namespace: database
+---
+# Role to allow creating secrets in the default namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: garage-secret-creator
+  namespace: default
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "update", "delete"]
+---
+# RoleBinding to grant the ServiceAccount permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: garage-bucket-creator-binding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: garage-secret-creator
+subjects:
+  - kind: ServiceAccount
+    name: garage-bucket-creator
+    namespace: database
