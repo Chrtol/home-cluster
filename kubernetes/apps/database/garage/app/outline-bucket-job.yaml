@@ -16,18 +16,27 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: setup
-          image: bitnami/kubectl:latest
+          image: alpine:3.19
           command:
             - /bin/sh
             - -c
             - |
               set -e
 
+              # Install required tools
+              echo "Installing required tools..."
+              apk add --no-cache curl wget unzip
+
+              # Install kubectl
+              echo "Installing kubectl..."
+              curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+              chmod +x kubectl
+              mv kubectl /usr/local/bin/
+
               # Install garage CLI
               echo "Installing Garage CLI..."
-              apk add --no-cache wget
               wget -q https://github.com/Deuxfleurs/garage/releases/download/v1.3.0/garage-x86_64-unknown-linux-gnu.zip
-              unzip garage-x86_64-unknown-linux-gnu.zip
+              unzip -q garage-x86_64-unknown-linux-gnu.zip
               mv garage /usr/local/bin/
               chmod +x /usr/local/bin/garage
 
