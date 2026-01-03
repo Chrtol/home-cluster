@@ -14,19 +14,6 @@ spec:
     spec:
       serviceAccountName: garage-bucket-creator
       restartPolicy: OnFailure
-      initContainers:
-        # Download garage binary to shared volume
-        - name: get-garage
-          image: dxflrs/garage:v1.3.0
-          command:
-            - sh
-            - -c
-            - |
-              cp /garage /shared/garage
-              chmod +x /shared/garage
-          volumeMounts:
-            - name: shared
-              mountPath: /shared
       containers:
         # Main container with kubectl that can run garage commands
         - name: setup
@@ -36,6 +23,14 @@ spec:
             - -c
             - |
               set -e
+
+              # Download and install garage CLI
+              echo "Downloading Garage CLI..."
+              apk add --no-cache wget
+              wget -q https://github.com/Deuxfleurs/garage/releases/download/v1.0.0/garage-x86_64-unknown-linux-musl.zip
+              unzip -q garage-x86_64-unknown-linux-musl.zip
+              chmod +x garage
+              mv garage /usr/local/bin/
 
               # Wait for garage service to be ready
               echo "Waiting for garage service to be ready..."
@@ -50,19 +45,19 @@ spec:
 
               # Create bucket
               echo "Creating bucket 'outline'..."
-              /shared/garage bucket create outline || echo "Bucket may already exist"
+              garage bucket create outline || echo "Bucket may already exist"
 
               # Create key if it doesn't exist
               echo "Creating key 'outline-key'..."
-              /shared/garage key create outline-key || echo "Key may already exist"
+              garage key create outline-key || echo "Key may already exist"
 
               # Grant permissions to the key for the bucket
               echo "Granting permissions to 'outline-key' for bucket 'outline'..."
-              /shared/garage bucket allow outline --read --write --owner --key outline-key
+              garage bucket allow outline --read --write --owner --key outline-key
 
               # Get key info with secret
               echo "Getting key credentials..."
-              KEY_OUTPUT=$(/shared/garage key info outline-key --show-secret 2>&1)
+              KEY_OUTPUT=$(garage key info outline-key --show-secret 2>&1)
 
               # Extract credentials from output
               ACCESS_KEY=$(echo "$KEY_OUTPUT" | grep -E "Key ID|Access key ID" | awk '{print $NF}')
@@ -98,9 +93,3 @@ spec:
                 secretKeyRef:
                   name: garage-secret
                   key: SECRET_GARAGE_RPC_SECRET
-          volumeMounts:
-            - name: shared
-              mountPath: /shared
-      volumes:
-        - name: shared
-          emptyDir: {}
