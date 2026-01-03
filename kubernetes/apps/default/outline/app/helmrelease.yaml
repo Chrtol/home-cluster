@@ -74,7 +74,6 @@ spec:
                 # Load S3 variables from auto-generated secret
                 - secretRef:
                     name: garage-outline-credentials
-                    namespace: database
                     expandObjectName: false
 
     # Disable cnpg and redis deployments as we use our own
@@ -90,3 +89,25 @@ spec:
       data:
         enabled: true
         type: emptyDir
+
+    service:
+      main:
+        ports:
+          main:
+            port: 3000
+
+    ingress:
+      main:
+        enabled: true
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+        ingressClassName: external
+
+        hosts:
+          - host: &host docs.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+            - *host
