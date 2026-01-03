@@ -18,3 +18,4 @@ resources:
   - ./capacitor-next.yaml
   - ./qui.yaml
   - ./homarr.yaml
+  - ./outline.yaml
