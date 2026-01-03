@@ -14,12 +14,84 @@ spec:
     spec:
       serviceAccountName: garage-bucket-creator
       restartPolicy: OnFailure
-      containers:
-        - name: setup
+      initContainers:
+        # Download garage binary to shared volume
+        - name: get-garage
           image: dxflrs/garage:v1.3.0
           command:
-            - /garage
-            - --version
+            - sh
+            - -c
+            - |
+              cp /garage /shared/garage
+              chmod +x /shared/garage
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+      containers:
+        # Main container with kubectl that can run garage commands
+        - name: setup
+          image: bitnami/kubectl:latest
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+
+              # Wait for garage service to be ready
+              echo "Waiting for garage service to be ready..."
+              until nc -z garage-app.database.svc.cluster.local 3900; do
+                echo "Waiting for garage API..."
+                sleep 2
+              done
+
+              # Set garage host for CLI
+              export GARAGE_RPC_HOST=garage-app.database.svc.cluster.local:3901
+              export GARAGE_RPC_SECRET="${GARAGE_RPC_SECRET}"
+
+              # Create bucket
+              echo "Creating bucket 'outline'..."
+              /shared/garage bucket create outline || echo "Bucket may already exist"
+
+              # Create key if it doesn't exist
+              echo "Creating key 'outline-key'..."
+              /shared/garage key create outline-key || echo "Key may already exist"
+
+              # Grant permissions to the key for the bucket
+              echo "Granting permissions to 'outline-key' for bucket 'outline'..."
+              /shared/garage bucket allow outline --read --write --owner --key outline-key
+
+              # Get key info with secret
+              echo "Getting key credentials..."
+              KEY_OUTPUT=$(/shared/garage key info outline-key --show-secret 2>&1)
+
+              # Extract credentials from output
+              ACCESS_KEY=$(echo "$KEY_OUTPUT" | grep -E "Key ID|Access key ID" | awk '{print $NF}')
+              SECRET_KEY=$(echo "$KEY_OUTPUT" | grep -E "Secret key" | awk '{print $NF}')
+
+              if [ -z "$ACCESS_KEY" ] || [ -z "$SECRET_KEY" ]; then
+                echo "Failed to extract credentials. Output was:"
+                echo "$KEY_OUTPUT"
+                exit 1
+              fi
+
+              echo "Access Key: $ACCESS_KEY"
+              echo "Secret Key: ${SECRET_KEY:0:10}..."
+
+              # Create Kubernetes secret in default namespace
+              echo "Creating Kubernetes secret..."
+              kubectl create secret generic garage-outline-credentials \
+                --namespace=default \
+                --from-literal=AWS_ACCESS_KEY_ID="$ACCESS_KEY" \
+                --from-literal=AWS_SECRET_ACCESS_KEY="$SECRET_KEY" \
+                --from-literal=AWS_REGION="homelab" \
+                --from-literal=AWS_S3_UPLOAD_BUCKET_NAME="outline" \
+                --from-literal=AWS_S3_UPLOAD_BUCKET_URL="https://s3.${SECRET_DOMAIN}" \
+                --from-literal=AWS_S3_FORCE_PATH_STYLE="true" \
+                --from-literal=AWS_S3_ACL="private" \
+                --from-literal=FILE_STORAGE="s3" \
+                --dry-run=client -o yaml | kubectl apply -f -
+
+              echo "Setup complete!"
           env:
             - name: GARAGE_RPC_SECRET
               valueFrom:
@@ -27,11 +99,8 @@ spec:
                   name: garage-secret
                   key: SECRET_GARAGE_RPC_SECRET
           volumeMounts:
-            - name: config
-              mountPath: /etc/garage.toml
-              subPath: config.toml
-              readOnly: true
+            - name: shared
+              mountPath: /shared
       volumes:
-        - name: config
-          configMap:
-            name: config.toml
+        - name: shared
+          emptyDir: {}
