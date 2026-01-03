@@ -6,5 +6,7 @@ resources:
   - ./externalsecret.yaml
   - ./configmap.yaml
   - ./helmrelease.yaml
-  - ./outline-bucket-rbac.yaml
+  # Simplified job that just outputs credentials
   - ./outline-bucket-job.yaml
+  # RBAC not needed since we're not creating K8s secrets
+  # - ./outline-bucket-rbac.yaml

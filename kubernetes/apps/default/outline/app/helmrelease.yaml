@@ -71,10 +71,10 @@ spec:
                 - secretRef:
                     name: outline-secret
                     expandObjectName: false
-                # Load S3 variables from auto-generated secret
-                - secretRef:
-                    name: garage-outline-credentials
-                    expandObjectName: false
+                # S3 disabled for now - using local storage
+                # - secretRef:
+                #     name: garage-outline-credentials
+                #     expandObjectName: false
 
     # Disable cnpg and redis deployments as we use our own
     redis:
