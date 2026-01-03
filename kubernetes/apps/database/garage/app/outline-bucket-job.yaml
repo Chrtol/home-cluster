@@ -6,13 +6,10 @@ kind: Job
 metadata:
   name: garage-outline-bucket-setup
   namespace: database
-  annotations:
-    # This ensures the job only runs once, even after cluster rebuilds
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   # Clean up after success
   ttlSecondsAfterFinished: 300  # 5 minutes
+  backoffLimit: 3
   template:
     spec:
       serviceAccountName: garage-bucket-creator
@@ -26,12 +23,16 @@ spec:
             - |
               set -e
 
-              # Install kubectl
+              # Install kubectl (using lightweight method)
               echo "Installing kubectl..."
-              apt-get update && apt-get install -y curl
-              curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+              apt-get update && apt-get install -y curl ca-certificates
+              curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
               chmod +x kubectl
               mv kubectl /usr/local/bin/
+
+              # Test kubectl access
+              echo "Testing kubectl access..."
+              kubectl auth can-i create secrets -n default || (echo "ERROR: Cannot create secrets in default namespace" && exit 1)
 
               # Configure garage CLI
               export GARAGE_RPC_HOST=garage.database.svc.cluster.local:3901
@@ -47,6 +48,10 @@ spec:
                 if garage status 2>/dev/null; then
                   echo "Garage is ready!"
                   break
+                fi
+                if [ $i -eq 30 ]; then
+                  echo "ERROR: Garage not ready after 30 attempts"
+                  exit 1
                 fi
                 echo "Attempt $i/30: Garage not ready yet..."
                 sleep 5
@@ -69,18 +74,21 @@ spec:
               fi
 
               echo "Creating new outline-app access key..."
-              # Create the key and capture the full output
-              KEY_OUTPUT=$(garage key create outline-app 2>&1)
-              echo "$KEY_OUTPUT"
+              # Create the key
+              garage key create outline-app
 
-              # Extract credentials using more reliable parsing
-              ACCESS_KEY=$(garage key info outline-app | grep "Key ID" | awk '{print $3}')
-              SECRET_KEY=$(garage key info outline-app --show-secret | grep "Secret key" | awk '{print $3}')
+              # Get the credentials
+              echo "Extracting credentials..."
+              ACCESS_KEY=$(garage key info outline-app 2>/dev/null | grep "Key ID" | awk '{print $3}')
+              SECRET_KEY=$(garage key info outline-app --show-secret 2>/dev/null | grep "Secret key" | awk '{print $3}')
 
-              echo ""
-              echo "✓ Key 'outline-app' created"
-              echo "  Access Key: $ACCESS_KEY"
-              echo "  Secret Key: [hidden]"
+              if [ -z "$ACCESS_KEY" ] || [ -z "$SECRET_KEY" ]; then
+                echo "ERROR: Failed to extract credentials"
+                garage key info outline-app --show-secret
+                exit 1
+              fi
+
+              echo "✓ Key 'outline-app' created successfully"
 
               echo ""
               echo "Granting permissions to outline bucket..."
@@ -90,11 +98,8 @@ spec:
               echo ""
               echo "Creating Kubernetes secret..."
 
-              # Check if secret already exists
-              if kubectl get secret garage-outline-credentials -n default 2>/dev/null; then
-                echo "Secret already exists, updating it..."
-                kubectl delete secret garage-outline-credentials -n default
-              fi
+              # Delete existing secret if it exists
+              kubectl delete secret garage-outline-credentials -n default 2>/dev/null || true
 
               # Create the secret in the default namespace (where Outline runs)
               kubectl create secret generic garage-outline-credentials \
@@ -117,7 +122,9 @@ spec:
               echo "Bucket 'outline' and credentials have been created."
               echo "The secret 'garage-outline-credentials' is ready to use."
               echo ""
-              echo "Outline can now use the S3 storage!"
+              echo "Access Key: $ACCESS_KEY"
+              echo "Bucket: outline"
+              echo "Region: homelab"
               echo "========================================="
           env:
             - name: GARAGE_RPC_SECRET
@@ -134,36 +141,3 @@ spec:
         - name: config
           configMap:
             name: config.toml
----
-# ServiceAccount for the job to create secrets
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: garage-bucket-creator
-  namespace: database
----
-# Role to allow creating secrets in the default namespace
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: garage-secret-creator
-  namespace: default
-rules:
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["create", "get", "update", "delete"]
----
-# RoleBinding to grant the ServiceAccount permissions
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: garage-bucket-creator-binding
-  namespace: default
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: garage-secret-creator
-subjects:
-  - kind: ServiceAccount
-    name: garage-bucket-creator
-    namespace: database
