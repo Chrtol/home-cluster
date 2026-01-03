@@ -29,3 +29,4 @@ resources:
   - ./bentopdf/ks.yaml
   - ./homarr/ks.yaml
   - ./jotty/ks.yaml
+  - ./outline/ks.yaml

@@ -1,0 +1,92 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: outline
+spec:
+  releaseName: outline
+  chartRef:
+    kind: OCIRepository
+    name: outline
+    namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    securityContext:
+      container:
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    resources:
+      limits:
+        cpu: 1
+        memory: 800Mi
+      requests:
+        cpu: 200m
+        memory: 400Mi
+
+    workload:
+      main:
+        annotations:
+          secret.reloader.stakater.com/reload: outline-secret
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        podSpec:
+          initContainers:
+            01-postgres-init:
+              image: ghcr.io/home-operations/postgres-init:18.1
+              envFrom:
+                - secretRef:
+                    name: outline-secret
+                    expandObjectName: false
+            migratedb:
+              envFrom:
+                - secretRef:
+                    name: outline-secret
+                    expandObjectName: false
+
+          containers:
+            main:
+              env:
+                # Basic configuration (overrides from secrets if needed)
+                URL: https://docs.${SECRET_DOMAIN}
+                LOG_LEVEL: info
+                NODE_ENV: production
+                PGSSLMODE: disable
+                WEB_CONCURRENCY: "2"
+                FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
+                FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
+
+              envFrom:
+                # Load all variables from outline-secret (DB, Redis, OIDC, etc.)
+                - secretRef:
+                    name: outline-secret
+                    expandObjectName: false
+                # Load S3 variables from auto-generated secret
+                - secretRef:
+                    name: garage-outline-credentials
+                    namespace: database
+                    expandObjectName: false
+
+    # Disable cnpg and redis deployments as we use our own
+    redis:
+      enabled: false
+      creds:
+        url: redis://dragonfly.database.svc.cluster.local:6379/3
+    cnpg:
+      main:
+        enabled: false
+
+    persistence:
+      data:
+        enabled: true
+        type: emptyDir
