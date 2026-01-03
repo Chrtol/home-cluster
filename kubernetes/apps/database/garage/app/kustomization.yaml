@@ -6,3 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./configmap.yaml
   - ./helmrelease.yaml
+  - ./outline-bucket-job.yaml
