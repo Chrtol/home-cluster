@@ -34,9 +34,9 @@ spec:
               APP_URL: https://jotty.${SECRET_DOMAIN}
               SSO_MODE: oidc
               SSO_FALLBACK_LOCAL: yes
-              OIDC_ADMIN_GROUPS: jotty-admins
-              OIDC_ADMIN_ROLES: admins
-              OIDC_GROUPS_SCOPE: oidc-groups
+              # OIDC_ADMIN_GROUPS: jotty-admins
+              # OIDC_ADMIN_ROLES: admins
+              # OIDC_GROUPS_SCOPE: oidc-groups
             envFrom:
               - secretRef:
                   name: jotty-secret
