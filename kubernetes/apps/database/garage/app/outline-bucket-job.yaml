@@ -15,7 +15,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: setup
-          image: debian:12-slim
+          image: debian:13-slim
           command:
             - /bin/bash
             - -c
