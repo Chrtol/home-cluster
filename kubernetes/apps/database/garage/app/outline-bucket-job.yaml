@@ -18,16 +18,16 @@ spec:
         - name: setup
           image: bitnami/kubectl:latest
           command:
-            - /bin/bash
+            - /bin/sh
             - -c
             - |
               set -e
 
               # Install garage CLI
               echo "Installing Garage CLI..."
-              apt-get update && apt-get install -y wget unzip
+              apk add --no-cache wget
               wget -q https://github.com/Deuxfleurs/garage/releases/download/v1.3.0/garage-x86_64-unknown-linux-gnu.zip
-              unzip -q garage-x86_64-unknown-linux-gnu.zip
+              unzip garage-x86_64-unknown-linux-gnu.zip
               mv garage /usr/local/bin/
               chmod +x /usr/local/bin/garage
 
