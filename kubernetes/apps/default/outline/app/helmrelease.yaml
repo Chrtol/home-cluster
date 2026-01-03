@@ -79,8 +79,6 @@ spec:
     # Disable cnpg and redis deployments as we use our own
     redis:
       enabled: false
-      creds:
-        url: redis://dragonfly.database.svc.cluster.local:6379/3
     cnpg:
       main:
         enabled: false
