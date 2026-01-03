@@ -90,7 +90,7 @@ spec:
       config:
         existingClaim: jotty-config
         advancedMounts:
-          jotty:
+          jotty-config:
             app:
               - path: /app/config
                 readOnly: false
@@ -99,7 +99,7 @@ spec:
         type: emptyDir
         sizeLimit: 1Gi
         advancedMounts:
-          jotty:
+          jotty-cache:
             app:
               - path: /app/.next/cache
                 readOnly: false
