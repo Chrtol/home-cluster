@@ -21,8 +21,6 @@ spec:
       namespace: database
     - name: garage
       namespace: database
-    - name: external-secrets-stores
-      namespace: external-secrets
   path: "./kubernetes/apps/default/outline/app"
   postBuild:
     substitute:
