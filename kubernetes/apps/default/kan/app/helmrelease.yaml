@@ -61,7 +61,7 @@ spec:
             port: *port
     route:
       app:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        hostnames: ["kanban.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
@@ -71,22 +71,22 @@ spec:
               - name: *app
                 port: *port
 
-    # ingress:
-    #   app:
-    #     enabled: true
-    #     className: external
-    #     annotations:
-    #       external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-    #     hosts:
-    #       - host: &host kanban.${SECRET_DOMAIN}
-    #         paths:
-    #           - path: /
-    #             service:
-    #               identifier: app
-    #               port: http
-    #     tls:
-    #       - hosts:
-    #         - *host
+    ingress:
+      app:
+        enabled: true
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+        hosts:
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+            - *host
 
     persistence:
           tmpfs:
