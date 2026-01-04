@@ -1,0 +1,17 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: seerr-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: seerr-secret  # Uses seerr-secret which contains RESTIC_REPOSITORY=/repository/jellyseerr
+    destinationPVC: seerr
+    copyMethod: Direct
+    storageClassName: csi-rbd-sc
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
