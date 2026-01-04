@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app jellyseerr
+  name: &app seerr
   namespace: &namespace media
 spec:
   commonMetadata:
@@ -14,10 +14,12 @@ spec:
       namespace: kube-system
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: cloudnative-pg-cluster-v17  # Add dependency for PostgreSQL
+      namespace: database
   components:
     - ../../../../components/gatus/external
   interval: 1h
-  path: ./kubernetes/apps/media/jellyseerr/app
+  path: ./kubernetes/apps/media/seerr/app
   postBuild:
     substitute:
       APP: *app

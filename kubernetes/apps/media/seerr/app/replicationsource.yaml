@@ -2,7 +2,7 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: jellyseerr-config-backup
+  name: seerr-config-backup
 spec:
   sourcePVC: jellyseerr
   trigger:
@@ -11,7 +11,7 @@ spec:
     copyMethod: Snapshot
     storageClassName: csi-rbd-sc
     volumeSnapshotClassName: csi-rbd-sc
-    repository: jellyseerr-secret
+    repository: seerr-secret
     retain:
       daily: 7
       weekly: 4
