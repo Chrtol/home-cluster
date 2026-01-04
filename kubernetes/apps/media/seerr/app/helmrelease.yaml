@@ -110,11 +110,11 @@ spec:
             - *host
     persistence:
       config:
-        existingClaim: jellyseerr  # Using existing jellyseerr PVC for automatic migration
+        existingClaim: seerr
         globalMounts:
           - path: /app/config
       config-cache:
-        existingClaim: jellyseerr-cache  # Using existing jellyseerr-cache PVC for automatic migration
+        existingClaim: seerr-cache
         globalMounts:
           - path: /app/config/cache
       tmpfs:
