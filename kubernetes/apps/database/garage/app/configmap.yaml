@@ -21,6 +21,20 @@ data:
     api_bind_addr = "0.0.0.0:3900"
     root_domain = ".s3.${SECRET_DOMAIN}"
 
+    # CORS configuration for browser uploads
+    # Add more allowed origins as needed (comma-separated in the array)
+    [s3_api.cors]
+    allowed_origins = [
+      "https://docs.${SECRET_DOMAIN}"
+      # Add more domains here as needed:
+      # "https://wiki.${SECRET_DOMAIN}",
+      # "https://notes.${SECRET_DOMAIN}"
+    ]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
+    allowed_headers = ["*"]
+    expose_headers = ["ETag", "Content-Length", "Content-Range"]
+    max_age = 3600
+
     [s3_web]
     bind_addr = "0.0.0.0:3902"
     root_domain = ".web.${SECRET_DOMAIN}"
