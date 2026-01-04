@@ -30,3 +30,4 @@ resources:
   - ./homarr/ks.yaml
   - ./jotty/ks.yaml
   - ./outline/ks.yaml
+  - ./kan/ks.yaml
