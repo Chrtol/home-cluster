@@ -1,0 +1,58 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seerr-migrate-to-postgres
+  namespace: media
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: pgloader
+          image: dimitri/pgloader:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL database to be ready..."
+              sleep 10
+
+              echo "Creating pgloader migration script..."
+              cat > /tmp/migrate.load <<'EOF'
+              LOAD DATABASE
+                  FROM sqlite:///config/db/db.sqlite3
+                  INTO postgresql://$(SEERR_POSTGRES_USER):$(SEERR_POSTGRES_PASS)@$(POSTGRES_RW_SVC):5432/seerr
+              WITH
+                  quote identifiers,
+                  data only
+              ;
+              EOF
+
+              echo "Starting migration from SQLite to PostgreSQL..."
+              pgloader /tmp/migrate.load
+
+              echo "Migration completed!"
+          env:
+            - name: POSTGRES_RW_SVC
+              valueFrom:
+                secretKeyRef:
+                  name: seerr-secret
+                  key: DB_HOST
+            - name: SEERR_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: seerr-secret
+                  key: DB_USER
+            - name: SEERR_POSTGRES_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: seerr-secret
+                  key: DB_PASS
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: seerr
