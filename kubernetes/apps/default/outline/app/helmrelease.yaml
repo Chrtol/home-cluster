@@ -44,7 +44,7 @@ spec:
               SMTP_PORT: 2525
               SMTP_FROM_EMAIL: "outline@${SECRET_DOMAIN}"
               SMTP_SECURE: false
-              WEB_CONCURRENCY: 10
+              WEB_CONCURRENCY: 3
             envFrom: *envFrom
             securityContext:
               allowPrivilegeEscalation: false
