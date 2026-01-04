@@ -14,8 +14,8 @@ spec:
       namespace: kube-system
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    # - name: cloudnative-pg-cluster-v17  # Commented out for initial migration
-    #   namespace: database
+    - name: cloudnative-pg-cluster-v17
+      namespace: database
   components:
     - ../../../../components/gatus/external
   interval: 1h
