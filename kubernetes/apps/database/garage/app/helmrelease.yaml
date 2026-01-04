@@ -94,17 +94,7 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-          # CORS configuration for S3 uploads
-          nginx.ingress.kubernetes.io/enable-cors: "true"
-          # Allowed origins - add more domains as comma-separated values
-          # Example: "https://docs.${SECRET_DOMAIN},https://wiki.${SECRET_DOMAIN},https://notes.${SECRET_DOMAIN}"
-          nginx.ingress.kubernetes.io/cors-allow-origin: >-
-            https://docs.${SECRET_DOMAIN}
-          nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, OPTIONS"
-          nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-amz-date,x-amz-content-sha256"
-          nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range,ETag"
-          nginx.ingress.kubernetes.io/cors-max-age: "3600"
-          nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+          # CORS is handled by Garage itself (see configmap.yaml)
         hosts:
           - host: &host s3.${SECRET_DOMAIN}
             paths:
