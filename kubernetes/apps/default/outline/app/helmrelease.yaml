@@ -1,111 +1,95 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: outline
+  name: &app outline
 spec:
-  releaseName: outline
+  interval: 1h
   chartRef:
     kind: OCIRepository
-    name: outline
+    name: app-template
     namespace: flux-system
-  interval: 50m
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
-
   values:
-    securityContext:
-      container:
-        readOnlyRootFilesystem: false
+    controllers:
+      outline:
+        labels:
+          postgres: "true"
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 18.1
+              pullPolicy: IfNotPresent
+            envFrom: &envFrom
+              - secretRef:
+                  name: outline-secret
+        containers:
+          app:
+            image:
+              repository: docker.io/outlinewiki/outline
+              tag: 1.1.0@sha256:51db3e893d3eabdbf9092712c9c8ed5362efb20e4c1d35b941ccacaed1c0f010
+            command: ["/bin/sh", "-c", "yarn db:migrate --env=production-ssl-disabled && yarn start --env=production-ssl-disabled"]
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              URL: https://docs.${SECRET_DOMAIN}
+              LOG_LEVEL: info
+              NODE_ENV: production
+              PGSSLMODE: disable
+              FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
+              FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
+              PORT: &port 8080
+              SMTP_HOST: smtp-relay.default.svc.cluster.local
+              SMTP_PORT: 2525
+              SMTP_FROM_EMAIL: "outline@${SECRET_DOMAIN}"
+              SMTP_SECURE: false
+              WEB_CONCURRENCY: 10
+            envFrom: *envFrom
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 50Mi
+              limits:
+                memory: 1000Mi
+    defaultPodOptions:
+      securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-
-    resources:
-      limits:
-        cpu: 1
-        memory: 800Mi
-      requests:
-        cpu: 200m
-        memory: 400Mi
-
-    workload:
-      main:
-        annotations:
-          secret.reloader.stakater.com/reload: outline-secret
-        strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
-        podSpec:
-          initContainers:
-            01-postgres-init:
-              image: ghcr.io/home-operations/postgres-init:18.1
-              envFrom:
-                - secretRef:
-                    name: outline-secret
-                    expandObjectName: false
-            migratedb:
-              envFrom:
-                - secretRef:
-                    name: outline-secret
-                    expandObjectName: false
-
-          containers:
-            main:
-              env:
-                # Basic configuration (overrides from secrets if needed)
-                URL: https://docs.${SECRET_DOMAIN}
-                LOG_LEVEL: info
-                NODE_ENV: production
-                PGSSLMODE: disable
-                WEB_CONCURRENCY: "2"
-                FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
-                FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
-
-              envFrom:
-                # Load all variables from outline-secret (DB, Redis, OIDC, etc.)
-                - secretRef:
-                    name: outline-secret
-                    expandObjectName: false
-                # S3 disabled for now - using local storage
-                # - secretRef:
-                #     name: garage-outline-credentials
-                #     expandObjectName: false
-
-    # Disable cnpg and redis deployments as we use our own
-    redis:
-      enabled: false
-    cnpg:
-      main:
-        enabled: false
-
-    persistence:
-      data:
-        enabled: true
-        type: emptyDir
-
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
         ports:
-          main:
-            port: 3000
-
+          http:
+            port: *port
     ingress:
-      main:
-        enabled: true
+      app:
+        className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        ingressClassName: external
-
         hosts:
-          - host: &host docs.${SECRET_DOMAIN}
+          - host: &host "docs.${SECRET_DOMAIN}"
             paths:
               - path: /
-                pathType: Prefix
+                service:
+                  identifier: app
+                  port: http
         tls:
           - hosts:
-            - *host
+              - *host
+    persistence:
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          outline:
+            app:
+              - path: /home/node
+                subPath: node
+              - path: /tmp
+                subPath: tmp
