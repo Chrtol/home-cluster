@@ -60,7 +60,7 @@ spec:
 
       ingress:
         enabled: true
-        ingressClassName: external
+        ingressClassName: external  # This uses VPS routing in your setup
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
           nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
@@ -69,6 +69,20 @@ spec:
         tls:
           - hosts:
             - *host
+
+      # route:
+      #   main:
+      #     enabled: true
+      #     hostnames:
+      #     - "sso.${SECRET_DOMAIN}"
+      #     annotations:
+      #       external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+      #     parentRefs:
+      #       - group: gateway.networking.k8s.io
+      #         kind: Gateway
+      #         name: external
+      #         namespace: network
+      #         sectionName: https
 
       probes:
         readiness:
