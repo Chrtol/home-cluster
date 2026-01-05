@@ -9,6 +9,8 @@ spec:
     - name: envoy-external
       namespace: network
       kind: Gateway
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
   hostnames:
     - echo-test.${SECRET_DOMAIN}
   rules:
