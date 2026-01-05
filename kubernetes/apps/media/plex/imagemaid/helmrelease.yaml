@@ -30,7 +30,7 @@ spec:
               tag: v1.1.1
             env:
               PLEX_URL: http://plex.media.svc.cluster.local:32400
-              PLEX_PATH: /data/plex_config
+              PLEX_PATH: /data/plex_config/Library/Application Support/Plex Media Server
               MODE: remove
               PHOTO_TRANSCODER: true
               TZ: ${SECRET_TIMEZONE}
