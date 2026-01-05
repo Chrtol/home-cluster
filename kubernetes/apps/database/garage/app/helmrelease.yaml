@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: dxflrs/garage
-              tag: v2.0.0  # Upgrading from v1.3.0 - see UPGRADE_LOG.md
+              tag: v1.3.0  # Rollback for proper migration
             command:
               - /garage
               - server
