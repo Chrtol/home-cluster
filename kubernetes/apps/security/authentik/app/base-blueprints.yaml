@@ -1,0 +1,53 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: authentik-base-blueprints
+  namespace: security
+  labels:
+    goauthentik_blueprint: "1"
+data:
+  default_groups.yaml: |
+    version: 1
+    metadata:
+      name: default-groups-blueprint
+      labels:
+        blueprints.goauthentik.io/description: |
+          This blueprint configures default user groups
+
+    entries:
+      ## Default Users group - all regular users
+      - model: authentik_core.group
+        state: present
+        identifiers:
+          name: "Users"
+        attrs:
+          name: "Users"
+        id: users-group
+
+      ## Media Admins - can manage media services
+      - model: authentik_core.group
+        state: present
+        identifiers:
+          name: "Media Admins"
+        attrs:
+          name: "Media Admins"
+          parent: !Find [authentik_core.group, [name, "authentik Admins"]]
+        id: media-admins-group
+
+      ## Media Users - can access media services
+      - model: authentik_core.group
+        state: present
+        identifiers:
+          name: "Media Users"
+        attrs:
+          name: "Media Users"
+          parent: !Find [authentik_core.group, [name, "Media Admins"]]
+        id: media-users-group
+
+      # Add more groups here as needed for your specific setup
+      # Examples:
+      # - Development team
+      # - Family members
+      # - Guest users
+      # Each app also gets its own ${APP}-users group via the OIDC component
