@@ -21,7 +21,7 @@ spec:
       retries: 3
   dependsOn:
     - name: plex
-    - name: jellyseerr
+    - name: seerr
   values:
     controllers:
       wizarr:
