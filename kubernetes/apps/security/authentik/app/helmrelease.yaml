@@ -43,6 +43,8 @@ spec:
       blueprints:
         - configMapRef:
             name: authentik-discord-blueprint
+        - configMapRef:
+            name: authentik-base-blueprints
     server:
       replicas: 1
       initContainers:

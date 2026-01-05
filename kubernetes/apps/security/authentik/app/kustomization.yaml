@@ -7,3 +7,5 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./configmap.yaml
+  - ./internal-certificate.yaml
+  - ./base-blueprints.yaml
