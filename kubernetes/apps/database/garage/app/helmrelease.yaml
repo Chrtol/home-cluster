@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: dxflrs/garage
-              tag: v1.3.0
+              tag: v2.0.0  # Upgrading from v1.3.0 - see UPGRADE_LOG.md
             command:
               - /garage
               - server
