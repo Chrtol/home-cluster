@@ -28,7 +28,11 @@ spec:
           app:
             image:
               repository: dxflrs/garage
+<<<<<<< HEAD
               tag: v2.0.0  # Migrating from v1.3.0
+=======
+              tag: v2.0.0  # Upgrading from v1.3.0 - see UPGRADE_LOG.md
+>>>>>>> parent of 6d5549f3 (chore(garage): downgrade image to 1.3.0 to follow proper migration path)
             command:
               - /garage
               - server
