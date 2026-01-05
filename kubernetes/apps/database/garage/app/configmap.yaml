@@ -9,7 +9,12 @@ data:
     metadata_dir = "/mnt/meta"
     data_dir = "/mnt/data"
 
-    replication_mode = "1"
+    # v2.0.0 uses replication_factor and consistency_mode instead of replication_mode
+    replication_factor = 1
+    consistency_mode = "consistent"
+
+    # Important for single-node setups
+    block_size = 1048576
     compression_level = 1
 
     rpc_bind_addr = "0.0.0.0:3901"
