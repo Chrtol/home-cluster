@@ -6,7 +6,8 @@ metadata:
   namespace: network
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    external-dns.alpha.kubernetes.io/target: external-gateway.${SECRET_DOMAIN}  # Different subdomain for testing
+    io.cilium/lb-ipam-ips: 10.0.30.61  # Different IP from nginx-ingress (10.0.30.60)
 spec:
   gatewayClassName: cilium
   listeners:
