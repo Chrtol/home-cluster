@@ -12,7 +12,8 @@ spec:
   interval: 10m
   path: ./kubernetes/apps/network/envoy-gateway/app
   postBuild:
-    APP: *app
+    substitute:
+      APP: *app
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
@@ -40,7 +41,8 @@ spec:
   interval: 10m
   path: ./kubernetes/apps/network/envoy-gateway/config
   postBuild:
-    APP: *app
+    substitute:
+      APP: *app
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
