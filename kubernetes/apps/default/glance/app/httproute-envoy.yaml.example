@@ -1,0 +1,27 @@
+---
+# Example HTTPRoute for Glance with Envoy Gateway
+# To use:
+# 1. Rename to httproute.yaml
+# 2. Add to kustomization.yaml resources
+# 3. Add ext-auth component to kustomization.yaml components
+# 4. Comment out or remove the existing ingress.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: glance
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - glance.${SECRET_DOMAIN}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: glance
+          port: 8080

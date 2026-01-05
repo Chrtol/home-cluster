@@ -1,0 +1,30 @@
+---
+# Example kustomization.yaml showing how to use Envoy Gateway with auth
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+  - ./gatus.yaml
+  - ./svc.yaml
+  # - ./ingress.yaml  # Comment out nginx ingress
+  - ./httproute.yaml  # Add HTTPRoute for Envoy Gateway
+
+# Add the ext-auth component for authentication
+components:
+  - ../../../../../components/ext-auth
+
+# Configure the SecurityPolicy with the app name
+replacements:
+  - source:
+      kind: HelmRelease
+      name: glance
+      fieldPath: metadata.name
+    targets:
+      - select:
+          kind: SecurityPolicy
+        fieldPaths:
+          - metadata.name
+          - spec.targetRefs.0.name
+        options:
+          create: true
