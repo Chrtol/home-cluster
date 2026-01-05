@@ -1,0 +1,39 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: envoy-external
+  namespace: network
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    io.cilium/lb-ipam-ips: 10.0.30.62  # Different from nginx (.60) and Cilium (.61)
+spec:
+  gatewayClassName: envoy
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      hostname: "*.${SECRET_DOMAIN}"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: "*.${SECRET_DOMAIN}"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: "${SECRET_DOMAIN/./-}-production-tls"
+            namespace: cert-manager

@@ -1,0 +1,37 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: envoy-gateway
+  namespace: network
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: gateway-helm
+      version: v1.2.4
+      sourceRef:
+        kind: HelmRepository
+        name: envoy-gateway
+        namespace: flux-system
+  values:
+    config:
+      envoyGateway:
+        provider:
+          type: Kubernetes
+          kubernetes:
+            deploy:
+              # Deploy Envoy proxies in the same namespace as the Gateway
+              type: GatewayNamespace
+    # Optional: Enable HPA for production
+    # hpa:
+    #   enabled: true
+    #   minReplicas: 1
+    #   maxReplicas: 3
+    #   metrics:
+    #     - resource:
+    #         name: cpu
+    #         target:
+    #           averageUtilization: 60
+    #           type: Utilization
+    #       type: Resource
