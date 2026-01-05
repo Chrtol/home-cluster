@@ -19,3 +19,4 @@ resources:
   - ./qui.yaml
   - ./homarr.yaml
   - ./outline.yaml
+  - ./envoy-gateway.yaml

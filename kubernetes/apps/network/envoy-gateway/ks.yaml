@@ -11,10 +11,17 @@ spec:
       app.kubernetes.io/name: *app
   interval: 10m
   path: ./kubernetes/apps/network/envoy-gateway/app
+  postBuild:
+    APP: *app
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
+  retryInterval: 2m
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: flux-system
+    namespace: flux-system
   wait: true
   dependsOn:
     - name: cilium
@@ -32,10 +39,17 @@ spec:
       app.kubernetes.io/name: *app
   interval: 10m
   path: ./kubernetes/apps/network/envoy-gateway/config
+  postBuild:
+    APP: *app
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
+  retryInterval: 2m
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: flux-system
+    namespace: flux-system
   wait: false
   dependsOn:
     - name: envoy-gateway
