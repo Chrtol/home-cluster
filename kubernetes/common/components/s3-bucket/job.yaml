@@ -1,0 +1,57 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${APP}-s3-setup
+  namespace: ${NAMESPACE}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      serviceAccountName: ${APP}-s3-setup
+      restartPolicy: OnFailure
+      containers:
+      - name: setup
+        image: ghcr.io/chrtol/garage-kubectl:v1.3.0  # Custom image with garage CLI + kubectl + aws-cli
+        command: ["/bin/bash"]
+        args: ["/scripts/setup.sh"]
+        env:
+        - name: APP
+          value: "${APP}"
+        - name: NAMESPACE
+          value: "${NAMESPACE}"
+        - name: S3_BUCKET
+          value: "${S3_BUCKET}"
+        - name: CORS_ORIGINS
+          value: "${CORS_ORIGINS:-}"
+        - name: SECRET_DOMAIN
+          value: "${SECRET_DOMAIN}"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: garage-admin
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: garage-admin
+              key: SECRET_KEY
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+          readOnly: true
+        - name: garage-config
+          mountPath: /etc/garage.toml
+          subPath: config.toml
+          readOnly: true
+      volumes:
+      - name: scripts
+        configMap:
+          name: ${APP}-s3-setup-script
+          defaultMode: 0755
+      - name: garage-config
+        configMap:
+          name: config.toml
+          namespace: database

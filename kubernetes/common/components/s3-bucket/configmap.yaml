@@ -1,0 +1,75 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP}-s3-setup-script
+  namespace: ${NAMESPACE}
+data:
+  setup.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "Setting up S3 bucket for ${APP}..."
+
+    # Wait for Garage to be ready
+    until /garage -c /etc/garage.toml status 2>/dev/null | grep -q "HEALTHY"; do
+      echo "Waiting for Garage to be healthy..."
+      sleep 5
+    done
+
+    # Create bucket if it doesn't exist
+    if ! /garage -c /etc/garage.toml bucket list | grep -q "${S3_BUCKET}"; then
+      echo "Creating bucket ${S3_BUCKET}..."
+      /garage -c /etc/garage.toml bucket create ${S3_BUCKET}
+    else
+      echo "Bucket ${S3_BUCKET} already exists"
+    fi
+
+    # Create key if it doesn't exist
+    KEY_NAME="${APP}-key"
+    if ! /garage -c /etc/garage.toml key list | grep -q "$KEY_NAME"; then
+      echo "Creating access key for ${APP}..."
+      KEY_OUTPUT=$(/garage -c /etc/garage.toml key create "$KEY_NAME")
+      ACCESS_KEY=$(echo "$KEY_OUTPUT" | grep "Key ID" | awk '{print $3}')
+      SECRET_KEY=$(echo "$KEY_OUTPUT" | grep "Secret key" | awk '{print $3}')
+
+      # Grant permissions
+      /garage -c /etc/garage.toml bucket allow --read --write --owner ${S3_BUCKET} --key "$ACCESS_KEY"
+
+      # Store in Kubernetes secret
+      kubectl create secret generic ${APP}-s3-credentials \
+        --namespace=${NAMESPACE} \
+        --from-literal=ACCESS_KEY="$ACCESS_KEY" \
+        --from-literal=SECRET_KEY="$SECRET_KEY" \
+        --from-literal=BUCKET="${S3_BUCKET}" \
+        --from-literal=ENDPOINT="https://s3.${SECRET_DOMAIN}" \
+        --from-literal=REGION="homelab" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+      echo "Created secret ${APP}-s3-credentials"
+    else
+      echo "Key for ${APP} already exists"
+    fi
+
+    # Set CORS if provided
+    if [ -n "${CORS_ORIGINS}" ]; then
+      echo "Setting CORS policy..."
+      cat <<EOF | aws s3api put-bucket-cors \
+        --endpoint-url http://garage.database.svc.cluster.local:3900 \
+        --bucket ${S3_BUCKET} \
+        --cors-configuration file:///dev/stdin
+    {
+      "CORSRules": [
+        {
+          "AllowedHeaders": ["*"],
+          "AllowedMethods": ["GET", "HEAD", "POST", "PUT", "DELETE"],
+          "AllowedOrigins": [${CORS_ORIGINS}],
+          "ExposeHeaders": ["ETag", "x-amz-version-id"],
+          "MaxAgeSeconds": 3600
+        }
+      ]
+    }
+    EOF
+    fi
+
+    echo "S3 setup for ${APP} complete!"

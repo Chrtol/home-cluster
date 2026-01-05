@@ -123,13 +123,123 @@ Different applications use different callback URL patterns:
 
 Always check your application's documentation for the correct callback URL format.
 
-## S3 Bucket Component (Coming Soon)
+## S3 Bucket Component
 
-Will provide automated S3 bucket creation with:
-- Bucket provisioning
-- Access key generation
-- CORS configuration
-- Secret management
+The S3 bucket component automatically creates and configures S3 buckets in Garage with GitOps-friendly declarative management.
+
+### What it creates:
+1. **S3 Bucket** - Automatically provisioned in Garage
+2. **Access Credentials** - Auto-generated and stored in `${APP}-s3-credentials` secret
+3. **CORS Policy** - Configured if `CORS_ORIGINS` is provided
+4. **Kubernetes Secret** with:
+   - `ACCESS_KEY` - S3 access key
+   - `SECRET_KEY` - S3 secret key
+   - `BUCKET` - Bucket name
+   - `ENDPOINT` - S3 endpoint URL
+   - `REGION` - S3 region
+
+### Prerequisites:
+1. Garage must be deployed and running
+2. A `garage-admin` secret must exist in the database namespace with admin credentials
+
+### How to use:
+
+1. **In your app's Kustomization** (`/kubernetes/apps/default/{app}/ks.yaml`):
+
+```yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: myapp
+  namespace: flux-system
+spec:
+  # ... other config ...
+  path: ./kubernetes/apps/default/myapp/app
+  components:
+    # Include the S3 bucket component
+    - ../../../../../common/components/s3-bucket
+  postBuild:
+    substitute:
+      # Required variables
+      APP: myapp                    # Application identifier
+      NAMESPACE: default            # Target namespace
+      S3_BUCKET: myapp-data        # Bucket name
+
+      # Optional: CORS for browser uploads
+      CORS_ORIGINS: '"https://myapp.${SECRET_DOMAIN}"'  # JSON array format
+```
+
+2. **In your app's HelmRelease**, reference the generated secret:
+
+```yaml
+env:
+  S3_ACCESS_KEY:
+    secretKeyRef:
+      name: ${APP}-s3-credentials
+      key: ACCESS_KEY
+  S3_SECRET_KEY:
+    secretKeyRef:
+      name: ${APP}-s3-credentials
+      key: SECRET_KEY
+  S3_BUCKET:
+    secretKeyRef:
+      name: ${APP}-s3-credentials
+      key: BUCKET
+  S3_ENDPOINT:
+    secretKeyRef:
+      name: ${APP}-s3-credentials
+      key: ENDPOINT
+  S3_REGION:
+    secretKeyRef:
+      name: ${APP}-s3-credentials
+      key: REGION
+```
+
+### Example: Application with Multiple Buckets
+
+If your app needs multiple buckets (e.g., KAN with avatars and attachments):
+
+```yaml
+# Create two separate Kustomizations for each bucket
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kan-avatars-bucket
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/default/kan/app
+  components:
+    - ../../../../../common/components/s3-bucket
+  postBuild:
+    substitute:
+      APP: kan-avatars
+      NAMESPACE: default
+      S3_BUCKET: kan-avatars
+      CORS_ORIGINS: '"https://kan.${SECRET_DOMAIN}"'
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kan-attachments-bucket
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/default/kan/app
+  components:
+    - ../../../../../common/components/s3-bucket
+  postBuild:
+    substitute:
+      APP: kan-attachments
+      NAMESPACE: default
+      S3_BUCKET: kan-attachments
+      CORS_ORIGINS: '"https://kan.${SECRET_DOMAIN}"'
+```
+
+### Notes:
+- The Job runs as a PostSync hook, so buckets are created after the app deploys
+- Credentials are stored in Kubernetes secrets for easy consumption
+- The Job is idempotent - it won't recreate existing buckets or keys
+- CORS configuration uses AWS CLI format (JSON array of origins)
 
 ## Database Component (Coming Soon)
 
