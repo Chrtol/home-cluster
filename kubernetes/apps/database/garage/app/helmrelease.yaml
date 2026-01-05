@@ -116,7 +116,7 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: api
+                port: 3900
     persistence:
       data:
         type: nfs
