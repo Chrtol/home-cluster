@@ -10,3 +10,4 @@ resources:
   - ./external/ks.yaml
   - ./internal/ks.yaml
   - ./vps-ingress/ks.yaml
+  - ./envoy-gateway/ks.yaml
