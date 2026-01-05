@@ -117,7 +117,7 @@ settings:
   playlist_exclude_user:
   playlist_report: false
   verify_ssl: true
-  custom_repo: https://github.com/joryirving/home-ops/tree/main/kubernetes/apps/base/media/plex/kometa/custom/
+  custom_repo: https://github.com/Chrtol/home-cluster/tree/main/kubernetes/apps/media/plex/kometa/custom
   check_nightly: false
   show_unconfigured: true
   playlist_exclude_users:
@@ -181,14 +181,14 @@ tmdb:
   cache_expiration: 60
   region:
 
-trakt:
-  client_id: <<TRAKT_CLIENT_ID>>
-  client_secret: <<TRAKT_CLIENT_SECRET>>
-  authorization:
-    access_token: <<TRAKT_ACCESS_TOKEN>>
-    token_type: Bearer
-    expires_in: <<TRAKT_EXPIRES_IN>>
-    refresh_token: <<TRAKT_REFRESH_TOKEN>>
-    scope: public
-    created_at: <<TRAKT_CREATED_AT>>
-  pin:
+# trakt:
+#   client_id: <<TRAKT_CLIENT_ID>>
+#   client_secret: <<TRAKT_CLIENT_SECRET>>
+#   authorization:
+#     access_token: <<TRAKT_ACCESS_TOKEN>>
+#     token_type: Bearer
+#     expires_in: <<TRAKT_EXPIRES_IN>>
+#     refresh_token: <<TRAKT_REFRESH_TOKEN>>
+#     scope: public
+#     created_at: <<TRAKT_CREATED_AT>>
+#   pin:
