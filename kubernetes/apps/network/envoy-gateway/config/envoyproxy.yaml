@@ -1,0 +1,16 @@
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-external-proxy
+  namespace: network
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        type: LoadBalancer
+        externalTrafficPolicy: Cluster
+        loadBalancerIP: "10.0.30.44"
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: "*.${SECRET_DOMAIN}"
