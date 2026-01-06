@@ -46,8 +46,6 @@ spec:
         policyEngineMode: "any"
       groups:
         # Create app-specific group for access control
-        - name: "${APP}-users"
+        - slug: "${APP}-users"
           parent: ""
-          users: []
-        # Bind existing authentik Admins group (admins always have access)
-        - name: "authentik Admins"
+        # TODO: Add authentik admins group once we verify the correct slug
