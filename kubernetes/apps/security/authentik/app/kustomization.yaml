@@ -11,3 +11,4 @@ resources:
   - ./internal-certificate.yaml
   - ./base-blueprints.yaml
   - ./referencegrant.yaml
+  - ./sidecar-rbac.yaml
