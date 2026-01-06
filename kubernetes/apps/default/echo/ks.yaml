@@ -16,6 +16,7 @@ spec:
       namespace: network
   components:
     - ../../../../components/gatus/external
+    - ../../../../components/ext-auth
   postBuild:
     substitute:
       APP: *app
