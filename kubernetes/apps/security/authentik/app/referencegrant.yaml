@@ -1,0 +1,19 @@
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: authentik-securitypolicy-ref
+  namespace: security
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: default
+    # Add more namespaces as needed when migrating other services
+    # - group: gateway.envoyproxy.io
+    #   kind: SecurityPolicy
+    #   namespace: media
+  to:
+    - group: ''
+      kind: Service
+      name: ak-outpost-authentik-embedded-outpost

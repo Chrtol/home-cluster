@@ -10,3 +10,4 @@ resources:
   - ./configmap.yaml
   - ./internal-certificate.yaml
   - ./base-blueprints.yaml
+  - ./referencegrant.yaml

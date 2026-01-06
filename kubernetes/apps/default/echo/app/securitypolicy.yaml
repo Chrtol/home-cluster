@@ -10,12 +10,16 @@ spec:
       kind: HTTPRoute
       name: echo-envoy-test
   extAuth:
+    failOpen: false
+    headersToExtAuth:
+      - cookie
     http:
       backendRefs:
         - name: ak-outpost-authentik-embedded-outpost
           namespace: security
           port: 9000
+      path: /outpost.goauthentik.io/auth/envoy
       headersToBackend:
-        - "Cookie"
-        - "Authorization"
-      failOpen: false
+        - set-cookie
+        - x-authentik-*
+        - authorization
