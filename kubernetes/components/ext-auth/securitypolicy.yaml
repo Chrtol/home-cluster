@@ -15,7 +15,7 @@ spec:
       - x-forwarded-proto
     http:
       backendRefs:
-        - name: ak-outpost-internal-proxy-outpost
+        - name: ak-outpost-authentik-embedded-outpost
           namespace: security
           port: 9000
       path: /outpost.goauthentik.io/auth/envoy
