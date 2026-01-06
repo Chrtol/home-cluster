@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+# Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ${APP}-proxy
+  labels:
+    homelab/auth-component: "true"
+spec:
+  releaseName: ${APP}-proxy
+  chartRef:
+    kind: OCIRepository
+    name: authentik-application
+    namespace: flux-system
+  interval: 1h
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    blueprint:
+      authentik:
+        domain: "https://sso.${SECRET_DOMAIN}"
+      provider:
+        enabled: true
+        name: "${APP}-proxy"
+        type: "proxy"
+        proxy:
+          mode: "forward_single"
+          externalHost: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
+          authorizationFlow: "default-provider-authorization-implicit-consent"
+      application:
+        name: "${APP}"
+        slug: "${APP}"
+        group: "${GROUP}"
+        launchURL: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
+        openInNewTab: false
+        icon: "${ICON_URL:-}"
+        description: "${DESCRIPTION}"
+        policyEngineMode: "any"
+      groups:
+        # Create app-specific group for access control
+        - name: "${APP}-users"
+          parent: ""
+          users: []
+        # Bind existing authentik Admins group (admins always have access)
+        - name: "authentik Admins"
