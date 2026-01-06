@@ -20,7 +20,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      GATUS_SUBDOMAIN: pdf
+      EXT_AUTH_HTTPROUTE_NAME: echo-envoy-test
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
