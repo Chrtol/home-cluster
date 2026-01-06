@@ -20,3 +20,4 @@ resources:
   - ./homarr.yaml
   - ./outline.yaml
   - ./envoy-gateway.yaml
+  - ./authentik-application.yaml

@@ -17,10 +17,14 @@ spec:
   components:
     - ../../../../components/gatus/external
     - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
   postBuild:
     substitute:
       APP: *app
       EXT_AUTH_HTTPROUTE_NAME: echo-envoy-test
+      GROUP: "Testing"
+      SUBDOMAIN: echo-test
+      DESCRIPTION: "Echo test service for Envoy Gateway"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
