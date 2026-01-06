@@ -17,3 +17,6 @@ spec:
     - group: ''
       kind: Service
       name: ak-outpost-authentik-embedded-outpost
+    - group: ''
+      kind: Service
+      name: ak-outpost-internal-proxy-outpost
