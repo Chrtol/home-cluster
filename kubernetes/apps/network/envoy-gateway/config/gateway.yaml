@@ -11,6 +11,8 @@ kind: Gateway
 metadata:
   name: envoy-external
   namespace: network
+  labels:
+    dns-provider: external
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
