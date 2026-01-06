@@ -9,6 +9,7 @@ metadata:
     homelab/auth-component: "true"
 spec:
   releaseName: ${APP}-proxy
+  targetNamespace: security
   chartRef:
     kind: OCIRepository
     name: authentik-application
