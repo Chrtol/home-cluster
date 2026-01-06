@@ -35,6 +35,12 @@ spec:
       envFrom:
         - secretRef:
             name: &secret authentik-secret
+      volumeMounts:
+        - name: sidecar-blueprints
+          mountPath: /blueprints/sidecar
+      volumes:
+        - name: sidecar-blueprints
+          emptyDir: {}
     redis:
       enabled: false
     authentik:
@@ -47,6 +53,7 @@ spec:
             name: authentik-base-blueprints
         - path: /blueprints/sidecar  # Include blueprints from sidecar
     server:
+      serviceAccountName: authentik
       replicas: 1
       initContainers:
       - name: init-db
@@ -100,6 +107,7 @@ spec:
         limits:
           memory: 1Gi
     worker:
+      serviceAccountName: authentik
       replicas: 3
       autoscaling:
         enabled: true
