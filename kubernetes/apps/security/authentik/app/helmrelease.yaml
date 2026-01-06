@@ -45,6 +45,12 @@ spec:
             name: authentik-discord-blueprint
         - configMapRef:
             name: authentik-base-blueprints
+    sidecar:
+      blueprints:
+        enabled: true
+        namespace: "security"  # Scan for blueprints in security namespace
+        labels:
+          goauthentik_blueprint: "1"  # Look for secrets/configmaps with this label
     server:
       replicas: 1
       initContainers:
