@@ -3,7 +3,7 @@
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-proxy
-#   - Application: [BP] ${APP} (display name) / ${APP} (slug)
+#   - Application: BP ${APP} (display name) / ${APP} (slug)
 #   - Group: bp-${APP}-users
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -40,7 +40,7 @@ spec:
           externalHost: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
           authorizationFlow: "default-provider-authorization-implicit-consent"
       application:
-        name: "[BP] ${APP}"  # [BP] prefix for blueprint-managed apps (display name)
+        name: "BP ${APP}"  # BP prefix without brackets for blueprint-managed apps
         slug: "${APP}"  # Keep slug simple for compatibility
         group: "${GROUP}"
         launchURL: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
