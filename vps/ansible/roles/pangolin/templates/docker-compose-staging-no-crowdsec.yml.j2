@@ -1,0 +1,67 @@
+# Pangolin staging deployment - WITHOUT Crowdsec (uses existing host Crowdsec)
+services:
+  pangolin:
+    image: fosrl/pangolin:latest
+    container_name: pangolin
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+    environment:
+      # Use existing Crowdsec on host
+      - CROWDSEC_API_URL=http://172.17.0.1:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      interval: "3s"
+      timeout: "3s"
+      retries: 15
+
+  gerbil:
+    image: fosrl/gerbil:latest
+    container_name: gerbil
+    restart: unless-stopped
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --reachableAt=http://gerbil:3004
+      - --generateAndSaveKeyTo=/var/config/key
+      - --remoteConfig=http://pangolin:3001/api/v1/
+    volumes:
+      - ./config/:/var/config
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    ports:
+      # Using alternate ports to avoid conflicts
+      - 51821:51820/udp  # Different from your existing WireGuard (51820)
+      - 21821:21820/udp  # Gerbil management port
+      - 8443:443         # HTTPS (staging)
+      - 8081:80          # HTTP (staging) - 8080 is used by crowdsec
+    extra_hosts:
+      # Allow container to reach host services
+      - "host.docker.internal:host-gateway"
+
+  traefik:
+    image: traefik:v3.4.0
+    container_name: traefik
+    restart: unless-stopped
+    network_mode: service:gerbil
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --configFile=/etc/traefik/traefik_config.yml
+    volumes:
+      - ./config/traefik:/etc/traefik:ro
+      - ./config/letsencrypt:/letsencrypt
+      - ./config/logs:/var/log/traefik
+      - ./config/.crowdsec-bouncer-key:/run/secrets/crowdsec_bouncer_key:ro
+    environment:
+      # Connect to existing Crowdsec on host
+      - CROWDSEC_BOUNCER_API_KEY_FILE=/run/secrets/crowdsec_bouncer_key
+      - CROWDSEC_AGENT_HOST=172.17.0.1:8080
+
+networks:
+  default:
+    driver: bridge
+    name: pangolin

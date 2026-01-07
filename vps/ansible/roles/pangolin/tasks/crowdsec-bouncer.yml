@@ -1,0 +1,74 @@
+---
+# Idempotent Crowdsec bouncer management for Pangolin
+
+- name: Check if pangolin-traefik bouncer exists
+  command: sudo cscli bouncers list -o json
+  register: bouncers_list
+  changed_when: false
+
+- name: Parse existing bouncers
+  set_fact:
+    bouncer_exists: "{{ (bouncers_list.stdout | from_json | selectattr('name', 'equalto', 'pangolin-traefik') | list | length) > 0 }}"
+
+- name: Create pangolin-traefik bouncer if not exists
+  when: not bouncer_exists
+  block:
+    - name: Generate bouncer
+      command: sudo cscli bouncers add pangolin-traefik -o json
+      register: new_bouncer
+
+    - name: Extract API key
+      set_fact:
+        bouncer_api_key: "{{ (new_bouncer.stdout | from_json).token }}"
+
+    - name: Save API key to file (for Traefik to use)
+      copy:
+        content: "{{ bouncer_api_key }}"
+        dest: /opt/pangolin/config/.crowdsec-bouncer-key
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Display API key for 1Password storage
+      debug:
+        msg: |
+          ========================================
+          IMPORTANT: Save this API key to 1Password
+          Item: crowdsec
+          Field: CROWDSEC_PANGOLIN_BOUNCER_KEY
+          Value: {{ bouncer_api_key }}
+          ========================================
+
+- name: Read existing bouncer key from file
+  when: bouncer_exists
+  block:
+    - name: Check if key file exists
+      stat:
+        path: /opt/pangolin/config/.crowdsec-bouncer-key
+      register: key_file
+
+    - name: Read existing key
+      when: key_file.stat.exists
+      slurp:
+        src: /opt/pangolin/config/.crowdsec-bouncer-key
+      register: existing_key
+
+    - name: Set bouncer API key from file
+      when: key_file.stat.exists
+      set_fact:
+        bouncer_api_key: "{{ existing_key.content | b64decode | trim }}"
+
+    - name: Fail if bouncer exists but key file missing
+      when: not key_file.stat.exists
+      fail:
+        msg: |
+          Bouncer 'pangolin-traefik' exists but key file is missing!
+          Either delete the bouncer with 'sudo cscli bouncers delete pangolin-traefik'
+          or restore the key file at /opt/pangolin/config/.crowdsec-bouncer-key
+
+- name: Ensure bouncer key is available
+  assert:
+    that:
+      - bouncer_api_key is defined
+      - bouncer_api_key | length > 0
+    fail_msg: "Failed to obtain Crowdsec bouncer API key"

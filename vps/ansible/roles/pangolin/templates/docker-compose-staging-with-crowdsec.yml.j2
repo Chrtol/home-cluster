@@ -1,0 +1,82 @@
+# Pangolin staging WITH containerized Crowdsec (future migration)
+services:
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    restart: unless-stopped
+    environment:
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/whitelist-good-actors"
+      CUSTOM_HOSTNAME: {{ pangolin_domain }}
+    volumes:
+      - ./config/crowdsec/data:/var/lib/crowdsec/data
+      - ./config/crowdsec/config:/etc/crowdsec
+      - ./config/crowdsec/acquis.d:/etc/crowdsec/acquis.d
+      - ./config/logs:/var/log/traefik:ro
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - /var/log/syslog:/var/log/syslog:ro
+    ports:
+      - 127.0.0.1:8082:8080  # Different port to avoid conflict during migration
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+  pangolin:
+    image: fosrl/pangolin:latest
+    container_name: pangolin
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      interval: "3s"
+      timeout: "3s"
+      retries: 15
+
+  gerbil:
+    image: fosrl/gerbil:latest
+    container_name: gerbil
+    restart: unless-stopped
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --reachableAt=http://gerbil:3004
+      - --generateAndSaveKeyTo=/var/config/key
+      - --remoteConfig=http://pangolin:3001/api/v1/
+    volumes:
+      - ./config/:/var/config
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    ports:
+      - 51821:51820/udp  # Different from existing WireGuard
+      - 21821:21820/udp  # Gerbil management
+      - 8443:443         # HTTPS (staging)
+      - 8081:80          # HTTP (staging)
+
+  traefik:
+    image: traefik:v3.4.0
+    container_name: traefik
+    restart: unless-stopped
+    network_mode: service:gerbil
+    depends_on:
+      pangolin:
+        condition: service_healthy
+      crowdsec:
+        condition: service_started
+    command:
+      - --configFile=/etc/traefik/traefik_config.yml
+    volumes:
+      - ./config/traefik:/etc/traefik:ro
+      - ./config/letsencrypt:/letsencrypt
+      - ./config/logs:/var/log/traefik
+      - ./config/.crowdsec-bouncer-key:/run/secrets/crowdsec_bouncer_key:ro
+    environment:
+      # Connect to containerized Crowdsec
+      - CROWDSEC_BOUNCER_API_KEY_FILE=/run/secrets/crowdsec_bouncer_key
+      - CROWDSEC_AGENT_HOST=crowdsec:8080
+
+networks:
+  default:
+    driver: bridge
+    name: pangolin

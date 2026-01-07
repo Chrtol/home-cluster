@@ -1,0 +1,6 @@
+---
+- name: restart pangolin
+  docker_compose:
+    project_src: /opt/pangolin
+    restarted: yes
+  listen: "restart pangolin"

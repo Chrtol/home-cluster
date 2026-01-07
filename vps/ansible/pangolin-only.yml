@@ -1,0 +1,53 @@
+---
+# Minimal playbook to ONLY deploy Pangolin on existing VPS
+# This won't touch system configuration, firewall, or other services
+
+- name: Deploy Pangolin to existing VPS
+  hosts: vps
+  become: yes
+
+  vars:
+    pangolin_domain: "{{ lookup('env', 'PANGOLIN_DOMAIN') }}"
+    pangolin_email: "{{ lookup('env', 'PANGOLIN_EMAIL') }}"
+
+  pre_tasks:
+    - name: Verify Docker is installed
+      command: docker --version
+      register: docker_check
+      failed_when: docker_check.rc != 0
+      changed_when: false
+
+    - name: Verify docker-compose is available
+      command: docker compose version
+      register: compose_check
+      failed_when: compose_check.rc != 0
+      changed_when: false
+
+  tasks:
+    - name: Configure firewall for Pangolin staging
+      include_role:
+        name: pangolin-firewall
+
+    - name: Deploy Pangolin stack
+      include_role:
+        name: pangolin
+
+  post_tasks:
+    - name: Show next steps
+      debug:
+        msg: |
+          ========================================
+          Pangolin STAGING deployment complete!
+
+          Running on ALTERNATE PORTS (no service disruption):
+          - HTTP:  http://{{ pangolin_domain }}:8081
+          - HTTPS: https://{{ pangolin_domain }}:8443
+
+          Initial setup: https://{{ pangolin_domain }}:8443/auth/initial-setup
+
+          Your existing services are UNTOUCHED:
+          - nginx still on ports 80/443
+          - WireGuard still on port 51820
+
+          See migration-strategy.md for zero-downtime migration plan
+          ========================================

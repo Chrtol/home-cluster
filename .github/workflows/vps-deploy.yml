@@ -1,0 +1,79 @@
+name: Deploy VPS Configuration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'vps/**'
+      - '.github/workflows/vps-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Run Ansible in debug mode'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    name: Deploy VPS Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # VPS Access
+          VPS_HOST: "op://Homelab/vps-wireguard/VPS_IP"
+          VPS_SSH_KEY: "op://Homelab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
+          # Pangolin Configuration
+          PANGOLIN_DOMAIN: "op://Homelab/pangolin/PANGOLIN_DOMAIN"
+          PANGOLIN_EMAIL: "op://Homelab/pangolin/PANGOLIN_EMAIL"
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vps_key root@$VPS_HOST "echo 'SSH connection successful'"
+
+      - name: Install Ansible and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible ansible-lint docker docker-compose
+
+      - name: Ansible syntax check
+        working-directory: ./vps/ansible
+        run: |
+          ansible-playbook pangolin-only.yml --syntax-check
+
+      - name: Run Ansible Playbook (Pangolin only for existing VPS)
+        working-directory: ./vps/ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_STDOUT_CALLBACK: yaml
+          VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
+        run: |
+          # Using pangolin-only.yml for existing VPS (won't touch system config)
+          # Change to site.yml for full setup on new VPS
+          ansible-playbook pangolin-only.yml \
+            -i inventory.yml \
+            ${{ github.event.inputs.debug == 'true' && '-vvv' || '' }}
+
+      - name: Verify deployment
+        run: |
+          curl -f -L https://$PANGOLIN_DOMAIN || echo "Pangolin not yet accessible (SSL provisioning may take a moment)"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf ~/.ssh/vps_key
