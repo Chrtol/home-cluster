@@ -18,7 +18,7 @@
         destination_port: 8081
         jump: ACCEPT
         comment: "Pangolin staging HTTP"
-      become: yes
+      become: true
 
     - name: Allow Pangolin HTTPS staging port (8443)
       iptables:
@@ -27,7 +27,7 @@
         destination_port: 8443
         jump: ACCEPT
         comment: "Pangolin staging HTTPS"
-      become: yes
+      become: true
 
     - name: Allow Gerbil WireGuard staging port (51821/udp)
       iptables:
@@ -36,7 +36,7 @@
         destination_port: 51821
         jump: ACCEPT
         comment: "Pangolin Gerbil WireGuard"
-      become: yes
+      become: true
 
     - name: Allow Gerbil management port (21821/udp)
       iptables:
@@ -45,17 +45,20 @@
         destination_port: 21821
         jump: ACCEPT
         comment: "Pangolin Gerbil management"
-      become: yes
+      become: true
 
     - name: Save iptables rules (Debian/Ubuntu)
       shell: |
         if command -v netfilter-persistent >/dev/null 2>&1; then
           netfilter-persistent save
         elif command -v iptables-save >/dev/null 2>&1; then
+          # Create directory if it doesn't exist
+          mkdir -p /etc/iptables
           iptables-save > /etc/iptables/rules.v4
         fi
-      become: yes
+      become: true
       changed_when: false
+      ignore_errors: true  # Don't fail if save doesn't work - rules are still active
 
 - name: Alternative - Add ufw rules if ufw is active
   when: iptables_check.rc != 0
@@ -78,4 +81,4 @@
         - { port: "8443", proto: tcp, comment: "Pangolin staging HTTPS" }
         - { port: "51821", proto: udp, comment: "Pangolin Gerbil WireGuard" }
         - { port: "21821", proto: udp, comment: "Pangolin Gerbil management" }
-      become: yes
+      become: true

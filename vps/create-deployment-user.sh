@@ -42,7 +42,8 @@ sudo chmod 600 /home/deploy/.ssh/authorized_keys
 sudo chown -R deploy:deploy /home/deploy/.ssh
 
 # Grant sudo permissions for deployment operations
-echo 'deploy ALL=(ALL) NOPASSWD: /usr/bin/docker, /usr/bin/docker-compose, /usr/sbin/cscli, /usr/bin/systemctl' | sudo tee /etc/sudoers.d/deploy
+# Include all commands needed by Ansible for fact gathering and deployment
+echo 'deploy ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy
 
 # Test the connection (from your local machine)
 EOF
