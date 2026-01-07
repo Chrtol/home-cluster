@@ -5,6 +5,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./config:/app/config
+    environment:
+      # Pangolin configuration
+      - PANGOLIN_DOMAIN={{ pangolin_domain }}
+      - PANGOLIN_EMAIL={{ pangolin_email }}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       interval: "3s"
