@@ -62,17 +62,14 @@
   community.docker.docker_compose_v2:
     project_src: /opt/pangolin
     state: present
-  environment:
-    PANGOLIN_DOMAIN: "{{ pangolin_domain }}"
-    PANGOLIN_EMAIL: "{{ pangolin_email }}"
   register: pangolin_start
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Check Pangolin container logs if startup failed
   when: pangolin_start.failed
   command: docker logs pangolin --tail 50
   register: pangolin_logs
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Display Pangolin logs if startup failed
   when: pangolin_start.failed and pangolin_logs is defined
@@ -84,7 +81,8 @@
   fail:
     msg: |
       Pangolin failed to start. Check the logs above for details.
-      You may need to verify PANGOLIN_DOMAIN and PANGOLIN_EMAIL are set in 1Password.
+      This is likely because Pangolin requires initial configuration.
+      See https://docs.pangolin.net/self-host/manual/docker-compose for setup instructions.
 
 - name: Wait for services to be healthy
   command: docker compose ps --format json
