@@ -12,6 +12,7 @@
     - /opt/pangolin
     - /opt/pangolin/config
     - /opt/pangolin/config/traefik
+    - /opt/pangolin/config/traefik-dynamic
     - /opt/pangolin/config/db
     - /opt/pangolin/config/letsencrypt
     - /opt/pangolin/config/logs
