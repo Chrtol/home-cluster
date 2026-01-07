@@ -9,6 +9,9 @@ services:
     environment:
       # Use existing Crowdsec on host
       - CROWDSEC_API_URL=http://172.17.0.1:8080
+      # Pangolin configuration
+      - PANGOLIN_DOMAIN={{ pangolin_domain }}
+      - PANGOLIN_EMAIL={{ pangolin_email }}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       interval: "3s"
