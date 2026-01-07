@@ -44,7 +44,7 @@
           Value: {{ bouncer_api_key }}
           ========================================
 
-- name: Read existing bouncer key from file
+- name: Handle existing bouncer
   when: bouncer_exists
   block:
     - name: Check if key file exists
@@ -63,13 +63,41 @@
       set_fact:
         bouncer_api_key: "{{ existing_key.content | b64decode | trim }}"
 
-    - name: Fail if bouncer exists but key file missing
+    - name: Recreate bouncer if key file missing
       when: not key_file.stat.exists
-      fail:
-        msg: |
-          Bouncer 'pangolin-traefik' exists but key file is missing!
-          Either delete the bouncer with 'sudo cscli bouncers delete pangolin-traefik'
-          or restore the key file at /opt/pangolin/config/.crowdsec-bouncer-key
+      block:
+        - name: Delete existing bouncer with missing key
+          command: sudo cscli bouncers delete pangolin-traefik
+
+        - name: Recreate bouncer
+          command: sudo cscli bouncers add pangolin-traefik
+          register: new_bouncer
+
+        - name: Debug bouncer output
+          debug:
+            var: new_bouncer.stdout
+
+        - name: Extract API key from output
+          set_fact:
+            bouncer_api_key: "{{ new_bouncer.stdout | regex_search('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|[A-Za-z0-9+/=]{20,}') }}"
+
+        - name: Save API key to file
+          copy:
+            content: "{{ bouncer_api_key }}"
+            dest: /opt/pangolin/config/.crowdsec-bouncer-key
+            mode: '0600'
+            owner: root
+            group: root
+
+        - name: Display recreated API key for 1Password storage
+          debug:
+            msg: |
+              ========================================
+              RECREATED bouncer - Save this API key to 1Password
+              Item: crowdsec
+              Field: CROWDSEC_PANGOLIN_BOUNCER_KEY
+              Value: {{ bouncer_api_key }}
+              ========================================
 
 - name: Ensure bouncer key is available
   assert:
