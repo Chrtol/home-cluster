@@ -6,6 +6,12 @@ services:
     restart: unless-stopped
     volumes:
       - ./config:/app/config
+    networks:
+      - pangolin_net
+    expose:
+      - "3000"  # External API
+      - "3001"  # Internal API
+      - "3002"  # Frontend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       interval: "3s"
@@ -28,11 +34,13 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
+    networks:
+      - pangolin_net
     ports:
       # Using alternate ports to avoid conflicts
       - 51821:51820/udp  # Different from your existing WireGuard (51820)
       - 21821:21820/udp  # Gerbil management port
-      - 8443:443         # HTTPS (staging)
+      - 8443:443         # HTTPS (staging) - Ports appear on gerbil due to network_mode
       - 8081:80          # HTTP (staging) - 8080 is used by crowdsec
     extra_hosts:
       # Allow container to reach host services
@@ -42,7 +50,7 @@ services:
     image: traefik:v3.4.0
     container_name: traefik
     restart: unless-stopped
-    network_mode: service:gerbil
+    network_mode: service:gerbil  # Required: Traefik operates on gerbil's network namespace
     depends_on:
       pangolin:
         condition: service_healthy
@@ -57,9 +65,9 @@ services:
     environment:
       # Connect to existing Crowdsec on host
       - CROWDSEC_BOUNCER_API_KEY_FILE=/run/secrets/crowdsec_bouncer_key
-      - CROWDSEC_AGENT_HOST=172.17.0.1:8080
+      - CROWDSEC_AGENT_HOST=host.docker.internal:8080
 
 networks:
-  default:
+  pangolin_net:
     driver: bridge
-    name: pangolin
+    name: pangolin_network
