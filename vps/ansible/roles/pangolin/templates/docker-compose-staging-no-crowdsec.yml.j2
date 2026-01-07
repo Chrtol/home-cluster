@@ -7,7 +7,9 @@ services:
     volumes:
       - ./config:/app/config
     networks:
-      - pangolin_net
+      pangolin_net:
+        aliases:
+          - pangolin
     expose:
       - "3000"  # External API
       - "3001"  # Internal API
@@ -25,6 +27,8 @@ services:
     depends_on:
       pangolin:
         condition: service_healthy
+    links:
+      - pangolin
     command:
       - --reachableAt=http://gerbil:3004
       - --generateAndSaveKeyTo=/var/config/key
@@ -70,4 +74,4 @@ services:
 networks:
   pangolin_net:
     driver: bridge
-    name: pangolin_network
+    name: pangolin
