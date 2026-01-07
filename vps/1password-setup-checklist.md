@@ -11,7 +11,7 @@ This item should contain:
 This item should contain:
 - **PANGOLIN_VPS_SSH_PRIVATE_KEY**: Your dedicated CI/CD SSH private key (full key content)
 - **PANGOLIN_VPS_SSH_USER**: The username for deployment (e.g., `deploy` or `pangolin`)
-- **PANGOLIN_DOMAIN**: `pangolin.yourdomain.com` (replace with your domain)
+- **PANGOLIN_DOMAIN**: Your Pangolin domain (e.g., `pangolin.yourdomain.com`)
 - **PANGOLIN_EMAIL**: Your email for Let's Encrypt certificates
 
 ## Steps to Complete
@@ -27,8 +27,9 @@ This item should contain:
    - `vps-wireguard`: VPS_IP, VPS_SSH_PORT (if not 22)
    - `pangolin`: PANGOLIN_VPS_SSH_PRIVATE_KEY, PANGOLIN_VPS_SSH_USER, PANGOLIN_DOMAIN, PANGOLIN_EMAIL
 
-3. **Add wildcard DNS** in Cloudflare:
-   - CNAME: `*.pangolin.yourdomain.com` → `yourdomain.com`
+3. **Add DNS record** for your domain (replace `yourdomain.com` with your actual domain):
+   - Point your domain to your VPS IP address
+   - Optionally add wildcard: `*.yourdomain.com` → VPS IP
 
 ## GitHub Secret
 

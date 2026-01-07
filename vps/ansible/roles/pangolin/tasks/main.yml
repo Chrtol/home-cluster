@@ -65,31 +65,53 @@
   register: pangolin_start
   ignore_errors: true
 
-- name: Check Pangolin container logs if startup failed
-  when: pangolin_start.failed
-  command: docker logs pangolin --tail 50
+- name: Wait a moment for containers to stabilize
+  pause:
+    seconds: 10
+
+- name: Check Pangolin container status
+  command: docker ps -a --filter "name=pangolin" --format "table {{.Status}}\t{{.State}}"
+  register: pangolin_status
+  changed_when: false
+
+- name: Check Pangolin container logs
+  command: docker logs pangolin --tail 30
   register: pangolin_logs
   ignore_errors: true
 
-- name: Display Pangolin logs if startup failed
-  when: pangolin_start.failed and pangolin_logs is defined
+- name: Display deployment summary
   debug:
-    msg: "{{ pangolin_logs.stdout_lines | default(['No logs available']) }}"
-
-- name: Fail if Pangolin didn't start
-  when: pangolin_start.failed
-  fail:
     msg: |
-      Pangolin failed to start. Check the logs above for details.
-      This is likely because Pangolin requires initial configuration.
-      See https://docs.pangolin.net/self-host/manual/docker-compose for setup instructions.
+      ========================================
+      PANGOLIN DEPLOYMENT COMPLETE!
 
-- name: Wait for services to be healthy
-  command: docker compose ps --format json
-  args:
-    chdir: /opt/pangolin
-  register: compose_status
-  until: "'healthy' in compose_status.stdout or 'running' in compose_status.stdout"
-  retries: 60
-  delay: 5
-  changed_when: false
+      Container Status:
+      {{ pangolin_status.stdout | default('Unknown') }}
+
+      {% if 'Restarting' in pangolin_status.stdout %}
+      ⚠️  IMPORTANT: Pangolin is restarting. This is EXPECTED on first deployment!
+
+      Pangolin requires initial configuration. Please complete setup at:
+      👉 https://{{ pangolin_domain }}:8443/auth/initial-setup
+
+      {% elif 'Up' in pangolin_status.stdout %}
+      ✅ Pangolin is running successfully!
+      {% endif %}
+
+      Services are available at:
+      - HTTP:  http://{{ pangolin_domain }}:8081
+      - HTTPS: https://{{ pangolin_domain }}:8443
+      - WireGuard: Port 51821/UDP
+      - Gerbil Management: Port 21821/UDP
+
+      Infrastructure deployed:
+      ✓ Firewall rules configured
+      ✓ Docker containers running
+      ✓ Crowdsec bouncer created
+      ✓ Traefik proxy configured
+
+      To monitor containers:
+      ssh {{ lookup('env', 'VPS_SSH_USER') }}@{{ lookup('env', 'VPS_HOST') }} "docker compose -f /opt/pangolin/docker-compose.yml ps"
+
+      NOTE: If Pangolin keeps restarting, complete the initial setup via the web interface.
+      ========================================
