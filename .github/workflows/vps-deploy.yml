@@ -32,6 +32,7 @@ jobs:
           # VPS Access
           VPS_HOST: "op://Lab/vps-wireguard/VPS_IP"
           VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
+          VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
           # Pangolin Configuration
           PANGOLIN_DOMAIN: "op://Lab/pangolin/PANGOLIN_DOMAIN"
           PANGOLIN_EMAIL: "op://Lab/pangolin/PANGOLIN_EMAIL"
@@ -44,7 +45,7 @@ jobs:
 
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vps_key root@$VPS_HOST "echo 'SSH connection successful'"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vps_key ${VPS_SSH_USER:-root}@$VPS_HOST "echo 'SSH connection successful'"
 
       - name: Install Ansible and dependencies
         run: |
@@ -62,6 +63,7 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: False
           ANSIBLE_STDOUT_CALLBACK: yaml
           VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
+          VPS_SSH_USER: ${{ env.VPS_SSH_USER }}
         run: |
           # Using pangolin-only.yml for existing VPS (won't touch system config)
           # Change to site.yml for full setup on new VPS

@@ -9,16 +9,24 @@ This item should contain:
 ### 2. `pangolin` Item (in Lab vault)
 This item should contain:
 - **PANGOLIN_VPS_SSH_PRIVATE_KEY**: Your dedicated CI/CD SSH private key (full key content)
+- **PANGOLIN_VPS_SSH_USER**: The username for deployment (e.g., `deploy` or `pangolin`)
 - **PANGOLIN_DOMAIN**: `pangolin.yourdomain.com` (replace with your domain)
 - **PANGOLIN_EMAIL**: Your email for Let's Encrypt certificates
 
 ## Steps to Complete
 
-1. **Verify all 1Password items** have required fields:
-   - `vps-wireguard`: VPS_IP
-   - `pangolin`: PANGOLIN_VPS_SSH_PRIVATE_KEY, PANGOLIN_DOMAIN, PANGOLIN_EMAIL
+1. **Create deployment user on VPS** (one-time setup):
+   ```bash
+   # Run the helper script to see the commands
+   bash vps/create-deployment-user.sh deploy ~/.ssh/vps-pangolin-deploy.pub
+   ```
+   Then run the displayed commands on your VPS.
 
-2. **Add wildcard DNS** in Cloudflare:
+2. **Verify all 1Password items** have required fields:
+   - `vps-wireguard`: VPS_IP
+   - `pangolin`: PANGOLIN_VPS_SSH_PRIVATE_KEY, PANGOLIN_VPS_SSH_USER, PANGOLIN_DOMAIN, PANGOLIN_EMAIL
+
+3. **Add wildcard DNS** in Cloudflare:
    - CNAME: `*.pangolin.yourdomain.com` → `yourdomain.com`
 
 ## GitHub Secret
