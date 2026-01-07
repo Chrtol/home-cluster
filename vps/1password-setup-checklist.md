@@ -5,6 +5,7 @@
 ### 1. `vps-wireguard` Item (in Lab vault)
 This item should contain:
 - **VPS_IP**: Your VPS IP address
+- **VPS_SSH_PORT**: Your SSH port (if not 22)
 
 ### 2. `pangolin` Item (in Lab vault)
 This item should contain:
@@ -23,7 +24,7 @@ This item should contain:
    Then run the displayed commands on your VPS.
 
 2. **Verify all 1Password items** have required fields:
-   - `vps-wireguard`: VPS_IP
+   - `vps-wireguard`: VPS_IP, VPS_SSH_PORT (if not 22)
    - `pangolin`: PANGOLIN_VPS_SSH_PRIVATE_KEY, PANGOLIN_VPS_SSH_USER, PANGOLIN_DOMAIN, PANGOLIN_EMAIL
 
 3. **Add wildcard DNS** in Cloudflare:

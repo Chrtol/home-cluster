@@ -50,24 +50,15 @@ jobs:
 
       - name: Install Ansible and dependencies
         run: |
-          # 1. Create a virtual environment
-          python3 -m venv venv
+          # Upgrade pip and setuptools first
+          python3 -m pip install --upgrade pip setuptools wheel
 
-          # 2. Activate it
-          source venv/bin/activate
+          # Install Ansible without docker-compose (we'll use Docker's built-in compose)
+          # docker-compose Python package is deprecated and causes PyYAML conflicts
+          pip install ansible ansible-lint
 
-          # 3. Upgrade pip inside the environment
-          pip install --upgrade pip
-
-          # 4. Install PyYAML first to lock the version
-          pip install "PyYAML>=6.0.1"
-
-          # 5. Install Ansible and the rest
-          pip install ansible ansible-lint docker docker-compose
-
-          # 6. Optional: Make sure the venv stays active for later steps
-          # by writing to the GITHUB_PATH
-          echo "$GITHUB_WORKSPACE/venv/bin" >> $GITHUB_PATH
+          # Verify Docker Compose v2 is available (comes with Docker on GitHub runners)
+          docker compose version
 
       - name: Ansible syntax check
         working-directory: ./vps/ansible
@@ -81,6 +72,7 @@ jobs:
           ANSIBLE_STDOUT_CALLBACK: yaml
           VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
           VPS_SSH_USER: ${{ env.VPS_SSH_USER }}
+          VPS_SSH_PORT: ${{ env.VPS_SSH_PORT }}
         run: |
           # Using pangolin-only.yml for existing VPS (won't touch system config)
           # Change to site.yml for full setup on new VPS
