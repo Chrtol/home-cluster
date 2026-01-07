@@ -29,6 +29,13 @@
     # API key is now managed by crowdsec-bouncer.yml and stored in file
     crowdsec_bouncer_key: "{{ bouncer_api_key | default('') }}"
 
+- name: Deploy Pangolin configuration file
+  template:
+    src: config.yml.j2
+    dest: /opt/pangolin/config/config.yml
+    mode: '0644'
+  notify: restart pangolin
+
 - name: Deploy Traefik static configuration
   template:
     src: traefik_config.yml.j2
