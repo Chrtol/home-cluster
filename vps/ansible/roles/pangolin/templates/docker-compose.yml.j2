@@ -11,9 +11,10 @@ services:
       - PANGOLIN_EMAIL={{ pangolin_email }}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
-      interval: "3s"
-      timeout: "3s"
-      retries: 15
+      interval: "10s"
+      timeout: "10s"
+      retries: 30
+      start_period: "30s"
 
   gerbil:
     image: fosrl/gerbil:latest

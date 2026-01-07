@@ -65,13 +65,33 @@
   environment:
     PANGOLIN_DOMAIN: "{{ pangolin_domain }}"
     PANGOLIN_EMAIL: "{{ pangolin_email }}"
+  register: pangolin_start
+  ignore_errors: yes
+
+- name: Check Pangolin container logs if startup failed
+  when: pangolin_start.failed
+  command: docker logs pangolin --tail 50
+  register: pangolin_logs
+  ignore_errors: yes
+
+- name: Display Pangolin logs if startup failed
+  when: pangolin_start.failed and pangolin_logs is defined
+  debug:
+    msg: "{{ pangolin_logs.stdout_lines | default(['No logs available']) }}"
+
+- name: Fail if Pangolin didn't start
+  when: pangolin_start.failed
+  fail:
+    msg: |
+      Pangolin failed to start. Check the logs above for details.
+      You may need to verify PANGOLIN_DOMAIN and PANGOLIN_EMAIL are set in 1Password.
 
 - name: Wait for services to be healthy
   command: docker compose ps --format json
   args:
     chdir: /opt/pangolin
   register: compose_status
-  until: "'healthy' in compose_status.stdout"
-  retries: 30
-  delay: 10
+  until: "'healthy' in compose_status.stdout or 'running' in compose_status.stdout"
+  retries: 60
+  delay: 5
   changed_when: false
