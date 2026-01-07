@@ -69,7 +69,6 @@ jobs:
         working-directory: ./vps/ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
-          ANSIBLE_STDOUT_CALLBACK: yaml
           VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
           VPS_SSH_USER: ${{ env.VPS_SSH_USER }}
           VPS_SSH_PORT: ${{ env.VPS_SSH_PORT }}
@@ -82,6 +81,7 @@ jobs:
 
       - name: Verify deployment
         run: |
+          sleep 10 && \
           curl -f -L https://$PANGOLIN_DOMAIN || echo "Pangolin not yet accessible (SSL provisioning may take a moment)"
 
       - name: Cleanup
