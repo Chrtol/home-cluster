@@ -1,0 +1,52 @@
+---
+# Crowdsec installation for Pangolin integration
+# Note: Pangolin includes crowdsec support built-in
+# This role is optional if you want standalone crowdsec
+
+- name: Check if crowdsec should be installed
+  set_fact:
+    install_crowdsec: "{{ enable_crowdsec | default(true) }}"
+
+- name: Install crowdsec (if enabled)
+  when: install_crowdsec
+  block:
+    - name: Add crowdsec GPG key
+      apt_key:
+        url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+        state: present
+
+    - name: Add crowdsec repository
+      apt_repository:
+        repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_distribution_release }} main"
+        state: present
+
+    - name: Install crowdsec
+      apt:
+        name:
+          - crowdsec
+          - crowdsec-firewall-bouncer-iptables
+        state: present
+        update_cache: yes
+
+    - name: Configure crowdsec for Docker logs
+      copy:
+        content: |
+          filenames:
+            - /var/lib/docker/containers/*/*-json.log
+          labels:
+            type: docker
+        dest: /etc/crowdsec/acquis.d/docker.yaml
+      notify: restart crowdsec
+
+    - name: Ensure crowdsec is running
+      systemd:
+        name: crowdsec
+        state: started
+        enabled: yes
+
+- name: Note about Pangolin integration
+  debug:
+    msg: |
+      Crowdsec can be integrated with Pangolin directly.
+      See: https://docs.pangolin.net/manage/security/crowdsec
+      The Pangolin docker-compose can include crowdsec as an optional service.

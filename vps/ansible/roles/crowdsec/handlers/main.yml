@@ -1,0 +1,5 @@
+---
+- name: restart crowdsec
+  systemd:
+    name: crowdsec
+    state: restarted

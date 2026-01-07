@@ -1,0 +1,65 @@
+---
+- name: Update system packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    autoremove: yes
+    autoclean: yes
+
+- name: Install essential packages
+  apt:
+    name:
+      - htop
+      - vim
+      - git
+      - curl
+      - wget
+      - net-tools
+      - jq
+      - unattended-upgrades
+      - chrony
+    state: present
+
+- name: Configure timezone
+  timezone:
+    name: UTC
+
+- name: Configure automatic security updates
+  copy:
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+      APT::Periodic::Unattended-Upgrade "1";
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+
+- name: Configure unattended upgrades
+  copy:
+    content: |
+      Unattended-Upgrade::Allowed-Origins {
+          "${distro_id}:${distro_codename}-security";
+          "${distro_id}ESMApps:${distro_codename}-apps-security";
+          "${distro_id}ESM:${distro_codename}-infra-security";
+      };
+      Unattended-Upgrade::DevRelease "false";
+      Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+      Unattended-Upgrade::MinimalSteps "true";
+      Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "03:00";
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+
+# Crowdsec will be handled by Pangolin integration
+# See https://docs.pangolin.net for crowdsec configuration
+
+- name: Configure kernel parameters for WireGuard
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  loop:
+    - { key: net.ipv4.ip_forward, value: 1 }
+    - { key: net.ipv6.conf.all.forwarding, value: 1 }

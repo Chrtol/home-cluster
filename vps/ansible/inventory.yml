@@ -1,0 +1,13 @@
+all:
+  hosts:
+    vps:
+      ansible_host: "{{ lookup('env', 'VPS_HOST') }}"
+      ansible_user: root
+      ansible_ssh_private_key_file: "{{ lookup('env', 'VPS_SSH_KEY_PATH') | default('/tmp/vps_key') }}"
+      ansible_python_interpreter: /usr/bin/python3
+
+  vars:
+    # 1Password Connect endpoint (accessible after WireGuard is up)
+    onepassword_connect_host: "http://onepassword-connect.security.svc.cluster.local:8080"
+    # This will be injected by GitHub Actions for initial setup
+    onepassword_service_account_token: "{{ lookup('env', 'OP_SERVICE_ACCOUNT_TOKEN') }}"

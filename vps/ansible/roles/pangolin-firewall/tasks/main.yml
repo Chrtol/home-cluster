@@ -1,0 +1,81 @@
+---
+# Firewall rules for Pangolin staging deployment
+# These are added to existing iptables rules without disrupting current setup
+
+- name: Check if iptables is installed
+  command: which iptables
+  register: iptables_check
+  changed_when: false
+  failed_when: false
+
+- name: Add Pangolin staging firewall rules
+  when: iptables_check.rc == 0
+  block:
+    - name: Allow Pangolin HTTP staging port (8081)
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 8081
+        jump: ACCEPT
+        comment: "Pangolin staging HTTP"
+      become: yes
+
+    - name: Allow Pangolin HTTPS staging port (8443)
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 8443
+        jump: ACCEPT
+        comment: "Pangolin staging HTTPS"
+      become: yes
+
+    - name: Allow Gerbil WireGuard staging port (51821/udp)
+      iptables:
+        chain: INPUT
+        protocol: udp
+        destination_port: 51821
+        jump: ACCEPT
+        comment: "Pangolin Gerbil WireGuard"
+      become: yes
+
+    - name: Allow Gerbil management port (21821/udp)
+      iptables:
+        chain: INPUT
+        protocol: udp
+        destination_port: 21821
+        jump: ACCEPT
+        comment: "Pangolin Gerbil management"
+      become: yes
+
+    - name: Save iptables rules (Debian/Ubuntu)
+      shell: |
+        if command -v netfilter-persistent >/dev/null 2>&1; then
+          netfilter-persistent save
+        elif command -v iptables-save >/dev/null 2>&1; then
+          iptables-save > /etc/iptables/rules.v4
+        fi
+      become: yes
+      changed_when: false
+
+- name: Alternative - Add ufw rules if ufw is active
+  when: iptables_check.rc != 0
+  block:
+    - name: Check if ufw is active
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      failed_when: false
+
+    - name: Add ufw rules for Pangolin staging
+      when: "'Status: active' in ufw_status.stdout"
+      ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+        comment: "{{ item.comment }}"
+      loop:
+        - { port: "8081", proto: tcp, comment: "Pangolin staging HTTP" }
+        - { port: "8443", proto: tcp, comment: "Pangolin staging HTTPS" }
+        - { port: "51821", proto: udp, comment: "Pangolin Gerbil WireGuard" }
+        - { port: "21821", proto: udp, comment: "Pangolin Gerbil management" }
+      become: yes

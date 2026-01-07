@@ -1,0 +1,48 @@
+---
+- name: Configure VPS with Pangolin
+  hosts: vps
+  become: yes
+
+  vars:
+    # Secrets from 1Password via GitHub Actions
+    pangolin_domain: "{{ lookup('env', 'PANGOLIN_DOMAIN') }}"
+    pangolin_email: "{{ lookup('env', 'PANGOLIN_EMAIL') }}"
+
+  pre_tasks:
+    - name: Verify required secrets are present
+      assert:
+        that:
+          - pangolin_domain != ""
+          - pangolin_email != ""
+        fail_msg: "Required secrets not found. Check 1Password configuration."
+
+  roles:
+    - base        # System hardening, updates
+    - docker      # Docker and docker-compose
+    - firewall    # UFW configuration
+    - pangolin    # Pangolin stack deployment
+
+  post_tasks:
+    - name: Wait for Pangolin to be healthy
+      uri:
+        url: "http://localhost:3001/api/v1/"
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 30
+      delay: 10
+
+    - name: Display completion message
+      debug:
+        msg: |
+          ========================================
+          VPS Configuration Complete!
+
+          Pangolin: https://{{ pangolin_domain }}
+          Initial Setup: https://{{ pangolin_domain }}/auth/initial-setup
+
+          Services Running:
+          - Pangolin (Control Plane)
+          - Gerbil (WireGuard Manager)
+          - Traefik (Reverse Proxy with SSL)
+          ========================================

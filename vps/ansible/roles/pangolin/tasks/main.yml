@@ -1,0 +1,77 @@
+---
+# Handle Crowdsec bouncer creation first
+- name: Manage Crowdsec bouncer for Pangolin
+  include_tasks: crowdsec-bouncer.yml
+
+- name: Create Pangolin directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/pangolin
+    - /opt/pangolin/config
+    - /opt/pangolin/config/traefik
+    - /opt/pangolin/config/db
+    - /opt/pangolin/config/letsencrypt
+    - /opt/pangolin/config/logs
+
+- name: Deploy docker-compose files
+  template:
+    src: "{{ item.src }}"
+    dest: "/opt/pangolin/{{ item.dest }}"
+    mode: '0644'
+  loop:
+    - { src: docker-compose-staging-no-crowdsec.yml.j2, dest: docker-compose.yml }
+    - { src: docker-compose.yml.j2, dest: docker-compose-production.yml }
+  notify: restart pangolin
+  vars:
+    # API key is now managed by crowdsec-bouncer.yml and stored in file
+    crowdsec_bouncer_key: "{{ bouncer_api_key | default('') }}"
+
+- name: Deploy Traefik static configuration
+  template:
+    src: traefik_config.yml.j2
+    dest: /opt/pangolin/config/traefik/traefik_config.yml
+    mode: '0644'
+  notify: restart pangolin
+
+- name: Deploy Traefik dynamic configuration
+  template:
+    src: dynamic_config.yml.j2
+    dest: /opt/pangolin/config/traefik/dynamic_config.yml
+    mode: '0644'
+  notify: restart pangolin
+
+- name: Set correct permissions for Let's Encrypt
+  file:
+    path: /opt/pangolin/config/letsencrypt
+    state: directory
+    mode: '0700'
+
+- name: Deploy migration scripts
+  copy:
+    src: "{{ item }}"
+    dest: "/opt/pangolin/{{ item }}"
+    mode: '0755'
+  loop:
+    - migrate-to-production.sh
+    - rollback.sh
+
+- name: Start Pangolin stack
+  docker_compose:
+    project_src: /opt/pangolin
+    state: present
+  environment:
+    PANGOLIN_DOMAIN: "{{ pangolin_domain }}"
+    PANGOLIN_EMAIL: "{{ pangolin_email }}"
+
+- name: Wait for services to be healthy
+  command: docker compose ps --format json
+  args:
+    chdir: /opt/pangolin
+  register: compose_status
+  until: "'healthy' in compose_status.stdout"
+  retries: 30
+  delay: 10
+  changed_when: false
