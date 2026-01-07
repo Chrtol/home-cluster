@@ -21,6 +21,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      DISPLAY_NAME: "Echo Test"
       EXT_AUTH_HTTPROUTE_NAME: echo-envoy-test
       GROUP: "Testing"
       SUBDOMAIN: echo-test
