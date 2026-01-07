@@ -71,7 +71,7 @@
 
 - name: Check Pangolin container status
   shell: |
-    docker ps -a --filter "name=pangolin" --format "table {{.Status}}\t{{.State}}"
+    docker ps -a --filter "name=pangolin" --format "table {% raw %}{{.Status}}\t{{.State}}{% endraw %}"
   register: pangolin_status
   changed_when: false
 
