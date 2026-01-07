@@ -1,0 +1,90 @@
+# Pangolin Configuration File
+# https://docs.pangolin.net/self-host/advanced/config-file
+
+app:
+  dashboard_url: "https://{{ pangolin_domain }}:8443"
+  log_level: "info"
+  save_logs: true
+  log_failed_attempts: true
+
+domains:
+  primary:
+    base_domain: "{{ pangolin_domain }}"
+    cert_resolver: "letsencrypt"
+    prefer_wildcard_cert: false
+
+server:
+  internal_port: 3001
+  internal_hostname: "pangolin"
+  secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=64') }}"
+  trust_proxy: 1
+  dashboard_session_length_hours: 720
+  resource_session_length_hours: 720
+  cors:
+    origins:
+      - "https://{{ pangolin_domain }}:8443"
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "PATCH"
+    allowed_headers:
+      - "X-CSRF-Token"
+      - "Content-Type"
+    credentials: true
+
+traefik:
+  http_entrypoint: "web"
+  https_entrypoint: "websecure"
+  cert_resolver: "letsencrypt"
+  dynamic_router_config_path: "/etc/traefik/router_config.yml"
+  file_mode: true
+
+gerbil:
+  base_endpoint: "{{ pangolin_domain }}"
+  start_port: 51821
+  clients_start_port: 21821
+  use_subdomain: false
+  subnet_group: "10.0.0.0/8"
+  block_size: 24
+  site_block_size: 26
+
+orgs:
+  block_size: 24
+  subnet_group: "100.90.128.0/24"
+
+rate_limits:
+  global:
+    window_minutes: 1
+    max_requests: 500
+  auth:
+    window_minutes: 1
+    max_requests: 10
+
+{% if pangolin_email is defined and pangolin_email %}
+email:
+  smtp_host: "smtp.gmail.com"  # Update with your SMTP host
+  smtp_port: 587
+  smtp_user: "{{ pangolin_email }}"
+  smtp_pass: ""  # Will need to be set separately
+  smtp_secure: false
+  no_reply: "{{ pangolin_email }}"
+  smtp_tls_reject_unauthorized: true
+{% endif %}
+
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true  # Security: Disable public signups
+  disable_user_create_org: true  # Security: Only admins can create orgs
+  allow_raw_resources: true
+  enable_integration_api: false
+  disable_local_sites: false
+  disable_basic_wireguard_sites: false
+  disable_config_managed_domains: false
+
+dns:
+  nameservers:
+    - "1.1.1.1"
+    - "1.0.0.1"
+    - "8.8.8.8"
