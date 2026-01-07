@@ -50,10 +50,24 @@ jobs:
 
       - name: Install Ansible and dependencies
         run: |
-          python -m pip install --upgrade pip
-          # Install PyYAML >= 6.0 first to avoid conflict with Python 3.12
+          # 1. Create a virtual environment
+          python3 -m venv venv
+
+          # 2. Activate it
+          source venv/bin/activate
+
+          # 3. Upgrade pip inside the environment
+          pip install --upgrade pip
+
+          # 4. Install PyYAML first to lock the version
           pip install "PyYAML>=6.0.1"
+
+          # 5. Install Ansible and the rest
           pip install ansible ansible-lint docker docker-compose
+
+          # 6. Optional: Make sure the venv stays active for later steps
+          # by writing to the GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/venv/bin" >> $GITHUB_PATH
 
       - name: Ansible syntax check
         working-directory: ./vps/ansible
