@@ -1,9 +1,10 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION
+# Optional variables : DISPLAY_NAME (defaults to APP if not provided)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-proxy
-#   - Application: BP ${APP} (display name) / ${APP} (slug)
+#   - Application: ${DISPLAY_NAME} (display name) / ${APP} (slug)
 #   - Group: bp-${APP}-users
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -40,7 +41,7 @@ spec:
           externalHost: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
           authorizationFlow: "default-provider-authorization-implicit-consent"
       application:
-        name: "BP ${APP}"  # BP prefix without brackets for blueprint-managed apps
+        name: "${DISPLAY_NAME:=${APP}}"  # Uses DISPLAY_NAME if provided, otherwise APP
         slug: "${APP}"  # Keep slug simple for compatibility
         group: "${GROUP}"
         launchURL: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
