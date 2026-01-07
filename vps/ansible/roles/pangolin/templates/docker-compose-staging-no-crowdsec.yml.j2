@@ -50,7 +50,7 @@ services:
       - --configFile=/etc/traefik/traefik_config.yml
     volumes:
       - ./config/traefik:/etc/traefik:ro
-      - ./config/traefik-dynamic:/etc/traefik/dynamic:ro
+      - ./config/traefik-dynamic:/etc/traefik-dynamic:rw
       - ./config/letsencrypt:/letsencrypt
       - ./config/logs:/var/log/traefik
       - ./config/.crowdsec-bouncer-key:/run/secrets/crowdsec_bouncer_key:ro
