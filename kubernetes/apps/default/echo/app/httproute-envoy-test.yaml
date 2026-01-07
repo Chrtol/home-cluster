@@ -14,6 +14,16 @@ spec:
   hostnames:
     - echo-test.${SECRET_DOMAIN}
   rules:
+    # Route Authentik callback to the outpost
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io
+      backendRefs:
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: security
+          port: 9000
+    # Main application route
     - matches:
         - path:
             type: PathPrefix
