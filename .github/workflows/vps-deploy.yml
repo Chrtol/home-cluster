@@ -30,11 +30,11 @@ jobs:
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           # VPS Access
-          VPS_HOST: "op://Homelab/vps-wireguard/VPS_IP"
-          VPS_SSH_KEY: "op://Homelab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
+          VPS_HOST: "op://Lab/vps-wireguard/VPS_IP"
+          VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
           # Pangolin Configuration
-          PANGOLIN_DOMAIN: "op://Homelab/pangolin/PANGOLIN_DOMAIN"
-          PANGOLIN_EMAIL: "op://Homelab/pangolin/PANGOLIN_EMAIL"
+          PANGOLIN_DOMAIN: "op://Lab/pangolin/PANGOLIN_DOMAIN"
+          PANGOLIN_EMAIL: "op://Lab/pangolin/PANGOLIN_EMAIL"
 
       - name: Setup SSH key
         run: |
