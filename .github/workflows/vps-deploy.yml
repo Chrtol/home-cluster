@@ -57,6 +57,9 @@ jobs:
           # docker-compose Python package is deprecated and causes PyYAML conflicts
           pip install ansible ansible-lint
 
+          # Install required Ansible collections
+          ansible-galaxy collection install community.docker
+
           # Verify Docker Compose v2 is available (comes with Docker on GitHub runners)
           docker compose version
 

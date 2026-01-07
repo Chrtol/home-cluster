@@ -59,7 +59,7 @@
     - rollback.sh
 
 - name: Start Pangolin stack
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: /opt/pangolin
     state: present
   environment:
