@@ -26,6 +26,12 @@
         # Match UUID-style keys or base64-style keys after "Api key" in the output
         bouncer_api_key: "{{ new_bouncer.stdout | regex_search('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|[A-Za-z0-9+/=]{20,}') }}"
 
+    - name: Ensure pangolin config directory exists
+      file:
+        path: /opt/pangolin/config
+        state: directory
+        mode: '0755'
+
     - name: Save API key to file (for Traefik to use)
       copy:
         content: "{{ bouncer_api_key }}"
@@ -80,6 +86,12 @@
         - name: Extract API key from output
           set_fact:
             bouncer_api_key: "{{ new_bouncer.stdout | regex_search('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}|[A-Za-z0-9+/=]{20,}') }}"
+
+        - name: Ensure pangolin config directory exists
+          file:
+            path: /opt/pangolin/config
+            state: directory
+            mode: '0755'
 
         - name: Save API key to file
           copy:
