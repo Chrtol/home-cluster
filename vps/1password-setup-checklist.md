@@ -2,11 +2,11 @@
 
 ## Required 1Password Items
 
-### 1. `vps-wireguard` Item (in Homelab vault)
+### 1. `vps-wireguard` Item (in Lab vault)
 This item should contain:
 - **VPS_IP**: Your VPS IP address
 
-### 2. `pangolin` Item (in Homelab vault)
+### 2. `pangolin` Item (in Lab vault)
 This item should contain:
 - **PANGOLIN_VPS_SSH_PRIVATE_KEY**: Your dedicated CI/CD SSH private key (full key content)
 - **PANGOLIN_DOMAIN**: `pangolin.yourdomain.com` (replace with your domain)
