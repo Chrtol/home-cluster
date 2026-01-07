@@ -70,7 +70,8 @@
     seconds: 10
 
 - name: Check Pangolin container status
-  command: docker ps -a --filter "name=pangolin" --format "table {{.Status}}\t{{.State}}"
+  shell: |
+    docker ps -a --filter "name=pangolin" --format "table {{.Status}}\t{{.State}}"
   register: pangolin_status
   changed_when: false
 
