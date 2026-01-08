@@ -3,7 +3,7 @@ kind: HelmRelease
 metadata:
   name: newt
   annotations:
-    secret.reloader.stakater.com/reload: "pangolin-api"
+    secret.reloader.stakater.com/reload: "newt-secret"
 spec:
   interval: 30m
   chart:
@@ -33,5 +33,5 @@ spec:
       existingSecretName: newt-secret
       keys:
         endpointKey: PANGOLIN_ENDPOINT
-        idKey: NEWT_ID
-        secretKey: NEWT_SECRET
+        idKey: NEWT_SITE_ID
+        secretKey: NEWT_SITE_SECRET
