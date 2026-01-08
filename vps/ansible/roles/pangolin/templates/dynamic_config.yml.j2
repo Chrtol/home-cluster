@@ -29,6 +29,10 @@ http:
         - badger
       tls:
         certResolver: letsencrypt
+        domains:
+          - main: "{{ root_domain }}"
+            sans:
+              - "*.{{ root_domain }}"
 
     # API router (handles /api/v1 paths)
     api-router:
@@ -40,6 +44,10 @@ http:
         - badger
       tls:
         certResolver: letsencrypt
+        domains:
+          - main: "{{ root_domain }}"
+            sans:
+              - "*.{{ root_domain }}"
 
     # WebSocket router
     ws-router:
@@ -51,6 +59,10 @@ http:
         - badger
       tls:
         certResolver: letsencrypt
+        domains:
+          - main: "{{ root_domain }}"
+            sans:
+              - "*.{{ root_domain }}"
 
   services:
     next-service:

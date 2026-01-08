@@ -10,6 +10,8 @@
     pangolin_domain: "{{ lookup('env', 'PANGOLIN_DOMAIN') }}"
     pangolin_email: "{{ lookup('env', 'PANGOLIN_EMAIL') }}"
     cloudflare_api_token: "{{ lookup('env', 'CLOUDFLARE_API_TOKEN') }}"
+    # Extract root domain (last two parts of the domain)
+    root_domain: "{{ pangolin_domain.split('.')[-2:] | join('.') }}"
 
   pre_tasks:
     - name: Verify Docker is installed
