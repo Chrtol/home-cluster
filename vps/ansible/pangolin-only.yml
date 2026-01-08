@@ -9,6 +9,7 @@
   vars:
     pangolin_domain: "{{ lookup('env', 'PANGOLIN_DOMAIN') }}"
     pangolin_email: "{{ lookup('env', 'PANGOLIN_EMAIL') }}"
+    cloudflare_api_token: "{{ lookup('env', 'CLOUDFLARE_API_TOKEN') }}"
 
   pre_tasks:
     - name: Verify Docker is installed

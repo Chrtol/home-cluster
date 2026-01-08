@@ -37,6 +37,7 @@ jobs:
           # Pangolin Configuration
           PANGOLIN_DOMAIN: "op://Lab/pangolin/PANGOLIN_DOMAIN"
           PANGOLIN_EMAIL: "op://Lab/pangolin/PANGOLIN_EMAIL"
+          CLOUDFLARE_API_TOKEN: "op://Lab/cloudflare/CLOUDFLARE_API_TOKEN"
 
       - name: Setup SSH key
         run: |
