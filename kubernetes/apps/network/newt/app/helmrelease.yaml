@@ -2,6 +2,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: newt
+  namespace: network
   annotations:
     secret.reloader.stakater.com/reload: "newt-secret"
 spec:
