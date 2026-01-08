@@ -9,6 +9,7 @@ on:
       - "Build and Push Reptile Tracker Images"
       - "Labeler"
       - "Label Sync"
+      - "Deploy VPS Configuration"
     types:
       - completed
 
