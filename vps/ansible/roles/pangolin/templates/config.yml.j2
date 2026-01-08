@@ -11,7 +11,7 @@ domains:
   primary:
     base_domain: "{{ pangolin_domain }}"
     cert_resolver: "letsencrypt"
-    prefer_wildcard_cert: false
+    prefer_wildcard_cert: true
 
 server:
   external_port: 3000  # External API port

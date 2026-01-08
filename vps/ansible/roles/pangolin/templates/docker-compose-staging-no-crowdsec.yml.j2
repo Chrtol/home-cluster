@@ -47,6 +47,8 @@ services:
     depends_on:
       pangolin:
         condition: service_healthy
+    environment:
+      - CF_DNS_API_TOKEN={{ cloudflare_api_token }}
     command:
       - --configFile=/etc/traefik/traefik_config.yml
     volumes:
