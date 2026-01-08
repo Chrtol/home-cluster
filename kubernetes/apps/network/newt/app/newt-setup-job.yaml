@@ -40,7 +40,7 @@ spec:
           echo "Waiting for Pangolin to be ready..."
 
           # Wait for Pangolin API to be available
-          until curl -s -k "${PANGOLIN_ENDPOINT}/v1/health" > /dev/null; do
+          until curl -s -k "${PANGOLIN_ENDPOINT}/v1/health" -H "X-API-Key: ${PANGOLIN_API_KEY}" > /dev/null; do
             echo "Waiting for Pangolin API..."
             sleep 10
           done
