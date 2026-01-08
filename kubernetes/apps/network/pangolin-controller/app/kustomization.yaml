@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: network
+
+resources:
+  - ./rbac.yaml
+  - ./configmap.yaml
+  - ./deployment.yaml
+  # Note: examples.yaml is not included by default - deploy manually to test
+
+commonLabels:
+  app.kubernetes.io/name: pangolin-controller
+  app.kubernetes.io/instance: pangolin
+  app.kubernetes.io/component: controller
