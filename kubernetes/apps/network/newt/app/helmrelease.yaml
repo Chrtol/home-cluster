@@ -28,11 +28,10 @@ spec:
     newtInstances:
       - name: main
         enabled: true
-
-    # Use existing secret for authentication
-    auth:
-      existingSecretName: newt-secret
-      keys:
-        endpointKey: PANGOLIN_ENDPOINT
-        idKey: NEWT_SITE_ID
-        secretKey: NEWT_SITE_SECRET
+        # Authentication configuration per instance
+        auth:
+          existingSecretName: newt-secret
+          keys:
+            endpointKey: PANGOLIN_ENDPOINT
+            idKey: NEWT_SITE_ID
+            secretKey: NEWT_SITE_SECRET
