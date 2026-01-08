@@ -1,12 +1,12 @@
 ---
 # This Job automatically creates Newt credentials in Pangolin and stores them as a K8s secret
 # Prerequisites:
-# 1. Login to Pangolin UI at https://your-pangolin-domain:8443
+# 1. Login to Pangolin UI at https://api.pangolin.your-domain:8443
 # 2. Go to Settings -> API Keys
 # 3. Create a new API key named "newt-automation"
-# 4. Store in 1Password as "pangolin-api" with fields:
-#    - endpoint: https://your-pangolin-domain:8443
-#    - apiKey: the generated API key
+# 4. Store in 1Password "pangolin" item with fields:
+#    - PANGOLIN_API_ENDPOINT: https://api.pangolin.your-domain:8443
+#    - PANGOLIN_API_KEY: the generated API key
 apiVersion: batch/v1
 kind: Job
 metadata:
