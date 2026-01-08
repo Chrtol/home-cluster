@@ -34,6 +34,24 @@ http:
             sans:
               - "*.{{ root_domain }}"
 
+    int-api-router-redirect:
+      rule: "Host(`api.{{ pangolin_domain }}`)"
+      service: int-api-service
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+        - badger
+
+    int-api-router:
+      rule: "Host(`api.{{ pangolin_domain }}`)"
+      service: int-api-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+
     # API router (handles /api/v1 paths)
     api-router:
       rule: "Host(`{{ pangolin_domain }}`) && PathPrefix(`/api/v1`)"
@@ -74,3 +92,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://pangolin:3000" # API/WebSocket server
+
+    int-api-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3003"
