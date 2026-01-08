@@ -44,6 +44,9 @@ spec:
           - NET_RAW
           - SYS_MODULE
 
+    nameOverride: "newt"
+    fullNameOverride: "newt"
+
     # Network configuration
     hostNetwork: true  # Enable host networking for WireGuard to properly manage network interfaces
 
