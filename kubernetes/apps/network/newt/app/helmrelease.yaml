@@ -34,40 +34,41 @@ spec:
             endpointKey: PANGOLIN_ENDPOINT
             idKey: NEWT_SITE_ID
             secretKey: NEWT_SITE_SECRET
+        # Instance-specific WireGuard settings
+        mtu: 1280
+        interface: "newt"
+        keepInterface: false
+        ping:
+          interval: 30
+          reliable: false
+        # Environment variables for this instance
+        extraEnv:
+          - name: NEWT_DISABLE_PING
+            value: "true"
+          - name: NEWT_HEALTH_CHECK_MODE
+            value: "websocket"
 
-    # Pod-level security context for WireGuard operations
-    securityContext:
-      privileged: true  # Required for WireGuard kernel module
-      capabilities:
-        add:
-          - NET_ADMIN
-          - NET_RAW
-          - SYS_MODULE
+    # Global settings (apply to all instances)
+    global:
+      # Name overrides
+      nameOverride: "newt"
+      fullNameOverride: "newt"
 
-    nameOverride: "newt"
-    fullNameOverride: "newt"
+      # Host networking for WireGuard
+      hostNetwork: true
 
-    # Network configuration
-    hostNetwork: true  # Enable host networking for WireGuard to properly manage network interfaces
+      # Security context for WireGuard operations
+      securityContext:
+        privileged: true
+        capabilities:
+          add:
+            - NET_ADMIN
+            - NET_RAW
+            - SYS_MODULE
 
-    # Health configuration - Newt uses /tmp/healthy file
-    health:
-      enabled: true
-      path: "/tmp/healthy"
-      readinessFailureThreshold: 10  # More lenient for Kubernetes
-      healthFile: "/tmp/healthy"
-
-    # Extra environment variables
-    extraEnv:
-      NEWT_DISABLE_PING: "true"  # Disable ICMP in containerized environment
-      NEWT_HEALTH_CHECK_MODE: "websocket"  # Use WebSocket for health checks
-
-    # WireGuard interface configuration
-    interface: "newt"
-    mtu: 1280
-    keepInterface: false
-
-    # Ping configuration (disabled due to Kubernetes limitations)
-    ping:
-      interval: 30
-      reliable: false  # Don't rely on ping for health
+      # Health probe configuration
+      health:
+        enabled: true
+        path: "/tmp/healthy"
+        readinessFailureThreshold: 10
+        healthFile: "/tmp/healthy"
