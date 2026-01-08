@@ -40,7 +40,7 @@ spec:
           echo "Waiting for Pangolin to be ready..."
 
           # Wait for Pangolin API to be available
-          until curl -s -k "${PANGOLIN_ENDPOINT}/api/v1/health" > /dev/null; do
+          until curl -s -k "${PANGOLIN_ENDPOINT}/v1/health" > /dev/null; do
             echo "Waiting for Pangolin API..."
             sleep 10
           done
@@ -48,7 +48,7 @@ spec:
           echo "Pangolin is ready. Using API key for authentication..."
 
           # Test API key authentication
-          RESPONSE=$(curl -s -k -X GET "${PANGOLIN_ENDPOINT}/api/v1/auth/whoami" \
+          RESPONSE=$(curl -s -k -X GET "${PANGOLIN_ENDPOINT}/v1/auth/whoami" \
             -H "X-API-Key: ${PANGOLIN_API_KEY}" \
             -w "\n%{http_code}")
 
@@ -64,7 +64,7 @@ spec:
 
           # Create Newt client endpoint for authentication
           # Newt will use these credentials to authenticate and then create sites
-          ENDPOINT_RESPONSE=$(curl -s -k -X POST "${PANGOLIN_ENDPOINT}/api/v1/endpoints" \
+          ENDPOINT_RESPONSE=$(curl -s -k -X POST "${PANGOLIN_ENDPOINT}/v1/endpoints" \
             -H "X-API-Key: ${PANGOLIN_API_KEY}" \
             -H "Content-Type: application/json" \
             -d '{
@@ -82,7 +82,7 @@ spec:
           elif [ "$HTTP_CODE" = "409" ]; then
             echo "Endpoint already exists, fetching existing..."
             # Get existing endpoints
-            ENDPOINTS=$(curl -s -k -X GET "${PANGOLIN_ENDPOINT}/api/v1/endpoints" \
+            ENDPOINTS=$(curl -s -k -X GET "${PANGOLIN_ENDPOINT}/v1/endpoints" \
               -H "X-API-Key: ${PANGOLIN_API_KEY}")
             NEWT_ID=$(echo "$ENDPOINTS" | grep -B1 -A1 '"name":"newt-home-cluster"' | grep -o '"id":"[^"]*' | cut -d'"' -f4)
 
