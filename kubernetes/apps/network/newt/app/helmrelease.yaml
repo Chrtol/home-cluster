@@ -36,7 +36,7 @@ spec:
             idKey: NEWT_SITE_ID
             secretKey: NEWT_SITE_SECRET
         # Instance-specific WireGuard settings
-        mtu: 1280
+        # mtu: 1280  # Removed - using default to avoid type comparison error
         interface: "newt"
         keepInterface: false
         ping:
