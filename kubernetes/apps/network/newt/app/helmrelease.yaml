@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: newt
-      version: "1.1.0"
+      version: "1.8.1"
       sourceRef:
         kind: HelmRepository
         name: fossorial
@@ -24,14 +24,47 @@ spec:
     remediation:
       retries: 3
   values:
-    # Configure Newt instance
+    # Configure Newt instances
     newtInstances:
       - name: main
-        enabled: true
-        # Authentication configuration per instance
+        # Use existing secret for authentication
         auth:
           existingSecretName: newt-secret
           keys:
             endpointKey: PANGOLIN_ENDPOINT
             idKey: NEWT_SITE_ID
             secretKey: NEWT_SITE_SECRET
+
+    # Pod-level security context for WireGuard operations
+    securityContext:
+      privileged: true  # Required for WireGuard kernel module
+      capabilities:
+        add:
+          - NET_ADMIN
+          - NET_RAW
+          - SYS_MODULE
+
+    # Network configuration
+    hostNetwork: true  # Enable host networking for WireGuard to properly manage network interfaces
+
+    # Health configuration - Newt uses /tmp/healthy file
+    health:
+      enabled: true
+      path: "/tmp/healthy"
+      readinessFailureThreshold: 10  # More lenient for Kubernetes
+      healthFile: "/tmp/healthy"
+
+    # Extra environment variables
+    extraEnv:
+      NEWT_DISABLE_PING: "true"  # Disable ICMP in containerized environment
+      NEWT_HEALTH_CHECK_MODE: "websocket"  # Use WebSocket for health checks
+
+    # WireGuard interface configuration
+    interface: "newt"
+    mtu: 1280
+    keepInterface: false
+
+    # Ping configuration (disabled due to Kubernetes limitations)
+    ping:
+      interval: 30
+      reliable: false  # Don't rely on ping for health
