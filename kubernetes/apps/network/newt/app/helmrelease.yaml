@@ -43,10 +43,8 @@ spec:
           reliable: false
         # Environment variables for this instance
         extraEnv:
-          - name: NEWT_DISABLE_PING
-            value: "true"
-          - name: NEWT_HEALTH_CHECK_MODE
-            value: "websocket"
+          NEWT_DISABLE_PING: "true"
+          NEWT_HEALTH_CHECK_MODE: "websocket"
 
     # Global settings (apply to all instances)
     global:
