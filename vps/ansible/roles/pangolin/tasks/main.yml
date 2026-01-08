@@ -49,7 +49,7 @@
     src: dynamic_config.yml.j2
     dest: /opt/pangolin/config/traefik/dynamic_config.yml
     mode: '0644'
-  notify: restart pangolin
+  # No restart needed - Traefik polls this file every 5 seconds
 
 - name: Set correct permissions for Let's Encrypt
   file:
