@@ -19,3 +19,4 @@ resources:
   - ./crowdsec.yaml
   - ./trivy-charts.yaml
   - ./lwolf-charts.yaml
+  - ./fossorial.yaml

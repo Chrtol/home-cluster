@@ -1,0 +1,158 @@
+---
+# This Job automatically creates Newt credentials in Pangolin and stores them as a K8s secret
+# Prerequisites:
+# 1. Login to Pangolin UI at https://your-pangolin-domain:8443
+# 2. Go to Settings -> API Keys
+# 3. Create a new API key named "newt-automation"
+# 4. Store in 1Password as "pangolin-api" with fields:
+#    - endpoint: https://your-pangolin-domain:8443
+#    - apiKey: the generated API key
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: newt-setup
+  namespace: newt
+spec:
+  ttlSecondsAfterFinished: 3600  # Clean up after 1 hour
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: newt-setup
+      containers:
+      - name: setup
+        image: curlimages/curl:8.5.0
+        env:
+        - name: PANGOLIN_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: pangolin-api
+              key: endpoint
+        - name: PANGOLIN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: pangolin-api
+              key: apiKey
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          set -e
+          echo "Waiting for Pangolin to be ready..."
+
+          # Wait for Pangolin API to be available
+          until curl -s -k "${PANGOLIN_ENDPOINT}/api/v1/health" > /dev/null; do
+            echo "Waiting for Pangolin API..."
+            sleep 10
+          done
+
+          echo "Pangolin is ready. Using API key for authentication..."
+
+          # Test API key authentication
+          RESPONSE=$(curl -s -k -X GET "${PANGOLIN_ENDPOINT}/api/v1/auth/whoami" \
+            -H "X-API-Key: ${PANGOLIN_API_KEY}" \
+            -w "\n%{http_code}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "API key authentication failed: $BODY"
+            exit 1
+          fi
+
+          echo "API key authenticated successfully. Creating Newt endpoint..."
+
+          # Create Newt client endpoint for authentication
+          # Newt will use these credentials to authenticate and then create sites
+          ENDPOINT_RESPONSE=$(curl -s -k -X POST "${PANGOLIN_ENDPOINT}/api/v1/endpoints" \
+            -H "X-API-Key: ${PANGOLIN_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "name": "newt-home-cluster",
+              "description": "Newt agent for home-cluster Kubernetes"
+            }' -w "\n%{http_code}")
+
+          HTTP_CODE=$(echo "$ENDPOINT_RESPONSE" | tail -n1)
+          BODY=$(echo "$ENDPOINT_RESPONSE" | head -n-1)
+
+          if [ "$HTTP_CODE" = "201" ]; then
+            echo "Newt endpoint created successfully"
+            NEWT_ID=$(echo "$BODY" | grep -o '"id":"[^"]*' | cut -d'"' -f4)
+            NEWT_SECRET=$(echo "$BODY" | grep -o '"secret":"[^"]*' | cut -d'"' -f4)
+          elif [ "$HTTP_CODE" = "409" ]; then
+            echo "Endpoint already exists, fetching existing..."
+            # Get existing endpoints
+            ENDPOINTS=$(curl -s -k -X GET "${PANGOLIN_ENDPOINT}/api/v1/endpoints" \
+              -H "X-API-Key: ${PANGOLIN_API_KEY}")
+            NEWT_ID=$(echo "$ENDPOINTS" | grep -B1 -A1 '"name":"newt-home-cluster"' | grep -o '"id":"[^"]*' | cut -d'"' -f4)
+
+            if [ -z "$NEWT_ID" ]; then
+              echo "Failed to find existing endpoint"
+              exit 1
+            fi
+            echo "Using existing endpoint: $NEWT_ID"
+            echo "WARNING: Cannot retrieve existing secret - you may need to recreate the endpoint"
+            exit 1
+          else
+            echo "Failed to create endpoint: $BODY"
+            exit 1
+          fi
+
+          # Create the secret in Kubernetes
+          echo "Creating Kubernetes secret..."
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: newt-secret
+            namespace: newt
+          type: Opaque
+          stringData:
+            PANGOLIN_ENDPOINT: "${PANGOLIN_ENDPOINT}"
+            NEWT_ID: "${NEWT_ID}"
+            NEWT_SECRET: "${NEWT_SECRET}"
+          EOF
+
+          echo "Successfully created Newt credentials!"
+
+---
+# ServiceAccount for the setup job
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: newt-setup
+  namespace: newt
+
+---
+# Role to create secrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: newt-setup
+  namespace: newt
+rules:
+# Allow creating any secret (needed for initial creation)
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"]
+# Allow read/update only for newt-secret specifically
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "update", "patch"]
+  resourceNames: ["newt-secret"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: newt-setup
+  namespace: newt
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: newt-setup
+subjects:
+- kind: ServiceAccount
+  name: newt-setup
+  namespace: newt

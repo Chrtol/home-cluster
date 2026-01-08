@@ -1,0 +1,8 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./pangolin-admin-secret.yaml  # Admin credentials from 1Password (manual setup)
+  - ./newt-setup-job.yaml          # Job to auto-create Newt credentials
+  - ./helmrelease.yaml              # Newt deployment
