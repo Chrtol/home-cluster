@@ -50,6 +50,10 @@ http:
         - websecure
       tls:
         certResolver: letsencrypt
+        domains:
+          - main: "{{ pangolin_domain }}"
+            sans:
+              - "*.{{ pangolin_domain }}"
 
 
     # API router (handles /api/v1 paths)
