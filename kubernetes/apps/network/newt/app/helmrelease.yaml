@@ -27,6 +27,7 @@ spec:
     # Configure Newt instances
     newtInstances:
       - name: main
+        enabled: true  # REQUIRED: Must be explicitly enabled
         # Use existing secret for authentication
         auth:
           existingSecretName: newt-secret
