@@ -65,9 +65,9 @@ spec:
             - NET_RAW
             - SYS_MODULE
 
-      # Health probe configuration
+      # Health probe configuration - disabled due to ping failures in Kubernetes
       health:
-        enabled: true
-        path: "/tmp/healthy"
-        readinessFailureThreshold: 10
-        healthFile: "/tmp/healthy"
+        enabled: false  # Disable health probes since ping fails in K8s
+        # path: "/tmp/healthy"
+        # readinessFailureThreshold: 10
+        # healthFile: "/tmp/healthy"
