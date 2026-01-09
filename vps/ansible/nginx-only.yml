@@ -1,0 +1,94 @@
+---
+# GitOps playbook for nginx configuration management
+# This ensures nginx configuration matches the desired state defined in code
+# Idempotent: Can be run repeatedly without side effects
+# Make changes to templates/configuration in git, not on the server
+
+- name: Ensure nginx configuration matches desired state
+  hosts: vps
+  become: yes
+
+  vars:
+    # These are populated from environment variables via 1Password in CI/CD
+    nginx_domain: "{{ lookup('env', 'NGINX_DOMAIN') }}"
+    nginx_ssl_cert_path: "{{ lookup('env', 'NGINX_SSL_CERT_PATH') | default('/etc/letsencrypt/live/' + nginx_domain + '/fullchain.pem') }}"
+    nginx_ssl_key_path: "{{ lookup('env', 'NGINX_SSL_KEY_PATH') | default('/etc/letsencrypt/live/' + nginx_domain + '/privkey.pem') }}"
+    nginx_external_ingress_ip: "{{ lookup('env', 'NGINX_EXTERNAL_INGRESS_IP') }}"
+    nginx_envoy_gateway_ip: "{{ lookup('env', 'NGINX_ENVOY_GATEWAY_IP') | default('10.0.30.44') }}"
+
+    # Feature toggles
+    enable_echo_test: "{{ lookup('env', 'NGINX_ENABLE_ECHO_TEST') | default('true') | bool }}"
+    enable_metrics: "{{ lookup('env', 'NGINX_ENABLE_METRICS') | default('true') | bool }}"
+
+  pre_tasks:
+    - name: Create backup of current nginx configuration
+      archive:
+        path: /etc/nginx
+        dest: "/tmp/nginx-backup-{{ ansible_date_time.epoch }}.tar.gz"
+        format: gz
+      ignore_errors: yes
+
+    - name: Display configuration summary
+      debug:
+        msg: |
+          ========================================
+          Applying Nginx Configuration State
+          ========================================
+          Domain: {{ nginx_domain }}
+          External Ingress IP: {{ nginx_external_ingress_ip }}
+          Envoy Gateway IP: {{ nginx_envoy_gateway_ip }}
+          Echo Test Enabled: {{ enable_echo_test }}
+          Metrics Enabled: {{ enable_metrics }}
+          ========================================
+
+  tasks:
+    - name: Ensure nginx role configuration is applied
+      include_role:
+        name: nginx
+
+  post_tasks:
+    - name: Verify nginx is running
+      systemd:
+        name: nginx
+        state: started
+      register: nginx_status
+
+    - name: Check nginx status
+      command: systemctl status nginx --no-pager
+      register: nginx_service_status
+      changed_when: false
+
+    - name: Display nginx status
+      debug:
+        var: nginx_service_status.stdout_lines
+
+    - name: Test connectivity to external ingress
+      uri:
+        url: "https://{{ nginx_external_ingress_ip }}:443"
+        method: GET
+        validate_certs: no
+        timeout: 5
+      register: ingress_test
+      ignore_errors: yes
+
+    - name: Show deployment result
+      debug:
+        msg: |
+          ========================================
+          Nginx configuration state applied!
+
+          Key fixes applied:
+          - Fixed WebSocket connection handling ($connection_upgrade map)
+          - Added proxy_request_buffering off for streaming
+          - Improved proxy header configuration
+          - Fixed SSL proxy settings
+
+          Status:
+          - Nginx: {{ 'Running' if nginx_status.state == 'started' else 'Not Running' }}
+          - External Ingress: {{ 'Reachable' if ingress_test.status is defined else 'Unreachable' }}
+
+          If issues persist, check:
+          - WireGuard tunnel status
+          - External ingress controller logs
+          - MTU settings on network interfaces
+          ========================================
