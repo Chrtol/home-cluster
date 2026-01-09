@@ -1,0 +1,62 @@
+---
+# Alternative: Run Newt as a DaemonSet directly on nodes
+# This gives better network access for WireGuard and ICMP
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: newt-daemon
+  namespace: network
+spec:
+  selector:
+    matchLabels:
+      app: newt-daemon
+  template:
+    metadata:
+      labels:
+        app: newt-daemon
+    spec:
+      hostNetwork: true  # Use host network for proper ICMP and WireGuard
+      hostPID: true      # Access host PID namespace
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        # Only run on specific nodes (adjust as needed)
+        node-role.kubernetes.io/control-plane: "true"
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: newt
+        image: ghcr.io/fosrl/newt:v1.5.0
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+            - SYS_MODULE
+        env:
+        - name: PANGOLIN_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: newt-secret
+              key: PANGOLIN_ENDPOINT
+        - name: NEWT_SITE_ID
+          valueFrom:
+            secretKeyRef:
+              name: newt-secret
+              key: NEWT_SITE_ID
+        - name: NEWT_SITE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: newt-secret
+              key: NEWT_SITE_SECRET
+        volumeMounts:
+        - name: host-modules
+          mountPath: /lib/modules
+          readOnly: true
+      volumes:
+      - name: host-modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
