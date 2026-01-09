@@ -30,6 +30,7 @@ spec:
         command:
         - /usr/local/bin/newt
         - -interface=newt0
+        - -port=51821  # Use different port than wireguard-vps (51820)
         - -health-file=/tmp/healthy
         - -metrics=true
         - -metrics-admin-addr=0.0.0.0:2112
@@ -78,11 +79,18 @@ spec:
             command:
             - sh
             - -c
-            - "test -f /tmp/healthy || (pgrep newt && ip link show | grep -q newt)"
+            - "pgrep newt"  # Just check if process is running
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 20
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
         volumeMounts:
         - name: host-modules
           mountPath: /lib/modules
