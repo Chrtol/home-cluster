@@ -29,14 +29,15 @@ spec:
         image: ghcr.io/fosrl/newt:1.8.1@sha256:c05a8383fc8370e6211f0ab84e37993848aae224322d0c5aede7d3368414bdd0
         command:
         - /usr/local/bin/newt
+        - -native=true  # Use native WireGuard with host networking
         - -interface=newt0
-        - -port=51821  # Use different port than wireguard-vps (51820)
+        - -port=51821  # Use different port than wireguard-vps
         - -health-file=/tmp/healthy
         - -metrics=true
         - -metrics-admin-addr=0.0.0.0:2112
         - -ping-interval=30s
         - -ping-timeout=10s
-        - -log-level=INFO
+        - -log-level=DEBUG  # More verbose logging
         securityContext:
           privileged: true
           capabilities:
