@@ -38,7 +38,7 @@ spec:
         - |
           # Extract last part of pod name for unique interface suffix
           IFACE_SUFFIX=$(echo ${POD_NAME} | cut -d'-' -f3)
-          /newt \
+          /usr/local/bin/newt \
             -interface=newt-${IFACE_SUFFIX} \
             -health-file=/tmp/healthy \
             -metrics=true \
