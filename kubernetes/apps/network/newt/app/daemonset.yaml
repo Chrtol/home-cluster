@@ -29,7 +29,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: newt
-        image: ghcr.io/fosrl/newt:v1.5.0
+        image: ghcr.io/fosrl/newt:1.8.1@sha256:c05a8383fc8370e6211f0ab84e37993848aae224322d0c5aede7d3368414bdd0
         securityContext:
           privileged: true
           capabilities:
