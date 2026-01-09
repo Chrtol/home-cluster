@@ -9,9 +9,8 @@ metadata:
     app.kubernetes.io/component: metrics
 spec:
   type: ClusterIP
-  clusterIP: None  # Headless service for DaemonSet
   selector:
-    app: newt-daemon
+    app.kubernetes.io/name: newt
   ports:
   - name: metrics
     port: 2112
