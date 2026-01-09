@@ -18,9 +18,11 @@ spec:
       hostNetwork: true  # Use host network for proper ICMP and WireGuard
       hostPID: true      # Access host PID namespace
       dnsPolicy: ClusterFirstWithHostNet
-      nodeSelector:
-        # Only run on specific nodes (adjust as needed)
-        node-role.kubernetes.io/control-plane: "true"
+      priorityClassName: system-node-critical
+      # Remove nodeSelector to run on all nodes like wireguard-vps
+      # Or add specific node selector if you want to limit to certain nodes
+      # nodeSelector:
+      #   kubernetes.io/hostname: dell1  # Example: run only on dell1
       tolerations:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
