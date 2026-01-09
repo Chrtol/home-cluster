@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./daemonset.yaml
+  - ./service.yaml
   #- ./helmrelease.yaml
