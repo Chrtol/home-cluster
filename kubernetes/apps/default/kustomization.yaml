@@ -31,3 +31,4 @@ resources:
   - ./jotty/ks.yaml
   - ./outline/ks.yaml
   - ./kan/ks.yaml
+  - ./moocup/ks.yaml
