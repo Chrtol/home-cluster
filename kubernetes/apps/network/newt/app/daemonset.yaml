@@ -43,12 +43,12 @@ spec:
             secretKeyRef:
               name: newt-secret
               key: PANGOLIN_ENDPOINT
-        - name: NEWT_SITE_ID
+        - name: NEWT_ID
           valueFrom:
             secretKeyRef:
               name: newt-secret
               key: NEWT_SITE_ID
-        - name: NEWT_SITE_SECRET
+        - name: NEWT_SECRET
           valueFrom:
             secretKeyRef:
               name: newt-secret
