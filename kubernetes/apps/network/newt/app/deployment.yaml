@@ -37,7 +37,7 @@ spec:
         - -metrics-admin-addr=0.0.0.0:2112
         - -ping-interval=30s
         - -ping-timeout=10s
-        - -log-level=DEBUG  # More verbose logging
+        - -log-level=INFO  # Standard logging
         securityContext:
           privileged: true
           capabilities:
