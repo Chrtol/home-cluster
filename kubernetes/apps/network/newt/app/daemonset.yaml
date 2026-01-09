@@ -30,6 +30,22 @@ spec:
       containers:
       - name: newt
         image: ghcr.io/fosrl/newt:1.8.1@sha256:c05a8383fc8370e6211f0ab84e37993848aae224322d0c5aede7d3368414bdd0
+        # Use sh -c to properly expand environment variable
+        # Each pod gets a unique interface name to avoid conflicts
+        command:
+        - sh
+        - -c
+        - |
+          # Extract last part of pod name for unique interface suffix
+          IFACE_SUFFIX=$(echo ${POD_NAME} | cut -d'-' -f3)
+          /newt \
+            -interface=newt-${IFACE_SUFFIX} \
+            -health-file=/tmp/healthy \
+            -metrics=true \
+            -metrics-admin-addr=0.0.0.0:2112 \
+            -ping-interval=30s \
+            -ping-timeout=10s \
+            -log-level=INFO
         securityContext:
           privileged: true
           capabilities:
@@ -38,6 +54,10 @@ spec:
             - NET_RAW
             - SYS_MODULE
         env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: PANGOLIN_ENDPOINT
           valueFrom:
             secretKeyRef:
@@ -53,6 +73,30 @@ spec:
             secretKeyRef:
               name: newt-secret
               key: NEWT_SITE_SECRET
+        ports:
+        - name: metrics
+          containerPort: 2112
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - test
+            - -f
+            - /tmp/healthy
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - test
+            - -f
+            - /tmp/healthy
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 10
         volumeMounts:
         - name: host-modules
           mountPath: /lib/modules
