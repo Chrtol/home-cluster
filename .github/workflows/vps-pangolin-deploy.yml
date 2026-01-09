@@ -1,11 +1,11 @@
-name: Deploy VPS Configuration
+name: Deploy VPS Pangolin Configuration
 
 on:
   push:
     branches: [main]
     paths:
       - 'vps/**'
-      - '.github/workflows/vps-deploy.yml'
+      - '.github/workflows/vps-pangolin-deploy.yml'
   workflow_dispatch:
     inputs:
       debug:
@@ -16,7 +16,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy VPS Configuration
+    name: Deploy Pangolin to VPS
     runs-on: ubuntu-latest
 
     steps:

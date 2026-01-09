@@ -6,7 +6,7 @@ on:
     paths:
       - 'vps/ansible/roles/nginx/**'
       - 'vps/ansible/nginx-only.yml'
-      - '.github/workflows/vps-nginx-update.yml'
+      - '.github/workflows/vps-nginx-deploy.yml'
   workflow_dispatch:
     inputs:
       debug:
@@ -82,18 +82,6 @@ jobs:
             -i inventory.yml \
             ${{ github.event.inputs.dry_run == 'true' && '--check --diff' || '' }} \
             ${{ github.event.inputs.debug == 'true' && '-vvv' || '' }}
-
-      - name: Test nginx configuration
-        if: github.event.inputs.dry_run != 'true'
-        run: |
-          echo "Testing nginx configuration on VPS..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vps_key -p ${VPS_SSH_PORT:-22} ${VPS_SSH_USER:-root}@$VPS_HOST "nginx -t"
-
-      - name: Check nginx status
-        if: github.event.inputs.dry_run != 'true'
-        run: |
-          echo "Checking nginx status..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vps_key -p ${VPS_SSH_PORT:-22} ${VPS_SSH_USER:-root}@$VPS_HOST "systemctl status nginx --no-pager"
 
       - name: Cleanup
         if: always()
