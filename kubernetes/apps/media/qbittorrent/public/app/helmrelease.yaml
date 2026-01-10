@@ -44,7 +44,7 @@ spec:
             env:
               DOT: "off"
               DNS_ADDRESS: 127.0.0.2
-              DNS_KEEP_NAMESERVER: "on"
+              DNS_KEEP_NAMESERVER: "off"
               HTTP_CONTROL_SERVER_ADDRESS: ":8000"
               HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH: &gluetunAuthPath /config/auth.toml
               HTTP_CONTROL_SERVER_API_KEY:
@@ -59,6 +59,9 @@ spec:
               VPN_PORT_FORWARDING_PROVIDER: protonvpn
               FIREWALL_INPUT_PORTS: "80,8000"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
+              HEALTH_TARGET_ADDRESS: 9.9.9.9:443
+              HEALTH_VPN_DURATION_INITIAL: 30s
+              HEALTH_VPN_DURATION_ADDITION: 10s
             envFrom:
               - secretRef:
                   name: qbittorrent-secret
