@@ -53,11 +53,9 @@ spec:
               VPN_SERVICE_PROVIDER: protonvpn
               VPN_TYPE: openvpn
               SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
-              FIREWALL_INPUT_PORTS: "80,8000"
+              FIREWALL_INPUT_PORTS: "80,8000,9999"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16
-              HEALTH_TARGET_ADDRESS: 9.9.9.9:443
-              HEALTH_VPN_DURATION_INITIAL: 30s
-              HEALTH_VPN_DURATION_ADDITION: 10s
+              HEALTH_SERVER_ADDRESS: ":9999"
             envFrom:
               - secretRef:
                   name: sabnzbd-gluetun-secret
@@ -70,6 +68,25 @@ spec:
             resources:
               limits:
                 squat.ai/tun: "1"
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 9999
+                  periodSeconds: 30
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 9999
+                  failureThreshold: 30
+                  periodSeconds: 10
         containers:
           app:
             image:
