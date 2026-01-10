@@ -1,4 +1,6 @@
-# Map for WebSocket upgrades
+# WebSocket Connection Upgrade Map
+# If client sends Upgrade header → Connection: upgrade (for WebSockets)
+# If no Upgrade header → Connection: close (for regular HTTP)
 map $http_upgrade $connection_upgrade {
     default upgrade;
     '' close;
@@ -101,13 +103,13 @@ server {
         proxy_http_version 1.1;
 
         # SSL proxy settings
-        proxy_ssl_verify off;
-        proxy_ssl_session_reuse on;
+        proxy_ssl_verify off;           # Backend uses self-signed cert, already secure via WireGuard
+        proxy_ssl_session_reuse on;     # Reduce SSL handshake overhead
         proxy_ssl_protocols TLSv1.2 TLSv1.3;
 
         # Buffering settings - critical for streaming
-        proxy_buffering off;
-        proxy_request_buffering off;
+        proxy_buffering off;            # Don't buffer responses (essential for Plex streaming)
+        proxy_request_buffering off;    # Don't buffer requests (fixes upload timeouts)
 
         # Headers
         proxy_set_header Host $host;
@@ -117,7 +119,8 @@ server {
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Port 443;
 
-        # WebSocket support (fixed with connection_upgrade map)
+        # WebSocket support - FIXED: Was using non-existent $http_connection variable
+        # Now properly uses the connection_upgrade map defined at top of file
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
