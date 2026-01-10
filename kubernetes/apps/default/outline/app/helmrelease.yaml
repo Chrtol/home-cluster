@@ -30,12 +30,13 @@ spec:
             image:
               repository: docker.io/outlinewiki/outline
               tag: 1.2.0@sha256:9fcb1f4a3de27b8ffcae687e63b3891d2ee49298bb8d4ba75e98fc28a9bbd364
-            command: ["/bin/sh", "-c", "corepack yarn db:migrate --env=production-ssl-disabled && corepack yarn start --env=production-ssl-disabled"]
+            command: ["/bin/sh", "-c", "YARN_ENABLE_IMMUTABLE_INSTALLS=false corepack yarn db:migrate --env=production-ssl-disabled && YARN_ENABLE_IMMUTABLE_INSTALLS=false corepack yarn start --env=production-ssl-disabled"]
             env:
               TZ: ${SECRET_TIMEZONE}
               URL: https://docs.${SECRET_DOMAIN}
               LOG_LEVEL: info
               NODE_ENV: production
+              YARN_CACHE_FOLDER: /tmp/.yarn-cache
               PGSSLMODE: disable
               FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
               FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
