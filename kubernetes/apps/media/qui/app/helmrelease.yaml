@@ -87,7 +87,6 @@ spec:
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
+        path: /mnt/truenas/cf-nas/data/torrents
         globalMounts:
-          - path: /media
-            readOnly: false
+          - path: /data/torrents
