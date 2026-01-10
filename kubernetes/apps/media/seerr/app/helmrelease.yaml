@@ -125,3 +125,7 @@ spec:
                 subPath: logs
               - path: /tmp
                 subPath: tmp
+              - path: /home/node/.npm
+                subPath: npm
+              - path: /app/.npm
+                subPath: app-npm
