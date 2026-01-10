@@ -84,3 +84,10 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
+      media:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data/media
+        globalMounts:
+          - path: /media
+            readOnly: false
