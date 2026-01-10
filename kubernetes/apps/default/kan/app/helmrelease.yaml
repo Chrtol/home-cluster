@@ -38,7 +38,7 @@ spec:
           app:
             image:
               repository: ghcr.io/kanbn/kan
-              tag: 0.5.2@sha256:f2cc17ba19e2765685b5953010e724ba54529bdb826f359fe910f2907fc722d4
+              tag: 0.5.3@sha256:b5c45ed1e841fa61d1481d7f8bbcca13184d9306ee06fb516359eb0537f24885
               pullPolicy: IfNotPresent
             env:
                 NEXT_PUBLIC_BASE_URL: https://kan.${SECRET_DOMAIN}
