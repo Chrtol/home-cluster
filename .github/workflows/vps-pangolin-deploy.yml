@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Load secrets from 1Password
-        uses: 1password/load-secrets-action@v2
+        uses: 1password/load-secrets-action@8d0d610af187e78a2772c2d18d627f4c52d3fbfb # v3
         with:
           export-env: true
         env:
