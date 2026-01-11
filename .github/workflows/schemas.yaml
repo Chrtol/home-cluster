@@ -1,0 +1,86 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Schemas
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * *  # Daily at midnight
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/schemas.yaml
+
+env:
+  UV_SYSTEM_PYTHON: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  main:
+    name: Extract and Publish Schemas
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install kubectl
+        run: |
+          if ! command -v kubectl &> /dev/null; then
+            echo "Installing kubectl..."
+            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+          else
+            echo "kubectl already installed"
+          fi
+
+      - name: Install uv (Python package manager)
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install Python Dependencies
+        run: uv pip install pyyaml
+
+      - name: Extract CRD Schemas
+        run: |
+          # Create directory for schemas
+          mkdir -p /tmp/crdSchemas
+          cd /tmp/crdSchemas
+
+          # Download and run the CRD extractor
+          curl -fsSL https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/Utilities/crd-extractor.sh | bash
+
+          # The script creates schemas in ~/.datree/crdSchemas
+          # Move them to our working directory
+          cp -r ~/.datree/crdSchemas/* /tmp/crdSchemas/ || true
+
+          # List what we extracted
+          echo "Extracted schemas:"
+          ls -la /tmp/crdSchemas/
+
+      - name: Publish Schemas to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: /tmp/crdSchemas
+          command: pages deploy --project-name=chrtol-schemas --branch main .
