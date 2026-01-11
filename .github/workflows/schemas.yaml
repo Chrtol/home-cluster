@@ -21,7 +21,7 @@ permissions:
 jobs:
   main:
     name: Extract and Publish Schemas
-    runs-on: self-hosted
+    runs-on: home-cluster
     permissions:
       contents: read
       packages: write

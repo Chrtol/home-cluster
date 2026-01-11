@@ -13,6 +13,7 @@ spec:
   values:
     githubConfigUrl: https://github.com/chrtol/home-cluster
     githubConfigSecret: home-cluster-runner-secret
+    runnerScaleSetName: home-cluster
     minRunners: 1
     maxRunners: 3
     containerMode:
