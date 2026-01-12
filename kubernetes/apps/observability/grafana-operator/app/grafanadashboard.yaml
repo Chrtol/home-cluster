@@ -3,14 +3,16 @@
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
-  name: speedtest-exporter
+  name: grafana-operator
 spec:
   allowCrossNamespaceImport: true
+  configMapRef:
+    name: grafana-operator-dashboard
+    key: grafana-operator.json
   datasources:
     - datasourceName: Prometheus
       inputName: DS_PROMETHEUS
-  folder: Networking
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
-  url: https://grafana.com/api/dashboards/13665/revisions/4/download
+  folder: Operators

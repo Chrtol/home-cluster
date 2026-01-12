@@ -26,6 +26,8 @@ spec:
   values:
     deploymentStrategy:
       type: Recreate
+    labels:
+      grafana.internal/instance: grafana
     admin:
       existingSecret: grafana-admin-secret
     env:
