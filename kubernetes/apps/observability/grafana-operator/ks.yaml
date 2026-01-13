@@ -28,6 +28,7 @@ metadata:
 spec:
   dependsOn:
     - name: grafana-operator
+      namespace: observability
   interval: 30m
   path: ./kubernetes/apps/observability/grafana-operator/resources
   prune: true
