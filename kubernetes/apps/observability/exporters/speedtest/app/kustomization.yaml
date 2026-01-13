@@ -10,3 +10,5 @@ configMapGenerator:
   - name: speedtest-dashboard
     files:
       - speedtest-dashboard.json
+generatorOptions:
+  disableNameSuffixHash: true
