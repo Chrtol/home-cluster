@@ -136,6 +136,12 @@ spec:
           volumeMounts:
             - name: sidecar-blueprints
               mountPath: /blueprints/sidecar
+          resources:
+            requests:
+              cpu: 11m
+              memory: 352Mi
+            limits:
+              memory: 512Mi
       volumes:
         - name: sidecar-blueprints
           emptyDir: {}
