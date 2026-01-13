@@ -50,6 +50,7 @@ spec:
           region: homelab
           insecure: true
           forcepathstyle: true
+          # Credentials will be provided via AWS environment variables
 
     # Configure components
     distributor:
@@ -60,9 +61,17 @@ spec:
           memory: 256Mi
         limits:
           memory: 512Mi
-      extraEnvFrom:
-        - secretRef:
-            name: tempo-s3-credentials
+      extraEnv:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: SECRET_KEY
 
     ingester:
       replicas: 1
@@ -76,9 +85,17 @@ spec:
           memory: 256Mi
         limits:
           memory: 1Gi
-      extraEnvFrom:
-        - secretRef:
-            name: tempo-s3-credentials
+      extraEnv:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: SECRET_KEY
 
     compactor:
       enabled: true
@@ -88,9 +105,17 @@ spec:
           memory: 256Mi
         limits:
           memory: 512Mi
-      extraEnvFrom:
-        - secretRef:
-            name: tempo-s3-credentials
+      extraEnv:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: SECRET_KEY
 
     querier:
       replicas: 1
@@ -100,9 +125,17 @@ spec:
           memory: 256Mi
         limits:
           memory: 512Mi
-      extraEnvFrom:
-        - secretRef:
-            name: tempo-s3-credentials
+      extraEnv:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: SECRET_KEY
 
     queryFrontend:
       replicas: 1
@@ -134,14 +167,7 @@ spec:
           memory: 256Mi
         limits:
           memory: 512Mi
-      extraEnvFrom:
-        - secretRef:
-            name: tempo-s3-credentials
-
-    # Global environment variables for S3 credentials
-    # Using extraEnvFrom to inject the secret into all components
-    global_overrides:
-      extraEnvVars:
+      extraEnv:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
@@ -152,8 +178,6 @@ spec:
             secretKeyRef:
               name: tempo-s3-credentials
               key: SECRET_KEY
-        - name: AWS_DEFAULT_REGION
-          value: "homelab"
 
     # Service monitor for Prometheus scraping
     serviceMonitor:
