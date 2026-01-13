@@ -11,7 +11,5 @@ spec:
     name: grafana-operator
     namespace: flux-system
   values:
-    dashboard:
-      enabled: true
     serviceMonitor:
       enabled: true
