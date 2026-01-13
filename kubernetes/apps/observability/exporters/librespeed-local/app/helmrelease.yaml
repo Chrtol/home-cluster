@@ -1,0 +1,106 @@
+---
+# Alternative: Persistent exporter without pushgateway
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: librespeed-local-exporter
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 30m
+  values:
+    controllers:
+      librespeed-local-exporter:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: python
+              tag: 3.11-alpine
+            command:
+              - /bin/sh
+              - -c
+            args:
+              - |
+                # Install dependencies
+                apk add --no-cache curl bc
+                pip install prometheus-client requests
+
+                # Create Python exporter script
+                cat << 'PYTHON_SCRIPT' > /app/exporter.py
+                import time
+                import subprocess
+                import json
+                from prometheus_client import start_http_server, Gauge
+
+                # Create metrics
+                download_gauge = Gauge('librespeed_local_download_mbps', 'Local network download speed in Mbps')
+                upload_gauge = Gauge('librespeed_local_upload_mbps', 'Local network upload speed in Mbps')
+                ping_gauge = Gauge('librespeed_local_ping_ms', 'Local network ping in ms')
+
+                def run_speedtest():
+                    librespeed_url = "http://librespeed.observability.svc.cluster.local:8080"
+
+                    try:
+                        # Simple speed test using curl
+                        # Download test (100MB)
+                        download_cmd = f"curl -w '%{{speed_download}}' -o /dev/null -s '{librespeed_url}/backend/garbage.php?ckSize=100'"
+                        download_result = subprocess.run(download_cmd, shell=True, capture_output=True, text=True)
+                        download_bps = float(download_result.stdout.strip() or 0)
+                        download_mbps = (download_bps * 8) / 1_000_000
+
+                        # Ping test
+                        ping_cmd = f"curl -w '%{{time_total}}' -o /dev/null -s '{librespeed_url}/backend/empty.php'"
+                        ping_result = subprocess.run(ping_cmd, shell=True, capture_output=True, text=True)
+                        ping_seconds = float(ping_result.stdout.strip() or 0)
+                        ping_ms = ping_seconds * 1000
+
+                        # Upload test (10MB of random data)
+                        upload_data = subprocess.run("head -c 10485760 /dev/urandom | base64", shell=True, capture_output=True)
+                        upload_cmd = f"curl -X POST -w '%{{speed_upload}}' -o /dev/null -s -d @- '{librespeed_url}/backend/empty.php'"
+                        upload_result = subprocess.run(upload_cmd, input=upload_data.stdout, shell=True, capture_output=True, text=True)
+                        upload_bps = float(upload_result.stdout.strip() or 0)
+                        upload_mbps = (upload_bps * 8) / 1_000_000
+
+                        # Update metrics
+                        download_gauge.set(download_mbps)
+                        upload_gauge.set(upload_mbps)
+                        ping_gauge.set(ping_ms)
+
+                        print(f"Test complete: Download={download_mbps:.2f}Mbps Upload={upload_mbps:.2f}Mbps Ping={ping_ms:.2f}ms")
+                    except Exception as e:
+                        print(f"Error running speed test: {e}")
+
+                if __name__ == '__main__':
+                    # Start Prometheus metrics server
+                    start_http_server(9798)
+                    print("Metrics server started on port 9798")
+
+                    # Run speed test every 30 minutes
+                    while True:
+                        run_speedtest()
+                        time.sleep(1800)  # 30 minutes
+                PYTHON_SCRIPT
+
+                # Run the exporter
+                python /app/exporter.py
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+    service:
+      app:
+        ports:
+          http:
+            port: 9798
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: http
+            path: /metrics
+            interval: 30m
+            scrapeTimeout: 2m

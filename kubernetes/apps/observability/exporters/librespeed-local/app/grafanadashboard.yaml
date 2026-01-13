@@ -1,0 +1,15 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: librespeed-local-dashboard
+  labels:
+    app: librespeed-local-exporter
+    grafana_dashboard: librespeed-local
+spec:
+  configMapRef:
+    name: librespeed-local-dashboard
+    key: librespeed-local-dashboard.json
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
