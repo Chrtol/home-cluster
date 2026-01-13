@@ -6,3 +6,7 @@ resources:
   - ./grafanadashboard.yaml
   - ./helmrelease.yaml
   - ./prometheusrule.yaml
+configMapGenerator:
+  - name: speedtest-dashboard
+    files:
+      - speedtest-dashboard.json
