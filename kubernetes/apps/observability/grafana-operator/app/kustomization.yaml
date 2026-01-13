@@ -4,6 +4,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./helmrelease.yaml
-  - ./grafanadatasource.yaml
+  # - ./grafanadatasource.yaml  # Datasources are already managed by Grafana Helm chart
   - ./grafanadashboard.yaml
   - ./instance.yaml
