@@ -11,6 +11,8 @@ spec:
       app.kubernetes.io/name: *app
   interval: 30m
   path: ./kubernetes/apps/observability/librespeed/app
+  components:
+    - ../../../../components/gatus/guarded
   prune: true
   sourceRef:
     kind: GitRepository
@@ -20,3 +22,10 @@ spec:
   timeout: 5m
   wait: false
   retryInterval: 2m
+  postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: speed
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
