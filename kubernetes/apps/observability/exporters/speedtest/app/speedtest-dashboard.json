@@ -43,12 +43,12 @@
                 "0": {
                   "color": "red",
                   "index": 1,
-                  "text": "Failed"
+                  "text": "Test Failed/Stale"
                 },
                 "1": {
                   "color": "green",
                   "index": 0,
-                  "text": "Success"
+                  "text": "Test Success"
                 }
               },
               "type": "value"
@@ -103,14 +103,12 @@
             "type": "prometheus",
             "uid": ""
           },
-          "expr": "speedtest_up{job=~\".*speedtest.*\"}",
-          "instant": false,
-          "interval": "",
-          "legendFormat": "Test Status",
+          "expr": "(time() - timestamp(speedtest_download_bits_per_second{job=~\".*speedtest.*\"})) < 3900",
+          "legendFormat": "Test Fresh",
           "refId": "A"
         }
       ],
-      "title": "Speedtest Status",
+      "title": "Last Test Status",
       "type": "stat"
     },
     {
@@ -220,11 +218,18 @@
             "type": "prometheus",
             "uid": ""
           },
-          "expr": "speedtest_up{job=~\".*speedtest.*\"}",
-          "instant": false,
-          "interval": "",
-          "legendFormat": "Test Status",
+          "expr": "up{job=\"speedtest-exporter\"}",
+          "legendFormat": "Exporter Status",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": ""
+          },
+          "expr": "(time() - speedtest_download_bits_per_second{job=~\".*speedtest.*\"} / speedtest_download_bits_per_second{job=~\".*speedtest.*\"} * time()) < 3900 or on() vector(0)",
+          "legendFormat": "Test Fresh (< 65 min old)",
+          "refId": "B"
         }
       ],
       "title": "Speedtest Success/Failure History",
@@ -986,6 +991,73 @@
       ],
       "title": "Ping and Jitter (ms)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": ""
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "red",
+                "value": 7200
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": ""
+          },
+          "expr": "time() - timestamp(speedtest_download_bits_per_second{job=~\".*speedtest.*\"})",
+          "legendFormat": "Time Since Last Test",
+          "refId": "A"
+        }
+      ],
+      "title": "Time Since Last Successful Test",
+      "type": "stat"
     }
   ],
   "preload": false,
