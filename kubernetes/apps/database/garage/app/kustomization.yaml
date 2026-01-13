@@ -6,4 +6,3 @@ resources:
   - ./externalsecret.yaml
   - ./configmap.yaml
   - ./helmrelease.yaml
-  - ./admin-key-job.yaml  # Creates garage-admin secret for s3-bucket component

@@ -13,16 +13,10 @@ spec:
   path: ./kubernetes/apps/observability/tempo/app
   components:
     - ../../../../components/gatus/guarded
-    - ../../../../components/s3-bucket
-  dependsOn:
-    - name: garage
-      namespace: database
   postBuild:
     substitute:
       APP: *app
       NAMESPACE: *namespace
-      S3_BUCKET: tempo-traces
-      CORS_ORIGINS: ""  # Empty string - Tempo doesn't need CORS for backend S3 access
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
