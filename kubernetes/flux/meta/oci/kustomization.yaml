@@ -24,3 +24,4 @@ resources:
   - ./gha-runner-scale-set.yaml
   - ./gha-runner-scale-set-controller.yaml
   - ./grafana-operator.yaml
+  - ./tempo.yaml

@@ -17,3 +17,4 @@ resources:
   - ./network-monitor/ks.yaml
   - ./capacitor/ks.yaml
   - ./grafana-operator/ks.yaml
+  - ./tempo/ks.yaml
