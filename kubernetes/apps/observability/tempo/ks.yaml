@@ -22,7 +22,7 @@ spec:
       APP: *app
       NAMESPACE: *namespace
       S3_BUCKET: tempo-traces
-      # CORS_ORIGINS not set - Tempo doesn't need CORS for backend S3 access
+      CORS_ORIGINS: ""  # Empty string - Tempo doesn't need CORS for backend S3 access
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
