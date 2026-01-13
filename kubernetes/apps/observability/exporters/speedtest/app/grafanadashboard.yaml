@@ -6,6 +6,9 @@ metadata:
   name: speedtest-exporter
 spec:
   allowCrossNamespaceImport: true
+  configMapRef:
+    name: speedtest-dashboard
+    key: speedtest-dashboard.json
   datasources:
     - datasourceName: Prometheus
       inputName: DS_PROMETHEUS
@@ -13,4 +16,3 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
-  url: https://grafana.com/api/dashboards/13665/revisions/4/download
