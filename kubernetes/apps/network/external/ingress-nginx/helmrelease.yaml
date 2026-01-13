@@ -55,6 +55,18 @@ spec:
         hsts-max-age: "31449600" # quote
         keep-alive-requests: 10000
         keep-alive: 120
+        # OpenTelemetry tracing configuration
+        enable-opentelemetry: "true"
+        opentelemetry-config: /etc/nginx/opentelemetry.toml
+        opentelemetry-operation-name: "HTTP $request_method $service_name $uri"
+        opentelemetry-trust-incoming-span: "true"
+        otlp-collector-host: tempo.observability.svc.cluster.local
+        otlp-collector-port: "4317"
+        otel-max-queuesize: "2048"
+        otel-schedule-delay-millis: "5000"
+        otel-max-export-batch-size: "512"
+        otel-service-name: external-ingress-nginx
+        otel-sampler-ratio: "0.5"
         log-format-escape-json: "true"
         log-format-upstream: >
           {"time": "$time_iso8601", "remote_addr": "$proxy_protocol_addr",

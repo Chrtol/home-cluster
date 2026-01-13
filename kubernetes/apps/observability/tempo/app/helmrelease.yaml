@@ -1,0 +1,108 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: tempo
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    tempo:
+      reportingEnabled: false
+      metricsGenerator:
+        enabled: true
+        remoteWriteUrl: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+
+      # Resource configuration
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 2Gi
+
+      # Retention period for traces
+      retention: 72h  # Keep traces for 3 days
+
+      # Receivers configuration for accepting traces
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+        zipkin:
+          endpoint: 0.0.0.0:9411
+        jaeger:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:14250
+            thrift_http:
+              endpoint: 0.0.0.0:14268
+
+      # Storage configuration using Garage S3
+      storage:
+        trace:
+          backend: s3
+          s3:
+            endpoint: garage.database.svc.cluster.local:3900
+            bucket: tempo-traces
+            insecure: true
+            forcepathstyle: true
+            # Access key and secret key are provided via environment variables
+            # from the tempo-s3-credentials secret created by s3-bucket component
+          wal:
+            path: /var/tempo/wal
+          pool:
+            max_workers: 100
+            queue_depth: 10000
+
+    # Persistence for WAL (Write-Ahead Log)
+    persistence:
+      enabled: true
+      storageClassName: csi-rbd-sc
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+
+    # Service configuration
+    service:
+      type: ClusterIP
+
+    # ServiceMonitor for Prometheus scraping
+    serviceMonitor:
+      enabled: true
+
+    # Configure tempo-query for Grafana integration
+    tempoQuery:
+      enabled: true
+      repository: grafana/tempo-query
+      tag: 2.7.0
+
+    # Environment variables for S3 credentials (auto-created by s3-bucket component)
+    extraEnv:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: tempo-s3-credentials
+            key: ACCESS_KEY  # Component creates ACCESS_KEY, not ACCESS_KEY_ID
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: tempo-s3-credentials
+            key: SECRET_KEY  # Component creates SECRET_KEY, not SECRET_ACCESS_KEY
+      - name: AWS_DEFAULT_REGION
+        value: "homelab"  # Set region since Garage requires it
