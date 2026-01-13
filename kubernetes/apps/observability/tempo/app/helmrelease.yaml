@@ -20,90 +20,141 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    tempo:
-      reportingEnabled: false
-      metricsGenerator:
-        enabled: true
-        remoteWriteUrl: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+    # Global settings
+    global:
+      image:
+        registry: docker.io
 
-      # Resource configuration
+    # Trace ingestion configuration
+    traces:
+      otlp:
+        grpc:
+          enabled: true
+        http:
+          enabled: true
+      zipkin:
+        enabled: true
+      jaeger:
+        grpc:
+          enabled: true
+        thriftHttp:
+          enabled: true
+
+    # Storage configuration for Garage S3
+    storage:
+      trace:
+        backend: s3
+        s3:
+          bucket: tempo-traces
+          endpoint: garage.database.svc.cluster.local:3900
+          region: homelab
+          insecure: true
+          forcepathstyle: true
+
+    # Configure components
+    distributor:
+      replicas: 1
       resources:
         requests:
           cpu: 100m
           memory: 256Mi
         limits:
-          memory: 2Gi
+          memory: 512Mi
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-s3-credentials
 
-      # Retention period for traces
-      retention: 72h  # Keep traces for 3 days
+    ingester:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: csi-rbd-sc
+        size: 10Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-s3-credentials
 
-      # Receivers configuration for accepting traces
-      receivers:
-        otlp:
-          protocols:
-            grpc:
-              endpoint: 0.0.0.0:4317
-            http:
-              endpoint: 0.0.0.0:4318
-        zipkin:
-          endpoint: 0.0.0.0:9411
-        jaeger:
-          protocols:
-            grpc:
-              endpoint: 0.0.0.0:14250
-            thrift_http:
-              endpoint: 0.0.0.0:14268
-
-      # Storage configuration using Garage S3
-      storage:
-        trace:
-          backend: s3
-          s3:
-            endpoint: garage.database.svc.cluster.local:3900
-            bucket: tempo-traces
-            insecure: true
-            forcepathstyle: true
-            # Access key and secret key are provided via environment variables
-            # from the tempo-s3-credentials secret created by s3-bucket component
-          wal:
-            path: /var/tempo/wal
-          pool:
-            max_workers: 100
-            queue_depth: 10000
-
-    # Persistence for WAL (Write-Ahead Log)
-    persistence:
+    compactor:
       enabled: true
-      storageClassName: csi-rbd-sc
-      accessModes:
-        - ReadWriteOnce
-      size: 10Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-s3-credentials
 
-    # Service configuration
-    service:
-      type: ClusterIP
+    querier:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-s3-credentials
 
-    # ServiceMonitor for Prometheus scraping
+    queryFrontend:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+
+    gateway:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+
+    # Metrics generation for Prometheus
+    metricsGenerator:
+      enabled: true
+      replicas: 1
+      remoteWriteUrl: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-s3-credentials
+
+    # Global environment variables for S3 credentials
+    # Using extraEnvFrom to inject the secret into all components
+    global_overrides:
+      extraEnvVars:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tempo-s3-credentials
+              key: SECRET_KEY
+        - name: AWS_DEFAULT_REGION
+          value: "homelab"
+
+    # Service monitor for Prometheus scraping
     serviceMonitor:
       enabled: true
-
-    # Configure tempo-query for Grafana integration
-    tempoQuery:
-      enabled: true
-      repository: grafana/tempo-query
-      tag: 2.7.0
-
-    # Environment variables for S3 credentials (auto-created by s3-bucket component)
-    extraEnv:
-      - name: AWS_ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: tempo-s3-credentials
-            key: ACCESS_KEY  # Component creates ACCESS_KEY, not ACCESS_KEY_ID
-      - name: AWS_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: tempo-s3-credentials
-            key: SECRET_KEY  # Component creates SECRET_KEY, not SECRET_ACCESS_KEY
-      - name: AWS_DEFAULT_REGION
-        value: "homelab"  # Set region since Garage requires it
