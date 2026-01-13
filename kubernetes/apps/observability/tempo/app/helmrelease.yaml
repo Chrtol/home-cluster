@@ -65,12 +65,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: ACCESS_KEY
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: SECRET_KEY
 
     ingester:
@@ -89,12 +89,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: ACCESS_KEY
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: SECRET_KEY
 
     compactor:
@@ -109,12 +109,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: ACCESS_KEY
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: SECRET_KEY
 
     querier:
@@ -129,12 +129,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: ACCESS_KEY
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: SECRET_KEY
 
     queryFrontend:
@@ -171,12 +171,12 @@ spec:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: ACCESS_KEY
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: tempo-s3-credentials
+              name: tempo-secret
               key: SECRET_KEY
 
     # Service monitor for Prometheus scraping
