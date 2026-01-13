@@ -88,7 +88,7 @@ data:
             url: http://plex.media.svc.cluster.local:32400
             key: {{HOMEPAGE_VAR_PLEX_KEY}}
             enableNowPlaying: true
-      - Jellyseer:
+      - Seerrr:
           icon: jellyseer.png
           href: https://request.${SECRET_DOMAIN}
           description: Media Requests
@@ -152,7 +152,7 @@ data:
     # headers / labels are hidden - number of columns per section is set here
 
     layout:
-      
+
       "Infrastructure":
         header: false
         style: row
@@ -160,7 +160,7 @@ data:
       "System Applications":
         header: false
         style: row
-        columns: 4  
+        columns: 4
       "Media":
         header: false
         style: row
