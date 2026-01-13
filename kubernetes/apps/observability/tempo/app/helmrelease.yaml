@@ -145,6 +145,17 @@ spec:
           memory: 128Mi
         limits:
           memory: 256Mi
+      extraEnv:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tempo-secret
+              key: ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tempo-secret
+              key: SECRET_KEY
 
     gateway:
       enabled: true
