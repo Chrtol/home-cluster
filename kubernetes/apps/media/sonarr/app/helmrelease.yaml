@@ -47,6 +47,14 @@ spec:
               SONARR__SERVER__PORT: &port 80
               SONARR__UPDATE__BRANCH: develop
               TZ: ${SECRET_TIMEZONE}
+              # OpenTelemetry instrumentation for .NET
+              OTEL_SERVICE_NAME: "sonarr"
+              OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
+              OTEL_TRACES_EXPORTER: "otlp"
+              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=media,app.type=media-management,media.type=tv"
+              # .NET specific
+              OTEL_DOTNET_AUTO_TRACES_ENABLED: "true"
+              OTEL_DOTNET_AUTO_LOGS_ENABLED: "false"
             envFrom: *envFrom
             probes:
               liveness: &probes

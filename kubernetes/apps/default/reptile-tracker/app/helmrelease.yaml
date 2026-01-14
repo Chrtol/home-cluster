@@ -87,6 +87,10 @@ spec:
               # Photo storage configuration
               PHOTO_STORAGE_BACKEND: "local"
               LOCAL_STORAGE_PATH: "/app/data/photos"
+              # OpenTelemetry configuration
+              OTEL_SERVICE_NAME: "reptile-tracker"
+              OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
+              OTEL_TRACES_EXPORTER: "otlp"
             probes:
               liveness:
                 enabled: true
@@ -197,6 +201,10 @@ spec:
               COOKIE_SAMESITE: "lax"
               ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
               REFRESH_TOKEN_EXPIRE_DAYS: "7"
+              # OpenTelemetry configuration
+              OTEL_SERVICE_NAME: "reptile-tracker"
+              OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
+              OTEL_TRACES_EXPORTER: "otlp"
             probes:
               liveness:
                 enabled: true

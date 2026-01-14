@@ -56,6 +56,13 @@ spec:
                   secretKeyRef:
                     name: n8n-secret
                     key: N8N_RUNNERS_AUTH_TOKEN
+              # OpenTelemetry instrumentation
+              OTEL_SERVICE_NAME: "n8n"
+              OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
+              OTEL_TRACES_EXPORTER: "otlp"
+              OTEL_PROPAGATORS: "tracecontext,baggage"
+              OTEL_NODE_RESOURCE_DETECTORS: "env,host,os,process"
+              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,service.version=latest,deployment.environment=production"
             resources:
               requests:
                 cpu: 15m
