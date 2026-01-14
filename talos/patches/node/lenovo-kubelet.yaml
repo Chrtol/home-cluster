@@ -1,0 +1,4 @@
+machine:
+  kubelet:
+    extraConfig:
+      maxPods: 150  # Increase from 110 to 150 for lenovo nodes
