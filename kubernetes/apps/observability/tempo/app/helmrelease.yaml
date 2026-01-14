@@ -33,6 +33,9 @@ spec:
             ring:
               replication_factor: 1  # Set to 1 since we only run 1 ingester
         metrics_generator:
+          ring:
+            kvstore:
+              store: memberlist
           # Enable service graphs generation
           processor:
             service_graphs:
@@ -51,6 +54,11 @@ spec:
                 - span.kind
                 - status.code
               histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.02, 2.05, 4.10]
+          storage:
+            # Remote write configuration to send metrics to Prometheus
+            remote_write:
+              - url: http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write
+                send_exemplars: true
 
     # Trace ingestion configuration
     traces:
@@ -198,7 +206,7 @@ spec:
     metricsGenerator:
       enabled: true
       replicas: 1
-      remoteWriteUrl: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+      # Note: remoteWriteUrl doesn't work with structuredConfig, it's set above in tempo.structuredConfig
       resources:
         requests:
           cpu: 100m
