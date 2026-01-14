@@ -1,0 +1,132 @@
+---
+# Python instrumentation for default namespace
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: python-instrumentation
+  namespace: observability
+spec:
+  exporter:
+    endpoint: http://tempo-distributor.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.5"  # 50% sampling
+  resource:
+    addK8sUIDAttributes: true
+  python:
+    env:
+      # Python uses http/proto by default, so we need port 4318 for HTTP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://tempo-distributor.observability.svc.cluster.local:4318
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: http/protobuf
+      - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_POSTGRESQL_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_HTTP_CLIENT_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_REQUESTS_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_FASTAPI_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_DJANGO_ENABLED
+        value: "true"
+      - name: OTEL_METRICS_EXPORTER
+        value: none  # Disable metrics for now
+---
+# Node.js instrumentation
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: nodejs-instrumentation
+  namespace: observability
+spec:
+  exporter:
+    endpoint: http://tempo-distributor.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.5"  # 50% sampling
+  resource:
+    addK8sUIDAttributes: true
+  nodejs:
+    env:
+      - name: OTEL_NODE_RESOURCE_DETECTORS
+        value: "env,host,os,process,container"
+      - name: OTEL_INSTRUMENTATION_HTTP_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_EXPRESS_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_FASTIFY_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_POSTGRES_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
+        value: "true"
+      - name: OTEL_METRICS_EXPORTER
+        value: none  # Disable metrics for now
+---
+# .NET instrumentation
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: dotnet-instrumentation
+  namespace: observability
+spec:
+  exporter:
+    endpoint: http://tempo-distributor.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.3"  # 30% sampling for potentially high-volume apps
+  resource:
+    addK8sUIDAttributes: true
+  dotnet:
+    env:
+      # .NET also uses http/proto by default
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://tempo-distributor.observability.svc.cluster.local:4318
+      - name: OTEL_DOTNET_AUTO_TRACES_ENABLED
+        value: "true"
+      - name: OTEL_DOTNET_AUTO_LOGS_ENABLED
+        value: "false"
+      - name: OTEL_METRICS_EXPORTER
+        value: none  # Disable metrics for now
+---
+# Java instrumentation
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-instrumentation
+  namespace: observability
+spec:
+  exporter:
+    endpoint: http://tempo-distributor.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.5"  # 50% sampling
+  resource:
+    addK8sUIDAttributes: true
+  java:
+    env:
+      - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_HTTP_ENABLED
+        value: "true"
+      - name: OTEL_METRICS_EXPORTER
+        value: none  # Disable metrics for now

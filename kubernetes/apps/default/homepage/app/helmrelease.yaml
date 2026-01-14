@@ -38,6 +38,8 @@ spec:
         annotations:
           # reloader.stakater.com/search: "true"
           reloader.stakater.com/auto: "true"
+          instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
+          instrumentation.opentelemetry.io/container-names: "app"
         containers:
           app:
             image:
@@ -47,12 +49,8 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               LOG_LEVEL: debug
               HOMEPAGE_ALLOWED_HOSTS: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-              # OpenTelemetry instrumentation
+              # OpenTelemetry custom attributes
               OTEL_SERVICE_NAME: "homepage"
-              OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
-              OTEL_TRACES_EXPORTER: "otlp"
-              OTEL_PROPAGATORS: "tracecontext,baggage"
-              OTEL_NODE_RESOURCE_DETECTORS: "env,host,os,process"
               OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,service.version=latest,deployment.environment=production"
             envFrom:
               - secretRef:
