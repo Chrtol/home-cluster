@@ -32,6 +32,25 @@ spec:
           lifecycler:
             ring:
               replication_factor: 1  # Set to 1 since we only run 1 ingester
+        metrics_generator:
+          # Enable service graphs generation
+          processor:
+            service_graphs:
+              dimensions:
+                - service.namespace
+                - service.name
+                - service.version
+              histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.02, 2.05, 4.10]
+              max_items: 10000
+              wait: 10s
+            span_metrics:
+              dimensions:
+                - service.namespace
+                - service.name
+                - span.name
+                - span.kind
+                - status.code
+              histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.02, 2.05, 4.10]
 
     # Trace ingestion configuration
     traces:
