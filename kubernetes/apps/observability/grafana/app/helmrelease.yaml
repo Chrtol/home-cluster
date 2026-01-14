@@ -92,6 +92,15 @@ spec:
                 datasourceUid: prometheus
                 spanStartTimeShift: "-1h"
                 spanEndTimeShift: "1h"
+                queries:
+                  - name: "Request rate"
+                    query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
+                  - name: "Error rate"
+                    query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags, status_code="ERROR"}[5m]))'
+                  - name: "Duration (p50)"
+                    query: 'histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m])) by (le))'
+                  - name: "Duration (p95)"
+                    query: 'histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m])) by (le))'
               nodeGraph:
                 enabled: true
               serviceMap:
