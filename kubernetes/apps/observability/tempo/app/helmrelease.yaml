@@ -25,6 +25,14 @@ spec:
       image:
         registry: docker.io
 
+    # Tempo configuration overrides
+    tempo:
+      structuredConfig:
+        ingester:
+          lifecycler:
+            ring:
+              replication_factor: 1  # Set to 1 since we only run 1 ingester
+
     # Trace ingestion configuration
     traces:
       otlp:
