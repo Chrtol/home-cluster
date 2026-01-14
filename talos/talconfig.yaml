@@ -27,6 +27,8 @@ nodes:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/95d432d6bb450a67e801a6ae77c96a67e38820b62ba4159ae7e997e1695207f7
     controlPlane: true
+    patches:
+      - "@./patches/node/lenovo-kubelet.yaml"
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:db:44:3d"
@@ -46,6 +48,8 @@ nodes:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/95d432d6bb450a67e801a6ae77c96a67e38820b62ba4159ae7e997e1695207f7
     controlPlane: true
+    patches:
+      - "@./patches/node/lenovo-kubelet.yaml"
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:11:70:d8"
@@ -65,6 +69,8 @@ nodes:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/95d432d6bb450a67e801a6ae77c96a67e38820b62ba4159ae7e997e1695207f7
     controlPlane: true
+    patches:
+      - "@./patches/node/dell1-kubelet.yaml"
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:c5:fc:46"

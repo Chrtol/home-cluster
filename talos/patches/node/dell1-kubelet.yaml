@@ -1,0 +1,4 @@
+machine:
+  kubelet:
+    extraConfig:
+      maxPods: 250  # Increase from 110 to 250 for dell1
