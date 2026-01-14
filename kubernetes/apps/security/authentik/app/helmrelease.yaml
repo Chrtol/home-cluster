@@ -55,11 +55,11 @@ spec:
     server:
       serviceAccountName: authentik
       replicas: 1
+      podAnnotations:
+        instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
-        # OpenTelemetry instrumentation
+        # Authentik has native OTEL support - keep these for native integration
         OTEL_SERVICE_NAME: "authentik"
-        OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
-        OTEL_TRACES_EXPORTER: "otlp"
         AUTHENTIK_TRACING__ENABLED: "true"
         AUTHENTIK_TRACING__EXPORTER: "otlp"
         OTEL_RESOURCE_ATTRIBUTES: "service.namespace=security,app.type=identity-provider"
@@ -117,11 +117,11 @@ spec:
     worker:
       serviceAccountName: authentik
       replicas: 3
+      podAnnotations:
+        instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
-        # OpenTelemetry instrumentation
+        # Authentik has native OTEL support - keep these for native integration
         OTEL_SERVICE_NAME: "authentik-worker"
-        OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
-        OTEL_TRACES_EXPORTER: "otlp"
         AUTHENTIK_TRACING__ENABLED: "true"
         AUTHENTIK_TRACING__EXPORTER: "otlp"
         OTEL_RESOURCE_ATTRIBUTES: "service.namespace=security,app.type=identity-provider,component=worker"

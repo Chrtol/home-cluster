@@ -24,6 +24,8 @@ spec:
 
         annotations:
           reloader.stakater.com/auto: "true"
+          instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
+          instrumentation.opentelemetry.io/container-names: "app"
 
         initContainers:
           init-db:
@@ -42,12 +44,8 @@ spec:
               pullPolicy: IfNotPresent
             envFrom: *envFrom # All values are created on the externalsecret
             env:
-              # OpenTelemetry instrumentation for Python
+              # OpenTelemetry custom attributes
               OTEL_SERVICE_NAME: "mealie"
-              OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
-              OTEL_TRACES_EXPORTER: "otlp"
-              OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
-              OTEL_INSTRUMENTATION_POSTGRESQL_ENABLED: "true"
               OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,deployment.environment=production"
             resources:
               requests:

@@ -18,3 +18,4 @@ resources:
   - ./capacitor/ks.yaml
   - ./grafana-operator/ks.yaml
   - ./tempo/ks.yaml
+  - ./opentelemetry/ks.yaml
