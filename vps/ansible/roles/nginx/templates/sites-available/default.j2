@@ -1,3 +1,20 @@
+# Extract trace ID from traceparent header for logging
+# Format: version-trace_id-parent_id-trace_flags
+map $http_traceparent $trace_id {
+    ~^[0-9a-f]{2}-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$ $1;
+    default "-";
+}
+
+# Custom log format with trace correlation
+log_format trace_format '$remote_addr - $remote_user [$time_local] '
+                        '"$request" $status $body_bytes_sent '
+                        '"$http_referer" "$http_user_agent" '
+                        'trace_id=$trace_id '
+                        'request_time=$request_time '
+                        'upstream_response_time=$upstream_response_time '
+                        'upstream_addr=$upstream_addr '
+                        'host=$host';
+
 # WebSocket Connection Upgrade Map
 # If client sends Upgrade header → Connection: upgrade (for WebSockets)
 # If no Upgrade header → Connection: close (for regular HTTP)
@@ -97,6 +114,9 @@ server {
     client_body_buffer_size 1M;
     client_body_timeout 120s;
 
+    # Enable trace-aware access logging
+    access_log /var/log/nginx/access-trace.log trace_format;
+
     location / {
         # Proxy to home cluster external nginx-ingress via WireGuard
         proxy_pass https://{{ nginx_external_ingress_ip }}:443;
@@ -136,6 +156,11 @@ server {
         # TCP optimizations
         tcp_nodelay on;
         tcp_nopush on;
+
+        # Pass OpenTelemetry trace context headers for correlation
+        proxy_set_header traceparent $http_traceparent;
+        proxy_set_header tracestate $http_tracestate;
+        proxy_set_header baggage $http_baggage;
     }
 
 {% if enable_metrics is defined and enable_metrics %}
