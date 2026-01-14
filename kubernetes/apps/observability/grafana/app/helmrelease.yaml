@@ -81,7 +81,7 @@ spec:
             type: tempo
             uid: tempo
             access: proxy
-            url: http://tempo.observability.svc.cluster.local:3100
+            url: http://tempo-query-frontend.observability.svc.cluster.local:3200
             jsonData:
               tracesToLogsV2:
                 datasourceUid: loki

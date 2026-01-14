@@ -5,6 +5,13 @@ metadata:
   name: envoy-external-proxy
   namespace: network
 spec:
+  telemetry:
+    tracing:
+      samplingRate: 50  # Sample 50% of requests
+      provider:
+        type: OpenTelemetry
+        host: tempo-distributor.observability.svc.cluster.local
+        port: 4317
   provider:
     type: Kubernetes
     kubernetes:
