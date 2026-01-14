@@ -25,6 +25,14 @@ spec:
       image:
         registry: docker.io
 
+    # Enable processors via overrides
+    overrides:
+      defaults:
+        metrics_generator:
+          processors:
+            - service-graphs
+            - span-metrics
+
     # Tempo configuration overrides
     tempo:
       structuredConfig:
@@ -36,10 +44,6 @@ spec:
           ring:
             kvstore:
               store: memberlist
-          # List of processors to enable
-          processors:
-            - service-graphs
-            - span-metrics
           # Enable service graphs generation
           processor:
             service_graphs:
