@@ -1,0 +1,130 @@
+---
+# Example: Auto-instrument Python applications
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-auto-instrumentation
+  namespace: default
+data:
+  install.sh: |
+    #!/bin/sh
+    # For Python apps
+    pip install opentelemetry-distro opentelemetry-exporter-otlp
+    opentelemetry-bootstrap --action=install
+
+---
+# Example: Add to your existing deployments
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reptile-tracker  # Your existing app
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend
+          env:
+            # Add these environment variables
+            - name: OTEL_SERVICE_NAME
+              value: "reptile-tracker"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://tempo-distributor.observability.svc.cluster.local:4317"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "none"
+            - name: OTEL_PROPAGATORS
+              value: "tracecontext,baggage"
+            # Add resource attributes
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.namespace=default,service.version=1.0.0,deployment.environment=production"
+            # Python specific - auto-instrument without code changes
+            - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+              value: "true"
+            # For Django/FastAPI/Flask
+            - name: OTEL_PYTHON_DJANGO_INSTRUMENT
+              value: "true"
+            - name: OTEL_PYTHON_FASTAPI_INSTRUMENT
+              value: "true"
+
+---
+# For Node.js applications
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-app-example
+spec:
+  template:
+    spec:
+      initContainers:
+        # Install OpenTelemetry in init container
+        - name: install-otel
+          image: node:18-alpine
+          command:
+            - sh
+            - -c
+            - |
+              npm install --prefix /otel \
+                @opentelemetry/api \
+                @opentelemetry/auto-instrumentations-node
+          volumeMounts:
+            - name: otel-libs
+              mountPath: /otel
+      containers:
+        - name: app
+          env:
+            - name: NODE_OPTIONS
+              value: "--require /otel/node_modules/@opentelemetry/auto-instrumentations-node/register"
+            - name: OTEL_SERVICE_NAME
+              value: "nodejs-app"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://tempo-distributor.observability.svc.cluster.local:4317"
+            - name: OTEL_NODE_RESOURCE_DETECTORS
+              value: "env,host,os,process,container"
+          volumeMounts:
+            - name: otel-libs
+              mountPath: /otel
+      volumes:
+        - name: otel-libs
+          emptyDir: {}
+
+---
+# For Go applications (requires code changes)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: go-instrumentation-example
+data:
+  main.go: |
+    package main
+
+    import (
+        "context"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+        "go.opentelemetry.io/otel/propagation"
+        "go.opentelemetry.io/otel/sdk/trace"
+    )
+
+    func initTracer() {
+        ctx := context.Background()
+
+        exporter, _ := otlptracegrpc.New(ctx,
+            otlptracegrpc.WithEndpoint("tempo-distributor.observability.svc.cluster.local:4317"),
+            otlptracegrpc.WithInsecure(),
+        )
+
+        tp := trace.NewTracerProvider(
+            trace.WithBatcher(exporter),
+            trace.WithResource(resource.NewWithAttributes(
+                semconv.SchemaURL,
+                semconv.ServiceNameKey.String("my-go-app"),
+            )),
+        )
+
+        otel.SetTracerProvider(tp)
+        otel.SetTextMapPropagator(propagation.TraceContext{})
+    }

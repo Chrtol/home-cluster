@@ -1,0 +1,113 @@
+---
+# Add annotations to your Ingress resources for better service identification
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plex
+  namespace: media
+  annotations:
+    # Add service name to traces
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      opentelemetry_attribute "service.name" "plex";
+      opentelemetry_attribute "app.type" "media-streaming";
+      opentelemetry_attribute "app.tier" "frontend";
+    # Add custom span name
+    nginx.ingress.kubernetes.io/opentelemetry-operation-name: "Plex-$request_method"
+spec:
+  ingressClassName: internal
+  rules:
+    - host: plex.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: plex
+                port:
+                  number: 32400
+
+---
+# For database-backed services, add database traces
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-tracing
+  namespace: default
+data:
+  postgres-config: |
+    # Add to PostgreSQL connection strings:
+    # For CloudNative-PG instances, add tracing
+    POSTGRES_CONNECTION="postgresql://user:pass@postgres:5432/db?application_name=reptile-tracker&traceparent=${TRACE_PARENT}"
+
+  redis-config: |
+    # For Redis/Dragonfly, enable command tracing
+    # Most Redis clients support OpenTelemetry
+    import redis
+    from opentelemetry.instrumentation.redis import RedisInstrumentor
+
+    RedisInstrumentor().instrument()
+
+---
+# Add service mesh observability with annotations
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: media
+spec:
+  template:
+    metadata:
+      annotations:
+        # These annotations help identify services in the graph
+        instrumentation.opentelemetry.io/inject-sdk: "true"
+        instrumentation.opentelemetry.io/service-name: "immich-server"
+        instrumentation.opentelemetry.io/container-names: "immich-server"
+    spec:
+      containers:
+        - name: immich-server
+          env:
+            # Propagate trace context to downstream services
+            - name: OTEL_PROPAGATORS
+              value: "tracecontext,baggage,b3multi"
+            # Include database calls in traces
+            - name: OTEL_INSTRUMENTATION_POSTGRESQL_ENABLED
+              value: "true"
+            # Include Redis calls
+            - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
+              value: "true"
+            # Include HTTP client calls
+            - name: OTEL_INSTRUMENTATION_HTTP_CLIENT_ENABLED
+              value: "true"
+
+---
+# For services that call external APIs
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-api-tracing
+data:
+  config.yaml: |
+    # Add tracing to external API calls
+    # This makes them appear in the service graph
+
+    # For Python requests
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+    RequestsInstrumentor().instrument(
+        # This will show external services in your graph
+        span_callback=lambda span, request: span.set_attribute("peer.service", urlparse(request.url).netloc)
+    )
+
+    # For Node.js fetch/axios
+    const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+    const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
+
+    registerInstrumentations({
+      instrumentations: [
+        new HttpInstrumentation({
+          requestHook: (span, request) => {
+            span.setAttribute('peer.service', request.hostname);
+          }
+        })
+      ]
+    });

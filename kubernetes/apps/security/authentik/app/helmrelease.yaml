@@ -55,6 +55,14 @@ spec:
     server:
       serviceAccountName: authentik
       replicas: 1
+      env:
+        # OpenTelemetry instrumentation
+        OTEL_SERVICE_NAME: "authentik"
+        OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
+        OTEL_TRACES_EXPORTER: "otlp"
+        AUTHENTIK_TRACING__ENABLED: "true"
+        AUTHENTIK_TRACING__EXPORTER: "otlp"
+        OTEL_RESOURCE_ATTRIBUTES: "service.namespace=security,app.type=identity-provider"
       initContainers:
       - name: init-db
         image: ghcr.io/home-operations/postgres-init:18.1
@@ -109,6 +117,14 @@ spec:
     worker:
       serviceAccountName: authentik
       replicas: 3
+      env:
+        # OpenTelemetry instrumentation
+        OTEL_SERVICE_NAME: "authentik-worker"
+        OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4317"
+        OTEL_TRACES_EXPORTER: "otlp"
+        AUTHENTIK_TRACING__ENABLED: "true"
+        AUTHENTIK_TRACING__EXPORTER: "otlp"
+        OTEL_RESOURCE_ATTRIBUTES: "service.namespace=security,app.type=identity-provider,component=worker"
       autoscaling:
         enabled: true
         minReplicas: 3
