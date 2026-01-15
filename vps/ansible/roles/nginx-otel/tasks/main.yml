@@ -154,37 +154,5 @@
 - name: Deployment status
   debug:
     msg: |
-      Container is {{ 'running' if final_container_info.container.State.Running else 'not running' }}
-      Health check: {{ 'passed' if health_check is succeeded else 'failed (container may still be restarting - this is expected)' }}
-      Note: Container may restart a few times initially due to file descriptor limits being applied
-
-- name: Test OTLP connectivity to Tempo
-  shell: |
-    echo "Testing connectivity to {{ otel_exporter_endpoint }}"
-    nc -zv {{ otel_exporter_endpoint.split(':')[0] }} {{ otel_exporter_endpoint.split(':')[1] }} 2>&1 || true
-  register: otlp_connectivity
-  ignore_errors: true
-
-- name: Display OTLP connectivity status
-  debug:
-    msg: |
-      OTLP Endpoint: {{ otel_exporter_endpoint }}
-      Connectivity test: {{ otlp_connectivity.stdout }}
-
-      To verify traces in Grafana:
-      1. Open Grafana and go to Explore
-      2. Select Tempo as the data source
-      3. Look for service name: {{ otel_service_name }}
-      4. Traces should appear after a few requests to your VPS nginx
-
-- name: Copy OpenTelemetry test script
-  copy:
-    src: test-otel.sh
-    dest: "{{ nginx_otel_dir }}/test-otel.sh"
-    mode: '0755'
-
-- name: Information about testing OpenTelemetry
-  debug:
-    msg: |
-      OpenTelemetry testing script deployed to {{ nginx_otel_dir }}/test-otel.sh
-      Run it on the VPS to generate test traces: {{ nginx_otel_dir }}/test-otel.sh
+      nginx-otel container is {{ 'running' if final_container_info.container.State.Running else 'not running' }}
+      OTLP endpoint: {{ otel_exporter_endpoint }}

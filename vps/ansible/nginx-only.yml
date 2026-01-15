@@ -75,9 +75,15 @@
       changed_when: false
       when: use_nginx_otel
 
-    - name: Display nginx status
+    - name: Display system nginx status
       debug:
-        var: "{{ 'nginx_service_status.stdout_lines' if not use_nginx_otel else 'nginx_container_status.stdout_lines' }}"
+        var: nginx_service_status.stdout_lines
+      when: not use_nginx_otel
+
+    - name: Display container nginx status
+      debug:
+        var: nginx_container_status.stdout_lines
+      when: use_nginx_otel
 
     - name: Test connectivity to external ingress
       uri:
