@@ -137,7 +137,9 @@
 - name: Verify nginx-otel is running
   uri:
     url: "http://localhost:{{ nginx_http_port }}/health"
-    status_code: [200, 404, 301, 302]
+    status_code: [200, 301, 302, 404]
+    validate_certs: false
+    follow_redirects: all
   register: health_check
   retries: 5
   delay: 2
