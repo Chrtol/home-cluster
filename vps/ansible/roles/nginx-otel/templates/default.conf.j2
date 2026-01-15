@@ -76,9 +76,8 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
-        # Pass trace context to upstream
-        proxy_set_header traceparent $http_traceparent;
-        proxy_set_header tracestate $http_tracestate;
+        # Note: OpenTelemetry trace context headers are automatically injected
+        # by the nginx OTEL module when otel_trace_context propagate is set.
 
         # Timeouts
         proxy_connect_timeout 60s;
@@ -151,10 +150,10 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
-        # Pass OpenTelemetry trace context headers
-        proxy_set_header traceparent $http_traceparent;
-        proxy_set_header tracestate $http_tracestate;
-        proxy_set_header baggage $http_baggage;
+        # Note: OpenTelemetry trace context headers are automatically injected
+        # by the nginx OTEL module when otel_trace_context propagate is set.
+        # DO NOT manually set traceparent/tracestate/baggage headers as it will
+        # override the OTEL module's trace propagation!
 
         # Extended timeouts for streaming
         proxy_connect_timeout 60s;
