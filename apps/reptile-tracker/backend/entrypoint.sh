@@ -63,5 +63,7 @@ if [ "${DEBUG_STARTUP:-0}" = "1" ]; then
   python /app/debug_startup.py || true
 fi
 
-echo "Starting Uvicorn"
-exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-config /app/logging_config.json
+echo "Starting Uvicorn with OpenTelemetry instrumentation"
+# Use opentelemetry-instrument to auto-instrument the application
+# The OpenTelemetry Operator will inject configuration via environment variables
+exec opentelemetry-instrument uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-config /app/logging_config.json

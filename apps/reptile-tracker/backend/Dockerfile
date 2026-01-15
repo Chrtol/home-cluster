@@ -16,11 +16,12 @@ RUN pip install --no-cache-dir -r requirements.txt && pip list
 COPY app ./app
 COPY migrations ./migrations
 COPY entrypoint.sh ./entrypoint.sh
+COPY entrypoint-celery.sh ./entrypoint-celery.sh
 COPY debug_startup.py ./debug_startup.py
 COPY logging_config.json ./logging_config.json
 COPY cleanup_duplicate_templates.py ./cleanup_duplicate_templates.py
 COPY celery_worker.py ./celery_worker.py
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh ./entrypoint-celery.sh
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
