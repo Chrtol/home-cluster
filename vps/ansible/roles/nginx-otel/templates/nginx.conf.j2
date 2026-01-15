@@ -17,6 +17,8 @@ http {
     default_type application/octet-stream;
 
     # OpenTelemetry configuration
+    # Note: The otel_exporter endpoint is configured via environment variable OTEL_EXPORTER_OTLP_ENDPOINT
+    # This provides better flexibility for TLS/gRPC configuration
     otel_exporter {
         endpoint {{ otel_exporter_endpoint }};
         interval 5s;

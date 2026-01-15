@@ -5,7 +5,9 @@ nginx_otel_config_dir: "{{ nginx_otel_dir }}/config"
 nginx_otel_ssl_dir: "{{ nginx_otel_dir }}/ssl"
 
 # OpenTelemetry configuration
-otel_exporter_endpoint: "tempo-otlp.{{ nginx_domain }}:443"  # Tempo gRPC via secure ingress
+# For gRPC over TLS (port 443), use https:// protocol
+# The nginx OpenTelemetry module expects the full URL with protocol
+otel_exporter_endpoint: "https://tempo-otlp.{{ nginx_domain }}:443"  # Tempo gRPC via secure ingress
 otel_service_name: "vps-nginx"
 otel_service_namespace: "vps"
 otel_resource_attributes: "deployment.environment=production,host.name={{ ansible_hostname }}"
