@@ -26,8 +26,8 @@ services:
       - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
     environment:
       - OTEL_SERVICE_NAME={{ otel_service_name }}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://{{ otel_exporter_endpoint }}
-      - OTEL_EXPORTER_OTLP_INSECURE=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT={{ otel_exporter_endpoint }}
+      - OTEL_EXPORTER_OTLP_INSECURE=false
     logging:
       driver: "json-file"
       options:

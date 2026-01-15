@@ -1,4 +1,21 @@
 ---
+# TLS Certificate for Tempo OTLP gRPC endpoint
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tempo-otlp-grpc
+  namespace: observability
+spec:
+  secretName: tempo-otlp-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "tempo-otlp.${SECRET_DOMAIN}"
+  dnsNames:
+    - "tempo-otlp.${SECRET_DOMAIN}"
+  privateKey:
+    rotationPolicy: Always
+---
 # Ingress for Tempo OTLP gRPC endpoint
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -7,14 +24,19 @@ metadata:
   namespace: observability
   annotations:
     external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+    # gRPC-specific annotations
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    nginx.ingress.kubernetes.io/grpc-backend: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    # Whitelist WireGuard subnet, server network, pod network, and service network
-    nginx.ingress.kubernetes.io/whitelist-source-range: "10.100.0.0/24,10.0.30.0/24,10.42.0.0/16,10.43.0.0/16"
-    # Basic auth for additional security (optional)
-    # nginx.ingress.kubernetes.io/auth-type: basic
-    # nginx.ingress.kubernetes.io/auth-secret: tempo-otlp-auth
-    # nginx.ingress.kubernetes.io/auth-realm: 'OTLP Authentication'
+    # gRPC requires HTTP/2 and longer timeouts for streaming
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    # Allow VPS and internal networks to send traces
+    # IMPORTANT: Add your VPS external IP to this whitelist
+    # nginx.ingress.kubernetes.io/whitelist-source-range: "YOUR_VPS_IP/32,10.100.0.0/24,10.0.30.0/24,10.42.0.0/16,10.43.0.0/16"
+    # For now, disable whitelist to allow VPS access (enable with VPS IP once working)
 spec:
   ingressClassName: external
   tls:
