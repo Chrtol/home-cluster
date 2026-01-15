@@ -49,10 +49,10 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
-      # Enable multi-instrumentation for multi-container pods
-      featureGates: "enable-multi-instrumentation"
       # disabled by default - enable instrumentation types
       extraArgs:
         - --enable-go-instrumentation=true
         - --enable-nginx-instrumentation=true
         - --enable-cr-metrics=false
+        # Enable multi-instrumentation for multi-container pods
+        - --feature-gates=enable-multi-instrumentation
