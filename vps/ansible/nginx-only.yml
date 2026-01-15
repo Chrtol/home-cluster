@@ -69,7 +69,8 @@
       when: not use_nginx_otel
 
     - name: Check containerized nginx-otel status
-      command: docker ps --filter "name=nginx-otel" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+      shell: |
+        docker ps --filter "name=nginx-otel" --format "table {% raw %}{{.Names}}\t{{.Status}}\t{{.Ports}}{% endraw %}"
       register: nginx_container_status
       changed_when: false
       when: use_nginx_otel
