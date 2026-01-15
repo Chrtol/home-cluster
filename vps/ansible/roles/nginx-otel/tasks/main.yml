@@ -16,6 +16,17 @@
     source: pull
     force_source: yes
 
+- name: Check if nginx has OpenTelemetry compiled in
+  shell: |
+    docker run --rm {{ nginx_otel_image }} nginx -V 2>&1
+  register: nginx_version_check
+  ignore_errors: yes
+
+- name: Display nginx version and modules
+  debug:
+    msg: "Nginx version info: {{ nginx_version_check.stderr | default(nginx_version_check.stdout) }}"
+  when: nginx_version_check is defined
+
 - name: Copy SSL certificates to container directory
   copy:
     src: "{{ item }}"
