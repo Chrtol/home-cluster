@@ -19,11 +19,12 @@ server {
 {% if enable_echo_test is defined and enable_echo_test %}
 # Echo test server for Envoy Gateway testing
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name echo-test.{{ nginx_domain }};
 
     # OpenTelemetry configuration
-    otel_span_name "echo-test_$request_method";
+    otel_span_name "echo-test:$request_method";
     otel_trace on;
 
     # Security headers
@@ -82,11 +83,12 @@ server {
 
 # Main wildcard server for all services
 server {
-    listen 443 ssl http2 default_server;
+    listen 443 ssl default_server;
+    http2 on;
     server_name *.{{ nginx_domain }} {{ nginx_domain }};
 
     # OpenTelemetry configuration - span name includes host and method
-    otel_span_name "$host_$request_method";
+    otel_span_name "$host:$request_method";
     otel_trace on;
 
     # Security headers
