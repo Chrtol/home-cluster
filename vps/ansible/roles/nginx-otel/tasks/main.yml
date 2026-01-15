@@ -90,13 +90,38 @@
     state: restarted
   when: config_changed
 
+- name: Check nginx-otel container status
+  community.docker.docker_container_info:
+    name: nginx-otel
+  register: container_info
+  retries: 3
+  delay: 2
+
+- name: Display container status for debugging
+  debug:
+    msg: |
+      Container Running: {{ container_info.container.State.Running | default(false) }}
+      Container Status: {{ container_info.container.State.Status | default('unknown') }}
+  when: container_info.container is defined
+
+- name: Get docker logs if container is not running
+  shell: docker logs nginx-otel --tail 50
+  register: docker_logs
+  when: container_info.container is not defined or not (container_info.container.State.Running | default(false))
+  ignore_errors: yes
+
+- name: Display docker logs if container failed
+  debug:
+    var: docker_logs.stdout_lines
+  when: docker_logs is defined and docker_logs.stdout_lines is defined
+
 - name: Wait for nginx-otel to be ready
   wait_for:
     port: "{{ nginx_http_port }}"
     state: started
     host: 0.0.0.0
-    delay: 2
-    timeout: 30
+    delay: 5
+    timeout: 60
 
 - name: Verify nginx-otel is running
   uri:
