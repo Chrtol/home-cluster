@@ -1,6 +1,5 @@
 ---
 - name: restart nginx-otel
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ nginx_otel_dir }}"
-    restarted: yes
-    state: present
+    state: restarted
