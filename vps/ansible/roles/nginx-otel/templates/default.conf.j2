@@ -76,9 +76,17 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
+        # Construct W3C traceparent header with nginx's span as parent
+        set $trace_flags "01";  # 01 = sampled
+        if ($otel_trace_flags) {
+            set $trace_flags $otel_trace_flags;
+        }
+        set $w3c_traceparent "00-$otel_trace_id-$otel_span_id-$trace_flags";
+
         # Pass trace context to upstream
-        proxy_set_header traceparent $http_traceparent;
+        proxy_set_header traceparent $w3c_traceparent;
         proxy_set_header tracestate $http_tracestate;
+        proxy_set_header baggage $http_baggage;
 
         # Timeouts
         proxy_connect_timeout 60s;
@@ -151,8 +159,17 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
+        # Construct W3C traceparent header with nginx's span as parent
+        # Format: version-trace_id-parent_id-trace_flags
+        # Where parent_id is nginx's current span_id
+        set $trace_flags "01";  # 01 = sampled
+        if ($otel_trace_flags) {
+            set $trace_flags $otel_trace_flags;
+        }
+        set $w3c_traceparent "00-$otel_trace_id-$otel_span_id-$trace_flags";
+
         # Pass OpenTelemetry trace context headers
-        proxy_set_header traceparent $http_traceparent;
+        proxy_set_header traceparent $w3c_traceparent;
         proxy_set_header tracestate $http_tracestate;
         proxy_set_header baggage $http_baggage;
 
