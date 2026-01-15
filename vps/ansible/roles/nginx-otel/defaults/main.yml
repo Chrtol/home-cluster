@@ -1,5 +1,5 @@
 ---
-nginx_otel_image: "nginx:alpine-otel"
+nginx_otel_image: "1.29.4-alpine-otel"
 nginx_otel_dir: "/opt/nginx-otel"
 nginx_otel_config_dir: "{{ nginx_otel_dir }}/config"
 nginx_otel_ssl_dir: "{{ nginx_otel_dir }}/ssl"
