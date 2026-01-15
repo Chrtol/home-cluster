@@ -11,7 +11,7 @@
     - "{{ nginx_otel_dir }}/logs"
 
 - name: Pull nginx-otel Docker image
-  docker_image:
+  community.docker.docker_image:
     name: "{{ nginx_otel_image }}"
     source: pull
     force_source: yes
@@ -74,11 +74,10 @@
   ignore_errors: yes
 
 - name: Ensure nginx-otel container is running with current configuration
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ nginx_otel_dir }}"
     state: present
-    pull: yes
-    restarted: no
+    pull: always
   register: nginx_otel_output
 
 - name: Check if configuration changed
@@ -86,10 +85,9 @@
     config_changed: "{{ nginx_otel_output.changed }}"
 
 - name: Restart nginx-otel if configuration changed
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ nginx_otel_dir }}"
-    restarted: yes
-    state: present
+    state: restarted
   when: config_changed
 
 - name: Wait for nginx-otel to be ready

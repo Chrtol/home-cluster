@@ -1,0 +1,4 @@
+---
+collections:
+  - name: community.docker
+    version: ">=3.12.0"  # Version 3.12.0 introduced docker_compose_v2 module
