@@ -13,7 +13,7 @@ spec:
     - baggage
   sampler:
     type: parentbased_traceidratio
-    argument: "0.5"  # 50% sampling
+    argument: "0.75"  # 75% sampling - good balance of visibility and performance
   resource:
     addK8sUIDAttributes: true
   python:
@@ -23,6 +23,11 @@ spec:
         value: http://tempo-distributor.observability.svc.cluster.local:4318
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: http/protobuf
+      # Don't override service name if already set by application
+      - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
         value: "true"
       - name: OTEL_INSTRUMENTATION_POSTGRESQL_ENABLED
@@ -56,7 +61,7 @@ spec:
     - baggage
   sampler:
     type: parentbased_traceidratio
-    argument: "0.5"  # 50% sampling
+    argument: "0.75"  # 75% sampling - good balance of visibility and performance
   resource:
     addK8sUIDAttributes: true
   nodejs:
@@ -90,7 +95,7 @@ spec:
     - baggage
   sampler:
     type: parentbased_traceidratio
-    argument: "0.3"  # 30% sampling for potentially high-volume apps
+    argument: "0.75"  # 75% sampling - good balance of visibility and performance
   resource:
     addK8sUIDAttributes: true
   dotnet:
@@ -119,7 +124,7 @@ spec:
     - baggage
   sampler:
     type: parentbased_traceidratio
-    argument: "0.5"  # 50% sampling
+    argument: "0.75"  # 75% sampling - good balance of visibility and performance
   resource:
     addK8sUIDAttributes: true
   java:
