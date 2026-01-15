@@ -14,13 +14,13 @@
   community.docker.docker_image:
     name: "{{ nginx_otel_image }}"
     source: pull
-    force_source: yes
+    force_source: true
 
 - name: Check if nginx has OpenTelemetry compiled in
   shell: |
     docker run --rm {{ nginx_otel_image }} nginx -V 2>&1
   register: nginx_version_check
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Display nginx version and modules
   debug:
@@ -31,12 +31,12 @@
   copy:
     src: "{{ item }}"
     dest: "{{ nginx_otel_ssl_dir }}/"
-    remote_src: yes
+    remote_src: true
     mode: '0644'
   loop:
     - "{{ nginx_ssl_cert_path }}"
     - "{{ nginx_ssl_key_path }}"
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Deploy nginx configuration with OpenTelemetry
   template:
@@ -68,9 +68,9 @@
   systemd:
     name: nginx
     state: stopped
-    enabled: no
+    enabled: false
   when: nginx_installed.rc == 0
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Wait for ports to be available
   wait_for:
@@ -82,7 +82,7 @@
   loop:
     - 80
     - 443
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Ensure nginx-otel container is running with current configuration
   community.docker.docker_compose_v2:
@@ -119,7 +119,7 @@
   shell: docker logs nginx-otel --tail 50
   register: docker_logs
   when: container_info.container is not defined or not (container_info.container.State.Running | default(false))
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Display docker logs if container failed
   debug:

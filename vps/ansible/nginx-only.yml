@@ -27,7 +27,7 @@
         path: /etc/nginx
         dest: "/tmp/nginx-backup-{{ ansible_date_time.epoch }}.tar.gz"
         format: gz
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Display configuration summary
       debug:
@@ -85,7 +85,7 @@
         validate_certs: no
         timeout: 5
       register: ingress_test
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Show deployment result
       debug:
