@@ -13,10 +13,10 @@ spec:
   path: ./kubernetes/apps/observability/opentelemetry/app
   dependsOn:
     - name: cert-manager
+      namespace: cert-manager
   postBuild:
     substitute:
-      APP: opentelemetry
-      NAMESPACE: observability
+      APP: opentelemetry-operator
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
