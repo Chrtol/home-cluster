@@ -59,10 +59,14 @@ spec:
         instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
         # Authentik has native OTEL support - keep these for native integration
-        OTEL_SERVICE_NAME: "authentik"
-        AUTHENTIK_TRACING__ENABLED: "true"
-        AUTHENTIK_TRACING__EXPORTER: "otlp"
-        OTEL_RESOURCE_ATTRIBUTES: "service.namespace=security,app.type=identity-provider"
+        - name: OTEL_SERVICE_NAME
+          value: "authentik"
+        - name: AUTHENTIK_TRACING__ENABLED
+          value: "true"
+        - name: AUTHENTIK_TRACING__EXPORTER
+          value: "otlp"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.namespace=security,app.type=identity-provider"
       initContainers:
       - name: init-db
         image: ghcr.io/home-operations/postgres-init:18.1
@@ -121,10 +125,14 @@ spec:
         instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
         # Authentik has native OTEL support - keep these for native integration
-        OTEL_SERVICE_NAME: "authentik-worker"
-        AUTHENTIK_TRACING__ENABLED: "true"
-        AUTHENTIK_TRACING__EXPORTER: "otlp"
-        OTEL_RESOURCE_ATTRIBUTES: "service.namespace=security,app.type=identity-provider,component=worker"
+        - name: OTEL_SERVICE_NAME
+          value: "authentik-worker"
+        - name: AUTHENTIK_TRACING__ENABLED
+          value: "true"
+        - name: AUTHENTIK_TRACING__EXPORTER
+          value: "otlp"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.namespace=security,app.type=identity-provider,component=worker"
       autoscaling:
         enabled: true
         minReplicas: 3
