@@ -4,8 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - 'vps/**'
+      - 'vps/ansible/roles/base/**'
+      - 'vps/ansible/roles/crowdsec/**'
+      - 'vps/ansible/roles/pangolin/**'
+      - 'vps/ansible/roles/pangolin-firewall/**'
+      - 'vps/ansible/roles/firewall/**'
+      - 'vps/ansible/roles/docker/**'
       - '.github/workflows/vps-pangolin-deploy.yml'
+      - 'vps/ansible/pangolin-only.yml'
+      - 'vps/ansible/site.yml'
+      - 'vps/ansible/inventory.yml'
   workflow_dispatch:
     inputs:
       debug:
