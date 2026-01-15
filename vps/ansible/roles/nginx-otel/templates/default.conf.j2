@@ -13,7 +13,18 @@ server {
     otel_span_name "HTTP_Redirect_$host";
     otel_trace on;
 
-    return 301 https://$host$request_uri;
+    # Health check endpoint (don't redirect)
+    location /health {
+        otel_trace off;  # Don't trace health checks
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Redirect all other requests to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 
 {% if enable_echo_test is defined and enable_echo_test %}

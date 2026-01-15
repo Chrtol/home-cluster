@@ -19,10 +19,14 @@ http {
     # OpenTelemetry configuration
     otel_exporter {
         endpoint {{ otel_exporter_endpoint }};
+        interval 5s;
+        batch_size 512;
+        batch_count 4;
     }
 
     otel_service_name {{ otel_service_name }};
     otel_trace on;
+    otel_trace_context propagate;
 
     # Standard log format with trace ID
     log_format main '$remote_addr - $remote_user [$time_local] "$request" '
