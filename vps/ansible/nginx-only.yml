@@ -19,6 +19,7 @@
     # Feature toggles
     enable_echo_test: "{{ lookup('env', 'NGINX_ENABLE_ECHO_TEST') | default('true') | bool }}"
     enable_metrics: "{{ lookup('env', 'NGINX_ENABLE_METRICS') | default('true') | bool }}"
+    use_nginx_otel: true  # Always use nginx with OpenTelemetry
 
   pre_tasks:
     - name: Create backup of current nginx configuration
@@ -39,28 +40,43 @@
           Envoy Gateway IP: {{ nginx_envoy_gateway_ip }}
           Echo Test Enabled: {{ enable_echo_test }}
           Metrics Enabled: {{ enable_metrics }}
+          OpenTelemetry Mode: {{ 'Enabled (containerized)' if use_nginx_otel else 'Disabled (system nginx)' }}
           ========================================
 
   tasks:
-    - name: Ensure nginx role configuration is applied
+    - name: Ensure system nginx configuration is applied
       include_role:
         name: nginx
+      when: not use_nginx_otel
+
+    - name: Ensure containerized nginx-otel is deployed
+      include_role:
+        name: nginx-otel
+      when: use_nginx_otel
 
   post_tasks:
-    - name: Verify nginx is running
+    - name: Verify system nginx is running
       systemd:
         name: nginx
         state: started
       register: nginx_status
+      when: not use_nginx_otel
 
-    - name: Check nginx status
+    - name: Check system nginx status
       command: systemctl status nginx --no-pager
       register: nginx_service_status
       changed_when: false
+      when: not use_nginx_otel
+
+    - name: Check containerized nginx-otel status
+      command: docker ps --filter "name=nginx-otel" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+      register: nginx_container_status
+      changed_when: false
+      when: use_nginx_otel
 
     - name: Display nginx status
       debug:
-        var: nginx_service_status.stdout_lines
+        var: "{{ 'nginx_service_status.stdout_lines' if not use_nginx_otel else 'nginx_container_status.stdout_lines' }}"
 
     - name: Test connectivity to external ingress
       uri:
@@ -77,18 +93,31 @@
           ========================================
           Nginx configuration state applied!
 
+          Mode: {{ 'Containerized nginx-otel with OpenTelemetry' if use_nginx_otel else 'System nginx (traditional)' }}
+
+          {% if use_nginx_otel %}
+          OpenTelemetry Configuration:
+          - Service: vps-nginx
+          - Tempo Endpoint: {{ nginx_external_ingress_ip }}:4317
+          - Traces enabled for all requests
+          {% else %}
           Key fixes applied:
           - Fixed WebSocket connection handling ($connection_upgrade map)
           - Added proxy_request_buffering off for streaming
           - Improved proxy header configuration
           - Fixed SSL proxy settings
+          {% endif %}
 
           Status:
-          - Nginx: {{ 'Running' if nginx_status.state == 'started' else 'Not Running' }}
+          - Nginx: {{ 'Container Running' if use_nginx_otel else ('Running' if nginx_status.state == 'started' else 'Not Running') }}
           - External Ingress: {{ 'Reachable' if ingress_test.status is defined else 'Unreachable' }}
 
           If issues persist, check:
           - WireGuard tunnel status
           - External ingress controller logs
           - MTU settings on network interfaces
+          {% if use_nginx_otel %}
+          - Docker logs: docker logs nginx-otel
+          - Traces in Grafana/Tempo
+          {% endif %}
           ========================================

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'vps/ansible/roles/nginx/**'
+      - 'vps/ansible/roles/nginx-otel/**'
       - 'vps/ansible/nginx-only.yml'
       - '.github/workflows/vps-nginx-deploy.yml'
   workflow_dispatch:
