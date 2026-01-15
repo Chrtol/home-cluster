@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  nginx-otel:
+    image: {{ nginx_otel_image }}
+    container_name: nginx-otel
+    restart: unless-stopped
+    network_mode: host  # Use host network to bind to ports 80/443 directly
+    volumes:
+      # Configuration
+      - {{ nginx_otel_config_dir }}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - {{ nginx_otel_config_dir }}/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+      # SSL certificates
+      - {{ nginx_otel_ssl_dir }}/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
+      - {{ nginx_otel_ssl_dir }}/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
+
+      # Logs
+      - {{ nginx_otel_dir }}/logs:/var/log/nginx
+
+      # For metrics endpoints auth (if exists)
+      - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    environment:
+      - OTEL_SERVICE_NAME={{ otel_service_name }}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://{{ otel_exporter_endpoint }}
+      - OTEL_EXPORTER_OTLP_INSECURE=true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

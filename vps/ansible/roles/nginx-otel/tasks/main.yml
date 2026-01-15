@@ -1,0 +1,109 @@
+---
+- name: Create nginx-otel directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ nginx_otel_dir }}"
+    - "{{ nginx_otel_config_dir }}"
+    - "{{ nginx_otel_ssl_dir }}"
+    - "{{ nginx_otel_dir }}/logs"
+
+- name: Pull nginx-otel Docker image
+  docker_image:
+    name: "{{ nginx_otel_image }}"
+    source: pull
+    force_source: yes
+
+- name: Copy SSL certificates to container directory
+  copy:
+    src: "{{ item }}"
+    dest: "{{ nginx_otel_ssl_dir }}/"
+    remote_src: yes
+    mode: '0644'
+  loop:
+    - "{{ nginx_ssl_cert_path }}"
+    - "{{ nginx_ssl_key_path }}"
+  ignore_errors: yes
+
+- name: Deploy nginx configuration with OpenTelemetry
+  template:
+    src: nginx.conf.j2
+    dest: "{{ nginx_otel_config_dir }}/nginx.conf"
+    mode: '0644'
+  notify: restart nginx-otel
+
+- name: Deploy site configuration
+  template:
+    src: default.conf.j2
+    dest: "{{ nginx_otel_config_dir }}/default.conf"
+    mode: '0644'
+  notify: restart nginx-otel
+
+- name: Deploy docker-compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ nginx_otel_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Check if system nginx is installed
+  command: which nginx
+  register: nginx_installed
+  changed_when: false
+  failed_when: false
+
+- name: Ensure system nginx is stopped and disabled
+  systemd:
+    name: nginx
+    state: stopped
+    enabled: no
+  when: nginx_installed.rc == 0
+  ignore_errors: yes
+
+- name: Wait for ports to be available
+  wait_for:
+    port: "{{ item }}"
+    state: stopped
+    host: 0.0.0.0
+    delay: 1
+    timeout: 30
+  loop:
+    - 80
+    - 443
+  ignore_errors: yes
+
+- name: Ensure nginx-otel container is running with current configuration
+  docker_compose:
+    project_src: "{{ nginx_otel_dir }}"
+    state: present
+    pull: yes
+    restarted: no
+  register: nginx_otel_output
+
+- name: Check if configuration changed
+  set_fact:
+    config_changed: "{{ nginx_otel_output.changed }}"
+
+- name: Restart nginx-otel if configuration changed
+  docker_compose:
+    project_src: "{{ nginx_otel_dir }}"
+    restarted: yes
+    state: present
+  when: config_changed
+
+- name: Wait for nginx-otel to be ready
+  wait_for:
+    port: "{{ nginx_http_port }}"
+    state: started
+    host: 0.0.0.0
+    delay: 2
+    timeout: 30
+
+- name: Verify nginx-otel is running
+  uri:
+    url: "http://localhost:{{ nginx_http_port }}/health"
+    status_code: [200, 404, 301, 302]
+  register: health_check
+  retries: 5
+  delay: 2
