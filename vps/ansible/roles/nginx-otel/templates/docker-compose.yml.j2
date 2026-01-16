@@ -12,7 +12,6 @@ services:
       # Configuration files
       - {{ nginx_otel_config_dir }}/nginx.conf:/etc/nginx/nginx.conf:ro
       - {{ nginx_otel_config_dir }}/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - {{ nginx_otel_config_dir }}/otel-nginx.toml:/etc/nginx/otel-nginx.toml:ro
 
       # SSL certificates
       - {{ nginx_otel_ssl_dir }}/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro

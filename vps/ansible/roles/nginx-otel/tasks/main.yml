@@ -55,13 +55,6 @@
     mode: '0644'
   notify: restart nginx-otel
 
-- name: Deploy OpenTelemetry module configuration
-  template:
-    src: otel-nginx.toml.j2
-    dest: "{{ nginx_otel_config_dir }}/otel-nginx.toml"
-    mode: '0644'
-  notify: restart nginx-otel
-
 - name: Deploy site configuration
   template:
     src: default.conf.j2
