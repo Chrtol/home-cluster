@@ -1,12 +1,5 @@
 ---
 - name: restart nginx-otel
-  block:
-    - name: Stop nginx-otel
-      community.docker.docker_compose_v2:
-        project_src: "{{ nginx_otel_dir }}"
-        state: absent
-
-    - name: Start nginx-otel
-      community.docker.docker_compose_v2:
-        project_src: "{{ nginx_otel_dir }}"
-        state: present
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_otel_dir }}"
+    state: restarted

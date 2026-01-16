@@ -55,6 +55,9 @@ server {
     ssl_prefer_server_ciphers on;
 
     location / {
+        # Add peer.service attribute for service graph
+        opentelemetry_attribute "peer.service" "envoy-gateway";
+
         set $envoy_backend "{{ nginx_envoy_gateway_ip }}";
 
         proxy_pass http://$envoy_backend:80;
@@ -130,6 +133,10 @@ server {
     client_body_timeout 120s;
 
     location / {
+        # Add peer.service attribute to create virtual node in service graph
+        # This tells Tempo that vps-nginx is calling external-ingress-nginx
+        opentelemetry_attribute "peer.service" "external-ingress-nginx";
+
         # Proxy to home cluster external nginx-ingress via WireGuard
         proxy_pass https://{{ nginx_external_ingress_ip }}:443;
         proxy_http_version 1.1;
