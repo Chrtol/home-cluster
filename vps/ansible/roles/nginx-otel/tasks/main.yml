@@ -10,15 +10,25 @@
     - "{{ nginx_otel_ssl_dir }}"
     - "{{ nginx_otel_dir }}/logs"
 
-- name: Pull nginx-otel Docker image
+- name: Copy Dockerfile for custom nginx build
+  template:
+    src: Dockerfile.j2
+    dest: "{{ nginx_otel_dir }}/Dockerfile"
+    mode: '0644'
+
+- name: Build custom nginx-otel image with opentelemetry-cpp-contrib
   community.docker.docker_image:
-    name: "{{ nginx_otel_image }}"
-    source: pull
+    name: nginx-otel-custom
+    tag: latest
+    source: build
+    build:
+      path: "{{ nginx_otel_dir }}"
+      pull: true
     force_source: true
 
 - name: Check if nginx has OpenTelemetry compiled in
   shell: |
-    docker run --rm {{ nginx_otel_image }} nginx -V 2>&1
+    docker run --rm nginx-otel-custom:latest nginx -V 2>&1
   register: nginx_version_check
   ignore_errors: true
 
@@ -42,6 +52,13 @@
   template:
     src: nginx.conf.j2
     dest: "{{ nginx_otel_config_dir }}/nginx.conf"
+    mode: '0644'
+  notify: restart nginx-otel
+
+- name: Deploy OpenTelemetry module configuration
+  template:
+    src: otel-nginx.toml.j2
+    dest: "{{ nginx_otel_config_dir }}/otel-nginx.toml"
     mode: '0644'
   notify: restart nginx-otel
 
