@@ -8,12 +8,7 @@ http:
         - websecure
       rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.{{ traefik_domain }}`)"
       service: kubernetes-external-ingress
-      tls:
-        certResolver: cloudflare
-        domains:
-          - main: "{{ traefik_domain }}"
-            sans:
-              - "*.{{ traefik_domain }}"
+      tls: {}
       middlewares:
         - security-headers
 {% if traefik_enable_authentik | default(false) %}
@@ -26,8 +21,7 @@ http:
         - websecure
       rule: "Host(`{{ traefik_domain }}`)"
       service: kubernetes-external-ingress
-      tls:
-        certResolver: cloudflare
+      tls: {}
       middlewares:
         - security-headers
 
@@ -45,8 +39,7 @@ http:
         - websecure
       rule: "Host(`traefik.{{ traefik_domain }}`)"
       service: api@internal
-      tls:
-        certResolver: cloudflare
+      tls: {}
       middlewares:
         - security-headers
 {% if traefik_enable_authentik | default(false) %}
@@ -116,3 +109,14 @@ http:
         dialTimeout: 30s
         responseHeaderTimeout: 30s
         idleConnTimeout: 90s
+
+# TLS Configuration - Use existing certificates from 1Password
+tls:
+  certificates:
+    - certFile: {{ proxy_ssl_cert_path }}
+      keyFile: {{ proxy_ssl_key_path }}
+  stores:
+    default:
+      defaultCertificate:
+        certFile: {{ proxy_ssl_cert_path }}
+        keyFile: {{ proxy_ssl_key_path }}

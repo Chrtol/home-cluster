@@ -36,11 +36,6 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 - `VPS_ENABLE_ECHO_TEST` - Enable echo test endpoint (true/false, default: true)
 - `VPS_ENABLE_METRICS` - Enable metrics endpoints (true/false, default: true)
 
-### 4. Cloudflare Configuration (Vault: `Lab`, Item: `cloudflare`)
-Required for Traefik Let's Encrypt certificates:
-- `EMAIL` - Cloudflare account email
-- `API_TOKEN` - Cloudflare API token with DNS edit permissions
-
 ## GitHub Secrets
 
 Only one secret needs to be configured in GitHub:

@@ -24,10 +24,6 @@
     otel_service_name: "{{ lookup('env', 'OTEL_SERVICE_NAME') | default('vps-' + reverse_proxy_type) }}"
     otel_sample_rate: "{{ lookup('env', 'OTEL_SAMPLE_RATE') | default('0.75') }}"
 
-    # Cloudflare configuration for Traefik (from 1Password)
-    cloudflare_email: "{{ lookup('env', 'CLOUDFLARE_EMAIL') }}"
-    cloudflare_api_token: "{{ lookup('env', 'CLOUDFLARE_API_TOKEN') }}"
-
     # Authentik configuration (from 1Password)
     authentik_enabled: "{{ lookup('env', 'AUTHENTIK_ENABLED') | default('false') | bool }}"
     authentik_domain: "{{ lookup('env', 'AUTHENTIK_DOMAIN') | default('authentik.' + proxy_domain) }}"
