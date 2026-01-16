@@ -1,17 +1,11 @@
 # Build nginx with proper OpenTelemetry support using opentelemetry-cpp-contrib
-FROM nginx:1.27-alpine
+# Use specific Alpine 3.20 version to match the pre-compiled module
+FROM nginx:1.27.3-alpine3.20
 
-# Install required dependencies for the OpenTelemetry module
-# The module needs protobuf, c-ares, grpc, and other libraries
-RUN apk add --no-cache \
-    wget \
-    protobuf \
-    c-ares \
-    grpc \
-    abseil-cpp \
-    re2
+# Install wget to download the module
+RUN apk add --no-cache wget
 
-# Download the pre-compiled OpenTelemetry module directly
+# Download the pre-compiled OpenTelemetry module for Alpine 3.20
 # This module provides the $opentelemetry_context_traceparent variable we need
 RUN wget -O /usr/lib/nginx/modules/otel_ngx_module.so \
     https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/download/nginx/v0.1.1/otel_ngx_module-alpine-3.20-1.27.3.so && \
