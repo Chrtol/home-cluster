@@ -6,3 +6,4 @@ resources:
   - externalsecret.yaml
   - helmrelease.yaml
   - tempo-otlp-external-service.yaml
+  - tempo-otlp-http-external-service.yaml
