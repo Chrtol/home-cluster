@@ -1,4 +1,4 @@
-name: Deploy VPS Reverse Proxy Configuration
+name: Deploy VPS Nginx Configuration
 
 on:
   push:
@@ -6,21 +6,10 @@ on:
     paths:
       - 'vps/ansible/roles/nginx/**'
       - 'vps/ansible/roles/nginx-otel/**'
-      - 'vps/ansible/roles/traefik/**'
-      - 'vps/ansible/reverse-proxy.yml'
-      - 'vps/ansible/nginx-only.yml'  # Keep for backward compatibility
-      - '.github/workflows/vps-reverse-proxy-deploy.yml'
-      - '.github/workflows/vps-nginx-deploy.yml'  # Trigger if old workflow changes
+      - 'vps/ansible/nginx-only.yml'
+      - '.github/workflows/vps-nginx-deploy.yml'
   workflow_dispatch:
     inputs:
-      proxy_type:
-        description: 'Reverse proxy type'
-        required: true
-        type: choice
-        options:
-          - traefik
-          - nginx-otel
-        default: traefik
       debug:
         description: 'Run Ansible in debug mode'
         required: false
@@ -33,8 +22,8 @@ on:
         default: false
 
 jobs:
-  deploy-reverse-proxy:
-    name: Deploy Reverse Proxy Configuration
+  deploy-nginx:
+    name: Deploy Nginx Configuration
     runs-on: ubuntu-latest
 
     steps:
@@ -47,51 +36,17 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-
           # VPS Access
           VPS_HOST: "op://Lab/vps-wireguard/VPS_IP"
           VPS_SSH_PORT: "op://Lab/vps-wireguard/VPS_SSH_PORT"
           VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
           VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
-
-          # Reverse Proxy Type (can be overridden by workflow dispatch)
-          REVERSE_PROXY_TYPE: "op://Lab/vps-proxy/VPS_PROXY_TYPE"
-
-          # Common Proxy Configuration
-          PROXY_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
-          PROXY_EXTERNAL_INGRESS_IP: "op://Lab/vps-proxy/VPS_EXTERNAL_INGRESS_IP"
-          PROXY_ENVOY_GATEWAY_IP: "op://Lab/vps-proxy/VPS_ENVOY_GATEWAY_IP"
-          PROXY_SSL_CERT_PATH: "op://Lab/vps-proxy/VPS_SSL_CERT_PATH"
-          PROXY_SSL_KEY_PATH: "op://Lab/vps-proxy/VPS_SSL_KEY_PATH"
-
-          # OpenTelemetry Configuration
-          OTEL_ENDPOINT: "op://Lab/vps-proxy/VPS_OTEL_ENDPOINT"
-          OTEL_SERVICE_NAME: "op://Lab/vps-proxy/VPS_OTEL_SERVICE_NAME"
-          OTEL_SAMPLE_RATE: "op://Lab/vps-proxy/VPS_OTEL_SAMPLE_RATE"
-
-          # Cloudflare Configuration (for Traefik Let's Encrypt)
-          CLOUDFLARE_EMAIL: "op://Lab/cloudflare/EMAIL"
-          CLOUDFLARE_API_TOKEN: "op://Lab/cloudflare/API_TOKEN"
-
-          # Authentik Configuration
-          AUTHENTIK_ENABLED: "op://Lab/vps-proxy/VPS_AUTHENTIK_ENABLED"
-          AUTHENTIK_DOMAIN: "op://Lab/vps-proxy/VPS_AUTHENTIK_DOMAIN"
-
-          # Feature Toggles
-          PROXY_ENABLE_ECHO_TEST: "op://Lab/vps-proxy/VPS_ENABLE_ECHO_TEST"
-          PROXY_ENABLE_METRICS: "op://Lab/vps-proxy/VPS_ENABLE_METRICS"
-
-          # Legacy nginx variables for backward compatibility
+          # Nginx Configuration (now using renamed vps-proxy item)
           NGINX_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
           NGINX_EXTERNAL_INGRESS_IP: "op://Lab/vps-proxy/VPS_EXTERNAL_INGRESS_IP"
           NGINX_ENVOY_GATEWAY_IP: "op://Lab/vps-proxy/VPS_ENVOY_GATEWAY_IP"
           NGINX_SSL_CERT_PATH: "op://Lab/vps-proxy/VPS_SSL_CERT_PATH"
           NGINX_SSL_KEY_PATH: "op://Lab/vps-proxy/VPS_SSL_KEY_PATH"
-
-      - name: Override proxy type if specified
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.proxy_type
-        run: |
-          echo "REVERSE_PROXY_TYPE=${{ github.event.inputs.proxy_type }}" >> $GITHUB_ENV
 
       - name: Setup SSH key
         run: |
@@ -116,7 +71,7 @@ jobs:
       - name: Ansible syntax check
         working-directory: ./vps/ansible
         run: |
-          ansible-playbook reverse-proxy.yml --syntax-check
+          ansible-playbook nginx-only.yml --syntax-check
 
       - name: Run Ansible Playbook
         working-directory: ./vps/ansible
@@ -125,9 +80,11 @@ jobs:
           VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
           VPS_SSH_USER: ${{ env.VPS_SSH_USER }}
           VPS_SSH_PORT: ${{ env.VPS_SSH_PORT }}
+          # Feature toggles
+          NGINX_ENABLE_ECHO_TEST: "true"
+          NGINX_ENABLE_METRICS: "true"
         run: |
-          echo "Deploying $REVERSE_PROXY_TYPE reverse proxy..."
-          ansible-playbook reverse-proxy.yml \
+          ansible-playbook nginx-only.yml \
             -i inventory.yml \
             ${{ github.event.inputs.dry_run == 'true' && '--check --diff' || '' }} \
             ${{ github.event.inputs.debug == 'true' && '-vvv' || '' }}
