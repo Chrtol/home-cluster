@@ -135,9 +135,15 @@
       changed_when: false
       when: reverse_proxy_type == 'traefik'
 
-    - name: Display proxy status
+    - name: Display nginx-otel proxy status
       debug:
-        var: "{{ 'nginx_container_status' if reverse_proxy_type == 'nginx-otel' else 'traefik_container_status' }}.stdout_lines"
+        var: nginx_container_status.stdout_lines
+      when: reverse_proxy_type == 'nginx-otel'
+
+    - name: Display traefik proxy status
+      debug:
+        var: traefik_container_status.stdout_lines
+      when: reverse_proxy_type == 'traefik'
 
     - name: Test connectivity to external ingress
       uri:

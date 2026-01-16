@@ -25,11 +25,11 @@ http:
       middlewares:
         - security-headers
 
-    # Health check endpoint (no auth)
+    # Health check endpoint (no auth) - Traefik's ping endpoint is at /ping
     health:
       entryPoints:
         - web
-      rule: "Path(`/health`)"
+      rule: "Path(`/ping`)"
       service: ping@internal
       priority: 1000  # High priority to override other rules
 
