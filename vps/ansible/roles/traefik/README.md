@@ -87,13 +87,7 @@ curl http://your-vps-ip/health
 
 ## Service Graph Fix
 
-The key configuration for proper service graphs is:
-
-```yaml
-traceVerbosity: minimal
-```
-
-This ensures Traefik emits exactly one SERVER span (incoming) and one CLIENT span (outgoing) per request, creating the proper edges in Tempo's service graph.
+Traefik automatically emits both SERVER spans (incoming) and CLIENT spans (outgoing) per request, creating the proper edges in Tempo's service graph. This is why it fixes the service graph issue that nginx-otel has (which only emits SERVER spans).
 
 ## Authentik Integration
 
@@ -122,9 +116,9 @@ When you're ready to enable Authentik forward auth:
 ## Troubleshooting
 
 ### Service graph not showing connections?
-- Verify `traceVerbosity: minimal` in configuration
 - Check Tempo is receiving traces: `kubectl logs -n observability deployment/tempo-distributor`
 - Wait ~30 seconds for service graph processor to update
+- Verify service name is `vps-traefik` in traces
 
 ### Authentik forward auth not working?
 - Verify Authentik is accessible from VPS

@@ -1,10 +1,16 @@
 ---
 # Handlers for Traefik role
 - name: restart traefik
-  community.docker.docker_compose_v2:
-    project_src: "{{ traefik_dir }}"
-    state: present
-    restarted: true
+  block:
+    - name: Stop Traefik
+      community.docker.docker_compose_v2:
+        project_src: "{{ traefik_dir }}"
+        state: absent
+
+    - name: Start Traefik
+      community.docker.docker_compose_v2:
+        project_src: "{{ traefik_dir }}"
+        state: present
 
 - name: reload traefik
   # Traefik automatically watches the dynamic configuration file
