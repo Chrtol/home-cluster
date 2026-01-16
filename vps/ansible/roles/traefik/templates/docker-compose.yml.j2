@@ -13,6 +13,3 @@ services:
       # Mount existing SSL certificates (read-only)
       - {{ proxy_ssl_cert_path }}:{{ proxy_ssl_cert_path }}:ro
       - {{ proxy_ssl_key_path }}:{{ proxy_ssl_key_path }}:ro
-
-      # Logs
-      - {{ traefik_dir }}/logs:/logs

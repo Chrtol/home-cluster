@@ -110,8 +110,9 @@ When you're ready to enable Authentik forward auth:
 - Can be scraped by your monitoring stack
 
 ### Logs
-- Access logs: `/opt/traefik/logs/access.log` (JSON format)
-- Application logs: `/opt/traefik/logs/traefik.log`
+- All logs output to stdout/stderr
+- View with: `docker logs traefik`
+- Access logs in JSON format
 
 ## Troubleshooting
 
@@ -132,9 +133,6 @@ When you're ready to enable Authentik forward auth:
 ├── config/
 │   ├── traefik.yml     # Static configuration
 │   └── dynamic.yml     # Dynamic configuration (routes, services, TLS)
-├── logs/
-│   ├── access.log      # Access logs (JSON)
-│   └── traefik.log     # Application logs
 └── docker-compose.yml  # Container definition
 ```
 

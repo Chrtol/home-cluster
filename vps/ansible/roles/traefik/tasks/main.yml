@@ -65,7 +65,6 @@
   loop:
     - "{{ traefik_dir }}"
     - "{{ traefik_config_dir }}"
-    - "{{ traefik_logs_dir }}"
 
 - name: Template Traefik static configuration
   ansible.builtin.template:
@@ -103,6 +102,10 @@
     pull: always
     recreate: always  # Force recreation to pick up config changes
   register: traefik_result
+
+- name: Pause to let container initialize
+  pause:
+    seconds: 3
 
 - name: Wait for Traefik to be healthy
   ansible.builtin.wait_for:
