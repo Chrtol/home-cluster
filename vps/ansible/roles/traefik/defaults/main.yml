@@ -2,7 +2,6 @@
 # Traefik configuration defaults
 traefik_dir: "/opt/traefik"
 traefik_config_dir: "{{ traefik_dir }}/config"
-traefik_logs_dir: "{{ traefik_dir }}/logs"
 
 # Domain configuration (uses nginx_domain from existing setup)
 traefik_domain: "{{ nginx_domain }}"

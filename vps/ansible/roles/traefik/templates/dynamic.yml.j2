@@ -2,11 +2,12 @@
 http:
   # Routers
   routers:
-    # Main wildcard router for all services
+    # Wildcard router for all subdomains (catch-all with lower priority)
     kubernetes-ingress:
       entryPoints:
         - websecure
-      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.{{ traefik_domain }}`)"
+      rule: "HostRegexp(`{host:.+}`)"  # Match any host
+      priority: 1  # Lowest priority - catches everything not matched by other rules
       service: kubernetes-external-ingress
       tls: {}
       middlewares:
@@ -15,11 +16,12 @@ http:
         - authentik-forward-auth
 {% endif %}
 
-    # Root domain router
+    # Root domain router (higher priority)
     kubernetes-root:
       entryPoints:
         - websecure
       rule: "Host(`{{ traefik_domain }}`)"
+      priority: 10  # Higher priority than wildcard
       service: kubernetes-external-ingress
       tls: {}
       middlewares:
