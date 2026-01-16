@@ -1,5 +1,5 @@
-# Load OpenTelemetry module
-load_module modules/ngx_otel_module.so;
+# Load OpenTelemetry module (opentelemetry-cpp-contrib version)
+load_module modules/otel_ngx_module.so;
 
 user nginx;
 worker_processes auto;
@@ -16,25 +16,14 @@ http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
 
-    # OpenTelemetry configuration
-    # Note: The otel_exporter endpoint is configured via environment variable OTEL_EXPORTER_OTLP_ENDPOINT
-    # This provides better flexibility for TLS/gRPC configuration
-    otel_exporter {
-        endpoint {{ otel_exporter_endpoint }};
-        interval 5s;
-        batch_size 512;
-        batch_count 4;
-    }
+    # OpenTelemetry configuration for opentelemetry-cpp-contrib module
+    opentelemetry_config /etc/nginx/otel-nginx.toml;
 
-    otel_service_name {{ otel_service_name }};
-    otel_trace on;
-    otel_trace_context propagate;
-
-    # Standard log format with trace ID
+    # Standard log format with trace ID from opentelemetry-cpp-contrib
     log_format main '$remote_addr - $remote_user [$time_local] "$request" '
                     '$status $body_bytes_sent "$http_referer" '
                     '"$http_user_agent" "$http_x_forwarded_for" '
-                    'trace_id=$otel_trace_id';
+                    'trace_id=$opentelemetry_trace_id';
 
     access_log /var/log/nginx/access.log main;
 

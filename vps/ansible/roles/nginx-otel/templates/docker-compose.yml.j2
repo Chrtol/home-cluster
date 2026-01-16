@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   nginx-otel:
-    image: {{ nginx_otel_image }}
+    image: nginx-otel-custom:latest  # Use our locally built custom image
     container_name: nginx-otel
     restart: unless-stopped
     network_mode: host  # Use host network to bind to ports 80/443 directly
@@ -11,9 +11,10 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      # Configuration (not read-only to allow entrypoint script to modify)
-      - {{ nginx_otel_config_dir }}/nginx.conf:/etc/nginx/nginx.conf
-      - {{ nginx_otel_config_dir }}/default.conf:/etc/nginx/conf.d/default.conf
+      # Configuration files
+      - {{ nginx_otel_config_dir }}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - {{ nginx_otel_config_dir }}/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - {{ nginx_otel_config_dir }}/otel-nginx.toml:/etc/nginx/otel-nginx.toml:ro
 
       # SSL certificates
       - {{ nginx_otel_ssl_dir }}/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro

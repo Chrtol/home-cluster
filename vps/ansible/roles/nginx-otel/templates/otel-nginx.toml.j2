@@ -1,0 +1,24 @@
+# OpenTelemetry configuration for nginx with opentelemetry-cpp-contrib module
+exporter = "otlp"
+processor = "batch"
+
+[exporters.otlp]
+endpoint = "{{ otel_exporter_endpoint | regex_replace('https://', '') }}"
+use_ssl = true
+ssl_insecure = false
+
+[processors.batch]
+max_queue_size = 2048
+schedule_delay_millis = 5000
+max_export_batch_size = 512
+
+[service]
+name = "{{ otel_service_name }}"
+namespace = "{{ otel_service_namespace }}"
+resource = "{{ otel_resource_attributes }}"
+
+[sampler]
+name = "AlwaysOn"
+
+[propagator]
+name = "tracecontext"  # W3C Trace Context standard

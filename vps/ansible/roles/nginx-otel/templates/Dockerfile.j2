@@ -1,0 +1,17 @@
+# Build nginx with proper OpenTelemetry support using opentelemetry-cpp-contrib
+FROM nginx:1.27-alpine
+
+# Install wget to download the module
+RUN apk add --no-cache wget
+
+# Download the pre-compiled OpenTelemetry module directly
+# This module provides the $opentelemetry_context_traceparent variable we need
+RUN wget -O /usr/lib/nginx/modules/otel_ngx_module.so \
+    https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/download/nginx/v0.1.1/otel_ngx_module-alpine-3.20-1.27.3.so && \
+    chmod 644 /usr/lib/nginx/modules/otel_ngx_module.so
+
+# Verify the module was downloaded
+RUN ls -la /usr/lib/nginx/modules/otel_ngx_module.so
+
+EXPOSE 80 443
+CMD ["nginx", "-g", "daemon off;"]

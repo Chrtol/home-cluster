@@ -10,12 +10,12 @@ server {
     server_name *.{{ nginx_domain }} {{ nginx_domain }};
 
     # OpenTelemetry configuration for redirects
-    otel_span_name "HTTP_Redirect_$host";
-    otel_trace on;
+    opentelemetry_operation_name "HTTP_Redirect_$host";
+    opentelemetry on;
 
     # Health check endpoint (don't redirect)
     location /health {
-        otel_trace off;  # Don't trace health checks
+        opentelemetry off;  # Don't trace health checks
         access_log off;
         return 200 "healthy\n";
         add_header Content-Type text/plain;
@@ -35,8 +35,8 @@ server {
     server_name echo-test.{{ nginx_domain }};
 
     # OpenTelemetry configuration
-    otel_span_name "echo-test:$request_method";
-    otel_trace on;
+    opentelemetry_operation_name "echo-test:$request_method";
+    opentelemetry on;
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -76,8 +76,10 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
-        # Pass trace context to upstream
-        proxy_set_header traceparent $http_traceparent;
+        # Pass trace context to upstream with nginx as parent
+        # The $opentelemetry_context_traceparent variable contains the full W3C header
+        # with nginx's span ID as the parent ID
+        proxy_set_header traceparent $opentelemetry_context_traceparent;
         proxy_set_header tracestate $http_tracestate;
         proxy_set_header baggage $http_baggage;
 
@@ -99,9 +101,10 @@ server {
     http2 on;
     server_name *.{{ nginx_domain }} {{ nginx_domain }};
 
-    # OpenTelemetry configuration - span name includes host and method
-    otel_span_name "$host:$request_method";
-    otel_trace on;
+    # OpenTelemetry configuration - operation name includes host and method
+    opentelemetry_operation_name "$host:$request_method";
+    opentelemetry on;
+    opentelemetry_propagate;  # Enable trace context propagation
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -152,8 +155,10 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
 
-        # Pass OpenTelemetry trace context headers
-        proxy_set_header traceparent $http_traceparent;
+        # Pass OpenTelemetry trace context headers with nginx as parent
+        # The $opentelemetry_context_traceparent contains the full W3C header
+        # with THIS nginx's span ID as the parent ID for downstream services
+        proxy_set_header traceparent $opentelemetry_context_traceparent;
         proxy_set_header tracestate $http_tracestate;
         proxy_set_header baggage $http_baggage;
 
@@ -173,8 +178,8 @@ server {
 
 {% if enable_metrics is defined and enable_metrics %}
     location /metrics/node {
-        otel_span_name "metrics_node_exporter";
-        otel_trace on;
+        opentelemetry_operation_name "metrics_node_exporter";
+        opentelemetry on;
 
         auth_basic "Metrics Access";
         auth_basic_user_file /etc/nginx/.htpasswd;
@@ -182,8 +187,8 @@ server {
     }
 
     location /metrics/wireguard {
-        otel_span_name "metrics_wireguard_exporter";
-        otel_trace on;
+        opentelemetry_operation_name "metrics_wireguard_exporter";
+        opentelemetry on;
 
         auth_basic "Metrics Access";
         auth_basic_user_file /etc/nginx/.htpasswd;
@@ -193,7 +198,7 @@ server {
 
     # Health check endpoint
     location /health {
-        otel_trace off;  # Don't trace health checks
+        opentelemetry off;  # Don't trace health checks
         access_log off;
         return 200 "healthy\n";
         add_header Content-Type text/plain;
