@@ -17,7 +17,10 @@ http {
     default_type application/octet-stream;
 
     # OpenTelemetry configuration for opentelemetry-cpp-contrib module
-    opentelemetry_config /etc/nginx/otel-nginx.toml;
+    opentelemetry on;
+    opentelemetry_service_name "{{ otel_service_name }}";
+    opentelemetry_otlp_traces_endpoint "{{ otel_exporter_endpoint }}";
+    opentelemetry_propagate;  # Enable W3C trace context propagation
 
     # Standard log format with trace ID from opentelemetry-cpp-contrib
     log_format main '$remote_addr - $remote_user [$time_local] "$request" '
