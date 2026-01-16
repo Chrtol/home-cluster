@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  nginx-otel-custom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nginx-otel-custom:latest
+    container_name: nginx-otel-custom
+    restart: unless-stopped
+    network_mode: host  # Use host network to bind to ports 80/443 directly
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      # Configuration files
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./otel-nginx.toml:/etc/nginx/otel-nginx.toml:ro
+      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
+
+      # SSL certificates (you'll need to copy these from your existing setup)
+      - ./ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
+      - ./ssl/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
+
+      # Logs
+      - ./logs:/var/log/nginx
+
+      # For metrics endpoints auth (if exists)
+      - ./.htpasswd:/etc/nginx/.htpasswd:ro
+    environment:
+      # Override the OpenTelemetry configuration
+      - OTEL_SERVICE_NAME=vps-nginx
+      - OTEL_EXPORTER_OTLP_ENDPOINT=https://tempo-otlp.${DOMAIN}:443
+      - OTEL_EXPORTER_OTLP_INSECURE=false
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=production,host.name=vps
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
