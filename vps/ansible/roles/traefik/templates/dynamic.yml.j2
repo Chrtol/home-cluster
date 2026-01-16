@@ -1,0 +1,118 @@
+# Traefik Dynamic Configuration
+http:
+  # Routers
+  routers:
+    # Main wildcard router for all services
+    kubernetes-ingress:
+      entryPoints:
+        - websecure
+      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.{{ traefik_domain }}`)"
+      service: kubernetes-external-ingress
+      tls:
+        certResolver: cloudflare
+        domains:
+          - main: "{{ traefik_domain }}"
+            sans:
+              - "*.{{ traefik_domain }}"
+      middlewares:
+        - security-headers
+{% if traefik_enable_authentik | default(false) %}
+        - authentik-forward-auth
+{% endif %}
+
+    # Root domain router
+    kubernetes-root:
+      entryPoints:
+        - websecure
+      rule: "Host(`{{ traefik_domain }}`)"
+      service: kubernetes-external-ingress
+      tls:
+        certResolver: cloudflare
+      middlewares:
+        - security-headers
+
+    # Health check endpoint (no auth)
+    health:
+      entryPoints:
+        - web
+      rule: "Path(`/health`)"
+      service: ping@internal
+      priority: 1000  # High priority to override other rules
+
+    # Dashboard (optional, with auth)
+    traefik-dashboard:
+      entryPoints:
+        - websecure
+      rule: "Host(`traefik.{{ traefik_domain }}`)"
+      service: api@internal
+      tls:
+        certResolver: cloudflare
+      middlewares:
+        - security-headers
+{% if traefik_enable_authentik | default(false) %}
+        - authentik-forward-auth
+{% endif %}
+
+  # Services
+  services:
+    # Kubernetes external ingress service
+    kubernetes-external-ingress:
+      loadBalancer:
+        servers:
+          - url: "https://{{ kubernetes_external_ingress_ip }}:443"
+        passHostHeader: true
+        serversTransport: kubernetes-transport
+
+  # Middleware
+  middlewares:
+    # Security Headers
+    security-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        frameDeny: true
+        sslRedirect: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        customResponseHeaders:
+          X-Robots-Tag: "noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
+          server: ""  # Remove server header
+
+{% if traefik_enable_authentik | default(false) %}
+    # Authentik Forward Auth
+    authentik-forward-auth:
+      forwardAuth:
+        address: "https://authentik.{{ traefik_domain }}/outpost.goauthentik.io/auth/traefik"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-authentik-username
+          - X-authentik-groups
+          - X-authentik-email
+          - X-authentik-name
+          - X-authentik-uid
+        tls:
+          insecureSkipVerify: {{ traefik_authentik_skip_verify | default('false') }}
+{% endif %}
+
+    # Rate Limiting (optional)
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1s
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+  # Server Transports
+  serversTransports:
+    # Transport for Kubernetes ingress (skip cert verification for internal certs)
+    kubernetes-transport:
+      insecureSkipVerify: true  # Since we're connecting to internal Kubernetes ingress
+      maxIdleConnsPerHost: 25
+      forwardingTimeouts:
+        dialTimeout: 30s
+        responseHeaderTimeout: 30s
+        idleConnTimeout: 90s

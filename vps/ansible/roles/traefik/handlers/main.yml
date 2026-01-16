@@ -1,0 +1,13 @@
+---
+# Handlers for Traefik role
+- name: restart traefik
+  community.docker.docker_compose_v2:
+    project_src: "{{ traefik_dir }}"
+    state: present
+    restarted: true
+
+- name: reload traefik
+  # Traefik automatically watches the dynamic configuration file
+  # This handler is here for consistency but doesn't need to do anything
+  ansible.builtin.debug:
+    msg: "Traefik will automatically reload the dynamic configuration"

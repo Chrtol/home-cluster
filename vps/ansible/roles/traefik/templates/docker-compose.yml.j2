@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    network_mode: host  # Use host network for ports 80/443
+    environment:
+      # Let's Encrypt
+      - CF_API_EMAIL={{ cloudflare_email }}
+      - CF_DNS_API_TOKEN={{ cloudflare_api_token }}
+    volumes:
+      # Configuration files
+      - {{ traefik_dir }}/config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - {{ traefik_dir }}/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
+
+      # Let's Encrypt certificates
+      - {{ traefik_dir }}/acme:/acme
+
+      # Logs
+      - {{ traefik_dir }}/logs:/logs

@@ -1,0 +1,101 @@
+---
+# Example SecurityPolicy for Authentik external authorization with Envoy Gateway
+# Rename to authentik-securitypolicy.yaml and add to kustomization.yaml when ready to enable
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: authentik-auth
+  namespace: network
+spec:
+  # Target the Gateway or specific HTTPRoutes
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: envoy-external  # Apply to the entire gateway
+    # Or target specific HTTPRoutes:
+    # kind: HTTPRoute
+    # name: my-protected-app
+
+  # External Authorization via Authentik
+  extAuth:
+    http:
+      # Authentik forward auth endpoint
+      backendRef:
+        name: authentik-forward-auth
+        namespace: authentik
+        port: 9000
+
+      # Path prefix for auth checks
+      pathPrefix: "/outpost.goauthentik.io/auth/envoy"
+
+      # Headers to send to auth service
+      headersToExtAuth:
+        - "cookie"
+        - "authorization"
+        - "x-forwarded-for"
+        - "x-forwarded-host"
+        - "x-forwarded-proto"
+
+      # Headers to add from auth response
+      headersToDownstream:
+        - "x-authentik-username"
+        - "x-authentik-groups"
+        - "x-authentik-email"
+        - "x-authentik-name"
+        - "x-authentik-uid"
+
+      # Headers to add to upstream request
+      headersToUpstream:
+        - "x-authentik-username"
+        - "x-authentik-groups"
+        - "x-authentik-email"
+        - "x-authentik-name"
+        - "x-authentik-uid"
+
+      # Fail open or closed
+      failOpen: false  # Set to true to allow requests if auth service is unavailable
+
+---
+# Alternative: Using OIDC directly (without forward auth)
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: authentik-oidc
+  namespace: network
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: protected-app
+
+  oidc:
+    provider:
+      issuer: "https://authentik.${SECRET_DOMAIN}/application/o/my-app/"
+      clientID: "${CLIENT_ID}"
+      clientSecret:
+        name: authentik-oidc-secret
+        key: client-secret
+
+    redirectURL: "https://myapp.${SECRET_DOMAIN}/oauth2/callback"
+    logoutPath: "/logout"
+
+    scopes:
+      - "openid"
+      - "profile"
+      - "email"
+      - "groups"
+
+---
+# Service for Authentik forward auth (if in different namespace)
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-forward-auth
+  namespace: network
+spec:
+  type: ExternalName
+  externalName: authentik-server.authentik.svc.cluster.local
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP

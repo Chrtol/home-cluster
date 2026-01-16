@@ -1,0 +1,117 @@
+---
+# Deploy Traefik with OpenTelemetry support
+# This role ensures only Traefik is running (stops nginx if present)
+
+# CRITICAL: Stop any existing nginx instances to avoid port conflicts
+- name: Stop and disable nginx services
+  block:
+    - name: Check if nginx-otel container exists
+      command: docker ps -a -q -f name=nginx-otel
+      register: nginx_container_exists
+      changed_when: false
+      failed_when: false
+
+    - name: Stop and remove nginx-otel container if exists
+      shell: |
+        docker stop nginx-otel || true
+        docker rm nginx-otel || true
+      when: nginx_container_exists.stdout != ""
+
+    - name: Check if system nginx service exists
+      command: systemctl list-units --full --all -t service --plain --no-legend nginx.service
+      register: nginx_service_exists
+      changed_when: false
+      failed_when: false
+
+    - name: Stop and disable system nginx if exists
+      systemd:
+        name: nginx
+        state: stopped
+        enabled: no
+      when: "'nginx.service' in nginx_service_exists.stdout"
+      ignore_errors: true
+
+    - name: Ensure ports 80 and 443 are free
+      wait_for:
+        port: "{{ item }}"
+        state: stopped
+        timeout: 10
+      loop:
+        - 80
+        - 443
+      ignore_errors: true
+
+- name: Create Traefik directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ traefik_dir }}"
+    - "{{ traefik_config_dir }}"
+    - "{{ traefik_acme_dir }}"
+    - "{{ traefik_logs_dir }}"
+
+- name: Template Traefik static configuration
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: "{{ traefik_config_dir }}/traefik.yml"
+    mode: '0644'
+  notify: restart traefik
+
+- name: Template Traefik dynamic configuration
+  ansible.builtin.template:
+    src: dynamic.yml.j2
+    dest: "{{ traefik_config_dir }}/dynamic.yml"
+    mode: '0644'
+  notify: reload traefik
+
+- name: Create ACME storage file if it doesn't exist
+  ansible.builtin.file:
+    path: "{{ traefik_acme_dir }}/acme.json"
+    state: touch
+    mode: '0600'
+  changed_when: false
+
+- name: Template docker-compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ traefik_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Start Traefik container
+  community.docker.docker_compose_v2:
+    project_src: "{{ traefik_dir }}"
+    state: present
+    pull: always
+  register: traefik_result
+
+- name: Wait for Traefik to be healthy
+  ansible.builtin.wait_for:
+    port: 443
+    host: 0.0.0.0
+    delay: 5
+    timeout: 60
+
+- name: Check Traefik health endpoint
+  ansible.builtin.uri:
+    url: "http://localhost/health"
+    method: GET
+    status_code: 200
+  retries: 5
+  delay: 2
+
+- name: Display Traefik status
+  ansible.builtin.debug:
+    msg: |
+      Traefik has been deployed successfully!
+      - Service: vps-traefik
+      - Domain: {{ traefik_domain }}
+      - OpenTelemetry endpoint: {{ traefik_otel_endpoint }}
+      - Trace verbosity: minimal (for clean service graphs)
+      - Sample rate: {{ traefik_sample_rate }}
+      {% if traefik_enable_authentik %}
+      - Authentik forward auth: ENABLED
+      {% else %}
+      - Authentik forward auth: DISABLED (set traefik_enable_authentik to true when ready)
+      {% endif %}

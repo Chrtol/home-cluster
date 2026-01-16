@@ -1,0 +1,89 @@
+# Traefik Static Configuration
+api:
+  dashboard: true
+  debug: false
+
+# Entry Points
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http2:
+      maxConcurrentStreams: 250
+    http3:
+      advertisedPort: 443
+
+# Providers
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+# Certificate Resolvers (Let's Encrypt)
+certificatesResolvers:
+  cloudflare:
+    acme:
+      email: {{ traefik_acme_email | default(cloudflare_email) }}
+      storage: /acme/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+
+# OpenTelemetry Tracing Configuration
+tracing:
+  openTelemetry:
+    grpc:
+      endpoint: {{ traefik_otel_endpoint }}
+      insecure: {{ traefik_otel_insecure | default('false') }}
+      headers:
+        # Optional: Add any auth headers if needed
+        # authorization: Bearer ${OTEL_AUTH_TOKEN}
+
+    # Service name for traces
+    serviceName: {{ traefik_service_name | default('vps-traefik') }}
+
+    # IMPORTANT: Use 'minimal' for clean service graphs with CLIENT/SERVER spans
+    # 'detailed' adds middleware spans which can clutter the service graph
+    traceVerbosity: minimal
+
+    # Sampling rate (1.0 = 100%, 0.1 = 10%)
+    sampleRate: {{ traefik_sample_rate | default('0.75') }}
+
+# Logs
+log:
+  level: {{ traefik_log_level | default('INFO') }}
+  filePath: /logs/traefik.log
+
+accessLog:
+  filePath: /logs/access.log
+  format: json
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+        Authorization: drop
+        Cookie: drop
+
+# Health Check
+ping:
+  entryPoint: web
+
+# Metrics (Prometheus)
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+    entryPoint: metrics
