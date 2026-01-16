@@ -2,7 +2,6 @@
 # Traefik configuration defaults
 traefik_dir: "/opt/traefik"
 traefik_config_dir: "{{ traefik_dir }}/config"
-traefik_acme_dir: "{{ traefik_dir }}/acme"
 traefik_logs_dir: "{{ traefik_dir }}/logs"
 
 # Domain configuration (uses nginx_domain from existing setup)
@@ -17,9 +16,6 @@ traefik_otel_endpoint: "tempo-otlp.{{ traefik_domain }}:443"
 traefik_otel_insecure: "false"  # Using TLS
 traefik_service_name: "vps-traefik"
 traefik_sample_rate: "0.75"  # Match existing nginx sampling
-
-# Let's Encrypt / Cloudflare
-traefik_acme_email: "{{ cloudflare_email }}"
 
 # Authentik integration (disabled by default, enable when ready)
 traefik_enable_authentik: false

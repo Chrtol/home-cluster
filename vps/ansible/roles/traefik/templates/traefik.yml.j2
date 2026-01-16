@@ -27,17 +27,8 @@ providers:
     filename: /etc/traefik/dynamic.yml
     watch: true
 
-# Certificate Resolvers (Let's Encrypt)
-certificatesResolvers:
-  cloudflare:
-    acme:
-      email: {{ traefik_acme_email | default(cloudflare_email) }}
-      storage: /acme/acme.json
-      dnsChallenge:
-        provider: cloudflare
-        resolvers:
-          - "1.1.1.1:53"
-          - "8.8.8.8:53"
+# Using existing certificates from 1Password configuration
+# No ACME/Let's Encrypt needed since certificates already exist
 
 # OpenTelemetry Tracing Configuration
 tracing:

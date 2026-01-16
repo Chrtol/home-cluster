@@ -7,13 +7,12 @@ This guide covers migrating from nginx-otel to Traefik for fixing OpenTelemetry 
 1. **Fixes Service Graph**: Traefik emits both CLIENT and SERVER spans, fixing Tempo service graphs
 2. **Future-proof**: nginx-ingress goes EOL March 2026, Traefik is actively maintained
 3. **Better Integration**: Native Authentik support and Gateway API compliance
-4. **Auto-certificates**: Built-in Let's Encrypt with Cloudflare DNS challenge
+4. **Uses existing certificates**: No need for Let's Encrypt, uses your configured SSL certs
 
 ## Pre-Migration Checklist
 
 - [ ] Backup current nginx configuration (automatic via playbook)
 - [ ] Configure 1Password secrets (see [1PASSWORD_SECRETS.md](ansible/1PASSWORD_SECRETS.md))
-- [ ] Verify Cloudflare API token has DNS edit permissions
 - [ ] Ensure GitHub Actions has `OP_SERVICE_ACCOUNT_TOKEN` secret
 
 ## Migration Steps
@@ -70,7 +69,7 @@ Once dry run passes, deploy for real:
 # The deployment will:
 # 1. Stop and remove nginx-otel container
 # 2. Deploy Traefik container
-# 3. Configure automatic Let's Encrypt certificates
+# 3. Use your existing SSL certificates from 1Password config
 # 4. Set up OpenTelemetry with proper CLIENT/SERVER spans
 ```
 
@@ -136,7 +135,7 @@ op item edit "vps-proxy" --vault="Lab" \
 | **Logs** | `docker logs nginx-otel` | `docker logs traefik` |
 | **OpenTelemetry** | SERVER spans only | CLIENT + SERVER spans |
 | **Service Name** | `vps-nginx` | `vps-traefik` |
-| **Certificates** | Manual | Automatic (Let's Encrypt) |
+| **Certificates** | Uses existing certs | Uses existing certs |
 | **Auth Support** | Basic | Authentik forward auth |
 
 ## Troubleshooting
@@ -150,15 +149,6 @@ Error: bind: address already in use
 ssh vps "docker stop nginx-otel && docker rm nginx-otel"
 ssh vps "systemctl stop nginx"
 ```
-
-### Certificate Generation Failed
-```
-Error: Unable to obtain ACME certificate
-```
-**Solution:** Check Cloudflare API token:
-- Must have Zone:DNS:Edit permissions
-- Domain must be in Cloudflare
-- Check logs: `docker logs traefik | grep acme`
 
 ### Service Graph Still Broken
 **Check:**

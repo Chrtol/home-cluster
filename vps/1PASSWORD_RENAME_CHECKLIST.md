@@ -77,8 +77,8 @@ op item get "vps-proxy" --vault="Lab" --format json | jq '.fields[].label'
 
 ## After Updating 1Password
 
-1. The GitHub workflows will automatically use the new item name and fields
-2. Both `vps-nginx-deploy.yml` and `vps-reverse-proxy-deploy.yml` will work
+1. The GitHub workflow will automatically use the new item name and fields
+2. The `vps-reverse-proxy-deploy.yml` workflow supports both nginx-otel and traefik
 3. You can switch between nginx and traefik by changing `VPS_PROXY_TYPE`
 
 ## Testing

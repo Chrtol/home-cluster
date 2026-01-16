@@ -49,7 +49,6 @@
   loop:
     - "{{ traefik_dir }}"
     - "{{ traefik_config_dir }}"
-    - "{{ traefik_acme_dir }}"
     - "{{ traefik_logs_dir }}"
 
 - name: Template Traefik static configuration
