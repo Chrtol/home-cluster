@@ -21,6 +21,9 @@ entryPoints:
     http3:
       advertisedPort: 443
 
+  metrics:
+    address: ":8082"
+
 # Providers
 providers:
   file:
@@ -47,19 +50,18 @@ log:
   level: {{ traefik_log_level | default('INFO') }}
   # No filePath means output to stdout
 
-# Access log disabled to keep stdout readable
-# Uncomment to enable access logging to a file
-# accessLog:
-#   filePath: /logs/access.log
-#   format: json
-#   fields:
-#     defaultMode: keep
-#     headers:
-#       defaultMode: drop
-#       names:
-#         User-Agent: keep
-#         Authorization: drop
-#         Cookie: drop
+# Access log to file for debugging (separate from stdout)
+accessLog:
+  filePath: /logs/access.log
+  format: json
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+        Authorization: drop
+        Cookie: drop
 
 # Health Check
 ping:
