@@ -72,20 +72,29 @@
     src: traefik.yml.j2
     dest: "{{ traefik_config_dir }}/traefik.yml"
     mode: '0644'
-  notify: restart traefik
+  register: static_config_changed
 
 - name: Template Traefik dynamic configuration
   ansible.builtin.template:
     src: dynamic.yml.j2
     dest: "{{ traefik_config_dir }}/dynamic.yml"
     mode: '0644'
-  notify: reload traefik
+  register: dynamic_config_changed
 
 - name: Template docker-compose file
   ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ traefik_dir }}/docker-compose.yml"
     mode: '0644'
+  register: compose_changed
+
+# CRITICAL: Force container recreation when config changes
+- name: Stop and remove Traefik container if config changed
+  community.docker.docker_compose_v2:
+    project_src: "{{ traefik_dir }}"
+    state: absent
+    remove_orphans: true
+  when: static_config_changed.changed or compose_changed.changed or dynamic_config_changed.changed
 
 - name: Start Traefik container
   community.docker.docker_compose_v2:
