@@ -1,0 +1,214 @@
+# WebSocket Connection Upgrade Map
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name *.{{ nginx_domain }} {{ nginx_domain }};
+
+    # OpenTelemetry configuration for redirects
+    opentelemetry_operation_name "HTTP_Redirect_$host";
+    opentelemetry on;
+
+    # Health check endpoint (don't redirect)
+    location /health {
+        opentelemetry off;  # Don't trace health checks
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Redirect all other requests to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+{% if enable_echo_test is defined and enable_echo_test %}
+# Echo test server for Envoy Gateway testing
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name echo-test.{{ nginx_domain }};
+
+    # OpenTelemetry configuration
+    opentelemetry_operation_name "echo-test:$request_method";
+    opentelemetry on;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # SSL certificate
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+
+    # SSL settings
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    location / {
+        set $envoy_backend "{{ nginx_envoy_gateway_ip }}";
+
+        proxy_pass http://$envoy_backend:80;
+        proxy_http_version 1.1;
+
+        # Proxy settings
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port 443;
+
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        # PROPER TRACE PROPAGATION with opentelemetry-cpp-contrib module
+        # This variable contains the full W3C traceparent header with nginx's span as parent
+        proxy_set_header traceparent $opentelemetry_context_traceparent;
+        proxy_set_header tracestate $http_tracestate;
+        proxy_set_header baggage $http_baggage;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 3600s;
+        proxy_read_timeout 3600s;
+
+        # File upload
+        client_max_body_size 100M;
+        client_body_buffer_size 1M;
+    }
+}
+{% endif %}
+
+# Main wildcard server for all services
+server {
+    listen 443 ssl default_server;
+    http2 on;
+    server_name *.{{ nginx_domain }} {{ nginx_domain }};
+
+    # OpenTelemetry configuration - operation name includes host and method
+    opentelemetry_operation_name "$host:$request_method";
+    opentelemetry on;
+
+    # Add custom attributes to spans
+    opentelemetry_attribute "http.host" "$host";
+    opentelemetry_attribute "http.method" "$request_method";
+    opentelemetry_attribute "http.url" "$scheme://$host$request_uri";
+    opentelemetry_attribute "http.user_agent" "$http_user_agent";
+
+    # Enable trace context propagation
+    opentelemetry_propagate;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # SSL certificate
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+
+    # SSL settings
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # Large file upload and streaming
+    client_max_body_size 100M;
+    client_body_buffer_size 1M;
+    client_body_timeout 120s;
+
+    location / {
+        # Proxy to home cluster external nginx-ingress via WireGuard
+        proxy_pass https://{{ nginx_external_ingress_ip }}:443;
+        proxy_http_version 1.1;
+
+        # SSL proxy settings
+        proxy_ssl_verify off;
+        proxy_ssl_session_reuse on;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+
+        # Buffering settings - critical for streaming
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port 443;
+
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        # PROPER TRACE PROPAGATION with opentelemetry-cpp-contrib module
+        # The $opentelemetry_context_traceparent variable contains the full W3C header
+        # with THIS nginx's span ID as the parent ID for downstream services
+        # Format: 00-{trace_id}-{nginx_span_id}-{flags}
+        proxy_set_header traceparent $opentelemetry_context_traceparent;
+        proxy_set_header tracestate $http_tracestate;
+        proxy_set_header baggage $http_baggage;
+
+        # Extended timeouts for streaming
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 3600s;
+        proxy_read_timeout 3600s;
+        send_timeout 3600s;
+
+        # Keep socket alive for better performance
+        proxy_socket_keepalive on;
+
+        # TCP optimizations
+        tcp_nodelay on;
+        tcp_nopush on;
+    }
+
+{% if enable_metrics is defined and enable_metrics %}
+    location /metrics/node {
+        opentelemetry_operation_name "metrics_node_exporter";
+        opentelemetry on;
+
+        auth_basic "Metrics Access";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://localhost:9100/metrics;
+    }
+
+    location /metrics/wireguard {
+        opentelemetry_operation_name "metrics_wireguard_exporter";
+        opentelemetry on;
+
+        auth_basic "Metrics Access";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://localhost:9586/metrics;
+    }
+{% endif %}
+
+    # Health check endpoint
+    location /health {
+        opentelemetry off;  # Don't trace health checks
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
