@@ -21,6 +21,8 @@ http {
     opentelemetry_service_name "{{ otel_service_name }}";
     opentelemetry_otlp_traces_endpoint "{{ otel_exporter_endpoint }}";
     opentelemetry_propagate;  # Enable W3C trace context propagation
+    # Don't trace our own OTLP exports to avoid recursive tracing and noise in service graph
+    opentelemetry_ignore_paths "(tempo-otlp|tempo-otlp-http)";
 
     # Standard log format with trace ID from opentelemetry-cpp-contrib
     log_format main '$remote_addr - $remote_user [$time_local] "$request" '
