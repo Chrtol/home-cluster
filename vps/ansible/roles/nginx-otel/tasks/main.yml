@@ -105,7 +105,7 @@
   community.docker.docker_compose_v2:
     project_src: "{{ nginx_otel_dir }}"
     state: present
-    pull: always
+    pull: never  # Don't pull since we're using a locally built image
   register: nginx_otel_output
 
 - name: Check if configuration changed
