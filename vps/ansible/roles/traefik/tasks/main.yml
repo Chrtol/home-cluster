@@ -65,6 +65,7 @@
   loop:
     - "{{ traefik_dir }}"
     - "{{ traefik_config_dir }}"
+    - "{{ traefik_dir }}/logs"
 
 - name: Template Traefik static configuration
   ansible.builtin.template:
