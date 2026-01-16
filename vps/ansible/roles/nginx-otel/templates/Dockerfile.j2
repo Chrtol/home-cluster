@@ -2,8 +2,14 @@
 # Use specific Alpine 3.20 version to match the pre-compiled module
 FROM nginx:1.27.3-alpine3.20
 
-# Install wget to download the module
-RUN apk add --no-cache wget
+# Install required runtime dependencies for the OpenTelemetry module
+RUN apk add --no-cache \
+    wget \
+    protobuf \
+    c-ares \
+    grpc \
+    abseil-cpp \
+    re2
 
 # Download the pre-compiled OpenTelemetry module for Alpine 3.20
 # This module provides the $opentelemetry_context_traceparent variable we need
