@@ -30,25 +30,17 @@ providers:
 # Using existing certificates from 1Password configuration
 # No ACME/Let's Encrypt needed since certificates already exist
 
-# OpenTelemetry Tracing Configuration
+# OpenTelemetry Tracing Configuration (OTLP format for Traefik v3)
 tracing:
-  openTelemetry:
+  serviceName: {{ traefik_service_name | default('vps-traefik') }}
+  sampleRate: {{ traefik_sample_rate | default('0.75') }}
+  otlp:
     grpc:
       endpoint: {{ traefik_otel_endpoint }}
       insecure: {{ traefik_otel_insecure | default('false') }}
       headers:
         # Optional: Add any auth headers if needed
         # authorization: Bearer ${OTEL_AUTH_TOKEN}
-
-    # Service name for traces
-    serviceName: {{ traefik_service_name | default('vps-traefik') }}
-
-    # IMPORTANT: Use 'minimal' for clean service graphs with CLIENT/SERVER spans
-    # 'detailed' adds middleware spans which can clutter the service graph
-    traceVerbosity: minimal
-
-    # Sampling rate (1.0 = 100%, 0.1 = 10%)
-    sampleRate: {{ traefik_sample_rate | default('0.75') }}
 
 # Logs
 log:
