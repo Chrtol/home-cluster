@@ -7,13 +7,13 @@ This Ansible role deploys Traefik as a reverse proxy replacement for nginx-otel,
 1. **Proper OpenTelemetry Support**: Traefik emits both CLIENT and SERVER spans, fixing the service graph visualization issue
 2. **Native Authentik Integration**: Built-in forward auth support for Authentik
 3. **Gateway API Ready**: Full support for the Kubernetes Gateway API (future-proof)
-4. **Auto-Configuration**: Automatic Let's Encrypt certificates via Cloudflare DNS
+4. **Existing Certificates**: Uses your configured SSL certificates from 1Password
 5. **Active Development**: Unlike nginx-ingress (EOL March 2026), Traefik is actively maintained
 
 ## Features
 
 - ✅ OpenTelemetry tracing with proper CLIENT/SERVER spans
-- ✅ Automatic HTTPS with Let's Encrypt (Cloudflare DNS challenge)
+- ✅ HTTPS with your existing SSL certificates
 - ✅ HTTP/2 and HTTP/3 support
 - ✅ Authentik forward authentication (optional)
 - ✅ Security headers middleware
@@ -28,12 +28,10 @@ This Ansible role deploys Traefik as a reverse proxy replacement for nginx-otel,
 
 ```yaml
 # Domain configuration
-nginx_domain: "example.com"  # Your domain
-nginx_external_ingress_ip: "10.0.30.60"  # Kubernetes external ingress IP
-
-# Cloudflare credentials (for Let's Encrypt)
-cloudflare_email: "your-email@example.com"
-cloudflare_api_token: "your-cloudflare-api-token"
+proxy_domain: "example.com"  # Your domain
+proxy_external_ingress_ip: "10.0.30.60"  # Kubernetes external ingress IP
+proxy_ssl_cert_path: "/path/to/cert.pem"  # SSL certificate path
+proxy_ssl_key_path: "/path/to/key.pem"    # SSL private key path
 ```
 
 ### Optional Variables
@@ -128,11 +126,6 @@ When you're ready to enable Authentik forward auth:
 - Check Tempo is receiving traces: `kubectl logs -n observability deployment/tempo-distributor`
 - Wait ~30 seconds for service graph processor to update
 
-### Certificate issues?
-- Check Cloudflare API token has DNS edit permissions
-- Verify domain is managed by Cloudflare
-- Check ACME storage: `ls -la /opt/traefik/acme/acme.json`
-
 ### Authentik forward auth not working?
 - Verify Authentik is accessible from VPS
 - Check the Proxy Provider configuration in Authentik
@@ -144,9 +137,7 @@ When you're ready to enable Authentik forward auth:
 /opt/traefik/
 ├── config/
 │   ├── traefik.yml     # Static configuration
-│   └── dynamic.yml     # Dynamic configuration (routes, services)
-├── acme/
-│   └── acme.json       # Let's Encrypt certificates
+│   └── dynamic.yml     # Dynamic configuration (routes, services, TLS)
 ├── logs/
 │   ├── access.log      # Access logs (JSON)
 │   └── traefik.log     # Application logs

@@ -65,13 +65,6 @@
     mode: '0644'
   notify: reload traefik
 
-- name: Create ACME storage file if it doesn't exist
-  ansible.builtin.file:
-    path: "{{ traefik_acme_dir }}/acme.json"
-    state: touch
-    mode: '0600'
-  changed_when: false
-
 - name: Template docker-compose file
   ansible.builtin.template:
     src: docker-compose.yml.j2
