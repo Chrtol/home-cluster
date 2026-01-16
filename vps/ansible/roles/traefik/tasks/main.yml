@@ -88,25 +88,20 @@
     mode: '0644'
   register: compose_changed
 
-- name: Check if Traefik is already running
-  command: docker ps -q -f name=traefik
-  register: traefik_running
-  changed_when: false
-  failed_when: false
-
-# CRITICAL: Force container recreation when config changes
-- name: Stop and remove Traefik container if config changed
+# ALWAYS recreate container to ensure it uses the latest config
+# This is idempotent - the desired state is a running container with current config
+- name: Stop and remove existing Traefik container
   community.docker.docker_compose_v2:
     project_src: "{{ traefik_dir }}"
     state: absent
     remove_orphans: true
-  when: (static_config_changed.changed or compose_changed.changed or dynamic_config_changed.changed) and traefik_running.stdout != ""
 
-- name: Start Traefik container
+- name: Start Traefik container with current configuration
   community.docker.docker_compose_v2:
     project_src: "{{ traefik_dir }}"
     state: present
     pull: always
+    recreate: always  # Force recreation to pick up config changes
   register: traefik_result
 
 - name: Wait for Traefik to be healthy
