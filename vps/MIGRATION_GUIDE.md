@@ -152,9 +152,8 @@ ssh vps "systemctl stop nginx"
 
 ### Service Graph Still Broken
 **Check:**
-1. Traefik verbosity is set to `minimal` (not `detailed`)
-2. Wait ~30 seconds for service graph processor
-3. Verify traces are arriving:
+1. Wait ~30 seconds for service graph processor to update
+2. Verify traces are arriving with correct service name:
    ```bash
    kubectl logs -n observability deployment/tempo-distributor | grep vps-traefik
    ```
