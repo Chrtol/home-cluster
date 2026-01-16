@@ -1,8 +1,15 @@
 # Build nginx with proper OpenTelemetry support using opentelemetry-cpp-contrib
 FROM nginx:1.27-alpine
 
-# Install wget to download the module
-RUN apk add --no-cache wget
+# Install required dependencies for the OpenTelemetry module
+# The module needs protobuf, c-ares, grpc, and other libraries
+RUN apk add --no-cache \
+    wget \
+    protobuf \
+    c-ares \
+    grpc \
+    abseil-cpp \
+    re2
 
 # Download the pre-compiled OpenTelemetry module directly
 # This module provides the $opentelemetry_context_traceparent variable we need
