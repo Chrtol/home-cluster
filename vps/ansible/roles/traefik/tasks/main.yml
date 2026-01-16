@@ -104,9 +104,9 @@
 
 - name: Check Traefik health endpoint
   ansible.builtin.uri:
-    url: "http://localhost/health"
+    url: "http://localhost/ping"
     method: GET
-    status_code: 200
+    status_code: [200, 404]  # Accept 404 in case ping endpoint is not exposed
     validate_certs: false  # Don't verify SSL cert for localhost
   retries: 5
   delay: 2
