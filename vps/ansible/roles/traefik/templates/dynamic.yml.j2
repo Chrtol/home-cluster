@@ -6,7 +6,7 @@ http:
     kubernetes-ingress:
       entryPoints:
         - websecure
-      rule: "HostRegexp(`{host:.+}`)"  # Match any host
+      rule: "HostRegexp(`.+`)"  # Match any host (Traefik v3 syntax)
       priority: 1  # Lowest priority - catches everything not matched by other rules
       service: kubernetes-external-ingress
       tls: {}
