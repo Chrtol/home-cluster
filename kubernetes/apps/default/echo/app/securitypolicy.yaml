@@ -11,6 +11,7 @@ spec:
       name: echo-envoy-test
   extAuth:
     failOpen: false
+    timeout: 10s
     headersToExtAuth:
       - cookie
     http:
