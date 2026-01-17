@@ -25,9 +25,9 @@
   register: bouncer_creation
   when: not bouncer_exists
 
-- name: Display bouncer creation output for debugging
+- name: Report bouncer creation
   debug:
-    var: bouncer_creation.stdout
+    msg: "CrowdSec bouncer 'vps-traefik-main' was successfully created"
   when: bouncer_creation is defined and bouncer_creation.changed
 
 # Try multiple regex patterns to extract the API key
@@ -77,19 +77,24 @@
 # Note: We no longer save the key to a local file since it's managed in 1Password
 # This ensures the key is only stored in the secure 1Password vault
 
-- name: Display bouncer API key for 1Password storage
+- name: Display bouncer API key instructions for 1Password storage
   debug:
     msg: |
       ================================================================================
-      IMPORTANT: Store this CrowdSec bouncer API key in 1Password
+      IMPORTANT: A new CrowdSec bouncer API key was created
 
-      Vault: Lab
-      Item: crowdsec
-      Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
-      Value: {{ crowdsec_bouncer_key }}
+      The key has been extracted but is NOT displayed here for security reasons.
+      Please SSH to the VPS and retrieve the key manually:
 
-      Command to add to 1Password:
-      op item edit "crowdsec" --vault="Lab" "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]={{ crowdsec_bouncer_key }}"
+      1. SSH to VPS and run: sudo cscli bouncers list
+      2. Delete and recreate if needed:
+         sudo cscli bouncers delete vps-traefik-main
+         sudo cscli bouncers add vps-traefik-main
+      3. Copy the API key that is displayed
+      4. Store in 1Password:
+         Vault: Lab
+         Item: crowdsec
+         Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
       ================================================================================
   when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
 
@@ -118,9 +123,9 @@
       command: cscli bouncers add vps-traefik-main
       register: bouncer_recreation
 
-    - name: Display bouncer recreation output for debugging
+    - name: Report bouncer recreation
       debug:
-        var: bouncer_recreation.stdout
+        msg: "CrowdSec bouncer 'vps-traefik-main' was recreated"
 
     - name: Extract API key from recreation (pattern 1 - UUID)
       set_fact:
@@ -158,16 +163,24 @@
 
     # Note: We no longer save the key to a local file since it's managed in 1Password
 
-    - name: Display recreated bouncer key
+    - name: Display recreated bouncer key instructions
       debug:
         msg: |
           ================================================================================
           RECREATED BOUNCER - Store this new API key in 1Password
 
-          Vault: Lab
-          Item: crowdsec
-          Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
-          Value: {{ crowdsec_bouncer_key }}
+          The key has been extracted but is NOT displayed here for security reasons.
+          Please SSH to the VPS and retrieve the key manually:
+
+          1. SSH to VPS and run: sudo cscli bouncers list
+          2. Delete and recreate if needed:
+             sudo cscli bouncers delete vps-traefik-main
+             sudo cscli bouncers add vps-traefik-main
+          3. Copy the API key that is displayed
+          4. Store in 1Password:
+             Vault: Lab
+             Item: crowdsec
+             Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
           ================================================================================
       when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
   when:
