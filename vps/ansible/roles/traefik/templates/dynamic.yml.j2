@@ -38,7 +38,7 @@ http:
     echo-test:
       entryPoints:
         - websecure
-      rule: "Host(`echo.test.{{ traefik_domain }}`)"
+      rule: "Host(`echo-test.{{ traefik_domain }}`)"
       priority: 20  # Higher priority than both wildcard and root domain
       service: envoy-gateway
       tls: {}
