@@ -58,12 +58,18 @@ spec:
       podAnnotations:
         instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
-        # Authentik has native OTEL support - keep these for native integration
+        # Authentik has native OTEL support - configure for Tempo
         - name: OTEL_SERVICE_NAME
           value: "authentik"
         - name: AUTHENTIK_TRACING__ENABLED
           value: "true"
         - name: AUTHENTIK_TRACING__EXPORTER
+          value: "otlp"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://tempo-distributor.observability.svc.cluster.local:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_TRACES_EXPORTER
           value: "otlp"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=security,app.type=identity-provider"
@@ -124,12 +130,18 @@ spec:
       podAnnotations:
         instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
-        # Authentik has native OTEL support - keep these for native integration
+        # Authentik has native OTEL support - configure for Tempo
         - name: OTEL_SERVICE_NAME
           value: "authentik-worker"
         - name: AUTHENTIK_TRACING__ENABLED
           value: "true"
         - name: AUTHENTIK_TRACING__EXPORTER
+          value: "otlp"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://tempo-distributor.observability.svc.cluster.local:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_TRACES_EXPORTER
           value: "otlp"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=security,app.type=identity-provider,component=worker"

@@ -23,6 +23,9 @@ spec:
       seerr:
         annotations:
           reloader.stakater.com/auto: "true"
+          # OpenTelemetry Node.js auto-instrumentation
+          instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
+          instrumentation.opentelemetry.io/container-names: "app"
 
         initContainers:
           init-db:
@@ -42,6 +45,9 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               LOG_LEVEL: "info"
               PORT: &port 80
+              # OpenTelemetry configuration
+              OTEL_SERVICE_NAME: "seerr"
+              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=media,app.type=media-request,deployment.environment=production"
             envFrom:
               - secretRef:
                   name: seerr-secret
