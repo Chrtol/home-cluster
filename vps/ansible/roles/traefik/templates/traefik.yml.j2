@@ -46,13 +46,17 @@ experimental:
 tracing:
   serviceName: {{ traefik_service_name | default('vps-traefik') }}
   sampleRate: {{ traefik_sample_rate | default('0.75') }}
+  addInternals: true
+  capturedRequestHeaders:
+    - traceparent
+    - tracestate
+  capturedResponseHeaders:
+    - traceparent
+    - tracestate
   otlp:
     grpc:
       endpoint: {{ traefik_otel_endpoint }}
       insecure: {{ traefik_otel_insecure | default('false') }}
-      headers:
-        # Optional: Add any auth headers if needed
-        # authorization: Bearer ${OTEL_AUTH_TOKEN}
 
 # Logs - output to stdout/stderr for docker logs
 log:
@@ -71,6 +75,8 @@ accessLog:
         User-Agent: keep
         Authorization: drop
         Cookie: drop
+        traceparent: keep
+        tracestate: keep
 
 # Health Check
 ping:
