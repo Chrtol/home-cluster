@@ -28,6 +28,12 @@
     authentik_enabled: "{{ lookup('env', 'AUTHENTIK_ENABLED') | default('false') | bool }}"
     authentik_domain: "{{ lookup('env', 'AUTHENTIK_DOMAIN') | default('authentik.' + proxy_domain) }}"
 
+    # CrowdSec configuration (from 1Password)
+    crowdsec_enabled: "{{ lookup('env', 'CROWDSEC_ENABLED') | default('true') | bool }}"
+    crowdsec_bouncer_api_key: "{{ lookup('env', 'CROWDSEC_BOUNCER_API_KEY') }}"
+    crowdsec_lapi_host: "{{ lookup('env', 'CROWDSEC_LAPI_HOST') | default('127.0.0.1:8080') }}"
+    crowdsec_log_level: "{{ lookup('env', 'CROWDSEC_LOG_LEVEL') | default('INFO') }}"
+
     # Feature toggles
     enable_echo_test: "{{ lookup('env', 'PROXY_ENABLE_ECHO_TEST') | default('true') | bool }}"
     enable_metrics: "{{ lookup('env', 'PROXY_ENABLE_METRICS') | default('true') | bool }}"
@@ -45,6 +51,10 @@
     traefik_service_name: "{{ otel_service_name }}"
     traefik_sample_rate: "{{ otel_sample_rate }}"
     traefik_enable_authentik: "{{ authentik_enabled }}"
+    traefik_crowdsec_enabled: "{{ crowdsec_enabled }}"
+    traefik_crowdsec_api_key: "{{ crowdsec_bouncer_api_key }}"
+    traefik_crowdsec_lapi_host: "{{ crowdsec_lapi_host }}"
+    traefik_crowdsec_log_level: "{{ crowdsec_log_level }}"
     kubernetes_external_ingress_ip: "{{ proxy_external_ingress_ip }}"
 
   pre_tasks:
@@ -69,6 +79,7 @@
           Metrics Enabled: {{ enable_metrics }}
           OpenTelemetry: {{ otel_service_name }} -> {{ otel_endpoint }}
           Authentik: {{ 'Enabled' if authentik_enabled else 'Disabled' }}
+          CrowdSec: {{ 'Enabled' if crowdsec_enabled else 'Disabled' }} (LAPI: {{ crowdsec_lapi_host }})
           ========================================
 
   tasks:

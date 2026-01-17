@@ -67,6 +67,11 @@
     - "{{ traefik_config_dir }}"
     - "{{ traefik_dir }}/logs"
 
+# Manage CrowdSec bouncer for Traefik protection
+- name: Setup CrowdSec bouncer
+  include_tasks: crowdsec-bouncer.yml
+  when: traefik_crowdsec_enabled | default(true)
+
 - name: Template Traefik static configuration
   ansible.builtin.template:
     src: traefik.yml.j2

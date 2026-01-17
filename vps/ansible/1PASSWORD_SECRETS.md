@@ -32,9 +32,20 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 - `VPS_AUTHENTIK_ENABLED` - Enable Authentik forward auth (true/false, default: false)
 - `VPS_AUTHENTIK_DOMAIN` - Authentik instance domain (default: authentik.${VPS_PROXY_DOMAIN})
 
+#### CrowdSec Fields (optional):
+- `VPS_CROWDSEC_ENABLED` - Enable CrowdSec protection (true/false, default: true)
+- `VPS_CROWDSEC_LAPI_HOST` - CrowdSec LAPI host:port (default: 127.0.0.1:8080)
+- `VPS_CROWDSEC_LOG_LEVEL` - CrowdSec plugin log level (default: INFO)
+
 #### Feature Toggles:
 - `VPS_ENABLE_ECHO_TEST` - Enable echo test endpoint (true/false, default: true)
 - `VPS_ENABLE_METRICS` - Enable metrics endpoints (true/false, default: true)
+
+### 4. CrowdSec Bouncer API Key (Vault: `Lab`, Item: `crowdsec`)
+**This item must be created after setting up the CrowdSec bouncer on the VPS**
+
+#### Required Field:
+- `CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY` - The bouncer API key from `sudo cscli bouncers add vps-traefik-main`
 
 ## GitHub Secrets
 
@@ -72,6 +83,20 @@ op item edit "vps-proxy" --vault="Lab" \
 # To switch between nginx and traefik
 op item edit "vps-proxy" --vault="Lab" \
   "VPS_PROXY_TYPE[text]=traefik"  # or nginx-otel
+
+# Configure CrowdSec settings
+op item edit "vps-proxy" --vault="Lab" \
+  "VPS_CROWDSEC_ENABLED[text]=true" \
+  "VPS_CROWDSEC_LAPI_HOST[text]=127.0.0.1:8080" \
+  "VPS_CROWDSEC_LOG_LEVEL[text]=INFO"
+
+# Create CrowdSec item and add bouncer key (after running `sudo cscli bouncers add vps-traefik-main`)
+op item create --vault="Lab" --title="crowdsec" --category="API Credential" \
+  "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]=YOUR_BOUNCER_API_KEY_HERE"
+
+# Or update existing item
+op item edit "crowdsec" --vault="Lab" \
+  "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]=YOUR_BOUNCER_API_KEY_HERE"
 ```
 
 ## Security Notes

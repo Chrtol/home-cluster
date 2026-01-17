@@ -1,0 +1,110 @@
+---
+# Idempotent task to manage CrowdSec bouncer for Traefik
+# This creates a bouncer API key for the main VPS Traefik instance
+
+- name: Check if vps-traefik-main bouncer exists
+  become: yes
+  command: cscli bouncers list -o json
+  register: bouncer_list
+  changed_when: false
+
+- name: Parse bouncer list
+  set_fact:
+    bouncer_exists: "{{ bouncer_list.stdout | from_json | selectattr('name', 'equalto', 'vps-traefik-main') | list | length > 0 }}"
+
+- name: Create vps-traefik-main bouncer if it doesn't exist
+  become: yes
+  command: cscli bouncers add vps-traefik-main
+  register: bouncer_creation
+  when: not bouncer_exists
+
+- name: Extract API key from bouncer creation output
+  set_fact:
+    crowdsec_bouncer_key: "{{ bouncer_creation.stdout | regex_search(\"Api key for 'vps-traefik-main': ([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})\", '\\1') | first }}"
+  when: bouncer_creation is defined and bouncer_creation.changed
+
+- name: Alternative API key extraction (base64 format)
+  set_fact:
+    crowdsec_bouncer_key: "{{ bouncer_creation.stdout | regex_search(\"Api key for 'vps-traefik-main': ([A-Za-z0-9+/=]{20,})\", '\\1') | first }}"
+  when:
+    - bouncer_creation is defined
+    - bouncer_creation.changed
+    - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+
+- name: Save bouncer API key to file for backup
+  copy:
+    content: "{{ crowdsec_bouncer_key }}"
+    dest: /opt/traefik/.crowdsec-bouncer-key
+    mode: '0600'
+    owner: root
+    group: root
+  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
+
+- name: Display bouncer API key for 1Password storage
+  debug:
+    msg: |
+      ================================================================================
+      IMPORTANT: Store this CrowdSec bouncer API key in 1Password
+
+      Vault: Lab
+      Item: crowdsec
+      Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
+      Value: {{ crowdsec_bouncer_key }}
+
+      Command to add to 1Password:
+      op item edit "crowdsec" --vault="Lab" "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]={{ crowdsec_bouncer_key }}"
+      ================================================================================
+  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
+
+- name: Check if bouncer key file exists (for existing bouncers)
+  stat:
+    path: /opt/traefik/.crowdsec-bouncer-key
+  register: bouncer_key_file
+
+- name: Recreate bouncer if key file is missing
+  block:
+    - name: Delete existing bouncer
+      become: yes
+      command: "cscli bouncers delete vps-traefik-main"
+
+    - name: Create new bouncer
+      become: yes
+      command: cscli bouncers add vps-traefik-main
+      register: bouncer_recreation
+
+    - name: Extract API key from recreation
+      set_fact:
+        crowdsec_bouncer_key: "{{ bouncer_recreation.stdout | regex_search(\"Api key for 'vps-traefik-main': ([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})\", '\\1') | first }}"
+
+    - name: Save recreated bouncer key
+      copy:
+        content: "{{ crowdsec_bouncer_key }}"
+        dest: /opt/traefik/.crowdsec-bouncer-key
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Display recreated bouncer key
+      debug:
+        msg: |
+          ================================================================================
+          RECREATED BOUNCER - Store this new API key in 1Password
+
+          Vault: Lab
+          Item: crowdsec
+          Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
+          Value: {{ crowdsec_bouncer_key }}
+          ================================================================================
+  when: bouncer_exists and not bouncer_key_file.stat.exists
+
+- name: Verify CrowdSec LAPI is accessible
+  uri:
+    url: http://127.0.0.1:8080/v1/info
+    method: GET
+    timeout: 5
+  register: crowdsec_api_check
+  failed_when: false
+
+- name: Display CrowdSec API status
+  debug:
+    msg: "CrowdSec LAPI Status: {{ 'Available' if crowdsec_api_check.status == 200 else 'Not accessible' }}"
