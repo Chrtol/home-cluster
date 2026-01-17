@@ -34,11 +34,11 @@ http:
         - security-headers
 
 {% if traefik_enable_echo_test | default(false) %}
-    # Gateway API test router - routes test domains to Envoy Gateway
-    gateway-api-test:
+    # Echo test router for Gateway API testing (higher priority than wildcard)
+    echo-test:
       entryPoints:
         - websecure
-      rule: "Host(`echo-test.{{ traefik_domain }}`) || Host(`test-noauth.{{ traefik_domain }}`) || HostRegexp(`^.+\\.test\\.{{ traefik_domain | replace('.', '\\.') }}$`)"
+      rule: "Host(`echo-test.{{ traefik_domain }}`)"
       priority: 20  # Higher priority than both wildcard and root domain
       service: envoy-gateway
       tls: {}
@@ -47,7 +47,7 @@ http:
         - crowdsec-bouncer
 {% endif %}
         - security-headers
-        # Note: NOT adding authentication middleware since Envoy handles its own auth per route
+        # Note: NOT adding authentication middleware since Envoy handles its own auth
 {% endif %}
 
     # Health check endpoint (no auth) - Traefik's ping endpoint is at /ping
