@@ -3,7 +3,7 @@
 # This creates a bouncer API key for the main VPS Traefik instance
 
 - name: Check if vps-traefik-main bouncer exists
-  become: yes
+  become: true
   command: cscli bouncers list -o json
   register: bouncer_list
   changed_when: false
@@ -13,7 +13,7 @@
     bouncer_exists: "{{ bouncer_list.stdout | from_json | selectattr('name', 'equalto', 'vps-traefik-main') | list | length > 0 }}"
 
 - name: Create vps-traefik-main bouncer if it doesn't exist
-  become: yes
+  become: true
   command: cscli bouncers add vps-traefik-main
   register: bouncer_creation
   when: not bouncer_exists
@@ -98,11 +98,11 @@
 - name: Recreate bouncer if key file is missing
   block:
     - name: Delete existing bouncer
-      become: yes
+      become: true
       command: "cscli bouncers delete vps-traefik-main"
 
     - name: Create new bouncer
-      become: yes
+      become: true
       command: cscli bouncers add vps-traefik-main
       register: bouncer_recreation
 
@@ -148,6 +148,7 @@
         mode: '0600'
         owner: root
         group: root
+      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
 
     - name: Display recreated bouncer key
       debug:
@@ -160,6 +161,7 @@
           Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
           Value: {{ crowdsec_bouncer_key }}
           ================================================================================
+      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
   when: bouncer_exists and not bouncer_key_file.stat.exists
 
 - name: Verify CrowdSec LAPI is accessible
