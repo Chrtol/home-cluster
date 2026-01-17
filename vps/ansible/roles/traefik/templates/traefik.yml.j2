@@ -31,32 +31,12 @@ providers:
     watch: true
 
 {% if traefik_crowdsec_enabled | default(true) %}
-# CrowdSec Plugin Configuration
+# CrowdSec Plugin - Load the plugin
 experimental:
   plugins:
     crowdsec-bouncer-traefik-plugin:
       moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
       version: v1.3.5
-
-# CrowdSec Plugin Static Configuration
-plugin:
-  crowdsec-bouncer-traefik-plugin:
-    enabled: true
-    logLevel: {{ traefik_crowdsec_log_level | default('INFO') }}
-    crowdsecLapiKey: {{ traefik_crowdsec_api_key | default('${CROWDSEC_BOUNCER_API_KEY}') }}
-    crowdsecLapiHost: {{ traefik_crowdsec_lapi_host | default('127.0.0.1:8080') }}
-    crowdsecLapiScheme: http
-    crowdsecMode: stream
-    updateIntervalSeconds: 10
-    defaultDecisionSeconds: 60
-    httpTimeoutSeconds: 10
-    crowdsecCapiMachineId: ""
-    crowdsecCapiPassword: ""
-    crowdsecCapiScenarios: []
-    forwardedHeadersCustomName: ""
-    redisCacheEnabled: false
-    crowdsecLapiTlsInsecureVerify: true
-    crowdsecAppsecEnabled: false
 {% endif %}
 
 # Using existing certificates from 1Password configuration
