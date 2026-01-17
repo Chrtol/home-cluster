@@ -56,10 +56,9 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
-    persistence:
       config:
-        type: secret
-        name: garage-secret
+        type: configMap
+        name: config.toml
         globalMounts:
           - path: /etc/garage.toml
             subPath: garage.toml
