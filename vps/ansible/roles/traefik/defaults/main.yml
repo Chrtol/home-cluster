@@ -27,3 +27,9 @@ traefik_log_level: "INFO"
 traefik_max_idle_conns_per_host: 25
 traefik_dial_timeout: "30s"
 traefik_response_header_timeout: "30s"
+
+# CrowdSec configuration
+traefik_crowdsec_enabled: true
+traefik_crowdsec_api_key: ""  # Will be provided from 1Password
+traefik_crowdsec_lapi_host: "127.0.0.1:8080"  # System CrowdSec LAPI
+traefik_crowdsec_log_level: "INFO"

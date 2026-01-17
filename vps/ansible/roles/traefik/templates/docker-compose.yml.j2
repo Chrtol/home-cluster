@@ -4,7 +4,11 @@ services:
     container_name: traefik
     restart: unless-stopped
     network_mode: host  # Use host network for ports 80/443
-    # No environment variables needed - using existing certificates
+{% if traefik_crowdsec_enabled | default(true) %}
+    environment:
+      # CrowdSec bouncer API key from 1Password
+      - CROWDSEC_BOUNCER_API_KEY={{ traefik_crowdsec_api_key }}
+{% endif %}
     volumes:
       # Configuration files
       - {{ traefik_dir }}/config/traefik.yml:/etc/traefik/traefik.yml:ro

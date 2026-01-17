@@ -73,6 +73,12 @@ jobs:
           AUTHENTIK_ENABLED: "op://Lab/vps-proxy/VPS_AUTHENTIK_ENABLED"
           AUTHENTIK_DOMAIN: "op://Lab/vps-proxy/VPS_AUTHENTIK_DOMAIN"
 
+          # CrowdSec Configuration
+          CROWDSEC_ENABLED: "op://Lab/vps-proxy/VPS_CROWDSEC_ENABLED"
+          CROWDSEC_BOUNCER_API_KEY: "op://Lab/crowdsec/CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY"
+          CROWDSEC_LAPI_HOST: "op://Lab/vps-proxy/VPS_CROWDSEC_LAPI_HOST"
+          CROWDSEC_LOG_LEVEL: "op://Lab/vps-proxy/VPS_CROWDSEC_LOG_LEVEL"
+
           # Feature Toggles
           PROXY_ENABLE_ECHO_TEST: "op://Lab/vps-proxy/VPS_ENABLE_ECHO_TEST"
           PROXY_ENABLE_METRICS: "op://Lab/vps-proxy/VPS_ENABLE_METRICS"

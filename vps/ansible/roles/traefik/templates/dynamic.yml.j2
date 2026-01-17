@@ -11,6 +11,9 @@ http:
       service: kubernetes-external-ingress
       tls: {}
       middlewares:
+{% if traefik_crowdsec_enabled | default(true) %}
+        - crowdsec-bouncer
+{% endif %}
         - security-headers
 {% if traefik_enable_authentik | default(false) %}
         - authentik-forward-auth
@@ -25,6 +28,9 @@ http:
       service: kubernetes-external-ingress
       tls: {}
       middlewares:
+{% if traefik_crowdsec_enabled | default(true) %}
+        - crowdsec-bouncer
+{% endif %}
         - security-headers
 
     # Health check endpoint (no auth) - Traefik's ping endpoint is at /ping
@@ -43,6 +49,9 @@ http:
       service: api@internal
       tls: {}
       middlewares:
+{% if traefik_crowdsec_enabled | default(true) %}
+        - crowdsec-bouncer
+{% endif %}
         - security-headers
 {% if traefik_enable_authentik | default(false) %}
         - authentik-forward-auth
@@ -60,6 +69,31 @@ http:
 
   # Middleware
   middlewares:
+{% if traefik_crowdsec_enabled | default(true) %}
+    # CrowdSec Bouncer Middleware
+    crowdsec-bouncer:
+      plugin:
+        crowdsec-bouncer-traefik-plugin:
+          enabled: true
+          crowdsecLapiKey: {{ traefik_crowdsec_api_key | default('${CROWDSEC_BOUNCER_API_KEY}') }}
+          crowdsecLapiHost: {{ traefik_crowdsec_lapi_host | default('127.0.0.1:8080') }}
+          crowdsecLapiScheme: http
+          crowdsecMode: stream
+          updateIntervalSeconds: 10
+          defaultDecisionSeconds: 60
+          httpTimeoutSeconds: 10
+          crowdsecLapiTlsInsecureVerify: true
+          crowdsecAppsecEnabled: false
+          forwardedHeadersTrustedIPs:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+          clientTrustedIPs:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+{% endif %}
+
     # Security Headers
     security-headers:
       headers:
