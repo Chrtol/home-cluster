@@ -26,19 +26,21 @@
 # Try multiple regex patterns to extract the API key
 - name: Extract API key from bouncer creation output (pattern 1 - UUID)
   set_fact:
-    crowdsec_bouncer_key: "{{ bouncer_creation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})') }}"
+    crowdsec_bouncer_key: "{{ bouncer_creation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})') | default('', true) }}"
   when:
     - bouncer_creation is defined
     - bouncer_creation.changed
+    - bouncer_creation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})')
   ignore_errors: true
 
 - name: Extract API key from bouncer creation output (pattern 2 - base64)
   set_fact:
-    crowdsec_bouncer_key: "{{ bouncer_creation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)') }}"
+    crowdsec_bouncer_key: "{{ bouncer_creation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)') | default('', true) }}"
   when:
     - bouncer_creation is defined
     - bouncer_creation.changed
-    - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+    - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
+    - bouncer_creation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)')
   ignore_errors: true
 
 - name: Extract API key from bouncer creation output (pattern 3 - after colon)
@@ -47,7 +49,7 @@
   when:
     - bouncer_creation is defined
     - bouncer_creation.changed
-    - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+    - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
     - "':' in bouncer_creation.stdout"
   ignore_errors: true
 
@@ -63,7 +65,7 @@
       3. Add to 1Password: op item edit "crowdsec" --vault="Lab" "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]=YOUR_KEY"
   when:
     - bouncer_creation is defined and bouncer_creation.changed
-    - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+    - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None
 
 - name: Save bouncer API key to file for backup
   copy:
@@ -72,7 +74,7 @@
     mode: '0600'
     owner: root
     group: root
-  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
+  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
 
 - name: Display bouncer API key for 1Password storage
   debug:
@@ -88,7 +90,7 @@
       Command to add to 1Password:
       op item edit "crowdsec" --vault="Lab" "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]={{ crowdsec_bouncer_key }}"
       ================================================================================
-  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
+  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
 
 - name: Check if bouncer key file exists (for existing bouncers)
   stat:
@@ -112,20 +114,23 @@
 
     - name: Extract API key from recreation (pattern 1 - UUID)
       set_fact:
-        crowdsec_bouncer_key: "{{ bouncer_recreation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})') }}"
+        crowdsec_bouncer_key: "{{ bouncer_recreation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})') | default('', true) }}"
+      when: bouncer_recreation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})')
       ignore_errors: true
 
     - name: Extract API key from recreation (pattern 2 - base64)
       set_fact:
-        crowdsec_bouncer_key: "{{ bouncer_recreation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)') }}"
-      when: crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+        crowdsec_bouncer_key: "{{ bouncer_recreation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)') | default('', true) }}"
+      when:
+        - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
+        - bouncer_recreation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)')
       ignore_errors: true
 
     - name: Extract API key from recreation (pattern 3 - after colon)
       set_fact:
         crowdsec_bouncer_key: "{{ bouncer_recreation.stdout.split(':')[-1] | trim }}"
       when:
-        - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+        - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
         - "':' in bouncer_recreation.stdout"
       ignore_errors: true
 
@@ -139,7 +144,7 @@
           1. SSH to VPS and run: sudo cscli bouncers add vps-traefik-main
           2. Copy the API key that is displayed
           3. Add to 1Password: op item edit "crowdsec" --vault="Lab" "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]=YOUR_KEY"
-      when: crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == ""
+      when: crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None
 
     - name: Save recreated bouncer key
       copy:
@@ -148,7 +153,7 @@
         mode: '0600'
         owner: root
         group: root
-      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
+      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
 
     - name: Display recreated bouncer key
       debug:
@@ -161,7 +166,7 @@
           Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
           Value: {{ crowdsec_bouncer_key }}
           ================================================================================
-      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != ""
+      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
   when: bouncer_exists and not bouncer_key_file.stat.exists
 
 - name: Verify CrowdSec LAPI is accessible
