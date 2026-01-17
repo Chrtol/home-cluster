@@ -55,10 +55,8 @@ spec:
     server:
       serviceAccountName: authentik
       replicas: 1
-      podAnnotations:
-        instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
-        # Authentik has native OTEL support - configure for Tempo
+        # Authentik native OTEL support (don't use auto-instrumentation - it conflicts)
         - name: OTEL_SERVICE_NAME
           value: "authentik"
         - name: AUTHENTIK_TRACING__ENABLED
@@ -71,6 +69,9 @@ spec:
           value: "http/protobuf"
         - name: OTEL_TRACES_EXPORTER
           value: "otlp"
+        # Propagators for trace context extraction from incoming requests
+        - name: OTEL_PROPAGATORS
+          value: "tracecontext,baggage"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=security,app.type=identity-provider"
       initContainers:
@@ -127,10 +128,8 @@ spec:
     worker:
       serviceAccountName: authentik
       replicas: 3
-      podAnnotations:
-        instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
       env:
-        # Authentik has native OTEL support - configure for Tempo
+        # Authentik native OTEL support (don't use auto-instrumentation - it conflicts)
         - name: OTEL_SERVICE_NAME
           value: "authentik-worker"
         - name: AUTHENTIK_TRACING__ENABLED
@@ -143,6 +142,9 @@ spec:
           value: "http/protobuf"
         - name: OTEL_TRACES_EXPORTER
           value: "otlp"
+        # Propagators for trace context extraction from incoming requests
+        - name: OTEL_PROPAGATORS
+          value: "tracecontext,baggage"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=security,app.type=identity-provider,component=worker"
       autoscaling:
