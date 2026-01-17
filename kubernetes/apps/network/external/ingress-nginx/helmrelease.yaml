@@ -68,7 +68,7 @@ spec:
         otel-schedule-delay-millis: "5000"
         otel-max-export-batch-size: "512"
         otel-service-name: external-ingress-nginx
-        otel-sampler-ratio: "0.75"
+        otel-sampler-ratio: "1.0"
         log-format-escape-json: "true"
         log-format-upstream: >
           {"time": "$time_iso8601", "remote_addr": "$proxy_protocol_addr",
