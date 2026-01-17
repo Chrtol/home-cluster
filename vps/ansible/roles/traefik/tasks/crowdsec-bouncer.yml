@@ -1,6 +1,13 @@
 ---
 # Idempotent task to manage CrowdSec bouncer for Traefik
 # This creates a bouncer API key for the main VPS Traefik instance
+# For existing bouncers with keys in 1Password, this task validates the setup
+
+- name: Clean up old local key file (keys are now managed in 1Password)
+  file:
+    path: /opt/traefik/.crowdsec-bouncer-key
+    state: absent
+  become: true
 
 - name: Check if vps-traefik-main bouncer exists
   become: true
@@ -67,14 +74,8 @@
     - bouncer_creation is defined and bouncer_creation.changed
     - crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None
 
-- name: Save bouncer API key to file for backup
-  copy:
-    content: "{{ crowdsec_bouncer_key }}"
-    dest: /opt/traefik/.crowdsec-bouncer-key
-    mode: '0600'
-    owner: root
-    group: root
-  when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
+# Note: We no longer save the key to a local file since it's managed in 1Password
+# This ensures the key is only stored in the secure 1Password vault
 
 - name: Display bouncer API key for 1Password storage
   debug:
@@ -92,12 +93,21 @@
       ================================================================================
   when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
 
-- name: Check if bouncer key file exists (for existing bouncers)
-  stat:
-    path: /opt/traefik/.crowdsec-bouncer-key
-  register: bouncer_key_file
+- name: Handle existing bouncer with API key from 1Password
+  debug:
+    msg: |
+      ================================================================================
+      Using existing CrowdSec bouncer 'vps-traefik-main'
+      API key is managed in 1Password (vault: Lab, item: crowdsec)
+      Field: CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY
+      ================================================================================
+  when:
+    - bouncer_exists
+    - traefik_crowdsec_api_key is defined
+    - traefik_crowdsec_api_key != ""
+    - traefik_crowdsec_api_key != None
 
-- name: Recreate bouncer if key file is missing
+- name: Recreate bouncer if key is missing from 1Password
   block:
     - name: Delete existing bouncer
       become: true
@@ -146,14 +156,7 @@
           3. Add to 1Password: op item edit "crowdsec" --vault="Lab" "CROWDSEC_VPS_TRAEFIK_BOUNCER_API_KEY[text]=YOUR_KEY"
       when: crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None
 
-    - name: Save recreated bouncer key
-      copy:
-        content: "{{ crowdsec_bouncer_key }}"
-        dest: /opt/traefik/.crowdsec-bouncer-key
-        mode: '0600'
-        owner: root
-        group: root
-      when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
+    # Note: We no longer save the key to a local file since it's managed in 1Password
 
     - name: Display recreated bouncer key
       debug:
@@ -167,7 +170,9 @@
           Value: {{ crowdsec_bouncer_key }}
           ================================================================================
       when: crowdsec_bouncer_key is defined and crowdsec_bouncer_key != "" and crowdsec_bouncer_key != None
-  when: bouncer_exists and not bouncer_key_file.stat.exists
+  when:
+    - bouncer_exists
+    - traefik_crowdsec_api_key is not defined or traefik_crowdsec_api_key == "" or traefik_crowdsec_api_key == None
 
 - name: Verify CrowdSec LAPI is accessible
   uri:
@@ -180,3 +185,43 @@
 - name: Display CrowdSec API status
   debug:
     msg: "CrowdSec LAPI Status: {{ 'Available' if crowdsec_api_check.status == 200 else 'Not accessible' }}"
+
+- name: Test bouncer API key authentication
+  uri:
+    url: http://127.0.0.1:8080/v1/decisions
+    method: GET
+    headers:
+      X-Api-Key: "{{ traefik_crowdsec_api_key }}"
+    timeout: 5
+  register: bouncer_auth_test
+  failed_when: false
+  when:
+    - traefik_crowdsec_api_key is defined
+    - traefik_crowdsec_api_key != ""
+    - traefik_crowdsec_api_key != None
+
+- name: Report bouncer authentication status
+  debug:
+    msg: |
+      ================================================================================
+      CrowdSec Bouncer Authentication Test:
+      {% if bouncer_auth_test.status is defined and bouncer_auth_test.status == 200 %}
+      ✓ SUCCESS - API key is valid and working
+      {% else %}
+      ✗ FAILED - API key authentication failed (status: {{ bouncer_auth_test.status | default('N/A') }})
+
+      This could mean:
+      1. The API key in 1Password doesn't match the bouncer
+      2. The bouncer was recreated but the key wasn't updated in 1Password
+      3. CrowdSec service is not running properly
+
+      To fix:
+      1. Delete the bouncer: sudo cscli bouncers delete vps-traefik-main
+      2. Rerun this deployment to create a new bouncer and key
+      3. Update the key in 1Password with the new value shown
+      {% endif %}
+      ================================================================================
+  when:
+    - traefik_crowdsec_api_key is defined
+    - traefik_crowdsec_api_key != ""
+    - traefik_crowdsec_api_key != None
