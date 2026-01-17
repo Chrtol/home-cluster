@@ -23,7 +23,7 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               API_BASE_URL: http://garage.database.svc.cluster.local:3903
               S3_ENDPOINT_URL: http://garage.database.svc.cluster.local:3900
-              CONFIG_PATH: /etc/garage.toml
+              CONFIG_PATH: /etc/garage/garage.toml
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -62,6 +62,5 @@ spec:
         type: configMap
         name: config.toml
         globalMounts:
-          - path: /etc/garage.toml
-            subPath: garage.toml
+          - path: /etc/garage/ # Mount as a directory here
             readOnly: true
