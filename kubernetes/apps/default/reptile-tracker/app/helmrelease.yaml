@@ -30,8 +30,10 @@ spec:
       reptile-tracker:
         annotations:
           reloader.stakater.com/auto: "true"
-          instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "backend"
+        pod:
+          annotations:
+            instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "backend"
         initContainers:
           init-db:
             image:
@@ -162,8 +164,10 @@ spec:
       celery-worker:
         annotations:
           reloader.stakater.com/auto: "true"
-          instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "worker"
+        pod:
+          annotations:
+            instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "worker"
         replicas: 1
         strategy: RollingUpdate
         containers:

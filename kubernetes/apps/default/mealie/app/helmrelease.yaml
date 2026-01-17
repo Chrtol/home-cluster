@@ -24,8 +24,10 @@ spec:
 
         annotations:
           reloader.stakater.com/auto: "true"
-          instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "app"
+        pod:
+          annotations:
+            instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "app"
 
         initContainers:
           init-db:

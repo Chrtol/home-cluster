@@ -18,10 +18,11 @@ spec:
       n8n:
         annotations:
           reloader.stakater.com/auto: "true"
-          instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "app"
 
         pod:
+          annotations:
+            instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "app"
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
