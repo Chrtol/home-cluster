@@ -14,7 +14,7 @@ kubernetes_external_ingress_ip: "{{ nginx_external_ingress_ip }}"
 traefik_otel_endpoint: "tempo-otlp.{{ traefik_domain }}:443"
 traefik_otel_insecure: "false"  # Using TLS
 traefik_service_name: "vps-traefik"
-traefik_sample_rate: "0.75"  # Match existing nginx sampling
+traefik_sample_rate: "1.0"  # Always propagate trace context; downstream services handle sampling
 
 # Authentik integration (disabled by default, enable when ready)
 traefik_enable_authentik: false
