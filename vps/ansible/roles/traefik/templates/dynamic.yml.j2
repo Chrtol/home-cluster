@@ -75,7 +75,7 @@ http:
       plugin:
         crowdsec-bouncer-traefik-plugin:
           enabled: true
-          crowdsecLapiKey: {{ traefik_crowdsec_api_key | default('${CROWDSEC_BOUNCER_API_KEY}') }}
+          crowdsecLapiKey: "{{ traefik_crowdsec_api_key }}"
           crowdsecLapiHost: {{ traefik_crowdsec_lapi_host | default('127.0.0.1:8080') }}
           crowdsecLapiScheme: http
           crowdsecMode: stream
