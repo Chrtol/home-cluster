@@ -30,10 +30,8 @@ spec:
       reptile-tracker:
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          annotations:
-            instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
-            instrumentation.opentelemetry.io/container-names: "backend"
+        # Note: This app has built-in OTEL instrumentation via opentelemetry-instrument in entrypoint.sh
+        # Don't use Operator auto-instrumentation - it conflicts with app's own OTEL packages
         initContainers:
           init-db:
             image:
@@ -94,14 +92,15 @@ spec:
               # OpenTelemetry configuration
               OTEL_SERVICE_NAME: "reptile-tracker"
               OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,app.type=reptile-management,deployment.environment=production"
-              # Explicit endpoint configuration (reinforces auto-instrumentation settings)
               OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4318"
               OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
               OTEL_TRACES_EXPORTER: "otlp"
               OTEL_LOGS_EXPORTER: "none"
               OTEL_METRICS_EXPORTER: "none"
-              # Enable Python auto-instrumentation debug logging
-              OTEL_PYTHON_LOG_LEVEL: "debug"
+              # Critical: Propagators for trace context extraction from incoming requests
+              OTEL_PROPAGATORS: "tracecontext,baggage"
+              # Critical: Sampler to always continue parent traces
+              OTEL_TRACES_SAMPLER: "parentbased_always_on"
             probes:
               liveness:
                 enabled: true
@@ -164,10 +163,7 @@ spec:
       celery-worker:
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          annotations:
-            instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
-            instrumentation.opentelemetry.io/container-names: "worker"
+        # Note: This app has built-in OTEL instrumentation - don't use Operator auto-instrumentation
         replicas: 1
         strategy: RollingUpdate
         containers:
@@ -176,7 +172,7 @@ spec:
               repository: ghcr.io/chrtol/reptile-tracker-backend
               tag: main-20260115114026 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
-            command: ["python", "celery_worker.py"]
+            command: ["opentelemetry-instrument", "python", "celery_worker.py"]
             env:
               DATABASE_URL:
                 valueFrom:
@@ -219,14 +215,15 @@ spec:
               # OpenTelemetry configuration
               OTEL_SERVICE_NAME: "reptile-tracker-celery"
               OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,app.type=reptile-management,component=celery-worker,deployment.environment=production"
-              # Explicit endpoint configuration (reinforces auto-instrumentation settings)
               OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4318"
               OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
               OTEL_TRACES_EXPORTER: "otlp"
               OTEL_LOGS_EXPORTER: "none"
               OTEL_METRICS_EXPORTER: "none"
-              # Enable Python auto-instrumentation debug logging
-              OTEL_PYTHON_LOG_LEVEL: "debug"
+              # Critical: Propagators for trace context extraction
+              OTEL_PROPAGATORS: "tracecontext,baggage"
+              # Critical: Sampler to always continue parent traces
+              OTEL_TRACES_SAMPLER: "parentbased_always_on"
             probes:
               liveness:
                 enabled: true
