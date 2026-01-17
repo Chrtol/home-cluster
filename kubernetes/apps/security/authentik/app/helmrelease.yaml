@@ -72,6 +72,9 @@ spec:
         # Propagators for trace context extraction from incoming requests
         - name: OTEL_PROPAGATORS
           value: "tracecontext,baggage"
+        # Sampler configuration - always continue parent traces
+        - name: OTEL_TRACES_SAMPLER
+          value: "parentbased_always_on"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=security,app.type=identity-provider"
       initContainers:
@@ -145,6 +148,9 @@ spec:
         # Propagators for trace context extraction from incoming requests
         - name: OTEL_PROPAGATORS
           value: "tracecontext,baggage"
+        # Sampler configuration - always continue parent traces
+        - name: OTEL_TRACES_SAMPLER
+          value: "parentbased_always_on"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=security,app.type=identity-provider,component=worker"
       autoscaling:
