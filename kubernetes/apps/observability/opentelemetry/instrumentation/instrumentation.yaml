@@ -25,6 +25,9 @@ spec:
       # Propagators for trace context extraction from incoming requests
       - name: OTEL_PROPAGATORS
         value: "tracecontext,baggage"
+      # Explicit sampler to always continue parent traces
+      - name: OTEL_TRACES_SAMPLER
+        value: "parentbased_always_on"
       # Don't override service name if already set by application
       - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
         valueFrom:
@@ -78,6 +81,9 @@ spec:
       # Propagators for trace context extraction from incoming requests
       - name: OTEL_PROPAGATORS
         value: "tracecontext,baggage"
+      # Explicit sampler to always continue parent traces
+      - name: OTEL_TRACES_SAMPLER
+        value: "parentbased_always_on"
       - name: OTEL_INSTRUMENTATION_HTTP_ENABLED
         value: "true"
       - name: OTEL_INSTRUMENTATION_EXPRESS_ENABLED
@@ -112,6 +118,12 @@ spec:
       # .NET also uses http/proto by default
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://tempo-distributor.observability.svc.cluster.local:4318
+      # Propagators for trace context extraction from incoming requests
+      - name: OTEL_PROPAGATORS
+        value: "tracecontext,baggage"
+      # Explicit sampler to always continue parent traces
+      - name: OTEL_TRACES_SAMPLER
+        value: "parentbased_always_on"
       - name: OTEL_DOTNET_AUTO_TRACES_ENABLED
         value: "true"
       - name: OTEL_DOTNET_AUTO_LOGS_ENABLED
@@ -137,6 +149,12 @@ spec:
     addK8sUIDAttributes: true
   java:
     env:
+      # Propagators for trace context extraction from incoming requests
+      - name: OTEL_PROPAGATORS
+        value: "tracecontext,baggage"
+      # Explicit sampler to always continue parent traces
+      - name: OTEL_TRACES_SAMPLER
+        value: "parentbased_always_on"
       - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
         value: "true"
       - name: OTEL_INSTRUMENTATION_HTTP_ENABLED
