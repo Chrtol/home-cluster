@@ -23,9 +23,11 @@ spec:
       seerr:
         annotations:
           reloader.stakater.com/auto: "true"
-          # OpenTelemetry Node.js auto-instrumentation
-          instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "app"
+        pod:
+          annotations:
+            # OpenTelemetry Node.js auto-instrumentation
+            instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "app"
 
         initContainers:
           init-db:

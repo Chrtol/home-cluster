@@ -23,8 +23,10 @@ spec:
       sonarr:
         annotations:
           reloader.stakater.com/auto: "true"
-          instrumentation.opentelemetry.io/inject-dotnet: "observability/dotnet-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "app"
+        pod:
+          annotations:
+            instrumentation.opentelemetry.io/inject-dotnet: "observability/dotnet-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "app"
         initContainers:
           init-db:
             image:

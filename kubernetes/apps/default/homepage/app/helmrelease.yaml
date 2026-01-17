@@ -38,8 +38,10 @@ spec:
         annotations:
           # reloader.stakater.com/search: "true"
           reloader.stakater.com/auto: "true"
-          instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
-          instrumentation.opentelemetry.io/container-names: "app"
+        pod:
+          annotations:
+            instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
+            instrumentation.opentelemetry.io/container-names: "app"
         containers:
           app:
             image:
