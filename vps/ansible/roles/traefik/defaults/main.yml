@@ -33,3 +33,7 @@ traefik_crowdsec_enabled: true
 traefik_crowdsec_api_key: ""  # Will be provided from 1Password
 traefik_crowdsec_lapi_host: "127.0.0.1:8080"  # System CrowdSec LAPI
 traefik_crowdsec_log_level: "INFO"
+
+# Echo test configuration (for testing Gateway API migration)
+traefik_enable_echo_test: false  # Will be provided from 1Password
+traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip | default('10.0.30.44') }}"

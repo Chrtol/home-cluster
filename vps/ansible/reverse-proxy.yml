@@ -56,6 +56,8 @@
     traefik_crowdsec_lapi_host: "{{ crowdsec_lapi_host }}"
     traefik_crowdsec_log_level: "{{ crowdsec_log_level }}"
     kubernetes_external_ingress_ip: "{{ proxy_external_ingress_ip }}"
+    traefik_enable_echo_test: "{{ enable_echo_test }}"
+    traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
 
   pre_tasks:
     - name: Create backup of current configuration
