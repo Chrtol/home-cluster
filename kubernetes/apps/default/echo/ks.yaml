@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 1h
-  path: ./kubernetes/apps/default/echo/apps
+  path: ./kubernetes/apps/default/echo/app
   components:
     - ../../../../components/gatus/external
     - ../../../../components/ext-auth
