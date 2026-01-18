@@ -35,6 +35,8 @@ spec:
             fieldPath: metadata.name
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
         value: "true"
+      - name: OTEL_PYTHON_LOG_LEVEL
+        value: "debug"
       - name: OTEL_INSTRUMENTATION_POSTGRESQL_ENABLED
         value: "true"
       - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
@@ -56,7 +58,9 @@ spec:
       - name: OTEL_INSTRUMENTATION_CELERY_ENABLED
         value: "true"
       - name: OTEL_METRICS_EXPORTER
-        value: none  # Disable metrics for now
+        value: none  # Disable metrics - Tempo doesn't accept them
+      - name: OTEL_LOGS_EXPORTER
+        value: none  # Disable logs - Tempo doesn't accept them
 ---
 # Node.js instrumentation
 apiVersion: opentelemetry.io/v1alpha1
@@ -95,7 +99,9 @@ spec:
       - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
         value: "true"
       - name: OTEL_METRICS_EXPORTER
-        value: none  # Disable metrics for now
+        value: none  # Disable metrics - Tempo doesn't accept them
+      - name: OTEL_LOGS_EXPORTER
+        value: none  # Disable logs - Tempo doesn't accept them
 ---
 # .NET instrumentation
 apiVersion: opentelemetry.io/v1alpha1
@@ -129,7 +135,9 @@ spec:
       - name: OTEL_DOTNET_AUTO_LOGS_ENABLED
         value: "false"
       - name: OTEL_METRICS_EXPORTER
-        value: none  # Disable metrics for now
+        value: none  # Disable metrics - Tempo doesn't accept them
+      - name: OTEL_LOGS_EXPORTER
+        value: none  # Disable logs - Tempo doesn't accept them
 ---
 # Java instrumentation
 apiVersion: opentelemetry.io/v1alpha1
@@ -160,4 +168,6 @@ spec:
       - name: OTEL_INSTRUMENTATION_HTTP_ENABLED
         value: "true"
       - name: OTEL_METRICS_EXPORTER
-        value: none  # Disable metrics for now
+        value: none  # Disable metrics - Tempo doesn't accept them
+      - name: OTEL_LOGS_EXPORTER
+        value: none  # Disable logs - Tempo doesn't accept them
