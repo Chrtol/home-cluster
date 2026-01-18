@@ -16,8 +16,14 @@ from app.database import async_session_maker
 from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members, ScheduleMode
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 from app.quota_tracker import check_quota_status
+from opentelemetry import trace
 
 logger = logging.getLogger(__name__)
+
+
+def get_tracer():
+    """Get the OpenTelemetry tracer lazily to ensure TracerProvider is fully configured."""
+    return trace.get_tracer(__name__)
 
 # Critical notification types that bypass quiet hours
 CRITICAL_NOTIFICATION_TYPES = {
@@ -153,17 +159,29 @@ async def execute_scheduled_notification(
                 await db.commit()
                 return
 
-            # Queue to Celery
+            # Queue to Celery with trace context propagation
             try:
                 from app.celery_tasks import send_schedule_reminder_task
 
-                send_schedule_reminder_task.delay(
-                    schedule_id=schedule.id,
-                    reptile_id=reptile.id,
-                    scheduled_date_str=scheduled_date.isoformat(),
-                    user_id=user.id,
-                    channel_id=channel.id
-                )
+                # Create a trace span so Celery instrumentation can propagate context
+                with get_tracer().start_as_current_span(
+                    "dispatch_schedule_reminder",
+                    attributes={
+                        "schedule.id": schedule.id,
+                        "schedule.type": schedule.schedule_type,
+                        "reptile.id": reptile.id,
+                        "reptile.name": reptile.name,
+                        "user.id": user.id,
+                        "channel.id": channel.id,
+                    }
+                ):
+                    send_schedule_reminder_task.delay(
+                        schedule_id=schedule.id,
+                        reptile_id=reptile.id,
+                        scheduled_date_str=scheduled_date.isoformat(),
+                        user_id=user.id,
+                        channel_id=channel.id
+                    )
 
                 logger.info(
                     f"Queued exact-time reminder for schedule {schedule.id} ({schedule.schedule_type}) "
@@ -1225,13 +1243,25 @@ async def check_schedule_reminders():
                                     try:
                                         from app.celery_tasks import send_schedule_reminder_task
 
-                                        send_schedule_reminder_task.delay(
-                                            schedule_id=schedule.id,
-                                            reptile_id=reptile.id,
-                                            scheduled_date_str=next_occurrence_date.isoformat(),
-                                            user_id=user.id,
-                                            channel_id=channel.id
-                                        )
+                                        # Create a trace span so Celery instrumentation can propagate context
+                                        with get_tracer().start_as_current_span(
+                                            "dispatch_schedule_reminder",
+                                            attributes={
+                                                "schedule.id": schedule.id,
+                                                "schedule.type": schedule.schedule_type,
+                                                "reptile.id": reptile.id,
+                                                "reptile.name": reptile.name,
+                                                "user.id": user.id,
+                                                "channel.id": channel.id,
+                                            }
+                                        ):
+                                            send_schedule_reminder_task.delay(
+                                                schedule_id=schedule.id,
+                                                reptile_id=reptile.id,
+                                                scheduled_date_str=next_occurrence_date.isoformat(),
+                                                user_id=user.id,
+                                                channel_id=channel.id
+                                            )
 
                                         logger.info(
                                             f"Queued reminder task for schedule {schedule.id} ({schedule.schedule_type}) "
