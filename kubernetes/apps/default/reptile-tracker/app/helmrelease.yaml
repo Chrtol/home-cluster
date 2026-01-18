@@ -91,7 +91,7 @@ spec:
               LOCAL_STORAGE_PATH: "/app/data/photos"
               # OpenTelemetry configuration
               OTEL_SERVICE_NAME: "reptile-tracker"
-              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,app.type=reptile-management,deployment.environment=production"
+              OTEL_RESOURCE_ATTRIBUTES: "service.name=reptile-tracker,service.namespace=default,app.type=reptile-management,deployment.environment=production"
               OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4318"
               OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
               OTEL_TRACES_EXPORTER: "otlp"
@@ -214,7 +214,7 @@ spec:
               REFRESH_TOKEN_EXPIRE_DAYS: "7"
               # OpenTelemetry configuration
               OTEL_SERVICE_NAME: "reptile-tracker-celery"
-              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,app.type=reptile-management,component=celery-worker,deployment.environment=production"
+              OTEL_RESOURCE_ATTRIBUTES: "service.name=reptile-tracker-celery,service.namespace=default,app.type=reptile-management,component=celery-worker,deployment.environment=production"
               OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo-distributor.observability.svc.cluster.local:4318"
               OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
               OTEL_TRACES_EXPORTER: "otlp"
