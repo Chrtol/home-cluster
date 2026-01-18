@@ -15,6 +15,18 @@ spec:
   provider:
     type: Kubernetes
     kubernetes:
+      envoyDeployment:
+        pod:
+          # Pin Envoy proxy to same node as Envoy Gateway controller
+          # to avoid cross-node xDS connection issues with Cilium
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: gateway-helm
+                      app.kubernetes.io/instance: envoy-gateway
+                  topologyKey: kubernetes.io/hostname
       envoyService:
         type: LoadBalancer
         externalTrafficPolicy: Cluster
