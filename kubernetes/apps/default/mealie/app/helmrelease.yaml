@@ -48,7 +48,7 @@ spec:
             env:
               # OpenTelemetry custom attributes
               OTEL_SERVICE_NAME: "mealie"
-              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,deployment.environment=production"
+              OTEL_RESOURCE_ATTRIBUTES: "service.name=mealie,service.namespace=default,deployment.environment=production"
             resources:
               requests:
                 cpu: 15m

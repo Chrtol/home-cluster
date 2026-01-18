@@ -53,7 +53,7 @@ spec:
               HOMEPAGE_ALLOWED_HOSTS: "{{ .Release.Name }}.${SECRET_DOMAIN}"
               # OpenTelemetry custom attributes
               OTEL_SERVICE_NAME: "homepage"
-              OTEL_RESOURCE_ATTRIBUTES: "service.namespace=default,service.version=latest,deployment.environment=production"
+              OTEL_RESOURCE_ATTRIBUTES: "service.name=homepage,service.namespace=default,service.version=latest,deployment.environment=production"
             envFrom:
               - secretRef:
                   name: homepage-secret
