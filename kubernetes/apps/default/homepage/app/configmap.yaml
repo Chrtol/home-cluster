@@ -88,14 +88,14 @@ data:
             url: http://plex.media.svc.cluster.local:32400
             key: {{HOMEPAGE_VAR_PLEX_KEY}}
             enableNowPlaying: true
-      - Seerrr:
-          icon: jellyseer.png
+      - Seerr:
+          icon: jellyseerr.png
           href: https://request.${SECRET_DOMAIN}
           description: Media Requests
           widget:
-            type: jellyseerr
-            url: http://jellyseerr.media.svc.cluster.local
-            key: {{HOMEPAGE_VAR_JELLYSEERR_KEY}}
+            type: seerr
+            url: http://seerr.media.svc.cluster.local
+            key: {{HOMEPAGE_VAR_SEERR_KEY}}
       - qBittorrent:
           icon: qbittorrent.png
           href: https://qbittorrent.${SECRET_DOMAIN}
