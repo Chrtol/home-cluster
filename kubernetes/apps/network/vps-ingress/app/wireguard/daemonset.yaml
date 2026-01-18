@@ -30,7 +30,10 @@ spec:
                   - -c
                   - |
                     sleep 5
-                    ip neigh add 10.0.30.60 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true
+                    # Add permanent ARP entries for LoadBalancer IPs
+                    # Without these, ARP resolution fails intermittently causing connection hangs
+                    ip neigh add 10.0.30.60 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true  # nginx-ingress
+                    ip neigh add 10.0.30.44 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true  # envoy-gateway
           env:
             - name: PUID
               value: "1000"
