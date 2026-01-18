@@ -23,15 +23,16 @@ spec:
   retry:
     numRetries: 2
     retryOn:
-      - connect-failure
-      - refused-stream
-      - retriable-status-codes
+      triggers:
+        - connect-failure
+        - refused-stream
+        - retriable-status-codes
+      httpStatusCodes:
+        - 502
+        - 503
+        - 504
     perRetry:
       timeout: 5s
       backOff:
         baseInterval: 100ms
         maxInterval: 1s
-    retriableStatusCodes:
-      - 502
-      - 503
-      - 504
