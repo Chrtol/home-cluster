@@ -10,10 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 1h
-  path: ./kubernetes/apps/default/echo/app
-  dependsOn:
-    - name: vps-ingress
-      namespace: network
+  path: ./kubernetes/apps/default/echo/apps
   components:
     - ../../../../components/gatus/external
     - ../../../../components/ext-auth
