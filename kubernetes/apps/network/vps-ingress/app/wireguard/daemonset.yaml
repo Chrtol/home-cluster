@@ -30,10 +30,11 @@ spec:
                   - -c
                   - |
                     sleep 5
-                    # Add permanent ARP entries for LoadBalancer IPs
-                    # Without these, ARP resolution fails intermittently causing connection hangs
-                    ip neigh add 10.0.30.60 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true  # nginx-ingress
-                    ip neigh add 10.0.30.44 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true  # envoy-gateway
+                    # Add permanent ARP entries for LoadBalancer IPs using broadcast MAC
+                    # Broadcast is used because Cilium L2 lease holders can change (failover)
+                    # Without these entries, ARP resolution fails intermittently causing connection hangs
+                    ip neigh replace 10.0.30.60 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true  # nginx-ingress
+                    ip neigh replace 10.0.30.44 lladdr ff:ff:ff:ff:ff:ff dev ens18 nud permanent || true  # envoy-gateway
           env:
             - name: PUID
               value: "1000"
