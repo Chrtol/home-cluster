@@ -5,5 +5,5 @@ kind: Kustomization
 namespace: network
 resources:
   - ./externalsecret.yaml
-  - ./daemonset.yaml
+  - ./helmrelease.yaml
   - ./cronjob.yaml
