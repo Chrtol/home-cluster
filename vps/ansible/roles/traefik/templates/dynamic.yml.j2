@@ -33,12 +33,12 @@ http:
 {% endif %}
         - security-headers
 
-{% if traefik_enable_echo_test | default(false) %}
-    # Echo test router for Gateway API testing (higher priority than wildcard)
-    echo-test:
+{% for host in traefik_envoy_test_hosts | default([]) %}
+    # {{ host }} router for Gateway API testing (higher priority than wildcard)
+    {{ host }}:
       entryPoints:
         - websecure
-      rule: "Host(`echo-test.{{ traefik_domain }}`)"
+      rule: "Host(`{{ host }}.{{ traefik_domain }}`)"
       priority: 20  # Higher priority than both wildcard and root domain
       service: envoy-gateway
       tls: {}
@@ -48,7 +48,8 @@ http:
 {% endif %}
         - security-headers
         # Note: NOT adding authentication middleware since Envoy handles its own auth
-{% endif %}
+
+{% endfor %}
 
     # Health check endpoint (no auth) - Traefik's ping endpoint is at /ping
     health:
@@ -84,8 +85,8 @@ http:
         passHostHeader: true
         serversTransport: kubernetes-transport
 
-{% if traefik_enable_echo_test | default(false) %}
-    # Envoy Gateway service for echo test
+{% if traefik_envoy_test_hosts | default([]) | length > 0 %}
+    # Envoy Gateway service for Gateway API testing
     envoy-gateway:
       loadBalancer:
         servers:
