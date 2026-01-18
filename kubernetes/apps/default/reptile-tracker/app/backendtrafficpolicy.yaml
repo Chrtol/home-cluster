@@ -1,0 +1,37 @@
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: reptile-tracker-envoy-test
+  namespace: default
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: reptile-tracker-envoy-test
+  tcpKeepalive:
+    probes: 3
+    idleTime: 60s
+    interval: 10s
+  timeout:
+    tcp:
+      connectTimeout: 5s
+    http:
+      connectionIdleTimeout: 30s
+      maxConnectionDuration: 60s
+      requestTimeout: 30s
+  retry:
+    numRetries: 2
+    retryOn:
+      - connect-failure
+      - refused-stream
+      - retriable-status-codes
+    perRetry:
+      timeout: 5s
+      backOff:
+        baseInterval: 100ms
+        maxInterval: 1s
+    retriableStatusCodes:
+      - 502
+      - 503
+      - 504

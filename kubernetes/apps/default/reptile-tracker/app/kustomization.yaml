@@ -5,6 +5,7 @@ namespace: default
 resources:
   - ./helmrelease.yaml
   - ./httproute-envoy-test.yaml
+  - ./backendtrafficpolicy.yaml
   - ./externalsecret.yaml
   - ./externalsecret-flux-ssh.yaml
   - ./gitrepository-write.yaml
