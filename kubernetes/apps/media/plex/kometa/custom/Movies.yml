@@ -420,6 +420,89 @@ collections:
     summary: The war movies on this list are ranked according to their success (awards & nominations), their popularity, and their cinematic greatness from a directing/writing perspective. To me, accuracy when making a Top 10/Top 100 all time list is extremely important. My lists are not based on my own personal favorites; they are based on the true greatness and/or success of the person, place or thing being ranked. In other words, a film's commercial success (Oscars & BAFTA Awards), and greatness in direction, screenwriting and production, is how I ranked the films on this list. -ChrisWalczyk55
 
 ############################
+#      KIDS & FAMILY       #
+############################
+
+  Family Movies:
+    template: {name: IMDb Genres, genre: family, year_min: 1980, rating_min: 6, votes_min: 10000, limit: 200}
+    summary: A collection of family-friendly movies from 1980 to now, with a minimum rating of 6 and at least 10000 votes from IMDb.
+
+  Kids Movies:
+    sort_title: "!07_<<collection_name>>"
+    plex_search:
+      all:
+        genre: Children
+        year.gte: 1980
+    sync_mode: sync
+    collection_order: alpha
+    collection_mode: hide
+    schedule: weekly(friday)
+    summary: Movies tagged with the Children genre in your library.
+
+  Family Classics:
+    template: {name: Custom}
+    imdb_list: https://www.imdb.com/list/ls000056323
+    summary: Classic family movies that are beloved across generations.
+
+  Best Family Movies (Rotten Tomatoes):
+    template: {name: Best Of - Rotten Tomatoes - Genres}
+    trakt_list: https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-kids-family-movies
+    summary: Top-rated family movies according to Rotten Tomatoes.
+
+  G-Rated Movies:
+    sort_title: "!07_G-Rated Movies"
+    plex_search:
+      all:
+        content_rating: G
+        year.gte: 1980
+    sync_mode: sync
+    collection_order: alpha
+    collection_mode: hide
+    schedule: weekly(friday)
+    summary: Movies rated G for General Audiences.
+
+  PG Movies:
+    sort_title: "!07_PG Movies"
+    plex_search:
+      all:
+        content_rating: PG
+        year.gte: 1980
+    sync_mode: sync
+    collection_order: alpha
+    collection_mode: hide
+    schedule: weekly(friday)
+    summary: Movies rated PG - Parental Guidance Suggested.
+
+############################
+#        NORWEGIAN         #
+############################
+
+  Norwegian Movies:
+    sort_title: "!07_<<collection_name>>"
+    plex_search:
+      all:
+        audio_language: Norwegian
+    sync_mode: sync
+    collection_order: alpha
+    collection_mode: hide
+    schedule: weekly(friday)
+    summary: Movies with Norwegian audio in your library.
+
+  Norwegian Family Movies:
+    sort_title: "!07_<<collection_name>>"
+    plex_search:
+      all:
+        audio_language: Norwegian
+        genre:
+          - Family
+          - Children
+    sync_mode: sync
+    collection_order: alpha
+    collection_mode: hide
+    schedule: weekly(friday)
+    summary: Family-friendly movies with Norwegian audio.
+
+############################
 #         REGULAR          #
 ############################
 
@@ -775,6 +858,8 @@ collections:
     template: {name: Random, genre: Documentary}
   Random Drama:
     template: {name: Random, genre: Drama}
+  Random Family:
+    template: {name: Random, genre: Family}
   Random Fantasy:
     template: {name: Random, genre: Fantasy}
   Random History:
