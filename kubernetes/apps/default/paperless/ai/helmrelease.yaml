@@ -8,6 +8,7 @@ spec:
   chartRef:
     kind: OCIRepository
     name: app-template
+    namespace: flux-system
   values:
     controllers:
       paperless-ai:
@@ -19,7 +20,7 @@ spec:
               repository: ghcr.io/clusterzx/paperless-ai
               tag: 3.0.9@sha256:2b65888163fd59716f1c8285b31c5bd0b30c9c3c192c42b516688e3887d4ba60
             env:
-              TZ: ${TIMEZONE}
+              TZ: ${SECRET_TIMEZONE}
               ACTIVATE_TAGGING: no
               AI_PROVIDER: openai
               OPENAI_MODEL: gpt-4o
@@ -54,14 +55,18 @@ spec:
       app:
         ports:
           http:
-            port: 3000
+            port: &port 3000
     route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.${SECRET_DOMAIN_INTERNAL}"
+      server:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
-          - name: envoy-internal
-            namespace: networking
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
