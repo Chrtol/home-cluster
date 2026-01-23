@@ -53,6 +53,7 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               OLLAMA_HOST: "0.0.0.0"
               OLLAMA_MODELS: /models
+              OLLAMA_INTEL_GPU: "true"
               OLLAMA_NUM_GPU: "999"
               ZES_ENABLE_SYSMAN: "1"
             resources:
