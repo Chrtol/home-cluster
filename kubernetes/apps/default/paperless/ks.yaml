@@ -31,6 +31,11 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 5Gi
+      # OIDC component variables
+      GROUP: "Default"
+      SUBDOMAIN: paperless
+      DESCRIPTION: "Document Management System"
+      REDIRECT_URL: "https://paperless.${SECRET_DOMAIN}/accounts/oidc/authentik/login/callback/"
     substituteFrom:
     - name: cluster-secrets
       kind: Secret
