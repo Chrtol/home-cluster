@@ -14,3 +14,22 @@ spec:
     cdi:
       staticPath: /var/cdi/static
       dynamicPath: /var/cdi/dynamic
+  # Patch to add /dev mount for Level Zero to access GPU devices
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: DaemonSet
+              name: intel-gpu-resource-driver-kubelet-plugin
+            patch: |
+              - op: add
+                path: /spec/template/spec/volumes/-
+                value:
+                  name: dev
+                  hostPath:
+                    path: /dev
+              - op: add
+                path: /spec/template/spec/containers/0/volumeMounts/-
+                value:
+                  name: dev
+                  mountPath: /dev
