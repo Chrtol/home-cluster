@@ -43,14 +43,18 @@ spec:
         containers:
           app:
             image:
-              repository: ollama/ollama
-              tag: 0.5.7
+              repository: intelanalytics/ipex-llm-inference-cpp-xpu
+              tag: 2.3.0-SNAPSHOT
+            command:
+              - /bin/sh
+              - -c
+              - mkdir -p /llm/ollama && cd /llm/ollama && init-ollama && exec ./ollama serve
             env:
               TZ: ${SECRET_TIMEZONE}
               OLLAMA_HOST: "0.0.0.0"
               OLLAMA_MODELS: /models
-              # Intel iGPU settings (not Arc)
-              OLLAMA_INTEL_GPU: "true"
+              OLLAMA_NUM_GPU: "999"
+              ZES_ENABLE_SYSMAN: "1"
             resources:
               requests:
                 cpu: "500m"
