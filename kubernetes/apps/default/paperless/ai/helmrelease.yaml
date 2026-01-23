@@ -22,8 +22,9 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               ACTIVATE_TAGGING: yes
-              AI_PROVIDER: openai
-              OPENAI_MODEL: gpt-4o
+              AI_PROVIDER: ollama
+              OLLAMA_API_URL: http://ollama.ai.svc.cluster.local:11434
+              OLLAMA_MODEL: qwen2.5:7b
               PAPERLESS_API_URL: http://paperless.default.svc.cluster.local:8000/api
               PROCESS_PREDEFINED_DOCUMENTS: yes
               USE_EXISTING_DATA: yes
