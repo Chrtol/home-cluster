@@ -38,9 +38,12 @@ spec:
               repository: intelanalytics/ipex-llm-inference-cpp-xpu
               tag: 2.3.0-SNAPSHOT
             command:
-              - /bin/sh
+              - /bin/bash
               - -c
-              - mkdir -p /llm/ollama && cd /llm/ollama && init-ollama && exec ./ollama serve
+              - |
+                source /usr/local/bin/ipex-llm-init --gpu --device iGPU
+                mkdir -p /llm/ollama && cd /llm/ollama && init-ollama
+                exec ./ollama serve
             env:
               TZ: ${SECRET_TIMEZONE}
               OLLAMA_HOST: "0.0.0.0"
@@ -50,6 +53,9 @@ spec:
               OLLAMA_NUM_GPU: "999"
               OLLAMA_KEEP_ALIVE: "60m"
               ZES_ENABLE_SYSMAN: "1"
+              ONEAPI_DEVICE_SELECTOR: "level_zero:0"
+              BIGDL_LLM_XMX_DISABLED: "1"
+              SYCL_CACHE_PERSISTENT: "1"
               no_proxy: "localhost,127.0.0.1"
             resources:
               requests:
@@ -128,3 +134,9 @@ spec:
             subPath: ollama
           - path: /models
             subPath: models
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 16Gi
+        globalMounts:
+          - path: /dev/shm
