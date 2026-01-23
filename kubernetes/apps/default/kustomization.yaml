@@ -32,3 +32,4 @@ resources:
   - ./outline/ks.yaml
   - ./kan/ks.yaml
   - ./moocup/ks.yaml
+  - ./paperless/ks.yaml

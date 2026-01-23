@@ -1,0 +1,108 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app paperless
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  values:
+    controllers:
+      paperless:
+        labels:
+          nfsMount: "true"
+          postgres: "true"
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 18.1
+              pullPolicy: IfNotPresent
+            envFrom: &envFrom
+              - secretRef:
+                  name: paperless-secret
+        containers:
+          app:
+            image:
+              repository: ghcr.io/paperless-ngx/paperless-ngx
+              tag: 2.20.5@sha256:665f2f5cc5482ea2e44f90a7fa170908aaeb95d8d3c70e17f746de8fcb81f644
+            env:
+              USERMAP_UID: 1000
+              USERMAP_GID: 1000
+              PAPERLESS_TIME_ZONE: ${SECRET_TIMEZONE}
+              PAPERLESS_DBENGINE: postgresql
+              PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect
+              PAPERLESS_ACCOUNT_ALLOW_SIGNUPS: false
+              PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS: false
+              PAPERLESS_WEBSERVER_WORKERS: 2
+              PAPERLESS_TASK_WORKERS: 2
+              PAPERLESS_URL: https://paperless.${SECRET_DOMAIN}
+              PAPERLESS_PORT: &port 8000
+              PAPERLESS_CONSUMPTION_DIR: /data/nas/consume
+              PAPERLESS_DATA_DIR: /usr/src/paperless/data
+              PAPERLESS_EXPORT_DIR: /data/nas/export
+              PAPERLESS_MEDIA_ROOT: /usr/src/paperless/media
+              PAPERLESS_CONSUMER_POLLING: 360
+              PAPERLESS_CONSUMER_RECURSIVE: true
+              PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: true
+              PAPERLESS_OCR_LANGUAGES: eng+nor
+              PAPERLESS_OCR_LANGUAGE: eng+nor
+              PAPERLESS_OCR_SKIP_ARCHIVE_FILE: with_text
+              PAPERLESS_OCR_USER_ARGS: '{"invalidate_digital_signatures": true}'
+              PAPERLESS_FILENAME_FORMAT: "{correspondent}/{created_year}/{correspondent}_{document_type}_{created}"
+              PAPERLESS_TIKA_ENABLED: 0
+            envFrom: *envFrom
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                memory: 2500Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      server:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+        advancedMounts:
+          paperless:
+            app:
+              - path: /usr/src/paperless/data
+                subPath: data
+              - path: /usr/src/paperless/media
+                subPath: media
+      nas:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/applications/paperless
+        globalMounts:
+          - path: /data/nas
+            readOnly: false
