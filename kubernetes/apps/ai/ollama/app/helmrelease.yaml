@@ -62,6 +62,7 @@ spec:
                 cpu: "500m"
                 memory: "8Gi"
               limits:
+                cpu: "4"
                 memory: "16Gi"
                 gpu.intel.com/i915: 1
             securityContext:
