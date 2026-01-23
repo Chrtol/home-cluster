@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: intel-gpu-resource-driver
+    - name: intel-device-plugins-gpu
       namespace: kube-system
   components:
     - ../../../../components/ceph-rbd
