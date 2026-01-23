@@ -45,14 +45,12 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               OLLAMA_HOST: "0.0.0.0"
               OLLAMA_MODELS: /models
+              DEVICE: iGPU
               OLLAMA_INTEL_GPU: "true"
-              # Limit GPU layers to prevent memory overcommit (iGPU has limited shared memory)
-              OLLAMA_NUM_GPU: "24"
-              # Keep model loaded to avoid reload cycles
+              OLLAMA_NUM_GPU: "999"
               OLLAMA_KEEP_ALIVE: "60m"
               ZES_ENABLE_SYSMAN: "1"
-              # Enable SYCL kernel caching for stability
-              SYCL_CACHE_PERSISTENT: "1"
+              no_proxy: "localhost,127.0.0.1"
             resources:
               requests:
                 cpu: "500m"
