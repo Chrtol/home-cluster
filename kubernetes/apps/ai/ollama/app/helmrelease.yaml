@@ -46,8 +46,13 @@ spec:
               OLLAMA_HOST: "0.0.0.0"
               OLLAMA_MODELS: /models
               OLLAMA_INTEL_GPU: "true"
-              OLLAMA_NUM_GPU: "999"
+              # Limit GPU layers to prevent memory overcommit (iGPU has limited shared memory)
+              OLLAMA_NUM_GPU: "24"
+              # Keep model loaded to avoid reload cycles
+              OLLAMA_KEEP_ALIVE: "60m"
               ZES_ENABLE_SYSMAN: "1"
+              # Enable SYCL kernel caching for stability
+              SYCL_CACHE_PERSISTENT: "1"
             resources:
               requests:
                 cpu: "500m"
