@@ -1,7 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
-# Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_URL
+# Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_PATH
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
+# REDIRECT_PATH: The callback path for OIDC (e.g., /accounts/oidc/authentik/login/callback/)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-oidc
 #   - Application: ${DISPLAY_NAME} (display name) / ${APP} (slug)
@@ -41,7 +42,7 @@ spec:
           clientType: "confidential"
           # clientID and clientSecret are auto-generated and stored in ${APP}-oidc-authentik-application secret
           redirectURL:
-          - "${REDIRECT_URL}"
+          - "https://${SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}"
           tokenDuration: "minutes=5"
           signingKey: "namespace_security.secret_authentik-cert-tls.tls"
           scopes:

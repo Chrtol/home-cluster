@@ -34,8 +34,9 @@ spec:
       # OIDC component variables
       GROUP: "Default"
       SUBDOMAIN: paperless
+      DISPLAY_NAME: "Paperless"
       DESCRIPTION: "Document Management System"
-      REDIRECT_URL: "https://paperless.${SECRET_DOMAIN}/accounts/oidc/authentik/login/callback/"
+      REDIRECT_PATH: "/accounts/oidc/authentik/login/callback/"
     substituteFrom:
     - name: cluster-secrets
       kind: Secret
