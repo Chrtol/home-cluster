@@ -21,7 +21,7 @@ spec:
               tag: 3.0.9@sha256:2b65888163fd59716f1c8285b31c5bd0b30c9c3c192c42b516688e3887d4ba60
             env:
               TZ: ${SECRET_TIMEZONE}
-              ACTIVATE_TAGGING: no
+              ACTIVATE_TAGGING: yes
               AI_PROVIDER: openai
               OPENAI_MODEL: gpt-4o
               PAPERLESS_API_URL: http://paperless.default.svc.cluster.local:8000/api
@@ -88,3 +88,11 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+      nltk:
+        type: emptyDir
+        globalMounts:
+          - path: /home/node/nltk_data
+      openapi:
+        type: emptyDir
+        globalMounts:
+          - path: /app/OPENAPI
