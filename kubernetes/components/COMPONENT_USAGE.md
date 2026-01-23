@@ -39,7 +39,7 @@ spec:
       SUBDOMAIN: myapp              # Subdomain for the application
       GROUP: "Productivity"         # Authentik UI group category
       DESCRIPTION: "My Application" # Human-readable description
-      REDIRECT_URL: "https://myapp.${SECRET_DOMAIN}/auth/callback/oidc"
+      REDIRECT_PATH: "/auth/callback/oidc"  # Callback path (full URL built from SUBDOMAIN + SECRET_DOMAIN)
 
       # Optional variables
       ICON_URL: ""                  # Icon URL for Authentik UI (optional)
@@ -109,19 +109,20 @@ spec:
       SUBDOMAIN: kan
       GROUP: "Productivity"
       DESCRIPTION: "Kanban Board"
-      REDIRECT_URL: "https://kan.${SECRET_DOMAIN}/api/auth/oauth2/callback/oidc"
+      REDIRECT_PATH: "/api/auth/oauth2/callback/oidc"
 ```
 
-### Common Redirect URL Patterns
+### Common Redirect Paths
 
-Different applications use different callback URL patterns:
+Different applications use different callback paths:
 
-- **Outline**: `https://${SUBDOMAIN}.${SECRET_DOMAIN}/auth/oidc.callback`
-- **KAN**: `https://${SUBDOMAIN}.${SECRET_DOMAIN}/api/auth/oauth2/callback/oidc`
-- **Generic**: `https://${SUBDOMAIN}.${SECRET_DOMAIN}/oauth/callback`
-- **Grafana**: `https://${SUBDOMAIN}.${SECRET_DOMAIN}/login/generic_oauth`
+- **Outline**: `/auth/oidc.callback`
+- **KAN**: `/api/auth/oauth2/callback/oidc`
+- **Paperless**: `/accounts/oidc/authentik/login/callback/`
+- **Generic**: `/oauth/callback`
+- **Grafana**: `/login/generic_oauth`
 
-Always check your application's documentation for the correct callback URL format.
+Always check your application's documentation for the correct callback path.
 
 ## S3 Bucket Component
 
