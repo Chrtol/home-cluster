@@ -25,18 +25,10 @@ spec:
         pod:
           affinity:
             nodeAffinity:
-              # Require nodes with Intel GPU
+              # Require dell1 (UHD 770 is faster than UHD 630)
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
-                      - key: intel.feature.node.kubernetes.io/gpu
-                        operator: In
-                        values: ["true"]
-              # Prefer dell1 (UHD 770 is faster than UHD 630)
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 100
-                  preference:
-                    matchExpressions:
                       - key: kubernetes.io/hostname
                         operator: In
                         values: ["dell1"]
