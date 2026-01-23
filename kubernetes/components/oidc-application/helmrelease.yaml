@@ -1,6 +1,11 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_URL
+# Optional variables : DISPLAY_NAME (defaults to APP if not provided)
+# Creates blueprint-managed resources with naming convention:
+#   - Provider: bp-${APP}-oidc
+#   - Application: ${DISPLAY_NAME} (display name) / ${APP} (slug)
+#   - Group: bp-${APP}-users
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -9,6 +14,7 @@ metadata:
     homelab/auth-component: "true"
 spec:
   releaseName: ${APP}-oidc
+  targetNamespace: security
   chartRef:
     kind: OCIRepository
     name: authentik-application
@@ -29,7 +35,7 @@ spec:
         domain: "https://sso.${SECRET_DOMAIN}"
       provider:
         enabled: true
-        name: "${APP}"
+        name: "bp-${APP}-oidc"  # bp- prefix for blueprint-managed providers
         type: "oidc"
         oidc:
           clientType: "confidential"
@@ -43,8 +49,8 @@ spec:
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
       application:
-        name: "${APP}"
-        slug: "${APP}"
+        name: "${DISPLAY_NAME:=${APP}}"  # Uses DISPLAY_NAME if provided, otherwise APP
+        slug: "${APP}"  # Keep slug simple for compatibility
         group: "${GROUP}"
         launchURL: "https://${SUBDOMAIN}.${SECRET_DOMAIN}"
         openInNewTab: false
@@ -52,10 +58,7 @@ spec:
         description: "${DESCRIPTION}"
         policyEngineMode: "any"
       groups:
-        # Create app-specific group for access control
-        - name: "${APP}-users"
+        # Create app-specific group for access control (blueprint-managed)
+        - slug: "bp-${APP}-users"
           parent: ""
-          users: []
-        # Bind existing authentik Admins group (admins always have access)
-        - name: "authentik Admins"
-          # No parent/users specified = just bind existing group
+        # TODO: Add authentik admins group once we verify the correct slug
