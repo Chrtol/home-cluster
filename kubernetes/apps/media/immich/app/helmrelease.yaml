@@ -37,7 +37,15 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           enableServiceLinks: false
-          
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["lenovo2"]
         initContainers:
           01-init-db:
             image:
