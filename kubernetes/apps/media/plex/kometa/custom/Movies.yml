@@ -493,9 +493,11 @@ collections:
     plex_search:
       all:
         audio_language: Norwegian
+      any:
         genre:
           - Family
           - Children
+          - Animation
     sync_mode: sync
     collection_order: alpha
     collection_mode: hide
