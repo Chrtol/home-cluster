@@ -52,13 +52,12 @@ spec:
               # Intel iGPU settings (not Arc)
               OLLAMA_INTEL_GPU: "true"
             resources:
-              claims:
-                - name: gpu
               requests:
                 cpu: "500m"
                 memory: "8Gi"
               limits:
                 memory: "16Gi"
+                gpu.intel.com/i915: 1
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
@@ -104,9 +103,6 @@ spec:
         runAsGroup: 0
         fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
-      resourceClaims:
-        - name: gpu
-          resourceClaimTemplateName: ollama
     service:
       app:
         controller: ollama
