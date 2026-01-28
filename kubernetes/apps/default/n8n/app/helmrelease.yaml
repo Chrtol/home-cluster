@@ -21,8 +21,9 @@ spec:
 
         pod:
           annotations:
-            instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
-            instrumentation.opentelemetry.io/container-names: "app"
+            # TEMP: Disabled OTEL to debug Code node "Could not get parameter jsCode" error
+            # instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
+            # instrumentation.opentelemetry.io/container-names: "app"
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
