@@ -1,7 +1,8 @@
-# Transform Gatus webhook data to standardized format  
+# Transform Gatus webhook data to standardized format
 # Handles n8n wrapper format: {"body": {"endpoint_name": "...", "alert_state": "..."}}
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 
-webhook_data = _input.first()['json']
+webhook_data = _items[0]['json']
 
 # Extract Gatus data (handle n8n body wrapper)
 gatus_data = webhook_data.get('body', webhook_data)

@@ -1,15 +1,12 @@
 # Transform Proxmox webhook data to standardized format
+# Updated for n8n 2.x native Python (uses _items instead of _input)
+import json
 
-webhook_data = _input.first()['json']
-
-# Convert JavaScript proxy objects to Python dictionaries if needed
-if hasattr(webhook_data, 'to_py'):
-    webhook_data = webhook_data.to_py()
+webhook_data = _items[0]['json']
 
 # If webhook_data is a string, try to parse it as JSON
 if isinstance(webhook_data, str):
     try:
-        import json
         webhook_data = json.loads(webhook_data)
     except json.JSONDecodeError:
         webhook_data = {}

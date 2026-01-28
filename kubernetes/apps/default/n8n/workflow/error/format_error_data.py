@@ -1,11 +1,11 @@
 # N8N Error Workflow - Format Error Data (Python)
 # This script formats error data for Discord webhook
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 
 from datetime import datetime
 
-# Get error data from N8N (correct N8N Python syntax)
-items = _input.all()
-error_data = items[0]['json']
+# Get error data from n8n 2.x native Python
+error_data = _items[0]['json']
 
 # Extract error information with safe fallbacks
 workflow_name = error_data.get('workflow', {}).get('name', 'Unknown Workflow')
@@ -71,4 +71,4 @@ discord_embed = {
 }
 
 # Return formatted data for Discord webhook
-return discord_embed
+return [{"json": discord_embed}]

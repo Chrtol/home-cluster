@@ -1,8 +1,9 @@
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 import re
 from datetime import datetime
 
 # Get HTML from previous HTTP Request node
-html_content = items[0]['json']['data']
+html_content = _items[0]['json']['data']
 
 # Initialize result
 result = {
@@ -203,7 +204,7 @@ try:
 
     # Calculate new HnRs by comparing with previous state (if available from workflow memory)
     # This needs to be passed from the workflow's previous execution data
-    previous_hnr_count = items[0].get('json', {}).get('last_hnr_count', 0)
+    previous_hnr_count = _items[0].get('json', {}).get('last_hnr_count', 0)
     if result["hnr_count"] > previous_hnr_count:
         result["new_hnrs"] = result["hnr_count"] - previous_hnr_count
     else:

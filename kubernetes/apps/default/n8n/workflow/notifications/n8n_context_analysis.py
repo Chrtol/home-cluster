@@ -1,3 +1,4 @@
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 from datetime import datetime
 
 def get_routing_reason(source, severity, namespace, is_night, is_infra, is_media, is_backup, is_service_down, alert_name=""):
@@ -43,7 +44,7 @@ def get_routing_reason(source, severity, namespace, is_night, is_infra, is_media
             return 'Standard alert routing'
 
 # Get standardized data from transformation node
-data = _input.first()['json']
+data = _items[0]['json']
 now = datetime.now()
 
 # Extract clean data

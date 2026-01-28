@@ -1,9 +1,25 @@
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 from datetime import datetime, timedelta
 from collections import Counter
 import json
 
+def parse_timestamp(ts_str):
+    """Parse timestamp and return naive datetime (strip timezone for comparison)"""
+    if not ts_str:
+        return None
+    # Handle 'Z' suffix (UTC)
+    ts_str = str(ts_str).replace('Z', '+00:00')
+    try:
+        dt = datetime.fromisoformat(ts_str)
+        # Convert to naive datetime for comparison
+        if dt.tzinfo is not None:
+            dt = dt.replace(tzinfo=None)
+        return dt
+    except ValueError:
+        return None
+
 # Get all alert logs from previous node
-alerts = [item['json'] for item in _input.all()]
+alerts = [item['json'] for item in _items]
 now = datetime.now()
 
 # Enhanced data extraction functions
@@ -115,9 +131,9 @@ instance_counts = Counter(get_instance(a) for a in alerts)
 alert_hours = Counter()
 for alert in alerts:
     try:
-        alert_time = datetime.fromisoformat(alert['timestamp'])
-        hour = alert_time.hour
-        alert_hours[hour] += 1
+        alert_time = parse_timestamp(alert.get('timestamp', ''))
+        if alert_time:
+            alert_hours[alert_time.hour] += 1
     except (KeyError, ValueError):
         continue
 
