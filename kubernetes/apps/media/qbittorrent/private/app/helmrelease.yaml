@@ -197,6 +197,13 @@ spec:
         path: /mnt/truenas/cf-nas/data/torrents
         globalMounts:
           - path: /data/torrents
+      media-library:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data/media
+        globalMounts:
+          - path: /data/media
+            readOnly: true
       tmp:
         type: emptyDir
       gluetun-auth:
