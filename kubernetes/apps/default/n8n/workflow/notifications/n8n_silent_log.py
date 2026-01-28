@@ -1,41 +1,19 @@
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 import json
 from datetime import datetime
-import os
 
-# Get input data safely
+# Get input data from n8n 2.x native Python
 try:
-    input_data = _input.first()['json']
+    alert = _items[0]['json']
 
     # Parse JSON string if needed
-    if isinstance(input_data, str):
+    if isinstance(alert, str):
         try:
-            alert = json.loads(input_data)
+            alert = json.loads(alert)
         except json.JSONDecodeError:
             alert = {}
-    else:
-        alert = input_data
 
-    # Convert JavaScript proxy objects to Python dictionaries
-    if hasattr(alert, 'to_py'):
-        # This is a Pyodide JavaScript object - convert it
-        alert = alert.to_py()
-    elif not isinstance(alert, dict):
-        # Try to convert by accessing properties if possible
-        try:
-            alert_dict = {}
-            for key in dir(alert):
-                if not key.startswith('_'):
-                    try:
-                        value = getattr(alert, key)
-                        if not callable(value):
-                            alert_dict[key] = value
-                    except:
-                        pass
-            alert = alert_dict
-        except:
-            alert = {}
-
-    # Now process the alert data
+    # Process the alert data
     if isinstance(alert, dict):
         # Extract the actual alert data
         source = alert.get('source', 'unknown')
@@ -70,11 +48,5 @@ except Exception as e:
         'exception_type': str(type(e))
     }
 
-# Write to log file
-log_file = '/home/node/.n8n/alert_logs.jsonl'
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
-
-with open(log_file, 'a') as f:
-    f.write(json.dumps(log_entry) + '\n')
-
-return [{'json': {'logged': True, 'timestamp': log_entry['timestamp']}}]
+# Return log entry (task runner can't write to /home/node/.n8n/ - different container)
+return [{'json': log_entry}]

@@ -1,8 +1,9 @@
 # Simple Discord formatter for n8n
+# Updated for n8n 2.x native Python (uses _items instead of _input)
 from datetime import datetime
 
 # Get data from previous node
-data = items[0]['json']
+data = _items[0]['json']
 
 # Determine alert level and color - prioritize new issues
 if data.get("status") == "error":
