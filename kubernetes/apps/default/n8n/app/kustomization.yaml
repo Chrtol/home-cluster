@@ -6,3 +6,4 @@ resources:
   - ./helmrelease.yaml
   - ./externalsecret.yaml
   - ./backup-reader-rbac.yaml
+  - ./task-runners-config.yaml
