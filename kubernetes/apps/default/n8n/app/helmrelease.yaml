@@ -72,7 +72,7 @@ spec:
           task-runner:
             image:
               repository: n8nio/runners
-              tag: latest
+              tag: "2.4.4"
             env:
               N8N_RUNNERS_AUTH_TOKEN:
                 valueFrom:
