@@ -82,6 +82,8 @@ spec:
                     key: N8N_RUNNERS_AUTH_TOKEN
               N8N_RUNNERS_TASK_BROKER_URI: "http://127.0.0.1:5679"
               N8N_RUNNERS_MAX_CONCURRENCY: "5"
+              # Allow all Python stdlib modules for Code nodes
+              N8N_RUNNERS_STDLIB_ALLOW: "*"
             resources:
               requests:
                 cpu: 10m
@@ -145,6 +147,15 @@ spec:
           n8n:
             app:
               - path: /home/node/.n8n
+      task-runners-config:
+        type: configMap
+        name: n8n-task-runners-config
+        advancedMounts:
+          n8n:
+            task-runner:
+              - path: /etc/n8n-task-runners.json
+                subPath: n8n-task-runners.json
+                readOnly: true
 
     ingress:
       app:
