@@ -80,16 +80,9 @@ spec:
         limits:
           memory: 512M
     agent:
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-      resources:
-        requests:
-          cpu: 15m
-          memory: 128M
-        limits:
-          memory: 256M
+      # Agent disabled - no Envoy parser available
+      # Decisions come from CrowdSec Central API and VPS Traefik
+      enabled: false
     reflector:
       enabled: true
       env:
