@@ -13,16 +13,9 @@ spec:
   path: ./kubernetes/apps/default/echo/app
   components:
     - ../../../../components/gatus/external
-    - ../../../../components/ext-auth
-    - ../../../../components/proxy-application
   postBuild:
     substitute:
       APP: *app
-      DISPLAY_NAME: "Echo Test"
-      EXT_AUTH_HTTPROUTE_NAME: echo-envoy-test
-      GROUP: "Testing"
-      SUBDOMAIN: echo-test
-      DESCRIPTION: "Echo test service for Envoy Gateway"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
