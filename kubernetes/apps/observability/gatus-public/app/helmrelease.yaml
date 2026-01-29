@@ -91,21 +91,19 @@ spec:
       app:
         endpoints:
           - port: http
-    ingress:
+    route:
       app:
-        className: external
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host "status.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *host
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["status.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            kind: Gateway
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: http
     rbac:
       roles:
         gatus-public:

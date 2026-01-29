@@ -72,23 +72,17 @@ spec:
           ldap:
             enabled: true
             port: *ldapPort
-    ingress:
+    route:
       app:
-        enabled: true
-        className: internal
-        annotations:
-          internal-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: &host lldap.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
+        hostnames: ["lldap.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: http
     persistence:
       data:
         enabled: true
