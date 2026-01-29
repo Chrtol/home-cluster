@@ -141,7 +141,7 @@ http:
     # Authentik Forward Auth
     authentik-forward-auth:
       forwardAuth:
-        address: "https://authentik.{{ traefik_domain }}/outpost.goauthentik.io/auth/traefik"
+        address: "https://sso.{{ traefik_domain }}/outpost.goauthentik.io/auth/traefik"
         trustForwardHeader: true
         authResponseHeaders:
           - X-authentik-username

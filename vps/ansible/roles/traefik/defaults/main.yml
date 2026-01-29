@@ -42,3 +42,4 @@ traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip | default('10.0.30.44') }}"
 traefik_envoy_test_hosts:
   - echo-test
   - reptile-tracker-test
+  - docs
