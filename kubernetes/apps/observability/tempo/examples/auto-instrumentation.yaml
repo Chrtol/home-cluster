@@ -62,7 +62,7 @@ spec:
       initContainers:
         # Install OpenTelemetry in init container
         - name: install-otel
-          image: node:18-alpine
+          image: node:24-alpine
           command:
             - sh
             - -c
