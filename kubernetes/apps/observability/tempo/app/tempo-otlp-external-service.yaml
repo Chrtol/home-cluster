@@ -16,53 +16,22 @@ spec:
   privateKey:
     rotationPolicy: Always
 ---
-# Ingress for Tempo OTLP gRPC endpoint
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+# GRPCRoute for Tempo OTLP gRPC endpoint
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
 metadata:
   name: tempo-otlp-grpc
   namespace: observability
   annotations:
-    external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-    # gRPC-specific annotations
-    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
-    nginx.ingress.kubernetes.io/grpc-backend: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    # gRPC requires HTTP/2 and longer timeouts for streaming
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-    # Allow VPS and internal networks to send traces
-    # IMPORTANT: Add your VPS external IP to this whitelist
-    # nginx.ingress.kubernetes.io/whitelist-source-range: "YOUR_VPS_IP/32,10.100.0.0/24,10.0.30.0/24,10.42.0.0/16,10.43.0.0/16"
-    # For now, disable whitelist to allow VPS access (enable with VPS IP once working)
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
 spec:
-  ingressClassName: external
-  tls:
-    - hosts:
-        - "tempo-otlp.${SECRET_DOMAIN}"
-      secretName: "tempo-otlp-tls"
+  parentRefs:
+    - name: external
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - tempo-otlp.${SECRET_DOMAIN}
   rules:
-    - host: "tempo-otlp.${SECRET_DOMAIN}"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: tempo-distributor
-                port:
-                  number: 4317
----
-# Optional: Basic auth secret for OTLP endpoint
-# Uncomment if you want to add authentication
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: tempo-otlp-auth
-#   namespace: observability
-# type: Opaque
-# data:
-#   # htpasswd -nb vps-nginx secure-password | base64
-#   auth: "dnBzLW5naW54OiQyeSQwNSRYUjNKZ2..."
+    - backendRefs:
+        - name: tempo-distributor
+          port: 4317
