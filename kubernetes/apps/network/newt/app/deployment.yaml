@@ -26,7 +26,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: newt
-        image: ghcr.io/fosrl/newt:1.8.1@sha256:c05a8383fc8370e6211f0ab84e37993848aae224322d0c5aede7d3368414bdd0
+        image: ghcr.io/fosrl/newt:1.9.0@sha256:22edec551d81c500a9a3c790a41cd8f7eada3b47ba0a31a187c80d61318e4cc6
         command:
         - /usr/local/bin/newt
         - -native=true  # Use native WireGuard with host networking
