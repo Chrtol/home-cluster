@@ -8,7 +8,7 @@ metadata:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
 spec:
   parentRefs:
-    - name: envoy-external
+    - name: external
       namespace: network
       kind: Gateway
   hostnames:
