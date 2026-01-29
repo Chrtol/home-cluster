@@ -5,7 +5,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./svc.yaml
-  - ./ingress.yaml
+  - ./httproute.yaml
   - ./helmrelease.yaml
   - ./gatus.yaml
 configMapGenerator:
