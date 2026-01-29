@@ -283,33 +283,34 @@ spec:
             targetPort: 80
             protocol: HTTP
             appProtocol: http
-    ingress:
-      main:
-        className: external
+    route:
+      app:
         annotations:
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-          hajimari.io/enable: "true"
-          hajimari.io/icon: mdi:snake
-          hajimari.io/group: apps
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: "reptile-tracker.${SECRET_DOMAIN}"
-            paths:
-              - path: /api
-                pathType: Prefix
-                service:
-                  identifier: backend
-                  port: http
-              - path: /auth
-                pathType: Prefix
-                service:
-                  identifier: backend
-                  port: http
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: frontend
-                  port: http
-        tls:
-          - hosts:
-              - "reptile-tracker.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["reptile-tracker.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+            backendRefs:
+              - identifier: backend
+                port: 8000
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /auth
+            backendRefs:
+              - identifier: backend
+                port: 8000
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - identifier: frontend
+                port: 80

@@ -32,7 +32,7 @@ spec:
             image:
               repository: ghcr.io/chrtol/openflow
               tag: latest
-              
+
             resources:
               requests:
                 cpu: 15m
@@ -53,7 +53,7 @@ spec:
       app:
         ports:
           http:
-            port: 80
+            port: &port 80
 
     persistence:
       nginx-cache:
@@ -67,19 +67,14 @@ spec:
           - path: /var/run
             subPath: run
 
-    ingress:
-      app:
-        enabled: true
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-        hosts:
-          - host: &host "openflow.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
+    route:
+      server:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
