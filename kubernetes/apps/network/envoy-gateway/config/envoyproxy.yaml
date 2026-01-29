@@ -16,6 +16,7 @@ spec:
     type: Kubernetes
     kubernetes:
       envoyDeployment:
+        name: envoy-gateway-external
         pod:
           # Pin Envoy proxy to same node as Envoy Gateway controller
           # to avoid cross-node xDS connection issues with Cilium
@@ -28,6 +29,7 @@ spec:
                       app.kubernetes.io/instance: envoy-gateway
                   topologyKey: kubernetes.io/hostname
       envoyService:
+        name: envoy-gateway-external
         type: LoadBalancer
         externalTrafficPolicy: Cluster
         loadBalancerIP: "10.0.30.44"
