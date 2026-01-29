@@ -80,13 +80,6 @@ spec:
         limits:
           memory: 512M
     agent:
-      acquisition:
-        - namespace: network
-          podName: external-ingress-nginx-controller-*
-          program: nginx
-        - namespace: network
-          podName: internal-ingress-nginx-controller-*
-          program: nginx
       metrics:
         enabled: true
         serviceMonitor:

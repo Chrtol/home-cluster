@@ -2,8 +2,7 @@
 http:
   # Routers
   routers:
-{% if traefik_envoy_gateway_only | default(false) %}
-    # All external traffic routes to Envoy Gateway (HTTPRoute-only mode)
+    # All external traffic routes to Envoy Gateway
     envoy-gateway-wildcard:
       entryPoints:
         - websecure
@@ -17,52 +16,13 @@ http:
 {% endif %}
         - security-headers
 
-{% else %}
-    # Legacy mode: Route specific hosts to Envoy, rest to nginx-ingress
-    kubernetes-ingress:
-      entryPoints:
-        - websecure
-      rule: "HostRegexp(`.+`)"
-      priority: 1
-      service: kubernetes-external-ingress
-      tls: {}
-      middlewares:
-{% if traefik_crowdsec_enabled | default(true) %}
-        - crowdsec-bouncer
-{% endif %}
-        - security-headers
-{% if traefik_enable_authentik | default(false) %}
-        - authentik-forward-auth
-{% endif %}
-
-{% for host in traefik_envoy_test_hosts | default([]) %}
-    {{ host }}:
-      entryPoints:
-        - websecure
-      rule: "Host(`{{ host }}.{{ traefik_domain }}`)"
-      priority: 20
-      service: envoy-gateway
-      tls: {}
-      middlewares:
-{% if traefik_crowdsec_enabled | default(true) %}
-        - crowdsec-bouncer
-{% endif %}
-        - security-headers
-
-{% endfor %}
-{% endif %}
-
-    # Root domain router (always routes to Envoy in new mode)
+    # Root domain router
     root-domain:
       entryPoints:
         - websecure
       rule: "Host(`{{ traefik_domain }}`)"
       priority: 10
-{% if traefik_envoy_gateway_only | default(false) %}
       service: envoy-gateway
-{% else %}
-      service: kubernetes-external-ingress
-{% endif %}
       tls: {}
       middlewares:
 {% if traefik_crowdsec_enabled | default(true) %}
@@ -93,23 +53,13 @@ http:
 
   # Services
   services:
-    # Envoy Gateway service (primary in new mode)
+    # Envoy Gateway service
     envoy-gateway:
       loadBalancer:
         servers:
           - url: "https://{{ traefik_envoy_gateway_ip }}:443"
         passHostHeader: true
         serversTransport: envoy-gateway-transport
-
-{% if not (traefik_envoy_gateway_only | default(false)) %}
-    # Legacy: Kubernetes nginx-ingress (only needed in legacy mode)
-    kubernetes-external-ingress:
-      loadBalancer:
-        servers:
-          - url: "https://{{ kubernetes_external_ingress_ip }}:443"
-        passHostHeader: true
-        serversTransport: kubernetes-transport
-{% endif %}
 
   # Middlewares
   middlewares:
@@ -170,16 +120,6 @@ http:
         dialTimeout: 30s
         responseHeaderTimeout: 30s
         idleConnTimeout: 90s
-
-{% if not (traefik_envoy_gateway_only | default(false)) %}
-    kubernetes-transport:
-      insecureSkipVerify: true
-      maxIdleConnsPerHost: 25
-      forwardingTimeouts:
-        dialTimeout: 30s
-        responseHeaderTimeout: 30s
-        idleConnTimeout: 90s
-{% endif %}
 
 # TLS Configuration
 tls:

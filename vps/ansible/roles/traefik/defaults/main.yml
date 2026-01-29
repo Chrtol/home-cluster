@@ -3,11 +3,8 @@
 traefik_dir: "/opt/traefik"
 traefik_config_dir: "{{ traefik_dir }}/config"
 
-# Domain configuration (uses nginx_domain from existing setup)
+# Domain configuration
 traefik_domain: "{{ nginx_domain }}"
-
-# Kubernetes ingress endpoint (uses existing nginx variables)
-kubernetes_external_ingress_ip: "{{ nginx_external_ingress_ip }}"
 
 # OpenTelemetry configuration
 # Using gRPC endpoint (port 4317) - Traefik uses gRPC for OTLP
@@ -36,7 +33,3 @@ traefik_crowdsec_log_level: "INFO"
 
 # Envoy Gateway configuration
 traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip | default('10.0.30.44') }}"
-
-# When true, ALL external traffic routes to Envoy Gateway (HTTPRoute-only mode)
-# When false, falls back to legacy nginx-ingress routing
-traefik_envoy_gateway_only: true
