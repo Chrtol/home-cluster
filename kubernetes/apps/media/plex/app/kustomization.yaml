@@ -8,15 +8,14 @@ resources:
   - ./helmrelease.yaml
   - ./replicationsource.yaml
   - ./prometheusrule.yaml
-  - ./ingress.yaml
-# configMapGenerator:
-#   - name: plex-loki-rules
-#     files:
-#       - plex.yaml=./lokirule.yaml
-#     options:
-#       labels:
-#         loki_rule: "true"
-# generatorOptions:
-#   disableNameSuffixHash: true
-#   annotations:
-#     kustomize.toolkit.fluxcd.io/substitute: disabled
+configMapGenerator:
+  - name: plex-loki-rules
+    files:
+      - plex.yaml=./lokirule.yaml
+    options:
+      labels:
+        loki_rule: "true"
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
