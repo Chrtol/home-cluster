@@ -41,7 +41,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  grpc:
+                  tcpSocket:
                     port: &port 8080
                   initialDelaySeconds: 5
                   periodSeconds: 10
@@ -49,7 +49,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  grpc:
+                  tcpSocket:
                     port: *port
                   initialDelaySeconds: 5
                   periodSeconds: 10
