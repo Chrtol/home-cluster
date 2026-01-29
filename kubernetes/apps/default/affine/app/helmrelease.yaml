@@ -82,20 +82,19 @@ spec:
         ports:
           http:
             port: *port
-    ingress:
-      app:
-        className: external
+    route:
+      external:
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host affine.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts: [*host]
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
 
     persistence:
       workspace:

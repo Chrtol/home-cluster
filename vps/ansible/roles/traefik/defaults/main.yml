@@ -43,3 +43,4 @@ traefik_envoy_test_hosts:
   - echo-test
   - reptile-tracker-test
   - docs
+  - affine
