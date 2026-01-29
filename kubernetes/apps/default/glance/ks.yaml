@@ -10,11 +10,13 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  # components:
-    # - ../../../../components/gatus/guarded
+  components:
+    - ../../../../components/ext-auth
+    # - ../../../../components/gatus/external
   postBuild:
     substitute:
       APP: *app
+      EXT_AUTH_HTTPROUTE_NAME: glance
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

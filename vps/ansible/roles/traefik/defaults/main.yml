@@ -41,7 +41,7 @@ traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip | default('10.0.30.44') }}"
 # Each item is a hostname prefix (e.g., "echo-test" routes echo-test.domain.com to Envoy)
 traefik_envoy_test_hosts:
   - echo
-  - reptile-tracker-test
+  - reptile-tracker
   - docs
   - affine
   - pdf
@@ -52,3 +52,5 @@ traefik_envoy_test_hosts:
   - kan
   - karakeep
   - recipes
+  - moocup
+  - n8n-webhook
