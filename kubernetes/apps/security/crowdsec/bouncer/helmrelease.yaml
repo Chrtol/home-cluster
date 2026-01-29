@@ -1,0 +1,80 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec-envoy-bouncer
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      bouncer:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/kdwils/envoy-proxy-bouncer
+              tag: v0.3.0
+            env:
+              ENVOY_BOUNCER_BOUNCER_LAPIURL: "http://crowdsec-service.security.svc.cluster.local:8080"
+              ENVOY_BOUNCER_BOUNCER_ENABLED: "true"
+              ENVOY_BOUNCER_BOUNCER_TICKERINTERVAL: "10s"
+              ENVOY_BOUNCER_LOG_LEVEL: "info"
+              ENVOY_BOUNCER_BOUNCER_APIKEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: crowdsec-envoy-bouncer-secret
+                    key: api-key
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  grpc:
+                    port: &port 8080
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  grpc:
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: bouncer
+        ports:
+          grpc:
+            port: *port
+            protocol: TCP

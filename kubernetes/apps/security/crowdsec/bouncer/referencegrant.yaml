@@ -1,0 +1,15 @@
+---
+# Allow SecurityPolicy in network namespace to reference bouncer service
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: crowdsec-envoy-bouncer-ref
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: crowdsec-envoy-bouncer

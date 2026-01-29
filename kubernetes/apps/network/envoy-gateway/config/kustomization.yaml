@@ -5,3 +5,4 @@ resources:
   - ./envoyproxy.yaml
   - ./gateway.yaml
   - ./referencegrant.yaml
+  - ./crowdsec-securitypolicy.yaml
