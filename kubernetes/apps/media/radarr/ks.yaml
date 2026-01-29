@@ -15,6 +15,7 @@ spec:
   path: ./kubernetes/apps/media/radarr/app
   components:
     - ../../../../components/gatus/guarded
+    - ../../../../components/ext-auth
   prune: true
   sourceRef:
     kind: GitRepository

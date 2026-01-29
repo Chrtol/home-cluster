@@ -12,10 +12,12 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       namespace: default
-    # Add more namespaces as needed when migrating other services
-    # - group: gateway.envoyproxy.io
-    #   kind: SecurityPolicy
-    #   namespace: media
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: media
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: media
   to:
     - group: ''
       kind: Service

@@ -68,7 +68,7 @@ spec:
           http:
             port: *port
     route:
-      app:
+      internal:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Media
@@ -80,7 +80,7 @@ spec:
           gethomepage.dev/widget.url: http://audiobookshelf.media.svc.cluster.local:80
           # gethomepage.dev/widget.key: "{{`{{HOMEPAGE_VAR_AUDIOBOOKSHELF_TOKEN}}`}}"
 
-        hostnames: ["audiobookshelf.${SECRET_DOMAIN}"]
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
@@ -89,22 +89,18 @@ spec:
           - backendRefs:
               - name: *app
                 port: *port
-
-    ingress:
-      app:
-        className: external
+      external:
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host audiobooks.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *host
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["audiobooks.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
 
     persistence:
       config:

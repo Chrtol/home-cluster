@@ -1,0 +1,30 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radarr
+spec:
+  parentRefs:
+    - name: internal
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - radarr.${SECRET_DOMAIN}
+  rules:
+    # Route Authentik callback to the outpost
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io
+      backendRefs:
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: security
+          port: 9000
+    # Main application route
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: radarr
+          port: 7878
