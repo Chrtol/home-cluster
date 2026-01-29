@@ -34,7 +34,7 @@ spec:
           app:
             image:
               repository: ghcr.io/n8n-io/n8n
-              tag: 2.6.2
+              tag: 2.4.7
             env:
               DB_SQLITE_VACUUM_ON_STARTUP: true
               EXECUTIONS_DATA_PRUNE: true
@@ -73,7 +73,7 @@ spec:
           task-runner:
             image:
               repository: n8nio/runners
-              tag: "2.6.2"
+              tag: 2.4.7
             env:
               N8N_RUNNERS_AUTH_TOKEN:
                 valueFrom:
