@@ -1,5 +1,9 @@
 name: Deploy VPS Reverse Proxy Configuration
 
+concurrency:
+  group: vps-reverse-proxy-deploy
+  cancel-in-progress: false
+
 on:
   push:
     branches: [main]
