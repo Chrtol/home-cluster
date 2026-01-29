@@ -42,7 +42,7 @@ spec:
                   name: home-assistant-secret
             securityContext:
               privileged: true
-              capabilities: 
+              capabilities:
                 add: ["NET_RAW", "NET_ADMIN", "SYS_ADMIN", "DAC_OVERRIDE"]
             resources:
               requests:
@@ -74,47 +74,31 @@ spec:
       app:
         ports:
           http:
-            port: 8123
+            port: &port 8123
 
     route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["hass.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
             sectionName: https
-
-    ingress:
-      internal:
-        enabled: true
-        className: internal
-        hosts:
-          - host: &internalHost "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *internalHost
-            
-      external:
-        enabled: true
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host hass.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *host
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
 
     persistence:
       config:
