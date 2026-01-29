@@ -51,3 +51,4 @@ traefik_envoy_test_hosts:
   - jotty
   - kan
   - karakeep
+  - recipes

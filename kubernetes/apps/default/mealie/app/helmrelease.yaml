@@ -63,7 +63,7 @@ spec:
           http:
             port: &port 9000
     route:
-      app:
+      internal:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/name: Mealie
@@ -80,7 +80,7 @@ spec:
           hajimari.io/appName: "Mealie"
           hajimari.io/group: "Home"
 
-        hostnames: ["mealie.${SECRET_DOMAIN}"]
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
@@ -89,23 +89,18 @@ spec:
           - backendRefs:
               - name: *app
                 port: *port
-
-    ingress:
-      app:
-        enabled: true
-        className: external
+      external:
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host recipes.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *host
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["recipes.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
 
     persistence:
       data:
