@@ -28,6 +28,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      EXT_AUTH_PORT: "7878"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
