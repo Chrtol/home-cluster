@@ -62,3 +62,4 @@ traefik_envoy_test_hosts:
   - booklore
   - photos
   - plex
+  - sso
