@@ -54,3 +54,4 @@ traefik_envoy_test_hosts:
   - recipes
   - moocup
   - n8n-webhook
+  - glance
