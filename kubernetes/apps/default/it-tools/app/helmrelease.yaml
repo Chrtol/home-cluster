@@ -51,7 +51,7 @@ spec:
       app:
         ports:
           http:
-            port: 8080
+            port: &port 8080
 
     persistence:
       tmpfs:
@@ -61,27 +61,25 @@ spec:
             subPath: tmp
 
     route:
-      app:
-        hostnames:
-          - it-tools.${SECRET_DOMAIN}
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["tools.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
             sectionName: https
-
-    ingress:
-      app:
-        enabled: true
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host tools.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-            - *host
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
