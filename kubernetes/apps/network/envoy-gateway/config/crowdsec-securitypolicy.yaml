@@ -1,0 +1,24 @@
+---
+# CrowdSec Envoy Bouncer SecurityPolicy
+# Applies IP-based blocking via ext auth to the external Gateway
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: crowdsec-bouncer
+  namespace: network
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: external
+  extAuth:
+    grpc:
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: crowdsec-envoy-bouncer
+          namespace: security
+          port: 8080
+    # Allow requests through if bouncer is unavailable
+    # Set to false for strict enforcement (may cause outage if bouncer is down)
+    failOpen: true
