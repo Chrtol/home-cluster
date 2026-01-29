@@ -58,19 +58,17 @@ spec:
           http:
             port: *httpPort
 
-    ingress:
-      app:
-        className: internal
-        hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app 
-                  port: http
-        tls:
-          - hosts:
-            - *host
+    route:
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *httpPort
 
     persistence:
       data:
