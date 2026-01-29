@@ -52,15 +52,7 @@ hubble:
     rollOutPods: true
     priorityClassName: control-plane-priority
     ingress:
-      enabled: true
-      annotations:
-        hajimari.io/icon: satellite-variant
-        hajimari.io/appName: Hubble
-        hajimari.io/group: Observability
-      className: internal
-      hosts: &host ["hubble.${SECRET_DOMAIN}"]
-      tls:
-        - hosts: *host
+      enabled: false
 ipam:
   mode: kubernetes
 ipv4NativeRoutingCIDR: "10.42.0.0/16"

@@ -1,33 +1,20 @@
 ---
-# Ingress for Tempo OTLP HTTP endpoint (for nginx and other HTTP-based exporters)
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+# HTTPRoute for Tempo OTLP HTTP endpoint (for nginx and other HTTP-based exporters)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: tempo-otlp-http
   namespace: observability
   annotations:
-    external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
 spec:
-  ingressClassName: external
-  tls:
-    - hosts:
-        - "tempo-otlp-http.${SECRET_DOMAIN}"
-      secretName: "tempo-otlp-tls"
+  parentRefs:
+    - name: external
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - tempo-otlp-http.${SECRET_DOMAIN}
   rules:
-    - host: "tempo-otlp-http.${SECRET_DOMAIN}"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: tempo-distributor
-                port:
-                  number: 4318
+    - backendRefs:
+        - name: tempo-distributor
+          port: 4318
