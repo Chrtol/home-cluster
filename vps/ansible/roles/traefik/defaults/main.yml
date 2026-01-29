@@ -49,3 +49,4 @@ traefik_envoy_test_hosts:
   - hass
   - tools
   - jotty
+  - kan
