@@ -9,5 +9,4 @@ resources:
   - ./lldap/ks.yaml
   - ./authentik/ks.yaml
   - ./crowdsec/ks.yaml
-  - ./crowdsec/bouncer/ks.yaml
   - ./trivy-operator/ks.yaml
