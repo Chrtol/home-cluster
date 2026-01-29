@@ -49,6 +49,11 @@ spec:
         enabled: true
         forceConflicts: true
     cleanPrometheusOperatorObjectNames: true
+    defaultRules:
+      rules:
+        kubeApiserverAvailability: false
+        kubeApiserverBurnrate: false
+        kubeApiserverSlos: false
     alertmanager:
       route:
         main:
