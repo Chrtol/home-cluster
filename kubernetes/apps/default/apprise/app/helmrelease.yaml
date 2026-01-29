@@ -36,7 +36,7 @@ spec:
                 memory: 300M
               limits:
                 memory: 512M
-                
+
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -49,23 +49,19 @@ spec:
       app:
         ports:
           http:
-            port: 8080
+            port: &port 8080
 
-    ingress:
-      app:
-        className: internal
-        annotations:
-          nginx.ingress.kubernetes.io/proxy-body-size: "0"
-        hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
+    route:
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
 
     persistence:
       config:
