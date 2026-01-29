@@ -48,3 +48,4 @@ traefik_envoy_test_hosts:
   - start
   - hass
   - tools
+  - jotty
