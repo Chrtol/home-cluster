@@ -7,18 +7,23 @@ metadata:
   labels:
     dns-provider: internal
 spec:
-  gatewayClassName: cilium
+  gatewayClassName: envoy
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: envoy-internal-proxy
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    hostname: "*.${SECRET_DOMAIN}"
-    allowedRoutes:
-      namespaces:
-        from: All  # Allow routes from any namespace
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: "${SECRET_DOMAIN/./-}-production-tls"
-        namespace: cert-manager
-        kind: Secret
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: "*.${SECRET_DOMAIN}"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: "${SECRET_DOMAIN/./-}-production-tls"
+            namespace: cert-manager
+            kind: Secret
