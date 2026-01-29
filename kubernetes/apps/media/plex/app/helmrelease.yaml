@@ -83,8 +83,22 @@ spec:
           http:
             port: 32400
     route:
-      server:
-        hostnames: ["plex-local.${SECRET_DOMAIN}"]
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          app.kubernetes.io/name: plex
+          app.kubernetes.io/instance: plex
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["{{ .Release.Name }}-local.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
