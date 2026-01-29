@@ -63,3 +63,6 @@ traefik_envoy_test_hosts:
   - photos
   - plex
   - sso
+  - status
+  - s3
+  - flux-webhook
