@@ -1,0 +1,35 @@
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-internal-proxy
+  namespace: network
+spec:
+  telemetry:
+    tracing:
+      samplingRate: 50
+      provider:
+        type: OpenTelemetry
+        host: tempo-distributor.observability.svc.cluster.local
+        port: 4317
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        name: envoy-gateway-internal
+        pod:
+          # Pin Envoy proxy to same node as Envoy Gateway controller
+          # to avoid cross-node xDS connection issues with Cilium
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: gateway-helm
+                      app.kubernetes.io/instance: envoy-gateway
+                  topologyKey: kubernetes.io/hostname
+      envoyService:
+        name: envoy-gateway-internal
+        type: LoadBalancer
+        externalTrafficPolicy: Cluster
+        loadBalancerIP: "10.0.30.43"
