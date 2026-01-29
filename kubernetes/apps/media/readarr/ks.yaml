@@ -12,6 +12,7 @@ spec:
   components:
     - ../../../../components/gatus/guarded
     - ../../../../components/ceph-rbd
+    - ../../../../components/ext-auth
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd

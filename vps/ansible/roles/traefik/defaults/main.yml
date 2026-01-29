@@ -55,3 +55,9 @@ traefik_envoy_test_hosts:
   - moocup
   - n8n-webhook
   - glance
+  - abr
+  - audiobooks
+  - request
+  - join
+  - booklore
+  - photos

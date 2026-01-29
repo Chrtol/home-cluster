@@ -177,16 +177,17 @@ spec:
           http:
             port: *port
 
-    ingress:
+    route:
       app:
-        className: internal
-        hosts:
-          - host: qb-priv.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
+        hostnames: ["qb-priv.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
 
     persistence:
       config:

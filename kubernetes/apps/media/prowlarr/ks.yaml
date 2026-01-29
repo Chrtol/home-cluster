@@ -16,6 +16,7 @@ spec:
   path: ./kubernetes/apps/media/prowlarr/app
   components:
     - ../../../../components/gatus/guarded
+    - ../../../../components/ext-auth
   postBuild:
     substitute:
       APP: *app

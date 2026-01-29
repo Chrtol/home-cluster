@@ -159,8 +159,8 @@ spec:
             port: 3003
 
     route:
-      server:
-        hostnames: ["immich.${SECRET_DOMAIN}"]
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
@@ -169,22 +169,18 @@ spec:
           - backendRefs:
               - identifier: server
                 port: *port
-
-    ingress:
-      app:
-        className: external
+      external:
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host photos.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: server
-                  port: http
-        tls:
-          - hosts:
-            - *host
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["photos.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: server
+                port: *port
 
     persistence:
       matplotlib:
