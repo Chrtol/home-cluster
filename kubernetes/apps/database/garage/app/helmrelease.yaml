@@ -89,25 +89,8 @@ spec:
             port: 3901
           web:
             port: 3902
-    ingress:
-      app:
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-          # CORS is handled by Garage itself (see configmap.yaml)
-        hosts:
-          - host: &host s3.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: app
-                  port: api
-        tls:
-          - hosts:
-              - *host
     route:
-      app:
+      internal:
         hostnames: ["s3-local.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
@@ -116,7 +99,19 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 3900
+                port: api
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["s3.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            kind: Gateway
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: api
     persistence:
       data:
         type: nfs

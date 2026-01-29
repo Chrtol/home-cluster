@@ -6,3 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./servicemonitor.yaml
   - ./helmrelease.yaml
+  - ./httproute.yaml
