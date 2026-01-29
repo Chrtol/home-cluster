@@ -50,3 +50,4 @@ traefik_envoy_test_hosts:
   - tools
   - jotty
   - kan
+  - karakeep
