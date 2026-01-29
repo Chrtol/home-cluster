@@ -74,6 +74,9 @@ spec:
             image:
               repository: ghcr.io/n8n-io/n8n
               tag: 2.4.7
+            command:
+              - n8n-task-runners
+              - launcher
             env:
               N8N_RUNNERS_AUTH_TOKEN:
                 valueFrom:
