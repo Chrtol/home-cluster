@@ -45,3 +45,5 @@ traefik_envoy_test_hosts:
   - docs
   - affine
   - pdf
+  - start
+  - hass
