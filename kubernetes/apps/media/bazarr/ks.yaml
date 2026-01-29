@@ -16,9 +16,15 @@ spec:
   path: ./kubernetes/apps/media/bazarr/app
   components:
     - ../../../../components/gatus/guarded
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
   postBuild:
     substitute:
       APP: *app
+      EXT_AUTH_PORT: "6767"
+      GROUP: Media
+      SUBDOMAIN: *app
+      DESCRIPTION: Subtitle management for Sonarr and Radarr
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
