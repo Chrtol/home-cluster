@@ -65,7 +65,7 @@ spec:
       nfs-nas-media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/shelfmark/bookdrop
+        path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
         advancedMounts:
           shelfmark:
             shelfmark:
