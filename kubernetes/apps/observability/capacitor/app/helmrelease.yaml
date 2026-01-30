@@ -31,6 +31,13 @@ spec:
     existingSecret:
       name: capacitor
 
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        cpu: 15m
+        memory: 256Mi
+
     service:
       enabled: true
       type: ClusterIP
