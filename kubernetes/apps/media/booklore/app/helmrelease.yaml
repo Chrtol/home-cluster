@@ -94,14 +94,14 @@ spec:
       config:
         existingClaim: *app
         globalMounts:
-          - path: /home/booklore/data
+          - path: /app/data
 
       books:
         type: nfs
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/data/media/books
         globalMounts:
-          - path: /home/booklore/books
+          - path: /books
             readOnly: false
 
       bookdrop:
@@ -109,5 +109,6 @@ spec:
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
         globalMounts:
-          - path: /home/booklore/bookdrop
+          - path: /bookdrop
+            readOnly: false
 
