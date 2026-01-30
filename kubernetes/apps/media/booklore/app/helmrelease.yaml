@@ -110,3 +110,4 @@ spec:
         path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
         globalMounts:
           - path: /home/booklore/bookdrop
+
