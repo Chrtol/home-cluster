@@ -34,3 +34,4 @@ resources:
   - ./mydia/ks.yaml
   - ./qui/ks.yaml
   - ./tracearr/ks.yaml
+  - ./shelfmark/ks.yaml
