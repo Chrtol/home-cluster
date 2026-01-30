@@ -62,7 +62,8 @@ spec:
     persistence:
       config:
         existingClaim: *app
-      nfs-nas-media:
+
+      nfs-nas-bookdrop:
         type: nfs
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
@@ -71,6 +72,14 @@ spec:
             shelfmark:
               - path: /bookdrop
                 subPath: Library/Main/Books/Booklore/bookdrop
+      nfs-nas-media:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data/media
+        globalMounts:
+          - path: /media
+            readOnly: false
+
       tmpfs:
         type: emptyDir
         sizeLimit: 1Gi
@@ -79,6 +88,7 @@ spec:
             subPath: tmp
           - path: /var/log
             subPath: var-log
+
     route:
       internal:
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
@@ -90,6 +100,7 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
+
     service:
       app:
         ports:
