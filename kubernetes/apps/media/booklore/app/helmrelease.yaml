@@ -105,6 +105,8 @@ spec:
             readOnly: false
 
       bookdrop:
-        type: emptyDir
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
         globalMounts:
           - path: /home/booklore/bookdrop
