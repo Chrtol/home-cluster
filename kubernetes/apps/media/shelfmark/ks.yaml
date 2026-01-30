@@ -13,7 +13,7 @@ spec:
     - ../../../../components/ceph-rbd
     - ../../../../components/gatus/guarded
   interval: 1h
-  path: "./kubernetes/apps/downloads/shelfmark/app"
+  path: "./kubernetes/apps/media/shelfmark/app"
   postBuild:
     substitute:
       APP: *app
