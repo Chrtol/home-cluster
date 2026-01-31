@@ -2,6 +2,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
+#                      PROXY_ADMIN_GROUP - existing group to bind for admin access (for proxy auth apps)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-proxy
 #   - Application: ${DISPLAY_NAME} (display name) / ${APP} (slug)
@@ -53,9 +54,9 @@ spec:
         # Create app-specific group for access control (blueprint-managed)
         - slug: "bp-${APP}-users"
           parent: ""
-        # Create app-specific admin group for access control (blueprint-managed)
-        - slug: "bp-${APP}-admins"
-          parent: "${PROXY_ADMIN_PARENT:-}"
+        # Bind existing admin group for proxy auth (set PROXY_ADMIN_GROUP to use)
+        - slug: "${PROXY_ADMIN_GROUP:-}"
+          parent: ""
         # Bind authentik Admins for admin access to all apps
         - slug: "authentik Admins"
           parent: ""

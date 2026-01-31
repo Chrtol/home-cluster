@@ -63,6 +63,16 @@ spec:
       config:
         existingClaim: *app
 
+      proxy-auth-config:
+        type: configMap
+        name: shelfmark-proxy-auth
+        advancedMounts:
+          shelfmark:
+            shelfmark:
+              - path: /config/plugins/security.json
+                subPath: security.json
+                readOnly: true
+
       nfs-nas-bookdrop:
         type: nfs
         server: nas.${SECRET_DOMAIN}

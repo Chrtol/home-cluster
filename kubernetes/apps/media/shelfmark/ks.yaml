@@ -24,7 +24,7 @@ spec:
       SUBDOMAIN: *app
       DESCRIPTION: Book and audiobook downloader
       CEPH_RBD_CAPACITY: 5Gi
-      PROXY_ADMIN_PARENT: media-admins
+      PROXY_ADMIN_GROUP: media-admins
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
