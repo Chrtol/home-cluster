@@ -30,12 +30,12 @@ spec:
   patches:
     - target:
         kind: HelmRelease
-        name: shelfmark-proxy
+        name: ${APP}-proxy
       patch: |
         - op: add
           path: /spec/values/blueprint/groups/-
           value:
-            slug: "bp-shelfmark-admins"
+            slug: "bp-${APP}-admins"
             parent: "Media Admins"
   prune: true
   sourceRef:
