@@ -21,3 +21,4 @@ resources:
   - ./lwolf-charts.yaml
   - ./fossorial.yaml
   - ./opentelemetry.yaml
+  - ./mariadb-operator.yaml

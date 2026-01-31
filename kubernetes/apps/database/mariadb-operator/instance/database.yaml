@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/k8s.mariadb.com/database_v1alpha1.json
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: booklore
+spec:
+  mariaDbRef:
+    name: mariadb-operator
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+  requeueInterval: 30s
+  retryInterval: 5s
