@@ -41,5 +41,10 @@ spec:
   metrics:
     enabled: true
 
+  podTemplate:
+    metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
+
   updateStrategy:
     type: ReplicasFirstPrimaryLast
