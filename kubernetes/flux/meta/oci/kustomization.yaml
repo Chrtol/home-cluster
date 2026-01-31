@@ -12,7 +12,6 @@ resources:
   - ./volsync.yaml
   - ./loki.yaml
   - ./promtail.yaml
-  - ./mariadb.yaml
   - ./opnsense-exporter.yaml
   - ./tuppr.yaml
   - ./capacitor-next.yaml

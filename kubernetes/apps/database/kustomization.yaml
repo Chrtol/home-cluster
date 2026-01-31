@@ -10,5 +10,4 @@ resources:
   - ./pgadmin/ks.yaml
   - ./dragonfly/ks.yaml
   - ./garage/ks.yaml
-  - ./mariadb/ks.yaml
   - ./mariadb-operator/ks.yaml
