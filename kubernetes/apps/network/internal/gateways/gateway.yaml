@@ -14,6 +14,15 @@ spec:
       kind: EnvoyProxy
       name: envoy-internal-proxy
   listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      hostname: "*.${SECRET_DOMAIN}"
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: HTTPRoute
     - name: https
       port: 443
       protocol: HTTPS

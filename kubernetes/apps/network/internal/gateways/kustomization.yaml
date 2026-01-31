@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./envoyproxy.yaml
   - ./gateway.yaml
+  - ./httproute-redirect.yaml
   - ./referencegrant.yaml
