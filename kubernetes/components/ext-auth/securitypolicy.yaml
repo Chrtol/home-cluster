@@ -22,8 +22,21 @@ spec:
       path: /outpost.goauthentik.io/auth/envoy
       headersToBackend:
         - set-cookie
-        - x-authentik-*
         - authorization
+        # Authentik user headers
+        - x-authentik-username
+        - x-authentik-groups
+        - x-authentik-entitlements
+        - x-authentik-email
+        - x-authentik-name
+        - x-authentik-uid
+        - x-authentik-jwt
+        # Authentik meta headers
+        - x-authentik-meta-jwks
+        - x-authentik-meta-outpost
+        - x-authentik-meta-provider
+        - x-authentik-meta-app
+        - x-authentik-meta-version
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
