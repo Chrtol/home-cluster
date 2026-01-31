@@ -72,6 +72,8 @@ spec:
             shelfmark:
               - path: /bookdrop
                 subPath: Library/Main/Books/Booklore/bookdrop
+                readOnly: false
+
       nfs-nas-data:
         type: nfs
         server: nas.${SECRET_DOMAIN}
