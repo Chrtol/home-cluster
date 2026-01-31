@@ -75,7 +75,7 @@ spec:
                 targetLabel: instance
         serviceName: pve-exporter
       ext:
-        enabled: true
+        enabled: false
         endpoints:
           - path: /pve
             params:
