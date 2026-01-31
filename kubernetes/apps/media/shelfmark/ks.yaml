@@ -36,7 +36,7 @@ spec:
           path: /spec/values/blueprint/groups/-
           value:
             slug: "bp-${APP}-admins"
-            parent: "Media Admins"
+            parent: "media-admins"
   prune: true
   sourceRef:
     kind: GitRepository
