@@ -13,7 +13,7 @@ spec:
     - ../../../../components/ceph-rbd
     - ../../../../components/gatus/guarded
     - ../../../../components/proxy-application
-    - ../../../../components/ext-auth
+    # - ../../../../components/ext-auth  # Temporarily disabled to fix proxy auth config
   interval: 1h
   path: "./kubernetes/apps/media/shelfmark/app"
   postBuild:
