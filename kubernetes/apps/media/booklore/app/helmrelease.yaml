@@ -40,7 +40,7 @@ spec:
               TZ: "${SECRET_TIMEZONE}"
               PUID: "1000"
               PGID: "1000"
-              DATABASE_URL: "jdbc:mariadb://mariadb.database.svc.cluster.local:3306/booklore"
+              DATABASE_URL: "jdbc:mariadb://mariadb-operator.database.svc.cluster.local:3306/booklore"
               DATABASE_USERNAME:
                 valueFrom:
                   secretKeyRef:
