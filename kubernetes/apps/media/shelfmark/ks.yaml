@@ -12,11 +12,17 @@ spec:
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/gatus/guarded
+    - ../../../../components/proxy-application
+    - ../../../../components/ext-auth
   interval: 1h
   path: "./kubernetes/apps/media/shelfmark/app"
   postBuild:
     substitute:
       APP: *app
+      EXT_AUTH_PORT: "8084"
+      GROUP: Media
+      SUBDOMAIN: *app
+      DESCRIPTION: Book and audiobook downloader
       CEPH_RBD_CAPACITY: 5Gi
     substituteFrom:
       - name: cluster-secrets
