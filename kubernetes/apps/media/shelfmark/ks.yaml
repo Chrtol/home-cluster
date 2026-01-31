@@ -27,6 +27,16 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+  patches:
+    - target:
+        kind: HelmRelease
+        name: shelfmark-proxy
+      patch: |
+        - op: add
+          path: /spec/values/blueprint/groups/-
+          value:
+            slug: "bp-shelfmark-admins"
+            parent: "Media Admins"
   prune: true
   sourceRef:
     kind: GitRepository
