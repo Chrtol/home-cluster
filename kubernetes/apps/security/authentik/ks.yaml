@@ -53,6 +53,8 @@ spec:
   dependsOn:
     - name: external-secrets
       namespace: external-secrets
+    - name: authentik
+      namespace: security
   postBuild:
     substitute:
       APP: *app
