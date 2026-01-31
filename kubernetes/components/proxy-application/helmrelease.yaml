@@ -53,6 +53,9 @@ spec:
         # Create app-specific group for access control (blueprint-managed)
         - slug: "bp-${APP}-users"
           parent: ""
+        # Create app-specific admin group for access control (blueprint-managed)
+        - slug: "bp-${APP}-admins"
+          parent: "${PROXY_ADMIN_PARENT:-}"
         # Bind authentik Admins for admin access to all apps
         - slug: "authentik Admins"
           parent: ""

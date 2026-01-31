@@ -24,19 +24,10 @@ spec:
       SUBDOMAIN: *app
       DESCRIPTION: Book and audiobook downloader
       CEPH_RBD_CAPACITY: 5Gi
+      PROXY_ADMIN_PARENT: media-admins
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
-  patches:
-    - target:
-        kind: HelmRelease
-        name: ${APP}-proxy
-      patch: |
-        - op: add
-          path: /spec/values/blueprint/groups/-
-          value:
-            slug: "bp-${APP}-admins"
-            parent: "media-admins"
   prune: true
   sourceRef:
     kind: GitRepository
