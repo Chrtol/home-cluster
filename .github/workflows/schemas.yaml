@@ -66,12 +66,20 @@ jobs:
           mkdir -p /tmp/crdSchemas
           cd /tmp/crdSchemas
 
-          # Download and run the CRD extractor
-          curl -fsSL https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/Utilities/crd-extractor.sh | bash
+          # Download both required files from the CRDs-catalog utilities
+          curl -fsSL -o crd-extractor.sh https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/Utilities/crd-extractor.sh
+          curl -fsSL -o openapi2jsonschema.py https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/Utilities/openapi2jsonschema.py
+          chmod +x crd-extractor.sh
+
+          # Run the CRD extractor
+          ./crd-extractor.sh
 
           # The script creates schemas in ~/.datree/crdSchemas
           # Move them to our working directory
           cp -r ~/.datree/crdSchemas/* /tmp/crdSchemas/ || true
+
+          # Clean up utility scripts before publishing
+          rm -f crd-extractor.sh openapi2jsonschema.py
 
           # List what we extracted
           echo "Extracted schemas:"
