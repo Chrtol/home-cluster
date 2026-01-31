@@ -11,3 +11,4 @@ resources:
   - ./base-blueprints.yaml
   - ./referencegrant.yaml
   - ./sidecar-rbac.yaml
+  - ./outpost-sync
