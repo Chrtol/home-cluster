@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/k8s.mariadb.com/mariadb_v1alpha1.json
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb-operator
+spec:
+  rootPasswordSecretKeyRef:
+    name: mariadb-operator-secret
+    key: mariadb-root-password
+
+  image: docker-registry1.mariadb.com/library/mariadb:11.4
+
+  port: 3306
+
+  storage:
+    size: 8Gi
+    storageClassName: csi-rbd-sc
+
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    binlog_format=row
+    innodb_autoinc_lock_mode=2
+    innodb_buffer_pool_size=256M
+    max_allowed_packet=256M
+    character-set-server=utf8mb4
+    collation-server=utf8mb4_unicode_ci
+
+    [client]
+    default-character-set=utf8mb4
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+  metrics:
+    enabled: true
+
+  updateStrategy:
+    type: ReplicasFirstPrimaryLast

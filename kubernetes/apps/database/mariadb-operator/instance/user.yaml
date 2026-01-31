@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/k8s.mariadb.com/user_v1alpha1.json
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: booklore
+spec:
+  mariaDbRef:
+    name: mariadb-operator
+  passwordSecretKeyRef:
+    name: mariadb-operator-secret
+    key: booklore-password
+  host: "%"
+  requeueInterval: 30s
+  retryInterval: 5s
