@@ -85,13 +85,13 @@ jobs:
           echo "Extracted schemas:"
           ls -la /tmp/crdSchemas/
 
-      - name: Publish Schemas to Cloudflare Pages
+      - name: Create Cloudflare Pages Project
+        continue-on-error: true
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: /tmp/crdSchemas
-          command: pages project create chrtol-schemas --production-branch main || true
+          command: pages project create chrtol-schemas --production-branch main
 
       - name: Deploy Schemas to Cloudflare Pages
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
