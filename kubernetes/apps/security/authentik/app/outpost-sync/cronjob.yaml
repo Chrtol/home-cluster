@@ -1,0 +1,52 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: outpost-provider-sync
+  namespace: security
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: sync
+              image: python:3.12-slim
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pip install --quiet --no-cache-dir requests && \
+                  python /scripts/sync.py
+              env:
+                - name: AUTHENTIK_URL
+                  value: "http://authentik-server.security.svc.cluster.local"
+                - name: OUTPOST_NAME
+                  value: "authentik Embedded Outpost"
+                - name: PROVIDER_PREFIX
+                  value: "bp-"
+                - name: REMOVE_ORPHANS
+                  value: "false"
+              envFrom:
+                - secretRef:
+                    name: outpost-sync-secret
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: outpost-sync-script

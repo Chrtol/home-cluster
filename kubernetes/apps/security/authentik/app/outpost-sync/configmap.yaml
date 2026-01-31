@@ -1,0 +1,129 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: outpost-sync-script
+  namespace: security
+data:
+  sync.py: |
+    #!/usr/bin/env python3
+    """
+    Sync blueprint-managed proxy providers to Authentik embedded outpost.
+
+    Environment Variables:
+      AUTHENTIK_URL: Authentik server URL (default: http://authentik-server.security.svc.cluster.local)
+      AUTHENTIK_TOKEN: API token (required)
+      OUTPOST_NAME: Name of outpost to sync (default: authentik Embedded Outpost)
+      PROVIDER_PREFIX: Prefix for managed providers (default: bp-)
+      REMOVE_ORPHANS: Remove providers not matching prefix (default: false)
+    """
+    import os
+    import sys
+    import requests
+    import logging
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
+    AUTHENTIK_URL = os.getenv('AUTHENTIK_URL', 'http://authentik-server.security.svc.cluster.local')
+    AUTHENTIK_TOKEN = os.getenv('AUTHENTIK_TOKEN')
+    OUTPOST_NAME = os.getenv('OUTPOST_NAME', 'authentik Embedded Outpost')
+    PROVIDER_PREFIX = os.getenv('PROVIDER_PREFIX', 'bp-')
+    REMOVE_ORPHANS = os.getenv('REMOVE_ORPHANS', 'false').lower() == 'true'
+
+    if not AUTHENTIK_TOKEN:
+        logger.error("AUTHENTIK_TOKEN environment variable is required")
+        sys.exit(1)
+
+    HEADERS = {
+        'Authorization': f'Bearer {AUTHENTIK_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+
+    def get_proxy_providers():
+        """Fetch all proxy providers matching the prefix."""
+        response = requests.get(
+            f'{AUTHENTIK_URL}/api/v3/providers/proxy/',
+            headers=HEADERS,
+            params={'page_size': 500}
+        )
+        response.raise_for_status()
+
+        providers = response.json()['results']
+        matched = [p for p in providers if p['name'].startswith(PROVIDER_PREFIX)]
+        logger.info(f"Found {len(matched)} providers with prefix '{PROVIDER_PREFIX}'")
+        return matched
+
+    def get_embedded_outpost():
+        """Get the embedded outpost by name."""
+        response = requests.get(
+            f'{AUTHENTIK_URL}/api/v3/outposts/instances/',
+            headers=HEADERS
+        )
+        response.raise_for_status()
+
+        for outpost in response.json()['results']:
+            if outpost['name'] == OUTPOST_NAME:
+                logger.info(f"Found outpost '{OUTPOST_NAME}' with {len(outpost.get('providers', []))} providers")
+                return outpost
+        return None
+
+    def sync_providers_to_outpost():
+        """Main sync logic."""
+        # Get current state
+        bp_providers = get_proxy_providers()
+        outpost = get_embedded_outpost()
+
+        if not outpost:
+            logger.error(f"Outpost '{OUTPOST_NAME}' not found")
+            return False
+
+        # Calculate provider sets
+        current_pks = set(outpost.get('providers', []))
+        desired_pks = {p['pk'] for p in bp_providers}
+
+        # Determine changes
+        to_add = desired_pks - current_pks
+        to_remove = set()
+
+        if REMOVE_ORPHANS:
+            # Only remove providers that match our prefix but are no longer in the cluster
+            # Don't remove providers that don't match our prefix (manually added)
+            all_bp_provider_pks = {p['pk'] for p in bp_providers}
+            to_remove = current_pks - all_bp_provider_pks
+
+        if not to_add and not to_remove:
+            logger.info("Outpost is in sync - no changes needed")
+            return True
+
+        # Log planned changes
+        if to_add:
+            added_names = [p['name'] for p in bp_providers if p['pk'] in to_add]
+            logger.info(f"Adding providers: {added_names}")
+        if to_remove:
+            logger.info(f"Removing provider PKs: {to_remove}")
+
+        # Build new provider list
+        new_providers = list((current_pks | to_add) - to_remove)
+
+        # Update outpost
+        response = requests.patch(
+            f'{AUTHENTIK_URL}/api/v3/outposts/instances/{outpost["pk"]}/',
+            headers=HEADERS,
+            json={'providers': new_providers}
+        )
+        response.raise_for_status()
+
+        logger.info(f"Outpost updated: added {len(to_add)}, removed {len(to_remove)} providers")
+        return True
+
+    if __name__ == '__main__':
+        try:
+            success = sync_providers_to_outpost()
+            sys.exit(0 if success else 1)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"API error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            sys.exit(1)
