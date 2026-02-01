@@ -82,25 +82,3 @@ spec:
             summary: VPS SSL certificate expired
             description: SSL certificate for {{ $labels.target }} has expired!
 
-    - name: vps-wireguard
-      interval: 1m
-      rules:
-        - alert: VPSWireGuardExporterDown
-          expr: up{job="wireguard-exporter",instance="vps"} == 0
-          for: 5m
-          labels:
-            severity: critical
-            category: vps
-          annotations:
-            summary: VPS WireGuard exporter is down
-            description: The WireGuard exporter on VPS has been unreachable for 5 minutes. Unable to monitor tunnel status.
-
-        - alert: VPSWireGuardNoTraffic
-          expr: rate(wireguard_sent_bytes_total{job="wireguard-exporter",instance="vps"}[10m]) == 0 and rate(wireguard_received_bytes_total{job="wireguard-exporter",instance="vps"}[10m]) == 0
-          for: 15m
-          labels:
-            severity: warning
-            category: vps
-          annotations:
-            summary: VPS WireGuard tunnel has no traffic
-            description: No traffic detected on WireGuard tunnel for 15 minutes. This may indicate routing issues or no active connections.

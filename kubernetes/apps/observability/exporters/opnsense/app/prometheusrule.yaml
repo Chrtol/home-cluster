@@ -201,21 +201,51 @@ spec:
               DHCP pool {{ $labels.pool }} is {{ $value | humanizePercentage }} full.
               New devices may fail to get IP addresses.
 
-    - name: opnsense-vpn
+    - name: opnsense-wireguard
       interval: 1m
       rules:
-        # VPN Tunnel Down (if you use VPN)
-        - alert: OPNsenseVPNTunnelDown
+        # WireGuard Interface Down
+        - alert: OPNsenseWireGuardInterfaceDown
           expr: |
-            opnsense_vpn_status == 0
-          for: 5m
+            opnsense_wireguard_interfaces_status == 0
+          for: 2m
+          labels:
+            severity: critical
+            category: wireguard
+          annotations:
+            summary: "WireGuard interface {{ $labels.device }} is down"
+            description: >
+              WireGuard interface {{ $labels.device }} on {{ $labels.instance }} is not running.
+              VPN connectivity to the VPS is affected.
+
+        # WireGuard Peer Stale Handshake
+        - alert: OPNsenseWireGuardPeerStale
+          expr: |
+            (time() - opnsense_wireguard_peer_last_handshake_seconds) > 300
+          for: 2m
           labels:
             severity: warning
-            category: vpn
+            category: wireguard
           annotations:
-            summary: "VPN tunnel {{ $labels.tunnel }} is down"
+            summary: "WireGuard peer {{ $labels.peer_name }} handshake stale"
             description: >
-              VPN tunnel {{ $labels.tunnel }} has been down for 5 minutes.
+              WireGuard peer {{ $labels.peer_name }} on {{ $labels.device }} hasn't had a handshake
+              in {{ $value | humanizeDuration }}. The tunnel may be disconnected.
+
+        # WireGuard No Traffic
+        - alert: OPNsenseWireGuardNoTraffic
+          expr: |
+            rate(opnsense_wireguard_peer_received_bytes_total[10m]) == 0
+            and rate(opnsense_wireguard_peer_transmitted_bytes_total[10m]) == 0
+          for: 15m
+          labels:
+            severity: warning
+            category: wireguard
+          annotations:
+            summary: "WireGuard peer {{ $labels.peer_name }} has no traffic"
+            description: >
+              No traffic on WireGuard peer {{ $labels.peer_name }} for 15 minutes.
+              This may indicate routing issues or the remote endpoint is down.
 
     - name: opnsense-firmware
       interval: 5m
@@ -265,3 +295,79 @@ spec:
               This may indicate API permission issues or connectivity problems.
               Check the opnsense-exporter logs and verify API credentials have
               the "System: Firmware" permission enabled.
+
+    - name: opnsense-services
+      interval: 1m
+      rules:
+        # Critical Service Down
+        - alert: OPNsenseCriticalServiceDown
+          expr: |
+            opnsense_services_status{name=~"pf|unbound|wireguard|dhcpd|webgui|configd|suricata|AdGuardHome"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            category: services
+          annotations:
+            summary: "Critical service {{ $labels.name }} is down"
+            description: >
+              OPNsense service {{ $labels.name }} has stopped running.
+              This may affect network connectivity or security.
+
+        # Service Stopped (non-critical)
+        - alert: OPNsenseServiceStopped
+          expr: |
+            opnsense_services_status{name=~"ntpd|openssh|syslog-ng|frr|tailscale"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            category: services
+          annotations:
+            summary: "Service {{ $labels.name }} has stopped"
+            description: >
+              OPNsense service {{ $labels.name }} is not running.
+              Check if this is intentional or if the service crashed.
+
+    - name: opnsense-tcp
+      interval: 1m
+      rules:
+        # High TIME_WAIT connections (connection exhaustion)
+        - alert: OPNsenseHighTimeWaitConnections
+          expr: |
+            opnsense_protocol_tcp_connection_count_by_state{state="TIME_WAIT"} > 1000
+          for: 10m
+          labels:
+            severity: warning
+            category: tcp
+          annotations:
+            summary: "High TIME_WAIT connections ({{ $value }})"
+            description: >
+              OPNsense has {{ $value }} connections in TIME_WAIT state.
+              This may indicate connection exhaustion or a service not properly closing connections.
+
+        # High CLOSE_WAIT connections (application not closing)
+        - alert: OPNsenseHighCloseWaitConnections
+          expr: |
+            opnsense_protocol_tcp_connection_count_by_state{state="CLOSE_WAIT"} > 100
+          for: 10m
+          labels:
+            severity: warning
+            category: tcp
+          annotations:
+            summary: "High CLOSE_WAIT connections ({{ $value }})"
+            description: >
+              OPNsense has {{ $value }} connections in CLOSE_WAIT state.
+              This indicates applications are not properly closing connections.
+
+        # Potential SYN flood (many half-open connections)
+        - alert: OPNsensePotentialSynFlood
+          expr: |
+            opnsense_protocol_tcp_connection_count_by_state{state="SYN_RCVD"} > 50
+          for: 2m
+          labels:
+            severity: critical
+            category: tcp
+          annotations:
+            summary: "Potential SYN flood detected ({{ $value }} half-open connections)"
+            description: >
+              OPNsense has {{ $value }} connections in SYN_RCVD state.
+              This may indicate a SYN flood attack or severe network congestion.
