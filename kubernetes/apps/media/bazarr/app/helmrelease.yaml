@@ -31,14 +31,24 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
             probes:
-              liveness: &probes
+              startup:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
                     path: /health
                     port: &port 6767
-                  initialDelaySeconds: 0
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                  timeoutSeconds: 1
+                  failureThreshold: 30
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
                   periodSeconds: 10
                   timeoutSeconds: 1
                   failureThreshold: 3
