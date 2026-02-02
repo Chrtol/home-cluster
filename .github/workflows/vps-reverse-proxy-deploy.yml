@@ -87,6 +87,10 @@ jobs:
           PROXY_ENABLE_ECHO_TEST: "op://Lab/vps-proxy/VPS_ENABLE_ECHO_TEST"
           PROXY_ENABLE_METRICS: "op://Lab/vps-proxy/VPS_ENABLE_METRICS"
 
+          # Metrics Authentication
+          VPS_METRICS_USER: "op://Lab/vps-proxy/VPS_METRICS_USER"
+          VPS_METRICS_PASSWORD_HASH: "op://Lab/vps-proxy/VPS_METRICS_PASSWORD_HASH"
+
           # Legacy nginx variables for backward compatibility
           NGINX_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
           NGINX_EXTERNAL_INGRESS_IP: "op://Lab/vps-proxy/VPS_EXTERNAL_INGRESS_IP"
