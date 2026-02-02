@@ -24,7 +24,7 @@ spec:
               API_BASE_URL: http://garage.database.svc.cluster.local:3903
               S3_ENDPOINT_URL: http://garage.database.svc.cluster.local:3900
               CONFIG_PATH: /etc/garage/config.toml
-              ADMIN_TOKEN: ${SECRET_GARAGE_ADMIN_TOKEN}
+              API_ADMIN_KEY: ${SECRET_GARAGE_ADMIN_TOKEN}
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
