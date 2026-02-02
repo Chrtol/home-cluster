@@ -9,7 +9,7 @@ spec:
     name: mariadb-operator-secret
     key: mariadb-root-password
 
-  image: docker-registry1.mariadb.com/library/mariadb:11.4
+  image: docker-registry1.mariadb.com/library/mariadb:11.8
 
   port: 3306
 
