@@ -2,11 +2,13 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_PATH
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
+#                      OIDC_SECRET_NAMESPACE (defaults to security - set to app namespace for direct secret access)
 # REDIRECT_PATH: The callback path for OIDC (e.g., /accounts/oidc/authentik/login/callback/)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-oidc
 #   - Application: ${DISPLAY_NAME} (display name) / ${APP} (slug)
 #   - Group: bp-${APP}-users
+#   - Secret: ${APP}-oidc-authentik-application (in OIDC_SECRET_NAMESPACE)
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -15,7 +17,7 @@ metadata:
     homelab/auth-component: "true"
 spec:
   releaseName: ${APP}-oidc
-  targetNamespace: security
+  targetNamespace: ${OIDC_SECRET_NAMESPACE:=security}
   chartRef:
     kind: OCIRepository
     name: authentik-application

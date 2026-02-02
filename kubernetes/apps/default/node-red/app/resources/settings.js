@@ -8,17 +8,19 @@ module.exports = {
     strategy: {
       name: "openidconnect",
       autoLogin: true,
-      label: "Sign in",
+      label: "Sign in with Authentik",
       icon: "fa-cloud",
       strategy: require("passport-openidconnect").Strategy,
       options: {
-        issuer: "https://id.${SECRET_DOMAIN}",
-        authorizationURL: "https://id.${SECRET_DOMAIN}/authorize",
-        tokenURL: "https://id.${SECRET_DOMAIN}/api/oidc/token",
-        userInfoURL: "https://id.${SECRET_DOMAIN}/api/oidc/userinfo",
-        clientID: process.env.NODE_RED_OAUTH_CLIENT_ID,
-        clientSecret: process.env.NODE_RED_OAUTH_CLIENT_SECRET,
-        callbackURL: "https://nodered.${SECRET_DOMAIN_INTERNAL}/auth/strategy/callback",
+        // From node-red-oidc-authentik-application secret (auto-generated)
+        issuer: process.env.issuerURL,
+        clientID: process.env.clientID,
+        clientSecret: process.env.clientSecret,
+        callbackURL: process.env.redirectURL,
+        // From node-red-secret (templated with Flux substitution)
+        authorizationURL: process.env.NODE_RED_OIDC_AUTH_URL,
+        tokenURL: process.env.NODE_RED_OIDC_TOKEN_URL,
+        userInfoURL: process.env.NODE_RED_OIDC_USERINFO_URL,
         scope: ["email", "profile", "openid"],
         proxy: true,
         verify: function (issuer, profile, done) {

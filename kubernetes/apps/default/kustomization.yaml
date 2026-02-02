@@ -31,3 +31,4 @@ resources:
   - ./kan/ks.yaml
   - ./moocup/ks.yaml
   - ./paperless/ks.yaml
+  - ./node-red/ks.yaml
