@@ -12,6 +12,7 @@ spec:
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
+    - ../../../../components/gatus/guarded
   path: ./kubernetes/apps/default/node-red/app
   prune: true
   sourceRef:
@@ -26,6 +27,7 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 1Gi
+      GATUS_SUBDOMAIN: nodered
       # OIDC component variables
       GROUP: "Default"
       SUBDOMAIN: nodered
