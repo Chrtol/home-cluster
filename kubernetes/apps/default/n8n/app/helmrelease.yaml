@@ -73,7 +73,7 @@ spec:
           task-runner:
             image:
               repository: ghcr.io/n8n-io/runners
-              tag: 2.4.7
+              tag: 2.7.0
             env:
               N8N_RUNNERS_AUTH_TOKEN:
                 valueFrom:
