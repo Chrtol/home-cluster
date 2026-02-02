@@ -28,7 +28,7 @@ spec:
       CEPH_RBD_CAPACITY: 1Gi
       # OIDC component variables
       GROUP: "Default"
-      SUBDOMAIN: node-red
+      SUBDOMAIN: nodered
       DISPLAY_NAME: "Node-RED"
       DESCRIPTION: "Low-code programming for event-driven applications"
       REDIRECT_PATH: "/auth/strategy/callback"
