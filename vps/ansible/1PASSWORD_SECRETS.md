@@ -41,6 +41,10 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 - `VPS_ENABLE_ECHO_TEST` - Enable echo test endpoint (true/false, default: true)
 - `VPS_ENABLE_METRICS` - Enable metrics endpoints (true/false, default: true)
 
+#### Metrics Authentication (required if VPS_ENABLE_METRICS is true):
+- `VPS_METRICS_USER` - Username for metrics basic auth (e.g., `prometheus`)
+- `VPS_METRICS_PASSWORD_HASH` - htpasswd hash for metrics auth (generate with `htpasswd -nB prometheus`)
+
 ### 4. CrowdSec Bouncer API Key (Vault: `Lab`, Item: `crowdsec`)
 **This item must be created after setting up the CrowdSec bouncer on the VPS**
 
@@ -78,7 +82,9 @@ op item edit "vps-proxy" --vault="Lab" \
   "VPS_AUTHENTIK_ENABLED[text]=false" \
   "VPS_AUTHENTIK_DOMAIN[text]=authentik.{domain}" \
   "VPS_ENABLE_ECHO_TEST[text]=true" \
-  "VPS_ENABLE_METRICS[text]=true"
+  "VPS_ENABLE_METRICS[text]=true" \
+  "VPS_METRICS_USER[text]=prometheus" \
+  "VPS_METRICS_PASSWORD_HASH[text]=\$(htpasswd -nB prometheus | cut -d: -f2)"
 
 # To switch between nginx and traefik
 op item edit "vps-proxy" --vault="Lab" \
