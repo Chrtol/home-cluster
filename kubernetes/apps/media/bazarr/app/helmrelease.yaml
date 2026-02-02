@@ -23,6 +23,15 @@ spec:
       bazarr:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 18.1
+              pullPolicy: IfNotPresent
+            envFrom: &envFrom
+              - secretRef:
+                  name: bazarr-secret
         containers:
           app:
             image:
@@ -30,6 +39,7 @@ spec:
               tag: 1.5.4
             env:
               TZ: ${SECRET_TIMEZONE}
+            envFrom: *envFrom
             probes:
               startup:
                 enabled: true
@@ -57,7 +67,7 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
-            resources: # Based on goldilocks
+            resources:
               requests:
                 cpu: 15m
                 memory: 443M
@@ -83,7 +93,7 @@ spec:
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path:  /mnt/truenas/cf-nas/data
+        path: /mnt/truenas/cf-nas/data
         globalMounts:
           - path: /data
             readOnly: false
