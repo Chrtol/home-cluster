@@ -14,6 +14,21 @@ spec:
       node-red:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          install-packages:
+            image:
+              repository: ghcr.io/node-red/node-red
+              tag: 4.1.4@sha256:926f1f116276e434dd8c74ab7ca36eb0158e1def5cf2fbe78451938ee0e58790
+            command:
+              - /bin/sh
+              - -c
+              - |
+                cd /data
+                npm install --save passport-openidconnect
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: { drop: ["ALL"] }
         containers:
           app:
             image:
