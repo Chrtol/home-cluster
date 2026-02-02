@@ -13,9 +13,10 @@ This is a Kubernetes home cluster deployment based on the onedr0p/cluster-templa
 - **Kubernetes**: Deployed via Talos with 3 controller nodes (lenovo1, lenovo2, dell1)
 - **GitOps**: Flux CD for cluster state management
 - **Networking**: Cilium CNI with BGP load balancing
-- **Storage**: Ceph RBD and CephFS via CSI drivers
+- **Storage**: Proxmox Ceph (RBD and CephFS via CSI drivers), TrueNAS with HDDs via NFS
 - **DNS**: CoreDNS with k8s_gateway for internal DNS
-- **Ingress**: nginx-ingress controllers (internal and external)
+- **Ingress**: Envoy Gateway
+- **External Access**: VPS with Traefik → WireGuard tunnel → OPNSense → Envoy Gateway
 - **Certificates**: cert-manager with Let's Encrypt
 
 **Template System:**
@@ -29,27 +30,6 @@ This is a Kubernetes home cluster deployment based on the onedr0p/cluster-templa
 - Network: 10.0.30.0/24 with API server at 10.0.30.50
 
 ## Common Commands
-
-### Initial Setup
-```bash
-# Initialize configuration files
-task init
-
-# Configure and render templates
-task configure
-```
-
-### Cluster Management
-```bash
-# Bootstrap Talos cluster
-task bootstrap:talos
-
-# Bootstrap applications
-task bootstrap:apps
-
-# Force Flux reconciliation
-task reconcile
-```
 
 ### Talos Operations
 ```bash
@@ -69,18 +49,6 @@ task talos:upgrade-k8s
 task talos:reset
 ```
 
-### Template Management
-```bash
-# Render configuration templates
-task template:render-configs
-
-# Validate configurations
-task template:validate-schemas
-
-# Clean up template files after deployment
-task template:tidy
-```
-
 ### Debugging
 ```bash
 # Gather cluster resources
@@ -98,60 +66,62 @@ cilium status
 
 ## Key Directories
 
+- `/apps/` - Custom application source code (e.g., reptile-tracker)
 - `/kubernetes/apps/` - Application manifests organized by namespace
 - `/kubernetes/flux/` - Flux configuration and repositories
 - `/talos/` - Talos configuration and patches
 - `/bootstrap/` - Initial cluster bootstrap configuration
 - `/templates/` - Jinja2 templates for configuration generation
+- `/vps/` - Ansible configuration for VPS (CI/CD deployed)
+  - Must be declarative and idempotent
+  - No hardcoded secrets, domains, or IP addresses
+  - All secrets/config from 1Password integration
 
 ## Secrets Management
 
-- Uses SOPS with age encryption for secrets
-- Age key stored in `age.key` file
-- Encrypted files have `.sops.yaml` extension
+- Uses External Secrets with 1Password as the primary secrets backend
+- SOPS with age encryption for certain in-cluster config files
 - GitHub deploy key for Flux Git access
 
 ## Networking
 
 - **Cluster Network**: 10.0.30.0/24
 - **API Server**: 10.0.30.50
-- **Internal Ingress**: 10.0.30.40
-- **External Ingress**: 10.0.30.60
-- **DNS Gateway**: 10.0.30.45
+- **Internal Gateway**: 10.0.30.43 (Envoy Gateway)
+- **External Gateway**: 10.0.30.44 (Envoy Gateway, via VPS/Traefik)
+- **DNS Gateway**: 10.0.30.45 (k8s_gateway)
 - **BGP**: AS 64514 peering with 10.0.30.1 (AS 64513)
+- **Domains**: Same domains used internally and externally (no split DNS)
 
 ## Application Categories
 
-- **Media**: Plex, Sonarr, Radarr, Jellyseerr, Immich, etc.
-- **Monitoring**: Prometheus, Grafana, Gatus
-- **Security**: Authentik, Authelia, LLDAP
-- **Database**: PostgreSQL (CloudNative-PG), Redis
-- **Storage**: Ceph CSI drivers
-- **Networking**: Cilium, external-dns, cloudflared
+- **Media**: Plex, Sonarr, Radarr, Jellyseerr, Immich, Audiobookshelf, qBittorrent, etc.
+- **Monitoring**: Prometheus, Grafana, Gatus, Loki, Promtail
+- **Security**: Authentik (SSO/OIDC), CrowdSec, Trivy
+- **Database**: PostgreSQL (CloudNative-PG, preferred), Dragonfly (Redis-compatible), MariaDB
+- **AI**: Ollama
+- **Home Automation**: Home Assistant, Mosquitto, Zigbee2MQTT
+- **Storage**: Ceph CSI drivers (RBD and CephFS)
+- **Networking**: Cilium, Envoy Gateway, external-dns
 
 ## Important Notes
 
 - All nodes are configured as both controllers and workers
-- Uses Cloudflare for external DNS and tunnel access
+- Uses external-dns to manage Cloudflare (external) and AdGuard Home on OPNSense (internal) DNS records
 - Renovate handles dependency updates automatically
 - Flux webhooks enable immediate deployment on git push
 - Template system allows for easy cluster configuration changes
-
-## Development Workflow
-
-1. Modify `cluster.yaml` or `nodes.yaml` for configuration changes
-2. Run `task configure` to render templates and validate
-3. Commit and push changes to trigger Flux reconciliation
-4. Use `task reconcile` to force immediate sync if needed
 
 ## Memory
 
 - Always remember I am using FluxCD and kustomizations
 - I have a webhook to reconcile on Git push so you never need to manually reconcile unless it's to fix a specific issue with hr/ks
-- Write a short commit message when making changes that can be used together with the changes
-- I am using Proxmox Ceph and a NAS with HDDs as storage
+- Storage: Proxmox Ceph for fast storage, TrueNAS via NFS for bulk/media storage
+- PostgreSQL is the preferred database; use it for new apps when possible
 - Never use kubectl apply since I am using FluxCD
-- Always write a summary of what has been changed that I can add to a commit message
 - Never suggest to use the task commands
 - Never git add or commit, always just give me a one line commit message based on the changed files in the format: "verb(app): summary", i.e. "fix(reptile-tracker): revert timezone changes in scheduler to fix notification crashes"
-- To use "kubectl" commands, always pre-fix your kubectl commands with "export KUBECONFIG=<path/to/kubeconfig> && kubectl ..."
+- To use "kubectl" commands, always pre-fix your kubectl commands with "export KUBECONFIG=/home/chrto/Homelab/github/chrtol/home-cluster/kubeconfig && kubectl ..."
+- For reusable patterns (auth/OIDC, backup, gatus, PVC provisioning, etc.), create generalized components in `/kubernetes/components/`
+- Prefer OCI repos over Helm repos for HelmReleases
+- Place .md documents in `/ai-activity/`; create a topic subfolder when multiple documents are needed
