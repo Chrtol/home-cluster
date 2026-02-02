@@ -118,7 +118,7 @@ http:
       maxIdleConnsPerHost: 25
       forwardingTimeouts:
         dialTimeout: 30s
-        responseHeaderTimeout: 30s
+        responseHeaderTimeout: 600s  # 10 minutes for large file uploads (Immich videos, etc.)
         idleConnTimeout: 90s
 
 # TLS Configuration
