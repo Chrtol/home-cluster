@@ -13,26 +13,34 @@ on:
     types:
       - completed
 
+permissions: {}
+
 jobs:
   notify-discord:
     name: Notify Discord on Failure
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    permissions:
+      contents: read
     steps:
       - name: Send Discord Notification
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.ACTIONS_DISCORD_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use env vars to prevent shell injection from untrusted context values
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO_URL: ${{ github.event.workflow_run.repository.html_url }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          ACTOR: ${{ github.event.workflow_run.triggering_actor.login }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
+          REPO_API_URL: ${{ github.event.workflow_run.repository.url }}
         run: |
-          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
-          WORKFLOW_URL="${{ github.event.workflow_run.html_url }}"
-          COMMIT_SHA="${{ github.event.workflow_run.head_sha }}"
-          COMMIT_URL="${{ github.event.workflow_run.repository.html_url }}/commit/${COMMIT_SHA}"
-          BRANCH="${{ github.event.workflow_run.head_branch }}"
-          ACTOR="${{ github.event.workflow_run.triggering_actor.login }}"
-          REPO="${{ github.event.workflow_run.repository.full_name }}"
+          COMMIT_URL="${REPO_URL}/commit/${COMMIT_SHA}"
 
-          COMMIT_MESSAGE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "${{ github.event.workflow_run.repository.url }}/commits/${COMMIT_SHA}" | \
+          COMMIT_MESSAGE=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+            "${REPO_API_URL}/commits/${COMMIT_SHA}" | \
             jq -r '.commit.message' | head -n 1)
 
           PAYLOAD=$(cat <<EOF
