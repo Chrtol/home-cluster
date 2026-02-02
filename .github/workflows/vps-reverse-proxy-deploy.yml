@@ -1,5 +1,8 @@
 name: Deploy VPS Reverse Proxy Configuration
 
+permissions:
+  contents: read
+
 concurrency:
   group: vps-reverse-proxy-deploy
   cancel-in-progress: false
