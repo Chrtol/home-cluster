@@ -64,7 +64,7 @@ module.exports = {
   externalModules: {},
 
   editorTheme: {
-    tours: false,
+    theme: "dracula",
 
     projects: {
       enabled: false,
