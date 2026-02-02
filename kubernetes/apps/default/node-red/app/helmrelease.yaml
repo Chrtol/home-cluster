@@ -8,6 +8,7 @@ spec:
   chartRef:
     kind: OCIRepository
     name: app-template
+    namespace: flux-system
   values:
     controllers:
       node-red:
@@ -23,6 +24,8 @@ spec:
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
+              - secretRef:
+                  name: "{{ .Release.Name }}-oidc-authentik-application"
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -43,9 +46,9 @@ spec:
       app:
         ports:
           http:
-            port: &port s1880
+            port: &port 1880
     route:
-      server:
+      internal:
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal

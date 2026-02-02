@@ -3,7 +3,7 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app node-red
-  namespace: &namespace home
+  namespace: &namespace default
 spec:
   targetNamespace: *namespace
   commonMetadata:
@@ -11,7 +11,8 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/ceph-rbd
-  path: ./kubernetes/apps/home/node-red/app
+    - ../../../../components/oidc-application
+  path: ./kubernetes/apps/default/node-red/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -25,6 +26,13 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 1Gi
+      # OIDC component variables
+      GROUP: "Default"
+      SUBDOMAIN: node-red
+      DISPLAY_NAME: "Node-RED"
+      DESCRIPTION: "Low-code programming for event-driven applications"
+      REDIRECT_PATH: "/auth/strategy/callback"
+      OIDC_SECRET_NAMESPACE: default
     substituteFrom:
     - name: cluster-secrets
       kind: Secret
