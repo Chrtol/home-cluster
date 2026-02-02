@@ -15,3 +15,17 @@ services:
       # Mount existing SSL certificates (read-only)
       - {{ proxy_ssl_cert_path }}:{{ proxy_ssl_cert_path }}:ro
       - {{ proxy_ssl_key_path }}:{{ proxy_ssl_key_path }}:ro
+
+{% if traefik_enable_metrics | default(false) %}
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.9.0
+    container_name: node-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command:
+      - '--path.rootfs=/host'
+      - '--web.listen-address=127.0.0.1:9100'
+    volumes:
+      - /:/host:ro,rslave
+{% endif %}

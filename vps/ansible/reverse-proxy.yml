@@ -58,6 +58,9 @@
     kubernetes_external_ingress_ip: "{{ proxy_external_ingress_ip }}"
     traefik_enable_echo_test: "{{ enable_echo_test }}"
     traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
+    traefik_enable_metrics: "{{ enable_metrics }}"
+    traefik_metrics_user: "{{ lookup('env', 'VPS_METRICS_USER') }}"
+    traefik_metrics_password_hash: "{{ lookup('env', 'VPS_METRICS_PASSWORD_HASH') }}"
 
   pre_tasks:
     - name: Create backup of current configuration

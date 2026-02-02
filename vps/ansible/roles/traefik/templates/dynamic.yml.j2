@@ -51,6 +51,20 @@ http:
 {% endif %}
         - security-headers
 
+{% if traefik_enable_metrics | default(false) %}
+    # Node exporter metrics endpoint
+    metrics-node:
+      entryPoints:
+        - websecure
+      rule: "Host(`{{ traefik_domain }}`) && Path(`/metrics/node`)"
+      priority: 100
+      service: node-exporter
+      tls: {}
+      middlewares:
+        - metrics-auth
+        - metrics-strip-prefix
+{% endif %}
+
   # Services
   services:
     # Envoy Gateway service
@@ -60,6 +74,14 @@ http:
           - url: "https://{{ traefik_envoy_gateway_ip }}:443"
         passHostHeader: true
         serversTransport: envoy-gateway-transport
+
+{% if traefik_enable_metrics | default(false) %}
+    # Node exporter service
+    node-exporter:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:9100"
+{% endif %}
 
   # Middlewares
   middlewares:
@@ -109,6 +131,18 @@ http:
         sourceCriterion:
           ipStrategy:
             depth: 1
+
+{% if traefik_enable_metrics | default(false) %}
+    metrics-auth:
+      basicAuth:
+        users:
+          - "{{ traefik_metrics_user }}:{{ traefik_metrics_password_hash }}"
+
+    metrics-strip-prefix:
+      stripPrefix:
+        prefixes:
+          - "/metrics/node"
+{% endif %}
 
   # Server Transports
   serversTransports:
