@@ -11,3 +11,4 @@ resources:
   - ./helmrelease.yaml
   # - ./ml-pvc.yaml
   - ./pvc.yaml
+  - ./backendtrafficpolicy.yaml

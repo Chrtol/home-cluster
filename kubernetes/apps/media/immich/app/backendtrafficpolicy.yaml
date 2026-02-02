@@ -1,0 +1,27 @@
+---
+# BackendTrafficPolicy for large file uploads (videos, photos)
+# Extends timeouts to 10 minutes to accommodate slow uploads over the internet
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: immich-upload-policy
+  namespace: media
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: immich-external
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: immich-internal
+  tcpKeepalive:
+    probes: 3
+    idleTime: 120s
+    interval: 30s
+  timeout:
+    tcp:
+      connectTimeout: 10s
+    http:
+      connectionIdleTimeout: 120s
+      maxConnectionDuration: 900s  # 15 minutes max connection
+      requestTimeout: 600s  # 10 minutes for uploads
