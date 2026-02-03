@@ -63,20 +63,7 @@ log:
   level: {{ traefik_log_level | default('INFO') }}
   # No filePath means output to stdout
 
-# Access log to file for debugging (separate from stdout)
-accessLog:
-  filePath: /logs/access.log
-  format: json
-  fields:
-    defaultMode: keep
-    headers:
-      defaultMode: drop
-      names:
-        User-Agent: keep
-        Authorization: drop
-        Cookie: drop
-        traceparent: keep
-        tracestate: keep
+# Access logging disabled - using OpenTelemetry tracing for observability instead
 
 # Health Check
 ping:

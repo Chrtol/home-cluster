@@ -82,6 +82,18 @@
         name: traefik
 
   post_tasks:
+    - name: Clean up old backup files (keep 2 most recent)
+      shell: |
+        ls -t /tmp/traefik-backup-*.tar.gz /tmp/proxy-backup-*.tar.gz 2>/dev/null | tail -n +3 | xargs -r rm -f
+      changed_when: false
+      ignore_errors: true
+
+    - name: Remove old logs directory (now using OpenTelemetry)
+      file:
+        path: /opt/traefik/logs
+        state: absent
+      ignore_errors: true
+
     - name: Check traefik status
       shell: |
         docker ps --filter "name=traefik" --format "table {% raw %}{{.Names}}\t{{.Status}}\t{{.Ports}}{% endraw %}"
