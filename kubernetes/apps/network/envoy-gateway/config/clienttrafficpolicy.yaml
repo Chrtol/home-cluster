@@ -1,0 +1,19 @@
+---
+# ClientTrafficPolicy for the internal gateway
+# Extends client-side timeouts to accommodate large file uploads (photos, videos)
+# NOTE: ClientTrafficPolicy can only target Gateways, not individual HTTPRoutes
+# This policy affects ALL routes through the internal gateway
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: internal-gateway-client-policy
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: internal
+  timeout:
+    http:
+      # Time to wait for the client to send the complete request body
+      # Extended for large video/photo uploads over slow WiFi connections
+      requestReceivedTimeout: 900s  # 15 minutes for large files
