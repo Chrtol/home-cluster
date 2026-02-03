@@ -125,3 +125,4 @@ cilium status
 - For reusable patterns (auth/OIDC, backup, gatus, PVC provisioning, etc.), create generalized components in `/kubernetes/components/`
 - Prefer OCI repos over Helm repos for HelmReleases
 - Place .md documents in `/ai-activity/`; create a topic subfolder when multiple documents are needed
+- Never mention a domain in a file - always use variable substitution
