@@ -65,7 +65,6 @@
   loop:
     - "{{ traefik_dir }}"
     - "{{ traefik_config_dir }}"
-    - "{{ traefik_dir }}/logs"
 
 # Manage CrowdSec bouncer for Traefik protection
 - name: Setup CrowdSec bouncer

@@ -9,9 +9,6 @@ services:
       - {{ traefik_dir }}/config/traefik.yml:/etc/traefik/traefik.yml:ro
       - {{ traefik_dir }}/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
 
-      # Logs directory
-      - {{ traefik_dir }}/logs:/logs
-
       # Mount existing SSL certificates (read-only)
       - {{ proxy_ssl_cert_path }}:{{ proxy_ssl_cert_path }}:ro
       - {{ proxy_ssl_key_path }}:{{ proxy_ssl_key_path }}:ro
