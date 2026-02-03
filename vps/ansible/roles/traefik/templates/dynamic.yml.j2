@@ -56,7 +56,7 @@ http:
     metrics-node:
       entryPoints:
         - websecure
-      rule: "Host(`{{ traefik_domain }}`) && Path(`/metrics/node`)"
+      rule: "Host(`vps.{{ traefik_domain }}`) && Path(`/metrics/node`)"
       priority: 100
       service: node-exporter
       tls: {}
