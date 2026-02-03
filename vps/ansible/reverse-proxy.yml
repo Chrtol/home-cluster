@@ -1,27 +1,24 @@
 ---
-# GitOps playbook for reverse proxy configuration management
-# This ensures reverse proxy configuration matches the desired state defined in code
+# GitOps playbook for Traefik reverse proxy configuration management
+# This ensures Traefik configuration matches the desired state defined in code
 # Idempotent: Can be run repeatedly without side effects
 # Make changes to templates/configuration in git, not on the server
 
-- name: Ensure reverse proxy configuration matches desired state
+- name: Ensure Traefik configuration matches desired state
   hosts: vps
   become: yes
 
   vars:
-    # These are populated from environment variables via 1Password in CI/CD
-    reverse_proxy_type: "{{ lookup('env', 'REVERSE_PROXY_TYPE') | default('traefik') }}"  # 'nginx-otel' or 'traefik'
-
-    # Common configuration from 1Password
+    # Configuration from 1Password via CI/CD environment variables
     proxy_domain: "{{ lookup('env', 'PROXY_DOMAIN') }}"
     proxy_external_ingress_ip: "{{ lookup('env', 'PROXY_EXTERNAL_INGRESS_IP') }}"
-    proxy_envoy_gateway_ip: "{{ lookup('env', 'PROXY_ENVOY_GATEWAY_IP') | default('10.0.30.44') }}"
+    proxy_envoy_gateway_ip: "{{ lookup('env', 'PROXY_ENVOY_GATEWAY_IP') }}"
     proxy_ssl_cert_path: "{{ lookup('env', 'PROXY_SSL_CERT_PATH') | default('/etc/letsencrypt/live/' + proxy_domain + '/fullchain.pem') }}"
     proxy_ssl_key_path: "{{ lookup('env', 'PROXY_SSL_KEY_PATH') | default('/etc/letsencrypt/live/' + proxy_domain + '/privkey.pem') }}"
 
     # OpenTelemetry configuration from 1Password
     otel_endpoint: "{{ lookup('env', 'OTEL_ENDPOINT') }}"
-    otel_service_name: "{{ lookup('env', 'OTEL_SERVICE_NAME') | default('vps-' + reverse_proxy_type) }}"
+    otel_service_name: "{{ lookup('env', 'OTEL_SERVICE_NAME') | default('vps-traefik') }}"
     otel_sample_rate: "{{ lookup('env', 'OTEL_SAMPLE_RATE') | default('0.75') }}"
 
     # Authentik configuration (from 1Password)
@@ -38,14 +35,7 @@
     enable_echo_test: "{{ lookup('env', 'PROXY_ENABLE_ECHO_TEST') | default('true') | bool }}"
     enable_metrics: "{{ lookup('env', 'PROXY_ENABLE_METRICS') | default('true') | bool }}"
 
-    # Pass these to nginx roles for compatibility
-    nginx_domain: "{{ proxy_domain }}"
-    nginx_external_ingress_ip: "{{ proxy_external_ingress_ip }}"
-    nginx_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
-    nginx_ssl_cert_path: "{{ proxy_ssl_cert_path }}"
-    nginx_ssl_key_path: "{{ proxy_ssl_key_path }}"
-
-    # Pass these to traefik role
+    # Pass variables to traefik role
     traefik_domain: "{{ proxy_domain }}"
     traefik_otel_endpoint: "{{ otel_endpoint }}"
     traefik_service_name: "{{ otel_service_name }}"
@@ -65,8 +55,8 @@
   pre_tasks:
     - name: Create backup of current configuration
       archive:
-        path: "{{ '/etc/nginx' if reverse_proxy_type == 'nginx-otel' else '/opt/traefik' }}"
-        dest: "/tmp/proxy-backup-{{ ansible_date_time.epoch }}.tar.gz"
+        path: /opt/traefik
+        dest: "/tmp/traefik-backup-{{ ansible_date_time.epoch }}.tar.gz"
         format: gz
       ignore_errors: true
 
@@ -74,9 +64,8 @@
       debug:
         msg: |
           ========================================
-          Applying Reverse Proxy Configuration State
+          Applying Traefik Configuration State
           ========================================
-          Proxy Type: {{ reverse_proxy_type | upper }}
           Domain: {{ proxy_domain }}
           External Ingress IP: {{ proxy_external_ingress_ip }}
           Envoy Gateway IP: {{ proxy_envoy_gateway_ip }}
@@ -88,78 +77,20 @@
           ========================================
 
   tasks:
-    # CRITICAL: Stop the proxy we're NOT using to ensure only one runs
-    - name: Stop nginx-otel if switching to traefik
-      block:
-        - name: Check if nginx-otel container exists
-          command: docker ps -a -q -f name=nginx-otel
-          register: nginx_container_exists
-          changed_when: false
-          failed_when: false
-
-        - name: Stop and remove nginx-otel container
-          shell: |
-            docker stop nginx-otel || true
-            docker rm nginx-otel || true
-          when: nginx_container_exists.stdout != ""
-
-        - name: Stop system nginx if it exists
-          systemd:
-            name: nginx
-            state: stopped
-            enabled: no
-          ignore_errors: true
-      when: reverse_proxy_type == 'traefik'
-
-    - name: Stop traefik if switching to nginx-otel
-      block:
-        - name: Check if traefik container exists
-          command: docker ps -a -q -f name=traefik
-          register: traefik_container_exists
-          changed_when: false
-          failed_when: false
-
-        - name: Stop and remove traefik container
-          shell: |
-            cd /opt/traefik && docker-compose down || true
-          when: traefik_container_exists.stdout != ""
-      when: reverse_proxy_type == 'nginx-otel'
-
-    # Deploy the selected reverse proxy
-    - name: Ensure nginx-otel is deployed
-      include_role:
-        name: nginx-otel
-      when: reverse_proxy_type == 'nginx-otel'
-
     - name: Ensure traefik is deployed
       include_role:
         name: traefik
-      when: reverse_proxy_type == 'traefik'
 
   post_tasks:
-    - name: Check nginx-otel status
-      shell: |
-        docker ps --filter "name=nginx-otel" --format "table {% raw %}{{.Names}}\t{{.Status}}\t{{.Ports}}{% endraw %}"
-      register: nginx_container_status
-      changed_when: false
-      when: reverse_proxy_type == 'nginx-otel'
-
     - name: Check traefik status
       shell: |
         docker ps --filter "name=traefik" --format "table {% raw %}{{.Names}}\t{{.Status}}\t{{.Ports}}{% endraw %}"
       register: traefik_container_status
       changed_when: false
-      when: reverse_proxy_type == 'traefik'
 
-    - name: Display nginx-otel proxy status
-      debug:
-        var: nginx_container_status.stdout_lines
-      when: reverse_proxy_type == 'nginx-otel'
-
-    - name: Display traefik proxy status
+    - name: Display traefik status
       debug:
         var: traefik_container_status.stdout_lines
-      when: reverse_proxy_type == 'traefik'
 
     - name: Test connectivity to external ingress
       uri:
@@ -182,38 +113,24 @@
       debug:
         msg: |
           ========================================
-          Reverse Proxy configuration state applied!
+          Traefik configuration state applied!
 
-          Type: {{ reverse_proxy_type | upper }}
-          {% if reverse_proxy_type == 'traefik' %}
-
-          Traefik Features:
-          - OpenTelemetry with CLIENT/SERVER spans (fixes service graph!)
+          Features:
+          - OpenTelemetry with CLIENT/SERVER spans
           - Automatic Let's Encrypt certificates
           - Native Authentik forward auth support
           - Gateway API ready
 
-          {% else %}
-
-          Nginx-OTel Features:
-          - OpenTelemetry tracing (SERVER spans only)
-          - Custom nginx build with OTel module
-
-          {% endif %}
           OpenTelemetry:
           - Service: {{ otel_service_name }}
           - Endpoint: {{ otel_endpoint }}
           - Sample Rate: {{ otel_sample_rate }}
 
           Status:
-          - Proxy: {{ 'Running' if (reverse_proxy_type == 'traefik' and traefik_container_status is defined) or (reverse_proxy_type == 'nginx-otel' and nginx_container_status is defined) else 'Not Running' }}
+          - Traefik: {{ 'Running' if traefik_container_status is defined else 'Not Running' }}
           - Health Check: {{ 'OK' if health_test.status is defined and health_test.status == 200 else 'Failed' }}
           - External Ingress: {{ 'Reachable' if ingress_test.status is defined else 'Unreachable' }}
 
-          {% if reverse_proxy_type == 'traefik' %}
           Traefik Dashboard: https://traefik.{{ proxy_domain }}
           Logs: docker logs traefik
-          {% else %}
-          Logs: docker logs nginx-otel
-          {% endif %}
           ========================================

@@ -1,14 +1,8 @@
 # Traefik Reverse Proxy Role
 
-This Ansible role deploys Traefik as a reverse proxy replacement for nginx-otel, with full OpenTelemetry support including proper CLIENT/SERVER spans for working service graphs.
+This Ansible role deploys Traefik as the VPS reverse proxy with full OpenTelemetry support including proper CLIENT/SERVER spans for working service graphs.
 
-## Why Traefik over nginx?
-
-1. **Proper OpenTelemetry Support**: Traefik emits both CLIENT and SERVER spans, fixing the service graph visualization issue
-2. **Native Authentik Integration**: Built-in forward auth support for Authentik
-3. **Gateway API Ready**: Full support for the Kubernetes Gateway API (future-proof)
-4. **Existing Certificates**: Uses your configured SSL certificates from 1Password
-5. **Active Development**: Unlike nginx-ingress (EOL March 2026), Traefik is actively maintained
+## Features
 
 ## Features
 
@@ -49,45 +43,6 @@ traefik_authentik_skip_verify: false
 # Logging
 traefik_log_level: "INFO"  # DEBUG, INFO, WARN, ERROR
 ```
-
-## Migration from nginx-otel
-
-### 1. Stop nginx-otel
-
-```bash
-cd /opt/nginx-otel
-docker-compose down
-```
-
-### 2. Deploy Traefik
-
-Update your playbook to use the traefik role instead of nginx-otel:
-
-```yaml
-- hosts: vps
-  roles:
-    - traefik  # Replace nginx-otel with traefik
-```
-
-### 3. Run the playbook
-
-```bash
-ansible-playbook -i inventory site.yml --tags traefik
-```
-
-### 4. Verify the deployment
-
-```bash
-# Check health
-curl http://your-vps-ip/health
-
-# Check traces in Grafana
-# You should now see proper service graph edges!
-```
-
-## Service Graph Fix
-
-Traefik automatically emits both SERVER spans (incoming) and CLIENT spans (outgoing) per request, creating the proper edges in Tempo's service graph. This is why it fixes the service graph issue that nginx-otel has (which only emits SERVER spans).
 
 ## Authentik Integration
 

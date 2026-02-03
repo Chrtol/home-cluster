@@ -1,4 +1,4 @@
-name: Deploy VPS Reverse Proxy Configuration
+name: Deploy VPS Traefik Configuration
 
 permissions:
   contents: read
@@ -11,23 +11,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'vps/ansible/roles/nginx/**'
-      - 'vps/ansible/roles/nginx-otel/**'
       - 'vps/ansible/roles/traefik/**'
       - 'vps/ansible/reverse-proxy.yml'
-      - 'vps/ansible/nginx-only.yml'  # Keep for backward compatibility
       - '.github/workflows/vps-reverse-proxy-deploy.yml'
   workflow_dispatch:
     inputs:
-      proxy_type:
-        description: 'Reverse proxy type'
-        required: false
-        type: choice
-        options:
-          - default  # Use 1Password setting
-          - traefik
-          - nginx-otel
-        default: default
       debug:
         description: 'Run Ansible in debug mode'
         required: false
@@ -40,8 +28,8 @@ on:
         default: false
 
 jobs:
-  deploy-reverse-proxy:
-    name: Deploy Reverse Proxy Configuration
+  deploy-traefik:
+    name: Deploy Traefik Configuration
     runs-on: ubuntu-latest
 
     steps:
@@ -61,10 +49,7 @@ jobs:
           VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
           VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
 
-          # Reverse Proxy Type (can be overridden by workflow dispatch)
-          REVERSE_PROXY_TYPE: "op://Lab/vps-proxy/VPS_PROXY_TYPE"
-
-          # Common Proxy Configuration
+          # Traefik Configuration
           PROXY_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
           PROXY_EXTERNAL_INGRESS_IP: "op://Lab/vps-proxy/VPS_EXTERNAL_INGRESS_IP"
           PROXY_ENVOY_GATEWAY_IP: "op://Lab/vps-proxy/VPS_ENVOY_GATEWAY_IP"
@@ -93,20 +78,6 @@ jobs:
           # Metrics Authentication
           VPS_METRICS_USER: "op://Lab/vps-proxy/VPS_METRICS_USER"
           VPS_METRICS_PASSWORD_HASH: "op://Lab/vps-proxy/VPS_METRICS_PASSWORD_HASH"
-
-          # Legacy nginx variables for backward compatibility
-          NGINX_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
-          NGINX_EXTERNAL_INGRESS_IP: "op://Lab/vps-proxy/VPS_EXTERNAL_INGRESS_IP"
-          NGINX_ENVOY_GATEWAY_IP: "op://Lab/vps-proxy/VPS_ENVOY_GATEWAY_IP"
-          NGINX_SSL_CERT_PATH: "op://Lab/vps-proxy/VPS_SSL_CERT_PATH"
-          NGINX_SSL_KEY_PATH: "op://Lab/vps-proxy/VPS_SSL_KEY_PATH"
-          NGINX_ENABLE_ECHO_TEST: "op://Lab/vps-proxy/VPS_ENABLE_ECHO_TEST"
-          NGINX_ENABLE_METRICS: "op://Lab/vps-proxy/VPS_ENABLE_METRICS"
-
-      - name: Override proxy type if specified
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.proxy_type != 'default'
-        run: |
-          echo "REVERSE_PROXY_TYPE=${{ github.event.inputs.proxy_type }}" >> $GITHUB_ENV
 
       - name: Setup SSH key
         run: |
@@ -141,7 +112,7 @@ jobs:
           VPS_SSH_USER: ${{ env.VPS_SSH_USER }}
           VPS_SSH_PORT: ${{ env.VPS_SSH_PORT }}
         run: |
-          echo "Deploying $REVERSE_PROXY_TYPE reverse proxy..."
+          echo "Deploying Traefik..."
           ansible-playbook reverse-proxy.yml \
             -i inventory.yml \
             ${{ github.event.inputs.dry_run == 'true' && '--check --diff' || '' }} \
