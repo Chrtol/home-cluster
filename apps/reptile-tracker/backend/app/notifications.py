@@ -28,6 +28,29 @@ BLOCKED_IP_RANGES = [
     ipaddress.ip_network("fc00::/7"),            # IPv6 private
 ]
 
+# Allowlisted domains for webhook providers (defense-in-depth for SSRF protection)
+WEBHOOK_DOMAIN_ALLOWLIST = {
+    "discord": {"discord.com", "discordapp.com"},
+    "pushover": {"api.pushover.net"},
+}
+
+
+def validate_webhook_url_for_type(url: str, webhook_type: str) -> bool:
+    """
+    Validate webhook URL against allowlist for known webhook types.
+    Returns True only if URL domain matches the expected provider.
+    """
+    if webhook_type not in WEBHOOK_DOMAIN_ALLOWLIST:
+        return False
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        return hostname.lower() in WEBHOOK_DOMAIN_ALLOWLIST[webhook_type]
+    except Exception:
+        return False
+
 
 def validate_webhook_url(url: str) -> bool:
     """
@@ -534,10 +557,16 @@ async def send_webhook_notification(
 
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
             if webhook_type == "discord":
-                # M-3 Fix: Validate URL before making request
-                if not webhook_url or not validate_webhook_url(webhook_url):
-                    logger.error(f"Discord webhook blocked: Invalid or dangerous URL: {webhook_url}")
-                    raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
+                # SSRF protection: Discord webhooks must go to discord.com/discordapp.com only
+                if not webhook_url:
+                    raise ValueError("Webhook URL is required")
+                url_is_discord = validate_webhook_url_for_type(webhook_url, "discord")
+                if not url_is_discord:
+                    logger.error(f"Discord webhook blocked: URL not on Discord domain: {webhook_url}")
+                    raise ValueError("Invalid webhook URL: Must be a Discord webhook URL")
+
+                # URL validated as Discord domain - safe to use
+                validated_url = webhook_url
 
                 # Create rich embed with fields if context is provided
                 if context and trigger_type:
@@ -554,7 +583,7 @@ async def send_webhook_notification(
                 payload = {
                     "embeds": [embed],
                 }
-                response = await client.post(webhook_url, json=payload)
+                response = await client.post(validated_url, json=payload)
                 response.raise_for_status()
                 logger.info(f"Discord notification sent successfully")
                 return True
@@ -615,17 +644,22 @@ async def send_webhook_notification(
                 return True
 
             else:  # generic webhook
-                # M-3 Fix: Validate URL before making request
-                if not webhook_url or not validate_webhook_url(webhook_url):
+                # SSRF protection: Validate URL is not targeting internal/private networks
+                if not webhook_url:
+                    raise ValueError("Webhook URL is required")
+                url_is_safe = validate_webhook_url(webhook_url)
+                if not url_is_safe:
                     logger.error(f"Generic webhook blocked: Invalid or dangerous URL: {webhook_url}")
                     raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
 
+                # URL has been validated as safe - not targeting private/internal networks
+                validated_url = webhook_url  # Explicitly mark as validated
                 payload = {
                     "message": message,
                     "title": title or "Reptile Tracker Notification",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
-                response = await client.post(webhook_url, json=payload)
+                response = await client.post(validated_url, json=payload)
                 response.raise_for_status()
                 logger.info(f"Generic webhook notification sent successfully")
                 return True
