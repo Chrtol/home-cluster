@@ -62,7 +62,7 @@ http:
       tls: {}
       middlewares:
         - metrics-auth
-        - metrics-strip-prefix
+        - metrics-rewrite-path
 {% endif %}
 
   # Services
@@ -138,10 +138,9 @@ http:
         users:
           - "{{ traefik_metrics_user }}:{{ traefik_metrics_password_hash }}"
 
-    metrics-strip-prefix:
-      stripPrefix:
-        prefixes:
-          - "/node"
+    metrics-rewrite-path:
+      replacePath:
+        path: "/metrics"
 {% endif %}
 
   # Server Transports
