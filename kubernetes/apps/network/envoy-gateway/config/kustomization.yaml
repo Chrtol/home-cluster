@@ -6,3 +6,4 @@ resources:
   - ./gateway.yaml
   - ./referencegrant.yaml
   - ./crowdsec-securitypolicy.yaml
+  - ./clienttrafficpolicy.yaml
