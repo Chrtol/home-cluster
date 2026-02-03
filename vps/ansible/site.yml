@@ -1,7 +1,7 @@
 ---
 - name: Configure VPS with Pangolin
   hosts: vps
-  become: yes
+  become: true
 
   vars:
     # Secrets from 1Password via GitHub Actions
