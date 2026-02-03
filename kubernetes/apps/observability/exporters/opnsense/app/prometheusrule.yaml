@@ -12,6 +12,21 @@ spec:
     - name: opnsense-network
       interval: 1m
       rules:
+        # Interface Link Down (No Carrier)
+        - alert: OPNsenseInterfaceLinkDown
+          expr: |
+            opnsense_interface_status == 0
+          for: 1m
+          labels:
+            severity: critical
+            category: network
+          annotations:
+            summary: "Interface {{ $labels.interface }} has no carrier (link down)"
+            description: >
+              Interface {{ $labels.interface }} on {{ $labels.instance }}
+              has lost physical link (no carrier). Check cable, switch port, or connected device.
+              This will cause all traffic on this interface to fail.
+
         # Firewall State Table Saturation
         - alert: OPNsenseStateTableNearFull
           expr: |

@@ -253,6 +253,7 @@ kubectl logs -n observability job/check-firmware-update-<timestamp>
 The following alerts are configured in [prometheusrule.yaml](./prometheusrule.yaml):
 
 ### Critical Alerts
+- **OPNsenseInterfaceLinkDown**: Interface has no carrier (physical link down)
 - **OPNsenseStateTableFull**: State table >95% full
 - **OPNsenseGatewayDown**: Gateway is unreachable
 
