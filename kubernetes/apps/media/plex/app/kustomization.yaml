@@ -8,6 +8,7 @@ resources:
   - ./helmrelease.yaml
   - ./replicationsource.yaml
   - ./prometheusrule.yaml
+  - ./backendtrafficpolicy.yaml
 configMapGenerator:
   - name: plex-loki-rules
     files:

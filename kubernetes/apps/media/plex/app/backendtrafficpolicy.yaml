@@ -1,0 +1,27 @@
+---
+# BackendTrafficPolicy for long-running streaming connections
+# Extends connection duration for movies up to 4+ hours
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: plex-streaming-policy
+  namespace: media
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: plex-external
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: plex-internal
+  tcpKeepalive:
+    probes: 3
+    idleTime: 300s
+    interval: 60s
+  timeout:
+    tcp:
+      connectTimeout: 10s
+    http:
+      connectionIdleTimeout: 600s      # 10 min idle before disconnect
+      maxConnectionDuration: 18000s    # 5 hours max for long movies
+      requestTimeout: 0s               # Disable request timeout for streaming
