@@ -12,3 +12,4 @@ resources:
   # - ./ml-pvc.yaml
   - ./pvc.yaml
   - ./backendtrafficpolicy.yaml
+  - ./clienttrafficpolicy.yaml
