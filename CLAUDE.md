@@ -121,7 +121,7 @@ cilium status
 - Never use kubectl apply since I am using FluxCD
 - Never suggest to use the task commands
 - Never git add or commit, always just give me a one line commit message based on the changed files in the format: "verb(app): summary", i.e. "fix(reptile-tracker): revert timezone changes in scheduler to fix notification crashes"
-- To use "kubectl" commands, always pre-fix your kubectl commands with "export KUBECONFIG=/home/chrto/Homelab/github/chrtol/home-cluster/kubeconfig && kubectl ..."
+- To use "kubectl" or "talosctl" commands, always pre-fix your kubectl commands with "export KUBECONFIG=/home/chrto/Homelab/github/chrtol/home-cluster/kubeconfig && kubectl ... / talosctl ..."
 - For reusable patterns (auth/OIDC, backup, gatus, PVC provisioning, etc.), create generalized components in `/kubernetes/components/`
 - Prefer OCI repos over Helm repos for HelmReleases
 - Place .md documents in `/ai-activity/`; create a topic subfolder when multiple documents are needed
