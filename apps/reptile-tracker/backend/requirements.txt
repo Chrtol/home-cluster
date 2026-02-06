@@ -31,3 +31,7 @@ opentelemetry-instrumentation-celery==0.48b0
 opentelemetry-instrumentation-asyncpg==0.48b0
 opentelemetry-instrumentation-boto3sqs==0.48b0
 opentelemetry-instrumentation-logging==0.48b0
+
+# Testing
+pytest==9.0.2
+pytest-asyncio==0.25.0

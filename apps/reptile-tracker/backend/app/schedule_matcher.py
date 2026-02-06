@@ -377,8 +377,8 @@ async def assign_feeding_to_schedule(
         instance = result.scalars().first()
 
         if instance:
-            # Use the existing instance without modifying its scheduled_date
-            # The actual completion date is tracked in the ScheduleCompletion record
+            # Move the instance to the actual completion date
+            instance.scheduled_date = feeding.fed_at.date()
             instance_id = instance.id
         else:
             # No pending instance exists - this is normal for interval schedules
