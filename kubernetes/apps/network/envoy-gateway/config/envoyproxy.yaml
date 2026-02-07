@@ -17,21 +17,21 @@ spec:
     kubernetes:
       envoyDeployment:
         name: envoy-gateway-external
+        replicas: 3
         pod:
-          # Pin Envoy proxy to same node as Envoy Gateway controller
-          # to avoid cross-node xDS connection issues with Cilium
           affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: gateway-helm
-                      app.kubernetes.io/instance: envoy-gateway
-                  topologyKey: kubernetes.io/hostname
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        gateway.envoyproxy.io/owning-gateway-name: external
+                    topologyKey: kubernetes.io/hostname
       envoyService:
         name: envoy-gateway-external
         type: LoadBalancer
-        externalTrafficPolicy: Cluster
+        externalTrafficPolicy: Local
         loadBalancerIP: "10.0.30.44"
         annotations:
           external-dns.alpha.kubernetes.io/hostname: "*.${SECRET_DOMAIN}"
