@@ -4,38 +4,38 @@
 
 @layer base {
   :root {
-    /* Warm dark palette - near-black backgrounds with warm undertones */
-    --background: 220 13% 9%;        /* #14161a - Very dark blue-gray */
+    /* Cron-inspired near-black palette (matching mockup) */
+    --background: 200 14% 7%;        /* #0f1214 - Deepest background */
     --foreground: 36 45% 90%;        /* #f0e6d6 - Warm off-white */
 
-    --card: 222 14% 11%;             /* #181b20 - Slightly lighter than background */
+    --card: 206 14% 10%;             /* #161a1d - Card background */
     --card-foreground: 36 45% 90%;
 
-    --popover: 222 14% 11%;
+    --popover: 206 14% 10%;          /* #161a1d - Same as card */
     --popover-foreground: 36 45% 90%;
 
     --primary: 142 76% 36%;          /* #16a34a - Vibrant green (primary-600) */
     --primary-foreground: 144 61% 98%;
 
-    --secondary: 220 13% 18%;        /* #272b32 - Elevated surface */
+    --secondary: 204 14% 14%;        /* #1e2428 - Elevated surface */
     --secondary-foreground: 36 45% 90%;
 
-    --muted: 220 13% 18%;            /* #272b32 - Muted backgrounds */
+    --muted: 204 14% 14%;            /* #1e2428 - Muted backgrounds */
     --muted-foreground: 36 25% 65%;  /* #a89a87 - Muted warm text */
 
-    --accent: 220 13% 18%;           /* #272b32 - Accent backgrounds */
+    --accent: 204 14% 14%;           /* #1e2428 - Accent backgrounds */
     --accent-foreground: 36 45% 90%;
 
     --destructive: 0 84% 60%;        /* #f04747 - Red for destructive actions */
     --destructive-foreground: 36 45% 90%;
 
-    --border: 220 13% 20%;           /* #2d3138 - Subtle borders */
-    --input: 220 13% 20%;            /* #2d3138 - Input borders */
+    --border: 204 14% 18%;           /* #262d33 - Subtle borders */
+    --input: 204 14% 18%;            /* #262d33 - Input borders */
     --ring: 142 76% 36%;             /* Primary green for focus rings */
 
     /* Additional surface tokens for layering */
-    --surface: 222 14% 11%;          /* Same as card */
-    --surface-elevated: 220 13% 18%; /* Same as secondary */
+    --surface: 206 14% 10%;          /* #161a1d - Same as card */
+    --surface-elevated: 204 14% 14%; /* #1e2428 - Same as secondary */
 
     --radius: 0.5rem;                /* 8px default border radius */
   }
