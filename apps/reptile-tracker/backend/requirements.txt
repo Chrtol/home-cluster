@@ -33,5 +33,5 @@ opentelemetry-instrumentation-boto3sqs==0.48b0
 opentelemetry-instrumentation-logging==0.48b0
 
 # Testing
-pytest==9.0.2
+pytest==8.3.5
 pytest-asyncio==0.25.0
