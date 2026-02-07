@@ -15,8 +15,7 @@ from fastapi import HTTPException
 from app.database import async_session_maker
 from app.models import Schedule, ScheduleCompletion, Reptile, User, NotificationSettings, NotificationType, CompletionStatus
 
-# Import utilities and notification senders
-from .core import is_within_quiet_hours
+# Note: is_within_quiet_hours imported inside function to avoid circular import with core.py
 from .notifications import send_overdue_alert
 
 logger = logging.getLogger(__name__)
@@ -24,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 async def check_overdue_schedules():
     """Check for overdue schedules and send alerts"""
+    # Late import to avoid circular dependency with core.py
+    from .core import is_within_quiet_hours
+
     logger.info("Running overdue schedule check")
 
     try:

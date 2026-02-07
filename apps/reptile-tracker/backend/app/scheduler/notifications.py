@@ -20,7 +20,9 @@ from app.models import (
 )
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 from app.constants import FOOD_CATEGORY_DISPLAY, get_schedule_type_emoji
-from .core import is_within_quiet_hours, create_in_app_notification
+
+# Note: is_within_quiet_hours and create_in_app_notification are imported inside
+# functions to avoid circular import with core.py
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,9 @@ async def send_schedule_reminder(
     config: dict = None
 ):
     """Send a schedule reminder notification"""
+    # Late import to avoid circular dependency with core.py
+    from .core import create_in_app_notification
+
     # Build context for template matching and rendering
     emoji = get_schedule_type_emoji(schedule.schedule_type)
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
@@ -188,6 +193,9 @@ async def send_overdue_alert(
     Returns:
         bool: True if notification was sent successfully, False on failure
     """
+    # Late import to avoid circular dependency with core.py
+    from .core import create_in_app_notification
+
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
     # Build schedule URL for links - use instance if available
@@ -326,6 +334,9 @@ async def send_interval_warning_notification(
     - max_days_approaching: Approaching max_days_between limit
     - max_days_exceeded: Exceeded max_days_between limit
     """
+    # Late import to avoid circular dependency with core.py
+    from .core import is_within_quiet_hours, create_in_app_notification
+
     try:
         # Get schedule's notification channels
         await db.refresh(schedule, ["notification_channels"])
