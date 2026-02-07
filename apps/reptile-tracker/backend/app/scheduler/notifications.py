@@ -19,6 +19,7 @@ from app.models import (
     FeedingRotation, Supplement
 )
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
+from app.constants import FOOD_CATEGORY_DISPLAY, get_schedule_type_emoji
 from .core import is_within_quiet_hours, create_in_app_notification
 
 logger = logging.getLogger(__name__)
@@ -36,14 +37,7 @@ async def send_schedule_reminder(
 ):
     """Send a schedule reminder notification"""
     # Build context for template matching and rendering
-    schedule_type_emoji = {
-        "feeding": "🍽️",
-        "misting": "💧",
-        "weighing": "⚖️",
-        "supplement": "💊"
-    }
-
-    emoji = schedule_type_emoji.get(schedule.schedule_type, "📅")
+    emoji = get_schedule_type_emoji(schedule.schedule_type)
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
     # Build time window string
@@ -93,15 +87,7 @@ async def send_schedule_reminder(
 
     # Add food category for feeding schedules
     if schedule.schedule_type == "feeding" and schedule.food_category:
-        food_category_display = {
-            "insects": "Insects/Worms",
-            "salad": "Salad/Vegetables",
-            "frozen": "Frozen Prey (Rodents)",
-            "prepared": "Prepared Diet (CGD, Repashy, etc.)",
-            "mixed": "Mixed (Multiple Types)",
-            "other": "Other"
-        }
-        context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
+        context["food_category"] = FOOD_CATEGORY_DISPLAY.get(schedule.food_category, schedule.food_category.title())
 
         # Try to get active supplement rotations for this reptile
         rotation_result = await db.execute(
@@ -234,15 +220,7 @@ async def send_overdue_alert(
 
     # Add food category for feeding schedules
     if schedule.schedule_type == "feeding" and schedule.food_category:
-        food_category_display = {
-            "insects": "Insects/Worms",
-            "salad": "Salad/Vegetables",
-            "frozen": "Frozen Prey (Rodents)",
-            "prepared": "Prepared Diet (CGD, Repashy, etc.)",
-            "mixed": "Mixed (Multiple Types)",
-            "other": "Other"
-        }
-        context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
+        context["food_category"] = FOOD_CATEGORY_DISPLAY.get(schedule.food_category, schedule.food_category.title())
 
         # Try to get active supplement rotations for this reptile
         rotation_result = await db.execute(

@@ -11,6 +11,7 @@ from app.database import async_session_maker
 from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 from app.scheduler import create_in_app_notification, is_within_quiet_hours
+from app.constants import FOOD_CATEGORY_DISPLAY, get_schedule_type_emoji
 
 logger = logging.getLogger(__name__)
 
@@ -75,14 +76,7 @@ async def send_schedule_reminder_task(
             )
 
             # Build context for template rendering
-            schedule_type_emoji = {
-                "feeding": "🍽️",
-                "misting": "💧",
-                "weighing": "⚖️",
-                "supplement": "💊"
-            }
-
-            emoji = schedule_type_emoji.get(schedule.schedule_type, "📅")
+            emoji = get_schedule_type_emoji(schedule.schedule_type)
             schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
             # Build time window string
@@ -115,15 +109,7 @@ async def send_schedule_reminder_task(
 
             # Add food category for feeding schedules
             if schedule.schedule_type == "feeding" and schedule.food_category:
-                food_category_display = {
-                    "insects": "Insects/Worms",
-                    "salad": "Salad/Vegetables",
-                    "frozen": "Frozen Prey (Rodents)",
-                    "prepared": "Prepared Diet (CGD, Repashy, etc.)",
-                    "mixed": "Mixed (Multiple Types)",
-                    "other": "Other"
-                }
-                context["food_category"] = food_category_display.get(schedule.food_category, schedule.food_category.title())
+                context["food_category"] = FOOD_CATEGORY_DISPLAY.get(schedule.food_category, schedule.food_category.title())
 
                 # Try to get active supplement rotations for this reptile
                 from app.models import FeedingRotation, Supplement
