@@ -21,8 +21,8 @@ from app.models import (
     ScheduledNotificationJob,
 )
 
-# Import callback and utility functions from core module
-from .core import execute_scheduled_notification, should_schedule_occur_on_date
+# Note: execute_scheduled_notification and should_schedule_occur_on_date are imported
+# inside functions to avoid circular import with core.py
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,9 @@ async def schedule_notification_jobs_for_schedule(
         schedule_id: The Schedule ID
         days_ahead: How many days ahead to schedule (default 7)
     """
+    # Late import to avoid circular dependency with core.py
+    from .core import should_schedule_occur_on_date
+
     if not scheduler:
         logger.warning("Scheduler not initialized, cannot schedule jobs")
         return
@@ -206,6 +209,9 @@ async def _schedule_single_notification_job(
         channel_id: Notification channel ID
         scheduled_date: Date to schedule notification for
     """
+    # Late import to avoid circular dependency with core.py
+    from .core import execute_scheduled_notification
+
     try:
         # Calculate reminder time in user's timezone
         user_tz = ZoneInfo(user.timezone if user.timezone else "UTC")
