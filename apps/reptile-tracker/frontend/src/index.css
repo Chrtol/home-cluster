@@ -3,33 +3,76 @@
 @tailwind utilities;
 
 @layer base {
-    body {
-        @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
-    }
+  :root {
+    /* Warm dark palette - near-black backgrounds with warm undertones */
+    --background: 220 13% 9%;        /* #14161a - Very dark blue-gray */
+    --foreground: 36 45% 90%;        /* #f0e6d6 - Warm off-white */
+
+    --card: 222 14% 11%;             /* #181b20 - Slightly lighter than background */
+    --card-foreground: 36 45% 90%;
+
+    --popover: 222 14% 11%;
+    --popover-foreground: 36 45% 90%;
+
+    --primary: 142 76% 36%;          /* #16a34a - Vibrant green (primary-600) */
+    --primary-foreground: 144 61% 98%;
+
+    --secondary: 220 13% 18%;        /* #272b32 - Elevated surface */
+    --secondary-foreground: 36 45% 90%;
+
+    --muted: 220 13% 18%;            /* #272b32 - Muted backgrounds */
+    --muted-foreground: 36 25% 65%;  /* #a89a87 - Muted warm text */
+
+    --accent: 220 13% 18%;           /* #272b32 - Accent backgrounds */
+    --accent-foreground: 36 45% 90%;
+
+    --destructive: 0 84% 60%;        /* #f04747 - Red for destructive actions */
+    --destructive-foreground: 36 45% 90%;
+
+    --border: 220 13% 20%;           /* #2d3138 - Subtle borders */
+    --input: 220 13% 20%;            /* #2d3138 - Input borders */
+    --ring: 142 76% 36%;             /* Primary green for focus rings */
+
+    /* Additional surface tokens for layering */
+    --surface: 222 14% 11%;          /* Same as card */
+    --surface-elevated: 220 13% 18%; /* Same as secondary */
+
+    --radius: 0.5rem;                /* 8px default border radius */
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 @layer components {
+  /* Legacy button classes - updated to use semantic tokens */
   .btn-primary {
-    @apply bg-primary-600 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 py-2 px-4;
+    @apply bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-200 py-2 px-4;
   }
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 py-2 px-4;
+    @apply bg-secondary text-secondary-foreground font-semibold rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-200 py-2 px-4;
   }
   .btn-danger {
-      @apply bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 py-2 px-4;
+    @apply bg-destructive text-destructive-foreground font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-200 py-2 px-4;
   }
+
+  /* Legacy input classes - updated to use semantic tokens */
   .input {
-    @apply block w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
+    @apply block w-full px-3 py-2 bg-surface border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input sm:text-sm;
   }
   .input-field {
-    @apply block w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+    @apply block w-full px-4 py-3 bg-surface border-2 border-input rounded-lg shadow-sm placeholder-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input transition-colors;
   }
   textarea.input-field {
     @apply resize-none;
   }
+
+  /* Legacy card class - updated to use semantic tokens */
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6;
+    @apply bg-card text-card-foreground rounded-lg shadow-sm border border-border p-6;
   }
+
   .counter-button {
     @apply w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors;
   }
