@@ -1,25 +1,47 @@
 """
-Scheduler package for notification and autocomplete job management.
+Scheduler package for notification and job management.
 
-This package is part of Phase 2 incremental extraction from the original scheduler.py.
-Job management functions are extracted here, while the global scheduler instance
-and lifecycle functions remain in the parent scheduler.py module.
+This package provides the global scheduler instance and job management functions.
+All imports should be done via this package (from app.scheduler import ...).
 
-Note: Do NOT import from app.scheduler here - that would create a circular import.
-The parent scheduler.py will import and re-export these functions instead.
+Structure:
+- core.py: Global scheduler instance, lifecycle, wrapper functions, utilities
+- jobs.py: Extracted notification job functions (accept scheduler as parameter)
 """
 
-# Export job management functions from jobs.py
-from .jobs import (
+# Re-export everything from core.py for backward compatibility
+from .core import (
+    # Global instance
+    scheduler,
+    # Lifecycle
+    start_scheduler,
+    stop_scheduler,
+    # Wrapper functions (these pass scheduler to jobs.py functions)
     schedule_notification_jobs_for_schedule,
     schedule_notifications_for_interval_instance,
     cancel_notification_jobs_for_schedule,
     reschedule_notification_jobs_for_schedule,
+    # Callbacks and utilities used by jobs.py and other modules
+    execute_scheduled_notification,
+    should_schedule_occur_on_date,
+    create_in_app_notification,
+    send_schedule_reminder,
+    is_within_quiet_hours,
+    schedule_autocomplete_for_instance,
 )
 
 __all__ = [
+    "scheduler",
+    "start_scheduler",
+    "stop_scheduler",
     "schedule_notification_jobs_for_schedule",
     "schedule_notifications_for_interval_instance",
     "cancel_notification_jobs_for_schedule",
     "reschedule_notification_jobs_for_schedule",
+    "execute_scheduled_notification",
+    "should_schedule_occur_on_date",
+    "create_in_app_notification",
+    "send_schedule_reminder",
+    "is_within_quiet_hours",
+    "schedule_autocomplete_for_instance",
 ]
