@@ -21,8 +21,8 @@ from app.models import (
     ScheduledNotificationJob,
 )
 
-# Import callback and utility functions from parent scheduler module
-from app.scheduler import execute_scheduled_notification, should_schedule_occur_on_date
+# Import callback and utility functions from core module
+from .core import execute_scheduled_notification, should_schedule_occur_on_date
 
 logger = logging.getLogger(__name__)
 
