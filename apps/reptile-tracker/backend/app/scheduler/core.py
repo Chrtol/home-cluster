@@ -19,7 +19,7 @@ from app.quota_tracker import check_quota_status
 from opentelemetry import trace
 
 # Import notification job functions from scheduler.jobs module (Phase 2 extraction)
-from app.scheduler.jobs import (
+from .jobs import (
     schedule_notification_jobs_for_schedule as _schedule_notification_jobs_for_schedule,
     schedule_notifications_for_interval_instance as _schedule_notifications_for_interval_instance,
     cancel_notification_jobs_for_schedule as _cancel_notification_jobs_for_schedule,
@@ -27,6 +27,27 @@ from app.scheduler.jobs import (
 )
 
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    # Global instance
+    "scheduler",
+    # Lifecycle
+    "start_scheduler",
+    "stop_scheduler",
+    # Wrapper functions (maintain backward compat)
+    "schedule_notification_jobs_for_schedule",
+    "schedule_notifications_for_interval_instance",
+    "cancel_notification_jobs_for_schedule",
+    "reschedule_notification_jobs_for_schedule",
+    # Callbacks used by jobs.py
+    "execute_scheduled_notification",
+    "should_schedule_occur_on_date",
+    # Other public functions used by routers
+    "create_in_app_notification",
+    "send_schedule_reminder",
+    "is_within_quiet_hours",
+    "schedule_autocomplete_for_instance",
+]
 
 
 def get_tracer():
