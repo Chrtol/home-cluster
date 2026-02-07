@@ -1,22 +1,18 @@
 """
 Notification scheduler for sending reminders and alerts
 """
-import asyncio
 import logging
 from datetime import datetime, timezone, timedelta, date as py_date, time as py_time
-from typing import List, Dict
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from sqlalchemy import select, and_, or_, delete
+from sqlalchemy import select, and_, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
 from app.database import async_session_maker
 from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members, ScheduleMode, InstanceStatus
-from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
-from app.quota_tracker import check_quota_status
 from opentelemetry import trace
 
 # Import notification job functions from scheduler.jobs module (Phase 2 extraction)
@@ -627,223 +623,6 @@ def should_schedule_occur_on_date(schedule: Schedule, check_date: py_date) -> bo
     return False
 
 
-async def check_schedule_reminders():
-    """
-    Check for LEGACY schedules that need reminder notifications (polling-based)
-    This only handles schedules using reminder_minutes_before (legacy approach)
-    Schedules with reminder_time are handled by the exact-time APScheduler system
-    """
-    logger.info("Running legacy schedule reminder check (polling-based)")
-
-    try:
-        async with async_session_maker() as db:
-            now = datetime.now(timezone.utc)
-            today = now.date()
-
-            # Get all users with schedule reminders enabled in their notification settings
-            result = await db.execute(
-                select(User)
-                .join(NotificationSettings)
-                .where(NotificationSettings.notify_schedule_reminders == True)
-            )
-            users = result.scalars().all()
-
-            logger.info(f"Found {len(users)} users with schedule reminders enabled")
-
-            for user in users:
-                try:
-                    # Get user's timezone (default to UTC if not set)
-                    user_tz = ZoneInfo(user.timezone if user.timezone else "UTC")
-
-                    # Get user's notification settings
-                    notif_settings_result = await db.execute(
-                        select(NotificationSettings).where(NotificationSettings.user_id == user.id)
-                    )
-                    notif_settings = notif_settings_result.scalars().first()
-
-                    if not notif_settings:
-                        continue
-
-                    # Get enabled notification channels for this user
-                    channels_result = await db.execute(
-                        select(NotificationChannel).where(
-                            and_(
-                                NotificationChannel.notification_settings_id == notif_settings.id,
-                                NotificationChannel.enabled == True
-                            )
-                        )
-                    )
-                    channels = channels_result.scalars().all()
-
-                    if not channels:
-                        continue
-
-                    # Get all schedules that use any of these channels
-                    channel_ids = [c.id for c in channels]
-
-                    # Query schedules that have these channels
-                    # ONLY include legacy schedules using reminder_minutes_before
-                    # Schedules with reminder_time are handled by the exact-time APScheduler system
-                    schedules_result = await db.execute(
-                        select(Schedule)
-                        .join(Schedule.notification_channels)
-                        .where(
-                            and_(
-                                Schedule.enabled == True,
-                                Schedule.notifications_enabled == True,
-                                # Only legacy schedules (no reminder_time set)
-                                Schedule.reminder_time.is_(None),
-                                Schedule.reminder_minutes_before.isnot(None),
-                                Schedule.reminder_minutes_before > 0,
-                                NotificationChannel.id.in_(channel_ids)
-                            )
-                        )
-                        .distinct(Schedule.id)
-                    )
-                    schedules = schedules_result.scalars().all()
-
-                    logger.debug(f"Found {len(schedules)} schedules for user {user.email}")
-
-                    for schedule in schedules:
-                        try:
-                            # Calculate next occurrence
-                            next_occurrence_date = get_next_occurrence_date(schedule, today)
-
-                            # Check if there's already a completion for today
-                            completion_result = await db.execute(
-                                select(ScheduleCompletion).where(
-                                    and_(
-                                        ScheduleCompletion.schedule_id == schedule.id,
-                                        ScheduleCompletion.scheduled_date == next_occurrence_date
-                                    )
-                                )
-                            )
-                            completion = completion_result.scalars().first()
-
-                            # Skip if already completed
-                            if completion and completion.status == CompletionStatus.COMPLETED_ON_TIME:
-                                continue
-
-                            # Calculate when to send reminder using user's timezone
-                            # This polling system only handles legacy schedules with reminder_minutes_before
-                            # Schedules with reminder_time are handled by exact-time APScheduler
-
-                            # If time window is enabled, use earliest_time, otherwise use noon
-                            if schedule.time_window_enabled and schedule.earliest_time:
-                                scheduled_datetime = datetime.combine(
-                                    next_occurrence_date,
-                                    schedule.earliest_time,
-                                    tzinfo=user_tz
-                                )
-                            else:
-                                # Use noon as default time
-                                scheduled_datetime = datetime.combine(
-                                    next_occurrence_date,
-                                    datetime.min.time().replace(hour=12),
-                                    tzinfo=user_tz
-                                )
-
-                            # Convert to UTC and calculate reminder time
-                            scheduled_utc = scheduled_datetime.astimezone(timezone.utc)
-                            reminder_time = scheduled_utc - timedelta(minutes=schedule.reminder_minutes_before)
-
-                            # Check if it's time to send reminder (within 5 minute window)
-                            time_until_reminder = (reminder_time - now).total_seconds()
-
-                            # Send reminder if within the next check interval (5 minutes)
-                            if -300 <= time_until_reminder <= 300:  # 5 minute window
-                                # Get reptile
-                                reptile = await db.get(Reptile, schedule.reptile_id)
-                                if not reptile:
-                                    continue
-
-                                # Check if user has access to this reptile
-                                from app.permissions import check_reptile_access
-                                try:
-                                    await check_reptile_access(db, user, reptile.id)
-                                except HTTPException:
-                                    # User lacks access - skip this channel
-                                    continue
-
-                                # Check quiet hours (schedule reminders are not critical)
-                                if is_within_quiet_hours(notif_settings, NotificationType.SCHEDULE_REMINDER, now):
-                                    logger.debug(f"Skipping reminder for user {user.email} - within quiet hours")
-                                    continue
-
-                                # Send to each of this user's channels that are associated with this schedule
-                                await db.refresh(schedule, ["notification_channels"])
-
-                                for channel in schedule.notification_channels:
-                                    # Only send to channels that belong to this user and are enabled
-                                    if channel.notification_settings_id != notif_settings.id:
-                                        continue
-                                    if not channel.enabled:
-                                        continue
-
-                                    # Try to queue reminder task for reliable delivery
-                                    # If Celery/Redis is down, fall back to direct send
-                                    try:
-                                        from app.celery_tasks import send_schedule_reminder_task
-
-                                        # Create a trace span so Celery instrumentation can propagate context
-                                        with get_tracer().start_as_current_span(
-                                            "dispatch_schedule_reminder",
-                                            attributes={
-                                                "schedule.id": schedule.id,
-                                                "schedule.type": schedule.schedule_type,
-                                                "reptile.id": reptile.id,
-                                                "reptile.name": reptile.name,
-                                                "user.id": user.id,
-                                                "channel.id": channel.id,
-                                            }
-                                        ):
-                                            send_schedule_reminder_task.delay(
-                                                schedule_id=schedule.id,
-                                                reptile_id=reptile.id,
-                                                scheduled_date_str=next_occurrence_date.isoformat(),
-                                                user_id=user.id,
-                                                channel_id=channel.id
-                                            )
-
-                                        logger.info(
-                                            f"Queued reminder task for schedule {schedule.id} ({schedule.schedule_type}) "
-                                            f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
-                                        )
-                                    except Exception as celery_error:
-                                        # Fallback: Send notification directly if Celery is down
-                                        logger.warning(
-                                            f"Celery queue failed for schedule {schedule.id}, falling back to direct send: {celery_error}"
-                                        )
-
-                                        # Send the reminder directly (synchronous fallback)
-                                        await send_schedule_reminder(
-                                            db=db,
-                                            reptile=reptile,
-                                            schedule=schedule,
-                                            scheduled_date=next_occurrence_date,
-                                            user=user,
-                                            webhook_url=channel.webhook_url,
-                                            webhook_type=channel.webhook_type,
-                                            config=channel.config
-                                        )
-
-                                        logger.info(
-                                            f"Sent reminder directly (fallback) for schedule {schedule.id} "
-                                            f"to user {user.email} via channel '{channel.name}'"
-                                        )
-
-                        except Exception as e:
-                            logger.error(f"Error processing schedule {schedule.id} for user {user.email}: {e}", exc_info=True)
-                            continue
-
-                except Exception as e:
-                    logger.error(f"Error processing user {user.email}: {e}", exc_info=True)
-                    continue
-
-    except Exception as e:
-        logger.error(f"Error in check_schedule_reminders: {e}", exc_info=True)
-
-
 async def create_in_app_notification(
     db: AsyncSession,
     user: User,
@@ -1200,15 +979,6 @@ async def start_scheduler():
         minute=5,
         id="create_completions",
         name="Create pending schedule completions",
-        replace_existing=True
-    )
-
-    # Check for reminders every 5 minutes
-    scheduler.add_job(
-        check_schedule_reminders,
-        trigger=IntervalTrigger(minutes=5),
-        id="check_reminders",
-        name="Check schedule reminders",
         replace_existing=True
     )
 
