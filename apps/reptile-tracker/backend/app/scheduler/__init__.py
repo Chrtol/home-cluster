@@ -9,6 +9,7 @@ Structure:
 - jobs.py: Extracted notification job functions (accept scheduler as parameter)
 - auto_complete.py: Extracted auto-complete job functions (accept scheduler as parameter)
 - notifications.py: Extracted notification sender functions (send reminders, overdue alerts, interval warnings)
+- overdue.py: Extracted overdue detection functions
 """
 
 # Re-export everything from core.py for backward compatibility
@@ -34,6 +35,9 @@ from .core import (
     schedule_autocomplete_for_instance,
 )
 
+# Re-export overdue detection from overdue.py
+from .overdue import check_overdue_schedules
+
 __all__ = [
     "scheduler",
     "start_scheduler",
@@ -50,4 +54,5 @@ __all__ = [
     "send_interval_warning_notification",
     "is_within_quiet_hours",
     "schedule_autocomplete_for_instance",
+    "check_overdue_schedules",
 ]
