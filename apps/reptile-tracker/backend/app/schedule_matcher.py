@@ -268,6 +268,43 @@ def determine_completion_status(
     return CompletionStatus.COMPLETED_ON_TIME
 
 
+async def complete_schedule_instance(
+    db: AsyncSession,
+    instance: ScheduleInstance,
+    schedule: Schedule,
+    completion_date: date_type,
+) -> None:
+    """
+    Mark a schedule instance as completed and generate the next instance for interval schedules.
+
+    Args:
+        db: Database session
+        instance: The ScheduleInstance to mark as completed
+        schedule: The parent Schedule object
+        completion_date: Date when the activity was completed
+    """
+    # Mark instance as completed
+    instance.status = "completed"
+    instance.updated_at = datetime.now(timezone.utc)
+
+    # For interval schedules, generate the next instance dynamically
+    from app.models import ScheduleMode
+    if schedule.schedule_mode == ScheduleMode.INTERVAL:
+        from app.instance_generator import create_interval_schedule_instance
+        try:
+            await create_interval_schedule_instance(
+                db=db,
+                schedule=schedule,
+                last_completion_date=completion_date
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(
+                f"Failed to create next interval instance for schedule {schedule.id}: {e}",
+                exc_info=True
+            )
+
+
 async def _assign_activity_to_schedule(
     db: AsyncSession,
     activity: SchedulableActivity,
@@ -429,25 +466,12 @@ async def _assign_activity_to_schedule(
 
     # Mark the instance as completed
     if instance:
-        instance.status = "completed"
-        instance.updated_at = datetime.now(timezone.utc)
-
-        # For interval schedules, generate the next instance dynamically
-        from app.models import ScheduleMode
-        if schedule.schedule_mode == ScheduleMode.INTERVAL:
-            from app.instance_generator import create_interval_schedule_instance
-            try:
-                await create_interval_schedule_instance(
-                    db=db,
-                    schedule=schedule,
-                    last_completion_date=activity_timestamp.date()
-                )
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(
-                    f"Failed to create next interval instance for schedule {schedule.id}: {e}",
-                    exc_info=True
-                )
+        await complete_schedule_instance(
+            db=db,
+            instance=instance,
+            schedule=schedule,
+            completion_date=activity_timestamp.date()
+        )
 
     # Link activity to completion
     activity.schedule_completion_id = completion.id
