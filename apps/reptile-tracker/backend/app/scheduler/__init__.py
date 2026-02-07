@@ -8,6 +8,7 @@ Structure:
 - core.py: Global scheduler instance, lifecycle, wrapper functions, utilities
 - jobs.py: Extracted notification job functions (accept scheduler as parameter)
 - auto_complete.py: Extracted auto-complete job functions (accept scheduler as parameter)
+- notifications.py: Extracted notification sender functions (send reminders, overdue alerts, interval warnings)
 """
 
 # Re-export everything from core.py for backward compatibility
@@ -27,6 +28,8 @@ from .core import (
     should_schedule_occur_on_date,
     create_in_app_notification,
     send_schedule_reminder,
+    send_overdue_alert,
+    send_interval_warning_notification,
     is_within_quiet_hours,
     schedule_autocomplete_for_instance,
 )
@@ -43,6 +46,8 @@ __all__ = [
     "should_schedule_occur_on_date",
     "create_in_app_notification",
     "send_schedule_reminder",
+    "send_overdue_alert",
+    "send_interval_warning_notification",
     "is_within_quiet_hours",
     "schedule_autocomplete_for_instance",
 ]
