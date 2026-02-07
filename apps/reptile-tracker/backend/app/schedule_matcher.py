@@ -20,6 +20,7 @@ from app.models import (
     WeightLog,
     CompletionStatus,
     CompletionType,
+    InstanceStatus,
 )
 
 
@@ -84,7 +85,7 @@ async def find_instance_within_window(
                 ScheduleInstance.schedule_id == schedule.id,
                 ScheduleInstance.scheduled_date >= start_date,
                 ScheduleInstance.scheduled_date <= end_date,
-                ScheduleInstance.status == "pending"
+                ScheduleInstance.status == InstanceStatus.PENDING
             )
         ).order_by(
             # Prefer instances closer to the activity date
@@ -284,7 +285,7 @@ async def complete_schedule_instance(
         completion_date: Date when the activity was completed
     """
     # Mark instance as completed
-    instance.status = "completed"
+    instance.status = InstanceStatus.COMPLETED
     instance.updated_at = datetime.now(timezone.utc)
 
     # For interval schedules, generate the next instance dynamically
@@ -413,7 +414,7 @@ async def _assign_activity_to_schedule(
             select(ScheduleInstance).where(
                 and_(
                     ScheduleInstance.schedule_id == schedule.id,
-                    ScheduleInstance.status == "pending"
+                    ScheduleInstance.status == InstanceStatus.PENDING
                 )
             ).limit(1)
         )

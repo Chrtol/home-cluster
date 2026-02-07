@@ -68,6 +68,14 @@ class CompletionStatus(str, PyEnum):
     PENDING = "pending"  # Future/current, not yet completed
 
 
+class InstanceStatus(str, PyEnum):
+    """Status of a schedule instance (ScheduleInstance.status column)"""
+    PENDING = "pending"      # Future/current, not yet completed
+    COMPLETED = "completed"  # Activity logged for this instance
+    MISSED = "missed"        # Not completed by deadline
+    SKIPPED = "skipped"      # Manually marked as skipped
+
+
 class CompletionType(str, PyEnum):
     """Type of activity that completed a schedule"""
     FEEDING = "feeding"
@@ -548,7 +556,7 @@ class ScheduleInstance(Base):
     scheduled_date = Column(Date, nullable=False, index=True)  # The date this instance is scheduled for
 
     # Status of this instance
-    status = Column(String(50), nullable=False, default="pending", index=True)  # pending, completed, missed, skipped
+    status = Column(String(50), nullable=False, default=InstanceStatus.PENDING.value, index=True)  # pending, completed, missed, skipped
 
     # Feeding sequence number for this schedule (used for feeding_count supplement rotations)
     # This is the nth feeding instance for this specific schedule (1, 2, 3, etc.)

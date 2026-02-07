@@ -7,6 +7,7 @@ from typing import List, Optional
 from datetime import date as py_date, datetime, timezone
 
 from app import models, schemas
+from app.models import InstanceStatus
 from app.database import get_db
 from app.routers.auth import get_current_user
 from app.permissions import check_reptile_access
@@ -324,7 +325,7 @@ async def mark_instance_skipped(
     completion.updated_at = datetime.now(timezone.utc)
 
     # Update instance status
-    instance.status = "skipped"
+    instance.status = InstanceStatus.SKIPPED
     instance.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
@@ -386,7 +387,7 @@ async def mark_instance_missed(
     completion.updated_at = datetime.now(timezone.utc)
 
     # Update instance status
-    instance.status = "missed"
+    instance.status = InstanceStatus.MISSED
     instance.updated_at = datetime.now(timezone.utc)
 
     await db.commit()

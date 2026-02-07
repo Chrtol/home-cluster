@@ -17,6 +17,7 @@ from app.models import (
     feeding_salad_components,
     feeding_food_supplements,
     NotificationSettings,
+    InstanceStatus,
 )
 from app.permissions import check_reptile_access
 from app.schemas import FeedingCreate, Feeding as FeedingSchema, FeedingWithUser
@@ -740,7 +741,7 @@ async def delete_feeding(
                 )
                 instance = instance_result.scalar_one_or_none()
                 if instance:
-                    instance.status = "pending"
+                    instance.status = InstanceStatus.PENDING
                     from datetime import datetime, timezone
                     instance.updated_at = datetime.now(timezone.utc)
 

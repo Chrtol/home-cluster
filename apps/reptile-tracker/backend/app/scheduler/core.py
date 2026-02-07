@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
 from app.database import async_session_maker
-from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members, ScheduleMode
+from app.models import Schedule, ScheduleCompletion, NotificationSettings, NotificationChannel, User, Reptile, CompletionStatus, UserNotification, NotificationType, ScheduledNotificationJob, AccessLevel, household_members, ScheduleMode, InstanceStatus
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 from app.quota_tracker import check_quota_status
 from opentelemetry import trace
@@ -919,7 +919,7 @@ async def check_auto_complete_schedules():
                     and_(
                         Schedule.enabled == True,
                         Schedule.auto_complete_enabled == True,
-                        ScheduleInstance.status == "pending"
+                        ScheduleInstance.status == InstanceStatus.PENDING
                     )
                 )
                 .options(selectinload(ScheduleInstance.schedule))
@@ -1019,7 +1019,7 @@ async def check_auto_complete_schedules():
                     db.add(completion)
 
                     # Update instance status
-                    instance.status = "completed"
+                    instance.status = InstanceStatus.COMPLETED
                     instance.updated_at = now
 
                     await db.flush()

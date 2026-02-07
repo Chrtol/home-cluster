@@ -25,6 +25,7 @@ from app.models import (
     AccessLevel,
     household_members,
     ScheduleMode,
+    InstanceStatus,
 )
 
 if TYPE_CHECKING:
@@ -53,7 +54,7 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         return False
 
     # Check if instance is still pending
-    if instance.status != "pending":
+    if instance.status != InstanceStatus.PENDING:
         logger.info(f"Instance {instance_id} already {instance.status}, skipping autocomplete")
         return False
 
@@ -89,7 +90,7 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
                 ).replace(tzinfo=timezone.utc)
                 logger.info(f"Fixed NULL completed_at for orphaned completion {existing_completion.id}")
 
-            instance.status = "completed"
+            instance.status = InstanceStatus.COMPLETED
             instance.updated_at = now
 
             # For interval schedules, create the next instance
@@ -117,8 +118,8 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
         logger.info(f"Instance {instance_id} already has completion record, skipping")
 
         # Ensure instance status is synced
-        if instance.status != "completed":
-            instance.status = "completed"
+        if instance.status != InstanceStatus.COMPLETED:
+            instance.status = InstanceStatus.COMPLETED
             instance.updated_at = datetime.now(timezone.utc)
             await db.commit()
 
@@ -141,7 +142,7 @@ async def _perform_autocomplete(db: AsyncSession, instance_id: int):
     db.add(completion)
 
     # Update instance status
-    instance.status = "completed"
+    instance.status = InstanceStatus.COMPLETED
     instance.updated_at = now
 
     # For interval schedules, create the next instance

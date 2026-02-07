@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import User, MistingLog, AccessLevel
+from app.models import User, MistingLog, AccessLevel, InstanceStatus
 from app.permissions import check_reptile_access
 from app.schemas import MistingLog as MistingLogSchema, MistingLogCreate, MistingLogUpdate
 from app.schedule_matcher import assign_misting_to_schedule
@@ -148,7 +148,7 @@ async def delete_misting_log(
                 )
                 instance = instance_result.scalar_one_or_none()
                 if instance:
-                    instance.status = "pending"
+                    instance.status = InstanceStatus.PENDING
                     from datetime import datetime, timezone
                     instance.updated_at = datetime.now(timezone.utc)
 

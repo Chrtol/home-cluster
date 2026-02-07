@@ -11,7 +11,7 @@ from sqlalchemy import select, and_, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Schedule, ScheduleInstance, FeedingRotation, Supplement, ScheduleMode
+from app.models import Schedule, ScheduleInstance, FeedingRotation, Supplement, ScheduleMode, InstanceStatus
 from app.database import async_session_maker
 from app.config import settings
 
@@ -234,7 +234,7 @@ async def generate_instances_for_schedule(
         instance = ScheduleInstance(
             schedule_id=schedule.id,
             scheduled_date=check_date,
-            status="pending",
+            status=InstanceStatus.PENDING,
             feeding_sequence_number=feeding_sequence_number,
             supplements=supplements if supplements else None
         )
@@ -309,7 +309,7 @@ async def delete_instances_for_schedule(db: AsyncSession, schedule_id: int) -> i
             and_(
                 ScheduleInstance.schedule_id == schedule_id,
                 ScheduleInstance.scheduled_date >= today,
-                ScheduleInstance.status == "pending"
+                ScheduleInstance.status == InstanceStatus.PENDING
             )
         )
     )
@@ -482,7 +482,7 @@ async def create_interval_schedule_instance(
     instance = ScheduleInstance(
         schedule_id=schedule.id,
         scheduled_date=next_date,
-        status="pending",
+        status=InstanceStatus.PENDING,
         feeding_sequence_number=feeding_sequence_number,
         supplements=supplements if supplements else None
     )
@@ -607,7 +607,7 @@ async def schedule_autocomplete_jobs_for_instances(days_ahead: Optional[int] = N
                 and_(
                     Schedule.enabled == True,
                     Schedule.auto_complete_enabled == True,
-                    ScheduleInstance.status == "pending",
+                    ScheduleInstance.status == InstanceStatus.PENDING,
                     ScheduleInstance.scheduled_date >= today,
                     ScheduleInstance.scheduled_date < end_date
                 )
