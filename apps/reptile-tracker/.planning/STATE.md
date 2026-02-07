@@ -70,16 +70,16 @@ Phase 12: Polish/Mobile   ○ Not started
 
 ## Next Steps
 
-To plan Phase 7 (Foundation):
+To plan Phase 8 (Dashboard):
 
 ```
-/gsd:plan-phase 7
+/gsd:plan-phase 8
 ```
 
 This will:
-1. Research shadcn/ui integration approach
-2. Create detailed PLAN.md for Phase 7
-3. Prepare for execution
+1. Research dashboard redesign approach
+2. Create detailed PLAN.md files for Phase 8
+3. Prepare for dashboard implementation
 
 ## Session Continuity
 
