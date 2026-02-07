@@ -7,6 +7,7 @@ All imports should be done via this package (from app.scheduler import ...).
 Structure:
 - core.py: Global scheduler instance, lifecycle, wrapper functions, utilities
 - jobs.py: Extracted notification job functions (accept scheduler as parameter)
+- auto_complete.py: Extracted auto-complete job functions (accept scheduler as parameter)
 """
 
 # Re-export everything from core.py for backward compatibility
