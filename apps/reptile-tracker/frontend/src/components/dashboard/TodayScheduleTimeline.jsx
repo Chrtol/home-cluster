@@ -333,7 +333,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
               </button>
 
               {expandedGroups.has('completed') && (
-                <div className="px-3 pb-2 space-y-1">
+                <div className="px-2 pb-2 space-y-1">
                   {completedSchedules.map(schedule => {
                     const status = getTaskStatus(schedule);
                     const scheduleType = schedule.schedule_type || schedule.type;
@@ -341,7 +341,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                     return (
                       <div
                         key={schedule.id}
-                        className={`pl-2 py-1.5 border-l-2 ${getStatusColor(status)} relative`}
+                        className={`pl-2 py-1 border-l-2 ${getStatusColor(status)} relative`}
                         onMouseEnter={() => handleMouseEnter(schedule)}
                         onMouseLeave={handleMouseLeave}
                       >
@@ -353,11 +353,16 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                               : formatTime(schedule.scheduled_time)}
                           </div>
                         )}
-                        <div className="flex items-center gap-2">
-                          <ReptileAvatar
-                            reptile={schedule.reptile}
-                            size="sm"
-                          />
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-4 h-4 rounded-xl overflow-hidden bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 flex-shrink-0">
+                            {schedule.reptile?.avatar_photo_url ? (
+                              <img
+                                src={schedule.reptile.avatar_photo_url}
+                                alt={schedule.reptile.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : null}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-xs text-foreground truncate">
                               {schedule.reptile_name} - {scheduleType}
@@ -374,7 +379,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
           )}
 
           {/* Pending tasks by time slot */}
-          <div className="space-y-2 p-3">
+          <div className="space-y-2 p-2">
             {sortedSlots.map(({ slot, schedules: slotSchedules }) => {
               const isCurrentSlot = slot.id === currentSlot.id;
 
@@ -384,12 +389,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                   ref={isCurrentSlot ? currentSlotRef : null}
                   className={`${isCurrentSlot ? 'ring-1 ring-primary/30 rounded-lg p-2 -m-2' : ''}`}
                 >
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
                     {slot.label}
                     {isCurrentSlot && <span className="ml-1 text-primary">(now)</span>}
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {slotSchedules.map(schedule => {
                       const status = getTaskStatus(schedule);
                       const scheduleType = schedule.schedule_type || schedule.type;
@@ -397,7 +402,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                       return (
                         <div
                           key={schedule.id}
-                          className={`pl-2 py-1.5 border-l-2 ${getStatusColor(status)} relative group`}
+                          className={`pl-2 py-1 border-l-2 ${getStatusColor(status)} relative group`}
                           onMouseEnter={() => handleMouseEnter(schedule)}
                           onMouseLeave={handleMouseLeave}
                         >
@@ -409,11 +414,16 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                                 : formatTime(schedule.scheduled_time)}
                             </div>
                           )}
-                          <div className="flex items-center gap-2">
-                            <ReptileAvatar
-                              reptile={schedule.reptile}
-                              size="sm"
-                            />
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-4 h-4 rounded-xl overflow-hidden bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 flex-shrink-0">
+                              {schedule.reptile?.avatar_photo_url ? (
+                                <img
+                                  src={schedule.reptile.avatar_photo_url}
+                                  alt={schedule.reptile.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : null}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-xs text-foreground truncate">
                                 {schedule.reptile_name} - {scheduleType}
