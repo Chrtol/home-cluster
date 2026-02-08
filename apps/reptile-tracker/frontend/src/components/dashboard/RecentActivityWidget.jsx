@@ -41,10 +41,21 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       setLoading(true);
       setError(null);
 
-      const [feedingsRes, weighingsRes] = await Promise.all([
+      const [feedingsRes, weighingsRes, reptilesRes] = await Promise.all([
         axios.get('/api/feedings', { params: { limit: itemCount * 2 } }),
-        axios.get('/api/weight/dashboard')
+        axios.get('/api/weight/dashboard'),
+        axios.get('/api/reptiles')
       ]);
+
+      // Create reptile lookup map for avatar URLs
+      const reptilesMap = {};
+      (reptilesRes.data || []).forEach(r => {
+        reptilesMap[r.id] = {
+          id: r.id,
+          name: r.name,
+          avatar_photo_url: r.avatar_photo_url
+        };
+      });
 
       const feedings = (feedingsRes.data || []).map(f => {
         // Build summary from foods array
@@ -62,12 +73,13 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
           icon: Utensils,
           iconColor: 'text-primary',
           reptile_id: f.reptile_id,
-          reptile_name: f.reptile?.name || 'Unknown',
-          reptile: f.reptile ? {
+          reptile_name: f.reptile?.name || reptilesMap[f.reptile_id]?.name || 'Unknown',
+          // Use reptile lookup to ensure avatar is always available
+          reptile: reptilesMap[f.reptile_id] || (f.reptile ? {
             id: f.reptile.id,
             name: f.reptile.name,
             avatar_photo_url: f.reptile.avatar_photo_url
-          } : null,
+          } : null),
           timestamp: f.fed_at,
           summary: summary + supplementText,
           prominentValue: totalItems > 0 ? `×${totalItems}` : null,
@@ -85,8 +97,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         icon: Scale,
         iconColor: 'text-amber-500',
         reptile_id: w.reptile_id,
-        reptile_name: w.reptile_name || 'Unknown',
-        reptile: {
+        reptile_name: w.reptile_name || reptilesMap[w.reptile_id]?.name || 'Unknown',
+        // Use reptile lookup to ensure avatar is always available
+        reptile: reptilesMap[w.reptile_id] || {
           id: w.reptile_id,
           name: w.reptile_name,
           avatar_photo_url: w.avatar_photo_url
