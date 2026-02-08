@@ -92,24 +92,28 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at))
         .slice(0, itemCount * 2);
 
-      const weighings = allWeighings.map(w => ({
-        type: 'weighing',
-        icon: Scale,
-        iconColor: 'text-amber-500',
-        reptile_id: w.reptile_id,
-        reptile_name: w.reptile_name || reptilesMap[w.reptile_id]?.name || 'Unknown',
-        // Use reptile lookup to ensure avatar is always available
-        reptile: reptilesMap[w.reptile_id] || {
-          id: w.reptile_id,
-          name: w.reptile_name,
-          avatar_photo_url: w.avatar_photo_url
-        },
-        timestamp: w.measured_at,
-        summary: 'Weight recorded',
-        prominentValue: `${w.weight_grams}g`,
-        detailLink: `/health-log/weight/${w.id}`,
-        notes: w.notes
-      }));
+      const weighings = allWeighings.map(w => {
+        // Always prefer reptile lookup map for consistent avatar data
+        const reptileFromMap = reptilesMap[w.reptile_id];
+        return {
+          type: 'weighing',
+          icon: Scale,
+          iconColor: 'text-amber-500',
+          reptile_id: w.reptile_id,
+          reptile_name: reptileFromMap?.name || w.reptile_name || 'Unknown',
+          // Always use reptile map lookup for avatar consistency
+          reptile: reptileFromMap || {
+            id: w.reptile_id,
+            name: w.reptile_name,
+            avatar_photo_url: null
+          },
+          timestamp: w.measured_at,
+          summary: 'Weight recorded',
+          prominentValue: `${w.weight_grams}g`,
+          detailLink: `/health-log/weight/${w.id}`,
+          notes: w.notes
+        };
+      });
 
       const combined = [...feedings, ...weighings];
       combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

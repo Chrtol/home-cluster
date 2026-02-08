@@ -95,8 +95,11 @@ export default function Layout({ user, onLogout }) {
     )
   }
 
-  const TrackButton = ({ onClose, collapsed }) => {
-    const [isOpen, setIsOpen] = useState(false)
+  const TrackButton = ({ onClose, collapsed, isOpen: externalIsOpen, setIsOpen: externalSetIsOpen }) => {
+    // Use external state if provided (for keyboard shortcut connection), otherwise use internal
+    const [internalIsOpen, setInternalIsOpen] = useState(false)
+    const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+    const setIsOpen = externalSetIsOpen || setInternalIsOpen
 
     const handleOptionClick = (path) => {
       navigate(path)
@@ -298,7 +301,7 @@ export default function Layout({ user, onLogout }) {
           <nav className={`flex-1 ${sidebarCollapsed ? 'px-2' : 'px-2'} py-2 space-y-0.5 overflow-y-auto`}>
             {/* Prominent Track Button */}
             <div className="mb-2">
-              <TrackButton collapsed={sidebarCollapsed} />
+              <TrackButton collapsed={sidebarCollapsed} isOpen={trackMenuOpen} setIsOpen={setTrackMenuOpen} />
             </div>
 
             {navItems.map(item => (
@@ -400,7 +403,7 @@ export default function Layout({ user, onLogout }) {
               <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                 {/* Prominent Track Button */}
                 <div className="mb-4">
-                  <TrackButton onClose={() => setSidebarOpen(false)} />
+                  <TrackButton onClose={() => setSidebarOpen(false)} isOpen={trackMenuOpen} setIsOpen={setTrackMenuOpen} />
                 </div>
 
                 {navItems.map(item => (

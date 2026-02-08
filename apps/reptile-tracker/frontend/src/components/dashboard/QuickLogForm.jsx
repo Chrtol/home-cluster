@@ -30,6 +30,18 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   // Time selection state
   const [fedAt, setFedAt] = useState(new Date());
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Fetch available foods for feeding tasks
   useEffect(() => {
     const fetchFoods = async () => {
@@ -40,6 +52,14 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
         // Get all foods
         const foodsRes = await axios.get('/api/foods');
         let foods = foodsRes.data;
+
+        // Filter by food_category if specified in schedule
+        const foodCategory = task?.food_category;
+        if (foodCategory) {
+          foods = foods.filter(f =>
+            f.category?.toLowerCase() === foodCategory.toLowerCase()
+          );
+        }
 
         // Get reptile favorites if available
         const reptileId = task.reptile_id || task.reptile?.id;
@@ -58,7 +78,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
           }
         }
 
-        // Sort: favorites first with heart icon
+        // Sort: favorites first with heart icon, then alphabetically
         foods.sort((a, b) => {
           if (a.isFavorite && !b.isFavorite) return -1;
           if (!a.isFavorite && b.isFavorite) return 1;

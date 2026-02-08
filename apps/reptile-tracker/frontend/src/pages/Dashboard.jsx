@@ -2060,7 +2060,7 @@ export default function Dashboard() {
       )}
 
       {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 auto-rows-min">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 auto-rows-min items-start">
         {dashboardCards
           .filter(card => card.visible)
           .map(card => {

@@ -87,6 +87,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
       const mapped = instances.map(instance => ({
         id: instance.id,
         schedule_id: instance.schedule_id,
+        instance_id: instance.id,
         scheduled_date: instance.scheduled_date,
         // Use earliest_time from schedule for time display, fallback to scheduled_date
         scheduled_time: instance.schedule?.earliest_time || instance.scheduled_date,
@@ -95,6 +96,10 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
         latest_time: instance.schedule?.latest_time,
         schedule_type: instance.schedule?.schedule_type,
         type: instance.schedule?.schedule_type,
+        // Include food_category for QuickLogForm filtering
+        food_category: instance.schedule?.food_category,
+        // Include reptile_id for QuickLogForm API calls
+        reptile_id: instance.schedule?.reptile_id,
         // Include reptile object for ReptileAvatar
         reptile: instance.schedule?.reptile ? {
           id: instance.schedule.reptile.id,

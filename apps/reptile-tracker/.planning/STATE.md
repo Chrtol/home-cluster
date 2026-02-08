@@ -18,10 +18,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | COMPLETE (14/14 plans) |
+| Phase Status | COMPLETE (16/16 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 8 - Gap Closure Round 3
+Progress: Phase 8 - Complete
 ```
 Phase 7 (Foundation):
 07-01: Complete (shadcn/ui foundation)
@@ -43,12 +43,14 @@ Phase 8 (Dashboard):
 08-12: Complete (gap closure R3 - bug fixes: time ranges, avatars, locale, supplements)
 08-13: Complete (gap closure R3 - visual: grid gap, timeline avatars, border color)
 08-14: Complete (gap closure R3 - functional: quantity +/-, task icons, customize)
+08-15: Complete (gap closure R4 - QuickLog consistency, keyboard shortcuts)
+08-16: Complete (gap closure R4 - grid layout, activity avatars)
 ```
 
 Progress bar:
 ```
 Phase 7:  [========] 3/3
-Phase 8:  [===========] 14/14
+Phase 8:  [============] 16/16
 Phase 9:  [           ] 0/?
 Phase 10: [           ] 0/?
 Phase 11: [           ] 0/?
@@ -66,7 +68,7 @@ Phase 12: [           ] 0/?
 **Phases:**
 ```
 Phase 7:  Foundation      Complete (3/3 plans)
-Phase 8:  Dashboard       Complete (14/14 plans)
+Phase 8:  Dashboard       Complete (16/16 plans)
 Phase 9:  Reptile Pages   Not started
 Phase 10: Calendar/Stats  Not started
 Phase 11: Forms/Tables    Not started
@@ -136,20 +138,20 @@ Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T22:25:29Z
-**Stopped at:** Phase 8 plan 14 complete - functional enhancements (quantity +/-, task icons, edit mode hide/reorder)
-**Resume file:** `.planning/phases/08-dashboard/08-14-SUMMARY.md`
+**Last session:** 2026-02-08
+**Stopped at:** Phase 8 complete - all 16 plans executed including gap closure round 4
+**Resume file:** `.planning/phases/08-dashboard/08-16-SUMMARY.md`
 
 **Recent activity:**
+- 08-16: Layout fixes (complete) - Grid items-start alignment, activity avatar consistency
+- 08-15: QuickLog consistency (complete) - Food category filter, favorites, Escape key, Cmd+K shortcut
 - 08-14: Functional enhancements (complete) - Quantity +/- buttons, task type icons, widget hide/reorder in edit mode
 - 08-13: Visual polish (complete) - Grid gap fix, timeline avatars, border color consistency
 - 08-12: Data display bug fixes (complete) - Time ranges, supplement tooltips, avatar consistency, locale formatting
 - 08-11: QuickLog enhancements (complete) - Food selector with favorites, time picker, route fixes
 - 08-10: Persistence and navigation (complete) - Profile-aware widget persistence, clickable avatars
-- 08-09: Visual fixes (complete) - Rounded-xl avatars, full-width header, compact timeline, notification dropdown
-- 08-08: Gap closure - visual polish (complete) - Taller sparklines (32px), alternating row colors, auto-rows-min grid
 
-**Phase 8 status:** COMPLETE - All 14 plans executed, dashboard fully functional with all enhancements
+**Phase 8 status:** COMPLETE - All 16 plans executed, dashboard fully functional with all enhancements
 
 ---
-*State updated: 2026-02-08T22:25:29Z - Phase 8 complete*
+*State updated: 2026-02-08 - Phase 8 complete, ready for Phase 9*
