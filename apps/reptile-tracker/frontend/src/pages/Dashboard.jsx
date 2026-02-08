@@ -700,6 +700,28 @@ export default function Dashboard() {
     return { color: 'green', emoji: '🟢', tooltip: 'No tasks due today' };
   };
 
+  // Calculate today's schedule stats for Header (MUST be before early return to respect Rules of Hooks)
+  const todayScheduleStats = useMemo(() => {
+    const today = new Date();
+    const todayEvents = weeklyEvents.filter(event =>
+      event.date.toDateString() === today.toDateString() &&
+      calendarReptileFilter.has(event.reptile_id)
+    );
+
+    const due = todayEvents.filter(e => e.status === 'pending').length;
+    const overdue = todayEvents.filter(e => e.status === 'missed').length;
+    const completed = todayEvents.filter(e => e.status === 'completed').length;
+
+    return { due, overdue, completed };
+  }, [weeklyEvents, calendarReptileFilter]);
+
+  // Compute today stats for Header - maps to Header's expected format
+  const todayStats = useMemo(() => ({
+    done: todayScheduleStats.completed,
+    due: todayScheduleStats.due,
+    overdue: todayScheduleStats.overdue
+  }), [todayScheduleStats]);
+
   if (loading) {
     return <div className="text-center text-muted-foreground">Loading dashboard...</div>;
   }
@@ -992,28 +1014,6 @@ export default function Dashboard() {
         return 'col-span-1';
     }
   };
-
-  // Calculate today's schedule stats
-  const todayScheduleStats = (() => {
-    const today = new Date();
-    const todayEvents = weeklyEvents.filter(event =>
-      event.date.toDateString() === today.toDateString() &&
-      calendarReptileFilter.has(event.reptile_id)
-    );
-
-    const due = todayEvents.filter(e => e.status === 'pending').length;
-    const overdue = todayEvents.filter(e => e.status === 'missed').length;
-    const completed = todayEvents.filter(e => e.status === 'completed').length;
-
-    return { due, overdue, completed };
-  })();
-
-  // Compute today stats for Header - maps to Header's expected format
-  const todayStats = useMemo(() => ({
-    done: todayScheduleStats.completed,
-    due: todayScheduleStats.due,
-    overdue: todayScheduleStats.overdue
-  }), [todayScheduleStats.completed, todayScheduleStats.due, todayScheduleStats.overdue]);
 
   // Helper to check if a card is XS sized
   const isCardXS = (cardId) => {
