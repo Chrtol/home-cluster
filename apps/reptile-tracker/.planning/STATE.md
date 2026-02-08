@@ -101,6 +101,11 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-08 | auto-rows-min grid pattern | Prevents empty grid gaps when reptile count doesn't fill rows |
 | 2026-02-08 | Profile-aware widget persistence | Widget visibility changes save to active profile (desktop vs mobile) |
 | 2026-02-08 | Clickable reptile avatars | Both avatar and name navigate to reptile detail page |
+| 2026-02-08 | Avatar shape rounded-xl | Changed from rounded-full to match mockup design (squares with rounded corners) |
+| 2026-02-08 | Negative margin header breakout | Dashboard breaks out of Layout padding for full-width Header |
+| 2026-02-08 | Compact timeline 16px avatars | Timeline uses w-4 h-4 inline avatars for data density |
+| 2026-02-08 | Notification dropdown right-anchored | Dropdown positioned from right edge to prevent viewport overflow |
+| 2026-02-08 | Inline settings cog | Settings icon inline with username, removed separate link row |
 
 ## Reference Documents
 
@@ -120,13 +125,13 @@ Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T21:14:20Z
-**Stopped at:** Phase 8 complete
-**Resume file:** `.planning/phases/08-dashboard/08-10-SUMMARY.md`
+**Last session:** 2026-02-08T22:17:00Z
+**Stopped at:** Phase 8 complete (Plan 08-09 visual polish)
+**Resume file:** `.planning/phases/08-dashboard/08-09-SUMMARY.md`
 
 **Recent activity:**
+- 08-09: Gap closure - visual polish & mockup parity (complete) - Avatar shapes (rounded-xl), full-width Header, compact timeline, inline settings cog, notification dropdown positioning
 - 08-10: Gap closure - widget persistence & clickable avatars (complete) - Profile-aware customization, clickable reptile avatars
-- 08-09: Gap closure - profile switching & widget gallery (complete) - Profile management UI, widget gallery improvements
 - 08-08: Gap closure - visual polish (complete) - Taller sparklines (32px), alternating row colors, auto-rows-min grid
 - 08-07: Gap closure - Header & edit mode integration (complete) - Header now renders on Dashboard with greeting/stats, EditModeControls accessible via Customize button, WidgetGallery opens from floating + button
 - 08-06: Gap closure - timeline & keyboard shortcuts (complete) - Fixed time slot grouping for time-only strings, Ctrl+K shortcut on Windows
@@ -140,4 +145,4 @@ Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 **Phase 8 status:** COMPLETE - All 10 plans executed successfully
 
 ---
-*State updated: 2026-02-08T21:14:20Z - Phase 8 complete*
+*State updated: 2026-02-08T22:17:00Z - Phase 8 Plan 09 (visual polish & mockup parity) complete*
