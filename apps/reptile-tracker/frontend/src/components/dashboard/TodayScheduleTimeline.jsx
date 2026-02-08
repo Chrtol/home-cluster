@@ -365,15 +365,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                           </div>
                         )}
                         <div className="flex items-center gap-1.5">
-                          <div className="w-4 h-4 rounded-xl overflow-hidden bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 flex-shrink-0">
-                            {schedule.reptile?.avatar_photo_url ? (
-                              <img
-                                src={schedule.reptile.avatar_photo_url}
-                                alt={schedule.reptile.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : null}
-                          </div>
+                          <ReptileAvatar
+                            reptile={schedule.reptile}
+                            size="sm"
+                            className="w-4 h-4"
+                            showFallbackIcon={false}
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="text-xs text-foreground truncate">
                               {schedule.reptile_name} - {scheduleType}
@@ -434,15 +431,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                             </div>
                           )}
                           <div className="flex items-center gap-1.5">
-                            <div className="w-4 h-4 rounded-xl overflow-hidden bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 flex-shrink-0">
-                              {schedule.reptile?.avatar_photo_url ? (
-                                <img
-                                  src={schedule.reptile.avatar_photo_url}
-                                  alt={schedule.reptile.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : null}
-                            </div>
+                            <ReptileAvatar
+                              reptile={schedule.reptile}
+                              size="sm"
+                              className="w-4 h-4"
+                              showFallbackIcon={false}
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="text-xs text-foreground truncate">
                                 {schedule.reptile_name} - {scheduleType}
