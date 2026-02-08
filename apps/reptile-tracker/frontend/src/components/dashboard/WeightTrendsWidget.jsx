@@ -184,8 +184,8 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
                 <span className="text-xs font-medium text-foreground">{reptile.currentWeight}g</span>
               </div>
               {/* Sparkline */}
-              <div className="h-4 w-full">
-                <ResponsiveContainer width="100%" height={16}>
+              <div className="h-8 w-full">
+                <ResponsiveContainer width="100%" height={32}>
                   <LineChart data={reptile.measurements}>
                     <Line
                       type="monotone"

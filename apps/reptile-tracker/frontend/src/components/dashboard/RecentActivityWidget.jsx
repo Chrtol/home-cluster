@@ -163,7 +163,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
             <Link
               key={`${activity.type}-${activity.timestamp}-${index}`}
               to={activity.detailLink}
-              className="flex items-center gap-2 p-2 rounded-lg border border-transparent hover:bg-muted/50 hover:border-border/50 transition-colors group"
+              className={`flex items-center gap-2 p-2 rounded-lg border border-transparent hover:bg-muted/50 hover:border-border/50 transition-colors group ${index % 2 === 0 ? 'bg-muted/30' : ''}`}
             >
               <ReptileAvatar
                 reptile={activity.reptile}
