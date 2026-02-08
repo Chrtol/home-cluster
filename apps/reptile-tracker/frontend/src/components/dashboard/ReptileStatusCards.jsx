@@ -104,22 +104,35 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
         // Find last feeding
         const lastFeeding = bulkData?.last_activity?.[reptile.id]?.last_feeding?.[0]?.fed_at || null;
 
-        // Find last weight
+        // Find last weight - API returns weight_grams not weight
         const weights = bulkData?.weight_data?.[reptile.id] || [];
         let lastWeight = null;
         if (weights.length > 0) {
           const latest = weights[0];
-          let change = null;
-          if (weights.length > 1) {
-            const previous = weights[1];
-            const diff = latest.weight - previous.weight;
-            const percent = (diff / previous.weight) * 100;
-            change = percent.toFixed(1);
+          // API returns weight_grams as the weight value
+          const latestWeight = latest.weight_grams ?? latest.weight;
+
+          // Only calculate if we have a valid weight
+          if (latestWeight != null && typeof latestWeight === 'number') {
+            let change = null;
+
+            if (weights.length > 1) {
+              const previous = weights[1];
+              const previousWeight = previous.weight_grams ?? previous.weight;
+
+              // Only calculate change if both values are valid numbers and previous is not zero
+              if (previousWeight != null && typeof previousWeight === 'number' && previousWeight !== 0) {
+                const diff = latestWeight - previousWeight;
+                const percent = (diff / previousWeight) * 100;
+                change = percent.toFixed(1);
+              }
+            }
+
+            lastWeight = {
+              weight: latestWeight,
+              change: change
+            };
           }
-          lastWeight = {
-            weight: latest.weight,
-            change: change
-          };
         }
 
         return {

@@ -105,8 +105,9 @@ const ReptileStatusCard = ({
 
   // Weight trend arrow
   const getWeightTrendIcon = () => {
-    if (!lastWeight || !lastWeight.change) return null;
+    if (!lastWeight || lastWeight.change == null) return null;
     const change = parseFloat(lastWeight.change);
+    if (isNaN(change)) return null;
     if (change > 0) return <TrendingUp className="w-3 h-3 text-primary" />;
     if (change < 0) return <TrendingDown className="w-3 h-3 text-destructive" />;
     return <Minus className="w-3 h-3 text-muted-foreground" />;
@@ -245,12 +246,12 @@ const ReptileStatusCard = ({
                   <span className={lastFed ? 'text-primary' : 'text-muted-foreground'}>🍽️</span>
                   <span className="text-muted-foreground">{getLastFedDisplay()}</span>
                 </div>
-                {lastWeight && (
+                {lastWeight && lastWeight.weight != null && (
                   <div className="flex items-center gap-1">
-                    <span className="text-amber-500">⚖️</span>
+                    <span className="text-amber-500">{'\u2696\uFE0F'}</span>
                     <span className="text-muted-foreground">{lastWeight.weight}g</span>
                     {getWeightTrendIcon()}
-                    {lastWeight.change && (
+                    {lastWeight.change != null && !isNaN(parseFloat(lastWeight.change)) && (
                       <span className={parseFloat(lastWeight.change) > 0 ? 'text-primary' : parseFloat(lastWeight.change) < 0 ? 'text-destructive' : 'text-muted-foreground'}>
                         {parseFloat(lastWeight.change) > 0 ? '+' : ''}{lastWeight.change}%
                       </span>
