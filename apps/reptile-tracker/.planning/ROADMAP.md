@@ -144,6 +144,11 @@ Plans:
 - [ ] Loading states consistency
 - [ ] Error states consistency
 
+**Deferred from Phase 8 (Dashboard gaps):**
+- [ ] Header component integration into Dashboard layout
+- [ ] Edit mode UI wiring (connect EditModeControls/WidgetGallery to Dashboard state)
+- [ ] Per-widget settings popover in edit mode
+
 **Success:** Desktop and mobile feel equally polished, consistent visual language
 
 ---
