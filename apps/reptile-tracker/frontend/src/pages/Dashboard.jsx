@@ -988,9 +988,27 @@ export default function Dashboard() {
     return card?.size === 'xs';
   };
 
+  // Handle quick log task clicks (form rendering in 08-03)
+  const handleQuickLog = (task) => {
+    setQuickLogTask(task);
+    // Plan 08-03 will render QuickLogForm based on quickLogTask state
+    console.log('Quick log task clicked:', task);
+  };
+
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
+      case 'reptile_status_cards':
+        {
+          const card = dashboardCards.find(c => c.id === 'reptile_status_cards');
+          return (
+            <ReptileStatusCards
+              config={card?.config || { showAge: true, showWeight: true }}
+              size={card?.size || 'large'}
+              onQuickLog={handleQuickLog}
+            />
+          );
+        }
       case 'weekly_summary':
         return (
           <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
