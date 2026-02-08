@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings, updateProfileCards, resetProfileToDefault } from '../utils/displaySettings';
@@ -36,6 +36,8 @@ export default function Dashboard() {
   const [user, setUser] = useState(null); // User for Header greeting
   const [isEditMode, setIsEditMode] = useState(false); // Edit mode for dashboard customization
   const [showWidgetGallery, setShowWidgetGallery] = useState(false); // Widget gallery modal
+  const [draggedWidget, setDraggedWidget] = useState(null); // Widget being dragged
+  const [dragOverWidget, setDragOverWidget] = useState(null); // Widget being dragged over
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -1084,6 +1086,61 @@ export default function Dashboard() {
     setDashboardCards(updated);
   };
 
+  // Drag and drop handlers for widget reordering
+  const handleDragStart = (e, widgetId) => {
+    setDraggedWidget(widgetId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, widgetId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverWidget(widgetId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverWidget(null);
+  };
+
+  const handleDrop = (e, targetWidgetId) => {
+    e.preventDefault();
+
+    if (!draggedWidget || draggedWidget === targetWidgetId) {
+      setDraggedWidget(null);
+      setDragOverWidget(null);
+      return;
+    }
+
+    // Find indices
+    const draggedIndex = dashboardCards.findIndex(c => c.id === draggedWidget);
+    const targetIndex = dashboardCards.findIndex(c => c.id === targetWidgetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedWidget(null);
+      setDragOverWidget(null);
+      return;
+    }
+
+    // Reorder array
+    const updated = [...dashboardCards];
+    const [removed] = updated.splice(draggedIndex, 1);
+    updated.splice(targetIndex, 0, removed);
+
+    // Save to active profile
+    const activeProfileId = getActiveProfileId();
+    updateProfileCards(activeProfileId, updated);
+
+    // Update local state
+    setDashboardCards(updated);
+    setDraggedWidget(null);
+    setDragOverWidget(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedWidget(null);
+    setDragOverWidget(null);
+  };
+
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
@@ -2011,17 +2068,35 @@ export default function Dashboard() {
             if (!content) return null;
 
             return (
-              <div key={card.id} className={`${getCardSizeClass(card.id)} relative group`}>
-                {/* Edit mode hide button */}
+              <div
+                key={card.id}
+                className={`${getCardSizeClass(card.id)} relative group ${
+                  dragOverWidget === card.id ? 'ring-2 ring-primary' : ''
+                } ${draggedWidget === card.id ? 'opacity-50' : ''}`}
+                draggable={isEditMode}
+                onDragStart={(e) => handleDragStart(e, card.id)}
+                onDragOver={(e) => handleDragOver(e, card.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, card.id)}
+                onDragEnd={handleDragEnd}
+              >
+                {/* Edit mode controls */}
                 {isEditMode && (
-                  <button
-                    onClick={() => handleHideWidget(card.id)}
-                    className="absolute top-2 right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-destructive/90"
-                    title="Hide widget"
-                    aria-label={`Hide ${card.id} widget`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <>
+                    {/* Drag handle */}
+                    <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+                    {/* Hide button */}
+                    <button
+                      onClick={() => handleHideWidget(card.id)}
+                      className="absolute top-2 right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-destructive/90"
+                      title="Hide widget"
+                      aria-label={`Hide ${card.id} widget`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </>
                 )}
                 {content}
               </div>
