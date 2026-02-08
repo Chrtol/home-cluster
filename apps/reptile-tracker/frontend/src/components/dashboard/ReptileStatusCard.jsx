@@ -250,6 +250,11 @@ const ReptileStatusCard = ({
                     <span className="text-amber-500">⚖️</span>
                     <span className="text-muted-foreground">{lastWeight.weight}g</span>
                     {getWeightTrendIcon()}
+                    {lastWeight.change && (
+                      <span className={parseFloat(lastWeight.change) > 0 ? 'text-primary' : parseFloat(lastWeight.change) < 0 ? 'text-destructive' : 'text-muted-foreground'}>
+                        {parseFloat(lastWeight.change) > 0 ? '+' : ''}{lastWeight.change}%
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

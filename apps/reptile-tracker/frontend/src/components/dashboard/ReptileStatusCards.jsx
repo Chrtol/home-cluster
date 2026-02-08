@@ -83,12 +83,16 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
           .filter(i => i.schedule?.reptile_id === reptile.id)
           .map(i => ({
             id: i.id,
+            instance_id: i.id,
             schedule_id: i.schedule_id,
             schedule_type: i.schedule?.schedule_type,
-            scheduled_time: i.schedule?.scheduled_time,
+            scheduled_time: i.schedule?.earliest_time,
             status: i.status,
             completed_at: i.status === 'completed' ? i.updated_at : null,
-            reptile_id: reptile.id
+            reptile_id: reptile.id,
+            reptile_name: reptile.name,
+            // Include reptile for QuickLogForm
+            reptile: reptile
           }));
 
         // Find last feeding

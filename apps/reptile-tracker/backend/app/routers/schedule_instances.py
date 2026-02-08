@@ -10,6 +10,7 @@ from app import models, schemas
 from app.models import InstanceStatus
 from app.database import get_db
 from app.routers.auth import get_current_user
+from app.routers.reptiles import populate_avatar_url
 from app.permissions import check_reptile_access
 from app.config import settings
 from app.instance_generator import (
@@ -71,6 +72,8 @@ async def get_calendar_instances(
 
         try:
             await check_reptile_access(db, current_user, instance.schedule.reptile.id)
+            # Populate avatar URL for the reptile
+            populate_avatar_url(instance.schedule.reptile)
             filtered_instances.append(instance)
         except HTTPException:
             # User doesn't have access, skip this instance

@@ -27,25 +27,26 @@ async def get_dashboard_weights(
     if not reptile_ids:
         return []
 
-    # Get recent weight logs with reptile names
+    # Get recent weight logs with reptile names and avatar info
     result = await db.execute(
-        select(WeightLog, Reptile.name)
+        select(WeightLog, Reptile.name, Reptile.id, Reptile.avatar_photo_id)
         .join(Reptile, WeightLog.reptile_id == Reptile.id)
         .where(WeightLog.reptile_id.in_(reptile_ids))
         .order_by(WeightLog.measured_at.desc())
         .limit(1000)  # Increased limit to show more historical data for chart interpolation
     )
 
-    # Transform results to include reptile name
+    # Transform results to include reptile name and avatar
     logs = []
-    for weight_log, reptile_name in result.all():
+    for weight_log, reptile_name, reptile_id, avatar_photo_id in result.all():
         log_dict = {
             "id": weight_log.id,
             "reptile_id": weight_log.reptile_id,
             "weight_grams": weight_log.weight_grams,
             "measured_at": weight_log.measured_at,
             "notes": weight_log.notes,
-            "reptile_name": reptile_name
+            "reptile_name": reptile_name,
+            "avatar_photo_url": f"/api/photos/reptiles/{reptile_id}/avatar" if avatar_photo_id else None
         }
         logs.append(log_dict)
 

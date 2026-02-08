@@ -88,7 +88,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
         id: instance.id,
         schedule_id: instance.schedule_id,
         scheduled_date: instance.scheduled_date,
-        scheduled_time: instance.schedule?.scheduled_time || instance.scheduled_date,
+        // Use earliest_time from schedule for time display, fallback to scheduled_date
+        scheduled_time: instance.schedule?.earliest_time || instance.scheduled_date,
         schedule_type: instance.schedule?.schedule_type,
         type: instance.schedule?.schedule_type,
         // Include reptile object for ReptileAvatar

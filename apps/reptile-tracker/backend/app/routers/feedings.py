@@ -166,6 +166,7 @@ async def list_feedings(
                 "date_of_birth": feeding.reptile.date_of_birth,
                 "notes": feeding.reptile.notes,
                 "photo_url": feeding.reptile.photo_url,
+                "avatar_photo_url": f"/api/photos/reptiles/{feeding.reptile.id}/avatar" if feeding.reptile.avatar_photo_id else None,
                 "feeding_schedule_enabled": feeding.reptile.feeding_schedule_enabled,
                 "feeding_frequency_days": feeding.reptile.feeding_frequency_days,
                 "reminder_enabled": feeding.reptile.reminder_enabled,

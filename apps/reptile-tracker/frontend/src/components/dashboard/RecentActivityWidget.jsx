@@ -46,17 +46,35 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         axios.get('/api/weight/dashboard')
       ]);
 
-      const feedings = (feedingsRes.data || []).map(f => ({
-        type: 'feeding',
-        icon: Utensils,
-        reptile_id: f.reptile_id,
-        reptile_name: f.reptile_name,
-        reptile: { id: f.reptile_id, name: f.reptile_name, avatar_photo_url: f.avatar_photo_url },
-        timestamp: f.fed_at,
-        description: `${f.food_item || 'Food'}${f.supplements ? ` + ${f.supplements}` : ''}`,
-        quantity: f.quantity ? `×${f.quantity}` : null,
-        details: f.notes
-      }));
+      const feedings = (feedingsRes.data || []).map(f => {
+        // Build summary from foods array
+        const foodItems = f.foods || [];
+        const totalItems = foodItems.reduce((sum, food) => sum + (food.quantity || 1), 0);
+        const foodNames = foodItems.map(food => food.name).filter(Boolean).join(', ');
+        const supplementNames = f.supplements && f.supplements.length > 0
+          ? f.supplements.map(s => s.name).join(', ')
+          : '';
+        const summary = foodNames || 'Food items';
+        const supplementText = supplementNames ? ` + ${supplementNames}` : '';
+
+        return {
+          type: 'feeding',
+          icon: Utensils,
+          iconColor: 'text-primary',
+          reptile_id: f.reptile_id,
+          reptile_name: f.reptile?.name || 'Unknown',
+          reptile: f.reptile ? {
+            id: f.reptile.id,
+            name: f.reptile.name,
+            avatar_photo_url: f.reptile.avatar_photo_url
+          } : null,
+          timestamp: f.fed_at,
+          summary: summary + supplementText,
+          prominentValue: totalItems > 0 ? `×${totalItems}` : null,
+          detailLink: `/feed/${f.id}`,
+          notes: f.notes
+        };
+      });
 
       const allWeighings = (weighingsRes.data || [])
         .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at))
@@ -65,13 +83,19 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       const weighings = allWeighings.map(w => ({
         type: 'weighing',
         icon: Scale,
+        iconColor: 'text-amber-500',
         reptile_id: w.reptile_id,
-        reptile_name: w.reptile_name,
-        reptile: { id: w.reptile_id, name: w.reptile_name, avatar_photo_url: w.avatar_photo_url },
+        reptile_name: w.reptile_name || 'Unknown',
+        reptile: {
+          id: w.reptile_id,
+          name: w.reptile_name,
+          avatar_photo_url: w.avatar_photo_url
+        },
         timestamp: w.measured_at,
-        description: 'Weight recorded',
-        quantity: `${w.weight_grams}g`,
-        details: w.notes
+        summary: 'Weight recorded',
+        prominentValue: `${w.weight_grams}g`,
+        detailLink: `/health-log/weight/${w.id}`,
+        notes: w.notes
       }));
 
       const combined = [...feedings, ...weighings];
@@ -112,7 +136,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
         </div>
-        <div className="text-center text-muted-foreground text-sm">
+        <div className="text-center text-muted-foreground text-sm py-4">
           No recent activity
         </div>
       </div>
@@ -125,39 +149,52 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
         <Link
           to="/activity"
-          className="text-xs text-primary hover:text-primary/80"
+          className="text-xs text-primary hover:text-primary/80 transition-colors"
         >
           View all
         </Link>
       </div>
 
-      <div className="space-y-2">
-        {activities.map((activity, index) => (
-          <div
-            key={`${activity.type}-${activity.timestamp}-${index}`}
-            className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-muted/50"
-          >
-            <ReptileAvatar
-              reptile={activity.reptile}
-              size="sm"
-            />
+      <div className="space-y-1.5">
+        {activities.map((activity, index) => {
+          const Icon = activity.icon;
 
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-foreground truncate">
-                {activity.description}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                {activity.reptile_name} · {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-              </div>
-            </div>
+          return (
+            <Link
+              key={`${activity.type}-${activity.timestamp}-${index}`}
+              to={activity.detailLink}
+              className="flex items-center gap-2 p-2 rounded-lg border border-transparent hover:bg-muted/50 hover:border-border/50 transition-colors group"
+            >
+              <ReptileAvatar
+                reptile={activity.reptile}
+                size="sm"
+              />
 
-            {activity.quantity && (
-              <span className="text-xs text-muted-foreground flex-shrink-0">
-                {activity.quantity}
-              </span>
-            )}
-          </div>
-        ))}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-1.5 mb-0.5">
+                  <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">
+                    {activity.reptile_name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Icon size={12} className={`flex-shrink-0 ${activity.iconColor}`} />
+                  <span className="text-xs text-muted-foreground truncate">
+                    {activity.summary}
+                  </span>
+                </div>
+              </div>
+
+              {activity.prominentValue && (
+                <span className="flex-shrink-0 text-sm font-semibold text-primary tabular-nums">
+                  {activity.prominentValue}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
