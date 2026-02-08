@@ -51,10 +51,11 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
       const startDate = format(weekStart, 'yyyy-MM-dd');
       const endDate = format(weekEnd, 'yyyy-MM-dd');
 
-      // Use the weekly-summary API endpoint and schedule-instances for tasks
+      // Use the weekly-summary API endpoint and schedule-instances/calendar for tasks
+      // calendar endpoint returns full schedule details including schedule_type
       const [summaryRes, instancesRes] = await Promise.all([
         axios.get('/api/stats/weekly-summary'),
-        axios.get('/api/schedule-instances', {
+        axios.get('/api/schedule-instances/calendar', {
           params: { start_date: startDate, end_date: endDate }
         })
       ]);
@@ -65,9 +66,9 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
       // Use weekly summary for feedings count
       const feedingCount = summary.total_feedings || 0;
 
-      // Count mistings from instances (task_type = 'misting' and completed)
+      // Count mistings from instances (schedule.schedule_type = 'misting' and completed)
       const mistingCount = instances.filter(i =>
-        i.task_type === 'misting' && i.status === 'completed'
+        i.schedule?.schedule_type === 'misting' && i.status === 'completed'
       ).length;
 
       // Count scheduled and overdue from instances

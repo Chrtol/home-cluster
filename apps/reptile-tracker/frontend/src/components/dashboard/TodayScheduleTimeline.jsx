@@ -74,15 +74,34 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
       const today = toLocalISODate(new Date());
 
-      const response = await axios.get('/api/schedules', {
+      // Use schedule-instances/calendar endpoint which returns instances with schedule details
+      const response = await axios.get('/api/schedule-instances/calendar', {
         params: {
           start_date: today,
-          end_date: today,
-          include_completed: true
+          end_date: today
         }
       });
 
-      setSchedules(response.data);
+      // Map instance data to expected schedule format
+      const instances = response.data || [];
+      const mapped = instances.map(instance => ({
+        id: instance.id,
+        schedule_id: instance.schedule_id,
+        scheduled_date: instance.scheduled_date,
+        scheduled_time: instance.schedule?.scheduled_time || instance.scheduled_date,
+        schedule_type: instance.schedule?.schedule_type,
+        type: instance.schedule?.schedule_type,
+        reptile_name: instance.schedule?.reptile?.name,
+        reptile_species: instance.schedule?.reptile?.species,
+        reptile_avatar: instance.schedule?.reptile?.avatar_url,
+        notes: instance.schedule?.notes,
+        supplements: instance.supplements || instance.schedule?.supplements,
+        status: instance.status,
+        completed_at: instance.status === 'completed' ? instance.updated_at : null,
+        last_logged: instance.completions?.[0]?.completed_at
+      }));
+
+      setSchedules(mapped);
     } catch (err) {
       console.error('Failed to fetch schedules:', err);
       setError('Failed to load schedule');
