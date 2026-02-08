@@ -18,10 +18,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | Complete (4/4 plans complete) |
+| Phase Status | Gap Closure (6/8 plans complete) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 8 - Complete (31/38 verified, 81.6%)
+Progress: Phase 8 - Gap Closure (6/8 gap plans complete)
 ```
 Phase 7 (Foundation):
 07-01: █ Complete (shadcn/ui foundation)
@@ -33,8 +33,10 @@ Phase 8 (Dashboard):
 08-02: █ Complete (reptile status cards)
 08-03: █ Complete (quick log form & timeline)
 08-04: █ Complete (dashboard widgets & edit mode)
-       ⚠ Gaps: Header not integrated, Edit mode UI not wired
-       ProfileManager customization in Settings still works
+08-05: █ Complete (gap closure - form, status, weight fixes)
+08-06: █ Complete (gap closure - timeline & keyboard shortcuts)
+08-07: ░ Pending (gap closure - Header & edit mode integration)
+08-08: ░ Pending (gap closure - overall verification)
 ```
 
 ## Milestone Scope
@@ -81,6 +83,8 @@ Phase 12: Polish/Mobile   ○ Not started
 | 2026-02-08 | Week summary 2x2 stat grid | Compact weekly stats (feedings, mistings, scheduled, overdue) in grid layout |
 | 2026-02-08 | Compact activity widget pattern | Separate compact_recent_activity widget vs. config on recent_activity for different use cases |
 | 2026-02-08 | Edit mode components ready, integration deferred | EditModeControls and WidgetGallery created, Dashboard integration deferred to avoid extensive refactoring |
+| 2026-02-08 | Time-only string parsing via regex | Use regex detection before Date constructor for HH:MM format times |
+| 2026-02-08 | Case-insensitive keyboard shortcuts | Use e.key.toLowerCase() for reliable shortcut matching across platforms |
 
 ## Reference Documents
 
@@ -102,18 +106,20 @@ This will plan the reptile detail pages redesign with new UI components.
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T16:08:00Z
-**Stopped at:** Phase 8 complete (all 4 plans)
-**Resume file:** `.planning/phases/08-dashboard/08-04-SUMMARY.md`
+**Last session:** 2026-02-08T19:36:00Z
+**Stopped at:** Phase 8 gap closure plan 6 complete
+**Resume file:** `.planning/phases/08-dashboard/08-06-SUMMARY.md`
 
 **Recent activity:**
-- 08-04: Dashboard widgets & edit mode (complete) - WeightTrendsWidget (sparklines), WeekSummaryWidget (stat grid), RecentActivityWidget (compact), EditModeControls, WidgetGallery (components ready, Dashboard integration deferred)
+- 08-06: Gap closure - timeline & keyboard shortcuts (complete) - Fixed time slot grouping for time-only strings, Ctrl+K shortcut on Windows
+- 08-05: Gap closure - form, status, weight fixes (complete) - QuickLogForm API, TaskChip display, weight NaN fix
+- 08-04: Dashboard widgets & edit mode (complete) - WeightTrendsWidget (sparklines), WeekSummaryWidget (stat grid), RecentActivityWidget (compact), EditModeControls, WidgetGallery
 - 08-03: Quick log form & timeline (complete) - QuickLogForm, TodayScheduleTimeline, unified quick-log experience
 - 08-02: Reptile status cards (complete) - TaskChip, ReptileStatusCard, ReptileStatusCards widget with auto-compact
 - 08-01: Navigation foundation (complete) - compact sidebar, Header component, keyboard shortcuts
 - Phase 7: All 3 plans complete (shadcn/ui, components, date pickers)
 
-**Phase 8 status:** 4 of 4 plans complete - Dashboard phase complete with all widgets, ready for Phase 9 (Reptile Pages)
+**Phase 8 status:** 6 of 8 gap closure plans complete - Timeline and shortcuts fixed, 2 plans remaining
 
 ---
-*State updated: 2026-02-08 - Phase 8 Plan 4 complete*
+*State updated: 2026-02-08 - Phase 8 Plan 6 (gap closure) complete*
