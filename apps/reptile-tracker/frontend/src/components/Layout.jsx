@@ -49,7 +49,7 @@ export default function Layout({ user, onLogout }) {
         onClick={onClick}
         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
           isActive
-            ? 'bg-primary/20 text-primary'
+            ? 'bg-primary/20 text-primary-400'
             : 'text-muted-foreground hover:bg-secondary'
         }`}
       >
@@ -128,7 +128,7 @@ export default function Layout({ user, onLogout }) {
           onClick={() => setSchedulesMenuOpen(!schedulesMenuOpen)}
           className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
             isSchedulesActive
-              ? 'bg-primary/20 text-primary'
+              ? 'bg-primary/20 text-primary-400'
               : 'text-muted-foreground hover:bg-secondary'
           }`}
         >
@@ -151,7 +151,7 @@ export default function Layout({ user, onLogout }) {
                   onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary/20 text-primary'
+                      ? 'bg-primary/20 text-primary-400'
                       : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
@@ -225,7 +225,7 @@ export default function Layout({ user, onLogout }) {
                 to="/settings"
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                   location.pathname === '/settings'
-                    ? 'bg-primary/20 text-primary'
+                    ? 'bg-primary/20 text-primary-400'
                     : 'text-muted-foreground hover:bg-secondary'
                 }`}
               >
@@ -301,7 +301,7 @@ export default function Layout({ user, onLogout }) {
                   onClick={() => setSidebarOpen(false)}
                   className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                     location.pathname === '/settings'
-                      ? 'bg-primary/20 text-primary'
+                      ? 'bg-primary/20 text-primary-400'
                       : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >

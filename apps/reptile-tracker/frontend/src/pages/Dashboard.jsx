@@ -1241,7 +1241,7 @@ export default function Dashboard() {
                   <div
                     key={index}
                     className={`border border-border rounded ${calendarView === 'week' ? 'p-2' : 'p-3'} cursor-pointer hover:bg-secondary transition-colors flex flex-col ${
-                      isToday ? 'bg-primary/10 border-primary/50' : ''
+                      isToday ? 'border-primary' : ''
                     }`}
                     onClick={() => setSelectedDate(day)}
                   >
@@ -1250,7 +1250,7 @@ export default function Dashboard() {
                         {format(day, calendarView === 'week' ? 'EEE' : 'EEEE, MMM d')}
                       </div>
                       {calendarView === 'week' && (
-                        <div className={`text-lg font-bold ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                        <div className={`text-lg font-bold ${isToday ? 'text-primary-400' : 'text-foreground'}`}>
                           {format(day, 'd')}
                         </div>
                       )}
