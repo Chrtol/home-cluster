@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { X, ExternalLink } from 'lucide-react';
+import { formatDate } from '../../utils/dateFormatting';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -285,7 +286,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
                 className="px-2 py-1.5 bg-muted border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               />
               <span className="text-xs text-muted-foreground">
-                {fedAt.toLocaleDateString()}
+                {formatDate(fedAt)}
               </span>
             </div>
           </div>
