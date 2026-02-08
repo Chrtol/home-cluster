@@ -44,10 +44,11 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       setError(null);
 
       // Fetch recent activities from all sources
+      // Note: /api/weight/dashboard returns all weight logs, we'll filter client-side
       const [feedingsRes, mistingsRes, weighingsRes, healthRes] = await Promise.all([
         axios.get('/api/feedings', { params: { limit: itemCount } }),
         axios.get('/api/mistings', { params: { limit: itemCount } }),
-        axios.get('/api/weighings', { params: { limit: itemCount } }),
+        axios.get('/api/weight/dashboard'),
         axios.get('/api/health-events', { params: { limit: itemCount } })
       ]);
 
@@ -75,7 +76,12 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         details: m.notes
       }));
 
-      const weighings = (weighingsRes.data || []).map(w => ({
+      // Weight dashboard returns all data, sort by date and take most recent
+      const allWeighings = (weighingsRes.data || [])
+        .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at))
+        .slice(0, itemCount);
+
+      const weighings = allWeighings.map(w => ({
         type: 'weighing',
         icon: Scale,
         reptile_id: w.reptile_id,
@@ -83,7 +89,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         reptile: { id: w.reptile_id, name: w.reptile_name, avatar_photo_url: w.avatar_photo_url },
         timestamp: w.measured_at,
         description: 'Weight recorded',
-        quantity: `${w.weight}g`,
+        quantity: `${w.weight_grams}g`,
         details: w.notes
       }));
 

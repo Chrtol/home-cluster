@@ -324,20 +324,28 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                     return (
                       <div
                         key={schedule.id}
-                        className={`pl-2 py-1.5 border-l-2 ${getStatusColor(status)} flex items-center gap-2 relative`}
+                        className={`pl-2 py-1.5 border-l-2 ${getStatusColor(status)} relative`}
                         onMouseEnter={() => handleMouseEnter(schedule)}
                         onMouseLeave={handleMouseLeave}
                       >
-                        <ReptileAvatar
-                          reptile={schedule.reptile}
-                          size="sm"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-gray-300 truncate">
-                            {schedule.reptile_name} - {scheduleType}
+                        {/* Scheduled time display */}
+                        {schedule.scheduled_time && (
+                          <div className="text-[10px] text-gray-500 mb-0.5">
+                            {formatTime(schedule.scheduled_time)}
                           </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <ReptileAvatar
+                            reptile={schedule.reptile}
+                            size="sm"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-300 truncate">
+                              {schedule.reptile_name} - {scheduleType}
+                            </div>
+                          </div>
+                          <span className="text-green-500">✓</span>
                         </div>
-                        <span className="text-green-500">✓</span>
                       </div>
                     );
                   })}
@@ -370,25 +378,33 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                       return (
                         <div
                           key={schedule.id}
-                          className={`pl-2 py-1.5 border-l-2 ${getStatusColor(status)} flex items-center gap-2 relative group`}
+                          className={`pl-2 py-1.5 border-l-2 ${getStatusColor(status)} relative group`}
                           onMouseEnter={() => handleMouseEnter(schedule)}
                           onMouseLeave={handleMouseLeave}
                         >
-                          <ReptileAvatar
-                            reptile={schedule.reptile}
-                            size="sm"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs text-gray-300 truncate">
-                              {schedule.reptile_name} - {scheduleType}
+                          {/* Scheduled time display */}
+                          {schedule.scheduled_time && (
+                            <div className="text-[10px] text-gray-500 mb-0.5">
+                              {formatTime(schedule.scheduled_time)}
                             </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <ReptileAvatar
+                              reptile={schedule.reptile}
+                              size="sm"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs text-gray-300 truncate">
+                                {schedule.reptile_name} - {scheduleType}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleLogClick(schedule)}
+                              className="ml-auto text-xs px-1.5 py-0.5 rounded bg-accent-600 hover:bg-accent-500 text-white"
+                            >
+                              Log
+                            </button>
                           </div>
-                          <button
-                            onClick={() => handleLogClick(schedule)}
-                            className="ml-auto text-xs px-1.5 py-0.5 rounded bg-accent-600 hover:bg-accent-500 text-white"
-                          >
-                            Log
-                          </button>
 
                           {/* Hover tooltip */}
                           {hoveredTask?.id === schedule.id && (

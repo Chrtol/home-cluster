@@ -172,28 +172,24 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-        <div className="text-center text-muted-foreground">
-          Loading reptiles...
-        </div>
+      <div className="text-center text-gray-400 text-sm py-6">
+        Loading reptiles...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-        <div className="text-center text-red-600 dark:text-red-400">
-          {error}
-        </div>
+      <div className="text-center text-red-400 text-sm py-6">
+        {error}
       </div>
     );
   }
 
   if (reptiles.length === 0) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-        <div className="text-center text-muted-foreground">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-6">
+        <div className="text-center text-gray-400 text-sm">
           No reptiles yet. Add your first reptile to get started!
         </div>
       </div>
@@ -201,17 +197,8 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-3">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-foreground">
-          Reptile Status
-        </h2>
-        {isCompact && (
-          <span className="text-xs text-muted-foreground">
-            Compact mode ({reptiles.length} reptiles)
-          </span>
-        )}
-      </div>
+    <div>
+      {/* No container card - individual reptile cards provide the visual structure */}
 
       <div className={getGridClasses()}>
         {reptiles.map((reptile, index) => (
