@@ -49,8 +49,8 @@ export default function Layout({ user, onLogout }) {
         onClick={onClick}
         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
           isActive
-            ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-secondary'
         }`}
       >
         <Icon size={20} />
@@ -82,35 +82,35 @@ export default function Layout({ user, onLogout }) {
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-lg shadow-xl border border-border overflow-hidden z-50">
             <button
               onClick={() => handleOptionClick('/feed')}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-colors border-b border-border"
             >
-              <Utensils size={20} className="text-primary-600 dark:text-primary-400" />
+              <Utensils size={20} className="text-primary" />
               <div className="text-left">
-                <div className="font-semibold text-gray-900 dark:text-white">Log Feeding</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Record food and supplements</div>
+                <div className="font-semibold text-foreground">Log Feeding</div>
+                <div className="text-xs text-muted-foreground">Record food and supplements</div>
               </div>
             </button>
             <button
               onClick={() => handleOptionClick('/health-log')}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-900/20 transition-colors border-b border-border"
             >
-              <Activity size={20} className="text-green-600 dark:text-green-400" />
+              <Activity size={20} className="text-green-400" />
               <div className="text-left">
-                <div className="font-semibold text-gray-900 dark:text-white">Log Health</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
+                <div className="font-semibold text-foreground">Log Health</div>
+                <div className="text-xs text-muted-foreground">Record health and weight data</div>
               </div>
             </button>
             <button
               onClick={() => handleOptionClick('/misting-log')}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 transition-colors"
             >
-              <Droplets size={20} className="text-blue-600 dark:text-blue-400" />
+              <Droplets size={20} className="text-blue-400" />
               <div className="text-left">
-                <div className="font-semibold text-gray-900 dark:text-white">Log Misting</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Record misting and humidity</div>
+                <div className="font-semibold text-foreground">Log Misting</div>
+                <div className="text-xs text-muted-foreground">Record misting and humidity</div>
               </div>
             </button>
           </div>
@@ -128,8 +128,8 @@ export default function Layout({ user, onLogout }) {
           onClick={() => setSchedulesMenuOpen(!schedulesMenuOpen)}
           className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
             isSchedulesActive
-              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-secondary'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -140,7 +140,7 @@ export default function Layout({ user, onLogout }) {
         </button>
 
         {schedulesMenuOpen && (
-          <div className="ml-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-1">
+          <div className="ml-4 pl-4 border-l-2 border-border space-y-1">
             {schedulesItems.map(item => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
@@ -151,15 +151,15 @@ export default function Layout({ user, onLogout }) {
                   onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
                   <Icon size={18} />
                   <div className="flex-1">
                     <div className="text-sm font-medium">{item.label}</div>
                     {item.description && (
-                      <div className="text-xs text-gray-500 dark:text-gray-500">{item.description}</div>
+                      <div className="text-xs text-muted-foreground">{item.description}</div>
                     )}
                   </div>
                 </Link>
@@ -172,17 +172,17 @@ export default function Layout({ user, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-background transition-colors">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col flex-1 min-h-0 bg-card border-r border-border">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between px-6 py-6 border-b border-border">
             <Link to="/" className="flex items-center gap-3">
               <div className="text-3xl">🦎</div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Reptile</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Tracker</p>
+                <h1 className="text-xl font-bold text-foreground">Reptile</h1>
+                <p className="text-sm text-muted-foreground">Tracker</p>
               </div>
             </Link>
             <NotificationBell />
@@ -204,19 +204,19 @@ export default function Layout({ user, onLogout }) {
           </nav>
 
           {/* User Section */}
-          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex-shrink-0 border-t border-border">
             <div className="p-4 space-y-2">
               <div className="flex items-center gap-3 px-4 py-2 min-w-0">
-                <div className="w-5 h-5 flex-shrink-0 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                  <span className="text-xs font-medium text-primary-700 dark:text-primary-300">
+                <div className="w-5 h-5 flex-shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-xs font-medium text-primary">
                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-full">
+                  <p className="text-sm font-medium text-foreground truncate max-w-full">
                     {user?.name || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-full">
+                  <p className="text-xs text-muted-foreground truncate max-w-full">
                     {user?.email}
                   </p>
                 </div>
@@ -225,8 +225,8 @@ export default function Layout({ user, onLogout }) {
                 to="/settings"
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                   location.pathname === '/settings'
-                    ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-secondary'
                 }`}
               >
                 <Settings size={20} />
@@ -234,7 +234,7 @@ export default function Layout({ user, onLogout }) {
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut size={20} />
                 <span className="font-medium">Logout</span>
@@ -245,17 +245,17 @@ export default function Layout({ user, onLogout }) {
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="lg:hidden sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🦎</span>
-            <span className="font-bold text-gray-900 dark:text-white">Reptile Tracker</span>
+            <span className="font-bold text-foreground">Reptile Tracker</span>
           </Link>
           <div className="flex items-center gap-2">
             <NotificationBell />
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary"
             >
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -266,19 +266,19 @@ export default function Layout({ user, onLogout }) {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
-          <div className="absolute inset-y-0 right-0 w-64 bg-white dark:bg-gray-800 shadow-xl">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)}></div>
+          <div className="absolute inset-y-0 right-0 w-64 bg-card shadow-xl">
             <div className="flex flex-col h-full">
-              <div className="px-4 py-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="px-4 py-6 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                    <span className="text-lg font-medium text-primary-700 dark:text-primary-300">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span className="text-lg font-medium text-primary">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                    <p className="font-medium text-foreground truncate">{user?.name || 'User'}</p>
+                    <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
                   </div>
                 </div>
               </div>
@@ -295,14 +295,14 @@ export default function Layout({ user, onLogout }) {
                 {/* Schedules Collapsible Menu */}
                 <SchedulesMenu onClose={() => setSidebarOpen(false)} />
               </nav>
-              <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+              <div className="px-4 py-4 border-t border-border space-y-2">
                 <Link
                   to="/settings"
                   onClick={() => setSidebarOpen(false)}
                   className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                     location.pathname === '/settings'
-                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
                   <Settings size={20} />
@@ -310,7 +310,7 @@ export default function Layout({ user, onLogout }) {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <LogOut size={20} />
                   <span className="font-medium">Logout</span>
@@ -329,15 +329,15 @@ export default function Layout({ user, onLogout }) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pb-safe">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border pb-safe">
         <div className="flex items-center justify-around relative">
           {/* Dashboard */}
           <Link
             to="/"
             className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
               location.pathname === '/'
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'text-primary'
+                : 'text-muted-foreground'
             }`}
           >
             <Home size={22} />
@@ -349,8 +349,8 @@ export default function Layout({ user, onLogout }) {
             onClick={() => setMobileSchedulesMenuOpen(!mobileSchedulesMenuOpen)}
             className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
               schedulesItems.some(item => location.pathname === item.path)
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'text-primary'
+                : 'text-muted-foreground'
             }`}
           >
             <Calendar size={22} />
@@ -370,8 +370,8 @@ export default function Layout({ user, onLogout }) {
             to="/reptiles"
             className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
               location.pathname === '/reptiles'
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'text-primary'
+                : 'text-muted-foreground'
             }`}
           >
             <List size={22} />
@@ -383,8 +383,8 @@ export default function Layout({ user, onLogout }) {
             to="/stats"
             className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
               location.pathname === '/stats'
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'text-primary'
+                : 'text-muted-foreground'
             }`}
           >
             <BarChart3 size={22} />
@@ -395,8 +395,8 @@ export default function Layout({ user, onLogout }) {
         {/* Mobile Schedules Menu Popup */}
         {mobileSchedulesMenuOpen && (
           <>
-            <div className="fixed inset-0 bg-black/20" onClick={() => setMobileSchedulesMenuOpen(false)} style={{ bottom: '64px' }}></div>
-            <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="fixed inset-0 bg-black/40" onClick={() => setMobileSchedulesMenuOpen(false)} style={{ bottom: '64px' }}></div>
+            <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-card rounded-lg shadow-2xl border border-border overflow-hidden">
               {schedulesItems.map(item => {
                 const Icon = item.icon
                 return (
@@ -404,11 +404,11 @@ export default function Layout({ user, onLogout }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileSchedulesMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary/10 transition-colors border-b border-border last:border-b-0"
                   >
-                    <Icon size={24} className="text-primary-600 dark:text-primary-400" />
+                    <Icon size={24} className="text-primary" />
                     <div className="text-left flex-1">
-                      <div className="font-semibold text-gray-900 dark:text-white">{item.label}</div>
+                      <div className="font-semibold text-foreground">{item.label}</div>
                     </div>
                   </Link>
                 )
@@ -421,39 +421,39 @@ export default function Layout({ user, onLogout }) {
         {/* Mobile Track Menu Popup */}
         {trackMenuOpen && (
           <>
-            <div className="fixed inset-0 bg-black/20" onClick={() => setTrackMenuOpen(false)} style={{ bottom: '64px' }}></div>
-            <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="fixed inset-0 bg-black/40" onClick={() => setTrackMenuOpen(false)} style={{ bottom: '64px' }}></div>
+            <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-card rounded-lg shadow-2xl border border-border overflow-hidden">
               <Link
                 to="/feed"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-primary/10 transition-colors border-b border-border"
               >
-                <Utensils size={24} className="text-primary-600 dark:text-primary-400" />
+                <Utensils size={24} className="text-primary" />
                 <div className="text-left flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-white">Log Feeding</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Record food and supplements</div>
+                  <div className="font-semibold text-foreground">Log Feeding</div>
+                  <div className="text-xs text-muted-foreground">Record food and supplements</div>
                 </div>
               </Link>
               <Link
                 to="/health-log"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-gray-200 dark:border-gray-700"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-green-900/20 transition-colors border-b border-border"
               >
-                <Activity size={24} className="text-green-600 dark:text-green-400" />
+                <Activity size={24} className="text-green-400" />
                 <div className="text-left flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-white">Log Health</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Record health and weight data</div>
+                  <div className="font-semibold text-foreground">Log Health</div>
+                  <div className="text-xs text-muted-foreground">Record health and weight data</div>
                 </div>
               </Link>
               <Link
                 to="/misting-log"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-blue-900/20 transition-colors"
               >
-                <Droplets size={24} className="text-blue-600 dark:text-blue-400" />
+                <Droplets size={24} className="text-blue-400" />
                 <div className="text-left flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-white">Log Misting</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Record misting and humidity</div>
+                  <div className="font-semibold text-foreground">Log Misting</div>
+                  <div className="text-xs text-muted-foreground">Record misting and humidity</div>
                 </div>
               </Link>
             </div>
