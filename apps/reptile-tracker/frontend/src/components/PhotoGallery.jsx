@@ -178,7 +178,7 @@ const PhotoGallery = ({
   if (loading) {
     return (
       <div className={`flex items-center justify-center py-12 ${className}`}>
-        <div className="text-gray-500 dark:text-gray-400">Loading photos...</div>
+        <div className="text-muted-foreground">Loading photos...</div>
       </div>
     );
   }
@@ -194,7 +194,7 @@ const PhotoGallery = ({
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               selectedCategory === cat.value
                 ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'bg-secondary text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             {cat.label}
@@ -213,10 +213,10 @@ const PhotoGallery = ({
       {!error && photos.length === 0 && (
         <div className="text-center py-12">
           <Camera className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             No photos yet
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-muted-foreground mb-4">
             {selectedCategory === 'all'
               ? 'Start building your reptile\'s photo gallery!'
               : `No ${selectedCategory} photos yet.`
@@ -231,7 +231,7 @@ const PhotoGallery = ({
         {photos.map(photo => (
           <div
             key={photo.id}
-            className="group relative bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden"
+            className="group relative bg-secondary rounded-lg overflow-hidden"
           >
             {/* Photo Image */}
             <div
@@ -308,13 +308,13 @@ const PhotoGallery = ({
                       value={captionText}
                       onChange={(e) => setCaptionText(e.target.value)}
                       placeholder="Add caption..."
-                      className="w-full px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded border border-gray-300 dark:border-gray-600"
+                      className="w-full px-2 py-1 text-xs bg-card text-foreground rounded border border-border"
                       autoFocus
                     />
                     <select
                       value={editingCategory}
                       onChange={(e) => setEditingCategory(e.target.value)}
-                      className="w-full px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded border border-gray-300 dark:border-gray-600"
+                      className="w-full px-2 py-1 text-xs bg-card text-foreground rounded border border-border"
                     >
                       {categories.filter(c => c.value !== 'all').map(cat => (
                         <option key={cat.value} value={cat.value}>{cat.label}</option>

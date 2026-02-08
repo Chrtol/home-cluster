@@ -49,8 +49,8 @@ export default function Layout({ user, onLogout }) {
         onClick={onClick}
         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
           isActive
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-secondary'
+            ? 'bg-primary/20 text-primary border-l-2 border-primary'
+            : 'text-muted-foreground hover:bg-secondary border-l-2 border-transparent'
         }`}
       >
         <Icon size={20} />
@@ -85,7 +85,7 @@ export default function Layout({ user, onLogout }) {
           <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-lg shadow-xl border border-border overflow-hidden z-50">
             <button
               onClick={() => handleOptionClick('/feed')}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-colors border-b border-border"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/20 transition-colors border-b border-border"
             >
               <Utensils size={20} className="text-primary" />
               <div className="text-left">
@@ -128,7 +128,7 @@ export default function Layout({ user, onLogout }) {
           onClick={() => setSchedulesMenuOpen(!schedulesMenuOpen)}
           className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
             isSchedulesActive
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-primary/20 text-primary'
               : 'text-muted-foreground hover:bg-secondary'
           }`}
         >
@@ -151,7 +151,7 @@ export default function Layout({ user, onLogout }) {
                   onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-primary/20 text-primary'
                       : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
@@ -225,7 +225,7 @@ export default function Layout({ user, onLogout }) {
                 to="/settings"
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                   location.pathname === '/settings'
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/20 text-primary'
                     : 'text-muted-foreground hover:bg-secondary'
                 }`}
               >
@@ -301,7 +301,7 @@ export default function Layout({ user, onLogout }) {
                   onClick={() => setSidebarOpen(false)}
                   className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                     location.pathname === '/settings'
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-primary/20 text-primary'
                       : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
@@ -404,7 +404,7 @@ export default function Layout({ user, onLogout }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileSchedulesMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary/10 transition-colors border-b border-border last:border-b-0"
+                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 transition-colors border-b border-border last:border-b-0"
                   >
                     <Icon size={24} className="text-primary" />
                     <div className="text-left flex-1">
@@ -426,7 +426,7 @@ export default function Layout({ user, onLogout }) {
               <Link
                 to="/feed"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-primary/10 transition-colors border-b border-border"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 transition-colors border-b border-border"
               >
                 <Utensils size={24} className="text-primary" />
                 <div className="text-left flex-1">

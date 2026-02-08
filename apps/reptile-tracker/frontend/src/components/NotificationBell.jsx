@@ -68,7 +68,7 @@ const NotificationBell = () => {
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
+        className="relative p-2 text-muted-foreground hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
         aria-label="Notifications"
       >
         <Bell className="w-6 h-6" />

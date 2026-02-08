@@ -64,9 +64,9 @@ export default function ScheduleInstanceDetail() {
       case 'missed':
         return { Icon: XCircle, color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' };
       case 'skipped':
-        return { Icon: MinusCircle, color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-700' };
+        return { Icon: MinusCircle, color: 'text-muted-foreground', bgColor: 'bg-secondary' };
       default:
-        return { Icon: AlertCircle, color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-700' };
+        return { Icon: AlertCircle, color: 'text-muted-foreground', bgColor: 'bg-secondary' };
     }
   };
 
@@ -81,7 +81,7 @@ export default function ScheduleInstanceDetail() {
       case 'health':
         return { Icon: Activity, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' };
       default:
-        return { Icon: Calendar, color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-700' };
+        return { Icon: Calendar, color: 'text-muted-foreground', bgColor: 'bg-secondary' };
     }
   };
 
@@ -221,7 +221,7 @@ export default function ScheduleInstanceDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -257,11 +257,11 @@ export default function ScheduleInstanceDetail() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
           >
-            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+            <ArrowLeft size={20} className="text-muted-foreground" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Schedule Instance
           </h1>
         </div>
@@ -277,17 +277,17 @@ export default function ScheduleInstanceDetail() {
       {/* Main Content */}
       <div className="space-y-6">
         {/* Status Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-lg ${statusInfo.bgColor}`}>
                 <statusInfo.Icon size={24} className={statusInfo.color} />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white capitalize">
+                <h2 className="text-xl font-semibold text-foreground capitalize">
                   {instance.status}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {formatDate(new Date(instance.scheduled_date))}
                 </p>
               </div>
@@ -302,24 +302,24 @@ export default function ScheduleInstanceDetail() {
           {/* Schedule Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Reptile
               </label>
               <Link
                 to={`/reptiles/${reptile?.id}`}
-                className="text-gray-900 dark:text-white font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                className="text-foreground font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 {reptile?.name}
               </Link>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Schedule Type
               </label>
               <div className="flex items-center gap-2">
                 <typeInfo.Icon size={16} className={typeInfo.color} />
-                <span className="text-gray-900 dark:text-white capitalize">
+                <span className="text-foreground capitalize">
                   {schedule?.schedule_type}
                 </span>
               </div>
@@ -327,10 +327,10 @@ export default function ScheduleInstanceDetail() {
 
             {schedule?.food_category && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Food Category
                 </label>
-                <span className="text-gray-900 dark:text-white capitalize">
+                <span className="text-foreground capitalize">
                   {schedule.food_category}
                 </span>
               </div>
@@ -338,10 +338,10 @@ export default function ScheduleInstanceDetail() {
 
             {schedule?.health_category && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Health Category
                 </label>
-                <span className="text-gray-900 dark:text-white capitalize">
+                <span className="text-foreground capitalize">
                   {schedule.health_category}
                 </span>
               </div>
@@ -349,11 +349,11 @@ export default function ScheduleInstanceDetail() {
 
             {schedule?.time_window_enabled && schedule?.earliest_time && schedule?.latest_time && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
                   <Clock size={14} />
                   Time Window
                 </label>
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-foreground">
                   {formatTime(new Date(`2000-01-01T${schedule.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${schedule.latest_time}`))}
                 </span>
               </div>
@@ -361,7 +361,7 @@ export default function ScheduleInstanceDetail() {
 
             {schedule?.notifications_enabled && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
                   <Bell size={14} />
                   Notifications
                 </label>
@@ -409,13 +409,13 @@ export default function ScheduleInstanceDetail() {
 
               return (
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
                     <Bot size={14} />
                     Auto-complete
                   </label>
-                  <div className="text-gray-900 dark:text-white">
+                  <div className="text-foreground">
                     <div>{formatTime(triggerTime)}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{displayText}</div>
+                    <div className="text-xs text-muted-foreground">{displayText}</div>
                   </div>
                 </div>
               );
@@ -423,10 +423,10 @@ export default function ScheduleInstanceDetail() {
 
             {instance.feeding_sequence_number && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Feeding Sequence #
                 </label>
-                <span className="text-gray-900 dark:text-white font-mono">
+                <span className="text-foreground font-mono">
                   {instance.feeding_sequence_number}
                 </span>
               </div>
@@ -434,11 +434,11 @@ export default function ScheduleInstanceDetail() {
           </div>
 
           {schedule?.notes && (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+            <div className="mt-4 pt-4 border-t border-border">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Schedule Notes
               </label>
-              <p className="text-gray-900 dark:text-white">
+              <p className="text-foreground">
                 {schedule.notes}
               </p>
             </div>
@@ -446,8 +446,8 @@ export default function ScheduleInstanceDetail() {
 
           {/* Supplements section */}
           {instance.supplements && instance.supplements.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            <div className="mt-4 pt-4 border-t border-border">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Pre-calculated Supplements
               </label>
               <div className="flex flex-wrap gap-2">
@@ -467,17 +467,17 @@ export default function ScheduleInstanceDetail() {
 
         {/* Action/Completion Card */}
           {instance.status === 'pending' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-blue-500 dark:border-blue-600 p-6">
+            <div className="bg-card rounded-lg shadow-sm border border-blue-500 dark:border-blue-600 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                   <Clock size={20} className="text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-foreground">
                   Action Required
                 </h3>
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 This schedule instance is pending and needs to be completed.
               </p>
 
@@ -492,34 +492,34 @@ export default function ScheduleInstanceDetail() {
           )}
 
           {instance.status === 'completed' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-green-500 dark:border-green-600 p-6">
+            <div className="bg-card rounded-lg shadow-sm border border-green-500 dark:border-green-600 p-6">
               {completionRecord?.auto_completed ? (
                 // Auto-completed instance
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
                     <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                       <Bot size={20} className="text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-foreground">
                         Auto-Completed
                       </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         This instance was automatically marked as completed
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
                       Completed At
                     </label>
-                    <span className="text-gray-900 dark:text-white">
+                    <span className="text-foreground">
                       {formatTime(new Date(completionRecord.completed_at))} on {formatDate(new Date(completionRecord.completed_at))}
                     </span>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="pt-3 border-t border-border">
                     <p className="text-sm text-amber-600 dark:text-amber-400 mb-3">
                       If this task was not actually completed, you can manually mark it as skipped or missed:
                     </p>
@@ -545,19 +545,19 @@ export default function ScheduleInstanceDetail() {
                 // Manually logged completion
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
                       Completion Type
                     </label>
-                    <span className="text-gray-900 dark:text-white capitalize">
+                    <span className="text-foreground capitalize">
                       {completionSummary.label}
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
                       Details
                     </label>
-                    <p className="text-gray-900 dark:text-white">
+                    <p className="text-foreground">
                       {completionSummary.quantity !== undefined ? (
                         <>
                           <span className={completionSummary.showQuantityBold ? 'font-bold' : ''}>
@@ -572,10 +572,10 @@ export default function ScheduleInstanceDetail() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
                       Completed At
                     </label>
-                    <span className="text-gray-900 dark:text-white">
+                    <span className="text-foreground">
                       {formatTime(new Date(completionSummary.timestamp))} on {formatDate(new Date(completionSummary.timestamp))}
                     </span>
                   </div>
@@ -596,7 +596,7 @@ export default function ScheduleInstanceDetail() {
                       const flexibleDays = instance.schedule?.flexible_completion_days || 2;
 
                       return (
-                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="pt-3 border-t border-border">
                           <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
                             <Calendar size={14} className="flex-shrink-0" />
                             Completed {dayText} {direction} scheduled date
@@ -623,25 +623,25 @@ export default function ScheduleInstanceDetail() {
               ) : completionRecord ? (
                 // Orphaned completion (from before instance system)
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                    <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                      <CheckCircle size={20} className="text-gray-600 dark:text-gray-400" />
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
+                    <div className="p-2 bg-secondary rounded-lg">
+                      <CheckCircle size={20} className="text-muted-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-foreground">
                         Completed
                       </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Historical completion from before the instance system
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
                       Completed At
                     </label>
-                    <span className="text-gray-900 dark:text-white">
+                    <span className="text-foreground">
                       {completionRecord.completed_at ? (
                         `${formatTime(new Date(completionRecord.completed_at))} on ${formatDate(new Date(completionRecord.completed_at))}`
                       ) : (
@@ -650,7 +650,7 @@ export default function ScheduleInstanceDetail() {
                     </span>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="pt-3 border-t border-border">
                     <p className="text-sm text-blue-600 dark:text-blue-400">
                       This completion was logged before the schedule instance system was implemented and has been automatically linked to this instance.
                     </p>

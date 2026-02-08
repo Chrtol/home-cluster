@@ -29,10 +29,10 @@ export default function Settings() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Settings</h1>
+      <h1 className="text-3xl font-bold mb-6 text-foreground">Settings</h1>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <div className="border-b border-border mb-6">
         <nav className="flex gap-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('preferences')}
@@ -196,30 +196,30 @@ function PreferencesTab() {
 
       <div className="card space-y-6">
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">General Preferences</h2>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">General Preferences</h2>
 
           <div className="space-y-4">
             {/* Theme Toggle */}
             <div>
-              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Theme</label>
+              <label className="block font-medium mb-2 text-foreground">Theme</label>
               <button
                 onClick={toggleDarkMode}
-                className="flex items-center gap-3 px-4 py-3 w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 w-full rounded-lg border-2 border-border bg-card/50 hover:bg-secondary transition-colors"
               >
                 {darkMode ? (
                   <>
                     <Moon size={20} className="text-blue-500" />
                     <div className="flex-1 text-left">
-                      <div className="font-medium text-gray-900 dark:text-white">Dark Mode</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Currently using dark theme</div>
+                      <div className="font-medium text-foreground">Dark Mode</div>
+                      <div className="text-sm text-muted-foreground">Currently using dark theme</div>
                     </div>
                   </>
                 ) : (
                   <>
                     <Sun size={20} className="text-yellow-500" />
                     <div className="flex-1 text-left">
-                      <div className="font-medium text-gray-900 dark:text-white">Light Mode</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Currently using light theme</div>
+                      <div className="font-medium text-foreground">Light Mode</div>
+                      <div className="text-sm text-muted-foreground">Currently using light theme</div>
                     </div>
                   </>
                 )}
@@ -228,7 +228,7 @@ function PreferencesTab() {
 
             {/* Time Format */}
             <div>
-              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Time Format</label>
+              <label className="block font-medium mb-2 text-foreground">Time Format</label>
               <select
                 value={timeFormat}
                 onChange={(e) => setTimeFormat(e.target.value)}
@@ -237,14 +237,14 @@ function PreferencesTab() {
                 <option value="24h">24-hour (14:30)</option>
                 <option value="12h">12-hour (2:30 PM)</option>
               </select>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Preview: {previewTime}
               </p>
             </div>
 
             {/* Date Format */}
             <div>
-              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Date Format</label>
+              <label className="block font-medium mb-2 text-foreground">Date Format</label>
               <select
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
@@ -255,14 +255,14 @@ function PreferencesTab() {
                 <option value="MM/DD/YYYY">MM/DD/YYYY (03/15/2024)</option>
                 <option value="DD.MM.YYYY">DD.MM.YYYY (15.03.2024)</option>
               </select>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Preview: {previewDate}
               </p>
             </div>
 
             {/* Timezone */}
             <div>
-              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Timezone</label>
+              <label className="block font-medium mb-2 text-foreground">Timezone</label>
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
@@ -277,14 +277,14 @@ function PreferencesTab() {
                 <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
                 <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
               </select>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Current timezone: {timezone}
               </p>
             </div>
 
             {/* First Day of Week */}
             <div>
-              <label className="block font-medium mb-2 text-gray-900 dark:text-white">First Day of Week</label>
+              <label className="block font-medium mb-2 text-foreground">First Day of Week</label>
               <select
                 value={firstDayOfWeek}
                 onChange={(e) => setFirstDayOfWeek(e.target.value)}
@@ -293,15 +293,15 @@ function PreferencesTab() {
                 <option value="sunday">Sunday</option>
                 <option value="monday">Monday</option>
               </select>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Affects calendar view and rotation day-of-week picker
               </p>
             </div>
 
             {/* Show Favorites First */}
             <div>
-              <label className="block font-medium mb-2 text-gray-900 dark:text-white">Food Favorites</label>
-              <label className="flex items-center gap-3 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <label className="block font-medium mb-2 text-foreground">Food Favorites</label>
+              <label className="flex items-center gap-3 p-4 rounded-lg border-2 border-border bg-card/50 cursor-pointer hover:bg-secondary transition-colors">
                 <input
                   type="checkbox"
                   checked={showFavoritesFirst}
@@ -309,8 +309,8 @@ function PreferencesTab() {
                   className="w-4 h-4 rounded"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white">Show favorite foods first when logging feedings</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Automatically sort foods with reptile favorites first, then global favorites</div>
+                  <div className="font-medium text-foreground">Show favorite foods first when logging feedings</div>
+                  <div className="text-sm text-muted-foreground">Automatically sort foods with reptile favorites first, then global favorites</div>
                 </div>
               </label>
             </div>
@@ -607,11 +607,11 @@ function DisplayTab() {
 
       {/* Export/Import Controls */}
       <div className="card">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
           <Download size={20} />
           Export & Import Settings
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Export your display customization settings to share across devices or as a backup.
         </p>
         <div className="flex gap-3 flex-wrap">
@@ -639,7 +639,7 @@ function DisplayTab() {
       {/* Dashboard Customization */}
       <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layout size={20} />
             Dashboard Layout
           </h2>
@@ -647,7 +647,7 @@ function DisplayTab() {
             Reset Dashboard
           </button>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Show/hide cards, reorder (drag on desktop, use arrows on mobile), and adjust card sizes on the Dashboard page.
         </p>
         <div className="space-y-2">
@@ -661,7 +661,7 @@ function DisplayTab() {
               className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all sm:cursor-move ${
                 card.visible
                   ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+                  : 'border-border bg-card/50'
               } ${draggedItem?.index === index && draggedItem?.type === 'dashboard' ? 'opacity-50' : ''}`}
             >
               {/* Top row on mobile: reorder buttons (mobile) / drag handle (desktop), visibility toggle, label */}
@@ -671,7 +671,7 @@ function DisplayTab() {
                   <button
                     onClick={() => handleDashboardCardMoveUp(index)}
                     disabled={index === 0}
-                    className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                     title="Move up"
                   >
                     <ChevronUp size={16} />
@@ -679,7 +679,7 @@ function DisplayTab() {
                   <button
                     onClick={() => handleDashboardCardMoveDown(index)}
                     disabled={index === dashboardCards.length - 1}
-                    className={`p-0.5 rounded ${index === dashboardCards.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    className={`p-0.5 rounded ${index === dashboardCards.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                     title="Move down"
                   >
                     <ChevronDown size={16} />
@@ -694,7 +694,7 @@ function DisplayTab() {
                   {card.visible ? <Eye size={16} className="text-blue-600 dark:text-blue-400 sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <span className={`font-medium text-sm sm:text-base ${card.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <span className={`font-medium text-sm sm:text-base ${card.visible ? 'text-foreground' : 'text-muted-foreground'}`}>
                     {card.label}
                   </span>
                 </div>
@@ -717,7 +717,7 @@ function DisplayTab() {
                         <option value="none">Dots</option>
                       </select>
                       {/* Divider - hidden on mobile */}
-                      <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                      <div className="hidden sm:block h-6 w-px bg-border"></div>
                     </>
                   )}
                   {/* Size buttons */}
@@ -727,7 +727,7 @@ function DisplayTab() {
                       className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'xs'
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                       }`}
                       title="Extra Small (1/4 width)"
                     >
@@ -738,7 +738,7 @@ function DisplayTab() {
                       className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'small'
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                       }`}
                       title="Small (1/2 width)"
                     >
@@ -749,7 +749,7 @@ function DisplayTab() {
                       className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'medium'
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                       }`}
                       title="Medium (3/4 width)"
                     >
@@ -760,7 +760,7 @@ function DisplayTab() {
                       className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                         card.size === 'large'
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                       }`}
                       title="Large (Full width)"
                     >
@@ -777,7 +777,7 @@ function DisplayTab() {
       {/* Statistics Customization */}
       <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Layout size={20} />
             Statistics Layout
           </h2>
@@ -797,7 +797,7 @@ function DisplayTab() {
               ))}
             </select>
             {/* Divider - hidden on mobile */}
-            <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <div className="hidden sm:block h-6 w-px bg-border"></div>
             <button onClick={handleResetStatistics} className="btn-secondary text-sm whitespace-nowrap">
               {selectedReptileId ? 'Reset to Default' : 'Reset Statistics'}
             </button>
@@ -814,8 +814,8 @@ function DisplayTab() {
                 </p>
               </div>
             ) : (
-              <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex-1 p-3 bg-card border border-border rounded-lg">
+                <p className="text-sm text-muted-foreground">
                   Currently using <strong>global layout</strong>. Make changes to create a custom layout for this reptile.
                 </p>
               </div>
@@ -834,7 +834,7 @@ function DisplayTab() {
           </div>
         )}
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           {selectedReptileId
             ? 'Customize the statistics layout for this specific reptile. Reorder using drag (desktop) or arrows (mobile).'
             : 'Configure the default statistics layout for all reptiles (unless they have custom settings). Reorder using drag (desktop) or arrows (mobile).'}
@@ -860,7 +860,7 @@ function DisplayTab() {
                 } ${
                   chart.visible
                     ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+                    : 'border-border bg-card/50'
                 } ${draggedItem?.index === index && draggedItem?.type === 'statistics' && !isChild ? 'opacity-50' : ''} ${
                   isChild ? 'ml-6 sm:ml-8' : ''
                 }`}
@@ -873,7 +873,7 @@ function DisplayTab() {
                       <button
                         onClick={() => handleStatisticsChartMoveUp(index)}
                         disabled={index === 0}
-                        className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                        className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                         title="Move up"
                       >
                         <ChevronUp size={16} />
@@ -881,7 +881,7 @@ function DisplayTab() {
                       <button
                         onClick={() => handleStatisticsChartMoveDown(index)}
                         disabled={index === statisticsCharts.length - 1}
-                        className={`p-0.5 rounded ${index === statisticsCharts.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                        className={`p-0.5 rounded ${index === statisticsCharts.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                         title="Move down"
                       >
                         <ChevronDown size={16} />
@@ -897,7 +897,7 @@ function DisplayTab() {
                     {chart.visible ? <Eye size={16} className="text-green-600 dark:text-green-400 sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <span className={`${isChild ? 'text-sm' : 'font-medium text-sm sm:text-base'} ${chart.visible ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <span className={`${isChild ? 'text-sm' : 'font-medium text-sm sm:text-base'} ${chart.visible ? 'text-foreground' : 'text-muted-foreground'}`}>
                       {chart.label}
                     </span>
                   </div>
@@ -920,7 +920,7 @@ function DisplayTab() {
                           <option value="none">Dots</option>
                         </select>
                         {/* Divider - hidden on mobile */}
-                        <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                        <div className="hidden sm:block h-6 w-px bg-border"></div>
                       </>
                     )}
                     {/* Size buttons - only show for non-child items */}
@@ -930,7 +930,7 @@ function DisplayTab() {
                         className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'xs'
                             ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                         }`}
                         title="Extra Small (1/4 width)"
                       >
@@ -941,7 +941,7 @@ function DisplayTab() {
                         className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'small'
                             ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                         }`}
                         title="Small (1/2 width)"
                       >
@@ -952,7 +952,7 @@ function DisplayTab() {
                         className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'medium'
                             ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                         }`}
                         title="Medium (3/4 width)"
                       >
@@ -963,7 +963,7 @@ function DisplayTab() {
                         className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
                           chart.size === 'large'
                             ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                         }`}
                         title="Large (Full width)"
                       >
@@ -980,8 +980,8 @@ function DisplayTab() {
 
       {/* Chart Settings */}
       <div className="card">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Chart Appearance</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <h2 className="text-xl font-semibold mb-4 text-foreground">Chart Appearance</h2>
+        <p className="text-sm text-muted-foreground mb-4">
           Customize how charts are displayed across the app.
         </p>
         <div className="space-y-4">
@@ -992,7 +992,7 @@ function DisplayTab() {
               onChange={(e) => handleChartSettingChange('showGrid', e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="text-gray-900 dark:text-white">Show grid lines</span>
+            <span className="text-foreground">Show grid lines</span>
           </label>
           <label className="flex items-center gap-3">
             <input
@@ -1001,7 +1001,7 @@ function DisplayTab() {
               onChange={(e) => handleChartSettingChange('showLegend', e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="text-gray-900 dark:text-white">Show legend</span>
+            <span className="text-foreground">Show legend</span>
           </label>
           <label className="flex items-center gap-3">
             <input
@@ -1010,10 +1010,10 @@ function DisplayTab() {
               onChange={(e) => handleChartSettingChange('showAxisLabels', e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="text-gray-900 dark:text-white">Show axis labels</span>
+            <span className="text-foreground">Show axis labels</span>
           </label>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Chart Height: {chartSettings.chartHeight}px
             </label>
             <input
@@ -1025,7 +1025,7 @@ function DisplayTab() {
               onChange={(e) => handleChartSettingChange('chartHeight', parseInt(e.target.value))}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>200px</span>
               <span>600px</span>
             </div>
@@ -1390,7 +1390,7 @@ function HouseholdSection() {
       admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       manager: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
       caretaker: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+      viewer: 'bg-secondary text-foreground'
     };
 
     return (
@@ -1404,7 +1404,7 @@ function HouseholdSection() {
     <div className="space-y-4">
       {households.length === 0 && !showCreateForm && !showJoinForm ? (
         <div className="text-center py-8">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">You are not a member of any households yet.</p>
+          <p className="text-muted-foreground mb-4">You are not a member of any households yet.</p>
           <div className="flex gap-3 justify-center">
             <button onClick={() => setShowCreateForm(true)} className="btn-primary">
               Create Household
@@ -1418,8 +1418,8 @@ function HouseholdSection() {
         <>
           {/* Create Household Form */}
           {showCreateForm && (
-            <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 mb-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Create New Household</h3>
+            <div className="p-4 border border-border rounded-lg bg-secondary mb-4">
+              <h3 className="font-semibold text-foreground mb-4">Create New Household</h3>
               <div className="space-y-3">
                 <input
                   type="text"
@@ -1443,8 +1443,8 @@ function HouseholdSection() {
 
           {/* Join Household Form */}
           {showJoinForm && (
-            <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 mb-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Join Household</h3>
+            <div className="p-4 border border-border rounded-lg bg-secondary mb-4">
+              <h3 className="font-semibold text-foreground mb-4">Join Household</h3>
               <div className="space-y-3">
                 <input
                   type="text"
@@ -1497,7 +1497,7 @@ function HouseholdSection() {
               </div>
 
               {/* Tabs */}
-              <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
+              <div className="border-b border-border mb-4">
                 <nav className="flex gap-4 overflow-x-auto">
                   <button
                     onClick={() => setActiveTab('overview')}
@@ -1537,7 +1537,7 @@ function HouseholdSection() {
               {/* Tab Content */}
               {activeTab === 'overview' && (
                 <div className="space-y-4">
-                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="p-4 border border-border rounded-lg">
                     {editingHouseholdId === selectedHousehold.id ? (
                       <div className="space-y-3">
                         <input
@@ -1561,8 +1561,8 @@ function HouseholdSection() {
                       <>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedHousehold.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Created {new Date(selectedHousehold.created_at).toLocaleDateString()}</p>
+                            <h3 className="text-lg font-semibold text-foreground">{selectedHousehold.name}</h3>
+                            <p className="text-sm text-muted-foreground">Created {new Date(selectedHousehold.created_at).toLocaleDateString()}</p>
                           </div>
                           <div className="flex gap-2">
                             {isOwner && (
@@ -1603,17 +1603,17 @@ function HouseholdSection() {
                     )}
                   </div>
 
-                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Quick Stats</h4>
+                  <div className="p-4 border border-border rounded-lg bg-secondary">
+                    <h4 className="font-medium text-foreground mb-2">Quick Stats</h4>
                     <div className={`grid ${canManage ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                       <div>
                         <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{members.length}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Members</p>
+                        <p className="text-sm text-muted-foreground">Members</p>
                       </div>
                       {canManage && (
                         <div>
                           <p className="text-2xl font-bold text-green-600 dark:text-green-400">{invitations.filter(i => !i.expires_at || new Date(i.expires_at) > new Date()).length}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Active Invites</p>
+                          <p className="text-sm text-muted-foreground">Active Invites</p>
                         </div>
                       )}
                     </div>
@@ -1635,17 +1635,17 @@ function HouseholdSection() {
                   )}
 
                   {members.length === 0 ? (
-                    <p className="text-center py-8 text-gray-600 dark:text-gray-400">No members found</p>
+                    <p className="text-center py-8 text-muted-foreground">No members found</p>
                   ) : (
                     <div className="space-y-4">
                       {members.map(member => (
                         <div
                           key={member.user_id}
-                          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                          className="flex items-center justify-between p-4 bg-card/50 rounded-lg"
                         >
                           <div className="flex-1">
-                            <h3 className="font-medium text-gray-900 dark:text-white">{member.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
+                            <h3 className="font-medium text-foreground">{member.name}</h3>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                               Joined {new Date(member.joined_at).toLocaleDateString()}
                             </p>
@@ -1683,28 +1683,28 @@ function HouseholdSection() {
                         </div>
                       ))}
 
-                      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Role Permissions</h3>
+                      <div className="mt-6 pt-6 border-t border-border">
+                        <h3 className="font-semibold text-foreground mb-3">Role Permissions</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                           <div>
                             <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Full household control (members, invitations, reptiles)</span>
+                            <span className="text-muted-foreground"> Full household control (members, invitations, reptiles)</span>
                           </div>
                           <div>
                             <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Can manage members, invitations, and reptiles</span>
+                            <span className="text-muted-foreground"> Can manage members, invitations, and reptiles</span>
                           </div>
                           <div>
                             <strong className="text-yellow-600 dark:text-yellow-400">Manager:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Can edit reptiles and create invitations</span>
+                            <span className="text-muted-foreground"> Can edit reptiles and create invitations</span>
                           </div>
                           <div>
                             <strong className="text-green-600 dark:text-green-400">Caretaker:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Can log feedings, misting, weights</span>
+                            <span className="text-muted-foreground"> Can log feedings, misting, weights</span>
                           </div>
                           <div>
-                            <strong className="text-gray-600 dark:text-gray-400">Viewer:</strong>
-                            <span className="text-gray-600 dark:text-gray-400"> Can only view reptiles and logs</span>
+                            <strong className="text-muted-foreground">Viewer:</strong>
+                            <span className="text-muted-foreground"> Can only view reptiles and logs</span>
                           </div>
                         </div>
                       </div>
@@ -1716,18 +1716,18 @@ function HouseholdSection() {
               {activeTab === 'invitations' && (
                 <div className="space-y-4">
                   {inviteLink && inviteCode && (
-                    <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-green-50 dark:bg-green-900/20 mb-4">
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Invitation Created!</h3>
+                    <div className="p-4 border border-dashed border-border rounded-lg bg-green-50 dark:bg-green-900/20 mb-4">
+                      <h3 className="font-semibold text-foreground mb-3">Invitation Created!</h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invitation Code</label>
+                          <label className="block text-sm font-medium text-muted-foreground mb-1">Invitation Code</label>
                           <div className="flex gap-2">
                             <input readOnly value={inviteCode} className="input flex-1 font-mono text-sm" />
                             <button onClick={copyCode} className="btn-secondary whitespace-nowrap">Copy</button>
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invitation Link</label>
+                          <label className="block text-sm font-medium text-muted-foreground mb-1">Invitation Link</label>
                           <div className="flex gap-2">
                             <input readOnly value={inviteLink} className="input flex-1 text-sm" />
                             <button onClick={copyLink} className="btn-secondary whitespace-nowrap">Copy</button>
@@ -1742,7 +1742,7 @@ function HouseholdSection() {
 
                   {invitations.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">No invitations yet</p>
+                      <p className="text-muted-foreground mb-4">No invitations yet</p>
                       <button
                         onClick={() => createInvite(selectedHousehold.id)}
                         disabled={creating}
@@ -1759,26 +1759,26 @@ function HouseholdSection() {
                         const isActive = !isExpired && !isMaxedOut;
 
                         return (
-                          <div key={inv.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex justify-between items-center">
+                          <div key={inv.id} className="p-4 border border-border rounded-lg flex justify-between items-center">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <code className="text-sm font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                                <code className="text-sm font-mono bg-card px-2 py-1 rounded">
                                   {inv.code}
                                 </code>
                                 <span className={`text-xs px-2 py-1 rounded-full ${
                                   isActive
                                     ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                    : 'bg-card text-muted-foreground'
                                 }`}>
                                   {isActive ? 'Active' : isExpired ? 'Expired' : 'Maxed Out'}
                                 </span>
                               </div>
-                              <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                              <div className="mt-1 text-sm text-muted-foreground">
                                 <span>Used {inv.used_count || 0} time{inv.used_count !== 1 ? 's' : ''}</span>
                                 {inv.max_uses && <span> (max: {inv.max_uses})</span>}
                                 {inv.expires_at && <span> • Expires {new Date(inv.expires_at).toLocaleDateString()}</span>}
                               </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              <p className="text-xs text-muted-foreground mt-1">
                                 Created {new Date(inv.created_at).toLocaleDateString()}
                               </p>
                             </div>

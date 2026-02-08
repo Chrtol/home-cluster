@@ -279,7 +279,7 @@ export default function MistingLog() {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">View Misting Log</h1>
+          <h1 className="text-3xl font-bold text-foreground">View Misting Log</h1>
           <div className="flex gap-2">
             <button onClick={() => setMode('edit')} className="btn-primary flex items-center gap-2">
               <Edit2 size={18} /> Edit
@@ -299,31 +299,31 @@ export default function MistingLog() {
         )}
 
         <div className="card space-y-6">
-          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Logged at</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+          <div className="pb-4 border-b border-border">
+            <p className="text-sm text-muted-foreground mb-1">Logged at</p>
+            <p className="text-lg font-medium text-foreground">
               {formatDateTime(existingLog.created_at || existingLog.misted_at)}
             </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+            <p className="text-sm text-muted-foreground mb-1">Reptile</p>
+            <p className="text-lg font-medium text-foreground">
               {reptiles.find(r => r.id === existingLog.reptile_id)?.name || existingLog.reptile?.name || 'Unknown'}
             </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Misted at</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+            <p className="text-sm text-muted-foreground mb-1">Misted at</p>
+            <p className="text-lg font-medium text-foreground">
               {formatDateTime(existingLog.misted_at)}
             </p>
           </div>
 
           {existingLog.notes && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Notes</p>
-              <p className="text-gray-900 dark:text-white">{existingLog.notes}</p>
+              <p className="text-sm text-muted-foreground mb-1">Notes</p>
+              <p className="text-foreground">{existingLog.notes}</p>
             </div>
           )}
         </div>
@@ -334,7 +334,7 @@ export default function MistingLog() {
   // CREATE/EDIT MODE
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+      <h1 className="text-3xl font-bold mb-6 text-foreground">
         {mode === 'edit' ? 'Edit Misting Log' : 'Log Misting'}
       </h1>
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
@@ -350,7 +350,7 @@ export default function MistingLog() {
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div>
-          <label htmlFor="reptile" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Reptile</label>
+          <label htmlFor="reptile" className="block font-medium mb-1 text-muted-foreground">Reptile</label>
           <select
             id="reptile"
             value={selectedReptile}
@@ -365,7 +365,7 @@ export default function MistingLog() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="mistingDate" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date</label>
+            <label htmlFor="mistingDate" className="block font-medium mb-1 text-muted-foreground">Date</label>
             <DateInput
               id="mistingDate"
               value={mistingDate}
@@ -375,7 +375,7 @@ export default function MistingLog() {
             />
           </div>
           <div>
-            <label className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
+            <label className="block font-medium mb-1 text-muted-foreground">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -386,7 +386,7 @@ export default function MistingLog() {
                 max={timeFormat === '12h' ? 12 : 23}
                 required
               />
-              <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+              <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
               <input
                 type="number"
                 value={String(minutes).padStart(2, '0')}
@@ -411,7 +411,7 @@ export default function MistingLog() {
         </div>
 
         <div>
-          <label htmlFor="notes" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Notes (optional)</label>
+          <label htmlFor="notes" className="block font-medium mb-1 text-muted-foreground">Notes (optional)</label>
           <textarea
             id="notes"
             value={notes}

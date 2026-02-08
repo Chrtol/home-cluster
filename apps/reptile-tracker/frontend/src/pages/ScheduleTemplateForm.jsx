@@ -259,7 +259,7 @@ function ScheduleTemplateForm() {
       <div className="mb-6 flex items-center gap-4">
         <button
           onClick={() => navigate('/schedule-templates')}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          className="p-2 hover:bg-secondary rounded-lg transition-colors"
         >
           <ArrowLeft size={24} />
         </button>
@@ -268,15 +268,15 @@ function ScheduleTemplateForm() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-card rounded-lg p-6 space-y-6">
         {/* Basic Information */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-border pb-2">
             Basic Information
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Template Name *
             </label>
             <input
@@ -284,13 +284,13 @@ function ScheduleTemplateForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Juvenile Bearded Dragon Daily Feeding"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Description
             </label>
             <textarea
@@ -298,13 +298,13 @@ function ScheduleTemplateForm() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe this schedule template..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Species (optional)
               </label>
               <input
@@ -312,21 +312,21 @@ function ScheduleTemplateForm() {
                 value={species}
                 onChange={(e) => setSpecies(e.target.value)}
                 placeholder="e.g., Bearded Dragon"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Leave empty for general templates
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Age Category (optional)
               </label>
               <select
                 value={ageCategory}
                 onChange={(e) => setAgeCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">All Ages</option>
                 <option value="hatchling">Hatchling</option>
@@ -340,19 +340,19 @@ function ScheduleTemplateForm() {
 
         {/* Schedule Configuration */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-border pb-2">
             Schedule Configuration
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Schedule Type *
               </label>
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                 required
               >
                 <option value="feeding">Feeding</option>
@@ -363,13 +363,13 @@ function ScheduleTemplateForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Schedule Rule *
               </label>
               <select
                 value={scheduleRule}
                 onChange={(e) => setScheduleRule(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                 required
               >
                 <option value="days_of_week">Specific Days of Week</option>
@@ -382,7 +382,7 @@ function ScheduleTemplateForm() {
           {/* Schedule Rule Parameters */}
           {scheduleRule === 'every_x_days' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Frequency (days) *
               </label>
               <input
@@ -391,7 +391,7 @@ function ScheduleTemplateForm() {
                 onChange={(e) => setFrequencyDays(e.target.value)}
                 min="1"
                 placeholder="e.g., 3"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                 required
               />
             </div>
@@ -399,7 +399,7 @@ function ScheduleTemplateForm() {
 
           {scheduleRule === 'days_of_week' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Days of Week *
               </label>
               <div className="flex flex-wrap gap-2">
@@ -411,7 +411,7 @@ function ScheduleTemplateForm() {
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       daysOfWeek.includes(day.value)
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
                     {day.label}
@@ -423,7 +423,7 @@ function ScheduleTemplateForm() {
 
           {scheduleRule === 'monthly' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Day of Month (1-31) *
               </label>
               <input
@@ -433,7 +433,7 @@ function ScheduleTemplateForm() {
                 min="1"
                 max="31"
                 placeholder="e.g., 15"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                 required
               />
             </div>
@@ -442,13 +442,13 @@ function ScheduleTemplateForm() {
           {/* Type-specific fields */}
           {scheduleType === 'feeding' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Food Category
               </label>
               <select
                 value={foodCategory}
                 onChange={(e) => setFoodCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">Not specified</option>
                 <option value="insects">Insects</option>
@@ -460,13 +460,13 @@ function ScheduleTemplateForm() {
 
           {scheduleType === 'misting' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Time Slot
               </label>
               <select
                 value={timeSlot}
                 onChange={(e) => setTimeSlot(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">Not specified</option>
                 <option value="morning">Morning</option>
@@ -480,13 +480,13 @@ function ScheduleTemplateForm() {
 
           {scheduleType === 'weighing' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Health Category
               </label>
               <select
                 value={healthCategory}
                 onChange={(e) => setHealthCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">Not specified</option>
                 <option value="weight_check">Weight Check</option>
@@ -498,13 +498,13 @@ function ScheduleTemplateForm() {
 
           {scheduleType === 'supplement' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Supplement
               </label>
               <select
                 value={supplementId}
                 onChange={(e) => setSupplementId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">Select supplement...</option>
                 {supplements.map(supplement => (
@@ -527,7 +527,7 @@ function ScheduleTemplateForm() {
               className="w-4 h-4 text-blue-600 rounded"
               id="timeWindow"
             />
-            <label htmlFor="timeWindow" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <label htmlFor="timeWindow" className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Clock size={16} />
               Enable Time Window
             </label>
@@ -536,7 +536,7 @@ function ScheduleTemplateForm() {
           {timeWindowEnabled && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Earliest Time
                 </label>
                 <div className="flex gap-2">
@@ -546,22 +546,22 @@ function ScheduleTemplateForm() {
                     onChange={(e) => setEarliestHours(Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0)))}
                     min={userTimeFormat === '12h' ? '1' : '0'}
                     max={userTimeFormat === '12h' ? '12' : '23'}
-                    className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
                   />
-                  <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                  <span className="self-center text-muted-foreground">:</span>
                   <input
                     type="number"
                     value={earliestMinutes}
                     onChange={(e) => setEarliestMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
                     min="0"
                     max="59"
-                    className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
                   />
                   {userTimeFormat === '12h' && (
                     <select
                       value={earliestPeriod}
                       onChange={(e) => setEarliestPeriod(e.target.value)}
-                      className="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                     >
                       <option value="AM">AM</option>
                       <option value="PM">PM</option>
@@ -571,7 +571,7 @@ function ScheduleTemplateForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Latest Time
                 </label>
                 <div className="flex gap-2">
@@ -581,22 +581,22 @@ function ScheduleTemplateForm() {
                     onChange={(e) => setLatestHours(Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0)))}
                     min={userTimeFormat === '12h' ? '1' : '0'}
                     max={userTimeFormat === '12h' ? '12' : '23'}
-                    className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
                   />
-                  <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                  <span className="self-center text-muted-foreground">:</span>
                   <input
                     type="number"
                     value={latestMinutes}
                     onChange={(e) => setLatestMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
                     min="0"
                     max="59"
-                    className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
                   />
                   {userTimeFormat === '12h' && (
                     <select
                       value={latestPeriod}
                       onChange={(e) => setLatestPeriod(e.target.value)}
-                      className="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                     >
                       <option value="AM">AM</option>
                       <option value="PM">PM</option>
@@ -606,7 +606,7 @@ function ScheduleTemplateForm() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Reminder (minutes before latest time)
                 </label>
                 <input
@@ -615,7 +615,7 @@ function ScheduleTemplateForm() {
                   onChange={(e) => setReminderMinutesBefore(e.target.value)}
                   min="0"
                   placeholder="e.g., 30"
-                  className="w-full md:w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="w-full md:w-48 px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -624,7 +624,7 @@ function ScheduleTemplateForm() {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground mb-1">
             Notes
           </label>
           <textarea
@@ -632,7 +632,7 @@ function ScheduleTemplateForm() {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Additional notes..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
           />
         </div>
 
@@ -649,7 +649,7 @@ function ScheduleTemplateForm() {
           <button
             type="button"
             onClick={() => navigate('/schedule-templates')}
-            className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="px-6 py-3 border border-border rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
           >
             Cancel
           </button>

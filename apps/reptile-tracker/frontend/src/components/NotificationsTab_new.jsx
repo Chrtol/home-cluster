@@ -453,7 +453,7 @@ function NotificationsTab() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="text-gray-500 dark:text-gray-400">Loading notification settings...</div>
+        <div className="text-muted-foreground">Loading notification settings...</div>
       </div>
     );
   }
@@ -462,8 +462,8 @@ function NotificationsTab() {
     <div className="space-y-6">
       {/* Global Notification Preferences */}
       <div className="card">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Notification Preferences</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Notification Preferences</h2>
+        <p className="text-sm text-muted-foreground mb-6">
           Choose which types of notifications you want to receive across all your notification channels.
         </p>
 
@@ -488,8 +488,8 @@ function NotificationsTab() {
               className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
             />
             <div className="flex-1">
-              <div className="font-medium text-gray-900 dark:text-white">Schedule Reminders</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="font-medium text-foreground">Schedule Reminders</div>
+              <div className="text-sm text-muted-foreground">
                 Get notified before a schedule's time window closes (configured per schedule)
               </div>
             </div>
@@ -503,15 +503,15 @@ function NotificationsTab() {
               className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
             />
             <div className="flex-1">
-              <div className="font-medium text-gray-900 dark:text-white">Overdue Alerts</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="font-medium text-foreground">Overdue Alerts</div>
+              <div className="text-sm text-muted-foreground">
                 Get notified when a scheduled activity is missed
               </div>
             </div>
           </label>
 
           {/* Quiet Hours */}
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="pt-4 border-t border-border">
             <label className="flex items-center gap-3 cursor-pointer mb-4">
               <input
                 type="checkbox"
@@ -520,8 +520,8 @@ function NotificationsTab() {
                 className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white">Enable Quiet Hours</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="font-medium text-foreground">Enable Quiet Hours</div>
+                <div className="text-sm text-muted-foreground">
                   Suppress non-critical notifications during specified hours (critical health alerts will still be sent)
                 </div>
               </div>
@@ -531,7 +531,7 @@ function NotificationsTab() {
               <div className="ml-7 space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Start Time
                     </label>
                     <div className="flex gap-2">
@@ -544,7 +544,7 @@ function NotificationsTab() {
                         max={userTimeFormat === '12h' ? 12 : 23}
                         required
                       />
-                      <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                      <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                       <input
                         type="number"
                         value={String(startMinutes).padStart(2, '0')}
@@ -567,7 +567,7 @@ function NotificationsTab() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       End Time
                     </label>
                     <div className="flex gap-2">
@@ -580,7 +580,7 @@ function NotificationsTab() {
                         max={userTimeFormat === '12h' ? 12 : 23}
                         required
                       />
-                      <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                      <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                       <input
                         type="number"
                         value={String(endMinutes).padStart(2, '0')}
@@ -603,7 +603,7 @@ function NotificationsTab() {
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   {quietHoursStart && quietHoursEnd && (
                     quietHoursStart > quietHoursEnd
                       ? `Quiet hours from ${quietHoursStart} to ${quietHoursEnd} (overnight)`
@@ -628,8 +628,8 @@ function NotificationsTab() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notification Channels</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h2 className="text-xl font-bold text-foreground">Notification Channels</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Add multiple notification channels (Discord, Pushover, etc.). Notifications are sent to all enabled channels.
             </p>
           </div>
@@ -644,9 +644,9 @@ function NotificationsTab() {
 
         {/* Channel Cards */}
         {channels.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <Bell size={48} className="mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 mb-4">No notification channels configured yet</p>
+          <div className="text-center py-12 bg-card/50 rounded-lg border-2 border-dashed border-border">
+            <Bell size={48} className="mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">No notification channels configured yet</p>
             <button onClick={handleAddChannel} className="btn-primary">
               <Plus size={16} className="inline mr-2" />
               Add Your First Channel
@@ -660,13 +660,13 @@ function NotificationsTab() {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   channel.enabled
                     ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
-                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50'
+                    : 'border-border bg-card/50'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <div className="font-semibold text-gray-900 dark:text-white mb-1">{channel.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="font-semibold text-foreground mb-1">{channel.name}</div>
+                    <div className="text-sm text-muted-foreground">
                       {getChannelTypeDisplay(channel.webhook_type)}
                     </div>
                   </div>
@@ -708,7 +708,7 @@ function NotificationsTab() {
                     )}
                   </div>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
+                <div className="text-xs text-muted-foreground font-mono break-all">
                   {channel.webhook_type === 'in_app' ? (
                     <div className="italic">Notifications appear in the notification bell icon</div>
                   ) : channel.webhook_type === 'pushover' ? (
@@ -721,7 +721,7 @@ function NotificationsTab() {
                   )}
                 </div>
                 {!channel.enabled && (
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                  <div className="mt-2 text-xs text-muted-foreground italic">
                     Disabled - notifications will not be sent to this channel
                   </div>
                 )}
@@ -735,13 +735,13 @@ function NotificationsTab() {
       {showAddChannel && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="card max-w-lg w-full">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-bold text-foreground mb-4">
               {editingChannel ? 'Edit' : 'Add'} Notification Channel
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Channel Name
                 </label>
                 <input
@@ -756,7 +756,7 @@ function NotificationsTab() {
               {/* Hide channel type selector for in-app channels */}
               {channelType !== 'in_app' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Channel Type
                   </label>
                   <select
@@ -776,7 +776,7 @@ function NotificationsTab() {
                 <>
                   {/* Pushover Config Fields */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       API Key *
                     </label>
                     <input
@@ -789,7 +789,7 @@ function NotificationsTab() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       User Key *
                     </label>
                     <input
@@ -802,7 +802,7 @@ function NotificationsTab() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Devices (Optional)
                     </label>
                     <input
@@ -815,7 +815,7 @@ function NotificationsTab() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Priority
                     </label>
                     <select
@@ -834,7 +834,7 @@ function NotificationsTab() {
                   {pushoverPriority === 'emergency' && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                           Retry (seconds)
                         </label>
                         <input
@@ -844,11 +844,11 @@ function NotificationsTab() {
                           min="30"
                           className="input-field"
                         />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 30 seconds</p>
+                        <p className="text-xs text-muted-foreground mt-1">Minimum 30 seconds</p>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                           Expire (seconds)
                         </label>
                         <input
@@ -858,13 +858,13 @@ function NotificationsTab() {
                           max="86400"
                           className="input-field"
                         />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Maximum 86400 seconds (24 hours)</p>
+                        <p className="text-xs text-muted-foreground mt-1">Maximum 86400 seconds (24 hours)</p>
                       </div>
                     </>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Sound (Optional)
                     </label>
                     <input
@@ -880,7 +880,7 @@ function NotificationsTab() {
                 <>
                   {/* Webhook URL for Discord and Generic */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Webhook URL *
                     </label>
                     <input
@@ -901,14 +901,14 @@ function NotificationsTab() {
                   onChange={(e) => setChannelEnabled(e.target.checked)}
                   className="w-4 h-4 text-primary-600 rounded"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-sm text-muted-foreground">
                   Enable this channel
                 </span>
               </label>
 
               {/* Household-wide toggle - hide for in-app channels */}
               {channelType !== 'in_app' && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                <div className="border border-border rounded-lg p-3 bg-card">
                   <label className="flex items-start gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -917,10 +917,10 @@ function NotificationsTab() {
                       className="w-4 h-4 text-primary-600 rounded mt-0.5"
                     />
                     <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                      <span className="text-sm font-medium text-foreground block">
                         Household channel
                       </span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400 block mt-1">
+                      <span className="text-xs text-muted-foreground block mt-1">
                         Make this channel available to all household members. When enabled, any household member can select this channel when creating schedules for shared reptiles.
                       </span>
                     </div>
@@ -929,7 +929,7 @@ function NotificationsTab() {
               )}
 
               {/* Test Button */}
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="pt-2 border-t border-border">
                 <button
                   onClick={handleTestChannel}
                   disabled={testingChannel || (channelType === 'pushover' ? (!pushoverApiKey.trim() || !pushoverUserKey.trim()) : (channelType === 'in_app' ? false : !channelUrl.trim()))}
@@ -983,11 +983,11 @@ function NotificationsTab() {
 
       {/* Info Card */}
       <div className="card bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border-blue-200 dark:border-blue-800">
-        <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
           <Bell size={20} className="text-blue-600 dark:text-blue-400" />
           How Notifications Work
         </h3>
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <div>
             <div className="font-semibold text-blue-600 dark:text-blue-400 mb-1">Multiple Channels</div>
             <p>Add as many notification channels as you need. All enabled channels will receive notifications.</p>

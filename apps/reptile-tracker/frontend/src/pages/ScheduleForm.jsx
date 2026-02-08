@@ -491,12 +491,12 @@ function ScheduleForm() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-foreground">
           {isEditing ? 'Edit Schedule' : 'Create Schedule'}
         </h1>
         <button
           onClick={() => navigate("/calendar")}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <ArrowLeft size={20} />
           <span>Back to Calendar</span>
@@ -506,7 +506,7 @@ function ScheduleForm() {
       <form onSubmit={handleSubmit} className="card space-y-6">
         {/* Reptile Selection */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-muted-foreground mb-2">
             Reptile *
           </label>
           <select
@@ -526,7 +526,7 @@ function ScheduleForm() {
 
         {/* Schedule Name */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-muted-foreground mb-2">
             Schedule Name
           </label>
           <input
@@ -536,14 +536,14 @@ function ScheduleForm() {
             placeholder="e.g., Morning Insects, Evening Salad"
             className="input-field"
           />
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Optional: Give this schedule a friendly name for easy identification
           </p>
         </div>
 
         {/* Schedule Type */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-muted-foreground mb-2">
             Schedule Type *
           </label>
           <select
@@ -561,7 +561,7 @@ function ScheduleForm() {
 
         {/* Schedule Mode (Fixed vs Requirement) */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-muted-foreground mb-2">
             Schedule Mode *
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -571,7 +571,7 @@ function ScheduleForm() {
               className={`px-3 py-3 rounded-lg border-2 transition-all ${
                 scheduleMode === "fixed"
                   ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+                  : "border-border text-muted-foreground hover:border-primary-400"
               }`}
             >
               <div className="font-semibold text-sm">Fixed</div>
@@ -585,7 +585,7 @@ function ScheduleForm() {
               className={`px-3 py-3 rounded-lg border-2 transition-all ${
                 scheduleMode === "interval"
                   ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+                  : "border-border text-muted-foreground hover:border-primary-400"
               }`}
             >
               <div className="font-semibold text-sm">Interval</div>
@@ -599,7 +599,7 @@ function ScheduleForm() {
               className={`px-3 py-3 rounded-lg border-2 transition-all ${
                 scheduleMode === "dependent"
                   ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+                  : "border-border text-muted-foreground hover:border-primary-400"
               }`}
             >
               <div className="font-semibold text-sm">Dependent</div>
@@ -608,7 +608,7 @@ function ScheduleForm() {
               </div>
             </button>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             {scheduleMode === "fixed"
               ? "Schedule occurs on specific dates or days of the week"
               : scheduleMode === "interval"
@@ -622,7 +622,7 @@ function ScheduleForm() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   Min Days Between *
                 </label>
                 <input
@@ -634,13 +634,13 @@ function ScheduleForm() {
                   placeholder="e.g., 3"
                   className="input-field"
                 />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Minimum time to wait (HARD constraint)
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   Max Days Between *
                 </label>
                 <input
@@ -652,14 +652,14 @@ function ScheduleForm() {
                 placeholder="e.g., 4"
                 className="input-field"
               />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Maximum allowed time (HARD constraint)
               </p>
             </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-muted-foreground mb-2">
                 Period Tracking
               </label>
               <select
@@ -670,13 +670,13 @@ function ScheduleForm() {
                 <option value="week">Week</option>
                 <option value="month">Month</option>
               </select>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 How to group feeding counts for display (informational only)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-muted-foreground mb-2">
                 Suggested Days (Optional)
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -688,14 +688,14 @@ function ScheduleForm() {
                     className={`px-4 py-3 rounded-lg border-2 transition-all ${
                       suggestedDays.includes(day.value)
                         ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                        : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                        : "border-border text-muted-foreground hover:border-green-400"
                     }`}
                   >
                     {day.label}
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 Calendar instances will appear on these days (adapts to actual completion)
               </p>
             </div>
@@ -705,7 +705,7 @@ function ScheduleForm() {
         {/* Food Category (only for feeding schedules) */}
         {scheduleType === "feeding" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Food Category
             </label>
             <select
@@ -721,7 +721,7 @@ function ScheduleForm() {
               <option value="mixed">Mixed (Multiple Types)</option>
               <option value="other">Other</option>
             </select>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Optional: Specify what type of food this feeding is for
             </p>
           </div>
@@ -730,7 +730,7 @@ function ScheduleForm() {
         {/* Time Slot (only for misting schedules) */}
         {scheduleType === "misting" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Time Slot
             </label>
             <select
@@ -745,7 +745,7 @@ function ScheduleForm() {
               <option value="evening">Evening</option>
               <option value="night">Night</option>
             </select>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Optional: Specify the time of day for misting
             </p>
           </div>
@@ -754,7 +754,7 @@ function ScheduleForm() {
         {/* Health Category (only for health/weighing schedules) */}
         {scheduleType === "weighing" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Health Activity Type
             </label>
             <select
@@ -767,7 +767,7 @@ function ScheduleForm() {
               <option value="shedding_check">Shedding Check</option>
               <option value="health_inspection">Health Inspection</option>
             </select>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Specify what type of health activity this schedule is for
             </p>
           </div>
@@ -776,7 +776,7 @@ function ScheduleForm() {
         {/* Supplement Selection (only for supplement schedules) */}
         {scheduleType === "supplement" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Supplement
             </label>
             <select
@@ -797,7 +797,7 @@ function ScheduleForm() {
         {/* Schedule Rule (only for fixed mode) */}
         {scheduleMode === "fixed" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Schedule Rule *
             </label>
             <select
@@ -819,7 +819,7 @@ function ScheduleForm() {
           <>
         {scheduleRule === "every_x_days" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Frequency (Days) *
             </label>
             <input
@@ -836,7 +836,7 @@ function ScheduleForm() {
 
         {scheduleRule === "days_of_week" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Days of Week *
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -848,7 +848,7 @@ function ScheduleForm() {
                   className={`px-4 py-3 rounded-lg border-2 transition-all ${
                     daysOfWeek.includes(day.value)
                       ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                      : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+                      : "border-border text-muted-foreground hover:border-primary-400"
                   }`}
                 >
                   {day.label}
@@ -860,7 +860,7 @@ function ScheduleForm() {
 
         {scheduleRule === "monthly" && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-muted-foreground mb-2">
               Day of Month *
             </label>
             <input
@@ -880,7 +880,7 @@ function ScheduleForm() {
         {scheduleMode === "dependent" && (
           <>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-muted-foreground mb-2">
                 Parent Schedule *
               </label>
               <select
@@ -915,13 +915,13 @@ function ScheduleForm() {
                   })
                 )}
               </select>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 This schedule will trigger based on occurrences of the parent schedule. Only non-dependent schedules can be parents.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-muted-foreground mb-2">
                 Dependent Rule *
               </label>
               <select
@@ -936,7 +936,7 @@ function ScheduleForm() {
                 <option value="once_per_day">Once Per Day (First Occurrence Only)</option>
               </select>
               {dependentRule === "once_per_day" && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Will trigger once per day when the parent schedule occurs. Perfect for daily supplements that should be given with one feeding per day (you choose which feeding when logging).
                 </p>
               )}
@@ -944,7 +944,7 @@ function ScheduleForm() {
 
             {dependentRule === "every_nth" && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   Occurrence Frequency *
                 </label>
                 <input
@@ -956,7 +956,7 @@ function ScheduleForm() {
                   placeholder="e.g., 2 for every 2nd occurrence"
                   className="input-field"
                 />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Example: "2" means every 2nd feeding, "3" means every 3rd feeding
                 </p>
               </div>
@@ -964,7 +964,7 @@ function ScheduleForm() {
 
             {dependentRule === "specific_days" && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   Days of Week *
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -976,14 +976,14 @@ function ScheduleForm() {
                       className={`px-4 py-3 rounded-lg border-2 transition-all ${
                         dependentDays.includes(day.value)
                           ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                          : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400"
+                          : "border-border text-muted-foreground hover:border-primary-400"
                       }`}
                     >
                       {day.label}
                     </button>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Only trigger on parent schedule occurrences that fall on these days
                 </p>
               </div>
@@ -995,7 +995,7 @@ function ScheduleForm() {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-muted-foreground mb-2">
             Notes
           </label>
           <textarea
@@ -1008,7 +1008,7 @@ function ScheduleForm() {
         </div>
 
         {/* Time Window Settings */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="border-t border-border pt-6">
           <div className="flex items-center gap-3 mb-4">
             <input
               type="checkbox"
@@ -1017,11 +1017,11 @@ function ScheduleForm() {
               onChange={(e) => setTimeWindowEnabled(e.target.checked)}
               className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
             />
-            <label htmlFor="timeWindowEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <label htmlFor="timeWindowEnabled" className="text-sm font-semibold text-muted-foreground">
               Enable Time Window
             </label>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Set a time range when this activity should be completed. Useful for basking reptiles that need to eat after warming up.
           </p>
 
@@ -1029,7 +1029,7 @@ function ScheduleForm() {
             <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Earliest Time
                   </label>
                   <div className="flex gap-2">
@@ -1042,7 +1042,7 @@ function ScheduleForm() {
                       max={userTimeFormat === '12h' ? 12 : 23}
                       required
                     />
-                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                     <input
                       type="number"
                       value={String(earliestMinutes).padStart(2, '0')}
@@ -1063,13 +1063,13 @@ function ScheduleForm() {
                       </select>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     When the feeding window opens
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Latest Time
                   </label>
                   <div className="flex gap-2">
@@ -1082,7 +1082,7 @@ function ScheduleForm() {
                       max={userTimeFormat === '12h' ? 12 : 23}
                       required
                     />
-                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                     <input
                       type="number"
                       value={String(latestMinutes).padStart(2, '0')}
@@ -1103,7 +1103,7 @@ function ScheduleForm() {
                       </select>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     When the feeding must be completed by
                   </p>
                 </div>
@@ -1113,7 +1113,7 @@ function ScheduleForm() {
         </div>
 
         {/* Auto-Complete Settings */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="border-t border-border pt-6">
           <div className="flex items-center gap-3 mb-4">
             <input
               type="checkbox"
@@ -1122,18 +1122,18 @@ function ScheduleForm() {
               onChange={(e) => setAutoCompleteEnabled(e.target.checked)}
               className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
             />
-            <label htmlFor="autoCompleteEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <label htmlFor="autoCompleteEnabled" className="text-sm font-semibold text-muted-foreground">
               Enable Auto-Complete
             </label>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Automatically mark this schedule as completed if not manually logged. Useful for daily repetitive tasks like salad feeding or misting.
           </p>
 
           {autoCompleteEnabled && (
             <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Hours After Window
                 </label>
                 <input
@@ -1145,7 +1145,7 @@ function ScheduleForm() {
                   max="24"
                   required
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {timeWindowEnabled
                     ? "Hours after the latest time to auto-complete this schedule"
                     : "Hours after end of day (11:59 PM) to auto-complete this schedule"}
@@ -1160,7 +1160,7 @@ function ScheduleForm() {
 
         {/* Flexible Completion Window Settings - Only for fixed schedules */}
         {scheduleMode === "fixed" && (
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="border-t border-border pt-6">
             <div className="flex items-center gap-3 mb-4">
               <input
                 type="checkbox"
@@ -1169,18 +1169,18 @@ function ScheduleForm() {
                 onChange={(e) => setFlexibleCompletionEnabled(e.target.checked)}
                 className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
               />
-              <label htmlFor="flexibleCompletionEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <label htmlFor="flexibleCompletionEnabled" className="text-sm font-semibold text-muted-foreground">
                 Enable Flexible Completion Window
               </label>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Allow completing this schedule within a range of days (e.g., feeding 1 day early or late). Useful when your schedule varies slightly from day to day.
             </p>
 
             {flexibleCompletionEnabled && (
               <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Completion Window (±days)
                   </label>
                   <input
@@ -1192,7 +1192,7 @@ function ScheduleForm() {
                     max="7"
                     required
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Activities can be logged {flexibleCompletionDays} day(s) before or after the scheduled date
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
@@ -1212,7 +1212,7 @@ function ScheduleForm() {
         )}
 
         {/* Notification Settings */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="border-t border-border pt-6">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -1221,11 +1221,11 @@ function ScheduleForm() {
               onChange={(e) => setNotificationsEnabled(e.target.checked)}
               className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
             />
-            <label htmlFor="notificationsEnabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+            <label htmlFor="notificationsEnabled" className="text-sm font-semibold text-muted-foreground cursor-pointer">
               Enable notifications for this schedule
             </label>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-8">
+          <p className="text-xs text-muted-foreground mt-2 ml-8">
             Receive reminder alerts and overdue warnings according to your notification preferences in Settings
           </p>
 
@@ -1246,7 +1246,7 @@ function ScheduleForm() {
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 border-2 rounded-lg text-xs font-medium transition-all ${
                         isSelected
                           ? 'bg-primary-100 dark:bg-primary-900/40 border-primary-500 dark:border-primary-500 text-primary-900 dark:text-primary-100'
-                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400 dark:hover:border-primary-600'
+                          : 'bg-card border-border text-muted-foreground hover:border-primary-400 dark:hover:border-primary-600'
                       }`}
                     >
                       {channel.household_wide ? (
@@ -1255,7 +1255,7 @@ function ScheduleForm() {
                         <UserIcon size={14} className="flex-shrink-0" />
                       )}
                       <span className="font-semibold">{channel.name}</span>
-                      <span className="text-gray-500 dark:text-gray-400">({getChannelTypeDisplay(channel.webhook_type)})</span>
+                      <span className="text-muted-foreground">({getChannelTypeDisplay(channel.webhook_type)})</span>
                     </button>
                   );
                 })}
@@ -1288,14 +1288,14 @@ function ScheduleForm() {
                   onChange={(e) => setReminderEnabled(e.target.checked)}
                   className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
                 />
-                <label htmlFor="reminderEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="reminderEnabled" className="text-sm font-medium text-muted-foreground">
                   Set reminder time
                 </label>
               </div>
 
               {reminderEnabled && (
                 <>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Reminder Time
                   </label>
                   <div className="flex gap-2">
@@ -1308,7 +1308,7 @@ function ScheduleForm() {
                       max={userTimeFormat === '12h' ? 12 : 23}
                       required
                     />
-                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                     <input
                       type="number"
                       value={String(reminderMinutes).padStart(2, '0')}
@@ -1329,7 +1329,7 @@ function ScheduleForm() {
                       </select>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {timeWindowEnabled
                       ? "Get reminded at this specific time (must be within the time window)"
                       : "Get reminded at this specific time"}
@@ -1350,7 +1350,7 @@ function ScheduleForm() {
         </div>
 
         {/* Enabled Toggle */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="border-t border-border pt-6">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -1359,18 +1359,18 @@ function ScheduleForm() {
               onChange={(e) => setEnabled(e.target.checked)}
               className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
             />
-            <label htmlFor="enabled" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <label htmlFor="enabled" className="text-sm font-semibold text-muted-foreground">
               Enable this schedule
             </label>
           </div>
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <button
             type="button"
             onClick={() => navigate("/calendar")}
-            className="px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="px-6 py-3 rounded-lg border border-border text-muted-foreground hover:bg-secondary transition-colors"
           >
             Cancel
           </button>

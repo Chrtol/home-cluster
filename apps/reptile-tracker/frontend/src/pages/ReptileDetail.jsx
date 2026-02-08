@@ -15,7 +15,7 @@ import AvatarCropper from '../components/AvatarCropper';
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
   if (!data || data.length === 0) {
-    return <p className="text-gray-500 dark:text-gray-400">No weight data available to display chart.</p>;
+    return <p className="text-muted-foreground">No weight data available to display chart.</p>;
   }
 
   const chartData = data.map(log => ({
@@ -338,7 +338,7 @@ export default function ReptileDetail() {
   };
 
   if (loading) {
-    return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptile details...</div>;
+    return <div className="text-center text-muted-foreground">Loading reptile details...</div>;
   }
 
   if (!reptile) {
@@ -352,7 +352,7 @@ export default function ReptileDetail() {
     feedings: (
       <div className="space-y-2">
         {feedings.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No feeding records yet</p>
+          <p className="text-center text-muted-foreground py-8">No feeding records yet</p>
         ) : (
           feedings.map((f, idx) => (
             <div key={f.id} className="relative group">
@@ -360,17 +360,17 @@ export default function ReptileDetail() {
                 to={`/feed/${f.id}`}
                 className={`block p-3 border-l-4 border-green-500 dark:border-green-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
-                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
-                      <p className="text-gray-900 dark:text-white font-semibold">
+                      <p className="text-foreground font-semibold">
                         {formatDateTimeShort(f.fed_at)}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">• {f.user?.name}</p>
+                      <p className="text-xs text-muted-foreground">• {f.user?.name}</p>
                     </div>
                     <div className="flex flex-wrap gap-1 items-center">
                       {f.foods && f.foods.length > 0 && f.foods.map((food, foodIdx) => (
@@ -391,13 +391,13 @@ export default function ReptileDetail() {
                       ))}
                     </div>
                     {f.notes && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5 italic line-clamp-2">{f.notes}</p>
+                      <p className="text-xs text-muted-foreground mt-1.5 italic line-clamp-2">{f.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
                       to={`/feed/${f.id}`}
-                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                      className="p-1.5 bg-card border border-border rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-secondary shadow-sm"
                       title="View/Edit"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -405,7 +405,7 @@ export default function ReptileDetail() {
                     </Link>
                     <button
                       onClick={(e) => { e.preventDefault(); handleDeleteFeeding(f.id); }}
-                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                      className="p-1.5 bg-card border border-border rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-secondary shadow-sm"
                       title="Delete"
                     >
                       <Trash2 size={16} />
@@ -421,7 +421,7 @@ export default function ReptileDetail() {
     misting: (
       <div className="space-y-2">
         {mistingLogs.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No misting records yet</p>
+          <p className="text-center text-muted-foreground py-8">No misting records yet</p>
         ) : (
           mistingLogs.map((m, idx) => (
             <div key={m.id} className="relative group">
@@ -429,26 +429,26 @@ export default function ReptileDetail() {
                 to={`/misting/${m.id}`}
                 className={`block p-3 border-l-4 border-blue-500 dark:border-blue-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
-                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <Droplet size={18} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 dark:text-white font-semibold">
+                      <p className="text-foreground font-semibold">
                         {formatDateTimeShort(m.misted_at)}
                       </p>
                       {m.notes && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 italic line-clamp-1">{m.notes}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{m.notes}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
                       to={`/misting/${m.id}`}
-                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                      className="p-1.5 bg-card border border-border rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-secondary shadow-sm"
                       title="View/Edit"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -456,7 +456,7 @@ export default function ReptileDetail() {
                     </Link>
                     <button
                       onClick={(e) => { e.preventDefault(); handleDeleteMisting(m.id); }}
-                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                      className="p-1.5 bg-card border border-border rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-secondary shadow-sm"
                       title="Delete"
                     >
                       <Trash2 size={16} />
@@ -471,11 +471,11 @@ export default function ReptileDetail() {
     ),
     weight: (
         <div>
-            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Weight History</h3>
+            <h3 className="text-lg font-bold mb-4 text-foreground">Weight History</h3>
             <WeightChart data={weightLogs} />
             <div className="space-y-2 mt-6">
                 {weightLogs.length === 0 ? (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-8">No weight records yet</p>
+                  <p className="text-center text-muted-foreground py-8">No weight records yet</p>
                 ) : (
                   weightLogs.map((w, idx) => (
                     <div key={w.id} className="relative group">
@@ -483,8 +483,8 @@ export default function ReptileDetail() {
                         to={`/health-log/weight/${w.id}`}
                         className={`block p-3 border-l-4 border-orange-500 dark:border-orange-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                           idx % 2 === 0
-                            ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
-                            : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
+                            ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
+                            : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-4">
@@ -492,18 +492,18 @@ export default function ReptileDetail() {
                             <Scale size={18} className="text-orange-600 dark:text-orange-400 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline gap-2">
-                                <p className="text-gray-900 dark:text-white font-semibold text-lg">
+                                <p className="text-foreground font-semibold text-lg">
                                   {w.weight_grams}g
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">• {formatDateShort(w.measured_at)}</p>
+                                <p className="text-xs text-muted-foreground">• {formatDateShort(w.measured_at)}</p>
                               </div>
-                              {w.notes && <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 italic line-clamp-1">{w.notes}</p>}
+                              {w.notes && <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{w.notes}</p>}
                             </div>
                           </div>
                           <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link
                               to={`/health-log/weight/${w.id}`}
-                              className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                              className="p-1.5 bg-card border border-border rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-secondary shadow-sm"
                               title="View/Edit"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -511,7 +511,7 @@ export default function ReptileDetail() {
                             </Link>
                             <button
                               onClick={(e) => { e.preventDefault(); handleDeleteWeight(w.id); }}
-                              className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                              className="p-1.5 bg-card border border-border rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-secondary shadow-sm"
                               title="Delete"
                             >
                               <Trash2 size={16} />
@@ -528,7 +528,7 @@ export default function ReptileDetail() {
     health: (
       <div className="space-y-2">
         {healthRecords.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No health records yet</p>
+          <p className="text-center text-muted-foreground py-8">No health records yet</p>
         ) : (
           healthRecords.map((h, idx) => (
             <div key={h.id} className="relative group">
@@ -536,8 +536,8 @@ export default function ReptileDetail() {
                 to={`/health-log/health/${h.id}`}
                 className={`block p-3 border-l-4 border-red-500 dark:border-red-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
-                    ? 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900/30'
-                    : 'bg-gray-50 dark:bg-gray-700/30 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -545,21 +545,21 @@ export default function ReptileDetail() {
                     <Activity size={18} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <p className="text-gray-900 dark:text-white font-semibold">{h.title}</p>
+                        <p className="text-foreground font-semibold">{h.title}</p>
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 capitalize">
                           {h.record_type}
                         </span>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">• {formatDateShort(h.date)}</p>
+                        <p className="text-xs text-muted-foreground">• {formatDateShort(h.date)}</p>
                       </div>
                       {h.description && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{h.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{h.description}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
                       to={`/health-log/health/${h.id}`}
-                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                      className="p-1.5 bg-card border border-border rounded text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-secondary shadow-sm"
                       title="View/Edit"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -567,7 +567,7 @@ export default function ReptileDetail() {
                     </Link>
                     <button
                       onClick={(e) => { e.preventDefault(); handleDeleteHealth(h.id); }}
-                      className="p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm"
+                      className="p-1.5 bg-card border border-border rounded text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-secondary shadow-sm"
                       title="Delete"
                     >
                       <Trash2 size={16} />
@@ -584,23 +584,23 @@ export default function ReptileDetail() {
       <div className="space-y-6">
         {/* Default Foods for Auto-Selection */}
         <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             Default Foods for Auto-Selection
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             These foods will be automatically pre-selected when logging a new feeding for {reptile.name}.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Default Insect */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Default Insect
               </label>
               <select
                 value={reptile.default_insect_id || ''}
                 onChange={(e) => handleUpdateDefaultFood('default_insect_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground"
               >
                 <option value="">None</option>
                 {allFoods
@@ -615,13 +615,13 @@ export default function ReptileDetail() {
 
             {/* Default Prepared Food */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Default Prepared Food
               </label>
               <select
                 value={reptile.default_prepared_id || ''}
                 onChange={(e) => handleUpdateDefaultFood('default_prepared_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground"
               >
                 <option value="">None</option>
                 {allFoods
@@ -637,10 +637,10 @@ export default function ReptileDetail() {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Manage {reptile.name}'s Favorite Foods
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Select foods that {reptile.name} commonly eats. These will appear first when logging feedings.
           </p>
         </div>
@@ -651,8 +651,8 @@ export default function ReptileDetail() {
           if (categoryFoods.length === 0) return null;
 
           return (
-            <div key={category} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
+            <div key={category} className="border border-border rounded-lg p-4">
+              <h4 className="font-medium text-foreground mb-3 capitalize">
                 {category.replace('_', ' ')}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -665,14 +665,14 @@ export default function ReptileDetail() {
                       className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
                         isFavorite
                           ? 'border-red-400 bg-red-50 dark:bg-red-900/20 dark:border-red-600'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                          : 'border-border hover:border-gray-300 dark:hover:border-gray-600 hover:bg-secondary/50'
                       }`}
                     >
                       <Heart
                         size={18}
                         className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
                       />
-                      <span className={`text-sm ${isFavorite ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                      <span className={`text-sm ${isFavorite ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                         {food.name}
                       </span>
                     </button>
@@ -690,7 +690,7 @@ export default function ReptileDetail() {
             </h4>
             <div className="flex flex-wrap gap-2">
               {favoriteFoods.map(food => (
-                <span key={food.id} className="px-3 py-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-full text-sm text-gray-700 dark:text-gray-300">
+                <span key={food.id} className="px-3 py-1 bg-card border border-blue-300 dark:border-blue-700 rounded-full text-sm text-muted-foreground">
                   {food.name}
                 </span>
               ))}
@@ -743,8 +743,8 @@ export default function ReptileDetail() {
         <div className="flex items-start gap-4">
           <ReptileAvatar reptile={reptile} size="xl" />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{reptile.name}</h1>
-            <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{reptile.name}</h1>
+            <p className="text-muted-foreground">{reptile.species}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -775,7 +775,7 @@ export default function ReptileDetail() {
             onClick={handleToggleActive}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
               reptile.is_active
-                ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                ? 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                 : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
           >
@@ -795,16 +795,16 @@ export default function ReptileDetail() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl font-bold mb-4 text-gray-900 dark:text-white">Details</h2>
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-bold mb-4 text-foreground">Details</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Date of Birth */}
-          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
             <Calendar size={20} className="text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Date of Birth</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Date of Birth</p>
+              <p className="text-sm font-medium text-foreground">
                 {reptile.date_of_birth ? formatDate(reptile.date_of_birth) : 'Not set'}
               </p>
             </div>
@@ -812,11 +812,11 @@ export default function ReptileDetail() {
 
           {/* Age Category - show if set OR if we can calculate from DOB */}
           {(reptile.age_category || reptile.date_of_birth) && (
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
               <Activity size={20} className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Life Stage</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Life Stage</p>
+                <p className="text-sm font-medium text-foreground capitalize">
                   {reptile.age_category || calculateAgeCategory(reptile.date_of_birth)}
                 </p>
               </div>
@@ -825,11 +825,11 @@ export default function ReptileDetail() {
 
           {/* Sex */}
           {reptile.sex && (
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
               <Users size={20} className="text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Sex</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Sex</p>
+                <p className="text-sm font-medium text-foreground capitalize">
                   {reptile.sex}
                 </p>
               </div>
@@ -838,11 +838,11 @@ export default function ReptileDetail() {
 
           {/* Length */}
           {reptile.length && (
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
               <Ruler size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Length</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Length</p>
+                <p className="text-sm font-medium text-foreground">
                   {reptile.length} cm
                 </p>
               </div>
@@ -851,11 +851,11 @@ export default function ReptileDetail() {
 
           {/* UVB Lighting */}
           {reptile.has_uvb !== null && (
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
               <Sun size={20} className="text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">UVB Lighting</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">UVB Lighting</p>
+                <p className="text-sm font-medium text-foreground">
                   {reptile.has_uvb ? 'Yes' : 'No'}
                 </p>
               </div>
@@ -865,11 +865,11 @@ export default function ReptileDetail() {
 
         {/* Notes - Full Width */}
         {reptile.notes && (
-          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg mt-4">
-            <FileText size={20} className="text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg mt-4">
+            <FileText size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</p>
-              <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">
                 {reptile.notes}
               </p>
             </div>
@@ -877,7 +877,7 @@ export default function ReptileDetail() {
         )}
       </div>
 
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto">
+      <div className="border-b border-border mb-4 overflow-x-auto">
         <nav className="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
           {Object.keys(tabs).map(tab => (
             <button
@@ -886,7 +886,7 @@ export default function ReptileDetail() {
               className={`${
                 activeTab === tab
                   ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  : 'border-transparent text-muted-foreground hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               } whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm capitalize`}
             >
               {tab}
@@ -895,14 +895,14 @@ export default function ReptileDetail() {
         </nav>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4 sm:p-6">
         {tabs[activeTab]}
       </div>
 
       {/* Photo Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full">
             <PhotoUpload
               reptileId={parseInt(id)}
               category="general"

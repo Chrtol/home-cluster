@@ -52,11 +52,11 @@ export default function AcceptInvite() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700 max-w-md w-full mx-4 text-center">
-        {status === 'loading' && <p className="text-gray-600 dark:text-gray-300">Joining household...</p>}
+      <div className="bg-card rounded-lg shadow-md p-8 border border-border max-w-md w-full mx-4 text-center">
+        {status === 'loading' && <p className="text-muted-foreground">Joining household...</p>}
         {status === 'success' && <p className="text-green-600 dark:text-green-300">{message}</p>}
         {status === 'error' && <p className="text-red-600 dark:text-red-300">{message}</p>}
-        {status === 'idle' && <p className="text-gray-600 dark:text-gray-300">Processing invitation...</p>}
+        {status === 'idle' && <p className="text-muted-foreground">Processing invitation...</p>}
       </div>
     </div>
   );

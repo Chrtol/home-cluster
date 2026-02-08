@@ -7,10 +7,10 @@ export default function FoodManagement() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Food & Supplement Management</h1>
+      <h1 className="text-3xl font-bold mb-6 text-foreground">Food & Supplement Management</h1>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <div className="border-b border-border mb-6">
         <nav className="flex gap-4">
           <button
             onClick={() => setActiveTab('foods')}
@@ -192,7 +192,7 @@ function FoodsTab() {
         </button>
 
         <div className="w-full sm:w-auto">
-          <label className="block font-medium mb-2 text-sm sm:text-base text-gray-900 dark:text-white">Filter by Category</label>
+          <label className="block font-medium mb-2 text-sm sm:text-base text-foreground">Filter by Category</label>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -217,20 +217,20 @@ function FoodsTab() {
       <div className="card">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+            <thead className="bg-card">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-12"></th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Size</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
               {filteredFoods.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan="6" className="px-6 py-4 text-center text-muted-foreground">
                     No foods found
                   </td>
                 </tr>
@@ -239,7 +239,7 @@ function FoodsTab() {
                   <tr
                     key={food.id}
                     onClick={() => setViewingFood(food)}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                    className="hover:bg-secondary/50 cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-4 whitespace-nowrap">
                       <button
@@ -256,22 +256,22 @@ function FoodsTab() {
                         />
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                       {food.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {food.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {food.insect_size || food.animal_size || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {food.is_default ? (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                           Default
                         </span>
                       ) : (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-secondary text-foreground">
                           Custom
                         </span>
                       )}
@@ -301,10 +301,10 @@ function FoodsTab() {
       {/* Food Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-foreground">
                   {editingFood ? 'Edit Food' : 'Add Food'}
                 </h2>
                 <button
@@ -317,7 +317,7 @@ function FoodsTab() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block font-medium mb-1 text-gray-900 dark:text-white">Name</label>
+                  <label className="block font-medium mb-1 text-foreground">Name</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -328,7 +328,7 @@ function FoodsTab() {
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-1 text-gray-900 dark:text-white">Category</label>
+                  <label className="block font-medium mb-1 text-foreground">Category</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -349,7 +349,7 @@ function FoodsTab() {
 
                 {formData.category === 'insect' && (
                   <div>
-                    <label className="block font-medium mb-1 text-gray-900 dark:text-white">Insect Size</label>
+                    <label className="block font-medium mb-1 text-foreground">Insect Size</label>
                     <select
                       value={formData.insect_size}
                       onChange={(e) => setFormData({ ...formData, insect_size: e.target.value })}
@@ -365,7 +365,7 @@ function FoodsTab() {
 
                 {formData.category === 'frozen_animal' && (
                   <div>
-                    <label className="block font-medium mb-1 text-gray-900 dark:text-white">Animal Size</label>
+                    <label className="block font-medium mb-1 text-foreground">Animal Size</label>
                     <select
                       value={formData.animal_size}
                       onChange={(e) => setFormData({ ...formData, animal_size: e.target.value })}
@@ -401,10 +401,10 @@ function FoodsTab() {
       {/* Food Read-Only View Modal */}
       {viewingFood && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-foreground">
                   {viewingFood.name}
                 </h2>
                 <button
@@ -419,15 +419,15 @@ function FoodsTab() {
                 {/* Category & Size Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Category</p>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                    <p className="text-sm text-muted-foreground mb-2">Category</p>
+                    <p className="text-lg font-semibold text-foreground capitalize">
                       {viewingFood.category.replace('_', ' ')}
                     </p>
                   </div>
                   {(viewingFood.insect_size || viewingFood.animal_size) && (
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Size</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                      <p className="text-sm text-muted-foreground mb-2">Size</p>
+                      <p className="text-lg font-semibold text-foreground capitalize">
                         {viewingFood.insect_size || viewingFood.animal_size?.replace('_', ' ')}
                       </p>
                     </div>
@@ -436,13 +436,13 @@ function FoodsTab() {
 
                 {/* Type Badge */}
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Type</p>
+                  <p className="text-sm text-muted-foreground mb-2">Type</p>
                   {viewingFood.is_default ? (
                     <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       Default Food
                     </span>
                   ) : (
-                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-secondary text-foreground">
                       Custom Food
                     </span>
                   )}
@@ -451,92 +451,92 @@ function FoodsTab() {
                 {/* Nutritional Information */}
                 {viewingFood.nutritional_data && Object.keys(viewingFood.nutritional_data).length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nutritional Information</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Nutritional Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {viewingFood.nutritional_data.protein_percent && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Protein</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Protein</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.protein_percent}%
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.fat_percent && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Fat</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Fat</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.fat_percent}%
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.calcium_mg_per_100g && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Calcium</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Calcium</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.calcium_mg_per_100g} mg/100g
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.phosphorus_mg_per_100g && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Phosphorus</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Phosphorus</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.phosphorus_mg_per_100g} mg/100g
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.calcium_phosphorus_ratio && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Ca:P Ratio</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Ca:P Ratio</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.calcium_phosphorus_ratio}
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.vitamin_a_iu && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin A</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Vitamin A</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.vitamin_a_iu} IU
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.vitamin_c_mg && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin C</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Vitamin C</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.vitamin_c_mg} mg
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.vitamin_d3_iu && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin D3</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Vitamin D3</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.vitamin_d3_iu} IU
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.vitamin_k_mcg && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin K</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Vitamin K</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.vitamin_k_mcg} mcg
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.moisture_percent && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Moisture</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Moisture</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.moisture_percent}%
                           </p>
                         </div>
                       )}
                       {viewingFood.nutritional_data.weight_grams && (
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Weight</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <div className="p-4 bg-secondary/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Weight</p>
+                          <p className="text-xl font-bold text-foreground">
                             {viewingFood.nutritional_data.weight_grams}g
                           </p>
                         </div>
@@ -548,15 +548,15 @@ function FoodsTab() {
                 {/* Notes */}
                 {viewingFood.nutritional_data?.note && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Notes</h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Notes</h3>
+                    <p className="text-muted-foreground">
                       {viewingFood.nutritional_data.note}
                     </p>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-3 pt-4 border-t border-border">
                   <button
                     onClick={() => {
                       setViewingFood(null);
@@ -725,7 +725,7 @@ function SupplementsTab() {
         <button onClick={handleCreate} className="btn-primary flex items-center gap-2 justify-center sm:justify-start">
           <PlusCircle size={20} /> Add Supplement
         </button>
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-right">
+        <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
           Common supplements: Calcium, Calcium with D3, Multivitamins
         </p>
       </div>
@@ -734,18 +734,18 @@ function SupplementsTab() {
       <div className="card">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+            <thead className="bg-card">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Composition</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Composition</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
               {supplements.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan="4" className="px-6 py-4 text-center text-muted-foreground">
                     No supplements found. Add common supplements like Calcium, Calcium with D3, or Multivitamins.
                   </td>
                 </tr>
@@ -761,21 +761,21 @@ function SupplementsTab() {
                     <tr
                       key={supplement.id}
                       onClick={() => setViewingSupplement(supplement)}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      className="hover:bg-secondary/50 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                         {supplement.name}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {composition.length > 0 ? composition.join(', ') : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {supplement.is_default ? (
                           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                             Default
                           </span>
                         ) : (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-secondary text-foreground">
                             Custom
                           </span>
                         )}
@@ -806,10 +806,10 @@ function SupplementsTab() {
       {/* Supplement Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-foreground">
                   {editingSupplement ? 'Edit Supplement' : 'Add Supplement'}
                 </h2>
                 <button
@@ -822,7 +822,7 @@ function SupplementsTab() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block font-medium mb-1 text-gray-900 dark:text-white">Name *</label>
+                  <label className="block font-medium mb-1 text-foreground">Name *</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -833,13 +833,13 @@ function SupplementsTab() {
                   />
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <h3 className="font-medium mb-3 text-gray-900 dark:text-white">Nutritional Information (Optional)</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">All values are per gram of supplement powder</p>
+                <div className="border-t border-border pt-4">
+                  <h3 className="font-medium mb-3 text-foreground">Nutritional Information (Optional)</h3>
+                  <p className="text-sm text-muted-foreground mb-3">All values are per gram of supplement powder</p>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Calcium (mg/g)</label>
+                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Calcium (mg/g)</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.calcium_mg}
@@ -853,7 +853,7 @@ function SupplementsTab() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Vitamin D3 (IU/g)</label>
+                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Vitamin D3 (IU/g)</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.vitamin_d3_iu}
@@ -867,7 +867,7 @@ function SupplementsTab() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Vitamin A (IU/g)</label>
+                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Vitamin A (IU/g)</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.vitamin_a_iu}
@@ -881,7 +881,7 @@ function SupplementsTab() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Notes</label>
+                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Notes</label>
                       <input
                         type="text"
                         value={formData.nutritional_data.notes}
@@ -913,10 +913,10 @@ function SupplementsTab() {
       {/* Supplement Read-Only View Modal */}
       {viewingSupplement && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-foreground">
                   {viewingSupplement.name}
                 </h2>
                 <button
@@ -930,13 +930,13 @@ function SupplementsTab() {
               <div className="space-y-6">
                 {/* Type Badge */}
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Type</p>
+                  <p className="text-sm text-muted-foreground mb-2">Type</p>
                   {viewingSupplement.is_default ? (
                     <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       Default Supplement
                     </span>
                   ) : (
-                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-secondary text-foreground">
                       Custom Supplement
                     </span>
                   )}
@@ -944,23 +944,23 @@ function SupplementsTab() {
 
                 {/* Nutritional Information */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nutritional Information</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Nutritional Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Calcium</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className="p-4 bg-secondary/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Calcium</p>
+                      <p className="text-xl font-bold text-foreground">
                         {viewingSupplement.nutritional_data?.calcium_mg ? `${viewingSupplement.nutritional_data.calcium_mg} mg` : 'Not specified'}
                       </p>
                     </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin D3</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className="p-4 bg-secondary/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Vitamin D3</p>
+                      <p className="text-xl font-bold text-foreground">
                         {viewingSupplement.nutritional_data?.vitamin_d3_iu ? `${viewingSupplement.nutritional_data.vitamin_d3_iu} IU` : 'Not specified'}
                       </p>
                     </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Vitamin A</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className="p-4 bg-secondary/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Vitamin A</p>
+                      <p className="text-xl font-bold text-foreground">
                         {viewingSupplement.nutritional_data?.vitamin_a_iu ? `${viewingSupplement.nutritional_data.vitamin_a_iu} IU` : 'Not specified'}
                       </p>
                     </div>
@@ -970,15 +970,15 @@ function SupplementsTab() {
                 {/* Notes */}
                 {viewingSupplement.nutritional_data?.notes && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Notes</h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Notes</h3>
+                    <p className="text-muted-foreground">
                       {viewingSupplement.nutritional_data.notes}
                     </p>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-3 pt-4 border-t border-border">
                   <button
                     onClick={() => {
                       setViewingSupplement(null);

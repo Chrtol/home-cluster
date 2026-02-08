@@ -376,7 +376,7 @@ export default function HealthLog() {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-foreground">
             View {logType === 'weight' ? 'Weight' : 'Health'} Log
           </h1>
           <div className="flex gap-2">
@@ -398,16 +398,16 @@ export default function HealthLog() {
         )}
 
         <div className="card space-y-6">
-          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Logged at</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+          <div className="pb-4 border-b border-border">
+            <p className="text-sm text-muted-foreground mb-1">Logged at</p>
+            <p className="text-lg font-medium text-foreground">
               {formatDateTime(existingLog.created_at || existingLog.measured_at || existingLog.date)}
             </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+            <p className="text-sm text-muted-foreground mb-1">Reptile</p>
+            <p className="text-lg font-medium text-foreground">
               {reptiles.find(r => r.id === existingLog.reptile_id)?.name || existingLog.reptile?.name || 'Unknown'}
             </p>
           </div>
@@ -415,14 +415,14 @@ export default function HealthLog() {
           {logType === 'weight' ? (
             <>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Weight</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white">
+                <p className="text-sm text-muted-foreground mb-1">Weight</p>
+                <p className="text-lg font-medium text-foreground">
                   {existingLog.weight_grams}g
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Measured at</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white">
+                <p className="text-sm text-muted-foreground mb-1">Measured at</p>
+                <p className="text-lg font-medium text-foreground">
                   {formatDateTime(existingLog.measured_at)}
                 </p>
               </div>
@@ -430,28 +430,28 @@ export default function HealthLog() {
           ) : (
             <>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Title</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white">
+                <p className="text-sm text-muted-foreground mb-1">Title</p>
+                <p className="text-lg font-medium text-foreground">
                   {existingLog.title}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Record Type</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white capitalize">
+                <p className="text-sm text-muted-foreground mb-1">Record Type</p>
+                <p className="text-lg font-medium text-foreground capitalize">
                   {existingLog.record_type.replace('_', ' ')}
                 </p>
               </div>
               {existingLog.consistency && (
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Consistency</p>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white capitalize">
+                  <p className="text-sm text-muted-foreground mb-1">Consistency</p>
+                  <p className="text-lg font-medium text-foreground capitalize">
                     {existingLog.consistency}
                   </p>
                 </div>
               )}
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Date</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white">
+                <p className="text-sm text-muted-foreground mb-1">Date</p>
+                <p className="text-lg font-medium text-foreground">
                   {formatDateTime(existingLog.date)}
                 </p>
               </div>
@@ -460,14 +460,14 @@ export default function HealthLog() {
 
           {existingLog.notes && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Notes</p>
-              <p className="text-gray-900 dark:text-white">{existingLog.notes}</p>
+              <p className="text-sm text-muted-foreground mb-1">Notes</p>
+              <p className="text-foreground">{existingLog.notes}</p>
             </div>
           )}
           {existingLog.description && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Description</p>
-              <p className="text-gray-900 dark:text-white">{existingLog.description}</p>
+              <p className="text-sm text-muted-foreground mb-1">Description</p>
+              <p className="text-foreground">{existingLog.description}</p>
             </div>
           )}
         </div>
@@ -478,7 +478,7 @@ export default function HealthLog() {
   // CREATE/EDIT MODE
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+      <h1 className="text-3xl font-bold mb-6 text-foreground">
         {mode === 'edit' ? `Edit ${logType === 'weight' ? 'Weight' : 'Health'} Log` : 'Log Health'}
       </h1>
       {error && <p className="text-red-500 bg-red-100 p-3 rounded mb-4">{error}</p>}
@@ -494,19 +494,19 @@ export default function HealthLog() {
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div>
-          <label htmlFor="reptile" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Reptile</label>
+          <label htmlFor="reptile" className="block font-medium mb-1 text-muted-foreground">Reptile</label>
           <select id="reptile" value={selectedReptile} onChange={e => setSelectedReptile(e.target.value)} className="input" required disabled={mode === 'edit'}>
             {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         </div>
 
         <div>
-            <label className="block font-medium mb-2 text-gray-700 dark:text-gray-300">Log Type</label>
+            <label className="block font-medium mb-2 text-muted-foreground">Log Type</label>
             <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setLogType('weight')} disabled={mode === 'edit'} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'weight' ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'} ${mode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <button type="button" onClick={() => setLogType('weight')} disabled={mode === 'edit'} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'weight' ? 'bg-primary-600 text-white' : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'} ${mode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   Weight
                 </button>
-                <button type="button" onClick={() => setLogType('health')} disabled={mode === 'edit'} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'health' ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'} ${mode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <button type="button" onClick={() => setLogType('health')} disabled={mode === 'edit'} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'health' ? 'bg-primary-600 text-white' : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'} ${mode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   Health Record
                 </button>
             </div>
@@ -514,13 +514,13 @@ export default function HealthLog() {
 
         {logType === 'weight' ? (
           <div>
-            <label htmlFor="weight" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Weight (grams)</label>
+            <label htmlFor="weight" className="block font-medium mb-1 text-muted-foreground">Weight (grams)</label>
             <input id="weight" type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} className="input" required />
           </div>
         ) : (
           <>
             <div>
-              <label htmlFor="recordType" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Record Type</label>
+              <label htmlFor="recordType" className="block font-medium mb-1 text-muted-foreground">Record Type</label>
               <select id="recordType" value={recordType} onChange={e => setRecordType(e.target.value)} className="input">
                 <option value="observation">General Observation</option>
                 <option value="shedding">Shedding</option>
@@ -530,12 +530,12 @@ export default function HealthLog() {
               </select>
             </div>
             <div>
-              <label htmlFor="title" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
+              <label htmlFor="title" className="block font-medium mb-1 text-muted-foreground">Title</label>
               <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="input" placeholder={recordType === 'shedding' ? 'e.g., Complete shed' : recordType === 'bowel_movement' ? 'e.g., Morning bowel movement' : 'Brief description'} required />
             </div>
             {recordType === 'bowel_movement' && (
               <div>
-                <label htmlFor="consistency" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Consistency</label>
+                <label htmlFor="consistency" className="block font-medium mb-1 text-muted-foreground">Consistency</label>
                 <select id="consistency" value={consistency} onChange={e => setConsistency(e.target.value)} className="input">
                   <option value="normal">Normal</option>
                   <option value="soft">Soft</option>
@@ -550,7 +550,7 @@ export default function HealthLog() {
 
         <div className="grid grid-cols-2 gap-4">
             <div>
-                <label htmlFor="logDate" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Date</label>
+                <label htmlFor="logDate" className="block font-medium mb-1 text-muted-foreground">Date</label>
                 <DateInput
                     id="logDate"
                     value={logDate}
@@ -560,7 +560,7 @@ export default function HealthLog() {
                 />
             </div>
             <div>
-                <label className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
+                <label className="block font-medium mb-1 text-muted-foreground">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
                 <div className="flex gap-2">
                     <input
                         type="number"
@@ -571,7 +571,7 @@ export default function HealthLog() {
                         max={timeFormat === '12h' ? 12 : 23}
                         required
                     />
-                    <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                    <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                     <input
                         type="number"
                         value={String(minutes).padStart(2, '0')}
@@ -596,7 +596,7 @@ export default function HealthLog() {
         </div>
 
         <div>
-            <label htmlFor="notes" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Notes (optional)</label>
+            <label htmlFor="notes" className="block font-medium mb-1 text-muted-foreground">Notes (optional)</label>
             <textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="input" placeholder={logType === 'weight' ? 'e.g., after shedding' : recordType === 'bowel_movement' ? 'Additional observations...' : 'e.g., noticed a small scratch'}/>
         </div>
 

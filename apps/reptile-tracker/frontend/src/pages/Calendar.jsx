@@ -490,7 +490,7 @@ function Calendar() {
       primary: "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400",
       blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
       purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
-      gray: "bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400"
+      gray: "bg-secondary/30 text-muted-foreground"
     };
     return colors[color] || colors.gray;
   };
@@ -569,7 +569,7 @@ function Calendar() {
         case "supplement":
           return "bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700";
         default:
-          return "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600";
+          return "bg-secondary text-foreground border border-border";
       }
     } else {
       // Outlined/lighter colors for scheduled events
@@ -583,7 +583,7 @@ function Calendar() {
         case "supplement":
           return "bg-green-900/20 text-green-300 dark:bg-green-900/30 dark:text-green-300 border border-green-700 dark:border-green-700";
         default:
-          return "bg-gray-900/20 text-gray-300 dark:bg-gray-900/30 dark:text-gray-300 border border-gray-700 dark:border-gray-700";
+          return "bg-muted/30 text-muted-foreground border border-gray-700 border-border";
       }
     }
   };
@@ -601,7 +601,7 @@ function Calendar() {
         case "supplement":
           return "bg-emerald-500 dark:bg-emerald-600 border border-emerald-600 dark:border-emerald-500";
         default:
-          return "bg-gray-500 dark:bg-gray-600 border border-gray-600 dark:border-gray-500";
+          return "bg-secondary border border-gray-600 border-border";
       }
     } else {
       // Lighter/outlined colors for scheduled events
@@ -615,7 +615,7 @@ function Calendar() {
         case "supplement":
           return "bg-emerald-200 dark:bg-emerald-800 border border-emerald-400 dark:border-emerald-700";
         default:
-          return "bg-gray-200 dark:bg-gray-800 border border-gray-400 dark:border-gray-700";
+          return "bg-secondary border border-gray-400 border-border";
       }
     }
   };
@@ -623,7 +623,7 @@ function Calendar() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600 dark:text-gray-400">Loading calendar...</div>
+        <div className="text-muted-foreground">Loading calendar...</div>
       </div>
     );
   }
@@ -633,7 +633,7 @@ function Calendar() {
       <div className="flex flex-col gap-4 mb-6">
         {/* Header with title, category filters, and action buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calendar</h1>
+          <h1 className="text-3xl font-bold text-foreground">Calendar</h1>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* Category Filters */}
@@ -643,7 +643,7 @@ function Calendar() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   visibleCategories.has('feeding')
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    : 'bg-secondary text-muted-foreground'
                 }`}
               >
                 Feeding
@@ -653,7 +653,7 @@ function Calendar() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   visibleCategories.has('misting')
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    : 'bg-secondary text-muted-foreground'
                 }`}
               >
                 Misting
@@ -663,7 +663,7 @@ function Calendar() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   visibleCategories.has('weighing')
                     ? 'bg-purple-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    : 'bg-secondary text-muted-foreground'
                 }`}
               >
                 Health
@@ -673,27 +673,27 @@ function Calendar() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   visibleCategories.has('supplement')
                     ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    : 'bg-secondary text-muted-foreground'
                 }`}
               >
                 Supplement
               </button>
               <button
                 onClick={toggleAllCategories}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-card text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
               </button>
             </div>
 
             {/* Divider */}
-            <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <div className="hidden sm:block h-8 w-px bg-border"></div>
 
             {/* Action Buttons */}
             <div className="flex gap-2">
               <button
                 onClick={() => setShowSchedules(!showSchedules)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
                 <List size={20} />
                 <span className="hidden sm:inline">Manage Schedules</span>
@@ -715,7 +715,7 @@ function Calendar() {
         {/* Reptile Filters */}
         {reptiles.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Reptiles:</span>
+            <span className="text-sm font-medium text-muted-foreground">Reptiles:</span>
             {reptiles.map(reptile => (
               <button
                 key={reptile.id}
@@ -723,7 +723,7 @@ function Calendar() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   visibleReptiles.has(reptile.id)
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    : 'bg-secondary text-muted-foreground'
                 }`}
               >
                 {reptile.name}
@@ -731,7 +731,7 @@ function Calendar() {
             ))}
             <button
               onClick={toggleAllReptiles}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-card text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
             </button>
@@ -742,10 +742,10 @@ function Calendar() {
       {/* Schedules Management Section */}
       {showSchedules && (
         <div className="card mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Schedules</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Active Schedules</h2>
 
           {schedules.length === 0 ? (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+            <div className="text-center text-muted-foreground py-8">
               <p className="mb-4">No schedules created yet</p>
               <button
                 onClick={() => navigate("/schedule-create")}
@@ -760,7 +760,7 @@ function Calendar() {
               {schedules.filter(schedule => visibleReptiles.has(schedule.reptile_id) && visibleCategories.has(schedule.schedule_type)).map(schedule => (
                 <div
                   key={schedule.id}
-                  className="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
+                  className="flex items-start justify-between p-4 rounded-lg border border-border hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
                 >
                   <Link to={`/schedules/${schedule.id}`} className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2 mb-1">
@@ -768,20 +768,20 @@ function Calendar() {
                       {schedule.reptile && (
                         <ReptileAvatar reptile={schedule.reptile} size="sm" className="flex-shrink-0" />
                       )}
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-foreground">
                         {schedule.reptile?.name || 'Unknown'}
                       </span>
                       <span className={`px-2 py-0.5 text-xs rounded-full ${getScheduleTypeColor(schedule.schedule_type, false)}`}>
                         {schedule.schedule_type}
                       </span>
                       {!schedule.enabled && (
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-secondary text-muted-foreground">
                           Disabled
                         </span>
                       )}
                     </div>
 
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-muted-foreground">
                       {schedule.schedule_mode === 'interval' ? (
                         <>
                           Interval-based
@@ -836,7 +836,7 @@ function Calendar() {
                     </div>
 
                     {schedule.notes && (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      <div className="text-sm text-muted-foreground mt-2">
                         {schedule.notes}
                       </div>
                     )}
@@ -845,14 +845,14 @@ function Calendar() {
                   <div className="flex items-center gap-2 ml-4">
                     <button
                       onClick={() => navigate(`/schedule-edit/${schedule.id}`)}
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400 hover:bg-secondary rounded-lg transition-colors"
                       title="Edit schedule"
                     >
                       <Edit size={18} />
                     </button>
                     <button
                       onClick={() => handleDeleteSchedule(schedule)}
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-secondary rounded-lg transition-colors"
                       title="Delete schedule"
                     >
                       <Trash2 size={18} />
@@ -872,11 +872,11 @@ function Calendar() {
           onClick={() => setSelectedDate(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-foreground">
                 {selectedDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
               </h2>
               <button
@@ -889,7 +889,7 @@ function Calendar() {
 
             <div className="px-6 py-4">
               {getEventsForDate(selectedDate).length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                <p className="text-center text-muted-foreground py-8">
                   No events scheduled for this day
                 </p>
               ) : (
@@ -903,8 +903,8 @@ function Calendar() {
                     const EventContent = (
                       <div className={`px-4 py-3 rounded-lg border-2 ${
                         event.is_completed || event.is_actual
-                          ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600'
-                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                          ? 'bg-card border-green-500 dark:border-green-600'
+                          : 'bg-card border-border'
                       }`}>
                         <div className="flex items-center gap-3 mb-3">
                           <div className={`p-2 rounded-lg ${getIconColorClasses(typeColor)}`}>
@@ -914,7 +914,7 @@ function Calendar() {
                             {(event.is_completed || event.is_actual) && (
                               <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
                             )}
-                            <div className="font-semibold text-gray-900 dark:text-white">
+                            <div className="font-semibold text-foreground">
                               {displayName}
                             </div>
                           </div>
@@ -934,53 +934,53 @@ function Calendar() {
                               ))}
                             </div>
                           )}
-                          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-secondary text-muted-foreground">
                             {event.schedule_type}
                           </span>
                         </div>
 
                         <div className="grid grid-cols-4 gap-x-6 gap-y-2 text-sm">
                           <div className="flex flex-col">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Reptile</span>
-                            <span className="text-gray-900 dark:text-white font-medium">{event.reptile_name}</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reptile</span>
+                            <span className="text-foreground font-medium">{event.reptile_name}</span>
                           </div>
 
                           {event.schedule_rule && (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Frequency</span>
-                              <span className="text-gray-900 dark:text-white">{event.schedule_rule.replace(/_/g, ' ')}</span>
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frequency</span>
+                              <span className="text-foreground">{event.schedule_rule.replace(/_/g, ' ')}</span>
                             </div>
                           )}
 
                           {event.food_category && (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Food</span>
-                              <span className="text-gray-900 dark:text-white">{event.food_category}</span>
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Food</span>
+                              <span className="text-foreground">{event.food_category}</span>
                             </div>
                           )}
 
                           {event.time_window_enabled && event.earliest_time && event.latest_time ? (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
                                 {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                               </span>
-                              <span className="text-gray-900 dark:text-white font-medium whitespace-nowrap">
+                              <span className="text-foreground font-medium whitespace-nowrap">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
                               </span>
                             </div>
                           ) : event.time_slot ? (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 Time
                                 {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                               </span>
-                              <span className="text-gray-900 dark:text-white">{event.time_slot}</span>
+                              <span className="text-foreground">{event.time_slot}</span>
                             </div>
                           ) : event.notifications_enabled ? (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 <Bell size={10} className="text-blue-500 dark:text-blue-400" />
                                 Notifications
                               </span>
@@ -990,15 +990,15 @@ function Calendar() {
 
                           {(event.completed_time || event.time) && (
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Completed</span>
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Completed</span>
                               <span className="text-green-600 dark:text-green-400 font-medium">{event.completed_time || event.time}</span>
                             </div>
                           )}
                         </div>
 
                         {event.notes && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Notes:</span> {event.notes}
+                          <div className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border">
+                            <span className="font-medium text-muted-foreground">Notes:</span> {event.notes}
                           </div>
                         )}
                       </div>
@@ -1031,7 +1031,7 @@ function Calendar() {
         <div className="flex flex-col lg:flex-row lg:items-center sm:justify-between gap-3 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* View Buttons */}
-            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-full sm:w-auto">
+            <div className="flex rounded-lg border border-border overflow-hidden w-full sm:w-auto">
             {/* Month and Week views - hidden on mobile */}
             {!isMobile && (
               <>
@@ -1040,17 +1040,17 @@ function Calendar() {
                   className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${
                     view === "month"
                       ? "bg-primary-600 text-white"
-                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      : "bg-card text-muted-foreground hover:bg-secondary"
                   }`}
                 >
                   Month
                 </button>
                 <button
                   onClick={() => setView("week")}
-                  className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                  className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-border transition-colors ${
                     view === "week"
                       ? "bg-primary-600 text-white"
-                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      : "bg-card text-muted-foreground hover:bg-secondary"
                   }`}
                 >
                   Week
@@ -1060,10 +1060,10 @@ function Calendar() {
             {/* 3-day view - always visible */}
             <button
               onClick={() => setView("3-day")}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium ${!isMobile ? 'border-l border-gray-200 dark:border-gray-700' : ''} transition-colors ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium ${!isMobile ? 'border-l border-border' : ''} transition-colors ${
                 view === "3-day"
                   ? "bg-primary-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  : "bg-card text-muted-foreground hover:bg-secondary"
               }`}
             >
               3-Day
@@ -1071,10 +1071,10 @@ function Calendar() {
             {/* Day view - always visible */}
             <button
               onClick={() => setView("day")}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-gray-200 dark:border-gray-700 transition-colors ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium border-l border-border transition-colors ${
                 view === "day"
                   ? "bg-primary-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  : "bg-card text-muted-foreground hover:bg-secondary"
               }`}
             >
               Day
@@ -1082,13 +1082,13 @@ function Calendar() {
           </div>
 
           {/* Divider */}
-          <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+          <div className="hidden sm:block h-8 w-px bg-border"></div>
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Scheduled */}
             <div className="flex items-center gap-1.5">
-              <span className="text-gray-500 dark:text-gray-400">Scheduled:</span>
+              <span className="text-muted-foreground">Scheduled:</span>
               <div className="px-2 py-0.5 rounded bg-primary-900/20 text-primary-300 dark:bg-primary-900/30 dark:text-primary-300 border border-primary-700 dark:border-primary-700">
                 Feed
               </div>
@@ -1104,7 +1104,7 @@ function Calendar() {
 
             {/* Completed */}
             <div className="flex items-center gap-1.5">
-              <span className="text-gray-500 dark:text-gray-400">Completed:</span>
+              <span className="text-muted-foreground">Completed:</span>
               <div className="px-2 py-0.5 rounded bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
                 ✓ Feed
               </div>
@@ -1122,25 +1122,25 @@ function Calendar() {
         <div className="flex items-center justify-between sm:justify-start gap-2">
             <button
               onClick={() => navigateView(-1)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-secondary rounded-lg transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
 
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white min-w-[200px] text-center">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground min-w-[200px] text-center">
               {getViewTitle()}
             </h2>
 
             <button
               onClick={() => navigateView(1)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-secondary rounded-lg transition-colors"
             >
               <ChevronRight size={24} />
             </button>
 
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="ml-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+              className="ml-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-secondary transition-colors text-muted-foreground"
               title="Go to today"
             >
               Today
@@ -1153,7 +1153,7 @@ function Calendar() {
           <>
             <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
               {getDayNames(true).map(day => (
-                <div key={day} className="text-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
+                <div key={day} className="text-center text-xs sm:text-sm font-semibold text-muted-foreground py-2">
                   {day}
                 </div>
               ))}
@@ -1171,14 +1171,14 @@ function Calendar() {
                     onClick={() => date && handleDateClick(date)}
                     className={`
                       min-h-16 sm:min-h-24 p-1 sm:p-2 rounded-lg border transition-all
-                      ${!date ? "bg-gray-50 dark:bg-gray-800/50" : "cursor-pointer hover:border-primary-300 dark:hover:border-primary-600"}
-                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+                      ${!date ? "bg-card/50" : "cursor-pointer hover:border-primary-300 dark:hover:border-primary-600"}
+                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-border"}
                       ${isSelected ? "ring-2 ring-primary-500" : ""}
                     `}
                   >
                     {date && (
                       <>
-                        <div className={`text-xs sm:text-sm font-semibold mb-1 ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
+                        <div className={`text-xs sm:text-sm font-semibold mb-1 ${isToday ? "text-primary-700 dark:text-primary-400" : "text-muted-foreground"}`}>
                           {date.getDate()}
                         </div>
 
@@ -1262,7 +1262,7 @@ function Calendar() {
           <>
             <div className="grid grid-cols-7 gap-2 mb-2">
               {getDayNames(true).map(day => (
-                <div key={day} className="text-center text-sm font-semibold text-gray-600 dark:text-gray-400 py-2">
+                <div key={day} className="text-center text-sm font-semibold text-muted-foreground py-2">
                   {day}
                 </div>
               ))}
@@ -1280,17 +1280,17 @@ function Calendar() {
                     onClick={() => handleDateClick(date)}
                     className={`
                       p-3 rounded-lg border transition-all cursor-pointer hover:border-primary-300 dark:hover:border-primary-600
-                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-border"}
                       ${isSelected ? "ring-2 ring-primary-500" : ""}
                     `}
                   >
                     <div className="flex sm:block items-center justify-between sm:justify-start mb-2">
-                      <div className={`text-sm font-semibold ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
+                      <div className={`text-sm font-semibold ${isToday ? "text-primary-700 dark:text-primary-400" : "text-muted-foreground"}`}>
                         <span className="sm:hidden">{date.toLocaleDateString("default", { weekday: "short" })} </span>
                         {date.getDate()}
                       </div>
                       {dayEvents.length > 0 && (
-                        <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400">
+                        <div className="sm:hidden text-xs text-muted-foreground">
                           {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
                         </div>
                       )}
@@ -1345,23 +1345,23 @@ function Calendar() {
                     key={index}
                     className={`
                       p-4 rounded-lg border transition-all
-                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+                      ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-border"}
                       ${isSelected ? "ring-2 ring-primary-500" : ""}
                     `}
                   >
-                    <div className="mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <div className={`text-lg font-bold ${isToday ? "text-primary-700 dark:text-primary-400" : "text-gray-900 dark:text-white"}`}>
+                    <div className="mb-3 pb-2 border-b border-border">
+                      <div className={`text-lg font-bold ${isToday ? "text-primary-700 dark:text-primary-400" : "text-foreground"}`}>
                         {date.toLocaleDateString("default", { weekday: "short", month: "short", day: "numeric" })}
                       </div>
                       {dayEvents.length > 0 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
                         </div>
                       )}
                     </div>
 
                     {dayEvents.length === 0 ? (
-                      <div className="text-center text-gray-400 dark:text-gray-500 py-4 text-sm">
+                      <div className="text-center text-muted-foreground py-4 text-sm">
                         No events
                       </div>
                     ) : (
@@ -1457,8 +1457,8 @@ function Calendar() {
                     <div
                       className={`p-5 rounded-lg border-2 ${
                         event.is_actual || event.is_completed
-                          ? "border-green-500 dark:border-green-600 bg-white dark:bg-gray-800"
-                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+                          ? "border-green-500 dark:border-green-600 bg-card"
+                          : "border-border bg-card"
                       } hover:shadow-md transition-all ${link ? 'cursor-pointer' : ''}`}
                     >
                       {/* Header */}
@@ -1471,11 +1471,11 @@ function Calendar() {
                             {(event.is_actual || event.is_completed) && (
                               <span className="text-green-600 dark:text-green-400 font-bold text-lg">✓</span>
                             )}
-                            <div className="font-bold text-lg text-gray-900 dark:text-white">
+                            <div className="font-bold text-lg text-foreground">
                               {event.name || event.reptile_name}
                             </div>
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                          <div className="text-sm text-muted-foreground capitalize">
                             {event.schedule_type}
                             {event.is_actual || event.is_completed ? " (Completed)" : " (Scheduled)"}
                           </div>
@@ -1489,33 +1489,33 @@ function Calendar() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                         {event.reptile_name && event.name && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Reptile</div>
-                            <div className="text-sm text-gray-900 dark:text-white font-medium">{event.reptile_name}</div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Reptile</div>
+                            <div className="text-sm text-foreground font-medium">{event.reptile_name}</div>
                           </div>
                         )}
 
                         {event.food_category && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Food Category</div>
-                            <div className="text-sm text-gray-900 dark:text-white capitalize">{event.food_category}</div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Food Category</div>
+                            <div className="text-sm text-foreground capitalize">{event.food_category}</div>
                           </div>
                         )}
 
                         {event.health_category && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Activity Type</div>
-                            <div className="text-sm text-gray-900 dark:text-white capitalize">{event.health_category.replace('_', ' ')}</div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Activity Type</div>
+                            <div className="text-sm text-foreground capitalize">{event.health_category.replace('_', ' ')}</div>
                           </div>
                         )}
 
                         {event.time_window_enabled && event.earliest_time && event.latest_time && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
                               <Clock size={12} />
                               Time Window
                               {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                             </div>
-                            <div className="text-sm text-gray-900 dark:text-white font-medium">
+                            <div className="text-sm text-foreground font-medium">
                               {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
                             </div>
                           </div>
@@ -1523,17 +1523,17 @@ function Calendar() {
 
                         {event.time_slot && !event.time_window_enabled && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
                               Time Slot
                               {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                             </div>
-                            <div className="text-sm text-gray-900 dark:text-white">{event.time_slot}</div>
+                            <div className="text-sm text-foreground">{event.time_slot}</div>
                           </div>
                         )}
 
                         {!event.time_window_enabled && !event.time_slot && event.notifications_enabled && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
                               <Bell size={12} className="text-blue-500 dark:text-blue-400" />
                               Notifications
                             </div>
@@ -1543,7 +1543,7 @@ function Calendar() {
 
                         {(event.completed_time || event.time) && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Completed At</div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Completed At</div>
                             <div className="text-sm text-green-600 dark:text-green-400 font-bold">
                               {event.completed_time || event.time}
                             </div>
@@ -1552,8 +1552,8 @@ function Calendar() {
 
                         {event.schedule_rule && (
                           <div>
-                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Frequency</div>
-                            <div className="text-sm text-gray-900 dark:text-white capitalize">{event.schedule_rule.replace(/_/g, ' ')}</div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Frequency</div>
+                            <div className="text-sm text-foreground capitalize">{event.schedule_rule.replace(/_/g, ' ')}</div>
                           </div>
                         )}
                       </div>
@@ -1561,8 +1561,8 @@ function Calendar() {
                       {/* Supplement (for supplement schedules) */}
                       {event.supplement && (
                         <div className="mb-3">
-                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Supplement</div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Supplement</div>
+                          <div className="text-sm font-medium text-foreground">
                             {event.supplement.name}
                           </div>
                         </div>
@@ -1571,7 +1571,7 @@ function Calendar() {
                       {/* Suggested Supplements (for feeding schedules) */}
                       {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                         <div className="mb-3">
-                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Suggested Supplements</div>
+                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Suggested Supplements</div>
                           <div className="flex gap-2 flex-wrap">
                             {event.suggested_supplements.map((supp, suppIdx) => (
                               <span key={suppIdx} className="px-3 py-1.5 text-sm rounded-lg font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
@@ -1585,10 +1585,10 @@ function Calendar() {
                       {/* Foods (if available from actual feeding) */}
                       {event.foods && event.foods.length > 0 && (
                         <div className="mb-3">
-                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Foods Given</div>
+                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Foods Given</div>
                           <div className="flex gap-2 flex-wrap">
                             {event.foods.map((food, foodIdx) => (
-                              <span key={foodIdx} className="px-3 py-1 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                              <span key={foodIdx} className="px-3 py-1 text-sm rounded-lg bg-secondary text-gray-800 dark:text-gray-200">
                                 {food.name} {food.quantity && `(${food.quantity})`}
                               </span>
                             ))}
@@ -1598,9 +1598,9 @@ function Calendar() {
 
                       {/* Notes */}
                       {event.notes && (
-                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</div>
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                        <div className="pt-3 border-t border-border">
+                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notes</div>
+                          <div className="text-sm text-muted-foreground">
                             {event.notes}
                           </div>
                         </div>
@@ -1618,7 +1618,7 @@ function Calendar() {
                 })}
               </div>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-16">
+              <div className="text-center text-muted-foreground py-16">
                 No events for this day
               </div>
             )}

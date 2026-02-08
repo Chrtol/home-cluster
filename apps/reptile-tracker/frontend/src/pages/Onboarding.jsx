@@ -75,25 +75,25 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             Welcome to Reptile Tracker!
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Let's get you set up with a household
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+        <div className="bg-card rounded-lg shadow-lg p-8">
           {step === 'choice' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
                   How would you like to get started?
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-muted-foreground mb-6">
                   Households let you share reptile care with family, friends, or caretakers.
                   You must be part of a household to use Reptile Tracker.
                 </p>
@@ -102,26 +102,26 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   onClick={() => setStep('create')}
-                  className="p-6 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors text-left group"
+                  className="p-6 border-2 border-border rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors text-left group"
                 >
                   <div className="text-4xl mb-3">🏠</div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                  <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400">
                     Create New Household
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-muted-foreground">
                     Start fresh and invite others to join you
                   </p>
                 </button>
 
                 <button
                   onClick={() => setStep('join')}
-                  className="p-6 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors text-left group"
+                  className="p-6 border-2 border-border rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors text-left group"
                 >
                   <div className="text-4xl mb-3">🔗</div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                  <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400">
                     Join Existing Household
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-muted-foreground">
                     Use an invitation code to join someone else's household
                   </p>
                 </button>
@@ -142,16 +142,16 @@ export default function Onboarding() {
                 ← Back
               </button>
 
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 Create New Household
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Choose a name for your household (e.g., "Smith Family", "My Reptiles", "Reptile Room")
               </p>
 
               <form onSubmit={handleCreateHousehold} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Household Name
                   </label>
                   <input
@@ -195,16 +195,16 @@ export default function Onboarding() {
                 ← Back
               </button>
 
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 Join Existing Household
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Enter the invitation code you received from the household owner
               </p>
 
               <form onSubmit={handleJoinHousehold} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Invitation Code
                   </label>
                   <input
@@ -238,10 +238,10 @@ export default function Onboarding() {
           {step === 'complete' && (
             <div className="text-center py-8">
               <div className="text-6xl mb-6">🎉</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 All Set!
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Your household is ready. You can now start tracking your reptiles!
               </p>
               <button
@@ -254,7 +254,7 @@ export default function Onboarding() {
           )}
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>
             You can always create additional households or join more households later in Settings
           </p>

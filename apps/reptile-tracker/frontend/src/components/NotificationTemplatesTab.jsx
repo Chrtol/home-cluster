@@ -473,7 +473,7 @@ const NotificationTemplatesTab = () => {
 
     if (template.priority !== 100) {
       badges.push(
-        <span key="priority" className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+        <span key="priority" className="px-2 py-0.5 text-xs bg-secondary text-muted-foreground rounded">
           Priority: {template.priority}
         </span>
       );
@@ -522,22 +522,22 @@ const NotificationTemplatesTab = () => {
   };
 
   if (loading) {
-    return <div className="p-6 text-center text-gray-900 dark:text-white">Loading templates...</div>;
+    return <div className="p-6 text-center text-foreground">Loading templates...</div>;
   }
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notification Templates</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <h2 className="text-2xl font-bold text-foreground">Notification Templates</h2>
+          <p className="text-muted-foreground mt-1">
             Customize notification messages with variables. System templates are read-only.
           </p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={handleAddGroup}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
+            className="px-4 py-2 bg-secondary text-foreground rounded hover:bg-secondary/80"
           >
             📁 Manage Groups
           </button>
@@ -596,16 +596,16 @@ const NotificationTemplatesTab = () => {
       <div className="mb-8">
         <button
           onClick={() => setSystemTemplatesExpanded(!systemTemplatesExpanded)}
-          className="w-full flex items-center justify-between p-3 mb-3 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="w-full flex items-center justify-between p-3 mb-3 bg-card rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         >
           <div className="flex items-center gap-3">
             <span className="text-xl">
               {systemTemplatesExpanded ? '▼' : '▶'}
             </span>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-foreground">
               System Templates
             </h3>
-            <span className="px-2 py-0.5 text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded">
+            <span className="px-2 py-0.5 text-xs bg-border text-muted-foreground rounded">
               {groupedTemplates.system.length} templates
             </span>
           </div>
@@ -613,7 +613,7 @@ const NotificationTemplatesTab = () => {
 
         {systemTemplatesExpanded && (
           <>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-sm text-muted-foreground mb-3">
               These are default templates. Click "Customize" to create your own editable version.
             </p>
             <div className="space-y-3">
@@ -627,13 +627,13 @@ const NotificationTemplatesTab = () => {
             return (
               <div
                 key={template.id}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800"
+                className="p-4 border border-border rounded bg-card"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">{template.name}</h4>
-                      <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                      <h4 className="font-semibold text-foreground">{template.name}</h4>
+                      <span className="px-2 py-0.5 text-xs bg-secondary text-muted-foreground rounded">
                         {template.trigger_type.replace('_', ' ')}
                       </span>
                       {template.channel_type && (
@@ -648,10 +648,10 @@ const NotificationTemplatesTab = () => {
                       )}
                     </div>
                     <div className="mt-2 text-sm">
-                      <div className="text-gray-600 dark:text-gray-400">
+                      <div className="text-muted-foreground">
                         <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
                       </div>
-                      <div className="text-gray-600 dark:text-gray-400 mt-1">
+                      <div className="text-muted-foreground mt-1">
                         <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
                       </div>
                     </div>
@@ -682,9 +682,9 @@ const NotificationTemplatesTab = () => {
 
       {/* Custom Templates */}
       <div>
-        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Custom Templates</h3>
+        <h3 className="text-lg font-semibold mb-3 text-foreground">Custom Templates</h3>
         {groupedTemplates.custom.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 italic">No custom templates yet. Create one to get started!</p>
+          <p className="text-muted-foreground italic">No custom templates yet. Create one to get started!</p>
         ) : (
           <div className="space-y-3">
             {/* Group custom templates by trigger_type */}
@@ -701,24 +701,24 @@ const NotificationTemplatesTab = () => {
               const triggerLabel = triggerType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
               return (
-                <div key={triggerType} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <div key={triggerType} className="border border-border rounded-lg overflow-hidden">
                   {/* Group Header */}
                   <button
                     onClick={() => toggleGroup(triggerType)}
-                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="w-full flex items-center justify-between p-3 bg-card hover:bg-secondary transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-lg">
                         {isExpanded ? '▼' : '▶'}
                       </span>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                      <h4 className="font-semibold text-foreground">
                         {triggerLabel}
                       </h4>
                       <span className="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">
                         {templates.length} {templates.length === 1 ? 'template' : 'templates'}
                       </span>
                       {activeCount < templates.length && (
-                        <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                        <span className="px-2 py-0.5 text-xs bg-secondary text-muted-foreground rounded">
                           {templates.length - activeCount} inactive
                         </span>
                       )}
@@ -727,38 +727,38 @@ const NotificationTemplatesTab = () => {
 
                   {/* Group Content */}
                   {isExpanded && (
-                    <div className="p-3 space-y-3 bg-white dark:bg-gray-900">
+                    <div className="p-3 space-y-3 bg-card">
                       {templates.map(template => (
                         <div
                           key={template.id}
-                          className={`p-4 border border-gray-200 dark:border-gray-700 rounded ${template.is_active ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900 opacity-60'}`}
+                          className={`p-4 border border-border rounded ${template.is_active ? 'bg-card' : 'bg-secondary opacity-60'}`}
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <h5 className="font-semibold text-gray-900 dark:text-white">{template.name}</h5>
+                                <h5 className="font-semibold text-foreground">{template.name}</h5>
                                 {template.channel_type && (
                                   <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
                                     {template.channel_type}
                                   </span>
                                 )}
                                 {!template.is_active && (
-                                  <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                                  <span className="px-2 py-0.5 text-xs bg-secondary text-muted-foreground rounded">
                                     Inactive
                                   </span>
                                 )}
                                 {renderFilterBadges(template)}
                               </div>
                               {template.applies_to_description && (
-                                <p className="text-xs text-gray-600 dark:text-gray-400 italic mt-1">
+                                <p className="text-xs text-muted-foreground italic mt-1">
                                   {template.applies_to_description}
                                 </p>
                               )}
                               <div className="mt-2 text-sm">
-                                <div className="text-gray-600 dark:text-gray-400">
+                                <div className="text-muted-foreground">
                                   <strong className="text-gray-900 dark:text-gray-200">Title:</strong> {template.title_template || 'N/A'}
                                 </div>
-                                <div className="text-gray-600 dark:text-gray-400 mt-1">
+                                <div className="text-muted-foreground mt-1">
                                   <strong className="text-gray-900 dark:text-gray-200">Message:</strong> {template.message_template}
                                 </div>
                               </div>
@@ -804,8 +804,8 @@ const NotificationTemplatesTab = () => {
       {/* Template Editor Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+          <div className="bg-card rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4 text-foreground">
               {editingTemplate ? 'Edit Template' : 'Create Template'}
             </h3>
 
@@ -816,7 +816,7 @@ const NotificationTemplatesTab = () => {
                   type="text"
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                   placeholder="My Custom Template"
                 />
               </div>
@@ -826,7 +826,7 @@ const NotificationTemplatesTab = () => {
                 <select
                   value={triggerType}
                   onChange={(e) => setTriggerType(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                 >
                   <option value="schedule_reminder">Schedule Reminder</option>
                   <option value="overdue_alert">Overdue Alert</option>
@@ -840,7 +840,7 @@ const NotificationTemplatesTab = () => {
                 <select
                   value={channelType}
                   onChange={(e) => setChannelType(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                 >
                   <option value="">All Channels</option>
                   <option value="discord">Discord Only</option>
@@ -854,7 +854,7 @@ const NotificationTemplatesTab = () => {
                 <select
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                 >
                   <option value="">No Group</option>
                   {groups
@@ -865,25 +865,25 @@ const NotificationTemplatesTab = () => {
                       </option>
                     ))}
                 </select>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Organize templates into custom groups for easier management
                 </p>
               </div>
 
               {/* Template Matching Filters */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+              <div className="border-t border-border pt-4 mt-4">
                 <h4 className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Template Filters (Optional)</h4>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                <p className="text-xs text-muted-foreground mb-3">
                   Apply this template only to specific reptiles, schedules, or types. More specific filters = higher priority.
                 </p>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Specific Reptile</label>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">Specific Reptile</label>
                     <select
                       value={reptileFilter}
                       onChange={(e) => setReptileFilter(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground text-sm"
                     >
                       <option value="">All Reptiles</option>
                       {reptiles.map(r => (
@@ -893,11 +893,11 @@ const NotificationTemplatesTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Specific Schedule</label>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">Specific Schedule</label>
                     <select
                       value={scheduleFilter}
                       onChange={(e) => setScheduleFilter(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground text-sm"
                     >
                       <option value="">All Schedules</option>
                       {schedules.map(s => (
@@ -907,11 +907,11 @@ const NotificationTemplatesTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Schedule Type Filter</label>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">Schedule Type Filter</label>
                     <select
                       value={scheduleTypeFilter}
                       onChange={(e) => setScheduleTypeFilter(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground text-sm"
                     >
                       <option value="">All Schedule Types</option>
                       <option value="feeding">Feeding</option>
@@ -923,11 +923,11 @@ const NotificationTemplatesTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Food Category Filter</label>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">Food Category Filter</label>
                     <select
                       value={foodCategoryFilter}
                       onChange={(e) => setFoodCategoryFilter(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground text-sm"
                     >
                       <option value="">All Food Categories</option>
                       <option value="insects">Insects/Worms</option>
@@ -939,34 +939,34 @@ const NotificationTemplatesTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">
                       Priority (Lower = Higher Priority)
                     </label>
                     <input
                       type="number"
                       value={priority}
                       onChange={(e) => setPriority(parseInt(e.target.value) || 100)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground text-sm"
                       min="0"
                       max="999"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Use to control which template wins when multiple match. Default: 100
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">
                       Description (Optional)
                     </label>
                     <input
                       type="text"
                       value={appliesToDescription}
                       onChange={(e) => setAppliesToDescription(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground text-sm"
                       placeholder="e.g., 'Urgent alerts for Luna'"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Friendly description of when this template applies
                     </p>
                   </div>
@@ -979,7 +979,7 @@ const NotificationTemplatesTab = () => {
                   type="text"
                   value={titleTemplate}
                   onChange={(e) => setTitleTemplate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                   placeholder="Schedule Reminder - {reptile_name}"
                 />
               </div>
@@ -990,12 +990,12 @@ const NotificationTemplatesTab = () => {
                   ref={messageTemplateRef}
                   value={messageTemplate}
                   onChange={(e) => setMessageTemplate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                   rows={4}
                   placeholder="{emoji} Reminder: {schedule_name} for {reptile_name}"
                 />
                 <div className="mt-2">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Available variables:</p>
+                  <p className="text-xs text-muted-foreground mb-1">Available variables:</p>
                   <div className="flex flex-wrap gap-1">
                     {availableVariables[triggerType].map(variable => (
                       <button
@@ -1025,9 +1025,9 @@ const NotificationTemplatesTab = () => {
 
               {/* Discord Configuration */}
               {(channelType === 'discord' || channelType === '') && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <div className="border-t border-border pt-4 mt-4">
                   <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Discord Embed Settings (Optional)</h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Customize how this template appears in Discord. The message template will be used as the embed description.
                   </p>
 
@@ -1039,13 +1039,13 @@ const NotificationTemplatesTab = () => {
                           type="color"
                           value={discordColor}
                           onChange={(e) => setDiscordColor(e.target.value)}
-                          className="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                          className="h-10 w-20 border border-border rounded cursor-pointer"
                         />
                         <input
                           type="text"
                           value={discordColor}
                           onChange={(e) => setDiscordColor(e.target.value)}
-                          className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                          className="flex-1 p-2 border border-border rounded bg-card text-foreground font-mono text-sm"
                           placeholder="#2E5BFF"
                         />
                       </div>
@@ -1055,7 +1055,7 @@ const NotificationTemplatesTab = () => {
                       <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Include Fields</label>
                       <div className="grid grid-cols-2 gap-2">
                         {['scheduled_date', 'schedule_type', 'notes', 'time_window', 'food_category', 'missed_date', 'schedule_link'].map(field => (
-                          <label key={field} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <label key={field} className="flex items-center gap-2 text-sm text-muted-foreground">
                             <input
                               type="checkbox"
                               checked={discordIncludeFields.includes(field)}
@@ -1072,7 +1072,7 @@ const NotificationTemplatesTab = () => {
                           </label>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Select which fields to display as structured embed fields below the description
                       </p>
                     </div>
@@ -1083,7 +1083,7 @@ const NotificationTemplatesTab = () => {
                         type="text"
                         value={discordFooterText}
                         onChange={(e) => setDiscordFooterText(e.target.value)}
-                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full p-2 border border-border rounded bg-card text-foreground"
                         placeholder="Reptile Tracker"
                       />
                     </div>
@@ -1095,7 +1095,7 @@ const NotificationTemplatesTab = () => {
             <div className="mt-6 flex justify-end gap-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                className="px-4 py-2 border border-border rounded hover:bg-secondary text-foreground"
               >
                 Cancel
               </button>
@@ -1114,8 +1114,8 @@ const NotificationTemplatesTab = () => {
       {/* Preview Modal */}
       {showPreview && previewTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+          <div className="bg-card rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4 text-foreground">
               Template Preview - {previewTemplate.name}
             </h3>
 
@@ -1128,12 +1128,12 @@ const NotificationTemplatesTab = () => {
             <div className="space-y-4">
               {previewTemplate.title_template && (
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium mb-2 text-muted-foreground">
                     Title:
                   </label>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
+                  <div className="p-3 bg-secondary border border-border rounded-lg">
                     <p
-                      className="font-semibold text-gray-900 dark:text-white whitespace-pre-wrap"
+                      className="font-semibold text-foreground whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{ __html: renderTemplate(previewTemplate, previewTemplate.title_template) }}
                     />
                   </div>
@@ -1141,22 +1141,22 @@ const NotificationTemplatesTab = () => {
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-medium mb-2 text-muted-foreground">
                   Message:
                 </label>
-                <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
+                <div className="p-3 bg-secondary border border-border rounded-lg">
                   <p
-                    className="text-gray-900 dark:text-white whitespace-pre-wrap"
+                    className="text-foreground whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{ __html: renderTemplate(previewTemplate, previewTemplate.message_template) }}
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+              <div className="pt-4 border-t border-border">
+                <label className="block text-sm font-medium mb-2 text-muted-foreground">
                   Template Information:
                 </label>
-                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <div className="text-sm text-muted-foreground space-y-1">
                   <p><strong>Trigger Type:</strong> {previewTemplate.trigger_type.replace('_', ' ')}</p>
                   {previewTemplate.channel_type && (
                     <p><strong>Channel Type:</strong> {previewTemplate.channel_type}</p>
@@ -1169,7 +1169,7 @@ const NotificationTemplatesTab = () => {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-4 py-2 bg-gray-600 dark:bg-gray-500 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+                className="px-4 py-2 bg-secondary text-foreground rounded hover:bg-secondary/80"
               >
                 Close
               </button>
@@ -1181,8 +1181,8 @@ const NotificationTemplatesTab = () => {
       {/* Group Management Modal */}
       {showGroupModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+          <div className="bg-card rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4 text-foreground">
               {editingGroup ? 'Edit Group' : 'Create Group'}
             </h3>
 
@@ -1193,7 +1193,7 @@ const NotificationTemplatesTab = () => {
                   type="text"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                   placeholder="Luna's Templates"
                 />
               </div>
@@ -1204,7 +1204,7 @@ const NotificationTemplatesTab = () => {
                   value={groupDescription}
                   onChange={(e) => setGroupDescription(e.target.value)}
                   rows={2}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                   placeholder="All notification templates for Luna"
                 />
               </div>
@@ -1216,11 +1216,11 @@ const NotificationTemplatesTab = () => {
                     type="text"
                     value={groupIcon}
                     onChange={(e) => setGroupIcon(e.target.value)}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full p-2 border border-border rounded bg-card text-foreground"
                     placeholder="🦎"
                     maxLength={4}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Emoji or symbol</p>
+                  <p className="text-xs text-muted-foreground mt-1">Emoji or symbol</p>
                 </div>
 
                 <div>
@@ -1230,13 +1230,13 @@ const NotificationTemplatesTab = () => {
                       type="color"
                       value={groupColor}
                       onChange={(e) => setGroupColor(e.target.value)}
-                      className="h-10 w-16 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                      className="h-10 w-16 border border-border rounded cursor-pointer"
                     />
                     <input
                       type="text"
                       value={groupColor}
                       onChange={(e) => setGroupColor(e.target.value)}
-                      className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="flex-1 p-2 border border-border rounded bg-card text-foreground"
                       placeholder="#3B82F6"
                     />
                   </div>
@@ -1249,21 +1249,21 @@ const NotificationTemplatesTab = () => {
                   type="number"
                   value={groupSortOrder}
                   onChange={(e) => setGroupSortOrder(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
                   placeholder="0"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Lower numbers appear first</p>
+                <p className="text-xs text-muted-foreground mt-1">Lower numbers appear first</p>
               </div>
 
               {/* Group Settings */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+              <div className="border-t border-border pt-4 mt-4">
                 <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Group Settings</h4>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Enabled</label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Master on/off switch for all templates in this group</p>
+                      <label className="block text-sm font-medium text-muted-foreground">Enabled</label>
+                      <p className="text-xs text-muted-foreground">Master on/off switch for all templates in this group</p>
                     </div>
                     <input
                       type="checkbox"
@@ -1274,23 +1274,23 @@ const NotificationTemplatesTab = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Default Priority Modifier</label>
+                    <label className="block text-sm font-medium mb-1 text-muted-foreground">Default Priority Modifier</label>
                     <input
                       type="number"
                       value={groupDefaultPriority}
                       onChange={(e) => setGroupDefaultPriority(parseInt(e.target.value) || 0)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full p-2 border border-border rounded bg-card text-foreground"
                       placeholder="0"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Added to each template's priority. Negative values = higher priority. (e.g., -50 for critical alerts)
                     </p>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Ignore Quiet Hours</label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Send notifications even during quiet hours</p>
+                      <label className="block text-sm font-medium text-muted-foreground">Ignore Quiet Hours</label>
+                      <p className="text-xs text-muted-foreground">Send notifications even during quiet hours</p>
                     </div>
                     <input
                       type="checkbox"
@@ -1320,7 +1320,7 @@ const NotificationTemplatesTab = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowGroupModal(false)}
-                  className="px-4 py-2 bg-gray-600 dark:bg-gray-500 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+                  className="px-4 py-2 bg-secondary text-foreground rounded hover:bg-secondary/80"
                 >
                   Cancel
                 </button>
@@ -1335,7 +1335,7 @@ const NotificationTemplatesTab = () => {
 
             {/* List of Existing Groups */}
             {!editingGroup && groups.length > 0 && (
-              <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div className="mt-6 border-t border-border pt-4">
                 <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Existing Groups</h4>
                 <div className="space-y-2">
                   {groups
@@ -1343,7 +1343,7 @@ const NotificationTemplatesTab = () => {
                     .map(group => (
                       <div
                         key={group.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600"
+                        className="flex items-center justify-between p-3 bg-secondary rounded border border-border"
                       >
                         <div className="flex items-center gap-2">
                           <div
@@ -1352,20 +1352,20 @@ const NotificationTemplatesTab = () => {
                           />
                           {group.icon && <span className="text-lg">{group.icon}</span>}
                           <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">{group.name}</div>
+                            <div className="text-sm font-medium text-foreground">{group.name}</div>
                             {group.description && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">{group.description}</div>
+                              <div className="text-xs text-muted-foreground">{group.description}</div>
                             )}
                           </div>
                           {!group.enabled && (
-                            <span className="text-xs px-2 py-0.5 bg-gray-300 dark:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
+                            <span className="text-xs px-2 py-0.5 bg-border rounded text-muted-foreground">
                               Disabled
                             </span>
                           )}
                         </div>
                         <button
                           onClick={() => handleEditGroup(group)}
-                          className="px-3 py-1 text-sm bg-gray-600 dark:bg-gray-500 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+                          className="px-3 py-1 text-sm bg-secondary text-foreground rounded hover:bg-secondary/80"
                         >
                           Edit
                         </button>

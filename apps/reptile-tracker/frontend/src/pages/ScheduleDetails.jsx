@@ -269,7 +269,7 @@ function ScheduleDetails() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600 dark:text-gray-400">Loading schedule details...</div>
+        <div className="text-muted-foreground">Loading schedule details...</div>
       </div>
     );
   }
@@ -294,7 +294,7 @@ function ScheduleDetails() {
       <div className="mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
+          className="flex items-center gap-2 text-muted-foreground hover:text-gray-900 dark:hover:text-gray-100 mb-4"
         >
           <ArrowLeft size={20} />
           Back
@@ -302,11 +302,11 @@ function ScheduleDetails() {
 
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               {schedule.name}
             </h1>
             {reptile && (
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 For: <Link to={`/reptiles/${reptile.id}`} className="font-semibold text-primary-600 dark:text-primary-400 hover:underline">{reptile.name}</Link>
               </p>
             )}
@@ -339,7 +339,7 @@ function ScheduleDetails() {
             Active
           </span>
         ) : (
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-muted-foreground text-sm">
             <XCircle size={16} />
             Disabled
           </span>
@@ -363,21 +363,21 @@ function ScheduleDetails() {
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
           {/* Left Column: Schedule Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Schedule Information</h2>
+          <div className="bg-card rounded-lg p-6 border border-border">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Schedule Information</h2>
 
             <div className="space-y-3 text-sm">
               <div>
-                <div className="text-gray-500 dark:text-gray-400 mb-1">Type</div>
-                <div className="font-medium text-gray-900 dark:text-white">
+                <div className="text-muted-foreground mb-1">Type</div>
+                <div className="font-medium text-foreground">
                   {getScheduleTypeDisplay(schedule.schedule_type)}
                 </div>
               </div>
 
               {schedule.food_category && (
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Food Category</div>
-                  <div className="font-medium text-gray-900 dark:text-white capitalize">
+                  <div className="text-muted-foreground mb-1">Food Category</div>
+                  <div className="font-medium text-foreground capitalize">
                     {schedule.food_category}
                   </div>
                 </div>
@@ -385,8 +385,8 @@ function ScheduleDetails() {
 
               {schedule.time_slot && (
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Time Slot</div>
-                  <div className="font-medium text-gray-900 dark:text-white capitalize">
+                  <div className="text-muted-foreground mb-1">Time Slot</div>
+                  <div className="font-medium text-foreground capitalize">
                     {schedule.time_slot}
                   </div>
                 </div>
@@ -394,8 +394,8 @@ function ScheduleDetails() {
 
               {schedule.health_category && (
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Health Category</div>
-                  <div className="font-medium text-gray-900 dark:text-white capitalize">
+                  <div className="text-muted-foreground mb-1">Health Category</div>
+                  <div className="font-medium text-foreground capitalize">
                     {schedule.health_category}
                   </div>
                 </div>
@@ -403,8 +403,8 @@ function ScheduleDetails() {
 
               {supplement && (
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Supplement</div>
-                  <div className="font-medium text-gray-900 dark:text-white">
+                  <div className="text-muted-foreground mb-1">Supplement</div>
+                  <div className="font-medium text-foreground">
                     {supplement.name}
                   </div>
                 </div>
@@ -412,13 +412,13 @@ function ScheduleDetails() {
 
               {applicableSupplements.length > 0 && (
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Applicable Supplements</div>
+                  <div className="text-muted-foreground mb-1">Applicable Supplements</div>
                   <div className="space-y-1">
                     {applicableSupplements.map((supp, idx) => (
-                      <div key={idx} className="font-medium text-gray-900 dark:text-white">
+                      <div key={idx} className="font-medium text-foreground">
                         {supp.name}
                         {supp.frequency_note && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                          <span className="text-xs text-muted-foreground ml-2">
                             ({supp.frequency_note})
                           </span>
                         )}
@@ -430,8 +430,8 @@ function ScheduleDetails() {
 
               {parentSchedule && (
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 mb-1">Parent Schedule</div>
-                  <div className="font-medium text-gray-900 dark:text-white">
+                  <div className="text-muted-foreground mb-1">Parent Schedule</div>
+                  <div className="font-medium text-foreground">
                     {parentSchedule.name}
                   </div>
                 </div>
@@ -442,24 +442,24 @@ function ScheduleDetails() {
           {/* Right Column: Stacked Cards */}
           <div className="space-y-6">
             {/* Frequency */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-card rounded-lg p-6 border border-border">
+              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Calendar size={20} />
                 Frequency
               </h2>
-              <div className="font-medium text-gray-900 dark:text-white">
+              <div className="font-medium text-foreground">
                 {formatScheduleRule()}
               </div>
             </div>
 
             {/* Time Window */}
             {schedule.time_window_enabled && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="bg-card rounded-lg p-6 border border-border">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Clock size={20} />
                   Time Window
                 </h2>
-                <div className="font-medium text-gray-900 dark:text-white">
+                <div className="font-medium text-foreground">
                   {formatTime(schedule.earliest_time)} - {formatTime(schedule.latest_time)}
                 </div>
               </div>
@@ -467,8 +467,8 @@ function ScheduleDetails() {
 
             {/* Notifications */}
             {schedule.notifications_enabled && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="bg-card rounded-lg p-6 border border-border">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Bell size={20} />
                   Notifications
                 </h2>
@@ -477,8 +477,8 @@ function ScheduleDetails() {
                   {/* Reminder Time */}
                   {schedule.reminder_time && (
                     <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Reminder Time</div>
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className="text-sm text-muted-foreground mb-2">Reminder Time</div>
+                      <div className="font-medium text-foreground">
                         {formatTime(schedule.reminder_time)}
                       </div>
                     </div>
@@ -487,12 +487,12 @@ function ScheduleDetails() {
                   {/* Notification Channels */}
                   {notificationChannels.length > 0 && (
                     <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Channels</div>
+                      <div className="text-sm text-muted-foreground mb-2">Channels</div>
                       <div className="space-y-2">
                         {notificationChannels.map(channel => (
                           <div
                             key={channel.id}
-                            className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                            className="flex items-center gap-2 text-sm text-muted-foreground"
                           >
                             {channel.household_wide ? (
                               <Users size={14} className="flex-shrink-0" />
@@ -500,7 +500,7 @@ function ScheduleDetails() {
                               <UserIcon size={14} className="flex-shrink-0" />
                             )}
                             <span className="font-medium">{channel.name}</span>
-                            <span className="text-gray-500 dark:text-gray-400">
+                            <span className="text-muted-foreground">
                               ({getChannelTypeDisplay(channel.webhook_type)})
                             </span>
                           </div>
@@ -514,30 +514,30 @@ function ScheduleDetails() {
 
             {/* Auto-complete */}
             {schedule.auto_complete_enabled && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="bg-card rounded-lg p-6 border border-border">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Bot size={20} />
                   Auto-complete
                 </h2>
 
                 <div className="space-y-4">
                   <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Status</div>
+                    <div className="text-sm text-muted-foreground mb-2">Status</div>
                     <div className="font-medium text-green-600 dark:text-green-400">
                       Enabled
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Trigger Time</div>
-                    <div className="text-gray-700 dark:text-gray-300">
+                    <div className="text-sm text-muted-foreground mb-2">Trigger Time</div>
+                    <div className="text-muted-foreground">
                       {schedule.time_window_enabled && schedule.latest_time ? (
                         <span>{formatTime(schedule.latest_time)} + {schedule.auto_complete_hours_after || 2}h</span>
                       ) : (
                         <span>23:59 + {schedule.auto_complete_hours_after || 2}h</span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {schedule.time_window_enabled && schedule.latest_time ? (
                         <span>{schedule.auto_complete_hours_after || 2} hour{(schedule.auto_complete_hours_after || 2) !== 1 ? 's' : ''} after latest time ({formatTime(schedule.latest_time)})</span>
                       ) : (
@@ -552,12 +552,12 @@ function ScheduleDetails() {
 
           {/* Notes - Full Width */}
           {schedule.notes && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 lg:col-span-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-card rounded-lg p-6 border border-border lg:col-span-2">
+              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <FileText size={20} />
                 Notes
               </h2>
-              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              <div className="text-muted-foreground whitespace-pre-wrap">
                 {schedule.notes}
               </div>
             </div>

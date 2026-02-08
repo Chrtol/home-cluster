@@ -152,7 +152,7 @@ const PhotoUpload = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
+    <div className={`bg-card rounded-lg p-4 ${className}`}>
       {/* Upload buttons */}
       {!selectedFile && (
         <div className="space-y-2">
@@ -200,7 +200,7 @@ const PhotoUpload = ({
             <button
               type="button"
               onClick={handleCancel}
-              className="w-full px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm"
+              className="w-full px-4 py-2 text-muted-foreground hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm"
             >
               Cancel
             </button>
@@ -216,7 +216,7 @@ const PhotoUpload = ({
             <img
               src={previewUrl}
               alt="Preview"
-              className="w-full max-h-64 object-contain rounded-lg bg-gray-100 dark:bg-gray-700"
+              className="w-full max-h-64 object-contain rounded-lg bg-secondary"
             />
             <button
               type="button"
@@ -230,13 +230,13 @@ const PhotoUpload = ({
 
           {/* Category selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Category
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500"
             >
               {categories.map(cat => (
                 <option key={cat.value} value={cat.value}>
@@ -252,7 +252,7 @@ const PhotoUpload = ({
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             placeholder="Add a caption (optional)"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500"
           />
 
           {/* Action buttons */}
@@ -280,7 +280,7 @@ const PhotoUpload = ({
               type="button"
               onClick={handleCancel}
               disabled={uploading}
-              className="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-900 dark:text-white rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

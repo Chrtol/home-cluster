@@ -129,25 +129,25 @@ export default function ReptileForm() {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">{isEditing ? 'Edit Reptile' : 'Add New Reptile'}</h1>
+            <h1 className="text-3xl font-bold mb-6 text-foreground">{isEditing ? 'Edit Reptile' : 'Add New Reptile'}</h1>
             {error && <p className="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
-            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+            <form onSubmit={handleSubmit} className="bg-card rounded-lg shadow-md p-6 border border-border space-y-4">
                 <div>
-                    <label htmlFor="name" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Name</label>
+                    <label htmlFor="name" className="block font-medium mb-1 text-muted-foreground">Name</label>
                     <input
                         id="name"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                         required
                     />
                 </div>
                 <div className="relative">
-                    <label htmlFor="species" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <label htmlFor="species" className="block font-medium mb-1 text-muted-foreground">
                         Species
                         {speciesList.length > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">(select from list or type new)</span>
+                            <span className="text-xs text-muted-foreground ml-2">(select from list or type new)</span>
                         )}
                     </label>
                     <input
@@ -177,13 +177,13 @@ export default function ReptileForm() {
                             // Delay to allow click on dropdown item
                             setTimeout(() => setShowDropdown(false), 200);
                         }}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                         placeholder="e.g., Bearded Dragon, Leopard Gecko"
                         required
                         autoComplete="off"
                     />
                     {showDropdown && filteredSpecies.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                             {filteredSpecies.map((sp, index) => (
                                 <button
                                     key={index}
@@ -192,7 +192,7 @@ export default function ReptileForm() {
                                         setSpecies(sp);
                                         setShowDropdown(false);
                                     }}
-                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white transition-colors"
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-foreground transition-colors"
                                 >
                                     {sp}
                                 </button>
@@ -201,49 +201,49 @@ export default function ReptileForm() {
                     )}
                 </div>
                 <div>
-                    <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <label htmlFor="dateOfBirth" className="block font-medium mb-1 text-muted-foreground">
                         Date of Birth (optional)
                     </label>
                     <DateInput
                         id="dateOfBirth"
                         value={dateOfBirth}
                         onChange={(e) => setDateOfBirth(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                     />
                 </div>
                 <div>
-                    <label htmlFor="notes" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">Notes (optional)</label>
+                    <label htmlFor="notes" className="block font-medium mb-1 text-muted-foreground">Notes (optional)</label>
                     <textarea
                         id="notes"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows="4"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                         placeholder="Any additional information about your reptile..."
                     />
                 </div>
                 <div>
-                    <label htmlFor="hasUvb" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
-                        UVB Lighting <span className="text-xs text-gray-500 dark:text-gray-400">(optional)</span>
+                    <label htmlFor="hasUvb" className="block font-medium mb-1 text-muted-foreground">
+                        UVB Lighting <span className="text-xs text-muted-foreground">(optional)</span>
                     </label>
                     <select
                         id="hasUvb"
                         value={hasUvb}
                         onChange={(e) => setHasUvb(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                     >
                         <option value="">Not specified</option>
                         <option value="yes">Yes - Has UVB lighting</option>
                         <option value="no">No - No UVB lighting</option>
                     </select>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                         This helps select appropriate supplement schedules (calcium with/without D3)
                     </p>
                 </div>
 
                 <div>
-                    <label htmlFor="length" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
-                        Length (cm) <span className="text-xs text-gray-500 dark:text-gray-400">(optional)</span>
+                    <label htmlFor="length" className="block font-medium mb-1 text-muted-foreground">
+                        Length (cm) <span className="text-xs text-muted-foreground">(optional)</span>
                     </label>
                     <input
                         id="length"
@@ -251,23 +251,23 @@ export default function ReptileForm() {
                         min="0"
                         value={length}
                         onChange={(e) => setLength(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                         placeholder="e.g., 25"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                         Track your reptile's length for growth monitoring. For Bearded Dragons, age category is based on size ({`<25cm = juvenile, >25cm = adult`}).
                     </p>
                 </div>
 
                 <div>
-                    <label htmlFor="sex" className="block font-medium mb-1 text-gray-700 dark:text-gray-300">
-                        Sex <span className="text-xs text-gray-500 dark:text-gray-400">(optional)</span>
+                    <label htmlFor="sex" className="block font-medium mb-1 text-muted-foreground">
+                        Sex <span className="text-xs text-muted-foreground">(optional)</span>
                     </label>
                     <select
                         id="sex"
                         value={sex}
                         onChange={(e) => setSex(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
                     >
                         <option value="">Not specified</option>
                         <option value="male">Male</option>
@@ -278,8 +278,8 @@ export default function ReptileForm() {
 
                 <div>
                     <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="ageCategory" className="block font-medium text-gray-700 dark:text-gray-300">
-                            Age Category <span className="text-xs text-gray-500 dark:text-gray-400">(optional)</span>
+                        <label htmlFor="ageCategory" className="block font-medium text-muted-foreground">
+                            Age Category <span className="text-xs text-muted-foreground">(optional)</span>
                         </label>
                         <button
                             type="button"
@@ -287,7 +287,7 @@ export default function ReptileForm() {
                             className={`text-xs px-3 py-1 rounded-full transition-colors ${
                                 ageCategoryAuto
                                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                    : 'bg-secondary text-muted-foreground'
                             }`}
                         >
                             {ageCategoryAuto ? 'Auto' : 'Manual'}
@@ -298,7 +298,7 @@ export default function ReptileForm() {
                         value={ageCategory}
                         onChange={(e) => setAgeCategory(e.target.value)}
                         disabled={ageCategoryAuto}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <option value="">Not specified</option>
                         <option value="hatchling">Hatchling</option>
@@ -306,7 +306,7 @@ export default function ReptileForm() {
                         <option value="adult">Adult</option>
                         <option value="gravid">Gravid (Pregnant Female)</option>
                     </select>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                         {ageCategoryAuto
                             ? 'Used to recommend appropriate feeding and supplement schedules. Auto-calculated from date of birth and species (e.g., Leopard Geckos are adult at 12+ months).'
                             : `Used to recommend appropriate feeding and supplement schedules. Set manually for size-based species like Bearded Dragons (<25cm = juvenile, >25cm = adult).`}

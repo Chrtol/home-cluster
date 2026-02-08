@@ -584,7 +584,7 @@ export default function Dashboard() {
       text: format === 'full'
         ? `${count} ${periodLabel}`
         : `${count}/${periodLabel}`,
-      className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
+      className: 'bg-secondary text-muted-foreground border border-border'
     };
   };
 
@@ -606,7 +606,7 @@ export default function Dashboard() {
       'orange': 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400',
       'blue': 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
       'purple': 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-      'gray': 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
+      'gray': 'bg-secondary text-muted-foreground',
     };
     return colorMap[color] || colorMap['gray'];
   };
@@ -675,7 +675,7 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return <div className="text-center text-gray-700 dark:text-gray-300">Loading dashboard...</div>;
+    return <div className="text-center text-muted-foreground">Loading dashboard...</div>;
   }
 
   // Calculate dashboard stats
@@ -993,22 +993,22 @@ export default function Dashboard() {
     switch (cardId) {
       case 'weekly_summary':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <TrendingUp size={18} className="text-gray-700 dark:text-gray-300" />
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">This Week</h3>
+                <TrendingUp size={18} className="text-muted-foreground" />
+                <h3 className="font-semibold text-sm text-foreground">This Week</h3>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5">
                   <Utensils size={14} className="text-primary-600 dark:text-primary-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Feedings:</span>
+                  <span className="text-muted-foreground">Feedings:</span>
                   <span className="font-bold text-primary-600 dark:text-primary-400">{feedingsThisWeek}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
                   <Droplets size={14} className="text-blue-600 dark:text-blue-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Misted today:</span>
+                  <span className="text-muted-foreground">Misted today:</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400">{mistedToday}</span>
                 </div>
               </div>
@@ -1018,22 +1018,22 @@ export default function Dashboard() {
       case 'health_summary': {
         const isXS = isCardXS('health_summary');
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Activity size={18} className="text-gray-700 dark:text-gray-300" />
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white whitespace-nowrap">Health Summary</h3>
+                <Activity size={18} className="text-muted-foreground" />
+                <h3 className="font-semibold text-sm text-foreground whitespace-nowrap">Health Summary</h3>
               </div>
               <div className={`flex items-center ${isXS ? 'gap-2' : 'gap-4'} text-sm flex-shrink-0`}>
                 <div className="flex items-center gap-1.5">
                   <Activity size={14} className="text-green-600 dark:text-green-400 flex-shrink-0" />
-                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Sheds:</span>}
+                  {!isXS && <span className="text-muted-foreground whitespace-nowrap">Sheds:</span>}
                   <span className="font-bold text-green-600 dark:text-green-400">{shedThisMonth}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
                   <Scale size={14} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Logs:</span>}
+                  {!isXS && <span className="text-muted-foreground whitespace-nowrap">Logs:</span>}
                   <span className="font-bold text-purple-600 dark:text-purple-400">{weightData.length}</span>
                 </div>
               </div>
@@ -1044,22 +1044,22 @@ export default function Dashboard() {
       case 'schedule_summary': {
         const isXS = isCardXS('schedule_summary');
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white whitespace-nowrap">Schedule Status</h3>
+                <Calendar size={18} className="text-muted-foreground" />
+                <h3 className="font-semibold text-sm text-foreground whitespace-nowrap">Schedule Status</h3>
               </div>
               <div className={`flex items-center ${isXS ? 'gap-2' : 'gap-4'} text-sm flex-shrink-0`}>
                 <div className="flex items-center gap-1.5">
                   <AlertCircle size={14} className="text-red-600 dark:text-red-400 flex-shrink-0" />
-                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Need:</span>}
-                  <span className={`font-bold ${reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>{reptilesNeedingFeeding}</span>
+                  {!isXS && <span className="text-muted-foreground whitespace-nowrap">Need:</span>}
+                  <span className={`font-bold ${reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{reptilesNeedingFeeding}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle size={14} className="text-green-600 dark:text-green-400 flex-shrink-0" />
-                  {!isXS && <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">Done:</span>}
+                  {!isXS && <span className="text-muted-foreground whitespace-nowrap">Done:</span>}
                   <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
                 </div>
               </div>
@@ -1069,25 +1069,25 @@ export default function Dashboard() {
       }
       case 'today_summary':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Today</h3>
+                <Calendar size={18} className="text-muted-foreground" />
+                <h3 className="font-semibold text-sm text-foreground">Today</h3>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-gray-600 dark:text-gray-400">Due:</span>
+                  <span className="text-muted-foreground">Due:</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400">{todayScheduleStats.due}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-gray-600 dark:text-gray-400">Overdue:</span>
-                  <span className={`font-bold ${todayScheduleStats.overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>{todayScheduleStats.overdue}</span>
+                  <span className="text-muted-foreground">Overdue:</span>
+                  <span className={`font-bold ${todayScheduleStats.overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{todayScheduleStats.overdue}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-gray-600 dark:text-gray-400">Done:</span>
+                  <span className="text-muted-foreground">Done:</span>
                   <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
                 </div>
               </div>
@@ -1129,45 +1129,45 @@ export default function Dashboard() {
         };
 
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Calendar size={18} className="text-gray-700 dark:text-gray-300" />
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">Schedule Calendar</h2>
+                <Calendar size={18} className="text-muted-foreground" />
+                <h2 className="text-base font-bold text-foreground">Schedule Calendar</h2>
               </div>
               <div className="flex items-center gap-2">
                 {/* Navigation arrows and Today button */}
                 <button
                   onClick={() => navigateCalendar(-1)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-secondary rounded transition-colors"
                   title="Previous"
                 >
-                  <ChevronLeft size={18} className="text-gray-600 dark:text-gray-400" />
+                  <ChevronLeft size={18} className="text-muted-foreground" />
                 </button>
                 <button
                   onClick={goToToday}
-                  className="px-2 py-1 text-xs font-medium rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+                  className="px-2 py-1 text-xs font-medium rounded hover:bg-secondary transition-colors text-muted-foreground"
                   title="Go to today"
                 >
                   Today
                 </button>
                 <button
                   onClick={() => navigateCalendar(1)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-secondary rounded transition-colors"
                   title="Next"
                 >
-                  <ChevronRight size={18} className="text-gray-600 dark:text-gray-400" />
+                  <ChevronRight size={18} className="text-muted-foreground" />
                 </button>
-                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-px h-4 bg-border"></div>
                 {/* View switcher - hidden when calendar is XS */}
                 {!hideSupplements && (
-                  <div className="flex rounded border border-gray-200 dark:border-gray-600 overflow-hidden">
+                  <div className="flex rounded border border-border overflow-hidden">
                     <button
                       onClick={() => setCalendarView('day')}
                       className={`px-2 py-1 text-xs font-medium transition-colors ${
                         calendarView === 'day'
                           ? 'bg-primary-600 text-white'
-                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          : 'bg-card text-muted-foreground hover:bg-secondary'
                       }`}
                       title="1 day view"
                     >
@@ -1175,10 +1175,10 @@ export default function Dashboard() {
                     </button>
                     <button
                       onClick={() => setCalendarView('three-day')}
-                      className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                      className={`px-2 py-1 text-xs font-medium border-l border-border transition-colors ${
                         calendarView === 'three-day'
                           ? 'bg-primary-600 text-white'
-                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          : 'bg-card text-muted-foreground hover:bg-secondary'
                       }`}
                       title="3 day view"
                     >
@@ -1186,10 +1186,10 @@ export default function Dashboard() {
                     </button>
                     <button
                       onClick={() => setCalendarView('week')}
-                      className={`px-2 py-1 text-xs font-medium border-l border-gray-200 dark:border-gray-600 transition-colors ${
+                      className={`px-2 py-1 text-xs font-medium border-l border-border transition-colors ${
                         calendarView === 'week'
                           ? 'bg-primary-600 text-white'
-                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          : 'bg-card text-muted-foreground hover:bg-secondary'
                       }`}
                       title="Week view"
                     >
@@ -1200,15 +1200,15 @@ export default function Dashboard() {
                 <div className="relative">
                   <button
                     onClick={() => setShowReptileFilter(!showReptileFilter)}
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="p-1 rounded hover:bg-secondary transition-colors"
                     title="Filter reptiles"
                   >
-                    <Filter size={16} className="text-gray-600 dark:text-gray-400" />
+                    <Filter size={16} className="text-muted-foreground" />
                   </button>
                   {showReptileFilter && (
-                    <div className="absolute right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
+                    <div className="absolute right-0 mt-2 bg-card border border-border rounded-lg shadow-lg p-2 z-10 min-w-[200px]">
                       {reptiles.map(reptile => (
-                        <label key={reptile.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer">
+                        <label key={reptile.id} className="flex items-center gap-2 p-2 hover:bg-secondary rounded cursor-pointer">
                           <input
                             type="checkbox"
                             checked={calendarReptileFilter.has(reptile.id)}
@@ -1223,7 +1223,7 @@ export default function Dashboard() {
                             }}
                             className="rounded"
                           />
-                          <span className="text-sm text-gray-900 dark:text-white">{reptile.name}</span>
+                          <span className="text-sm text-foreground">{reptile.name}</span>
                         </label>
                       ))}
                     </div>
@@ -1240,22 +1240,22 @@ export default function Dashboard() {
                 return (
                   <div
                     key={index}
-                    className={`border border-gray-200 dark:border-gray-700 rounded ${calendarView === 'week' ? 'p-2' : 'p-3'} cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col ${
+                    className={`border border-border rounded ${calendarView === 'week' ? 'p-2' : 'p-3'} cursor-pointer hover:bg-secondary transition-colors flex flex-col ${
                       isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''
                     }`}
                     onClick={() => setSelectedDate(day)}
                   >
                     <div className="text-center mb-2 flex-shrink-0">
-                      <div className={`${calendarView === 'week' ? 'text-xs' : 'text-sm'} font-medium text-gray-600 dark:text-gray-400`}>
+                      <div className={`${calendarView === 'week' ? 'text-xs' : 'text-sm'} font-medium text-muted-foreground`}>
                         {format(day, calendarView === 'week' ? 'EEE' : 'EEEE, MMM d')}
                       </div>
                       {calendarView === 'week' && (
-                        <div className={`text-lg font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                        <div className={`text-lg font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
                           {format(day, 'd')}
                         </div>
                       )}
                       {dayEvents.length > 0 && calendarView !== 'week' && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
                         </div>
                       )}
@@ -1263,7 +1263,7 @@ export default function Dashboard() {
 
                     <div className={`${calendarView === 'week' ? 'space-y-1' : 'space-y-2'} overflow-y-auto flex-1 min-h-0`}>
                       {dayEvents.length === 0 && calendarView !== 'week' && (
-                        <div className="text-center text-gray-400 dark:text-gray-500 py-4 text-xs">
+                        <div className="text-center text-muted-foreground py-4 text-xs">
                           No events
                         </div>
                       )}
@@ -1284,10 +1284,10 @@ export default function Dashboard() {
                           return (
                             <div
                               key={idx}
-                              className={`px-2 py-1 rounded bg-white dark:bg-gray-800 border overflow-hidden ${
+                              className={`px-2 py-1 rounded bg-card border overflow-hidden ${
                                 event.is_completed
                                   ? 'border-green-500 dark:border-green-600'
-                                  : 'border-gray-200 dark:border-gray-600'
+                                  : 'border-border'
                               }`}
                               title={event.notes || event.name || event.reptile_name}
                             >
@@ -1299,7 +1299,7 @@ export default function Dashboard() {
                                     <ReptileAvatar reptile={event.reptile} size="sm" className="w-[12px] h-[12px] text-[6px]" />
                                   </div>
                                 )}
-                                <span className="font-semibold text-gray-900 dark:text-white truncate min-w-0">
+                                <span className="font-semibold text-foreground truncate min-w-0">
                                   {event.reptile_name}
                                 </span>
 
@@ -1313,22 +1313,22 @@ export default function Dashboard() {
 
                                 {/* Details */}
                                 {(timeText || foodCategory) && (
-                                  <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
+                                  <span className="text-muted-foreground flex-shrink-0">•</span>
                                 )}
                                 {timeText && (
                                   <>
-                                    <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{timeText}</span>
-                                    {foodCategory && <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>}
+                                    <span className="text-muted-foreground flex-shrink-0">{timeText}</span>
+                                    {foodCategory && <span className="text-muted-foreground flex-shrink-0">•</span>}
                                   </>
                                 )}
                                 {foodCategory && (
                                   <>
-                                    <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{foodCategory}</span>
+                                    <span className="text-muted-foreground flex-shrink-0">{foodCategory}</span>
                                   </>
                                 )}
                                 {!hideSupplements && event.suggested_supplements && event.suggested_supplements.length > 0 && (
                                   <>
-                                    <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
+                                    <span className="text-muted-foreground flex-shrink-0">•</span>
                                     <span className="text-amber-600 dark:text-amber-400 truncate min-w-0">
                                       +{event.suggested_supplements.map(s => s.name).join(', ')}
                                     </span>
@@ -1348,10 +1348,10 @@ export default function Dashboard() {
                         return (
                           <div
                             key={idx}
-                            className={`text-xs px-1.5 py-0.5 rounded bg-white dark:bg-gray-800 border ${
+                            className={`text-xs px-1.5 py-0.5 rounded bg-card border ${
                               event.is_completed
                                 ? 'border-green-500 dark:border-green-600'
-                                : 'border-gray-200 dark:border-gray-600'
+                                : 'border-border'
                             }`}
                             title={`${event.reptile_name}${timeText ? ' • ' + timeText : ''}${foodCategory ? ' • ' + foodCategory : ''}${!hideSupplements && event.suggested_supplements?.length > 0 ? ' • +' + event.suggested_supplements.map(s => s.name).join(', ') : ''}${event.notes ? '\n' + event.notes : ''}`}
                           >
@@ -1363,7 +1363,7 @@ export default function Dashboard() {
                                   <ReptileAvatar reptile={event.reptile} size="sm" className="w-[8px] h-[8px] text-[5px]" />
                                 </div>
                               )}
-                              <span className="truncate text-gray-700 dark:text-gray-300 font-medium">
+                              <span className="truncate text-muted-foreground font-medium">
                                 {event.reptile_name}
                               </span>
 
@@ -1376,13 +1376,13 @@ export default function Dashboard() {
                               )}
 
                               {/* Details */}
-                              {(timeText || foodCategory) && <span className="text-gray-400 dark:text-gray-500">•</span>}
+                              {(timeText || foodCategory) && <span className="text-muted-foreground">•</span>}
                               {timeText && (
-                                <span className="text-gray-500 dark:text-gray-400 truncate">{timeText}</span>
+                                <span className="text-muted-foreground truncate">{timeText}</span>
                               )}
-                              {foodCategory && timeText && <span className="text-gray-400 dark:text-gray-500">•</span>}
+                              {foodCategory && timeText && <span className="text-muted-foreground">•</span>}
                               {foodCategory && (
-                                <span className="text-gray-500 dark:text-gray-400 truncate">{foodCategory}</span>
+                                <span className="text-muted-foreground truncate">{foodCategory}</span>
                               )}
 
                               {/* Checkmark (right-aligned) */}
@@ -1412,10 +1412,10 @@ export default function Dashboard() {
         const lineType = 'monotone';
 
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
             <div className="flex items-center gap-2 mb-3">
-              <Scale size={18} className="text-gray-700 dark:text-gray-300" />
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">Weight Tracking</h2>
+              <Scale size={18} className="text-muted-foreground" />
+              <h2 className="text-base font-bold text-foreground">Weight Tracking</h2>
             </div>
             <div style={{ width: '100%', height: 200 }}>
               <ResponsiveContainer>
@@ -1562,8 +1562,8 @@ export default function Dashboard() {
         );
       case 'reptile_cards':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Your Reptiles</h2>
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
+            <h2 className="text-base font-bold mb-2 text-foreground">Your Reptiles</h2>
             <div className="space-y-1.5 max-h-96 overflow-y-auto">
               {reptiles.length > 0 ? (
                 reptiles.map(reptile => {
@@ -1575,14 +1575,14 @@ export default function Dashboard() {
                   const healthBadge = getHealthStatusBadge(reptile.id);
 
                   return (
-                    <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border border-gray-100 dark:border-gray-700">
+                    <Link to={`/reptiles/${reptile.id}`} key={reptile.id} className="block p-2 rounded hover:bg-secondary/50 transition-colors border border-border">
                       <div className="flex items-center gap-2">
                         {/* Avatar + Reptile Name (always together) */}
                         <ReptileAvatar reptile={reptile} size="sm" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{reptile.name}</span>
-                            <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{reptile.species}</span>
+                            <span className="font-medium text-sm text-foreground truncate">{reptile.name}</span>
+                            <span className="text-xs text-muted-foreground truncate">{reptile.species}</span>
                           </div>
                           <div className="flex flex-wrap items-center gap-2 text-xs">
                             <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
@@ -1602,7 +1602,7 @@ export default function Dashboard() {
                               {healthData[reptile.id] ? <span title="Days since last shed">{daysSinceShed === 0 ? 'Today' : `${daysSinceShed}d`}</span> : <span>-</span>}
                             </div>
                             {feedingStatus && (
-                              <div className={`flex items-center gap-1 ${feedingStatus.color === 'red' ? 'text-red-600 dark:text-red-400 font-medium' : feedingStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' : feedingStatus.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' : feedingStatus.color === 'green' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                              <div className={`flex items-center gap-1 ${feedingStatus.color === 'red' ? 'text-red-600 dark:text-red-400 font-medium' : feedingStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' : feedingStatus.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' : feedingStatus.color === 'green' ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                                 <feedingStatus.icon size={11} className="flex-shrink-0" />
                                 <span className="truncate">{feedingStatus.text}</span>
                               </div>
@@ -1619,7 +1619,7 @@ export default function Dashboard() {
                 })
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-gray-500 dark:text-gray-400 mb-3">No reptiles added yet.</p>
+                  <p className="text-muted-foreground mb-3">No reptiles added yet.</p>
                   <Link to="/reptiles/new" className="text-primary-600 dark:text-primary-400 hover:underline text-sm">Add your first reptile</Link>
                 </div>
               )}
@@ -1628,8 +1628,8 @@ export default function Dashboard() {
         );
       case 'recent_activity':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 h-full">
-            <h2 className="text-base font-bold mb-2 text-gray-900 dark:text-white">Recent Activity</h2>
+          <div className="bg-card rounded-lg shadow-sm border border-border p-3 h-full">
+            <h2 className="text-base font-bold mb-2 text-foreground">Recent Activity</h2>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {recentActivity.length > 0 ? (
                 recentActivity.map(activity => {
@@ -1665,18 +1665,18 @@ export default function Dashboard() {
                       break;
                   }
                   return (
-                    <Link key={activity.id} to={detailLink} className="block p-2 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+                    <Link key={activity.id} to={detailLink} className="block p-2 rounded border border-border hover:bg-secondary/50 hover:border-primary/50 transition-colors">
                       <div className="flex items-center gap-2">
                         {/* Avatar + Reptile Name (always together) */}
                         {activity.reptile && <ReptileAvatar reptile={activity.reptile} size="sm" className="flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2 mb-0.5">
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
+                            <p className="font-medium text-sm text-foreground">{activity.reptile ? activity.reptile.name : '(deleted reptile)'}</p>
+                            <p className="text-xs text-muted-foreground whitespace-nowrap">{formatDistanceToNow(activity.timestamp, { addSuffix: true })}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Icon size={14} className={`flex-shrink-0 ${colorClasses[activity.color]}`} />
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{summary}</p>
+                            <p className="text-sm text-muted-foreground truncate">{summary}</p>
                           </div>
                         </div>
                         {/* Prominent value (for weight, feeding count, etc.) */}
@@ -1689,7 +1689,7 @@ export default function Dashboard() {
                 })
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">No activity logged yet.</p>
+                  <p className="text-muted-foreground mb-4">No activity logged yet.</p>
                   <Link to="/feed" className="btn-primary">Log First Activity</Link>
                 </div>
               )}
@@ -1704,7 +1704,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
       </div>
 
       {/* Day Events Modal */}
@@ -1714,16 +1714,16 @@ export default function Dashboard() {
           onClick={() => setSelectedDate(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-foreground">
                 {selectedDate.toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
               </h2>
               <button
                 onClick={() => setSelectedDate(null)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronUp size={24} />
               </button>
@@ -1731,7 +1731,7 @@ export default function Dashboard() {
 
             <div className="px-6 py-4">
               {getEventsForDate(selectedDate).length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                <p className="text-center text-muted-foreground py-8">
                   No events scheduled for this day
                 </p>
               ) : (
@@ -1746,8 +1746,8 @@ export default function Dashboard() {
                         onClick={() => event.instance_id && navigate(`/schedule-instances/${event.instance_id}`)}
                         className={`px-4 py-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                           event.is_completed
-                            ? 'bg-white dark:bg-gray-800 border-green-500 dark:border-green-600 hover:border-green-600 dark:hover:border-green-500'
-                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400'
+                            ? 'bg-card border-green-500 dark:border-green-600 hover:border-green-600 dark:hover:border-green-500'
+                            : 'bg-card border-border hover:border-primary-500 dark:hover:border-primary-400'
                         }`}
                       >
                         <div className="flex items-center gap-3 mb-3">
@@ -1758,12 +1758,12 @@ export default function Dashboard() {
                             {event.is_completed && (
                               <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
                             )}
-                            <div className="font-semibold text-gray-900 dark:text-white">
+                            <div className="font-semibold text-foreground">
                               {displayName}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-secondary text-muted-foreground">
                               {event.schedule_type}
                             </span>
                           </div>
@@ -1771,28 +1771,28 @@ export default function Dashboard() {
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
                           <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Reptile</span>
-                            <span className="text-gray-900 dark:text-white font-medium truncate">{event.reptile_name}</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reptile</span>
+                            <span className="text-foreground font-medium truncate">{event.reptile_name}</span>
                           </div>
 
                           {event.schedule_rule && (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Frequency</span>
-                              <span className="text-gray-900 dark:text-white truncate">{event.schedule_rule.replace(/_/g, ' ')}</span>
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frequency</span>
+                              <span className="text-foreground truncate">{event.schedule_rule.replace(/_/g, ' ')}</span>
                             </div>
                           )}
 
                           {event.food_category && (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Food</span>
-                              <span className="text-gray-900 dark:text-white truncate">{event.food_category}</span>
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Food</span>
+                              <span className="text-foreground truncate">{event.food_category}</span>
                             </div>
                           )}
 
                           {event.suggested_supplements && event.suggested_supplements.length > 0 && (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Supplement</span>
-                              <span className="text-gray-900 dark:text-white truncate">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Supplement</span>
+                              <span className="text-foreground truncate">
                                 {event.suggested_supplements.map(s => s.name).join(', ')}
                               </span>
                             </div>
@@ -1800,26 +1800,26 @@ export default function Dashboard() {
 
                           {event.time_window_enabled && event.earliest_time && event.latest_time ? (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
                                 {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                               </span>
-                              <span className="text-gray-900 dark:text-white font-medium break-words">
+                              <span className="text-foreground font-medium break-words">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
                               </span>
                             </div>
                           ) : event.time_slot ? (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 Time
                                 {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
                               </span>
-                              <span className="text-gray-900 dark:text-white truncate">{event.time_slot}</span>
+                              <span className="text-foreground truncate">{event.time_slot}</span>
                             </div>
                           ) : event.notifications_enabled ? (
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 <Bell size={10} className="text-blue-500 dark:text-blue-400" />
                                 Notifications
                               </span>
@@ -1829,8 +1829,8 @@ export default function Dashboard() {
                         </div>
 
                         {event.notes && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Notes:</span> {event.notes}
+                          <div className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border">
+                            <span className="font-medium text-muted-foreground">Notes:</span> {event.notes}
                           </div>
                         )}
                       </div>

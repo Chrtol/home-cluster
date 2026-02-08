@@ -29,13 +29,13 @@ function Modal({ isOpen, onClose, title, children, type = 'info' }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+      <div className="bg-card rounded-lg shadow-xl max-w-md w-full">
         <div className="p-6">
           <div className="flex items-start gap-3 mb-4">
             {type !== 'info' && (
               <AlertCircle className={`flex-shrink-0 mt-0.5 ${iconColors[type]}`} size={24} />
             )}
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">
+            <h3 className="text-lg font-semibold text-foreground flex-1">
               {title}
             </h3>
             <button
@@ -316,8 +316,8 @@ export default function ProfileManager({ onProfileChange }) {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Display Profiles</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h2 className="text-xl font-semibold text-foreground">Display Profiles</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Save and switch between different dashboard and statistics layouts
             </p>
           </div>
@@ -344,9 +344,9 @@ export default function ProfileManager({ onProfileChange }) {
         {/* Create New Profile Form */}
         {showNewProfileForm && (
           <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-            <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Create New Profile</h3>
+            <h3 className="font-semibold mb-2 text-foreground">Create New Profile</h3>
             <div className="flex items-start justify-between gap-4 mb-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 This will save your current dashboard and statistics settings as a new profile.
               </p>
               <select
@@ -390,7 +390,7 @@ export default function ProfileManager({ onProfileChange }) {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   isActive
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+                    : 'border-border bg-card/50'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -426,11 +426,11 @@ export default function ProfileManager({ onProfileChange }) {
                     ) : (
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className={`font-semibold ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                          <h3 className={`font-semibold ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
                             {profile.name}
                           </h3>
                           {profile.isDefault && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                            <span className="text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground">
                               Built-in
                             </span>
                           )}
@@ -447,7 +447,7 @@ export default function ProfileManager({ onProfileChange }) {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Last updated: {new Date(profile.updated_at).toLocaleString()}
                         </p>
                       </div>
@@ -526,7 +526,7 @@ export default function ProfileManager({ onProfileChange }) {
         </div>
 
         {/* Help Text */}
-        <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-4 p-3 bg-card rounded text-sm text-muted-foreground">
           <p className="font-medium mb-1">How to use profiles:</p>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>Create a new profile to save your current dashboard and statistics layout</li>
@@ -545,7 +545,7 @@ export default function ProfileManager({ onProfileChange }) {
         title={modalConfig.title}
         type={modalConfig.type}
       >
-        <p className="text-gray-700 dark:text-gray-300 mb-4">
+        <p className="text-muted-foreground mb-4">
           {modalConfig.message}
         </p>
         {modalConfig.showInput && (

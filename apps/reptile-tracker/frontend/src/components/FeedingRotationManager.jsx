@@ -182,15 +182,15 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
   };
 
   if (loading) {
-    return <div className="text-gray-600 dark:text-gray-400">Loading rotations...</div>;
+    return <div className="text-muted-foreground">Loading rotations...</div>;
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Supplement Rotation</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h3 className="text-lg font-bold text-foreground">Supplement Rotation</h3>
+          <p className="text-sm text-muted-foreground mt-1">
             Automatically apply supplements based on feeding count or schedule
           </p>
         </div>
@@ -214,13 +214,13 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
       {/* Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+          <div className="bg-card rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+            <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-xl font-semibold text-foreground">
                   Rotation Schedule Preview
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Next 2 weeks for {reptileName}
                 </p>
               </div>
@@ -234,10 +234,10 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
             <div className="px-6 py-4">
               {preview.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400 mb-3">
+                  <p className="text-muted-foreground mb-3">
                     No feeding schedules found for this reptile
                   </p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Create feeding schedules in the Calendar to see when supplements will apply.
                     Rotations automatically apply to scheduled feedings based on your configured triggers.
                   </p>
@@ -245,9 +245,9 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
               ) : (
                 <div className="space-y-3">
                   {preview.map((day, idx) => (
-                    <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="bg-gray-50 dark:bg-gray-900/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-semibold text-gray-900 dark:text-white">
+                    <div key={idx} className="border border-border rounded-lg overflow-hidden">
+                      <div className="bg-secondary/50 px-4 py-2 border-b border-border">
+                        <span className="font-semibold text-foreground">
                           {day.date_display}
                         </span>
                       </div>
@@ -259,12 +259,12 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                                 <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700">
                                   {feeding.food_category}
                                 </span>
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                <span className="text-sm text-muted-foreground">
                                   #{feeding.feeding_number}
                                 </span>
                               </div>
                               {feeding.schedule_name && (
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                <div className="text-xs text-muted-foreground">
                                   {feeding.schedule_name}
                                 </div>
                               )}
@@ -280,7 +280,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                <span className="text-sm text-muted-foreground italic">
                                   No supplements
                                 </span>
                               )}
@@ -300,13 +300,13 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
       {/* Form */}
       {showForm && (
         <div className="card mb-4">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+          <h4 className="font-semibold text-foreground mb-4">
             {editingRotation ? 'Edit' : 'Add'} Rotation Rule
           </h4>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Supplement *
                 </label>
                 <select
@@ -323,7 +323,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Trigger Mode *
                 </label>
                 <select
@@ -339,7 +339,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
 
               {formData.trigger_mode === 'feeding_count' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Every N Feedings *
                   </label>
                   <input
@@ -350,7 +350,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                     required
                     className="input-field"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Apply supplement every {formData.every_n_feedings} feeding(s)
                   </p>
                 </div>
@@ -358,7 +358,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
 
               {formData.trigger_mode === 'schedule_based' && (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Days of Week *
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -370,14 +370,14 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                         className={`px-4 py-2 rounded-lg border-2 transition-colors ${
                           formData.schedule_days_of_week.includes(day)
                             ? 'bg-primary-500 border-primary-500 text-white'
-                            : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400 dark:hover:border-primary-500'
+                            : 'bg-card border-border text-muted-foreground hover:border-primary-400 dark:hover:border-primary-500'
                         }`}
                       >
                         {dayNames[index]}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     {formData.schedule_days_of_week.length === 0
                       ? 'Select at least one day'
                       : `Applies on: ${formData.schedule_days_of_week.map(d => getDayName(d)).join(', ')}`
@@ -387,7 +387,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Applies To
                 </label>
                 <select
@@ -403,7 +403,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Priority *
                 </label>
                 <input
@@ -415,13 +415,13 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                   required
                   className="input-field"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Lower number = higher priority (1 = highest)
                 </p>
               </div>
             </div>
 
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+            <div className="border border-border rounded-lg p-4 bg-secondary/50">
               <label className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -430,14 +430,14 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                   className="mt-1"
                 />
                 <div className="flex-1">
-                  <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <span className="block text-sm font-medium text-muted-foreground mb-1">
                     Exclusive Mode
                   </span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     When enabled, this supplement will exclude all lower-priority supplements when it triggers.
                     Only the highest priority supplement will apply. Leave unchecked to allow multiple supplements simultaneously.
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     <strong>Example:</strong> If "Calcium + D3" (priority 1, exclusive) and "Multivitamin" (priority 2) both trigger,
                     only "Calcium + D3" will apply. Without exclusive mode, both would apply.
                   </p>
@@ -446,7 +446,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Notes
               </label>
               <textarea
@@ -472,7 +472,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
       {/* Rotation List */}
       <div className="space-y-3">
         {rotations.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+          <div className="text-center text-muted-foreground py-8">
             <p className="mb-4">No rotation rules configured</p>
             <button onClick={() => setShowForm(true)} className="btn-primary text-sm">
               <Plus size={18} className="inline mr-2" />
@@ -483,15 +483,15 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
           rotations.map(rotation => (
             <div
               key={rotation.id}
-              className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
+              className="p-4 rounded-lg border border-border hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">
+                    <span className="font-semibold text-foreground">
                       {rotation.supplement?.name}
                     </span>
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-secondary text-muted-foreground">
                       Priority: {rotation.priority} ({getPriorityLabel(rotation.priority)})
                     </span>
                     {!rotation.enabled && (
@@ -501,7 +501,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                     )}
                   </div>
 
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     {rotation.trigger_mode === 'schedule_based' ? (
                       <>
                         {rotation.schedule_days_of_week
@@ -518,7 +518,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                   </div>
 
                   {rotation.notes && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <div className="text-sm text-muted-foreground mt-2">
                       {rotation.notes}
                     </div>
                   )}
@@ -527,14 +527,14 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                 <div className="flex items-center gap-2 ml-4">
                   <button
                     onClick={() => handleEdit(rotation)}
-                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400 hover:bg-secondary rounded-lg transition-colors"
                     title="Edit rotation"
                   >
                     <Edit size={18} />
                   </button>
                   <button
                     onClick={() => handleDelete(rotation.id)}
-                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-secondary rounded-lg transition-colors"
                     title="Delete rotation"
                   >
                     <Trash2 size={18} />

@@ -94,7 +94,7 @@ function Statistics() {
   };
 
   const getWeightTrendColor = () => {
-    if (!stats?.summary?.weight_change) return 'text-gray-600 dark:text-gray-400';
+    if (!stats?.summary?.weight_change) return 'text-muted-foreground';
     return stats.summary.weight_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
   };
 
@@ -375,7 +375,7 @@ function Statistics() {
   if (loading && !stats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600 dark:text-gray-400">Loading statistics...</div>
+        <div className="text-muted-foreground">Loading statistics...</div>
       </div>
     );
   }
@@ -383,9 +383,9 @@ function Statistics() {
   if (reptiles.length === 0) {
     return (
       <div>
-        <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Statistics</h1>
+        <h1 className="text-3xl font-bold mb-6 text-foreground">Statistics</h1>
         <div className="card">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             No reptiles found. Add a reptile to start tracking statistics.
           </p>
         </div>
@@ -396,7 +396,7 @@ function Statistics() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistics</h1>
+        <h1 className="text-3xl font-bold text-foreground">Statistics</h1>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {/* Left: Filter Toggles - Inline and Horizontal */}
@@ -408,7 +408,7 @@ function Statistics() {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     visibleData.weight
                       ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      : 'bg-secondary text-muted-foreground'
                   }`}
                 >
                   <Scale size={16} className="inline mr-1" />
@@ -419,7 +419,7 @@ function Statistics() {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     visibleData.feeding
                       ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      : 'bg-secondary text-muted-foreground'
                   }`}
                 >
                   <Calendar size={16} className="inline mr-1" />
@@ -430,7 +430,7 @@ function Statistics() {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     visibleData.misting
                       ? 'bg-blue-400 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      : 'bg-secondary text-muted-foreground'
                   }`}
                 >
                   <Droplets size={16} className="inline mr-1" />
@@ -441,7 +441,7 @@ function Statistics() {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     visibleData.health
                       ? 'bg-red-400 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      : 'bg-secondary text-muted-foreground'
                   }`}
                 >
                   <Heart size={16} className="inline mr-1" />
@@ -450,7 +450,7 @@ function Statistics() {
               </div>
 
               {/* Divider */}
-              <div className="hidden sm:block h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+              <div className="hidden sm:block h-8 w-px bg-border"></div>
             </>
           )}
 
@@ -497,13 +497,13 @@ function Statistics() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Scale size={20} className="text-purple-600 dark:text-purple-400" />
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Weight</h3>
+                    <h3 className="font-semibold text-foreground">Weight</h3>
                   </div>
                   {getWeightTrendIcon()}
                 </div>
                 {stats.summary.current_weight ? (
                   <>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.summary.current_weight}g
                     </p>
                     {stats.summary.weight_change && (
@@ -512,12 +512,12 @@ function Statistics() {
                         {stats.summary.weight_change.toFixed(1)}g ({stats.summary.weight_change_percent?.toFixed(1)}%)
                       </p>
                     )}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {stats.summary.weight_logs_count} measurements
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No weight data</p>
+                  <p className="text-sm text-muted-foreground">No weight data</p>
                 )}
               </div>
             )}
@@ -527,12 +527,12 @@ function Statistics() {
               <div className="card">
                 <div className="flex items-center gap-2 mb-2">
                   <Utensils size={20} className="text-primary-600 dark:text-primary-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Feedings</h3>
+                  <h3 className="font-semibold text-foreground">Feedings</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-foreground">
                   {stats.summary.total_feedings}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {(stats.summary.total_feedings / (timeRange / 7)).toFixed(1)} per week avg
                 </p>
               </div>
@@ -543,12 +543,12 @@ function Statistics() {
               <div className="card">
                 <div className="flex items-center gap-2 mb-2">
                   <Droplets size={20} className="text-blue-600 dark:text-blue-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Misting</h3>
+                  <h3 className="font-semibold text-foreground">Misting</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-foreground">
                   {stats.summary.total_mistings}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {(stats.summary.total_mistings / (timeRange / 7)).toFixed(1)} per week avg
                 </p>
               </div>
@@ -559,12 +559,12 @@ function Statistics() {
               <div className="card">
                 <div className="flex items-center gap-2 mb-2">
                   <Heart size={20} className="text-red-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Health Events</h3>
+                  <h3 className="font-semibold text-foreground">Health Events</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-foreground">
                   {stats.summary.total_health_events}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Logs recorded
                 </p>
               </div>
@@ -577,7 +577,7 @@ function Statistics() {
             <div className={`${getChartSizeClass('weight_feeding')} card`}>
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-xl font-semibold text-foreground">
                     Weight & Feeding Correlation
                   </h2>
                   {getAvailableFoods().length > 0 && (
@@ -593,7 +593,7 @@ function Statistics() {
                     </select>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   See how feeding frequency affects weight over time
                 </p>
               </div>
@@ -706,8 +706,8 @@ function Statistics() {
           {/* Feeding Frequency Calendar Heatmap */}
           {isChartVisible('feeding_heatmap') && visibleData.feeding && stats.feeding_data.length > 0 && (
             <div className={`${getChartSizeClass('feeding_heatmap')} card`} style={{ maxWidth: '420px' }}>
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Feeding Activity Calendar</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Feeding Activity Calendar</h2>
+              <p className="text-sm text-muted-foreground mb-4">
                 Daily feeding activity over the past {timeRange} days
               </p>
               <div className="overflow-x-auto">
@@ -719,7 +719,7 @@ function Statistics() {
           {/* Misting Frequency Chart */}
           {isChartVisible('misting_frequency') && visibleData.misting && stats.misting_data.length > 0 && (
             <div className={`${getChartSizeClass('misting_frequency')} card`}>
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Misting Frequency</h2>
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Misting Frequency</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={stats.misting_data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -753,7 +753,7 @@ function Statistics() {
           {/* Health Events Timeline */}
           {isChartVisible('health_events') && visibleData.health && stats.health_data.length > 0 && (
             <div className={`${getChartSizeClass('health_events')} card`}>
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Health Events Timeline</h2>
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Health Events Timeline</h2>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {stats.health_data.map((event, index) => {
                   // Determine icon and color based on event type
@@ -778,18 +778,18 @@ function Statistics() {
                   const EventIcon = style.icon;
 
                   return (
-                    <div key={index} className="p-3 rounded border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div key={index} className="p-3 rounded border border-border hover:bg-secondary/50 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className={`flex-shrink-0 p-2 rounded-lg ${style.bgColor}`}>
                           <EventIcon size={18} className={`${style.color}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2">
-                            <span className="font-medium text-sm text-gray-900 dark:text-white capitalize">
+                            <span className="font-medium text-sm text-foreground capitalize">
                               {style.label}
                             </span>
                             {event.title && (
-                              <span className="text-sm text-gray-600 dark:text-gray-400">{event.title}</span>
+                              <span className="text-sm text-muted-foreground">{event.title}</span>
                             )}
                           </div>
                           {event.description && (
@@ -810,14 +810,14 @@ function Statistics() {
           {/* No Data Messages */}
           {(visibleData.weight || visibleData.feeding) && getCombinedData().length === 0 && (
             <div className="card">
-              <p className="text-center text-gray-600 dark:text-gray-400">
+              <p className="text-center text-muted-foreground">
                 No weight or feeding data available for this period. Start logging to see trends!
               </p>
             </div>
           )}
           {visibleData.health && stats.health_data.length === 0 && (
             <div className="card">
-              <p className="text-center text-gray-600 dark:text-gray-400">
+              <p className="text-center text-muted-foreground">
                 No health events recorded for this period.
               </p>
             </div>
@@ -875,7 +875,7 @@ function FeedingHeatmap({ feedingData, timeRange }) {
   };
 
   const getColor = (count) => {
-    if (count === 0) return 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+    if (count === 0) return 'bg-card border border-border';
     if (count === 1) return 'bg-green-200 dark:bg-green-900 border border-green-300 dark:border-green-800';
     if (count === 2) return 'bg-green-400 dark:bg-green-700 border border-green-500 dark:border-green-600';
     if (count === 3) return 'bg-green-500 dark:bg-green-600 border border-green-600 dark:border-green-500';
@@ -927,7 +927,7 @@ function FeedingHeatmap({ feedingData, timeRange }) {
             return (
               <div key={weekIdx} className="w-3">
                 {showMonth && (
-                  <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap -ml-2">
+                  <div className="text-xs text-muted-foreground whitespace-nowrap -ml-2">
                     {firstValidDay.date.toLocaleDateString('en-US', { month: 'short' })}
                   </div>
                 )}
@@ -941,7 +941,7 @@ function FeedingHeatmap({ feedingData, timeRange }) {
           {/* Day of week labels column */}
           <div className="flex flex-col gap-1 pr-2 text-right">
             {dayLabels.map(day => (
-              <div key={day} className="h-3 text-xs text-gray-600 dark:text-gray-400 flex items-center justify-end" style={{minWidth: '28px'}}>
+              <div key={day} className="h-3 text-xs text-muted-foreground flex items-center justify-end" style={{minWidth: '28px'}}>
                 {day}
               </div>
             ))}
@@ -968,10 +968,10 @@ function FeedingHeatmap({ feedingData, timeRange }) {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-2 mt-4 text-xs text-gray-600 dark:text-gray-400">
+        <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
           <span>Less</span>
           <div className="flex gap-1">
-            <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"></div>
+            <div className="w-3 h-3 rounded-sm bg-card border border-border"></div>
             <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900 border border-green-300 dark:border-green-800"></div>
             <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700 border border-green-500 dark:border-green-600"></div>
             <div className="w-3 h-3 rounded-sm bg-green-500 dark:bg-green-600 border border-green-600 dark:border-green-500"></div>

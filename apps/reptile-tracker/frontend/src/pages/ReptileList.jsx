@@ -77,13 +77,13 @@ export default function ReptileList() {
   };
 
   if (loading) {
-    return <div className="text-center text-gray-700 dark:text-gray-300">Loading reptiles...</div>;
+    return <div className="text-center text-muted-foreground">Loading reptiles...</div>;
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Reptiles</h1>
+        <h1 className="text-3xl font-bold text-foreground">Your Reptiles</h1>
         <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
           <Plus size={20} />
           Add Reptile
@@ -99,7 +99,7 @@ export default function ReptileList() {
               onClick={() => toggleHousehold(household.id)}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                 hiddenHouseholds.has(household.id)
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  ? 'bg-secondary text-muted-foreground'
                   : 'bg-blue-500 text-white'
               }`}
             >
@@ -113,8 +113,8 @@ export default function ReptileList() {
 
       {reptiles.length === 0 ? (
         <div className="text-center py-12 card">
-          <h2 className="text-xl font-medium text-gray-900 dark:text-white">No reptiles found</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">Get started by adding your first reptile.</p>
+          <h2 className="text-xl font-medium text-foreground">No reptiles found</h2>
+          <p className="text-muted-foreground mt-2">Get started by adding your first reptile.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -126,10 +126,10 @@ export default function ReptileList() {
               <div key={household.id}>
                 {/* Household Header */}
                 <div className="mb-4">
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
                     {household.id !== 'no_household' && <Home size={24} className="text-blue-500" />}
                     {household.name}
-                    <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                    <span className="text-sm font-normal text-muted-foreground">
                       ({household.reptiles.length} {household.reptiles.length === 1 ? 'reptile' : 'reptiles'})
                     </span>
                   </h2>
@@ -147,8 +147,8 @@ export default function ReptileList() {
                       <div className="flex items-start gap-4">
                         <ReptileAvatar reptile={reptile} size="lg" className="flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{reptile.name}</h3>
-                          <p className="text-gray-600 dark:text-gray-400">{reptile.species}</p>
+                          <h3 className="text-xl font-bold text-foreground">{reptile.name}</h3>
+                          <p className="text-muted-foreground">{reptile.species}</p>
                           {reptile.date_of_birth && (
                             <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
                               Age: {calculateAge(reptile.date_of_birth)}

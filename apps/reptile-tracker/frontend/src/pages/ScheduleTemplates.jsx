@@ -927,7 +927,7 @@ function ScheduleTemplates() {
       supplement: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
       supplement_rotation: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
     };
-    return colors[type] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+    return colors[type] || 'bg-secondary text-muted-foreground';
   }
 
   function getTypeDisplayName(type) {
@@ -952,7 +952,7 @@ function ScheduleTemplates() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Schedule Templates
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Reusable schedule recommendations based on species and age
         </p>
       </div>
@@ -994,10 +994,10 @@ function ScheduleTemplates() {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-lg p-4 mb-6 border border-border">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Species (Multi-Select)
               </label>
               <div className="flex flex-wrap gap-2" key={speciesFilter.join(',')}>
@@ -1008,7 +1008,7 @@ function ScheduleTemplates() {
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                       speciesFilter.includes(species)
                         ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
                     {species}
@@ -1026,13 +1026,13 @@ function ScheduleTemplates() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Life Stage
               </label>
               <select
                 value={ageCategoryFilter}
                 onChange={(e) => setAgeCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">All Ages</option>
                 <option value="hatchling">Hatchling</option>
@@ -1043,13 +1043,13 @@ function ScheduleTemplates() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Schedule Type
               </label>
               <select
                 value={scheduleTypeFilter}
                 onChange={(e) => setScheduleTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
               >
                 <option value="">All Types</option>
                 <option value="feeding">Feeding</option>
@@ -1068,7 +1068,7 @@ function ScheduleTemplates() {
               onChange={(e) => setIncludeDefaults(e.target.checked)}
               className="w-4 h-4 text-blue-600 rounded"
             />
-            <label htmlFor="includeDefaults" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="includeDefaults" className="text-sm font-medium text-muted-foreground">
               Include Default Templates
             </label>
           </div>
@@ -1081,9 +1081,9 @@ function ScheduleTemplates() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="text-center py-12 bg-card rounded-lg border border-border">
           <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 mb-4">No schedule templates found</p>
+          <p className="text-muted-foreground mb-4">No schedule templates found</p>
           <button
             onClick={() => navigate('/schedule-templates/new')}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
@@ -1097,7 +1097,7 @@ function ScheduleTemplates() {
           {groupTemplates(filteredTemplates).map((group, groupIdx) => (
             <div
               key={group.groupName || `ungrouped-${groupIdx}`}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
+              className="bg-card rounded-lg border border-border p-4 hover:shadow-lg transition-shadow"
             >
               {group.groupName ? (
                 /* Super-Group Template Card - Source Level */
@@ -1118,7 +1118,7 @@ function ScheduleTemplates() {
                           {group.templates.length} Templates
                         </span>
                         {group.species.length > 0 && (
-                          <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                          <span className="px-2 py-1 rounded bg-secondary text-muted-foreground">
                             {group.species.length} Species
                           </span>
                         )}
@@ -1134,10 +1134,10 @@ function ScheduleTemplates() {
                   {/* Summary of covered species */}
                   {group.species.length > 0 && (
                     <div className="mb-4">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Covers:</div>
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Covers:</div>
                       <div className="flex flex-wrap gap-1">
                         {group.species.map((species, idx) => (
-                          <span key={idx} className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                          <span key={idx} className="px-2 py-0.5 rounded text-xs bg-secondary text-muted-foreground">
                             {species}
                           </span>
                         ))}
@@ -1153,7 +1153,7 @@ function ScheduleTemplates() {
                   {/* Sample templates preview (first 3) */}
                   <div className="space-y-1 mb-4">
                     {group.templates.slice(0, 3).map((template, idx) => (
-                      <div key={template.id} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                      <div key={template.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span className={`w-2 h-2 rounded-full ${
                           template.schedule_type === 'feeding' ? 'bg-orange-500' :
                           template.schedule_type === 'supplement' || template.schedule_type === 'supplement_rotation' ? 'bg-green-500' :
@@ -1164,14 +1164,14 @@ function ScheduleTemplates() {
                       </div>
                     ))}
                     {group.templates.length > 3 && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 italic pl-4">
+                      <div className="text-xs text-muted-foreground italic pl-4">
                         +{group.templates.length - 3} more...
                       </div>
                     )}
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
                     <button
                       onClick={() => openViewModal(group)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors font-medium"
@@ -1204,7 +1204,7 @@ function ScheduleTemplates() {
                                 {getTypeDisplayName(template.schedule_type)}
                               </span>
                               {template.species && (
-                                <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                <span className="px-2 py-0.5 rounded bg-secondary text-muted-foreground">
                                   {template.species}
                                 </span>
                               )}
@@ -1219,20 +1219,20 @@ function ScheduleTemplates() {
 
                         {/* Description */}
                         {template.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          <p className="text-sm text-muted-foreground mb-3">
                             {template.description}
                           </p>
                         )}
 
                         {/* Schedule Details */}
                         <div className="space-y-2 mb-4 text-sm">
-                          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar size={16} />
                             <span>{formatScheduleRule(template)}</span>
                           </div>
 
                           {template.time_window_enabled && (
-                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Clock size={16} />
                               <span>
                                 {formatTime(template.earliest_time)} - {formatTime(template.latest_time)}
@@ -1241,24 +1241,24 @@ function ScheduleTemplates() {
                           )}
 
                           {template.food_category && (
-                            <div className="text-gray-600 dark:text-gray-400">
+                            <div className="text-muted-foreground">
                               Food: {template.food_category}
                             </div>
                           )}
 
                           {/* Supplement Rotation Details */}
                           {template.schedule_type === 'supplement_rotation' && template._rotationData && (
-                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1.5">
+                            <div className="mt-3 pt-3 border-t border-border space-y-1.5">
                               {template._rotationData.applies_to_category && (
-                                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                                <div className="flex items-center gap-2 text-muted-foreground">
                                   <span className="font-medium">Applies to:</span>
                                   <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs">
                                     {template._rotationData.applies_to_category}
                                   </span>
                                 </div>
                               )}
-                              <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 text-xs">
-                                <span>Priority: <strong className="text-gray-700 dark:text-gray-300">{template._rotationData.priority}</strong> {template._rotationData.priority < 5 ? '(high)' : template._rotationData.priority > 10 ? '(low)' : ''}</span>
+                              <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                                <span>Priority: <strong className="text-muted-foreground">{template._rotationData.priority}</strong> {template._rotationData.priority < 5 ? '(high)' : template._rotationData.priority > 10 ? '(low)' : ''}</span>
                                 {template._rotationData.is_exclusive && (
                                   <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
                                     Exclusive
@@ -1270,7 +1270,7 @@ function ScheduleTemplates() {
                         </div>
 
                         {/* Actions - Only View button */}
-                        <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
                           <button
                             onClick={() => openViewModal(template)}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors font-medium"
@@ -1292,13 +1292,13 @@ function ScheduleTemplates() {
       {/* View Template Modal - Two Column Layout */}
       {viewModalOpen && selectedTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             {/* Check if this is a grouped template or single template */}
             {selectedTemplate.groupName ? (
               /* GROUPED TEMPLATE VIEW */
               <>
                 {/* Header */}
-                <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+                <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {selectedTemplate.groupName}
@@ -1337,7 +1337,7 @@ function ScheduleTemplates() {
                 {(viewModalReptile || (viewModalAgeCategory && viewModalManualUvb !== null)) && (
                   <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-4 flex-wrap">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-sm font-medium text-muted-foreground">
                         Viewing for:
                       </label>
                       {viewModalReptile ? (
@@ -1354,7 +1354,7 @@ function ScheduleTemplates() {
                               setViewModalAgeCategory(ageCategory);
                             }
                           }}
-                          className="px-4 py-2 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
+                          className="px-4 py-2 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-card text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
                         >
                           {reptiles.map(reptile => {
                             // Handle both single species (string) and grouped templates (array)
@@ -1388,7 +1388,7 @@ function ScheduleTemplates() {
                             </span>
                           )}
                           {!viewModalAgeCategory && viewModalManualUvb === null && (
-                            <span className="px-3 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium">
+                            <span className="px-3 py-1 rounded bg-secondary text-muted-foreground text-sm font-medium">
                               All Templates
                             </span>
                           )}
@@ -1410,22 +1410,22 @@ function ScheduleTemplates() {
 
                 {/* Reptile/Context Selection Overlay - Required for grouped templates */}
                 {!viewModalReptile && !(viewModalAgeCategory && viewModalManualUvb !== null) && (
-                  <div className="flex items-center justify-center min-h-[400px] p-12 bg-gray-50 dark:bg-gray-900/30">
+                  <div className="flex items-center justify-center min-h-[400px] p-12 bg-secondary/30">
                     <div className="max-w-2xl w-full">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3 text-center">
                         Select Context for Template View
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
+                      <p className="text-sm text-muted-foreground mb-6 text-center">
                         Choose your reptile to see personalized schedules, or manually select criteria to browse templates.
                       </p>
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Option 1: Select a Reptile */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
+                        <div className="bg-card rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
                           <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                             <span className="text-blue-600 dark:text-blue-400">Option 1:</span> Select Your Reptile
                           </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          <p className="text-sm text-muted-foreground mb-4">
                             We'll automatically filter schedules based on their age and UVB setup.
                           </p>
                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
@@ -1451,7 +1451,7 @@ function ScheduleTemplates() {
                                     className={`w-full px-4 py-3 rounded-lg text-left transition-colors ${
                                       isMatchingSpecies
                                         ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                                        : 'bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-600'
+                                        : 'bg-secondary hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-border hover:border-blue-400 dark:hover:border-blue-600'
                                     }`}
                                   >
                                     <div className="flex items-center justify-between">
@@ -1462,7 +1462,7 @@ function ScheduleTemplates() {
                                             <span className="ml-2 text-blue-600 dark:text-blue-400 text-xs">✓ Match</span>
                                           )}
                                         </div>
-                                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                                        <div className="text-xs text-muted-foreground">
                                           {reptile.species}
                                         </div>
                                       </div>
@@ -1477,7 +1477,7 @@ function ScheduleTemplates() {
                               })
                             ) : (
                               <div className="text-center py-4">
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                <p className="text-sm text-muted-foreground mb-3">
                                   No reptiles found
                                 </p>
                                 <button
@@ -1492,17 +1492,17 @@ function ScheduleTemplates() {
                         </div>
 
                         {/* Option 2: Manual Selection */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-800">
+                        <div className="bg-card rounded-lg p-6 border-2 border-purple-200 dark:border-purple-800">
                           <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                             <span className="text-purple-600 dark:text-purple-400">Option 2:</span> Manual Selection
                           </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          <p className="text-sm text-muted-foreground mb-4">
                             Choose life stage and UVB setup to browse templates.
                           </p>
 
                           {/* UVB Setup Selection */}
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-muted-foreground mb-2">
                               UVB Setup
                             </label>
                             <div className="space-y-2">
@@ -1511,7 +1511,7 @@ function ScheduleTemplates() {
                                 className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                   viewModalManualUvb === true
                                     ? 'bg-purple-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                    : 'bg-secondary text-muted-foreground hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                 }`}
                               >
                                 Has UVB Lighting
@@ -1548,8 +1548,8 @@ function ScheduleTemplates() {
                                           typeof s === 'string' && s.toLowerCase().includes('bearded dragon')
                                         );
                                         return requiresUvb
-                                          ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20';
+                                          ? 'bg-secondary text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                                          : 'bg-secondary text-muted-foreground hover:bg-purple-50 dark:hover:bg-purple-900/20';
                                       })()
                                 }`}
                               >
@@ -1561,7 +1561,7 @@ function ScheduleTemplates() {
                           {/* Life Stage Selection */}
                           {selectedTemplate.ageCategories && selectedTemplate.ageCategories.length > 0 && (
                             <div className="mb-4">
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <label className="block text-sm font-medium text-muted-foreground mb-2">
                                 Life Stage
                               </label>
                               <div className="space-y-2">
@@ -1574,7 +1574,7 @@ function ScheduleTemplates() {
                                     className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                       viewModalAgeCategory === age
                                         ? 'bg-purple-600 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                        : 'bg-secondary text-muted-foreground hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                     }`}
                                   >
                                     {age.charAt(0).toUpperCase() + age.slice(1)}
@@ -1600,7 +1600,7 @@ function ScheduleTemplates() {
                         <Calendar size={18} />
                         Complete Care Schedule
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <p className="text-sm text-muted-foreground mb-4">
                         This template includes {getViewModalFilteredTemplates().length} coordinated schedules for complete care.
                       </p>
                     </div>
@@ -1608,7 +1608,7 @@ function ScheduleTemplates() {
                     {/* List all schedules in the group */}
                     <div className="space-y-3">
                       {getViewModalFilteredTemplates().map((template, idx) => (
-                        <div key={template.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                        <div key={template.id} className="bg-secondary/50 rounded-lg p-4 border border-border">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
@@ -1620,18 +1620,18 @@ function ScheduleTemplates() {
                                 </h4>
                               </div>
                               {template.description && (
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{template.description}</p>
+                                <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
                               )}
                             </div>
                           </div>
 
                           <div className="space-y-1 text-sm">
-                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Calendar size={14} />
                               <span className="text-xs">{formatScheduleRule(template)}</span>
                             </div>
                             {template.time_window_enabled && (
-                              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                              <div className="flex items-center gap-2 text-muted-foreground">
                                 <Clock size={14} />
                                 <span className="text-xs">
                                   {formatTime(template.earliest_time)} - {formatTime(template.latest_time)}
@@ -1639,12 +1639,12 @@ function ScheduleTemplates() {
                               </div>
                             )}
                             {template.food_category && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                              <div className="text-xs text-muted-foreground">
                                 Food: {template.food_category}
                               </div>
                             )}
                             {template.notes && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400 italic mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                              <div className="text-xs text-muted-foreground italic mt-2 pt-2 border-t border-border">
                                 {template.notes}
                               </div>
                             )}
@@ -1654,11 +1654,11 @@ function ScheduleTemplates() {
                     </div>
 
                     {/* Metadata */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                       {selectedTemplate.species && (
                         <div>
                           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 text-sm">Species</h3>
-                          <span className="inline-block px-3 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm">
+                          <span className="inline-block px-3 py-1 rounded bg-secondary text-muted-foreground text-sm">
                             {selectedTemplate.species}
                           </span>
                         </div>
@@ -1689,7 +1689,7 @@ function ScheduleTemplates() {
                         if (preview.length === 0) {
                           return (
                             <div className="text-center py-8">
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <p className="text-sm text-muted-foreground">
                                 No scheduled activities in the next 2 weeks
                               </p>
                             </div>
@@ -1697,9 +1697,9 @@ function ScheduleTemplates() {
                         }
 
                         return preview.slice(0, 10).map((day, idx) => (
-                          <div key={idx} className="bg-white/70 dark:bg-gray-800/70 rounded-lg border border-blue-200/50 dark:border-blue-700/50 overflow-hidden">
-                            <div className="bg-white/90 dark:bg-gray-800/90 px-3 py-2 border-b border-blue-200/50 dark:border-blue-700/50">
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <div key={idx} className="bg-card/70 rounded-lg border border-blue-200/50 dark:border-blue-700/50 overflow-hidden">
+                            <div className="bg-card/90 px-3 py-2 border-b border-blue-200/50 dark:border-blue-700/50">
+                              <span className="text-sm font-semibold text-foreground">
                                 {day.dateStr}
                               </span>
                             </div>
@@ -1718,13 +1718,13 @@ function ScheduleTemplates() {
                                         {getTypeDisplayName(schedule.schedule_type)}
                                       </span>
                                       {schedule.time_window_enabled && (
-                                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                                        <span className="text-xs text-muted-foreground">
                                           {formatTime(schedule.earliest_time)}
                                         </span>
                                       )}
                                     </div>
                                     {schedule.food_category && (
-                                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                      <div className="text-xs text-muted-foreground mt-0.5">
                                         {schedule.food_category}
                                       </div>
                                     )}
@@ -1744,7 +1744,7 @@ function ScheduleTemplates() {
                       {(() => {
                         const filteredTemplates = getViewModalFilteredTemplates();
                         return generateTwoWeekPreview(filteredTemplates).length > 10 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 italic">
+                          <p className="text-xs text-muted-foreground text-center py-2 italic">
                             Showing first 10 days with activities...
                           </p>
                         );
@@ -1754,7 +1754,7 @@ function ScheduleTemplates() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div className="border-t border-border px-6 py-4">
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={openApplyModal}
@@ -1771,7 +1771,7 @@ function ScheduleTemplates() {
               /* SINGLE TEMPLATE VIEW - Original Structure */
               <>
                 {/* Header */}
-                <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+                <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {selectedTemplate.name}
@@ -1798,7 +1798,7 @@ function ScheduleTemplates() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => navigate(`/schedule-templates/edit/${selectedTemplate.id}`)}
-                      className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                      className="bg-gray-100 hover:bg-secondary dark:hover:bg-gray-600 text-muted-foreground px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                       title="Edit template"
                     >
                       <Edit size={16} />
@@ -1829,7 +1829,7 @@ function ScheduleTemplates() {
                     {selectedTemplate.description && (
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Description</h3>
-                        <p className="text-gray-600 dark:text-gray-400">{selectedTemplate.description}</p>
+                        <p className="text-muted-foreground">{selectedTemplate.description}</p>
                       </div>
                     )}
 
@@ -1845,7 +1845,7 @@ function ScheduleTemplates() {
                       {selectedTemplate.species && (
                         <div>
                           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Species</h3>
-                          <span className="inline-block px-3 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                          <span className="inline-block px-3 py-1 rounded bg-secondary text-muted-foreground">
                             {selectedTemplate.species}
                           </span>
                         </div>
@@ -1864,7 +1864,7 @@ function ScheduleTemplates() {
                     {/* Schedule Details */}
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Schedule Rule</h3>
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar size={16} />
                         <span>{formatScheduleRule(selectedTemplate)}</span>
                       </div>
@@ -1873,7 +1873,7 @@ function ScheduleTemplates() {
                     {selectedTemplate.time_window_enabled && (
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Time Window</h3>
-                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <Clock size={16} />
                           <span>
                             {formatTime(selectedTemplate.earliest_time)} - {formatTime(selectedTemplate.latest_time)}
@@ -1885,7 +1885,7 @@ function ScheduleTemplates() {
                     {selectedTemplate.food_category && (
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Food Category</h3>
-                        <p className="text-gray-600 dark:text-gray-400 capitalize">{selectedTemplate.food_category}</p>
+                        <p className="text-muted-foreground capitalize">{selectedTemplate.food_category}</p>
                       </div>
                     )}
 
@@ -1896,7 +1896,7 @@ function ScheduleTemplates() {
 
                         {selectedTemplate._rotationData.applies_to_category && (
                           <div>
-                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applies to Meals:</div>
+                            <div className="text-sm font-medium text-muted-foreground mb-1">Applies to Meals:</div>
                             <span className="px-3 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-sm capitalize">
                               {selectedTemplate._rotationData.applies_to_category}
                             </span>
@@ -1905,21 +1905,21 @@ function ScheduleTemplates() {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority:</div>
+                            <div className="text-sm font-medium text-muted-foreground mb-1">Priority:</div>
                             <div className="text-gray-900 dark:text-gray-100">
                               <span className="font-bold">{selectedTemplate._rotationData.priority}</span>
-                              <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                              <span className="text-sm text-muted-foreground ml-2">
                                 {selectedTemplate._rotationData.priority < 5 ? '(high priority)' : selectedTemplate._rotationData.priority > 10 ? '(low priority)' : '(normal)'}
                               </span>
                             </div>
                           </div>
 
                           <div>
-                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Exclusive Mode:</div>
+                            <div className="text-sm font-medium text-muted-foreground mb-1">Exclusive Mode:</div>
                             <span className={`px-3 py-1 rounded text-sm ${
                               selectedTemplate._rotationData.is_exclusive
                                 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                : 'bg-secondary text-muted-foreground'
                             }`}>
                               {selectedTemplate._rotationData.is_exclusive ? 'Yes' : 'No'}
                             </span>
@@ -1927,7 +1927,7 @@ function ScheduleTemplates() {
                         </div>
 
                         <div className="pt-2 border-t border-green-200 dark:border-green-800">
-                          <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                          <p className="text-xs text-muted-foreground italic">
                             {selectedTemplate._rotationData.is_exclusive
                               ? 'Only the highest priority supplement applies when multiple rotations trigger on the same feeding.'
                               : 'Multiple supplements can apply simultaneously to the same feeding.'}
@@ -1940,7 +1940,7 @@ function ScheduleTemplates() {
                     {selectedTemplate.notes && (
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Notes</h3>
-                        <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{selectedTemplate.notes}</p>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{selectedTemplate.notes}</p>
                       </div>
                     )}
                   </div>
@@ -1953,14 +1953,14 @@ function ScheduleTemplates() {
                     </h3>
 
                     <div className="space-y-3">
-                      <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Frequency</div>
+                      <div className="bg-card/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Frequency</div>
                         <div className="font-semibold text-gray-900 dark:text-gray-100">{formatScheduleRule(selectedTemplate)}</div>
                       </div>
 
                       {selectedTemplate.time_window_enabled && (
-                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
-                          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Time Window</div>
+                        <div className="bg-card/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
+                          <div className="text-xs font-medium text-muted-foreground mb-1">Time Window</div>
                           <div className="font-semibold text-gray-900 dark:text-gray-100">
                             {formatTime(selectedTemplate.earliest_time)} - {formatTime(selectedTemplate.latest_time)}
                           </div>
@@ -1968,21 +1968,21 @@ function ScheduleTemplates() {
                       )}
 
                       {selectedTemplate.food_category && (
-                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
-                          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Food Type</div>
+                        <div className="bg-card/50 rounded-lg p-3 border border-blue-200/50 dark:border-blue-700/50">
+                          <div className="text-xs font-medium text-muted-foreground mb-1">Food Type</div>
                           <div className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{selectedTemplate.food_category}</div>
                         </div>
                       )}
 
                       <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 italic leading-relaxed">
+                        <p className="text-xs text-muted-foreground italic leading-relaxed">
                           This schedule will automatically create recurring events in your calendar when applied to a reptile. Events will be generated based on the schedule rule and will include all specified details.
                         </p>
                       </div>
 
                       {/* Example Preview Days */}
                       <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Upcoming Occurrences:</div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Upcoming Occurrences:</div>
                         <div className="space-y-2">
                           {(() => {
                             const today = new Date();
@@ -2021,42 +2021,42 @@ function ScheduleTemplates() {
                               return (
                                 <div key={idx} className="flex items-center gap-2 text-sm">
                                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                  <span className="text-gray-700 dark:text-gray-300">{dayStr}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  <span className="text-muted-foreground">{dayStr}</span>
+                                  <span className="text-xs text-muted-foreground">
                                     {selectedTemplate.time_window_enabled ? formatTime(selectedTemplate.earliest_time) : 'All day'}
                                   </span>
                                 </div>
                               );
                             });
                           })()}
-                          <div className="text-xs text-gray-500 dark:text-gray-400 italic">and continues...</div>
+                          <div className="text-xs text-muted-foreground italic">and continues...</div>
                         </div>
                       </div>
 
                       {/* Reminder Notification Preview */}
                       {selectedTemplate.reminder_time && (
                         <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">Reminder Notification Preview:</div>
+                          <div className="text-xs font-medium text-muted-foreground mb-3">Reminder Notification Preview:</div>
 
                           {/* Normal Format Preview */}
                           <div className="mb-3">
-                            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Normal Format:</div>
-                            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-3 text-xs">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">Normal Format:</div>
+                            <div className="bg-card border border-border rounded p-3 text-xs">
                               <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                                 🔔 Schedule Reminder: {selectedTemplate.name}
                               </div>
-                              <div className="text-gray-700 dark:text-gray-300 space-y-1">
+                              <div className="text-muted-foreground space-y-1">
                                 <p>Reptile: <strong>Example Reptile</strong></p>
                                 <p>Schedule: <strong>{selectedTemplate.name}</strong></p>
                                 <p>Time: <strong>{selectedTemplate.time_window_enabled ? `${formatTime(selectedTemplate.earliest_time)} - ${formatTime(selectedTemplate.latest_time)}` : 'All day'}</strong></p>
-                                {selectedTemplate.notes && <p className="text-gray-600 dark:text-gray-400 italic text-xs mt-1">{selectedTemplate.notes}</p>}
+                                {selectedTemplate.notes && <p className="text-muted-foreground italic text-xs mt-1">{selectedTemplate.notes}</p>}
                               </div>
                             </div>
                           </div>
 
                           {/* Discord Format Preview */}
                           <div>
-                            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Discord Format:</div>
+                            <div className="text-xs font-medium text-muted-foreground mb-1">Discord Format:</div>
                             <div className="bg-[#36393f] rounded p-3 text-xs">
                               <div className="flex gap-2">
                                 <div className="w-1 rounded bg-blue-500 flex-shrink-0"></div>
@@ -2094,7 +2094,7 @@ function ScheduleTemplates() {
                             </div>
                           </div>
 
-                          <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
+                          <p className="text-xs text-muted-foreground italic mt-2">
                             Notification will be sent at {formatTime(selectedTemplate.reminder_time)} on schedule days
                           </p>
                         </div>
@@ -2105,18 +2105,18 @@ function ScheduleTemplates() {
 
                 {/* Life Stage Selection - Only show if template has age */}
                 {selectedTemplate.age_category && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <div className="border-t border-border px-6 py-4 bg-secondary/30">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       This template is for: <span className="font-semibold">{selectedTemplate.age_category.charAt(0).toUpperCase() + selectedTemplate.age_category.slice(1)}</span> reptiles
                     </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       The life stage will be pre-filled when you apply this template.
                     </p>
                   </div>
                 )}
 
                 {/* Action Buttons - Full Width at Bottom */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div className="border-t border-border px-6 py-4">
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={openApplyModal}
@@ -2145,7 +2145,7 @@ function ScheduleTemplates() {
       {/* Apply Template Modal */}
       {applyModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg max-w-5xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Apply {selectedTemplate?.groupName || selectedTemplate?.name}
@@ -2166,7 +2166,7 @@ function ScheduleTemplates() {
               <select
                 value={selectedReptile}
                 onChange={(e) => setSelectedReptile(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-blue-300 dark:border-blue-700 rounded-lg bg-card text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Choose a reptile...</option>
                 {reptiles.map(reptile => (
@@ -2178,7 +2178,7 @@ function ScheduleTemplates() {
               {selectedReptile && (() => {
                 const reptile = reptiles.find(r => r.id === parseInt(selectedReptile));
                 return (
-                  <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="mt-2 text-sm text-muted-foreground">
                     {reptile?.has_uvb !== null && reptile?.has_uvb !== undefined && (
                       <div className="flex items-center gap-2">
                         <span className="font-medium">UVB Setup:</span>
@@ -2213,7 +2213,7 @@ function ScheduleTemplates() {
                       setSelectedTemplateIds(new Set(filtered.map(t => t.id)));
                     }
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="w-full px-4 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select life stage...</option>
                   {selectedTemplate.ageCategories.map(age => (
@@ -2244,13 +2244,13 @@ function ScheduleTemplates() {
                 <div className="ml-7 space-y-4">
                   {/* Channel Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Notification Channels
                     </label>
-                    <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded p-2 bg-white dark:bg-gray-800">
+                    <div className="space-y-2 max-h-32 overflow-y-auto border border-border rounded p-2 bg-card">
                       {availableChannels.length > 0 ? (
                         availableChannels.map(channel => (
-                          <label key={channel.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded">
+                          <label key={channel.id} className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:bg-secondary/50 p-1 rounded">
                             <input
                               type="checkbox"
                               checked={globalChannelIds.includes(channel.id)}
@@ -2267,7 +2267,7 @@ function ScheduleTemplates() {
                           </label>
                         ))
                       ) : (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                        <p className="text-xs text-muted-foreground italic">
                           No notification channels configured. Go to Settings → Notifications to add channels.
                         </p>
                       )}
@@ -2276,7 +2276,7 @@ function ScheduleTemplates() {
 
                   {/* Reminder Time */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                       <input
                         type="checkbox"
                         checked={globalReminderEnabled}
@@ -2291,17 +2291,17 @@ function ScheduleTemplates() {
                           type="number"
                           value={globalReminderHours}
                           onChange={e => handleGlobalReminderHoursChange(e.target.value)}
-                          className="w-20 text-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          className="w-20 text-center px-3 py-2 border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                           min={userTimeFormat === '12h' ? 1 : 0}
                           max={userTimeFormat === '12h' ? 12 : 23}
                           required
                         />
-                        <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+                        <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
                         <input
                           type="number"
                           value={String(globalReminderMinutes).padStart(2, '0')}
                           onChange={e => handleGlobalReminderMinutesChange(e.target.value)}
-                          className="w-20 text-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          className="w-20 text-center px-3 py-2 border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                           min="0"
                           max="59"
                           required
@@ -2310,7 +2310,7 @@ function ScheduleTemplates() {
                           <select
                             value={globalReminderPeriod}
                             onChange={e => setGlobalReminderPeriod(e.target.value)}
-                            className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-20 px-3 py-2 border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                           >
                             <option value="AM">AM</option>
                             <option value="PM">PM</option>
@@ -2320,7 +2320,7 @@ function ScheduleTemplates() {
                     )}
                   </div>
 
-                  <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                  <p className="text-xs text-muted-foreground italic">
                     These settings will apply to all schedules created from this template. You can override them for individual schedules below.
                   </p>
                 </div>
@@ -2359,7 +2359,7 @@ function ScheduleTemplates() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-h-96 overflow-y-auto">
+                <div className="bg-secondary/50 border border-border rounded-lg p-3 max-h-96 overflow-y-auto">
                   <div className="space-y-2">
                     {(() => {
                       const reptile = selectedReptile ? reptiles.find(r => r.id === parseInt(selectedReptile)) : null;
@@ -2381,10 +2381,10 @@ function ScheduleTemplates() {
                       return (
                         <div
                           key={template.id}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+                          className="border border-border rounded-lg overflow-hidden"
                         >
                           {/* Header row with checkbox and expand button */}
-                          <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800">
+                          <div className="flex items-start gap-3 p-2 bg-card">
                             <input
                               type="checkbox"
                               checked={selectedTemplateIds.has(template.id)}
@@ -2403,12 +2403,12 @@ function ScheduleTemplates() {
                               {!isExpanded && (
                                 <>
                                   {displayData.time_window_enabled && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <div className="text-xs text-muted-foreground mt-1">
                                       {formatTime(displayData.earliest_time)} - {formatTime(displayData.latest_time)}
                                     </div>
                                   )}
                                   {displayData.food_category && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="text-xs text-muted-foreground">
                                       {displayData.food_category}
                                     </div>
                                   )}
@@ -2427,24 +2427,24 @@ function ScheduleTemplates() {
 
                           {/* Expandable editing section */}
                           {isExpanded && (
-                            <div className="p-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                            <div className="p-3 bg-secondary/50 border-t border-border space-y-3">
                               {/* Schedule Name */}
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
                                   Schedule Name
                                 </label>
                                 <input
                                   type="text"
                                   value={displayData.name || template.name}
                                   onChange={(e) => updateTemplateEdit(template.id, 'name', e.target.value)}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   placeholder="Schedule name..."
                                 />
                               </div>
 
                               {/* Time Window */}
                               <div>
-                                <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
                                   <input
                                     type="checkbox"
                                     checked={displayData.time_window_enabled ?? false}
@@ -2483,7 +2483,7 @@ function ScheduleTemplates() {
                                     <div className="space-y-2 mt-1">
                                       {/* Earliest Time */}
                                       <div>
-                                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Earliest</label>
+                                        <label className="block text-xs text-muted-foreground mb-0.5">Earliest</label>
                                         <div className="flex gap-1">
                                           <input
                                             type="number"
@@ -2494,9 +2494,9 @@ function ScheduleTemplates() {
                                             }}
                                             min={userTimeFormat === '12h' ? '1' : '0'}
                                             max={userTimeFormat === '12h' ? '12' : '23'}
-                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                            className="w-12 px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100 text-center"
                                           />
-                                          <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                                          <span className="self-center text-muted-foreground">:</span>
                                           <input
                                             type="number"
                                             value={earliest.minutes}
@@ -2506,7 +2506,7 @@ function ScheduleTemplates() {
                                             }}
                                             min="0"
                                             max="59"
-                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                            className="w-12 px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100 text-center"
                                           />
                                           {userTimeFormat === '12h' && (
                                             <select
@@ -2514,7 +2514,7 @@ function ScheduleTemplates() {
                                               onChange={(e) => {
                                                 updateTemplateEdit(template.id, 'earliest_time', convertTo24h(earliest.hours, earliest.minutes, e.target.value));
                                               }}
-                                              className="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                              className="px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                             >
                                               <option value="AM">AM</option>
                                               <option value="PM">PM</option>
@@ -2525,7 +2525,7 @@ function ScheduleTemplates() {
 
                                       {/* Latest Time */}
                                       <div>
-                                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Latest</label>
+                                        <label className="block text-xs text-muted-foreground mb-0.5">Latest</label>
                                         <div className="flex gap-1">
                                           <input
                                             type="number"
@@ -2536,9 +2536,9 @@ function ScheduleTemplates() {
                                             }}
                                             min={userTimeFormat === '12h' ? '1' : '0'}
                                             max={userTimeFormat === '12h' ? '12' : '23'}
-                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                            className="w-12 px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100 text-center"
                                           />
-                                          <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                                          <span className="self-center text-muted-foreground">:</span>
                                           <input
                                             type="number"
                                             value={latest.minutes}
@@ -2548,7 +2548,7 @@ function ScheduleTemplates() {
                                             }}
                                             min="0"
                                             max="59"
-                                            className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                            className="w-12 px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100 text-center"
                                           />
                                           {userTimeFormat === '12h' && (
                                             <select
@@ -2556,7 +2556,7 @@ function ScheduleTemplates() {
                                               onChange={(e) => {
                                                 updateTemplateEdit(template.id, 'latest_time', convertTo24h(latest.hours, latest.minutes, e.target.value));
                                               }}
-                                              className="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                              className="px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                             >
                                               <option value="AM">AM</option>
                                               <option value="PM">PM</option>
@@ -2572,13 +2572,13 @@ function ScheduleTemplates() {
                               {/* Food Category (for feeding schedules) */}
                               {template.schedule_type === 'feeding' && (
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                                     Food Category
                                   </label>
                                   <select
                                     value={displayData.food_category || ''}
                                     onChange={(e) => updateTemplateEdit(template.id, 'food_category', e.target.value)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   >
                                     <option value="">Select category...</option>
                                     <option value="insects">Insects</option>
@@ -2593,13 +2593,13 @@ function ScheduleTemplates() {
 
                               {/* Notes */}
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
                                   Notes
                                 </label>
                                 <textarea
                                   value={displayData.notes || ''}
                                   onChange={(e) => updateTemplateEdit(template.id, 'notes', e.target.value)}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   rows="2"
                                   placeholder="Add any custom notes..."
                                 />
@@ -2608,13 +2608,13 @@ function ScheduleTemplates() {
                               {/* Schedule Rule (only show for non-dependent schedules) */}
                               {(template.schedule_rule === 'every_x_days' || template.schedule_rule === 'days_of_week' || template.schedule_rule === 'feeding_count') && (
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                                     Schedule Rule
                                   </label>
                                   <select
                                     value={displayData.schedule_rule || template.schedule_rule}
                                     onChange={(e) => updateTemplateEdit(template.id, 'schedule_rule', e.target.value)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   >
                                     <option value="feeding_count">Every X Feedings</option>
                                     <option value="every_x_days">Every X Days</option>
@@ -2626,7 +2626,7 @@ function ScheduleTemplates() {
                               {/* Feeding Count Frequency (for feeding_count schedules) */}
                               {(displayData.schedule_rule || template.schedule_rule) === 'feeding_count' && (
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                                     Every X Feedings
                                   </label>
                                   <input
@@ -2634,7 +2634,7 @@ function ScheduleTemplates() {
                                     min="1"
                                     value={displayData.frequency_days || ''}
                                     onChange={(e) => updateTemplateEdit(template.id, 'frequency_days', parseInt(e.target.value))}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   />
                                 </div>
                               )}
@@ -2642,7 +2642,7 @@ function ScheduleTemplates() {
                               {/* Frequency (for every_x_days schedules) */}
                               {(displayData.schedule_rule || template.schedule_rule) === 'every_x_days' && (
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                                     Frequency (days)
                                   </label>
                                   <input
@@ -2650,7 +2650,7 @@ function ScheduleTemplates() {
                                     min="1"
                                     value={displayData.frequency_days || ''}
                                     onChange={(e) => updateTemplateEdit(template.id, 'frequency_days', parseInt(e.target.value))}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   />
                                 </div>
                               )}
@@ -2677,7 +2677,7 @@ function ScheduleTemplates() {
 
                                 return (
                                   <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label className="block text-xs font-medium text-muted-foreground mb-2">
                                       Specific Days
                                     </label>
                                     <div className="grid grid-cols-3 gap-1.5">
@@ -2689,14 +2689,14 @@ function ScheduleTemplates() {
                                           className={`px-2 py-1.5 rounded text-xs font-medium border transition-all ${
                                             currentDays.includes(day.value)
                                               ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                              : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                                              : "border-border text-muted-foreground hover:border-green-400"
                                           }`}
                                         >
                                           {day.label.slice(0, 3)}
                                         </button>
                                       ))}
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1">
                                       Choose which days this schedule should occur
                                     </p>
                                   </div>
@@ -2705,8 +2705,8 @@ function ScheduleTemplates() {
 
                               {/* Notification Override */}
                               {globalNotificationsEnabled && (
-                                <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
-                                  <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <div className="pt-3 mt-3 border-t border-border">
+                                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
                                     <input
                                       type="checkbox"
                                       checked={displayData.notificationOverride === true}
@@ -2720,7 +2720,7 @@ function ScheduleTemplates() {
                                     <div className="ml-5 space-y-3 mt-2">
                                       {/* Per-schedule notifications enabled */}
                                       <div>
-                                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
                                           <input
                                             type="checkbox"
                                             checked={displayData.notifications_enabled === true}
@@ -2735,12 +2735,12 @@ function ScheduleTemplates() {
                                         <>
                                           {/* Per-schedule channels */}
                                           <div>
-                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            <label className="block text-xs font-medium text-muted-foreground mb-1">
                                               Notification Channels
                                             </label>
-                                            <div className="space-y-1 max-h-24 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded p-1.5 bg-white dark:bg-gray-800">
+                                            <div className="space-y-1 max-h-24 overflow-y-auto border border-border rounded p-1.5 bg-card">
                                               {availableChannels.map(channel => (
-                                                <label key={channel.id} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded">
+                                                <label key={channel.id} className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer hover:bg-secondary/50 p-1 rounded">
                                                   <input
                                                     type="checkbox"
                                                     checked={(displayData.channel_ids || []).includes(channel.id)}
@@ -2762,7 +2762,7 @@ function ScheduleTemplates() {
 
                                           {/* Per-schedule reminder time */}
                                           <div>
-                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            <label className="block text-xs font-medium text-muted-foreground mb-1">
                                               Reminder Time
                                             </label>
                                             {(() => {
@@ -2800,9 +2800,9 @@ function ScheduleTemplates() {
                                                     }}
                                                     min={userTimeFormat === '12h' ? '1' : '0'}
                                                     max={userTimeFormat === '12h' ? '12' : '23'}
-                                                    className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                                    className="w-12 px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100 text-center"
                                                   />
-                                                  <span className="self-center text-gray-600 dark:text-gray-400">:</span>
+                                                  <span className="self-center text-muted-foreground">:</span>
                                                   <input
                                                     type="number"
                                                     value={reminder.minutes}
@@ -2812,7 +2812,7 @@ function ScheduleTemplates() {
                                                     }}
                                                     min="0"
                                                     max="59"
-                                                    className="w-12 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
+                                                    className="w-12 px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100 text-center"
                                                   />
                                                   {userTimeFormat === '12h' && (
                                                     <select
@@ -2820,7 +2820,7 @@ function ScheduleTemplates() {
                                                       onChange={(e) => {
                                                         updateTemplateEdit(template.id, 'reminder_time', convertTo24h(reminder.hours, reminder.minutes, e.target.value));
                                                       }}
-                                                      className="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                                      className="px-1 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                                     >
                                                       <option value="AM">AM</option>
                                                       <option value="PM">PM</option>
@@ -2846,7 +2846,7 @@ function ScheduleTemplates() {
                 </div>
 
                 <div className="mt-2 space-y-1">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-muted-foreground">
                     {(() => {
                       const reptile = selectedReptile ? reptiles.find(r => r.id === parseInt(selectedReptile)) : null;
                       const reptileHasUvb = reptile?.has_uvb;
@@ -2876,14 +2876,14 @@ function ScheduleTemplates() {
               </div>
             ) : (
               /* Single Template Info */
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Creating schedule from: <strong>{selectedTemplate?.name}</strong>
               </p>
             )}
 
             {/* Add Custom Schedule Section */}
             {selectedTemplate?.groupName && (
-              <div className="mb-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div className="mb-6 border-t border-border pt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddCustomSchedule(!showAddCustomSchedule)}
@@ -2894,13 +2894,13 @@ function ScheduleTemplates() {
                 </button>
 
                 {showAddCustomSchedule && (
-                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <div className="bg-secondary/50 border border-border rounded-lg p-4 space-y-4">
+                    <p className="text-xs text-muted-foreground mb-3">
                       Create additional schedules that aren't in the templates. Great for dependent schedules like "Calcium on every feeding" or "Multivitamin twice a week."
                     </p>
 
                     {customSchedules.map((schedule, index) => (
-                      <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 space-y-3">
+                      <div key={index} className="border border-border rounded-lg p-3 bg-card space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             Custom Schedule #{index + 1}
@@ -2916,7 +2916,7 @@ function ScheduleTemplates() {
 
                         {/* Schedule Name */}
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Schedule Name</label>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Schedule Name</label>
                           <input
                             type="text"
                             value={schedule.name || ''}
@@ -2925,7 +2925,7 @@ function ScheduleTemplates() {
                               newSchedules[index] = { ...schedule, name: e.target.value };
                               setCustomSchedules(newSchedules);
                             }}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                             placeholder="e.g., Calcium on Every Feeding"
                           />
                         </div>
@@ -2933,7 +2933,7 @@ function ScheduleTemplates() {
                         <div className="grid grid-cols-2 gap-3">
                           {/* Schedule Type */}
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Type</label>
                             <select
                               value={schedule.schedule_type}
                               onChange={(e) => {
@@ -2941,7 +2941,7 @@ function ScheduleTemplates() {
                                 newSchedules[index] = { ...schedule, schedule_type: e.target.value };
                                 setCustomSchedules(newSchedules);
                               }}
-                              className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                             >
                               <option value="supplement">Supplement</option>
                               <option value="feeding">Feeding</option>
@@ -2953,7 +2953,7 @@ function ScheduleTemplates() {
                           {/* Supplement Selection (for supplement schedules) */}
                           {schedule.schedule_type === 'supplement' && (
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Supplement</label>
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">Supplement</label>
                               <select
                                 value={schedule.supplement_id || ''}
                                 onChange={(e) => {
@@ -2961,7 +2961,7 @@ function ScheduleTemplates() {
                                   newSchedules[index] = { ...schedule, supplement_id: e.target.value ? parseInt(e.target.value) : null };
                                   setCustomSchedules(newSchedules);
                                 }}
-                                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                               >
                                 <option value="">Select...</option>
                                 {supplements.map(sup => (
@@ -2974,7 +2974,7 @@ function ScheduleTemplates() {
 
                         {/* Schedule Rule */}
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">When</label>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">When</label>
                           <select
                             value={schedule.schedule_rule}
                             onChange={(e) => {
@@ -2982,7 +2982,7 @@ function ScheduleTemplates() {
                               newSchedules[index] = { ...schedule, schedule_rule: e.target.value };
                               setCustomSchedules(newSchedules);
                             }}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                           >
                             <option value="dependent">Dependent on Another Schedule</option>
                             <option value="days_of_week">Specific Days of Week</option>
@@ -2994,7 +2994,7 @@ function ScheduleTemplates() {
                         {schedule.schedule_rule === 'dependent' && (
                           <>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Trigger On</label>
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">Trigger On</label>
                               <select
                                 value={schedule.parent_schedule_id || ''}
                                 onChange={(e) => {
@@ -3002,7 +3002,7 @@ function ScheduleTemplates() {
                                   newSchedules[index] = { ...schedule, parent_schedule_id: e.target.value ? parseInt(e.target.value) : null };
                                   setCustomSchedules(newSchedules);
                                 }}
-                                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                               >
                                 <option value="">Select parent schedule...</option>
                                 <optgroup label="From Templates">
@@ -3027,7 +3027,7 @@ function ScheduleTemplates() {
                             </div>
 
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency</label>
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">Frequency</label>
                               <select
                                 value={schedule.dependent_rule}
                                 onChange={(e) => {
@@ -3035,7 +3035,7 @@ function ScheduleTemplates() {
                                   newSchedules[index] = { ...schedule, dependent_rule: e.target.value };
                                   setCustomSchedules(newSchedules);
                                 }}
-                                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                               >
                                 <option value="every_occurrence">Every Time</option>
                                 <option value="every_nth">Every Nth Time</option>
@@ -3046,7 +3046,7 @@ function ScheduleTemplates() {
 
                             {schedule.dependent_rule === 'every_nth' && (
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Every Nth Occurrence</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Every Nth Occurrence</label>
                                 <input
                                   type="number"
                                   min="2"
@@ -3056,7 +3056,7 @@ function ScheduleTemplates() {
                                     newSchedules[index] = { ...schedule, dependent_frequency: parseInt(e.target.value) };
                                     setCustomSchedules(newSchedules);
                                   }}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                                   placeholder="e.g., 2"
                                 />
                               </div>
@@ -3082,7 +3082,7 @@ function ScheduleTemplates() {
 
                               return (
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Days</label>
+                                  <label className="block text-xs font-medium text-muted-foreground mb-1">Days</label>
                                   <div className="grid grid-cols-3 gap-1">
                                     {weekDays.map((day) => (
                                       <button
@@ -3102,7 +3102,7 @@ function ScheduleTemplates() {
                                         className={`px-1.5 py-1 rounded text-xs font-medium border transition-all ${
                                           currentDays.includes(day.value)
                                             ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                                            : "border-border text-muted-foreground hover:border-green-400"
                                         }`}
                                       >
                                         {day.label.slice(0, 3)}
@@ -3135,7 +3135,7 @@ function ScheduleTemplates() {
 
                           return (
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Days</label>
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">Days</label>
                               <div className="grid grid-cols-3 gap-1">
                                 {weekDays.map((day) => (
                                   <button
@@ -3155,7 +3155,7 @@ function ScheduleTemplates() {
                                     className={`px-1.5 py-1 rounded text-xs font-medium border transition-all ${
                                       currentDays.includes(day.value)
                                         ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                        : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400"
+                                        : "border-border text-muted-foreground hover:border-green-400"
                                     }`}
                                   >
                                     {day.label.slice(0, 3)}
@@ -3169,7 +3169,7 @@ function ScheduleTemplates() {
                         {/* Every X Days */}
                         {schedule.schedule_rule === 'every_x_days' && (
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency (days)</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Frequency (days)</label>
                             <input
                               type="number"
                               min="1"
@@ -3179,7 +3179,7 @@ function ScheduleTemplates() {
                                 newSchedules[index] = { ...schedule, frequency_days: parseInt(e.target.value) };
                                 setCustomSchedules(newSchedules);
                               }}
-                              className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                               placeholder="e.g., 3"
                             />
                           </div>
@@ -3187,7 +3187,7 @@ function ScheduleTemplates() {
 
                         {/* Notes */}
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (Optional)</label>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Notes (Optional)</label>
                           <textarea
                             value={schedule.notes || ''}
                             onChange={(e) => {
@@ -3195,7 +3195,7 @@ function ScheduleTemplates() {
                               newSchedules[index] = { ...schedule, notes: e.target.value };
                               setCustomSchedules(newSchedules);
                             }}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-2 py-1 text-xs border border-border rounded bg-card text-gray-900 dark:text-gray-100"
                             rows="2"
                             placeholder="Add custom notes..."
                           />
@@ -3216,7 +3216,7 @@ function ScheduleTemplates() {
                           notes: ''
                         }]);
                       }}
-                      className="w-full px-3 py-2 text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-3 py-2 text-sm border-2 border-dashed border-border rounded-lg text-muted-foreground hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2"
                     >
                       <Plus size={16} />
                       Add Another Schedule
@@ -3228,7 +3228,7 @@ function ScheduleTemplates() {
 
             {/* 2-Week Calendar Preview */}
             {selectedReptile && selectedTemplateIds.size > 0 && (
-              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div className="mb-6 p-4 bg-secondary/50 border border-border rounded-lg">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                   Schedule Preview (Next 2 Weeks)
                 </h3>
@@ -3240,8 +3240,8 @@ function ScheduleTemplates() {
                         : [selectedTemplate]
                     );
                     return preview.slice(0, 14).map((day, index) => (
-                      <div key={index} className="flex gap-2 py-1.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
-                        <div className="w-20 font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <div key={index} className="flex gap-2 py-1.5 border-b border-border last:border-0">
+                        <div className="w-20 font-medium text-muted-foreground flex-shrink-0">
                           {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
                         </div>
                         <div className="flex-1 flex flex-wrap gap-1">
@@ -3280,7 +3280,7 @@ function ScheduleTemplates() {
               </button>
               <button
                 onClick={() => setApplyModalOpen(false)}
-                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-3 border border-border rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
               >
                 Cancel
               </button>
@@ -3292,7 +3292,7 @@ function ScheduleTemplates() {
       {/* Import Modal */}
       {importModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+          <div className="bg-card rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 Import Templates
@@ -3305,7 +3305,7 @@ function ScheduleTemplates() {
               </button>
             </div>
 
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Select a JSON file to import schedule templates.
             </p>
 
@@ -3313,12 +3313,12 @@ function ScheduleTemplates() {
               type="file"
               accept=".json"
               onChange={handleImport}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
             />
 
             <button
               onClick={() => setImportModalOpen(false)}
-              className="mt-4 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="mt-4 w-full px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
             >
               Cancel
             </button>

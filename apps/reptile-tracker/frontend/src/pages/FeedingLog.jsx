@@ -788,7 +788,7 @@ export default function FeedingLog() {
   );
 
   if (loading) {
-    return <div className="text-center text-gray-700 dark:text-gray-300">Loading...</div>;
+    return <div className="text-center text-muted-foreground">Loading...</div>;
   }
 
   // VIEW MODE
@@ -796,7 +796,7 @@ export default function FeedingLog() {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">View Feeding</h1>
+          <h1 className="text-3xl font-bold text-foreground">View Feeding</h1>
           <div className="flex gap-2">
             <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
               <Edit2 size={18} /> Edit
@@ -852,32 +852,32 @@ export default function FeedingLog() {
         )}
 
         <div className="card space-y-6">
-          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Logged at</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+          <div className="pb-4 border-b border-border">
+            <p className="text-sm text-muted-foreground mb-1">Logged at</p>
+            <p className="text-lg font-medium text-foreground">
               {formatDateTime(existingFeeding.created_at || existingFeeding.fed_at)}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               by {existingFeeding.user?.name || 'Unknown'}
             </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Reptile</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+            <p className="text-sm text-muted-foreground mb-1">Reptile</p>
+            <p className="text-lg font-medium text-foreground">
               {reptiles.find(r => r.id === existingFeeding.reptile_id)?.name || existingFeeding.reptile?.name || 'Unknown'}
             </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Fed at</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+            <p className="text-sm text-muted-foreground mb-1">Fed at</p>
+            <p className="text-lg font-medium text-foreground">
               {formatDateTime(existingFeeding.fed_at)}
             </p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Food Items</p>
+            <p className="text-sm text-muted-foreground mb-3">Food Items</p>
             <div className="space-y-3">
               {existingFeeding.foods && existingFeeding.foods.length > 0 ? (
                 existingFeeding.foods.map(food => {
@@ -886,13 +886,13 @@ export default function FeedingLog() {
                     return null;
                   }
                   return (
-                    <div key={food.id} className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                    <div key={food.id} className="bg-card/50 p-3 rounded-lg">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-gray-900 dark:text-white">
+                        <p className="font-medium text-foreground">
                           {food.name} × {food.quantity || 1}
                         </p>
                         {food.supplements && food.supplements.length > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             {food.supplements.length} supplement{food.supplements.length !== 1 ? 's' : ''}
                           </span>
                         )}
@@ -910,7 +910,7 @@ export default function FeedingLog() {
                   );
                 })
               ) : !existingFeeding.is_salad ? (
-                <p className="text-gray-500 dark:text-gray-400">None specified</p>
+                <p className="text-muted-foreground">None specified</p>
               ) : null}
 
               {existingFeeding.is_salad && existingFeeding.salad_components && existingFeeding.salad_components.length > 0 && (
@@ -926,7 +926,7 @@ export default function FeedingLog() {
                       );
                     })()}
                   </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  <p className="text-sm text-muted-foreground mb-2">
                     <span className="font-medium">Components:</span> {existingFeeding.salad_components.map(sc => sc.name).join(', ')}
                   </p>
                   {(() => {
@@ -948,7 +948,7 @@ export default function FeedingLog() {
 
           {existingFeeding.supplements && existingFeeding.supplements.length > 0 && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Global Supplements</p>
+              <p className="text-sm text-muted-foreground mb-2">Global Supplements</p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">Applied to all food items</p>
               <div className="flex flex-wrap gap-2">
                 {existingFeeding.supplements.map(sup => (
@@ -962,8 +962,8 @@ export default function FeedingLog() {
 
           {existingFeeding.notes && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Notes</p>
-              <p className="text-gray-900 dark:text-white">{existingFeeding.notes}</p>
+              <p className="text-sm text-muted-foreground mb-1">Notes</p>
+              <p className="text-foreground">{existingFeeding.notes}</p>
             </div>
           )}
         </div>
@@ -975,7 +975,7 @@ export default function FeedingLog() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
           {mode === 'edit' ? 'Edit Feeding' : 'Log Feeding'}
         </h1>
       </div>
@@ -1030,7 +1030,7 @@ export default function FeedingLog() {
               className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                 includeInsects
                   ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+                  : 'bg-card border-border text-muted-foreground hover:border-primary-400'
               }`}
             >
               <div className="flex flex-col items-center gap-1 sm:gap-2">
@@ -1045,7 +1045,7 @@ export default function FeedingLog() {
               className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                 includeSalad
                   ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+                  : 'bg-card border-border text-muted-foreground hover:border-primary-400'
               }`}
             >
               <div className="flex flex-col items-center gap-1 sm:gap-2">
@@ -1065,7 +1065,7 @@ export default function FeedingLog() {
               className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                 includePrepared
                   ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+                  : 'bg-card border-border text-muted-foreground hover:border-primary-400'
               }`}
             >
               <div className="flex flex-col items-center gap-1 sm:gap-2">
@@ -1078,11 +1078,11 @@ export default function FeedingLog() {
 
         {/* INSECTS/WORMS SECTION */}
         {includeInsects && (
-          <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <div className="space-y-3 p-4 bg-card/50 rounded-lg">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
               <div className="space-y-2">
-                <h3 className="font-medium text-gray-900 dark:text-white">Insects/Worms</h3>
-                <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                <h3 className="font-medium text-foreground">Insects/Worms</h3>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                   <input
                     type="checkbox"
                     checked={showOnlyFavoriteInsects}
@@ -1106,7 +1106,7 @@ export default function FeedingLog() {
               const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
 
               return (
-                <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
+                <div key={item.id} className="space-y-2 bg-card p-2 sm:p-3 rounded">
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <select
@@ -1140,7 +1140,7 @@ export default function FeedingLog() {
                       <button
                         type="button"
                         onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
                       >
                         -
                       </button>
@@ -1154,7 +1154,7 @@ export default function FeedingLog() {
                       <button
                         type="button"
                         onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
                       >
                         +
                       </button>
@@ -1172,8 +1172,8 @@ export default function FeedingLog() {
                 </div>
                 {/* Per-item supplements */}
                 {supplements.length > 0 && (
-                  <div className="pl-2 sm:pl-2 border-l-2 border-gray-200 dark:border-gray-600">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5">Supplements:</p>
+                  <div className="pl-2 sm:pl-2 border-l-2 border-border">
+                    <p className="text-xs text-muted-foreground mb-1.5">Supplements:</p>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {supplements.map(sup => (
                         <label key={sup.id} className="flex items-center gap-1.5 text-xs sm:text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
@@ -1199,8 +1199,8 @@ export default function FeedingLog() {
         {includeSalad && (
           <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <div className="space-y-2">
-              <h3 className="font-medium text-gray-900 dark:text-white">Salad Components</h3>
-              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+              <h3 className="font-medium text-foreground">Salad Components</h3>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showOnlyFavoriteSalad}
@@ -1212,7 +1212,7 @@ export default function FeedingLog() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {saladFoods.map(food => (
-                <label key={food.id} className="flex items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700">
+                <label key={food.id} className="flex items-center gap-2 p-2 border border-border rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700">
                   <input
                     type="checkbox"
                     checked={saladComponents.includes(food.id)}
@@ -1228,11 +1228,11 @@ export default function FeedingLog() {
             </div>
             {/* Salad supplements */}
             {supplements.length > 0 && (
-              <div className="pt-2 border-t border-gray-300 dark:border-gray-600">
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Supplements:</p>
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs text-muted-foreground mb-2">Supplements:</p>
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {supplements.map(sup => (
-                    <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-secondary transition-colors">
                       <input
                         type="checkbox"
                         checked={saladSupplements.includes(sup.id)}
@@ -1250,11 +1250,11 @@ export default function FeedingLog() {
 
         {/* PREPARED FOOD SECTION */}
         {includePrepared && (
-          <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <div className="space-y-3 p-4 bg-card/50 rounded-lg">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
               <div className="space-y-2">
-                <h3 className="font-medium text-gray-900 dark:text-white">Other Food</h3>
-                <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                <h3 className="font-medium text-foreground">Other Food</h3>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                   <input
                     type="checkbox"
                     checked={showOnlyFavoritePrepared}
@@ -1278,7 +1278,7 @@ export default function FeedingLog() {
               const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
 
               return (
-                <div key={item.id} className="space-y-2 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded">
+                <div key={item.id} className="space-y-2 bg-card p-2 sm:p-3 rounded">
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <select
@@ -1312,7 +1312,7 @@ export default function FeedingLog() {
                       <button
                         type="button"
                         onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
                       >
                         -
                       </button>
@@ -1326,7 +1326,7 @@ export default function FeedingLog() {
                       <button
                         type="button"
                         onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold text-xl sm:text-lg hover:bg-gray-300 dark:hover:bg-gray-500 active:scale-95 transition-all"
+                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
                       >
                         +
                       </button>
@@ -1344,8 +1344,8 @@ export default function FeedingLog() {
                 </div>
                 {/* Per-item supplements */}
                 {supplements.length > 0 && (
-                  <div className="pl-2 sm:pl-2 border-l-2 border-gray-200 dark:border-gray-600">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5">Supplements:</p>
+                  <div className="pl-2 sm:pl-2 border-l-2 border-border">
+                    <p className="text-xs text-muted-foreground mb-1.5">Supplements:</p>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {supplements.map(sup => (
                         <label key={sup.id} className="flex items-center gap-1.5 text-xs sm:text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
@@ -1450,12 +1450,12 @@ export default function FeedingLog() {
         {/* GLOBAL SUPPLEMENTS */}
         <div>
           <label className="block font-medium mb-1 text-sm sm:text-base">Global Supplements (optional)</label>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+          <p className="text-xs text-muted-foreground mb-2">
             Applied to all food items. You can also add supplements to individual items above.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {supplements.map(sup => (
-              <label key={sup.id} className="flex items-center gap-2 p-2.5 sm:p-2 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <label key={sup.id} className="flex items-center gap-2 p-2.5 sm:p-2 border border-border rounded cursor-pointer hover:bg-secondary transition-colors">
                 <input
                   type="checkbox"
                   checked={selectedSupplements.includes(sup.id)}
@@ -1491,7 +1491,7 @@ export default function FeedingLog() {
                 max={timeFormat === '12h' ? 12 : 23}
                 required
               />
-              <span className="flex items-center text-xl font-bold text-gray-700 dark:text-gray-300">:</span>
+              <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
               <input
                 type="number"
                 value={String(minutes).padStart(2, '0')}

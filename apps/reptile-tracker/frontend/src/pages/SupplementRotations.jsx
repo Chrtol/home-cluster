@@ -79,7 +79,7 @@ function SupplementRotations() {
             </button>
           )}
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Manage supplement schedules and food replacements for your reptiles
         </p>
       </div>
@@ -101,9 +101,9 @@ function SupplementRotations() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
         </div>
       ) : reptiles.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="text-center py-12 bg-card rounded-lg border border-border">
           <RefreshCw size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 mb-4">No reptiles found</p>
+          <p className="text-muted-foreground mb-4">No reptiles found</p>
           <button
             onClick={() => navigate('/reptiles/new')}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"

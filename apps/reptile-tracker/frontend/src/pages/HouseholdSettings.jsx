@@ -86,7 +86,7 @@ export default function HouseholdSettings() {
       admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       caretaker: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+      viewer: 'bg-secondary text-foreground'
     };
 
     return (
@@ -110,7 +110,7 @@ export default function HouseholdSettings() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <Users size={32} className="text-primary-600 dark:text-primary-400" />
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Household Settings</h1>
+        <h1 className="text-3xl font-bold text-foreground">Household Settings</h1>
       </div>
 
       {error && (
@@ -126,8 +126,8 @@ export default function HouseholdSettings() {
       )}
 
       <div className="card mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{household.name}</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <h2 className="text-xl font-bold text-foreground mb-2">{household.name}</h2>
+        <p className="text-sm text-muted-foreground">
           Created {formatDateTime(household.created_at)}
         </p>
       </div>
@@ -144,17 +144,17 @@ export default function HouseholdSettings() {
       )}
 
       <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Members ({members.length})</h2>
+        <h2 className="text-xl font-bold text-foreground mb-4">Members ({members.length})</h2>
 
         <div className="space-y-4">
           {members.map(member => (
             <div
               key={member.user_id}
-              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+              className="flex items-center justify-between p-4 bg-card/50 rounded-lg"
             >
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-white">{member.name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
+                <h3 className="font-medium text-foreground">{member.name}</h3>
+                <p className="text-sm text-muted-foreground">{member.email}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                   Joined {formatDateTime(member.joined_at)}
                 </p>
@@ -191,28 +191,28 @@ export default function HouseholdSettings() {
           ))}
         </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Role Permissions</h3>
+        <div className="mt-6 pt-6 border-t border-border">
+          <h3 className="font-semibold text-foreground mb-3">Role Permissions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div>
               <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
-              <span className="text-gray-600 dark:text-gray-400"> Full household control (members, invitations, reptiles)</span>
+              <span className="text-muted-foreground"> Full household control (members, invitations, reptiles)</span>
             </div>
             <div>
               <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
-              <span className="text-gray-600 dark:text-gray-400"> Can manage members, invitations, and reptiles</span>
+              <span className="text-muted-foreground"> Can manage members, invitations, and reptiles</span>
             </div>
             <div>
               <strong className="text-yellow-600 dark:text-yellow-400">Manager:</strong>
-              <span className="text-gray-600 dark:text-gray-400"> Can edit reptiles and create invitations</span>
+              <span className="text-muted-foreground"> Can edit reptiles and create invitations</span>
             </div>
             <div>
               <strong className="text-green-600 dark:text-green-400">Caretaker:</strong>
-              <span className="text-gray-600 dark:text-gray-400"> Can log feedings, misting, weights</span>
+              <span className="text-muted-foreground"> Can log feedings, misting, weights</span>
             </div>
             <div>
-              <strong className="text-gray-600 dark:text-gray-400">Viewer:</strong>
-              <span className="text-gray-600 dark:text-gray-400"> Can only view reptiles and logs</span>
+              <strong className="text-muted-foreground">Viewer:</strong>
+              <span className="text-muted-foreground"> Can only view reptiles and logs</span>
             </div>
           </div>
         </div>
