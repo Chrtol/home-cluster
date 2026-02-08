@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import NotificationBell from './NotificationBell'
 
@@ -10,6 +10,9 @@ export default function Layout({ user, onLogout }) {
   const [trackMenuOpen, setTrackMenuOpen] = useState(false)
   const [schedulesMenuOpen, setSchedulesMenuOpen] = useState(false)
   const [mobileSchedulesMenuOpen, setMobileSchedulesMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    localStorage.getItem('sidebar_collapsed') === 'true'
+  )
 
   // Load dark mode preference on mount (defaults to true/dark)
   useEffect(() => {
@@ -20,6 +23,37 @@ export default function Layout({ user, onLogout }) {
     } else {
       document.documentElement.classList.remove('dark')
     }
+  }, [])
+
+  // Persist sidebar collapse state
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', sidebarCollapsed.toString())
+  }, [sidebarCollapsed])
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger shortcuts when typing in input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return
+      }
+
+      // Cmd+K (Mac) or Ctrl+K (Windows/Linux) - Toggle Track menu
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setTrackMenuOpen(prev => !prev)
+      }
+
+      // Escape - Close any open menus
+      if (e.key === 'Escape') {
+        setTrackMenuOpen(false)
+        setSchedulesMenuOpen(false)
+        setMobileSchedulesMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   const handleLogout = () => {
@@ -40,26 +74,27 @@ export default function Layout({ user, onLogout }) {
     { path: '/supplement-rotations', icon: RefreshCw, label: 'Supplement Rotations' },
   ]
 
-  const NavLink = ({ item, onClick }) => {
+  const NavLink = ({ item, onClick, collapsed }) => {
     const isActive = location.pathname === item.path
     const Icon = item.icon
     return (
       <Link
         to={item.path}
         onClick={onClick}
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+        className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'} px-3 py-2 rounded-lg transition-colors text-sm ${
           isActive
             ? 'bg-primary/20 text-primary-400'
             : 'text-muted-foreground hover:bg-secondary'
         }`}
+        title={collapsed ? item.label : undefined}
       >
-        <Icon size={20} />
-        <span className="font-medium">{item.label}</span>
+        <Icon size={16} />
+        {!collapsed && <span className="font-medium">{item.label}</span>}
       </Link>
     )
   }
 
-  const TrackButton = ({ onClose }) => {
+  const TrackButton = ({ onClose, collapsed }) => {
     const [isOpen, setIsOpen] = useState(false)
 
     const handleOptionClick = (path) => {
@@ -68,17 +103,64 @@ export default function Layout({ user, onLogout }) {
       if (onClose) onClose()
     }
 
+    if (collapsed) {
+      return (
+        <div className="relative group">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full flex items-center justify-center p-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white transition-all shadow-lg hover:shadow-xl"
+            title="Track (⌘K)"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+          </button>
+
+          {isOpen && (
+            <div className="absolute top-0 left-full ml-2 bg-card rounded-lg shadow-xl border border-border overflow-hidden z-50 w-64">
+              <button
+                onClick={() => handleOptionClick('/feed')}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/20 transition-colors border-b border-border"
+              >
+                <Utensils size={20} className="text-primary" />
+                <div className="text-left">
+                  <div className="font-semibold text-foreground">Log Feeding</div>
+                  <div className="text-xs text-muted-foreground">Record food and supplements</div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleOptionClick('/health-log')}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-900/20 transition-colors border-b border-border"
+              >
+                <Activity size={20} className="text-green-400" />
+                <div className="text-left">
+                  <div className="font-semibold text-foreground">Log Health</div>
+                  <div className="text-xs text-muted-foreground">Record health and weight data</div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleOptionClick('/misting-log')}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 transition-colors"
+              >
+                <Droplets size={20} className="text-blue-400" />
+                <div className="text-left">
+                  <div className="font-semibold text-foreground">Log Misting</div>
+                  <div className="text-xs text-muted-foreground">Record misting and humidity</div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+      )
+    }
+
     return (
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 dark:from-primary-700 dark:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 text-white transition-all shadow-lg hover:shadow-xl"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all"
         >
-          <div className="flex items-center gap-3">
-            <Plus size={22} className="font-bold" />
-            <span className="font-bold text-lg">Track</span>
-          </div>
-          <ChevronDown size={18} className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <Plus size={16} strokeWidth={2.5} />
+          <span>Track</span>
+          <span className="text-xs text-primary-200 ml-auto hidden xl:inline-block">⌘K</span>
         </button>
 
         {isOpen && (
@@ -119,28 +201,45 @@ export default function Layout({ user, onLogout }) {
     )
   }
 
-  const SchedulesMenu = ({ onClose }) => {
+  const SchedulesMenu = ({ onClose, collapsed }) => {
     const isSchedulesActive = schedulesItems.some(item => location.pathname.startsWith(item.path))
 
+    if (collapsed) {
+      return (
+        <div className="relative group">
+          <button
+            className={`w-full flex items-center justify-center px-3 py-2 rounded-lg transition-colors text-sm ${
+              isSchedulesActive
+                ? 'bg-primary/20 text-primary-400'
+                : 'text-muted-foreground hover:bg-secondary'
+            }`}
+            title="Schedules"
+          >
+            <Calendar size={16} />
+          </button>
+        </div>
+      )
+    }
+
     return (
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         <button
           onClick={() => setSchedulesMenuOpen(!schedulesMenuOpen)}
-          className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
+          className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
             isSchedulesActive
               ? 'bg-primary/20 text-primary-400'
               : 'text-muted-foreground hover:bg-secondary'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <Calendar size={20} />
+          <div className="flex items-center gap-2.5">
+            <Calendar size={16} />
             <span className="font-medium">Schedules</span>
           </div>
-          <ChevronDown size={18} className={`transform transition-transform ${schedulesMenuOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={14} className={`transform transition-transform ${schedulesMenuOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {schedulesMenuOpen && (
-          <div className="ml-4 pl-4 border-l-2 border-border space-y-1">
+          <div className="ml-4 pl-4 border-l-2 border-border space-y-0.5">
             {schedulesItems.map(item => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
@@ -149,18 +248,15 @@ export default function Layout({ user, onLogout }) {
                   key={item.path}
                   to={item.path}
                   onClick={onClose}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
                     isActive
                       ? 'bg-primary/20 text-primary-400'
                       : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
-                  <Icon size={18} />
+                  <Icon size={14} />
                   <div className="flex-1">
-                    <div className="text-sm font-medium">{item.label}</div>
-                    {item.description && (
-                      <div className="text-xs text-muted-foreground">{item.description}</div>
-                    )}
+                    <div className="text-xs font-medium">{item.label}</div>
                   </div>
                 </Link>
               )
@@ -174,71 +270,91 @@ export default function Layout({ user, onLogout }) {
   return (
     <div className="min-h-screen bg-background transition-colors">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <aside className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-all duration-200 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'}`}>
         <div className="flex flex-col flex-1 min-h-0 bg-card border-r border-border">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-6 border-b border-border">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="text-3xl">🦎</div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Reptile</h1>
-                <p className="text-sm text-muted-foreground">Tracker</p>
-              </div>
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'} py-4 border-b border-border`}>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="text-2xl">🦎</div>
+              {!sidebarCollapsed && (
+                <div>
+                  <h1 className="text-sm font-semibold text-foreground">Reptile Tracker</h1>
+                </div>
+              )}
             </Link>
-            <NotificationBell />
+            {!sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                className="p-1 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+                title="Collapse sidebar"
+              >
+                <ChevronLeft size={16} />
+              </button>
+            )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <nav className={`flex-1 ${sidebarCollapsed ? 'px-2' : 'px-2'} py-2 space-y-0.5 overflow-y-auto`}>
             {/* Prominent Track Button */}
-            <div className="mb-4">
-              <TrackButton />
+            <div className="mb-2">
+              <TrackButton collapsed={sidebarCollapsed} />
             </div>
 
             {navItems.map(item => (
-              <NavLink key={item.path} item={item} />
+              <NavLink key={item.path} item={item} collapsed={sidebarCollapsed} />
             ))}
 
             {/* Schedules Collapsible Menu */}
-            <SchedulesMenu />
+            <SchedulesMenu collapsed={sidebarCollapsed} />
           </nav>
 
           {/* User Section */}
           <div className="flex-shrink-0 border-t border-border">
-            <div className="p-4 space-y-2">
-              <div className="flex items-center gap-3 px-4 py-2 min-w-0">
-                <div className="w-5 h-5 flex-shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-xs font-medium text-primary">
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                  <p className="text-sm font-medium text-foreground truncate max-w-full">
-                    {user?.name || 'User'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate max-w-full">
-                    {user?.email}
-                  </p>
-                </div>
-              </div>
-              <Link
-                to="/settings"
-                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                  location.pathname === '/settings'
-                    ? 'bg-primary/20 text-primary-400'
-                    : 'text-muted-foreground hover:bg-secondary'
-                }`}
-              >
-                <Settings size={20} />
-                <span className="font-medium">Settings</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <LogOut size={20} />
-                <span className="font-medium">Logout</span>
-              </button>
+            <div className={`${sidebarCollapsed ? 'p-2' : 'p-3'} space-y-2`}>
+              {sidebarCollapsed ? (
+                <>
+                  <div className="flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary">
+                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSidebarCollapsed(false)}
+                    className="w-full flex items-center justify-center p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+                    title="Expand sidebar"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 px-2 py-1.5 min-w-0">
+                    <div className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary">
+                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                      <p className="text-xs font-medium text-foreground truncate max-w-full">
+                        {user?.name || 'User'}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/settings"
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      location.pathname === '/settings'
+                        ? 'bg-primary/20 text-primary-400'
+                        : 'text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    <Settings size={16} />
+                    <span className="font-medium">Settings</span>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -322,7 +438,7 @@ export default function Layout({ user, onLogout }) {
       )}
 
       {/* Main Content */}
-      <div className="lg:pl-64">
+      <div className={`transition-all duration-200 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-56'}`}>
         <main className="py-6 px-4 sm:px-6 lg:px-8">
           <Outlet />
         </main>
