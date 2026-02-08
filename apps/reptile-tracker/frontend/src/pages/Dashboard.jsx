@@ -5,7 +5,7 @@ import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } f
 import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings } from '../utils/displaySettings';
+import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings, updateProfileCards, resetProfileToDefault } from '../utils/displaySettings';
 import ReptileAvatar from '../components/ReptileAvatar';
 import ReptileStatusCards from '../components/dashboard/ReptileStatusCards';
 import TodayScheduleTimeline from '../components/dashboard/TodayScheduleTimeline';
@@ -1048,20 +1048,40 @@ export default function Dashboard() {
   };
 
   const handleResetLayout = () => {
-    // Reset is handled by EditModeControls with confirmation
-    // After reset, reload dashboard cards
+    // Reset the active profile to default, then reload
+    const activeProfileId = getActiveProfileId();
+    resetProfileToDefault(activeProfileId);
     setDashboardCards(getDashboardCardSettings());
   };
 
   const handleAddWidget = (widgetId) => {
-    // Add widget to visible cards
-    const cards = getDashboardCardSettings();
+    // Add widget to visible cards and save to active profile
+    const cards = [...dashboardCards];
     const updated = cards.map(c =>
       c.id === widgetId ? { ...c, visible: true } : c
     );
-    saveDashboardCardSettings(updated);
+
+    // Save to the active profile (desktop or mobile)
+    const activeProfileId = getActiveProfileId();
+    updateProfileCards(activeProfileId, updated);
+
+    // Update local state
     setDashboardCards(updated);
     setShowWidgetGallery(false);
+  };
+
+  const handleHideWidget = (widgetId) => {
+    // Hide widget and save to active profile
+    const updated = dashboardCards.map(c =>
+      c.id === widgetId ? { ...c, visible: false } : c
+    );
+
+    // Save to the active profile
+    const activeProfileId = getActiveProfileId();
+    updateProfileCards(activeProfileId, updated);
+
+    // Update local state
+    setDashboardCards(updated);
   };
 
   // Define all card rendering functions
@@ -1830,19 +1850,21 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
-      {/* Header with greeting and quick stats */}
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-6">
+      {/* Header with greeting and quick stats - full width */}
       <Header user={user} todayStats={todayStats} />
 
-      {/* Edit mode controls bar */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm text-muted-foreground">Dashboard</span>
-        <EditModeControls
-          isEditMode={isEditMode}
-          onToggleEditMode={handleToggleEditMode}
-          onResetLayout={handleResetLayout}
-        />
-      </div>
+      {/* Content area with restored padding */}
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        {/* Edit mode controls bar */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-muted-foreground">Dashboard</span>
+          <EditModeControls
+            isEditMode={isEditMode}
+            onToggleEditMode={handleToggleEditMode}
+            onResetLayout={handleResetLayout}
+          />
+        </div>
 
       {/* Day Events Modal */}
       {selectedDate && (
@@ -2017,13 +2039,14 @@ export default function Dashboard() {
         </button>
       )}
 
-      {/* Widget Gallery modal */}
-      <WidgetGallery
-        isOpen={showWidgetGallery}
-        availableWidgets={dashboardCards}
-        onAddWidget={handleAddWidget}
-        onClose={() => setShowWidgetGallery(false)}
-      />
+        {/* Widget Gallery modal */}
+        <WidgetGallery
+          isOpen={showWidgetGallery}
+          availableWidgets={dashboardCards}
+          onAddWidget={handleAddWidget}
+          onClose={() => setShowWidgetGallery(false)}
+        />
+      </div>
     </div>
   );
 }
