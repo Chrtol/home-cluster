@@ -7,17 +7,17 @@
 ## Overview
 
 ```
-Phase 7:  Foundation          → Design system, shadcn/ui, tokens
-Phase 8:  Dashboard           → Single pane of glass redesign
-Phase 9:  Reptile Pages       → List and detail pages
-Phase 10: Calendar & Stats    → Calendar quick-view, statistics improvements
-Phase 11: Forms & Tables      → Feed logging, food table, pickers
-Phase 12: Polish & Mobile     → Consistency pass, mobile optimization
+Phase 7:  Foundation          -> Design system, shadcn/ui, tokens
+Phase 8:  Dashboard           -> Single pane of glass redesign
+Phase 9:  Reptile Pages       -> List and detail pages
+Phase 10: Calendar & Stats    -> Calendar quick-view, statistics improvements
+Phase 11: Forms & Tables      -> Feed logging, food table, pickers
+Phase 12: Polish & Mobile     -> Consistency pass, mobile optimization
 ```
 
 ---
 
-## Phase 7: Foundation ✓ Complete
+## Phase 7: Foundation Complete
 
 **Goal:** Establish new design system foundation with shadcn/ui
 
@@ -27,9 +27,9 @@ Phase 12: Polish & Mobile     → Consistency pass, mobile optimization
 **Plans:** 3/3 complete
 
 Plans:
-- [x] 07-01-PLAN.md — shadcn/ui setup, path aliases, design tokens, CSS variables
-- [x] 07-02-PLAN.md — Core components (Button, Card, Input, Badge), ReptileNameWithAvatar, Framer Motion
-- [x] 07-03-PLAN.md — DatePicker and TimePicker with user format preference
+- [x] 07-01-PLAN.md -- shadcn/ui setup, path aliases, design tokens, CSS variables
+- [x] 07-02-PLAN.md -- Core components (Button, Card, Input, Badge), ReptileNameWithAvatar, Framer Motion
+- [x] 07-03-PLAN.md -- DatePicker and TimePicker with user format preference
 
 **Deliverables:**
 - [x] Design tokens (colors, spacing, typography) in Tailwind config
@@ -44,21 +44,25 @@ Plans:
 
 ---
 
-## Phase 8: Dashboard ✓ Complete (with gaps)
+## Phase 8: Dashboard In Progress (Gap Closure)
 
 **Goal:** Transform dashboard into single pane of glass showing all reptile statuses at a glance
 
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, NAV-01, NAV-02
 
-**Status:** Complete (2026-02-08)
-**Plans:** 4/4 complete
-**Verification:** 31/38 must-haves (81.6%). See 08-VERIFICATION.md.
+**Status:** Gap closure in progress
+**Plans:** 8 (4 complete, 4 gap closure)
+**Verification:** 31/38 must-haves (81.6%). See 08-VERIFICATION.md and 08-UAT.md.
 
 Plans:
-- [x] 08-01-PLAN.md — Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
-- [x] 08-02-PLAN.md — Reptile status cards widget with compact mode, drag reorder, task chips
-- [x] 08-03-PLAN.md — Today's schedule timeline with time grouping, filters, auto-scroll, quick-log
-- [x] 08-04-PLAN.md — Weight trends sparklines, week summary, recent activity, edit mode, widget gallery
+- [x] 08-01-PLAN.md -- Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
+- [x] 08-02-PLAN.md -- Reptile status cards widget with compact mode, drag reorder, task chips
+- [x] 08-03-PLAN.md -- Today's schedule timeline with time grouping, filters, auto-scroll, quick-log
+- [x] 08-04-PLAN.md -- Weight trends sparklines, week summary, recent activity, edit mode, widget gallery
+- [ ] 08-05-PLAN.md -- GAP CLOSURE: Fix QuickLogForm 404, task names, weight display, supplements
+- [ ] 08-06-PLAN.md -- GAP CLOSURE: Fix timeline time slot grouping, Ctrl+K shortcut on Windows
+- [ ] 08-07-PLAN.md -- GAP CLOSURE: Integrate Header, edit mode controls, widget gallery
+- [ ] 08-08-PLAN.md -- GAP CLOSURE: Visual polish (sparkline height, avatars, grid gaps, defaults)
 
 **Deliverables:**
 - [x] Compact sidebar matching mockup
@@ -69,12 +73,17 @@ Plans:
 - [x] Week summary stats
 - [x] Preserve modularity system (ProfileManager in Settings still works)
 
-**Gaps (defer to Phase 12 Polish):**
-- Header component not integrated into Dashboard layout
-- Edit mode UI not wired (components exist, EditModeControls/WidgetGallery ready)
-- Per-widget settings popover not implemented
+**Gap Closure (Plans 05-08):**
+- [ ] Fix QuickLogForm 404 errors (BLOCKER)
+- [ ] Fix task chip display (shows "task" instead of names)
+- [ ] Fix weight display (NaN%)
+- [ ] Fix timeline time slot grouping (all in evening)
+- [ ] Fix Ctrl+K on Windows
+- [ ] Integrate Header component
+- [ ] Wire edit mode and widget gallery
+- [ ] Visual polish (sparklines, avatars, grid gaps)
 
-**Success:** Dashboard shows all reptile statuses at a glance, no scrolling needed for overview
+**Success:** Dashboard shows all reptile statuses at a glance, all features work correctly
 
 ---
 
@@ -144,11 +153,6 @@ Plans:
 - [ ] Loading states consistency
 - [ ] Error states consistency
 
-**Deferred from Phase 8 (Dashboard gaps):**
-- [ ] Header component integration into Dashboard layout
-- [ ] Edit mode UI wiring (connect EditModeControls/WidgetGallery to Dashboard state)
-- [ ] Per-widget settings popover in edit mode
-
 **Success:** Desktop and mobile feel equally polished, consistent visual language
 
 ---
@@ -156,12 +160,12 @@ Plans:
 ## Dependencies
 
 ```
-Phase 7 (Foundation) → All other phases depend on this
-Phase 8 (Dashboard) → Can start after Phase 7
-Phase 9 (Reptile)   → Can start after Phase 7, parallel with Phase 8
-Phase 10 (Cal/Stat) → Can start after Phase 7
-Phase 11 (Forms)    → Depends on Phase 7 (pickers)
-Phase 12 (Polish)   → After all other phases complete
+Phase 7 (Foundation) -> All other phases depend on this
+Phase 8 (Dashboard)  -> Can start after Phase 7
+Phase 9 (Reptile)    -> Can start after Phase 7, parallel with Phase 8
+Phase 10 (Cal/Stat)  -> Can start after Phase 7
+Phase 11 (Forms)     -> Depends on Phase 7 (pickers)
+Phase 12 (Polish)    -> After all other phases complete
 ```
 
 ## Risk Mitigation

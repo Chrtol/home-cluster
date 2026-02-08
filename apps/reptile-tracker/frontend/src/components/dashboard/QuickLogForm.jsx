@@ -26,16 +26,22 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     if (!task) return '/';
 
     const scheduleType = task.schedule_type || task.type;
+    const reptileId = task.reptile_id || task.reptile?.id;
+    const instanceId = task.instance_id || task.id;
+
+    // Build query params - prefer instance_id, fall back to reptile_id
+    const queryParam = instanceId ? `instance_id=${instanceId}` : (reptileId ? `reptile_id=${reptileId}` : '');
 
     if (scheduleType === 'feeding') {
-      return `/feeding?instance_id=${task.instance_id || task.id}`;
+      return `/feeding${queryParam ? `?${queryParam}` : ''}`;
     } else if (scheduleType === 'misting') {
-      return `/misting?instance_id=${task.instance_id || task.id}`;
-    } else if (scheduleType === 'health') {
-      return `/health-log?instance_id=${task.instance_id || task.id}`;
+      return `/misting${queryParam ? `?${queryParam}` : ''}`;
+    } else if (scheduleType === 'health' || scheduleType === 'weighing') {
+      return `/health-log${queryParam ? `?${queryParam}` : ''}`;
     }
 
-    return '/';
+    // Default to reptile page if no specific form
+    return reptileId ? `/reptiles/${reptileId}` : '/';
   };
 
   const handleOpenFull = () => {
@@ -51,33 +57,47 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     setError('');
 
     try {
-      const instanceId = task.instance_id || task.id;
       const scheduleType = task.schedule_type || task.type;
+      const reptileId = task.reptile_id || task.reptile?.id;
 
-      // Determine the correct API endpoint based on task type
+      if (!reptileId) {
+        throw new Error('Missing reptile ID');
+      }
+
+      // Determine the correct API endpoint and payload based on task type
       let endpoint = '';
-      let payload = {
-        notes: notes.trim() || undefined,
-        completed_at: new Date().toISOString()
-      };
+      let payload = {};
 
       if (scheduleType === 'feeding') {
-        endpoint = `/api/schedule-instances/${instanceId}/complete-feeding`;
-
-        // Include auto-filled data from schedule
-        if (task.food_category) {
-          payload.food_category = task.food_category;
-        }
-        if (task.supplements && task.supplements.length > 0) {
-          payload.supplements = task.supplements;
-        }
+        endpoint = '/api/feedings';
+        payload = {
+          reptile_id: reptileId,
+          fed_at: new Date().toISOString(),
+          foods: [], // Quick log doesn't specify foods - empty array required
+          supplements: [], // Global supplements
+          is_salad: false,
+          salad_components: [],
+          notes: notes.trim() || null
+        };
       } else if (scheduleType === 'misting') {
-        endpoint = `/api/schedule-instances/${instanceId}/complete-misting`;
-      } else if (scheduleType === 'health') {
-        endpoint = `/api/schedule-instances/${instanceId}/complete-health`;
+        endpoint = '/api/misting';
+        payload = {
+          reptile_id: reptileId,
+          misted_at: new Date().toISOString(),
+          notes: notes.trim() || null
+        };
+      } else if (scheduleType === 'health' || scheduleType === 'weighing') {
+        endpoint = '/api/health';
+        payload = {
+          reptile_id: reptileId,
+          record_type: scheduleType === 'weighing' ? 'weight_check' : 'observation',
+          title: scheduleType === 'weighing' ? 'Weight Check' : 'Health Observation',
+          description: notes.trim() || null,
+          date: new Date().toISOString()
+        };
       } else {
-        // Generic completion for other task types
-        endpoint = `/api/schedule-instances/${instanceId}/complete`;
+        // Unsupported task type - show error
+        throw new Error(`Unsupported task type: ${scheduleType}. Please use the full form.`);
       }
 
       await axios.post(endpoint, payload);
@@ -90,7 +110,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       onClose();
     } catch (err) {
       console.error('Failed to log task:', err);
-      setError(err.response?.data?.message || 'Failed to log task. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Failed to log task. Please try again.');
       setSubmitting(false);
     }
   };
@@ -143,7 +163,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
 
               {task.supplements && task.supplements.length > 0 && (
                 <div className="text-xs text-foreground">
-                  <span className="text-muted-foreground">Supplements:</span> {task.supplements.join(', ')}
+                  <span className="text-muted-foreground">Supplements:</span> {task.supplements.map(s => typeof s === 'string' ? s : s.name).join(', ')}
                 </div>
               )}
 
