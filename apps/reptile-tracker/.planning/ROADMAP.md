@@ -44,15 +44,15 @@ Plans:
 
 ---
 
-## Phase 8: Dashboard Complete
+## Phase 8: Dashboard In Progress (Gap Closure Round 4)
 
 **Goal:** Transform dashboard into single pane of glass showing all reptile statuses at a glance
 
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, NAV-01, NAV-02
 
-**Status:** Complete (2026-02-08)
-**Plans:** 14/14 complete
-**Verification:** 54/54 must-haves verified. See 08-VERIFICATION.md.
+**Status:** Gap closure round 4 in progress
+**Plans:** 16 (14 complete, 2 gap closure pending)
+**Verification:** Manual UAT found 7 issues requiring fixes.
 
 Plans:
 - [x] 08-01-PLAN.md -- Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
@@ -69,6 +69,8 @@ Plans:
 - [x] 08-12-PLAN.md -- GAP CLOSURE R3: Bug fixes (time ranges, avatar data, locale, supplements serialization)
 - [x] 08-13-PLAN.md -- GAP CLOSURE R3: Visual fixes (grid gap, timeline avatars, border color, now highlight)
 - [x] 08-14-PLAN.md -- GAP CLOSURE R3: Functional (quantity +/-, task type icons, customize hide/reorder)
+- [ ] 08-15-PLAN.md -- GAP CLOSURE R4: QuickLog consistency (food category, favorites, escape key, Cmd+K)
+- [ ] 08-16-PLAN.md -- GAP CLOSURE R4: Layout fixes (grid gap with tall widgets, activity avatars)
 
 **Deliverables:**
 - [x] Compact sidebar matching mockup
@@ -84,6 +86,18 @@ Plans:
 - [x] Time ranges in timeline
 - [x] Task type icons (feeding/misting/health)
 - [x] Customize mode with hide and reorder
+- [ ] QuickLog from Today card same as Status Card (food category, favorites)
+- [ ] Keyboard shortcuts (Escape, Cmd+K)
+- [ ] Grid layout without gaps from varying widget heights
+
+**Gap Closure Round 4 (Plans 15-16):**
+- [ ] QuickLog from Today card shows auto-fill info
+- [ ] Food selector filters by schedule category
+- [ ] Favorites shown with hearts at top
+- [ ] Escape key closes QuickLog
+- [ ] Cmd/Ctrl+K opens Track menu
+- [ ] Grid layout fixed for varying widget heights
+- [ ] All Recent Activity items show avatars
 
 **Success:** Dashboard shows all reptile statuses at a glance, all features work correctly, matches mockup
 
