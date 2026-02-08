@@ -16,7 +16,8 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
 
   // Determine task status for styling
   const getTaskStatus = (task) => {
-    if (task.status === 'done' || task.completed) return 'done';
+    // Check for completed status - API returns 'completed' not 'done'
+    if (task.status === 'done' || task.status === 'completed' || task.completed || task.completed_at) return 'done';
     if (task.status === 'overdue' || task.is_overdue) return 'overdue';
     return 'due';
   };
@@ -32,10 +33,13 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
 
   // Format display text
   const getDisplayText = () => {
-    const taskName = task.task_name || task.name || 'Task';
+    // Get task name from schedule data or fall back to capitalized schedule_type
+    const scheduleType = task.schedule_type || task.type;
+    const taskName = task.task_name || task.name ||
+      (scheduleType ? scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1) : 'Task');
 
     if (status === 'done') {
-      return `✓ ${taskName}`;
+      return `\u2713 ${taskName}`;
     }
 
     if (status === 'overdue') {
@@ -43,10 +47,10 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
     }
 
     // Due tasks: show time if available
-    if (task.time || task.time_range_start) {
-      const time = task.time || task.time_range_start;
+    if (task.time || task.time_range_start || task.scheduled_time) {
+      const time = task.time || task.time_range_start || task.scheduled_time;
       // Format time (assuming HH:MM:SS format from backend)
-      const timeStr = time.substring(0, 5); // Get HH:MM
+      const timeStr = typeof time === 'string' && time.length >= 5 ? time.substring(0, 5) : time;
       return `${taskName} ${timeStr}`;
     }
 
@@ -78,7 +82,7 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={`Quick log ${task.task_name || task.name}`}
+      aria-label={`Quick log ${task.task_name || task.name || task.schedule_type || 'task'}`}
     >
       {getDisplayText()}
     </span>

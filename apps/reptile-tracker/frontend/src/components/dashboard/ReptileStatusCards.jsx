@@ -86,11 +86,17 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
             instance_id: i.id,
             schedule_id: i.schedule_id,
             schedule_type: i.schedule?.schedule_type,
+            // Include schedule name for display - fallback to capitalized schedule_type
+            name: i.schedule?.name,
+            task_name: i.schedule?.name,
             scheduled_time: i.schedule?.earliest_time,
             status: i.status,
             completed_at: i.status === 'completed' ? i.updated_at : null,
             reptile_id: reptile.id,
             reptile_name: reptile.name,
+            // Include schedule data for QuickLogForm
+            food_category: i.schedule?.food_category,
+            supplements: i.supplements || i.schedule?.supplements,
             // Include reptile for QuickLogForm
             reptile: reptile
           }));
