@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId } from '../utils/displaySettings';
+import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings } from '../utils/displaySettings';
 import ReptileAvatar from '../components/ReptileAvatar';
 import ReptileStatusCards from '../components/dashboard/ReptileStatusCards';
 import TodayScheduleTimeline from '../components/dashboard/TodayScheduleTimeline';
@@ -14,6 +14,8 @@ import WeightTrendsWidget from '../components/dashboard/WeightTrendsWidget';
 import WeekSummaryWidget from '../components/dashboard/WeekSummaryWidget';
 import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 import Header from '../components/Header';
+import EditModeControls from '../components/dashboard/EditModeControls';
+import WidgetGallery from '../components/dashboard/WidgetGallery';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,6 +34,8 @@ export default function Dashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force data refresh
   const [quickLogTask, setQuickLogTask] = useState(null); // Task for quick-log form (08-03)
   const [user, setUser] = useState(null); // User for Header greeting
+  const [isEditMode, setIsEditMode] = useState(false); // Edit mode for dashboard customization
+  const [showWidgetGallery, setShowWidgetGallery] = useState(false); // Widget gallery modal
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -1032,6 +1036,34 @@ export default function Dashboard() {
     setQuickLogTask(null);
   };
 
+  // Edit mode handlers
+  const handleToggleEditMode = () => {
+    setIsEditMode(prev => {
+      if (prev) {
+        // Exiting edit mode - hide gallery if open
+        setShowWidgetGallery(false);
+      }
+      return !prev;
+    });
+  };
+
+  const handleResetLayout = () => {
+    // Reset is handled by EditModeControls with confirmation
+    // After reset, reload dashboard cards
+    setDashboardCards(getDashboardCardSettings());
+  };
+
+  const handleAddWidget = (widgetId) => {
+    // Add widget to visible cards
+    const cards = getDashboardCardSettings();
+    const updated = cards.map(c =>
+      c.id === widgetId ? { ...c, visible: true } : c
+    );
+    saveDashboardCardSettings(updated);
+    setDashboardCards(updated);
+    setShowWidgetGallery(false);
+  };
+
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
@@ -1802,6 +1834,16 @@ export default function Dashboard() {
       {/* Header with greeting and quick stats */}
       <Header user={user} todayStats={todayStats} />
 
+      {/* Edit mode controls bar */}
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-sm text-muted-foreground">Dashboard</span>
+        <EditModeControls
+          isEditMode={isEditMode}
+          onToggleEditMode={handleToggleEditMode}
+          onResetLayout={handleResetLayout}
+        />
+      </div>
+
       {/* Day Events Modal */}
       {selectedDate && (
         <div
@@ -1963,6 +2005,25 @@ export default function Dashboard() {
           onSubmit={handleQuickLogSubmit}
         />
       )}
+
+      {/* Floating Add Widget button - only visible in edit mode */}
+      {isEditMode && (
+        <button
+          onClick={() => setShowWidgetGallery(true)}
+          className="fixed bottom-20 lg:bottom-6 right-6 bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors z-40"
+          title="Add Widget"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Widget Gallery modal */}
+      <WidgetGallery
+        isOpen={showWidgetGallery}
+        availableWidgets={dashboardCards}
+        onAddWidget={handleAddWidget}
+        onClose={() => setShowWidgetGallery(false)}
+      />
     </div>
   );
 }
