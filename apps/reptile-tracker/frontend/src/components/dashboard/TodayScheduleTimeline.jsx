@@ -395,7 +395,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                 <div
                   key={slot.id}
                   ref={isCurrentSlot ? currentSlotRef : null}
-                  className={`${isCurrentSlot ? 'ring-1 ring-primary/30 rounded-lg p-2 -m-2' : ''}`}
+                  className={`${isCurrentSlot ? 'ring-1 ring-inset ring-primary/30 rounded-lg p-2' : ''}`}
                 >
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
                     {slot.label}
