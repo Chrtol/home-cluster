@@ -7,6 +7,12 @@ import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } fro
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId } from '../utils/displaySettings';
 import ReptileAvatar from '../components/ReptileAvatar';
+import ReptileStatusCards from '../components/dashboard/ReptileStatusCards';
+import TodayScheduleTimeline from '../components/dashboard/TodayScheduleTimeline';
+import QuickLogForm from '../components/dashboard/QuickLogForm';
+import WeightTrendsWidget from '../components/dashboard/WeightTrendsWidget';
+import WeekSummaryWidget from '../components/dashboard/WeekSummaryWidget';
+import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -23,6 +29,7 @@ export default function Dashboard() {
   const [chartSettings, setChartSettings] = useState(null);
   const [hideSupplements, setHideSupplements] = useState(false); // Hide supplements when calendar is XS
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force data refresh
+  const [quickLogTask, setQuickLogTask] = useState(null); // Task for quick-log form (08-03)
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -988,16 +995,35 @@ export default function Dashboard() {
     return card?.size === 'xs';
   };
 
-  // Handle quick log task clicks (form rendering in 08-03)
+  // Handle quick log task clicks (opens QuickLogForm)
   const handleQuickLog = (task) => {
     setQuickLogTask(task);
-    // Plan 08-03 will render QuickLogForm based on quickLogTask state
-    console.log('Quick log task clicked:', task);
+  };
+
+  const handleQuickLogClose = () => {
+    setQuickLogTask(null);
+  };
+
+  const handleQuickLogSubmit = async () => {
+    // Refresh data after successful log
+    setRefreshTrigger(prev => prev + 1);
+    setQuickLogTask(null);
   };
 
   // Define all card rendering functions
   const renderCard = (cardId) => {
     switch (cardId) {
+      case 'today_timeline':
+        {
+          const card = dashboardCards.find(c => c.id === 'today_timeline');
+          return (
+            <TodayScheduleTimeline
+              config={card?.config || {}}
+              size={card?.size || 'small'}
+              onQuickLog={handleQuickLog}
+            />
+          );
+        }
       case 'reptile_status_cards':
         {
           const card = dashboardCards.find(c => c.id === 'reptile_status_cards');
@@ -1714,6 +1740,36 @@ export default function Dashboard() {
             </div>
           </div>
         );
+      case 'weight_trends':
+        {
+          const card = dashboardCards.find(c => c.id === 'weight_trends');
+          return (
+            <WeightTrendsWidget
+              config={card?.config || { timeRange: 90 }}
+              size={card?.size || 'small'}
+            />
+          );
+        }
+      case 'week_summary':
+        {
+          const card = dashboardCards.find(c => c.id === 'week_summary');
+          return (
+            <WeekSummaryWidget
+              config={card?.config || {}}
+              size={card?.size || 'small'}
+            />
+          );
+        }
+      case 'compact_recent_activity':
+        {
+          const card = dashboardCards.find(c => c.id === 'compact_recent_activity');
+          return (
+            <RecentActivityWidget
+              config={card?.config || { itemCount: 5 }}
+              size={card?.size || 'small'}
+            />
+          );
+        }
       default:
         return null;
     }
@@ -1877,6 +1933,15 @@ export default function Dashboard() {
           })
         }
       </div>
+
+      {/* QuickLogForm modal */}
+      {quickLogTask && (
+        <QuickLogForm
+          task={quickLogTask}
+          onClose={handleQuickLogClose}
+          onSubmit={handleQuickLogSubmit}
+        />
+      )}
     </div>
   );
 }
