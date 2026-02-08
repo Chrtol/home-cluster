@@ -2011,7 +2011,18 @@ export default function Dashboard() {
             if (!content) return null;
 
             return (
-              <div key={card.id} className={`${getCardSizeClass(card.id)}`}>
+              <div key={card.id} className={`${getCardSizeClass(card.id)} relative group`}>
+                {/* Edit mode hide button */}
+                {isEditMode && (
+                  <button
+                    onClick={() => handleHideWidget(card.id)}
+                    className="absolute top-2 right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-destructive/90"
+                    title="Hide widget"
+                    aria-label={`Hide ${card.id} widget`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
                 {content}
               </div>
             );
