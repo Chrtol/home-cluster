@@ -72,12 +72,15 @@ const ReptileStatusCard = ({
 
   const taskStatus = getTaskStatus();
 
-  // Status ring colors
-  const statusRingColors = {
-    done: 'ring-primary',
-    due: 'ring-amber-500',
-    overdue: 'ring-destructive',
-    none: 'ring-primary'
+  // Get custom border color or fall back to default
+  const customBorderColor = reptile.avatar_border_color || '#10b981'; // Default green
+
+  // Status ring colors - use custom color for normal states, task status colors for urgent states
+  const getRingColor = () => {
+    if (taskStatus === 'overdue') return 'ring-destructive';
+    if (taskStatus === 'due') return 'ring-amber-500';
+    // For done or none, use custom border color
+    return null; // Will use inline style instead
   };
 
   // Status dot colors
@@ -192,10 +195,14 @@ const ReptileStatusCard = ({
             onClick={handleNameClick}
             className={cn(
               'rounded-xl overflow-hidden cursor-pointer transition-all',
-              statusRingColors[taskStatus],
-              'ring-2 hover:ring-primary',
+              getRingColor() || '', // Use task status ring color for urgent states
+              getRingColor() ? 'ring-2' : '', // Only apply ring-2 if using class-based color
+              'hover:ring-primary hover:ring-2',
               isCompact && !isExpanded ? 'w-12 h-12' : 'w-16 h-16'
             )}
+            style={!getRingColor() ? {
+              boxShadow: `0 0 0 2px ${customBorderColor}` // Use custom color when not urgent
+            } : undefined}
           >
             {reptile.avatar_photo_url ? (
               <img
