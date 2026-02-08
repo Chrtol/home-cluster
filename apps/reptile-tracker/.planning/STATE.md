@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | COMPLETE (8/8 plans) |
+| Phase Status | COMPLETE (10/10 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 8 - Complete
@@ -37,16 +37,18 @@ Phase 8 (Dashboard):
 08-06: Complete (gap closure - timeline & keyboard shortcuts)
 08-07: Complete (gap closure - Header & edit mode integration)
 08-08: Complete (gap closure - visual polish)
+08-09: Complete (gap closure - profile switching & widget gallery)
+08-10: Complete (gap closure - widget persistence & clickable avatars)
 ```
 
 Progress bar:
 ```
-Phase 7:  [========] 3/3
-Phase 8:  [========] 8/8
-Phase 9:  [        ] 0/?
-Phase 10: [        ] 0/?
-Phase 11: [        ] 0/?
-Phase 12: [        ] 0/?
+Phase 7:  [==========] 3/3
+Phase 8:  [==========] 10/10
+Phase 9:  [          ] 0/?
+Phase 10: [          ] 0/?
+Phase 11: [          ] 0/?
+Phase 12: [          ] 0/?
 ```
 
 ## Milestone Scope
@@ -60,7 +62,7 @@ Phase 12: [        ] 0/?
 **Phases:**
 ```
 Phase 7:  Foundation      Complete (3/3 plans)
-Phase 8:  Dashboard       Complete (8/8 plans)
+Phase 8:  Dashboard       Complete (10/10 plans)
 Phase 9:  Reptile Pages   Not started
 Phase 10: Calendar/Stats  Not started
 Phase 11: Forms/Tables    Not started
@@ -97,6 +99,8 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-08 | Case-insensitive keyboard shortcuts | Use e.key.toLowerCase() for reliable shortcut matching across platforms |
 | 2026-02-08 | Sparkline height 32px | Increased from 16px for visible weight trend curves |
 | 2026-02-08 | auto-rows-min grid pattern | Prevents empty grid gaps when reptile count doesn't fill rows |
+| 2026-02-08 | Profile-aware widget persistence | Widget visibility changes save to active profile (desktop vs mobile) |
+| 2026-02-08 | Clickable reptile avatars | Both avatar and name navigate to reptile detail page |
 
 ## Reference Documents
 
@@ -116,11 +120,13 @@ Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T19:49:00Z
+**Last session:** 2026-02-08T21:14:20Z
 **Stopped at:** Phase 8 complete
-**Resume file:** `.planning/phases/08-dashboard/08-08-SUMMARY.md`
+**Resume file:** `.planning/phases/08-dashboard/08-10-SUMMARY.md`
 
 **Recent activity:**
+- 08-10: Gap closure - widget persistence & clickable avatars (complete) - Profile-aware customization, clickable reptile avatars
+- 08-09: Gap closure - profile switching & widget gallery (complete) - Profile management UI, widget gallery improvements
 - 08-08: Gap closure - visual polish (complete) - Taller sparklines (32px), alternating row colors, auto-rows-min grid
 - 08-07: Gap closure - Header & edit mode integration (complete) - Header now renders on Dashboard with greeting/stats, EditModeControls accessible via Customize button, WidgetGallery opens from floating + button
 - 08-06: Gap closure - timeline & keyboard shortcuts (complete) - Fixed time slot grouping for time-only strings, Ctrl+K shortcut on Windows
@@ -131,7 +137,7 @@ Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 - 08-01: Navigation foundation (complete) - compact sidebar, Header component, keyboard shortcuts
 - Phase 7: All 3 plans complete (shadcn/ui, components, date pickers)
 
-**Phase 8 status:** COMPLETE - All 8 plans executed successfully
+**Phase 8 status:** COMPLETE - All 10 plans executed successfully
 
 ---
-*State updated: 2026-02-08 - Phase 8 complete*
+*State updated: 2026-02-08T21:14:20Z - Phase 8 complete*
