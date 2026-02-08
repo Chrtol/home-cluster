@@ -39,7 +39,7 @@ const ReptileAvatar = ({
 
   return (
     <div
-      className={`${sizeClass} rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 ${className}`}
+      className={`${sizeClass} rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 ${className}`}
       style={{
         boxShadow: `0 0 0 2px ${borderColor}`
       }}
