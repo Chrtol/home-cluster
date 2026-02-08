@@ -118,7 +118,23 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
   // Time slot helper
   const getTimeSlot = (time) => {
-    const hour = new Date(time).getHours();
+    if (!time) return { id: 'morning', label: '07:00 - 11:59', order: 1 };
+
+    let hour;
+
+    // Handle time-only strings (HH:MM or HH:MM:SS)
+    if (typeof time === 'string' && /^\d{2}:\d{2}/.test(time)) {
+      hour = parseInt(time.substring(0, 2), 10);
+    } else {
+      // Handle full datetime strings
+      const date = new Date(time);
+      if (isNaN(date.getTime())) {
+        // Fallback if parsing fails
+        return { id: 'morning', label: '07:00 - 11:59', order: 1 };
+      }
+      hour = date.getHours();
+    }
+
     if (hour < 7) return { id: 'night', label: '00:00 - 06:59', order: 0 };
     if (hour < 12) return { id: 'morning', label: '07:00 - 11:59', order: 1 };
     if (hour < 18) return { id: 'afternoon', label: '12:00 - 17:59', order: 2 };
