@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
@@ -13,6 +13,7 @@ import QuickLogForm from '../components/dashboard/QuickLogForm';
 import WeightTrendsWidget from '../components/dashboard/WeightTrendsWidget';
 import WeekSummaryWidget from '../components/dashboard/WeekSummaryWidget';
 import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
+import Header from '../components/Header';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [hideSupplements, setHideSupplements] = useState(false); // Hide supplements when calendar is XS
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force data refresh
   const [quickLogTask, setQuickLogTask] = useState(null); // Task for quick-log form (08-03)
+  const [user, setUser] = useState(null); // User for Header greeting
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -73,6 +75,19 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem('dashboard_calendar_view', calendarView);
   }, [calendarView]);
+
+  // Fetch user for Header greeting
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get('/auth/me');
+        setUser(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   // Navigation functions for calendar
   const navigateCalendar = (direction) => {
@@ -989,6 +1004,13 @@ export default function Dashboard() {
     return { due, overdue, completed };
   })();
 
+  // Compute today stats for Header - maps to Header's expected format
+  const todayStats = useMemo(() => ({
+    done: todayScheduleStats.completed,
+    due: todayScheduleStats.due,
+    overdue: todayScheduleStats.overdue
+  }), [todayScheduleStats.completed, todayScheduleStats.due, todayScheduleStats.overdue]);
+
   // Helper to check if a card is XS sized
   const isCardXS = (cardId) => {
     const card = dashboardCards.find(c => c.id === cardId);
@@ -1777,9 +1799,8 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
-      </div>
+      {/* Header with greeting and quick stats */}
+      <Header user={user} todayStats={todayStats} />
 
       {/* Day Events Modal */}
       {selectedDate && (
