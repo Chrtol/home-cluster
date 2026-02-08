@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | In Progress (1/3 plans complete) |
+| Phase Status | In Progress (2/3 plans complete) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 8 - In Progress
@@ -30,7 +30,7 @@ Phase 7 (Foundation):
 
 Phase 8 (Dashboard):
 08-01: █ Complete (navigation foundation)
-08-02: ░ Not started
+08-02: █ Complete (reptile status cards)
 08-03: ░ Not started
 ```
 
@@ -45,7 +45,7 @@ Phase 8 (Dashboard):
 **Phases:**
 ```
 Phase 7:  Foundation      █ Complete (3/3 plans)
-Phase 8:  Dashboard       ◐ In Progress (1/3 plans complete)
+Phase 8:  Dashboard       ◑ In Progress (2/3 plans complete)
 Phase 9:  Reptile Pages   ○ Not started
 Phase 10: Calendar/Stats  ○ Not started
 Phase 11: Forms/Tables    ○ Not started
@@ -68,6 +68,8 @@ Phase 12: Polish/Mobile   ○ Not started
 | 2026-02-08 | Sidebar collapse state persisted | Store in localStorage for consistent UX across sessions |
 | 2026-02-08 | Header component receives stats from Dashboard | Not rendered globally; Dashboard-specific with todayStats prop |
 | 2026-02-08 | Keyboard shortcuts in Layout | Cmd/Ctrl+K for Track menu, Escape to close, global document listener |
+| 2026-02-08 | Hardcoded compact threshold = 6 | Auto-compact mode triggers at 6+ reptiles, not user-configurable (implementation detail) |
+| 2026-02-08 | Drag-to-reorder desktop only | Touch gestures complex, desktop drag simpler with localStorage persistence |
 
 ## Reference Documents
 
@@ -79,25 +81,26 @@ Phase 12: Polish/Mobile   ○ Not started
 
 ## Next Steps
 
-Continue Phase 8 (Dashboard) with remaining plans:
+Continue Phase 8 (Dashboard) with remaining plan:
 
 ```
-/gsd:execute-phase 8 --plan 02
+/gsd:execute-phase 8 --plan 03
 ```
 
-This will implement dashboard content (reptile cards, today's schedule, etc.)
+This will implement quick log form for task completion from status cards.
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T15:19:05Z
-**Stopped at:** Phase 8, Plan 1 complete
-**Resume file:** `.planning/phases/08-dashboard/08-01-SUMMARY.md`
+**Last session:** 2026-02-08T15:23:00Z
+**Stopped at:** Phase 8, Plan 2 complete
+**Resume file:** `.planning/phases/08-dashboard/08-02-SUMMARY.md`
 
 **Recent activity:**
+- 08-02: Reptile status cards (complete) - TaskChip, ReptileStatusCard, ReptileStatusCards widget with auto-compact
 - 08-01: Navigation foundation (complete) - compact sidebar, Header component, keyboard shortcuts
 - Phase 7: All 3 plans complete (shadcn/ui, components, date pickers)
 
-**Phase 8 status:** 1 of 3 plans complete - navigation ready, dashboard content next
+**Phase 8 status:** 2 of 3 plans complete - navigation and status cards ready, quick log form next
 
 ---
-*State updated: 2026-02-08 - Phase 8 Plan 1 complete*
+*State updated: 2026-02-08 - Phase 8 Plan 2 complete*
