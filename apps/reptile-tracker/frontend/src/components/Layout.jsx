@@ -33,14 +33,15 @@ export default function Layout({ user, onLogout }) {
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Don't trigger shortcuts when typing in input/textarea
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      // Don't trigger shortcuts when typing in input/textarea/contenteditable
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return
       }
 
       // Cmd+K (Mac) or Ctrl+K (Windows/Linux) - Toggle Track menu
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
+        e.stopPropagation()
         setTrackMenuOpen(prev => !prev)
       }
 
