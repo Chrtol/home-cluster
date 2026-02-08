@@ -1,0 +1,215 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { X, ExternalLink } from 'lucide-react';
+
+/**
+ * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
+ *
+ * Displays auto-filled data from schedule instance and provides minimal input
+ * for quick task completion. Offers option to open full form for detailed logging.
+ *
+ * Props:
+ * - task: Schedule instance object with auto-fill data (from ReptileStatusCards or Timeline)
+ * - onClose: Handler to close the form
+ * - onSubmit: Handler for successful submission (triggers widget refresh)
+ * - onOpenFull: Handler to navigate to full log view with scheduleId
+ */
+const QuickLogForm = ({ task, onClose, onSubmit }) => {
+  const navigate = useNavigate();
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  // Determine task type for navigation
+  const getFullFormPath = () => {
+    if (!task) return '/';
+
+    const scheduleType = task.schedule_type || task.type;
+
+    if (scheduleType === 'feeding') {
+      return `/feeding?instance_id=${task.instance_id || task.id}`;
+    } else if (scheduleType === 'misting') {
+      return `/misting?instance_id=${task.instance_id || task.id}`;
+    } else if (scheduleType === 'health') {
+      return `/health-log?instance_id=${task.instance_id || task.id}`;
+    }
+
+    return '/';
+  };
+
+  const handleOpenFull = () => {
+    navigate(getFullFormPath());
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!task) return;
+
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const instanceId = task.instance_id || task.id;
+      const scheduleType = task.schedule_type || task.type;
+
+      // Determine the correct API endpoint based on task type
+      let endpoint = '';
+      let payload = {
+        notes: notes.trim() || undefined,
+        completed_at: new Date().toISOString()
+      };
+
+      if (scheduleType === 'feeding') {
+        endpoint = `/api/schedule-instances/${instanceId}/complete-feeding`;
+
+        // Include auto-filled data from schedule
+        if (task.food_category) {
+          payload.food_category = task.food_category;
+        }
+        if (task.supplements && task.supplements.length > 0) {
+          payload.supplements = task.supplements;
+        }
+      } else if (scheduleType === 'misting') {
+        endpoint = `/api/schedule-instances/${instanceId}/complete-misting`;
+      } else if (scheduleType === 'health') {
+        endpoint = `/api/schedule-instances/${instanceId}/complete-health`;
+      } else {
+        // Generic completion for other task types
+        endpoint = `/api/schedule-instances/${instanceId}/complete`;
+      }
+
+      await axios.post(endpoint, payload);
+
+      // Call success handler to refresh widgets
+      if (onSubmit) {
+        await onSubmit();
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Failed to log task:', err);
+      setError(err.response?.data?.message || 'Failed to log task. Please try again.');
+      setSubmitting(false);
+    }
+  };
+
+  if (!task) return null;
+
+  const scheduleType = task.schedule_type || task.type || 'task';
+  const reptileName = task.reptile_name || task.name || 'Unknown';
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-surface-700 rounded-lg shadow-xl max-w-md w-full animate-in fade-in duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-surface-600">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Quick Log</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {reptileName} • {scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          {/* Auto-filled data display */}
+          {(task.food_category || (task.supplements && task.supplements.length > 0)) && (
+            <div className="bg-surface-800 rounded p-2 space-y-1">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Auto-filled from schedule</p>
+
+              {task.food_category && (
+                <div className="text-xs text-gray-300">
+                  <span className="text-gray-500">Food:</span> {task.food_category.charAt(0).toUpperCase() + task.food_category.slice(1)}
+                </div>
+              )}
+
+              {task.supplements && task.supplements.length > 0 && (
+                <div className="text-xs text-gray-300">
+                  <span className="text-gray-500">Supplements:</span> {task.supplements.join(', ')}
+                </div>
+              )}
+
+              {task.time_window && (
+                <div className="text-xs text-gray-300">
+                  <span className="text-gray-500">Time:</span> {task.time_window}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notes input */}
+          <div>
+            <label htmlFor="quick-notes" className="block text-xs font-medium text-gray-300 mb-1">
+              Notes (optional)
+            </label>
+            <textarea
+              id="quick-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any quick notes..."
+              rows={2}
+              className="w-full px-2 py-1.5 bg-surface-800 border border-surface-600 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+            />
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="text-xs text-red-400 bg-red-500/10 rounded p-2">
+              {error}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              onClick={handleOpenFull}
+              className="text-xs text-primary hover:text-primary-light flex items-center gap-1 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Open full form
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-primary hover:bg-primary-light rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Logging...' : 'Log Task'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default QuickLogForm;
