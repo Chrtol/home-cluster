@@ -330,31 +330,29 @@ export default function Layout({ user, onLogout }) {
                   </button>
                 </>
               ) : (
-                <>
-                  <div className="flex items-center gap-2 px-2 py-1.5 min-w-0">
-                    <div className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary">
-                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                      <p className="text-xs font-medium text-foreground truncate max-w-full">
-                        {user?.name || 'User'}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-2 px-2 py-1.5 min-w-0">
+                  <div className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span className="text-xs font-medium text-primary">
+                      {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                    <p className="text-xs font-medium text-foreground truncate max-w-full">
+                      {user?.name || 'User'}
+                    </p>
                   </div>
                   <Link
                     to="/settings"
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                    className={`p-1 rounded-lg transition-colors ${
                       location.pathname === '/settings'
-                        ? 'bg-primary/20 text-primary-400'
-                        : 'text-muted-foreground hover:bg-secondary'
+                        ? 'text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                     }`}
+                    title="Settings"
                   >
                     <Settings size={16} />
-                    <span className="font-medium">Settings</span>
                   </Link>
-                </>
+                </div>
               )}
             </div>
           </div>
