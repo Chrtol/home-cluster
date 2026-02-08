@@ -18,10 +18,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | COMPLETE (11/11 plans) |
+| Phase Status | GAP CLOSURE R3 (11/14 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 8 - Complete
+Progress: Phase 8 - Gap Closure Round 3
 ```
 Phase 7 (Foundation):
 07-01: Complete (shadcn/ui foundation)
@@ -40,12 +40,15 @@ Phase 8 (Dashboard):
 08-09: Complete (gap closure R2 - avatar shape, header layout, grid gaps)
 08-10: Complete (gap closure R2 - persistence, avatar clickable)
 08-11: Complete (gap closure R2 - QuickLog food selector, time picker)
+08-12: Pending (gap closure R3 - bug fixes: time ranges, avatars, locale, supplements)
+08-13: Pending (gap closure R3 - visual: grid gap, timeline avatars, border color)
+08-14: Pending (gap closure R3 - functional: quantity +/-, task icons, customize)
 ```
 
 Progress bar:
 ```
 Phase 7:  [========] 3/3
-Phase 8:  [========] 11/11
+Phase 8:  [========░░] 11/14
 Phase 9:  [        ] 0/?
 Phase 10: [        ] 0/?
 Phase 11: [        ] 0/?

@@ -44,15 +44,15 @@ Plans:
 
 ---
 
-## Phase 8: Dashboard Complete
+## Phase 8: Dashboard In Progress (Gap Closure Round 3)
 
 **Goal:** Transform dashboard into single pane of glass showing all reptile statuses at a glance
 
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, NAV-01, NAV-02
 
-**Status:** Complete (2026-02-08)
-**Plans:** 11/11 complete
-**Verification:** 43/43 must-haves verified. See 08-VERIFICATION.md.
+**Status:** Gap closure round 3 in progress
+**Plans:** 14 (11 complete, 3 gap closure pending)
+**Verification:** See 08-UAT-round3.md for issues found.
 
 Plans:
 - [x] 08-01-PLAN.md -- Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
@@ -66,6 +66,9 @@ Plans:
 - [x] 08-09-PLAN.md -- GAP CLOSURE R2: Visual fixes (avatar shape, header layout, grid gaps, timeline compact, widget avatars)
 - [x] 08-10-PLAN.md -- GAP CLOSURE R2: Persistence and navigation (Customize saves to profile, avatar clickable)
 - [x] 08-11-PLAN.md -- GAP CLOSURE R2: QuickLog enhancements (food selector, time picker, full form navigation)
+- [ ] 08-12-PLAN.md -- GAP CLOSURE R3: Bug fixes (time ranges, avatar data, locale, supplements serialization)
+- [ ] 08-13-PLAN.md -- GAP CLOSURE R3: Visual fixes (grid gap, timeline avatars, border color, now highlight)
+- [ ] 08-14-PLAN.md -- GAP CLOSURE R3: Functional (quantity +/-, task type icons, customize hide/reorder)
 
 **Deliverables:**
 - [x] Compact sidebar matching mockup
@@ -78,19 +81,23 @@ Plans:
 - [x] Header with greeting and quick stats
 - [x] Edit mode with widget gallery
 - [x] Working quick-log flow with food selection and time picker
+- [ ] Time ranges in timeline
+- [ ] Task type icons (feeding/misting/health)
+- [ ] Customize mode with hide and reorder
 
-**Gap Closure Round 2 (Plans 09-11):**
-- [x] Avatars as rounded squares (rounded-xl), not circles
-- [x] Header edge-to-edge, not centered
-- [x] No gap between status cards and bottom widgets
-- [x] Today timeline compact like mockup
-- [x] Avatars in Recent Activity and Weight Trends widgets
-- [x] Notification dropdown opens within viewport
-- [x] Customize persistence to active profile
-- [x] Avatar click navigates to detail page
-- [x] QuickLog food selector with favorites
-- [x] QuickLog time picker
-- [x] "Open full form" navigation fix
+**Gap Closure Round 3 (Plans 12-14):**
+- [ ] Time ranges display (HH:MM - HH:MM)
+- [ ] All Recent Activity rows show avatars
+- [ ] Date/time respects user locale (24H, DD/MM/YYYY)
+- [ ] Supplements tooltip shows names not [object Object]
+- [ ] Grid gap fixed between sections
+- [ ] Timeline avatars rounded-xl
+- [ ] Reptile custom border color respected
+- [ ] Now highlight contained in card
+- [ ] Quantity +/- buttons in quick log
+- [ ] Task type icons on chips
+- [ ] Customize: hide widgets via X
+- [ ] Customize: reorder widgets via drag
 
 **Success:** Dashboard shows all reptile statuses at a glance, all features work correctly, matches mockup
 
