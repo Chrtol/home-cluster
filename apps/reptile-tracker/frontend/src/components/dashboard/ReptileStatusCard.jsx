@@ -74,24 +74,24 @@ const ReptileStatusCard = ({
 
   // Status ring colors
   const statusRingColors = {
-    done: 'ring-accent-600',
-    due: 'ring-status-due',
-    overdue: 'ring-status-overdue',
-    none: 'ring-accent-600'
+    done: 'ring-primary',
+    due: 'ring-amber-500',
+    overdue: 'ring-destructive',
+    none: 'ring-primary'
   };
 
   // Status dot colors
   const statusDotColors = {
-    done: 'bg-accent-500',
-    due: 'bg-status-due',
-    overdue: 'bg-status-overdue',
-    none: 'bg-accent-500'
+    done: 'bg-primary',
+    due: 'bg-amber-500',
+    overdue: 'bg-destructive',
+    none: 'bg-primary'
   };
 
   // Border styling per user decision
   const getBorderClass = () => {
-    if (taskStatus === 'overdue') return 'border-status-due';
-    return 'border-surface-600/50 hover:border-accent-700/50';
+    if (taskStatus === 'overdue') return 'border-destructive';
+    return 'border-border hover:border-primary/50';
   };
 
   // Calculate last fed display
@@ -107,9 +107,9 @@ const ReptileStatusCard = ({
   const getWeightTrendIcon = () => {
     if (!lastWeight || !lastWeight.change) return null;
     const change = parseFloat(lastWeight.change);
-    if (change > 0) return <TrendingUp className="w-3 h-3 text-accent-400" />;
-    if (change < 0) return <TrendingDown className="w-3 h-3 text-status-overdue" />;
-    return <Minus className="w-3 h-3 text-gray-400" />;
+    if (change > 0) return <TrendingUp className="w-3 h-3 text-primary" />;
+    if (change < 0) return <TrendingDown className="w-3 h-3 text-destructive" />;
+    return <Minus className="w-3 h-3 text-muted-foreground" />;
   };
 
   // Navigate to reptile detail page
@@ -171,7 +171,7 @@ const ReptileStatusCard = ({
   return (
     <div
       className={cn(
-        'bg-surface-800 rounded-xl border p-3 transition-all',
+        'bg-card rounded-xl border p-3 transition-all',
         getBorderClass(),
         isDragging && 'opacity-50',
         isCompact && !isExpanded && 'cursor-pointer',
@@ -202,7 +202,7 @@ const ReptileStatusCard = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-accent-700 to-accent-900 flex items-center justify-center text-2xl">
+              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-2xl">
                 {getSpeciesEmoji(reptile.species)}
               </div>
             )}
@@ -210,7 +210,7 @@ const ReptileStatusCard = ({
           {/* Status dot */}
           <span
             className={cn(
-              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-surface-800',
+              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card',
               statusDotColors[taskStatus]
             )}
           />
@@ -221,7 +221,7 @@ const ReptileStatusCard = ({
           <div className="flex items-center justify-between mb-1">
             <h3
               className={cn(
-                'font-semibold text-white group-hover:text-accent-400 cursor-pointer transition-colors',
+                'font-semibold text-foreground group-hover:text-primary cursor-pointer transition-colors',
                 isCompact && !isExpanded ? 'text-sm' : 'text-base'
               )}
               onClick={handleNameClick}
@@ -229,7 +229,7 @@ const ReptileStatusCard = ({
               {reptile.name}
             </h3>
             {showFull && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {calculateAge(reptile.date_of_birth || reptile.hatch_date)}
               </span>
             )}
@@ -237,18 +237,18 @@ const ReptileStatusCard = ({
 
           {showFull && (
             <>
-              <p className="text-xs text-gray-400 mb-2">{reptile.species}</p>
+              <p className="text-xs text-muted-foreground mb-2">{reptile.species}</p>
 
               {/* Quick stats row */}
               <div className="flex items-center gap-3 text-xs">
                 <div className="flex items-center gap-1">
-                  <span className={lastFed ? 'text-accent-400' : 'text-gray-500'}>🍽️</span>
-                  <span className="text-gray-400">{getLastFedDisplay()}</span>
+                  <span className={lastFed ? 'text-primary' : 'text-muted-foreground'}>🍽️</span>
+                  <span className="text-muted-foreground">{getLastFedDisplay()}</span>
                 </div>
                 {lastWeight && (
                   <div className="flex items-center gap-1">
-                    <span className="text-earth-amber">⚖️</span>
-                    <span className="text-gray-400">{lastWeight.weight}g</span>
+                    <span className="text-amber-500">⚖️</span>
+                    <span className="text-muted-foreground">{lastWeight.weight}g</span>
                     {getWeightTrendIcon()}
                   </div>
                 )}
@@ -260,7 +260,7 @@ const ReptileStatusCard = ({
 
       {/* Today's tasks section - only in full view */}
       {showFull && (
-        <div className="mt-3 pt-3 border-t border-surface-600/50">
+        <div className="mt-3 pt-3 border-t border-border">
           {todayTasks && todayTasks.length > 0 ? (
             <div className="flex items-center gap-2 text-xs flex-wrap">
               {todayTasks.slice(0, 3).map((task, idx) => (
@@ -271,13 +271,13 @@ const ReptileStatusCard = ({
                 />
               ))}
               {todayTasks.length > 3 && (
-                <span className="text-gray-500 italic">
+                <span className="text-muted-foreground italic">
                   +{todayTasks.length - 3} more
                 </span>
               )}
             </div>
           ) : (
-            <span className="text-gray-500 italic text-xs">No tasks today</span>
+            <span className="text-muted-foreground italic text-xs">No tasks today</span>
           )}
         </div>
       )}

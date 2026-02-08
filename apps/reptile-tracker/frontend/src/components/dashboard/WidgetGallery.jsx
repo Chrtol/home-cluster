@@ -23,62 +23,62 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
     today_summary: {
       icon: Clock,
       description: 'Quick overview of today\'s tasks',
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-blue-500'
     },
     today_timeline: {
       icon: Clock,
       description: 'Timeline view of today\'s schedule',
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-blue-500'
     },
     weekly_calendar: {
       icon: Calendar,
       description: 'Week view of scheduled tasks',
-      color: 'text-purple-600 dark:text-purple-400'
+      color: 'text-purple-500'
     },
     weight_chart: {
       icon: TrendingUp,
       description: 'Weight tracking chart over time',
-      color: 'text-green-600 dark:text-green-400'
+      color: 'text-primary'
     },
     weight_trends: {
       icon: Scale,
       description: 'Compact weight trends with sparklines',
-      color: 'text-green-600 dark:text-green-400'
+      color: 'text-primary'
     },
     reptile_cards: {
       icon: Activity,
       description: 'Status cards for each reptile',
-      color: 'text-orange-600 dark:text-orange-400'
+      color: 'text-amber-500'
     },
     recent_activity: {
       icon: Activity,
       description: 'Recent feedings, mistings, and events',
-      color: 'text-gray-600 dark:text-gray-400'
+      color: 'text-muted-foreground'
     },
     compact_recent_activity: {
       icon: Activity,
       description: 'Compact recent activity list',
-      color: 'text-gray-600 dark:text-gray-400'
+      color: 'text-muted-foreground'
     },
     week_summary: {
       icon: Droplets,
       description: 'This week\'s stats at a glance',
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-blue-500'
     },
     weekly_summary: {
       icon: Calendar,
       description: 'Weekly summary statistics',
-      color: 'text-purple-600 dark:text-purple-400'
+      color: 'text-purple-500'
     },
     health_summary: {
       icon: Activity,
       description: 'Health events summary',
-      color: 'text-red-600 dark:text-red-400'
+      color: 'text-destructive'
     },
     schedule_summary: {
       icon: Clock,
       description: 'Schedule summary',
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-blue-500'
     }
   };
 
@@ -108,7 +108,7 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
             <h2 className="text-lg font-bold text-foreground">Add Widget</h2>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-surface-700/50 transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
               title="Close"
             >
               <X size={20} />
@@ -122,7 +122,7 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
                 const metadata = widgetMetadata[widget.id] || {
                   icon: Activity,
                   description: 'Widget description',
-                  color: 'text-gray-600 dark:text-gray-400'
+                  color: 'text-muted-foreground'
                 };
                 const Icon = metadata.icon;
                 const isVisible = widget.visible;
@@ -136,8 +136,8 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
                     transition={{ duration: 0.2 }}
                     className={`relative p-4 rounded-lg border-2 transition-all ${
                       isVisible
-                        ? 'border-accent-400 bg-accent-400/10'
-                        : 'border-border bg-surface-700/30 hover:border-accent-400/50 hover:bg-surface-700/50'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50'
                     }`}
                   >
                     {/* Icon */}
@@ -155,14 +155,14 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
 
                     {/* Action button */}
                     {isVisible ? (
-                      <div className="flex items-center gap-2 text-xs text-accent-400 font-medium">
+                      <div className="flex items-center gap-2 text-xs text-primary font-medium">
                         <Check size={14} />
                         Active
                       </div>
                     ) : (
                       <button
                         onClick={() => handleAddWidget(widget.id)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-accent-400 text-white hover:bg-accent-500 transition-colors font-medium"
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
                       >
                         <Plus size={14} />
                         Add Widget

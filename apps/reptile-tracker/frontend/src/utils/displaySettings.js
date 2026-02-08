@@ -25,7 +25,7 @@ const DEFAULT_DASHBOARD_CARDS = [
   // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
   { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
   { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'xs', type: 'content', config: { timeRange: 90 } },
-  { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'xs', type: 'content' },
+  { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
   // Legacy widgets (hidden by default in v1.1)
   { id: 'today_summary', label: 'Today Summary', visible: false, order: 5, size: 'large', type: 'summary' },
   { id: 'weekly_calendar', label: 'Weekly Calendar', visible: false, order: 6, size: 'large', type: 'content' },
@@ -446,7 +446,7 @@ export function getDisplayProfiles() {
         // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
         { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
         { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'xs', type: 'content', config: { timeRange: 90 } },
-        { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'xs', type: 'content' },
+        { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -466,7 +466,7 @@ export function getDisplayProfiles() {
         // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
         { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 3 } },
         { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'xs', type: 'content', config: { timeRange: 90 } },
-        { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'xs', type: 'content' },
+        { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -518,7 +518,7 @@ export function getDisplayProfiles() {
           // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
           { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
           { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'xs', type: 'content', config: { timeRange: 90 } },
-          { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'xs', type: 'content' },
+          { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,
@@ -541,7 +541,7 @@ export function getDisplayProfiles() {
           // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
           { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 3 } },
           { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'xs', type: 'content', config: { timeRange: 90 } },
-          { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'xs', type: 'content' },
+          { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,

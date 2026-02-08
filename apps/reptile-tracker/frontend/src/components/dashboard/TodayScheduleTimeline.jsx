@@ -175,10 +175,10 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'done': return 'border-green-500';
-      case 'overdue': return 'border-red-500';
+      case 'done': return 'border-primary';
+      case 'overdue': return 'border-destructive';
       case 'due': return 'border-amber-500';
-      default: return 'border-surface-600';
+      default: return 'border-border';
     }
   };
 
@@ -228,8 +228,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
   if (loading) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+      <div className="bg-card rounded-xl border border-border p-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           Loading schedule...
         </div>
@@ -239,31 +239,31 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
   if (error) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
-        <p className="text-sm text-red-400">{error}</p>
+      <div className="bg-card rounded-xl border border-border p-3">
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     );
   }
 
   if (schedules.length === 0) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+      <div className="bg-card rounded-xl border border-border p-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-white">Today</h2>
-          <span className="text-xs text-gray-500">0 tasks</span>
+          <h2 className="text-sm font-semibold text-foreground">Today</h2>
+          <span className="text-xs text-muted-foreground">0 tasks</span>
         </div>
-        <p className="text-sm text-gray-400">No scheduled tasks for today</p>
+        <p className="text-sm text-muted-foreground">No scheduled tasks for today</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface-800 rounded-xl border border-surface-600/50 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Header with task count */}
-      <div className="p-3 border-b border-surface-600/50">
+      <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-white">Today</h2>
-          <span className="text-xs text-gray-500">{schedules.length} tasks</span>
+          <h2 className="text-sm font-semibold text-foreground">Today</h2>
+          <span className="text-xs text-muted-foreground">{schedules.length} tasks</span>
         </div>
 
         {/* Filter buttons */}
@@ -274,8 +274,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
               onClick={() => toggleFilter(filterType)}
               className={`px-2 py-0.5 text-xs font-medium rounded transition-colors ${
                 activeFilters.includes(filterType)
-                  ? 'bg-primary text-white'
-                  : 'bg-surface-700 text-gray-400 hover:text-gray-300'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
               {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
@@ -287,11 +287,11 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
       {/* All done state */}
       {allDone && (
         <div className="p-4 text-center">
-          <div className="inline-flex items-center gap-2 text-green-400 mb-2">
+          <div className="inline-flex items-center gap-2 text-primary mb-2">
             <CheckCircle className="w-5 h-5" />
             <span className="text-sm font-semibold">All done for today!</span>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Great job taking care of your reptiles 🎉
           </p>
         </div>
@@ -302,10 +302,10 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
         <div className="max-h-96 overflow-y-auto">
           {/* Completed tasks section */}
           {showCompletedSection && completedSchedules.length > 0 && (
-            <div className="border-b border-surface-700">
+            <div className="border-b border-border">
               <button
                 onClick={() => toggleGroupExpansion('completed')}
-                className="w-full px-3 py-2 flex items-center justify-between text-xs text-gray-400 hover:text-gray-300 hover:bg-surface-700/50 transition-colors"
+                className="w-full px-3 py-2 flex items-center justify-between text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
                 <span>{completedSchedules.length} completed</span>
                 {expandedGroups.has('completed') ? (
@@ -328,10 +328,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                         onMouseEnter={() => handleMouseEnter(schedule)}
                         onMouseLeave={handleMouseLeave}
                       >
-                        {/* Scheduled time display */}
+                        {/* Scheduled time display - show raw time if it's HH:MM format */}
                         {schedule.scheduled_time && (
-                          <div className="text-[10px] text-gray-500 mb-0.5">
-                            {formatTime(schedule.scheduled_time)}
+                          <div className="text-[10px] text-muted-foreground mb-0.5">
+                            {typeof schedule.scheduled_time === 'string' && schedule.scheduled_time.match(/^\d{2}:\d{2}/)
+                              ? schedule.scheduled_time.slice(0, 5)
+                              : formatTime(schedule.scheduled_time)}
                           </div>
                         )}
                         <div className="flex items-center gap-2">
@@ -340,11 +342,11 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                             size="sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs text-gray-300 truncate">
+                            <div className="text-xs text-foreground truncate">
                               {schedule.reptile_name} - {scheduleType}
                             </div>
                           </div>
-                          <span className="text-green-500">✓</span>
+                          <span className="text-primary">✓</span>
                         </div>
                       </div>
                     );
@@ -365,7 +367,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                   ref={isCurrentSlot ? currentSlotRef : null}
                   className={`${isCurrentSlot ? 'ring-1 ring-primary/30 rounded-lg p-2 -m-2' : ''}`}
                 >
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1.5">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
                     {slot.label}
                     {isCurrentSlot && <span className="ml-1 text-primary">(now)</span>}
                   </div>
@@ -382,10 +384,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                           onMouseEnter={() => handleMouseEnter(schedule)}
                           onMouseLeave={handleMouseLeave}
                         >
-                          {/* Scheduled time display */}
+                          {/* Scheduled time display - show raw time if it's HH:MM format */}
                           {schedule.scheduled_time && (
-                            <div className="text-[10px] text-gray-500 mb-0.5">
-                              {formatTime(schedule.scheduled_time)}
+                            <div className="text-[10px] text-muted-foreground mb-0.5">
+                              {typeof schedule.scheduled_time === 'string' && schedule.scheduled_time.match(/^\d{2}:\d{2}/)
+                                ? schedule.scheduled_time.slice(0, 5)
+                                : formatTime(schedule.scheduled_time)}
                             </div>
                           )}
                           <div className="flex items-center gap-2">
@@ -394,13 +398,13 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                               size="sm"
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs text-gray-300 truncate">
+                              <div className="text-xs text-foreground truncate">
                                 {schedule.reptile_name} - {scheduleType}
                               </div>
                             </div>
                             <button
                               onClick={() => handleLogClick(schedule)}
-                              className="ml-auto text-xs px-1.5 py-0.5 rounded bg-accent-600 hover:bg-accent-500 text-white"
+                              className="ml-auto text-xs px-1.5 py-0.5 rounded bg-primary hover:bg-primary/90 text-primary-foreground"
                             >
                               Log
                             </button>
@@ -408,23 +412,23 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
                           {/* Hover tooltip */}
                           {hoveredTask?.id === schedule.id && (
-                            <div className="absolute left-0 top-full mt-1 z-10 bg-surface-900 border border-surface-600 rounded-lg p-2 shadow-lg text-xs w-64">
+                            <div className="absolute left-0 top-full mt-1 z-10 bg-popover border border-border rounded-lg p-2 shadow-lg text-xs w-64">
                               {schedule.notes && (
                                 <div className="mb-1">
-                                  <span className="text-gray-500">Notes:</span>{' '}
-                                  <span className="text-gray-300">{schedule.notes}</span>
+                                  <span className="text-muted-foreground">Notes:</span>{' '}
+                                  <span className="text-foreground">{schedule.notes}</span>
                                 </div>
                               )}
                               {schedule.supplements && schedule.supplements.length > 0 && (
                                 <div className="mb-1">
-                                  <span className="text-gray-500">Supplements:</span>{' '}
-                                  <span className="text-gray-300">{schedule.supplements.join(', ')}</span>
+                                  <span className="text-muted-foreground">Supplements:</span>{' '}
+                                  <span className="text-foreground">{schedule.supplements.join(', ')}</span>
                                 </div>
                               )}
                               {schedule.last_logged && (
                                 <div>
-                                  <span className="text-gray-500">Last logged:</span>{' '}
-                                  <span className="text-gray-300">{formatTime(schedule.last_logged)}</span>
+                                  <span className="text-muted-foreground">Last logged:</span>{' '}
+                                  <span className="text-foreground">{formatTime(schedule.last_logged)}</span>
                                 </div>
                               )}
                             </div>

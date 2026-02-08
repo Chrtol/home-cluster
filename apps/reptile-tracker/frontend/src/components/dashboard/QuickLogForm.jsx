@@ -108,20 +108,20 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       }}
     >
       <div
-        className="bg-surface-700 rounded-lg shadow-xl max-w-md w-full animate-in fade-in duration-200"
+        className="bg-card rounded-lg shadow-xl max-w-md w-full animate-in fade-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-surface-600">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
-            <h3 className="text-sm font-semibold text-white">Quick Log</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h3 className="text-sm font-semibold text-foreground">Quick Log</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {reptileName} • {scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -132,24 +132,24 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
           {/* Auto-filled data display */}
           {(task.food_category || (task.supplements && task.supplements.length > 0)) && (
-            <div className="bg-surface-800 rounded p-2 space-y-1">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Auto-filled from schedule</p>
+            <div className="bg-muted rounded p-2 space-y-1">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Auto-filled from schedule</p>
 
               {task.food_category && (
-                <div className="text-xs text-gray-300">
-                  <span className="text-gray-500">Food:</span> {task.food_category.charAt(0).toUpperCase() + task.food_category.slice(1)}
+                <div className="text-xs text-foreground">
+                  <span className="text-muted-foreground">Food:</span> {task.food_category.charAt(0).toUpperCase() + task.food_category.slice(1)}
                 </div>
               )}
 
               {task.supplements && task.supplements.length > 0 && (
-                <div className="text-xs text-gray-300">
-                  <span className="text-gray-500">Supplements:</span> {task.supplements.join(', ')}
+                <div className="text-xs text-foreground">
+                  <span className="text-muted-foreground">Supplements:</span> {task.supplements.join(', ')}
                 </div>
               )}
 
               {task.time_window && (
-                <div className="text-xs text-gray-300">
-                  <span className="text-gray-500">Time:</span> {task.time_window}
+                <div className="text-xs text-foreground">
+                  <span className="text-muted-foreground">Time:</span> {task.time_window}
                 </div>
               )}
             </div>
@@ -157,7 +157,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
 
           {/* Notes input */}
           <div>
-            <label htmlFor="quick-notes" className="block text-xs font-medium text-gray-300 mb-1">
+            <label htmlFor="quick-notes" className="block text-xs font-medium text-foreground mb-1">
               Notes (optional)
             </label>
             <textarea
@@ -166,13 +166,13 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add any quick notes..."
               rows={2}
-              className="w-full px-2 py-1.5 bg-surface-800 border border-surface-600 rounded text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+              className="w-full px-2 py-1.5 bg-muted border border-border rounded text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
             />
           </div>
 
           {/* Error message */}
           {error && (
-            <div className="text-xs text-red-400 bg-red-500/10 rounded p-2">
+            <div className="text-xs text-destructive bg-destructive/10 rounded p-2">
               {error}
             </div>
           )}
@@ -193,14 +193,14 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-primary hover:bg-primary-light rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Logging...' : 'Log Task'}
               </button>

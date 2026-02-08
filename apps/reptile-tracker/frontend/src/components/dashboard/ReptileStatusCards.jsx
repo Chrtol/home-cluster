@@ -172,7 +172,7 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
 
   if (loading) {
     return (
-      <div className="text-center text-gray-400 text-sm py-6">
+      <div className="text-center text-muted-foreground text-sm py-6">
         Loading reptiles...
       </div>
     );
@@ -180,7 +180,7 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
 
   if (error) {
     return (
-      <div className="text-center text-red-400 text-sm py-6">
+      <div className="text-center text-destructive text-sm py-6">
         {error}
       </div>
     );
@@ -188,8 +188,8 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
 
   if (reptiles.length === 0) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-6">
-        <div className="text-center text-gray-400 text-sm">
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="text-center text-muted-foreground text-sm">
           No reptiles yet. Add your first reptile to get started!
         </div>
       </div>

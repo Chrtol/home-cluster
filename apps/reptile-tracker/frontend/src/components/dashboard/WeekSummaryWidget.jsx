@@ -38,21 +38,17 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
 
       // Calculate current week range
       const today = new Date();
-      // getUserFirstDayOfWeek returns 'monday' or 'sunday' string, convert to number for date-fns
       const firstDayStr = getUserFirstDayOfWeek();
       const firstDayOfWeek = firstDayStr === 'monday' ? 1 : 0;
       const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
       const weekEnd = endOfWeek(today, { weekStartsOn: firstDayOfWeek });
 
-      // Format week range for display
       const rangeStr = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'd')}`;
       setWeekRange(rangeStr);
 
       const startDate = format(weekStart, 'yyyy-MM-dd');
       const endDate = format(weekEnd, 'yyyy-MM-dd');
 
-      // Use the weekly-summary API endpoint and schedule-instances/calendar for tasks
-      // calendar endpoint returns full schedule details including schedule_type
       const [summaryRes, instancesRes] = await Promise.all([
         axios.get('/api/stats/weekly-summary'),
         axios.get('/api/schedule-instances/calendar', {
@@ -63,15 +59,12 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
       const summary = summaryRes.data || {};
       const instances = instancesRes.data || [];
 
-      // Use weekly summary for feedings count
       const feedingCount = summary.total_feedings || 0;
 
-      // Count mistings from instances (schedule.schedule_type = 'misting' and completed)
       const mistingCount = instances.filter(i =>
         i.schedule?.schedule_type === 'misting' && i.status === 'completed'
       ).length;
 
-      // Count scheduled and overdue from instances
       const todayStr = format(today, 'yyyy-MM-dd');
       let scheduledCount = 0;
       let overdueCount = 0;
@@ -105,8 +98,8 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
 
   if (loading) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
-        <div className="text-center text-gray-400 text-sm">
+      <div className="bg-card rounded-lg border border-border p-3">
+        <div className="text-center text-muted-foreground text-sm">
           Loading week summary...
         </div>
       </div>
@@ -115,8 +108,8 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
 
   if (error) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
-        <div className="text-center text-red-400 text-sm">
+      <div className="bg-card rounded-lg border border-border p-3">
+        <div className="text-center text-destructive text-sm">
           {error}
         </div>
       </div>
@@ -124,50 +117,50 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
   }
 
   return (
-    <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+    <div className="bg-card rounded-lg border border-border p-3">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-white">This Week</h2>
-        <span className="text-xs text-gray-500">{weekRange}</span>
+        <h2 className="text-sm font-semibold text-foreground">This Week</h2>
+        <span className="text-xs text-muted-foreground">{weekRange}</span>
       </div>
 
       {/* 2x2 grid of stat cards */}
       <div className="grid grid-cols-2 gap-3">
         {/* Feedings */}
-        <div className="text-center p-2 rounded-lg bg-surface-700/50">
-          <div className="text-lg font-semibold text-accent-400">
+        <div className="text-center p-2 rounded-lg bg-muted/50">
+          <div className="text-lg font-semibold text-primary">
             {stats.feedings}
           </div>
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[10px] text-muted-foreground">
             Feedings
           </div>
         </div>
 
         {/* Mistings */}
-        <div className="text-center p-2 rounded-lg bg-surface-700/50">
-          <div className="text-lg font-semibold text-status-mist">
+        <div className="text-center p-2 rounded-lg bg-muted/50">
+          <div className="text-lg font-semibold text-blue-500">
             {stats.mistings}
           </div>
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[10px] text-muted-foreground">
             Mistings
           </div>
         </div>
 
         {/* Scheduled */}
-        <div className="text-center p-2 rounded-lg bg-surface-700/50">
-          <div className="text-lg font-semibold text-white">
+        <div className="text-center p-2 rounded-lg bg-muted/50">
+          <div className="text-lg font-semibold text-foreground">
             {stats.scheduled}
           </div>
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[10px] text-muted-foreground">
             Scheduled
           </div>
         </div>
 
         {/* Overdue */}
-        <div className="text-center p-2 rounded-lg bg-surface-700/50">
-          <div className="text-lg font-semibold text-status-overdue">
+        <div className="text-center p-2 rounded-lg bg-muted/50">
+          <div className="text-lg font-semibold text-destructive">
             {stats.overdue}
           </div>
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[10px] text-muted-foreground">
             Overdue
           </div>
         </div>

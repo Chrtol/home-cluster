@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Droplets, Scale, Activity } from 'lucide-react';
+import { Utensils, Scale } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 
 /**
  * RecentActivityWidget - Compact recent activity list
  *
- * Shows recent feedings, mistings, weighings, and health events
- * in a compact format suitable for dashboard widgets.
+ * Shows recent feedings and weighings in a compact format suitable for dashboard widgets.
  *
  * Props:
  * - config: { itemCount: number (default 5) }
@@ -20,7 +19,6 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Determine item count based on widget size
   const getItemCount = () => {
     if (config.itemCount) return config.itemCount;
     const sizeMap = {
@@ -43,13 +41,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       setLoading(true);
       setError(null);
 
-      // Fetch recent activities from all sources
-      // Note: /api/weight/dashboard returns all weight logs, we'll filter client-side
-      const [feedingsRes, mistingsRes, weighingsRes, healthRes] = await Promise.all([
-        axios.get('/api/feedings', { params: { limit: itemCount } }),
-        axios.get('/api/mistings', { params: { limit: itemCount } }),
-        axios.get('/api/weight/dashboard'),
-        axios.get('/api/health-events', { params: { limit: itemCount } })
+      const [feedingsRes, weighingsRes] = await Promise.all([
+        axios.get('/api/feedings', { params: { limit: itemCount * 2 } }),
+        axios.get('/api/weight/dashboard')
       ]);
 
       const feedings = (feedingsRes.data || []).map(f => ({
@@ -64,22 +58,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         details: f.notes
       }));
 
-      const mistings = (mistingsRes.data || []).map(m => ({
-        type: 'misting',
-        icon: Droplets,
-        reptile_id: m.reptile_id,
-        reptile_name: m.reptile_name,
-        reptile: { id: m.reptile_id, name: m.reptile_name, avatar_photo_url: m.avatar_photo_url },
-        timestamp: m.misted_at,
-        description: 'Misted',
-        quantity: m.duration ? `${m.duration}s` : null,
-        details: m.notes
-      }));
-
-      // Weight dashboard returns all data, sort by date and take most recent
       const allWeighings = (weighingsRes.data || [])
         .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at))
-        .slice(0, itemCount);
+        .slice(0, itemCount * 2);
 
       const weighings = allWeighings.map(w => ({
         type: 'weighing',
@@ -93,23 +74,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         details: w.notes
       }));
 
-      const healthEvents = (healthRes.data || []).map(h => ({
-        type: 'health',
-        icon: Activity,
-        reptile_id: h.reptile_id,
-        reptile_name: h.reptile_name,
-        reptile: { id: h.reptile_id, name: h.reptile_name, avatar_photo_url: h.avatar_photo_url },
-        timestamp: h.event_date,
-        description: h.event_type,
-        quantity: null,
-        details: h.description
-      }));
-
-      // Combine and sort by timestamp
-      const combined = [...feedings, ...mistings, ...weighings, ...healthEvents];
+      const combined = [...feedings, ...weighings];
       combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-      // Take only itemCount
       setActivities(combined.slice(0, itemCount));
     } catch (err) {
       console.error('Failed to fetch recent activity:', err);
@@ -121,8 +88,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
 
   if (loading) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
-        <div className="text-center text-gray-400 text-sm">
+      <div className="bg-card rounded-lg border border-border p-3">
+        <div className="text-center text-muted-foreground text-sm">
           Loading recent activity...
         </div>
       </div>
@@ -131,8 +98,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
 
   if (error) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
-        <div className="text-center text-red-400 text-sm">
+      <div className="bg-card rounded-lg border border-border p-3">
+        <div className="text-center text-destructive text-sm">
           {error}
         </div>
       </div>
@@ -141,11 +108,11 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
 
   if (activities.length === 0) {
     return (
-      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+      <div className="bg-card rounded-lg border border-border p-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
+          <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
         </div>
-        <div className="text-center text-gray-400 text-sm">
+        <div className="text-center text-muted-foreground text-sm">
           No recent activity
         </div>
       </div>
@@ -153,12 +120,12 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
   }
 
   return (
-    <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+    <div className="bg-card rounded-lg border border-border p-3">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
+        <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
         <Link
           to="/activity"
-          className="text-xs text-accent-500 hover:text-accent-400"
+          className="text-xs text-primary hover:text-primary/80"
         >
           View all
         </Link>
@@ -168,30 +135,24 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         {activities.map((activity, index) => (
           <div
             key={`${activity.type}-${activity.timestamp}-${index}`}
-            className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-surface-700/50"
+            className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-muted/50"
           >
-            {/* Avatar */}
             <ReptileAvatar
               reptile={activity.reptile}
               size="sm"
             />
 
-            {/* Content */}
             <div className="flex-1 min-w-0">
-              {/* Description */}
-              <div className="text-xs text-gray-300 truncate">
+              <div className="text-xs text-foreground truncate">
                 {activity.description}
               </div>
-
-              {/* Reptile name + time */}
-              <div className="text-[10px] text-gray-500">
+              <div className="text-[10px] text-muted-foreground">
                 {activity.reptile_name} · {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
               </div>
             </div>
 
-            {/* Quantity */}
             {activity.quantity && (
-              <span className="text-xs text-gray-500 flex-shrink-0">
+              <span className="text-xs text-muted-foreground flex-shrink-0">
                 {activity.quantity}
               </span>
             )}

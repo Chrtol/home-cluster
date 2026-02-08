@@ -610,9 +610,9 @@ export default function Dashboard() {
 
   const getIconColorClasses = (color) => {
     const colorMap = {
-      'orange': 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400',
-      'blue': 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-      'purple': 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+      'orange': 'bg-primary/10 text-primary',
+      'blue': 'bg-blue-500/10 text-blue-500',
+      'purple': 'bg-purple-500/10 text-purple-500',
       'gray': 'bg-secondary text-muted-foreground',
     };
     return colorMap[color] || colorMap['gray'];
@@ -1045,15 +1045,15 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5">
-                  <Utensils size={14} className="text-primary-600 dark:text-primary-400" />
+                  <Utensils size={14} className="text-primary" />
                   <span className="text-muted-foreground">Feedings:</span>
-                  <span className="font-bold text-primary-600 dark:text-primary-400">{feedingsThisWeek}</span>
+                  <span className="font-bold text-primary">{feedingsThisWeek}</span>
                 </div>
                 <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
-                  <Droplets size={14} className="text-blue-600 dark:text-blue-400" />
+                  <Droplets size={14} className="text-blue-500" />
                   <span className="text-muted-foreground">Misted today:</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{mistedToday}</span>
+                  <span className="font-bold text-blue-500">{mistedToday}</span>
                 </div>
               </div>
             </div>
@@ -1070,15 +1070,15 @@ export default function Dashboard() {
               </div>
               <div className={`flex items-center ${isXS ? 'gap-2' : 'gap-4'} text-sm flex-shrink-0`}>
                 <div className="flex items-center gap-1.5">
-                  <Activity size={14} className="text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <Activity size={14} className="text-primary flex-shrink-0" />
                   {!isXS && <span className="text-muted-foreground whitespace-nowrap">Sheds:</span>}
-                  <span className="font-bold text-green-600 dark:text-green-400">{shedThisMonth}</span>
+                  <span className="font-bold text-primary">{shedThisMonth}</span>
                 </div>
                 <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
-                  <Scale size={14} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                  <Scale size={14} className="text-purple-500 flex-shrink-0" />
                   {!isXS && <span className="text-muted-foreground whitespace-nowrap">Logs:</span>}
-                  <span className="font-bold text-purple-600 dark:text-purple-400">{weightData.length}</span>
+                  <span className="font-bold text-purple-500">{weightData.length}</span>
                 </div>
               </div>
             </div>
@@ -1096,15 +1096,15 @@ export default function Dashboard() {
               </div>
               <div className={`flex items-center ${isXS ? 'gap-2' : 'gap-4'} text-sm flex-shrink-0`}>
                 <div className="flex items-center gap-1.5">
-                  <AlertCircle size={14} className="text-red-600 dark:text-red-400 flex-shrink-0" />
+                  <AlertCircle size={14} className="text-destructive flex-shrink-0" />
                   {!isXS && <span className="text-muted-foreground whitespace-nowrap">Need:</span>}
-                  <span className={`font-bold ${reptilesNeedingFeeding > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{reptilesNeedingFeeding}</span>
+                  <span className={`font-bold ${reptilesNeedingFeeding > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{reptilesNeedingFeeding}</span>
                 </div>
                 <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle size={14} className="text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <CheckCircle size={14} className="text-primary flex-shrink-0" />
                   {!isXS && <span className="text-muted-foreground whitespace-nowrap">Done:</span>}
-                  <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
+                  <span className="font-bold text-primary">{todayScheduleStats.completed}</span>
                 </div>
               </div>
             </div>
@@ -1122,17 +1122,17 @@ export default function Dashboard() {
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5">
                   <span className="text-muted-foreground">Due:</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{todayScheduleStats.due}</span>
+                  <span className="font-bold text-blue-500">{todayScheduleStats.due}</span>
                 </div>
                 <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-muted-foreground">Overdue:</span>
-                  <span className={`font-bold ${todayScheduleStats.overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{todayScheduleStats.overdue}</span>
+                  <span className={`font-bold ${todayScheduleStats.overdue > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{todayScheduleStats.overdue}</span>
                 </div>
                 <div className="w-px h-4 bg-border"></div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-muted-foreground">Done:</span>
-                  <span className="font-bold text-green-600 dark:text-green-400">{todayScheduleStats.completed}</span>
+                  <span className="font-bold text-primary">{todayScheduleStats.completed}</span>
                 </div>
               </div>
             </div>
@@ -1210,7 +1210,7 @@ export default function Dashboard() {
                       onClick={() => setCalendarView('day')}
                       className={`px-2 py-1 text-xs font-medium transition-colors ${
                         calendarView === 'day'
-                          ? 'bg-primary-600 text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-card text-muted-foreground hover:bg-secondary'
                       }`}
                       title="1 day view"
@@ -1221,7 +1221,7 @@ export default function Dashboard() {
                       onClick={() => setCalendarView('three-day')}
                       className={`px-2 py-1 text-xs font-medium border-l border-border transition-colors ${
                         calendarView === 'three-day'
-                          ? 'bg-primary-600 text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-card text-muted-foreground hover:bg-secondary'
                       }`}
                       title="3 day view"
@@ -1232,7 +1232,7 @@ export default function Dashboard() {
                       onClick={() => setCalendarView('week')}
                       className={`px-2 py-1 text-xs font-medium border-l border-border transition-colors ${
                         calendarView === 'week'
-                          ? 'bg-primary-600 text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-card text-muted-foreground hover:bg-secondary'
                       }`}
                       title="Week view"
@@ -1294,7 +1294,7 @@ export default function Dashboard() {
                         {format(day, calendarView === 'week' ? 'EEE' : 'EEEE, MMM d')}
                       </div>
                       {calendarView === 'week' && (
-                        <div className={`text-lg font-bold ${isToday ? 'text-primary-400' : 'text-foreground'}`}>
+                        <div className={`text-lg font-bold ${isToday ? 'text-primary' : 'text-foreground'}`}>
                           {format(day, 'd')}
                         </div>
                       )}
@@ -1330,7 +1330,7 @@ export default function Dashboard() {
                               key={idx}
                               className={`px-2 py-1 rounded bg-card border overflow-hidden ${
                                 event.is_completed
-                                  ? 'border-green-500 dark:border-green-600'
+                                  ? 'border-primary'
                                   : 'border-border'
                               }`}
                               title={event.notes || event.name || event.reptile_name}
@@ -1348,11 +1348,11 @@ export default function Dashboard() {
                                 </span>
 
                                 {/* Category Icon */}
-                                <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                                <Icon size={12} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary' : color === 'blue' ? 'text-blue-500' : 'text-purple-500'}`} />
 
                                 {/* Notification Bell */}
                                 {event.notifications_enabled && (
-                                  <Bell size={10} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
+                                  <Bell size={10} className="flex-shrink-0 text-blue-500" title="Notifications enabled" />
                                 )}
 
                                 {/* Details */}
@@ -1373,7 +1373,7 @@ export default function Dashboard() {
                                 {!hideSupplements && event.suggested_supplements && event.suggested_supplements.length > 0 && (
                                   <>
                                     <span className="text-muted-foreground flex-shrink-0">•</span>
-                                    <span className="text-amber-600 dark:text-amber-400 truncate min-w-0">
+                                    <span className="text-amber-500 truncate min-w-0">
                                       +{event.suggested_supplements.map(s => s.name).join(', ')}
                                     </span>
                                   </>
@@ -1381,7 +1381,7 @@ export default function Dashboard() {
 
                                 {/* Checkmark (right-aligned) */}
                                 {event.is_completed && (
-                                  <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0 ml-auto">✓</span>
+                                  <span className="text-primary font-bold flex-shrink-0 ml-auto">✓</span>
                                 )}
                               </div>
                             </div>
@@ -1394,7 +1394,7 @@ export default function Dashboard() {
                             key={idx}
                             className={`text-xs px-1.5 py-0.5 rounded bg-card border ${
                               event.is_completed
-                                ? 'border-green-500 dark:border-green-600'
+                                ? 'border-primary'
                                 : 'border-border'
                             }`}
                             title={`${event.reptile_name}${timeText ? ' • ' + timeText : ''}${foodCategory ? ' • ' + foodCategory : ''}${!hideSupplements && event.suggested_supplements?.length > 0 ? ' • +' + event.suggested_supplements.map(s => s.name).join(', ') : ''}${event.notes ? '\n' + event.notes : ''}`}
@@ -1412,11 +1412,11 @@ export default function Dashboard() {
                               </span>
 
                               {/* Category Icon */}
-                              <Icon size={9} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary-600 dark:text-primary-400' : color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'}`} />
+                              <Icon size={9} className={`flex-shrink-0 ${color === 'orange' ? 'text-primary' : color === 'blue' ? 'text-blue-500' : 'text-purple-500'}`} />
 
                               {/* Notification Bell */}
                               {event.notifications_enabled && (
-                                <Bell size={8} className="flex-shrink-0 text-blue-500 dark:text-blue-400" title="Notifications enabled" />
+                                <Bell size={8} className="flex-shrink-0 text-blue-500" title="Notifications enabled" />
                               )}
 
                               {/* Details */}
@@ -1431,7 +1431,7 @@ export default function Dashboard() {
 
                               {/* Checkmark (right-aligned) */}
                               {event.is_completed && (
-                                <span className="text-green-600 dark:text-green-400 font-bold flex-shrink-0 ml-auto">✓</span>
+                                <span className="text-primary font-bold flex-shrink-0 ml-auto">✓</span>
                               )}
                             </div>
                           </div>
@@ -1629,24 +1629,24 @@ export default function Dashboard() {
                             <span className="text-xs text-muted-foreground truncate">{reptile.species}</span>
                           </div>
                           <div className="flex flex-wrap items-center gap-2 text-xs">
-                            <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
+                            <div className="flex items-center gap-1 text-primary">
                               <Utensils size={11} className="flex-shrink-0" />
                               {feedingData[reptile.id] ? <span title="Days since last feeding">{daysSinceFeeding === 0 ? 'Today' : `${daysSinceFeeding}d`}</span> : <span>-</span>}
                             </div>
-                            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                            <div className="flex items-center gap-1 text-blue-500">
                               <Droplets size={11} className="flex-shrink-0" />
                               {mistingData[reptile.id] ? <span title="Days since last misting">{daysSinceMisting === 0 ? 'Today' : `${daysSinceMisting}d`}</span> : <span>-</span>}
                             </div>
-                            <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                            <div className="flex items-center gap-1 text-purple-500">
                               <Scale size={11} className="flex-shrink-0" />
                               {weighingData[reptile.id] ? <span title="Days since last weighing">{daysSinceWeighing === 0 ? 'Today' : `${daysSinceWeighing}d`}</span> : <span>-</span>}
                             </div>
-                            <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                            <div className="flex items-center gap-1 text-purple-500">
                               <Activity size={11} className="flex-shrink-0" />
                               {healthData[reptile.id] ? <span title="Days since last shed">{daysSinceShed === 0 ? 'Today' : `${daysSinceShed}d`}</span> : <span>-</span>}
                             </div>
                             {feedingStatus && (
-                              <div className={`flex items-center gap-1 ${feedingStatus.color === 'red' ? 'text-red-600 dark:text-red-400 font-medium' : feedingStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' : feedingStatus.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' : feedingStatus.color === 'green' ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                              <div className={`flex items-center gap-1 ${feedingStatus.color === 'red' ? 'text-destructive font-medium' : feedingStatus.color === 'orange' ? 'text-amber-500 font-medium' : feedingStatus.color === 'yellow' ? 'text-amber-400' : feedingStatus.color === 'green' ? 'text-primary' : 'text-muted-foreground'}`}>
                                 <feedingStatus.icon size={11} className="flex-shrink-0" />
                                 <span className="truncate">{feedingStatus.text}</span>
                               </div>
@@ -1664,7 +1664,7 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-3">No reptiles added yet.</p>
-                  <Link to="/reptiles/new" className="text-primary-600 dark:text-primary-400 hover:underline text-sm">Add your first reptile</Link>
+                  <Link to="/reptiles/new" className="text-primary hover:underline text-sm">Add your first reptile</Link>
                 </div>
               )}
             </div>
@@ -1678,7 +1678,7 @@ export default function Dashboard() {
               {recentActivity.length > 0 ? (
                 recentActivity.map(activity => {
                   const Icon = activity.icon;
-                  const colorClasses = { primary: 'text-primary-600 dark:text-primary-400', blue: 'text-blue-600 dark:text-blue-400', purple: 'text-purple-600 dark:text-purple-400', green: 'text-green-600 dark:text-green-400' };
+                  const colorClasses = { primary: 'text-primary', blue: 'text-blue-500', purple: 'text-purple-500', green: 'text-primary' };
                   let summary = '', prominentValue = null, details = '', detailLink = '';
                   switch (activity.type) {
                     case 'feeding':
@@ -1725,7 +1725,7 @@ export default function Dashboard() {
                         </div>
                         {/* Prominent value (for weight, feeding count, etc.) */}
                         {prominentValue && (
-                          <span className="flex-shrink-0 text-lg font-bold text-primary-600 dark:text-primary-400 tabular-nums">{prominentValue}</span>
+                          <span className="flex-shrink-0 text-lg font-bold text-primary tabular-nums">{prominentValue}</span>
                         )}
                       </div>
                     </Link>
@@ -1820,8 +1820,8 @@ export default function Dashboard() {
                         onClick={() => event.instance_id && navigate(`/schedule-instances/${event.instance_id}`)}
                         className={`px-4 py-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                           event.is_completed
-                            ? 'bg-card border-green-500 dark:border-green-600 hover:border-green-600 dark:hover:border-green-500'
-                            : 'bg-card border-border hover:border-primary-500 dark:hover:border-primary-400'
+                            ? 'bg-card border-primary hover:border-primary/80'
+                            : 'bg-card border-border hover:border-primary/50'
                         }`}
                       >
                         <div className="flex items-center gap-3 mb-3">
@@ -1830,7 +1830,7 @@ export default function Dashboard() {
                           </div>
                           <div className="flex items-center gap-2 flex-1">
                             {event.is_completed && (
-                              <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                              <span className="text-primary font-bold">✓</span>
                             )}
                             <div className="font-semibold text-foreground">
                               {displayName}
@@ -1877,7 +1877,7 @@ export default function Dashboard() {
                               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 <Clock size={12} />
                                 Time Window
-                                {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
+                                {event.notifications_enabled && <Bell size={10} className="text-blue-500" />}
                               </span>
                               <span className="text-foreground font-medium break-words">
                                 {formatTime(new Date(`2000-01-01T${event.earliest_time}`))} - {formatTime(new Date(`2000-01-01T${event.latest_time}`))}
@@ -1887,17 +1887,17 @@ export default function Dashboard() {
                             <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                                 Time
-                                {event.notifications_enabled && <Bell size={10} className="text-blue-500 dark:text-blue-400" />}
+                                {event.notifications_enabled && <Bell size={10} className="text-blue-500" />}
                               </span>
                               <span className="text-foreground truncate">{event.time_slot}</span>
                             </div>
                           ) : event.notifications_enabled ? (
                             <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                                <Bell size={10} className="text-blue-500 dark:text-blue-400" />
+                                <Bell size={10} className="text-blue-500" />
                                 Notifications
                               </span>
-                              <span className="text-blue-600 dark:text-blue-400 text-xs">Enabled</span>
+                              <span className="text-blue-500 text-xs">Enabled</span>
                             </div>
                           ) : null}
                         </div>

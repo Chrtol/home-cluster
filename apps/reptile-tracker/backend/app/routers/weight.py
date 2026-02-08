@@ -58,9 +58,12 @@ async def list_weight_logs(
     db: AsyncSession = Depends(get_db),
 ):
     """List all weight logs for a reptile"""
+    from sqlalchemy.orm import selectinload
+
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
     result = await db.execute(
         select(WeightLog)
+        .options(selectinload(WeightLog.logged_by))
         .where(WeightLog.reptile_id == reptile_id)
         .order_by(WeightLog.measured_at.desc())
     )

@@ -25,9 +25,9 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
 
   // Status-based styling per user decision
   const statusStyles = {
-    done: 'bg-status-done/20 text-status-done',
-    due: 'bg-surface-600 text-gray-400',
-    overdue: 'bg-status-overdue/20 text-status-overdue'
+    done: 'bg-primary/20 text-primary',
+    due: 'bg-muted text-muted-foreground',
+    overdue: 'bg-destructive/20 text-destructive'
   };
 
   // Format display text

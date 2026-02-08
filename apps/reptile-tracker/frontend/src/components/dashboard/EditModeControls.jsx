@@ -30,7 +30,7 @@ const EditModeControls = ({ isEditMode, onToggleEditMode, onResetLayout }) => {
         <>
           <button
             onClick={handleResetClick}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border border-border bg-surface-700/50 text-foreground hover:bg-surface-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border border-border bg-muted text-foreground hover:bg-muted/80 transition-colors"
             title="Reset to default layout"
           >
             <RotateCcw size={14} />
@@ -38,7 +38,7 @@ const EditModeControls = ({ isEditMode, onToggleEditMode, onResetLayout }) => {
           </button>
           <button
             onClick={onToggleEditMode}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-accent-400 text-white hover:bg-accent-500 transition-colors font-medium"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
           >
             Done
           </button>
@@ -46,7 +46,7 @@ const EditModeControls = ({ isEditMode, onToggleEditMode, onResetLayout }) => {
       ) : (
         <button
           onClick={onToggleEditMode}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border border-border bg-surface-700/50 text-foreground hover:bg-surface-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border border-border bg-muted text-foreground hover:bg-muted/80 transition-colors"
           title="Customize dashboard"
         >
           <Settings size={14} />
