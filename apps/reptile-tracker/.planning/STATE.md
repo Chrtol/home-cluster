@@ -1,84 +1,146 @@
----
-project: home-cluster/reptile-tracker
-phase: 08-dashboard
-status: in-progress
-last_updated: "2026-02-08T21:25:11Z"
----
+# Project State
 
-# Project State: Reptile Tracker Dashboard Overhaul
+**Project:** Reptile Tracker
+**Started:** 2025-02-06
+**Current milestone:** v1.1 UI Overhaul
+
+## Project Reference
+
+See: `.planning/PROJECT.md` (updated 2026-02-07)
+
+**Core value:** A polished, information-dense tool for managing reptile care
+**Current focus:** Full frontend UI overhaul
 
 ## Current Position
 
-**Phase:** 08-dashboard (Phase 08 of Phase 08)
-**Plan:** 11 of ~15 (Phase 08)
-**Status:** In progress
-**Last activity:** 2026-02-08 - Completed 08-11-PLAN.md (Enhanced Quick Log Form)
+| Metric | Value |
+|--------|-------|
+| Current Milestone | v1.1 UI Overhaul |
+| Milestone Status | IN PROGRESS |
+| Current Phase | 8 (Dashboard) |
+| Phase Status | COMPLETE (11/11 plans) |
+| Requirements | 22 total (see REQUIREMENTS.md) |
 
-**Progress:** ███████████░░░░ (11/15 estimated)
+Progress: Phase 8 - Complete
+```
+Phase 7 (Foundation):
+07-01: Complete (shadcn/ui foundation)
+07-02: Complete (core UI components)
+07-03: Complete (date/time pickers)
 
-### Phase 08 Plans Completed
-1. ✅ 08-01 - Initial dashboard layout
-2. ✅ 08-02 - Reptile status cards
-3. ✅ 08-03 - Recent activity feed
-4. ✅ 08-04 - Timeline view
-5. ✅ 08-05 - Visual polish
-6. ✅ 08-06 - Timeline & shortcuts gap closure
-7. ✅ 08-07 - Activity summary with sparklines
-8. ✅ 08-08 - Visual polish refinements
-9. ✅ 08-09 - Quick log infrastructure
-10. ✅ 08-10 - Quick log implementation
-11. ✅ 08-11 - Enhanced quick log form
-12. ⏳ Next plans...
+Phase 8 (Dashboard):
+08-01: Complete (navigation foundation)
+08-02: Complete (reptile status cards)
+08-03: Complete (quick log form & timeline)
+08-04: Complete (dashboard widgets & edit mode)
+08-05: Complete (gap closure - form, status, weight fixes)
+08-06: Complete (gap closure - timeline & keyboard shortcuts)
+08-07: Complete (gap closure - Header & edit mode integration)
+08-08: Complete (gap closure - visual polish)
+08-09: Complete (gap closure R2 - avatar shape, header layout, grid gaps)
+08-10: Complete (gap closure R2 - persistence, avatar clickable)
+08-11: Complete (gap closure R2 - QuickLog food selector, time picker)
+```
 
-## Decisions Made
+Progress bar:
+```
+Phase 7:  [========] 3/3
+Phase 8:  [========] 11/11
+Phase 9:  [        ] 0/?
+Phase 10: [        ] 0/?
+Phase 11: [        ] 0/?
+Phase 12: [        ] 0/?
+```
 
-| Decision | Context | Rationale | Impact |
-|----------|---------|-----------|--------|
-| Favorites-first sorting | Food selector in quick log | Users typically feed the same foods - put favorites first for speed | Quick log ergonomics |
-| HTML5 time input | Time picker implementation | Native control is accessible, mobile-friendly, and well-supported | Cross-platform UX |
-| Route correction | Fixed /feeding → /feed | Must match App.jsx route definitions | Navigation works correctly |
+## Milestone Scope
 
-## Technical Context
+**v1.1 UI Overhaul:**
+- Design direction: Data-Dense + Warm
+- Tech stack: Adding shadcn/ui
+- 6 phases (7-12)
+- Excludes: Settings, Onboarding, Login
 
-### Active Milestone
-**v1.1 UI Overhaul** - Dashboard transformation to data-dense single pane of glass
+**Phases:**
+```
+Phase 7:  Foundation      Complete (3/3 plans)
+Phase 8:  Dashboard       Complete (11/11 plans)
+Phase 9:  Reptile Pages   Not started
+Phase 10: Calendar/Stats  Not started
+Phase 11: Forms/Tables    Not started
+Phase 12: Polish/Mobile   Not started
+```
 
-### Recent Completions
-- Quick log form with food selection and time picker
-- Routing corrections for navigation consistency
-- Favorites-first food sorting
+## Key Decisions (v1.1)
 
-### Current Focus
-- Dashboard enhancement (Phase 08)
-- Quick log workflow improvements
-- Gap closure items
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-02-07 | Full UI overhaul | Current UI too generic, wasted space |
+| 2026-02-07 | shadcn/ui components | Better date pickers, polished components |
+| 2026-02-07 | Data-Dense + Warm direction | Information density with personality |
+| 2026-02-07 | Exclude Settings/Onboarding | Focus on daily-use pages |
+| 2026-02-07 | Equal mobile/desktop priority | Both must be great |
+| 2026-02-07 | Badge status variants | Custom variants (due, overdue, done, mist) for reptile care tracking with dark mode compatibility |
+| 2026-02-07 | ReptileNameWithAvatar pattern | Standard component for all reptile references, addresses HIGH PRIORITY locked decision |
+| 2026-02-07 | Framer Motion opt-in | Animation via `animate` prop for flexibility across UI contexts |
+| 2026-02-07 | Accessibility in clickable components | Keyboard support (Enter/Space) for interactive elements |
+| 2026-02-08 | Sidebar collapse state persisted | Store in localStorage for consistent UX across sessions |
+| 2026-02-08 | Header component receives stats from Dashboard | Not rendered globally; Dashboard-specific with todayStats prop |
+| 2026-02-08 | Keyboard shortcuts in Layout | Cmd/Ctrl+K for Track menu, Escape to close, global document listener |
+| 2026-02-08 | Hardcoded compact threshold = 6 | Auto-compact mode triggers at 6+ reptiles, not user-configurable (implementation detail) |
+| 2026-02-08 | Drag-to-reorder desktop only | Touch gestures complex, desktop drag simpler with localStorage persistence |
+| 2026-02-08 | QuickLogForm as modal overlay | Simpler than inline positioning, consistent UX, click-outside-to-close |
+| 2026-02-08 | Smart API endpoint selection in QuickLogForm | Detects task type, routes to /complete-feeding, /complete-misting, /complete-health |
+| 2026-02-08 | Timeline filter persistence | localStorage 'timeline_filters' stores user's active filter preferences |
+| 2026-02-08 | today_timeline in all profiles | Added to standard/compact/mobile profiles with appropriate sizing |
+| 2026-02-08 | Recharts sparklines for weight trends | Minimal LineChart config for compact trend visualization |
+| 2026-02-08 | Week summary 2x2 stat grid | Compact weekly stats (feedings, mistings, scheduled, overdue) in grid layout |
+| 2026-02-08 | Compact activity widget pattern | Separate compact_recent_activity widget vs. config on recent_activity for different use cases |
+| 2026-02-08 | Edit mode components now integrated | Header, EditModeControls, WidgetGallery all wired up in Dashboard |
+| 2026-02-08 | Time-only string parsing via regex | Use regex detection before Date constructor for HH:MM format times |
+| 2026-02-08 | Case-insensitive keyboard shortcuts | Use e.key.toLowerCase() for reliable shortcut matching across platforms |
+| 2026-02-08 | Sparkline height 32px | Increased from 16px for visible weight trend curves |
+| 2026-02-08 | auto-rows-min grid pattern | Prevents empty grid gaps when reptile count doesn't fill rows |
+| 2026-02-08 | Rounded-xl avatars (squares) | Changed from rounded-full (circles) to match v1.1 mockup |
+| 2026-02-08 | Header full-width negative margin | Uses -mx-4/-mx-6/-mx-8 breakout for edge-to-edge layout |
+| 2026-02-08 | Inline settings cog in sidebar | Settings icon inline with username, not separate nav row |
+| 2026-02-08 | Notification dropdown right-anchored | Anchor to right edge to prevent viewport overflow |
+| 2026-02-08 | Profile-aware widget persistence | updateProfileCards() saves changes to active profile (standard/compact/mobile) |
+| 2026-02-08 | Clickable avatars in status cards | Avatar div has onClick handler for navigation to detail page |
+| 2026-02-08 | Favorites-first food sorting | Food selector sorts reptile favorites with ❤️ first for quick access |
+| 2026-02-08 | HTML5 time input for quick log | Native time picker for accessibility and mobile compatibility |
+| 2026-02-08 | Corrected route paths | /feeding→/feed, /misting→/misting-log to match App.jsx routes |
 
-### Architecture Notes
-- React frontend with shadcn/ui components
-- Flask backend with PostgreSQL
-- RESTful API
-- FluxCD GitOps deployment
+## Reference Documents
 
-## Known Issues & Blockers
+- `.planning/PROJECT.md` - Project overview
+- `.planning/REQUIREMENTS.md` - v1.1 requirements
+- `.planning/ROADMAP.md` - Phase breakdown
+- `.planning/MILESTONES.md` - Historical milestones
+- `.planning/mockups/dashboard-v1.1-concept.html` - Design reference
 
-None currently blocking progress.
+## Next Steps
 
-## Next Phase Readiness
+Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 
-**Phase 09:** TBD (pending Phase 08 completion)
-
-**Blockers:** None
-
-**Prerequisites:** Complete remaining Phase 08 plans
+```
+/gsd:plan-phase 9
+```
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T21:25:11Z
-**Stopped at:** Plan 08-11 complete
-**Resume from:** Check for Plan 08-12 or next phase planning
+**Last session:** 2026-02-08T22:30:00Z
+**Stopped at:** Phase 8 complete - all 11 plans executed, verification passed
+**Resume file:** `.planning/phases/08-dashboard/08-VERIFICATION.md`
 
-**Quick context:**
-- Phase 08 is dashboard overhaul with quick log functionality
-- Just completed enhanced quick log with food selection and time picker
-- Routing paths corrected to match actual route definitions
-- Pre-fill functionality already complete in FeedingLog.jsx
+**Recent activity:**
+- 08-11: QuickLog enhancements (complete) - Food selector with favorites, time picker, route fixes
+- 08-10: Persistence and navigation (complete) - Profile-aware widget persistence, clickable avatars
+- 08-09: Visual fixes (complete) - Rounded-xl avatars, full-width header, compact timeline, notification dropdown
+- 08-08: Gap closure - visual polish (complete) - Taller sparklines (32px), alternating row colors, auto-rows-min grid
+- 08-07: Gap closure - Header & edit mode integration (complete)
+- 08-06: Gap closure - timeline & keyboard shortcuts (complete)
+
+**Phase 8 status:** COMPLETE - All 11 plans executed, 43/43 must-haves verified
+
+---
+*State updated: 2026-02-08 - Phase 8 complete*

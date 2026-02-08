@@ -51,8 +51,8 @@ Plans:
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, NAV-01, NAV-02
 
 **Status:** Complete (2026-02-08)
-**Plans:** 8/8 complete
-**Verification:** 35/38 must-haves (92%). See 08-VERIFICATION.md.
+**Plans:** 11/11 complete
+**Verification:** 43/43 must-haves verified. See 08-VERIFICATION.md.
 
 Plans:
 - [x] 08-01-PLAN.md -- Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
@@ -63,6 +63,9 @@ Plans:
 - [x] 08-06-PLAN.md -- GAP CLOSURE: Fix timeline time slot grouping, Ctrl+K shortcut on Windows
 - [x] 08-07-PLAN.md -- GAP CLOSURE: Integrate Header, edit mode controls, widget gallery
 - [x] 08-08-PLAN.md -- GAP CLOSURE: Visual polish (sparkline height, avatars, grid gaps, defaults)
+- [x] 08-09-PLAN.md -- GAP CLOSURE R2: Visual fixes (avatar shape, header layout, grid gaps, timeline compact, widget avatars)
+- [x] 08-10-PLAN.md -- GAP CLOSURE R2: Persistence and navigation (Customize saves to profile, avatar clickable)
+- [x] 08-11-PLAN.md -- GAP CLOSURE R2: QuickLog enhancements (food selector, time picker, full form navigation)
 
 **Deliverables:**
 - [x] Compact sidebar matching mockup
@@ -74,9 +77,22 @@ Plans:
 - [x] Preserve modularity system (ProfileManager in Settings still works)
 - [x] Header with greeting and quick stats
 - [x] Edit mode with widget gallery
-- [x] Working quick-log flow
+- [x] Working quick-log flow with food selection and time picker
 
-**Success:** Dashboard shows all reptile statuses at a glance, all features work correctly
+**Gap Closure Round 2 (Plans 09-11):**
+- [x] Avatars as rounded squares (rounded-xl), not circles
+- [x] Header edge-to-edge, not centered
+- [x] No gap between status cards and bottom widgets
+- [x] Today timeline compact like mockup
+- [x] Avatars in Recent Activity and Weight Trends widgets
+- [x] Notification dropdown opens within viewport
+- [x] Customize persistence to active profile
+- [x] Avatar click navigates to detail page
+- [x] QuickLog food selector with favorites
+- [x] QuickLog time picker
+- [x] "Open full form" navigation fix
+
+**Success:** Dashboard shows all reptile statuses at a glance, all features work correctly, matches mockup
 
 ---
 
