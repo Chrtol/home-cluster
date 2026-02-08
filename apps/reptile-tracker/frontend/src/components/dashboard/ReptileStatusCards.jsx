@@ -223,7 +223,7 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
     <div>
       {/* No container card - individual reptile cards provide the visual structure */}
 
-      <div className={getGridClasses()}>
+      <div className={`${getGridClasses()} auto-rows-min`}>
         {reptiles.map((reptile, index) => (
           <ReptileStatusCard
             key={reptile.id}
