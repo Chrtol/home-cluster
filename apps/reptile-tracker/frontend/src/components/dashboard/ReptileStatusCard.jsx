@@ -189,10 +189,11 @@ const ReptileStatusCard = ({
         {/* Avatar with status indicator */}
         <div className="relative flex-shrink-0">
           <div
+            onClick={handleNameClick}
             className={cn(
-              'rounded-xl overflow-hidden',
+              'rounded-xl overflow-hidden cursor-pointer transition-all',
               statusRingColors[taskStatus],
-              'ring-2',
+              'ring-2 hover:ring-primary',
               isCompact && !isExpanded ? 'w-12 h-12' : 'w-16 h-16'
             )}
           >
@@ -211,7 +212,7 @@ const ReptileStatusCard = ({
           {/* Status dot */}
           <span
             className={cn(
-              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card',
+              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card pointer-events-none',
               statusDotColors[taskStatus]
             )}
           />
