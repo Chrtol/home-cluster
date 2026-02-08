@@ -38,7 +38,9 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
 
       // Calculate current week range
       const today = new Date();
-      const firstDayOfWeek = getUserFirstDayOfWeek();
+      // getUserFirstDayOfWeek returns 'monday' or 'sunday' string, convert to number for date-fns
+      const firstDayStr = getUserFirstDayOfWeek();
+      const firstDayOfWeek = firstDayStr === 'monday' ? 1 : 0;
       const weekStart = startOfWeek(today, { weekStartsOn: firstDayOfWeek });
       const weekEnd = endOfWeek(today, { weekStartsOn: firstDayOfWeek });
 
@@ -49,40 +51,38 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
       const startDate = format(weekStart, 'yyyy-MM-dd');
       const endDate = format(weekEnd, 'yyyy-MM-dd');
 
-      // Fetch this week's data
-      const [feedingsRes, mistingsRes, schedulesRes] = await Promise.all([
-        axios.get('/api/feedings', {
-          params: { start_date: startDate, end_date: endDate }
-        }),
-        axios.get('/api/mistings', {
-          params: { start_date: startDate, end_date: endDate }
-        }),
-        axios.get('/api/schedules', {
+      // Use the weekly-summary API endpoint and schedule-instances for tasks
+      const [summaryRes, instancesRes] = await Promise.all([
+        axios.get('/api/stats/weekly-summary'),
+        axios.get('/api/schedule-instances', {
           params: { start_date: startDate, end_date: endDate }
         })
       ]);
 
-      const feedings = feedingsRes.data || [];
-      const mistings = mistingsRes.data || [];
-      const schedules = schedulesRes.data || [];
+      const summary = summaryRes.data || {};
+      const instances = instancesRes.data || [];
 
-      // Calculate stats
-      const feedingCount = feedings.length;
-      const mistingCount = mistings.length;
+      // Use weekly summary for feedings count
+      const feedingCount = summary.total_feedings || 0;
 
-      // Count scheduled and overdue tasks
+      // Count mistings from instances (task_type = 'misting' and completed)
+      const mistingCount = instances.filter(i =>
+        i.task_type === 'misting' && i.status === 'completed'
+      ).length;
+
+      // Count scheduled and overdue from instances
       const todayStr = format(today, 'yyyy-MM-dd');
       let scheduledCount = 0;
       let overdueCount = 0;
 
-      schedules.forEach(schedule => {
-        const scheduleDate = schedule.scheduled_date;
-        const isCompleted = schedule.completed;
+      instances.forEach(instance => {
+        const instanceDate = instance.scheduled_date;
+        const isCompleted = instance.status === 'completed';
 
         if (!isCompleted) {
-          if (scheduleDate < todayStr) {
+          if (instanceDate < todayStr) {
             overdueCount++;
-          } else if (scheduleDate >= todayStr) {
+          } else {
             scheduledCount++;
           }
         }

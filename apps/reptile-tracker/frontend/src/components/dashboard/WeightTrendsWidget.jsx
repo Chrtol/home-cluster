@@ -33,34 +33,34 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
       setLoading(true);
       setError(null);
 
-      // Calculate date range
+      // Calculate date range for filtering
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - timeRange);
 
-      // Fetch weight logs
-      const response = await axios.get('/api/weighings', {
-        params: {
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd')
-        }
-      });
+      // Fetch weight logs from dashboard endpoint (returns all data, filter client-side)
+      const response = await axios.get('/api/weight/dashboard');
 
       const weighings = response.data || [];
 
+      // Filter by date range client-side
+      const filtered = weighings.filter(log => {
+        const logDate = new Date(log.measured_at);
+        return logDate >= startDate && logDate <= endDate;
+      });
+
       // Group by reptile
       const byReptile = {};
-      weighings.forEach(log => {
+      filtered.forEach(log => {
         if (!byReptile[log.reptile_id]) {
           byReptile[log.reptile_id] = {
             id: log.reptile_id,
             name: log.reptile_name,
-            species: log.species,
             measurements: []
           };
         }
         byReptile[log.reptile_id].measurements.push({
-          weight: log.weight,
+          weight: log.weight_grams, // API returns weight_grams, not weight
           measured_at: log.measured_at
         });
       });
