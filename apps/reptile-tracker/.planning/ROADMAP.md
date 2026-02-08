@@ -44,25 +44,25 @@ Plans:
 
 ---
 
-## Phase 8: Dashboard In Progress (Gap Closure)
+## Phase 8: Dashboard Complete
 
 **Goal:** Transform dashboard into single pane of glass showing all reptile statuses at a glance
 
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, NAV-01, NAV-02
 
-**Status:** Gap closure in progress
-**Plans:** 8 (4 complete, 4 gap closure)
-**Verification:** 31/38 must-haves (81.6%). See 08-VERIFICATION.md and 08-UAT.md.
+**Status:** Complete (2026-02-08)
+**Plans:** 8/8 complete
+**Verification:** 35/38 must-haves (92%). See 08-VERIFICATION.md.
 
 Plans:
 - [x] 08-01-PLAN.md -- Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
 - [x] 08-02-PLAN.md -- Reptile status cards widget with compact mode, drag reorder, task chips
 - [x] 08-03-PLAN.md -- Today's schedule timeline with time grouping, filters, auto-scroll, quick-log
 - [x] 08-04-PLAN.md -- Weight trends sparklines, week summary, recent activity, edit mode, widget gallery
-- [ ] 08-05-PLAN.md -- GAP CLOSURE: Fix QuickLogForm 404, task names, weight display, supplements
-- [ ] 08-06-PLAN.md -- GAP CLOSURE: Fix timeline time slot grouping, Ctrl+K shortcut on Windows
-- [ ] 08-07-PLAN.md -- GAP CLOSURE: Integrate Header, edit mode controls, widget gallery
-- [ ] 08-08-PLAN.md -- GAP CLOSURE: Visual polish (sparkline height, avatars, grid gaps, defaults)
+- [x] 08-05-PLAN.md -- GAP CLOSURE: Fix QuickLogForm 404, task names, weight display, supplements
+- [x] 08-06-PLAN.md -- GAP CLOSURE: Fix timeline time slot grouping, Ctrl+K shortcut on Windows
+- [x] 08-07-PLAN.md -- GAP CLOSURE: Integrate Header, edit mode controls, widget gallery
+- [x] 08-08-PLAN.md -- GAP CLOSURE: Visual polish (sparkline height, avatars, grid gaps, defaults)
 
 **Deliverables:**
 - [x] Compact sidebar matching mockup
@@ -72,16 +72,9 @@ Plans:
 - [x] Weight trends with sparklines
 - [x] Week summary stats
 - [x] Preserve modularity system (ProfileManager in Settings still works)
-
-**Gap Closure (Plans 05-08):**
-- [ ] Fix QuickLogForm 404 errors (BLOCKER)
-- [ ] Fix task chip display (shows "task" instead of names)
-- [ ] Fix weight display (NaN%)
-- [ ] Fix timeline time slot grouping (all in evening)
-- [ ] Fix Ctrl+K on Windows
-- [ ] Integrate Header component
-- [ ] Wire edit mode and widget gallery
-- [ ] Visual polish (sparklines, avatars, grid gaps)
+- [x] Header with greeting and quick stats
+- [x] Edit mode with widget gallery
+- [x] Working quick-log flow
 
 **Success:** Dashboard shows all reptile statuses at a glance, all features work correctly
 

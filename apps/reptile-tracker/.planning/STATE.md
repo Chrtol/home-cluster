@@ -18,25 +18,35 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | Gap Closure (6/8 plans complete) |
+| Phase Status | COMPLETE (8/8 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 8 - Gap Closure (6/8 gap plans complete)
+Progress: Phase 8 - Complete
 ```
 Phase 7 (Foundation):
-07-01: █ Complete (shadcn/ui foundation)
-07-02: █ Complete (core UI components)
-07-03: █ Complete (date/time pickers)
+07-01: Complete (shadcn/ui foundation)
+07-02: Complete (core UI components)
+07-03: Complete (date/time pickers)
 
 Phase 8 (Dashboard):
-08-01: █ Complete (navigation foundation)
-08-02: █ Complete (reptile status cards)
-08-03: █ Complete (quick log form & timeline)
-08-04: █ Complete (dashboard widgets & edit mode)
-08-05: █ Complete (gap closure - form, status, weight fixes)
-08-06: █ Complete (gap closure - timeline & keyboard shortcuts)
-08-07: ░ Pending (gap closure - Header & edit mode integration)
-08-08: ░ Pending (gap closure - overall verification)
+08-01: Complete (navigation foundation)
+08-02: Complete (reptile status cards)
+08-03: Complete (quick log form & timeline)
+08-04: Complete (dashboard widgets & edit mode)
+08-05: Complete (gap closure - form, status, weight fixes)
+08-06: Complete (gap closure - timeline & keyboard shortcuts)
+08-07: Complete (gap closure - Header & edit mode integration)
+08-08: Complete (gap closure - visual polish)
+```
+
+Progress bar:
+```
+Phase 7:  [========] 3/3
+Phase 8:  [========] 8/8
+Phase 9:  [        ] 0/?
+Phase 10: [        ] 0/?
+Phase 11: [        ] 0/?
+Phase 12: [        ] 0/?
 ```
 
 ## Milestone Scope
@@ -49,12 +59,12 @@ Phase 8 (Dashboard):
 
 **Phases:**
 ```
-Phase 7:  Foundation      █ Complete (3/3 plans)
-Phase 8:  Dashboard       █ Complete (4/4 plans)
-Phase 9:  Reptile Pages   ○ Not started
-Phase 10: Calendar/Stats  ○ Not started
-Phase 11: Forms/Tables    ○ Not started
-Phase 12: Polish/Mobile   ○ Not started
+Phase 7:  Foundation      Complete (3/3 plans)
+Phase 8:  Dashboard       Complete (8/8 plans)
+Phase 9:  Reptile Pages   Not started
+Phase 10: Calendar/Stats  Not started
+Phase 11: Forms/Tables    Not started
+Phase 12: Polish/Mobile   Not started
 ```
 
 ## Key Decisions (v1.1)
@@ -82,9 +92,11 @@ Phase 12: Polish/Mobile   ○ Not started
 | 2026-02-08 | Recharts sparklines for weight trends | Minimal LineChart config for compact trend visualization |
 | 2026-02-08 | Week summary 2x2 stat grid | Compact weekly stats (feedings, mistings, scheduled, overdue) in grid layout |
 | 2026-02-08 | Compact activity widget pattern | Separate compact_recent_activity widget vs. config on recent_activity for different use cases |
-| 2026-02-08 | Edit mode components ready, integration deferred | EditModeControls and WidgetGallery created, Dashboard integration deferred to avoid extensive refactoring |
+| 2026-02-08 | Edit mode components now integrated | Header, EditModeControls, WidgetGallery all wired up in Dashboard |
 | 2026-02-08 | Time-only string parsing via regex | Use regex detection before Date constructor for HH:MM format times |
 | 2026-02-08 | Case-insensitive keyboard shortcuts | Use e.key.toLowerCase() for reliable shortcut matching across platforms |
+| 2026-02-08 | Sparkline height 32px | Increased from 16px for visible weight trend curves |
+| 2026-02-08 | auto-rows-min grid pattern | Prevents empty grid gaps when reptile count doesn't fill rows |
 
 ## Reference Documents
 
@@ -96,30 +108,30 @@ Phase 12: Polish/Mobile   ○ Not started
 
 ## Next Steps
 
-Phase 8 (Dashboard) is now complete. Ready to begin Phase 9 (Reptile Pages):
+Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 
 ```
 /gsd:research-phase 9
 ```
 
-This will plan the reptile detail pages redesign with new UI components.
-
 ## Session Continuity
 
-**Last session:** 2026-02-08T19:36:00Z
-**Stopped at:** Phase 8 gap closure plan 6 complete
-**Resume file:** `.planning/phases/08-dashboard/08-06-SUMMARY.md`
+**Last session:** 2026-02-08T19:49:00Z
+**Stopped at:** Phase 8 complete
+**Resume file:** `.planning/phases/08-dashboard/08-08-SUMMARY.md`
 
 **Recent activity:**
+- 08-08: Gap closure - visual polish (complete) - Taller sparklines (32px), alternating row colors, auto-rows-min grid
+- 08-07: Gap closure - Header & edit mode integration (complete) - Header now renders on Dashboard with greeting/stats, EditModeControls accessible via Customize button, WidgetGallery opens from floating + button
 - 08-06: Gap closure - timeline & keyboard shortcuts (complete) - Fixed time slot grouping for time-only strings, Ctrl+K shortcut on Windows
 - 08-05: Gap closure - form, status, weight fixes (complete) - QuickLogForm API, TaskChip display, weight NaN fix
-- 08-04: Dashboard widgets & edit mode (complete) - WeightTrendsWidget (sparklines), WeekSummaryWidget (stat grid), RecentActivityWidget (compact), EditModeControls, WidgetGallery
-- 08-03: Quick log form & timeline (complete) - QuickLogForm, TodayScheduleTimeline, unified quick-log experience
-- 08-02: Reptile status cards (complete) - TaskChip, ReptileStatusCard, ReptileStatusCards widget with auto-compact
+- 08-04: Dashboard widgets & edit mode (complete) - WeightTrendsWidget, WeekSummaryWidget, RecentActivityWidget, EditModeControls, WidgetGallery
+- 08-03: Quick log form & timeline (complete) - QuickLogForm, TodayScheduleTimeline
+- 08-02: Reptile status cards (complete) - TaskChip, ReptileStatusCard, ReptileStatusCards
 - 08-01: Navigation foundation (complete) - compact sidebar, Header component, keyboard shortcuts
 - Phase 7: All 3 plans complete (shadcn/ui, components, date pickers)
 
-**Phase 8 status:** 6 of 8 gap closure plans complete - Timeline and shortcuts fixed, 2 plans remaining
+**Phase 8 status:** COMPLETE - All 8 plans executed successfully
 
 ---
-*State updated: 2026-02-08 - Phase 8 Plan 6 (gap closure) complete*
+*State updated: 2026-02-08 - Phase 8 complete*
