@@ -105,8 +105,8 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-        <div className="text-center text-muted-foreground">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+        <div className="text-center text-gray-400 text-sm">
           Loading week summary...
         </div>
       </div>
@@ -115,8 +115,8 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
 
   if (error) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-        <div className="text-center text-red-600 dark:text-red-400">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+        <div className="text-center text-red-400 text-sm">
           {error}
         </div>
       </div>
@@ -124,50 +124,50 @@ const WeekSummaryWidget = ({ config = {}, size = 'small' }) => {
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+    <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-foreground">This Week</h2>
-        <span className="text-xs text-muted-foreground">{weekRange}</span>
+        <h2 className="text-sm font-semibold text-white">This Week</h2>
+        <span className="text-xs text-gray-500">{weekRange}</span>
       </div>
 
       {/* 2x2 grid of stat cards */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         {/* Feedings */}
-        <div className="bg-surface-700/50 rounded-lg p-2 text-center">
+        <div className="text-center p-2 rounded-lg bg-surface-700/50">
           <div className="text-lg font-semibold text-accent-400">
             {stats.feedings}
           </div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">
+          <div className="text-[10px] text-gray-500">
             Feedings
           </div>
         </div>
 
         {/* Mistings */}
-        <div className="bg-surface-700/50 rounded-lg p-2 text-center">
+        <div className="text-center p-2 rounded-lg bg-surface-700/50">
           <div className="text-lg font-semibold text-status-mist">
             {stats.mistings}
           </div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">
+          <div className="text-[10px] text-gray-500">
             Mistings
           </div>
         </div>
 
         {/* Scheduled */}
-        <div className="bg-surface-700/50 rounded-lg p-2 text-center">
-          <div className="text-lg font-semibold text-foreground">
+        <div className="text-center p-2 rounded-lg bg-surface-700/50">
+          <div className="text-lg font-semibold text-white">
             {stats.scheduled}
           </div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">
+          <div className="text-[10px] text-gray-500">
             Scheduled
           </div>
         </div>
 
         {/* Overdue */}
-        <div className="bg-surface-700/50 rounded-lg p-2 text-center">
+        <div className="text-center p-2 rounded-lg bg-surface-700/50">
           <div className="text-lg font-semibold text-status-overdue">
             {stats.overdue}
           </div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide">
+          <div className="text-[10px] text-gray-500">
             Overdue
           </div>
         </div>

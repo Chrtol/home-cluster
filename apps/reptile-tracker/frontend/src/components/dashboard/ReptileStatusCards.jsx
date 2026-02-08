@@ -39,10 +39,10 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
 
       const today = toLocalISODate(new Date());
 
-      // Fetch reptiles with today's schedules
-      const [reptilesRes, schedulesRes, bulkDataRes] = await Promise.all([
+      // Fetch reptiles with today's schedule instances
+      const [reptilesRes, instancesRes, bulkDataRes] = await Promise.all([
         axios.get('/api/reptiles'),
-        axios.get('/api/schedules', {
+        axios.get('/api/schedule-instances/calendar', {
           params: {
             start_date: today,
             end_date: today
@@ -73,13 +73,23 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
         }
       }
 
-      // Attach today's tasks, last feeding, and last weight to each reptile
-      const schedules = schedulesRes.data || [];
+      // Process schedule instances into task format
+      const instances = instancesRes.data || [];
       const bulkData = bulkDataRes.data;
 
       const enrichedReptiles = reptilesData.map(reptile => {
-        // Find today's tasks for this reptile
-        const todayTasks = schedules.filter(s => s.reptile_id === reptile.id);
+        // Find today's tasks for this reptile from schedule instances
+        const todayTasks = instances
+          .filter(i => i.schedule?.reptile_id === reptile.id)
+          .map(i => ({
+            id: i.id,
+            schedule_id: i.schedule_id,
+            schedule_type: i.schedule?.schedule_type,
+            scheduled_time: i.schedule?.scheduled_time,
+            status: i.status,
+            completed_at: i.status === 'completed' ? i.updated_at : null,
+            reptile_id: reptile.id
+          }));
 
         // Find last feeding
         const lastFeeding = bulkData?.last_activity?.[reptile.id]?.last_feeding?.[0]?.fed_at || null;

@@ -56,10 +56,10 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         icon: Utensils,
         reptile_id: f.reptile_id,
         reptile_name: f.reptile_name,
-        species: f.species,
+        reptile: { id: f.reptile_id, name: f.reptile_name, avatar_photo_url: f.avatar_photo_url },
         timestamp: f.fed_at,
-        description: `Fed ${f.food_item || 'food'}`,
-        quantity: f.quantity,
+        description: `${f.food_item || 'Food'}${f.supplements ? ` + ${f.supplements}` : ''}`,
+        quantity: f.quantity ? `×${f.quantity}` : null,
         details: f.notes
       }));
 
@@ -68,10 +68,10 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         icon: Droplets,
         reptile_id: m.reptile_id,
         reptile_name: m.reptile_name,
-        species: m.species,
+        reptile: { id: m.reptile_id, name: m.reptile_name, avatar_photo_url: m.avatar_photo_url },
         timestamp: m.misted_at,
         description: 'Misted',
-        quantity: m.duration ? `${m.duration} sec` : null,
+        quantity: m.duration ? `${m.duration}s` : null,
         details: m.notes
       }));
 
@@ -80,9 +80,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         icon: Scale,
         reptile_id: w.reptile_id,
         reptile_name: w.reptile_name,
-        species: w.species,
+        reptile: { id: w.reptile_id, name: w.reptile_name, avatar_photo_url: w.avatar_photo_url },
         timestamp: w.measured_at,
-        description: 'Weighed',
+        description: 'Weight recorded',
         quantity: `${w.weight}g`,
         details: w.notes
       }));
@@ -92,7 +92,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         icon: Activity,
         reptile_id: h.reptile_id,
         reptile_name: h.reptile_name,
-        species: h.species,
+        reptile: { id: h.reptile_id, name: h.reptile_name, avatar_photo_url: h.avatar_photo_url },
         timestamp: h.event_date,
         description: h.event_type,
         quantity: null,
@@ -115,8 +115,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-        <div className="text-center text-muted-foreground">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+        <div className="text-center text-gray-400 text-sm">
           Loading recent activity...
         </div>
       </div>
@@ -125,8 +125,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
 
   if (error) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-        <div className="text-center text-red-600 dark:text-red-400">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+        <div className="text-center text-red-400 text-sm">
           {error}
         </div>
       </div>
@@ -135,11 +135,11 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
 
   if (activities.length === 0) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold text-foreground">Recent Activity</h2>
+          <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
         </div>
-        <div className="text-center text-muted-foreground text-sm">
+        <div className="text-center text-gray-400 text-sm">
           No recent activity
         </div>
       </div>
@@ -147,59 +147,50 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+    <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-foreground">Recent Activity</h2>
+        <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
         <Link
           to="/activity"
-          className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline"
+          className="text-xs text-accent-500 hover:text-accent-400"
         >
           View all
         </Link>
       </div>
 
       <div className="space-y-2">
-        {activities.map((activity, index) => {
-          const Icon = activity.icon;
-          return (
-            <div
-              key={`${activity.type}-${activity.timestamp}-${index}`}
-              className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-700/50 transition-colors"
-            >
-              {/* Avatar */}
-              <ReptileAvatar
-                name={activity.reptile_name}
-                species={activity.species}
-                size="w-6 h-6"
-                className="flex-shrink-0"
-              />
+        {activities.map((activity, index) => (
+          <div
+            key={`${activity.type}-${activity.timestamp}-${index}`}
+            className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-surface-700/50"
+          >
+            {/* Avatar */}
+            <ReptileAvatar
+              reptile={activity.reptile}
+              size="sm"
+            />
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                {/* Description */}
-                <div className="text-xs text-foreground truncate">
-                  {activity.description}
-                </div>
-
-                {/* Reptile name + time */}
-                <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                  <span className="truncate">{activity.reptile_name}</span>
-                  <span className="text-gray-400">·</span>
-                  <span className="whitespace-nowrap">
-                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                  </span>
-                </div>
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              {/* Description */}
+              <div className="text-xs text-gray-300 truncate">
+                {activity.description}
               </div>
 
-              {/* Quantity */}
-              {activity.quantity && (
-                <div className="text-xs text-gray-500 flex-shrink-0">
-                  {activity.quantity}
-                </div>
-              )}
+              {/* Reptile name + time */}
+              <div className="text-[10px] text-gray-500">
+                {activity.reptile_name} · {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+              </div>
             </div>
-          );
-        })}
+
+            {/* Quantity */}
+            {activity.quantity && (
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                {activity.quantity}
+              </span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

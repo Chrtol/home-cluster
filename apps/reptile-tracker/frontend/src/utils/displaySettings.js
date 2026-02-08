@@ -19,19 +19,23 @@
  *   - interpolationMode: 'linear' | 'step' | 'none' (only for weight-related charts)
  */
 const DEFAULT_DASHBOARD_CARDS = [
-  { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+  // Hero section: Reptile status cards (3 cols) + Today timeline (1 col)
+  { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
   { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'small', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-  { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 2, size: 'large', type: 'content' },
-  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'large', type: 'content', interpolationMode: 'linear' },
-  { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 4, size: 'small', type: 'content' },
-  { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 5, size: 'medium', type: 'content' },
-  { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 6, size: 'small', type: 'content', config: { timeRange: 90 } },
-  { id: 'week_summary', label: 'This Week', visible: true, order: 7, size: 'small', type: 'content' },
-  { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: false, order: 8, size: 'small', type: 'content', config: { itemCount: 5 } },
-  // Additional summary cards (disabled by default) - TODO: Implement these in Dashboard.jsx
-  { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 9, size: 'large', type: 'summary' },
-  { id: 'health_summary', label: 'Health Summary', visible: false, order: 10, size: 'large', type: 'summary' },
-  { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 11, size: 'large', type: 'summary' },
+  // Bottom row: Recent Activity + Weight Trends + This Week
+  { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
+  { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'small', type: 'content', config: { timeRange: 90 } },
+  { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'small', type: 'content' },
+  // Legacy widgets (hidden by default in v1.1)
+  { id: 'today_summary', label: 'Today Summary', visible: false, order: 5, size: 'large', type: 'summary' },
+  { id: 'weekly_calendar', label: 'Weekly Calendar', visible: false, order: 6, size: 'large', type: 'content' },
+  { id: 'weight_chart', label: 'Weight Tracking', visible: false, order: 7, size: 'large', type: 'content', interpolationMode: 'linear' },
+  { id: 'reptile_cards', label: 'Your Reptiles (Legacy)', visible: false, order: 8, size: 'small', type: 'content' },
+  { id: 'recent_activity', label: 'Recent Activity (Full)', visible: false, order: 9, size: 'medium', type: 'content' },
+  // Summary cards
+  { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 10, size: 'large', type: 'summary' },
+  { id: 'health_summary', label: 'Health Summary', visible: false, order: 11, size: 'large', type: 'summary' },
+  { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 12, size: 'large', type: 'summary' },
 ];
 
 export function getDashboardCardSettings() {
@@ -436,14 +440,13 @@ export function getDisplayProfiles() {
       id: 'standard',
       name: 'Standard',
       dashboard_cards: [
-        { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+        // Hero row: Reptile status cards (3 cols) + Today timeline (1 col)
+        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
         { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'small', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-        { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 2, size: 'large', type: 'content' },
-        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'medium', type: 'content', interpolationMode: 'linear' },
-        { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 4, size: 'xs', type: 'content' },
-        { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 5, size: 'large', type: 'content' },
-        { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 6, size: 'small', type: 'content', config: { timeRange: 90 } },
-        { id: 'week_summary', label: 'This Week', visible: true, order: 7, size: 'small', type: 'content' },
+        // Bottom row: 3 equal columns
+        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
+        { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'small', type: 'content', config: { timeRange: 90 } },
+        { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'small', type: 'content' },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -457,13 +460,13 @@ export function getDisplayProfiles() {
       id: 'compact',
       name: 'Compact',
       dashboard_cards: [
-        { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
-        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+        // Hero row with compact cards
+        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
+        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'small', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+        // Bottom row
         { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 3 } },
-        { id: 'week_summary', label: 'This Week', visible: true, order: 3, size: 'small', type: 'content' },
-        { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 4, size: 'xs', type: 'content' },
-        { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 5, size: 'small', type: 'content', config: { timeRange: 90 } },
-        { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 6, size: 'xs', type: 'content' },
+        { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'small', type: 'content', config: { timeRange: 90 } },
+        { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'small', type: 'content' },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -477,13 +480,12 @@ export function getDisplayProfiles() {
       id: 'mobile',
       name: 'Mobile',
       dashboard_cards: [
-        { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+        // Mobile: Stack vertically
+        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
         { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-        { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 2, size: 'large', type: 'content' },
-        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, size: 'large', type: 'content', config: { itemCount: 5 } },
+        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'large', type: 'content', config: { itemCount: 5 } },
+        { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'large', type: 'content', config: { timeRange: 90 } },
         { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'large', type: 'content' },
-        { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 5, size: 'xs', type: 'content' },
-        { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 6, size: 'large', type: 'content', config: { timeRange: 90 } },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -510,14 +512,13 @@ export function getDisplayProfiles() {
         id: 'standard',
         name: 'Standard',
         dashboard_cards: [
-          { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+          // Hero row: Reptile status cards (3 cols) + Today timeline (1 col)
+          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
           { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'small', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-          { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 2, size: 'large', type: 'content' },
-          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'medium', type: 'content', interpolationMode: 'linear' },
-          { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 4, size: 'xs', type: 'content' },
-          { id: 'recent_activity', label: 'Recent Activity', visible: true, order: 5, size: 'large', type: 'content' },
-          { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 6, size: 'small', type: 'content', config: { timeRange: 90 } },
-          { id: 'week_summary', label: 'This Week', visible: true, order: 7, size: 'small', type: 'content' },
+          // Bottom row: 3 equal columns
+          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
+          { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'small', type: 'content', config: { timeRange: 90 } },
+          { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'small', type: 'content' },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,
@@ -534,13 +535,13 @@ export function getDisplayProfiles() {
         id: 'compact',
         name: 'Compact',
         dashboard_cards: [
-          { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
-          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+          // Hero row with compact cards
+          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
+          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'small', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+          // Bottom row
           { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 3 } },
-          { id: 'week_summary', label: 'This Week', visible: true, order: 3, size: 'small', type: 'content' },
-          { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 4, size: 'xs', type: 'content' },
-          { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 5, size: 'small', type: 'content', config: { timeRange: 90 } },
-          { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 6, size: 'xs', type: 'content' },
+          { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'small', type: 'content', config: { timeRange: 90 } },
+          { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'small', type: 'content' },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,
@@ -557,13 +558,12 @@ export function getDisplayProfiles() {
         id: 'mobile',
         name: 'Mobile',
         dashboard_cards: [
-          { id: 'today_summary', label: 'Today Summary', visible: true, order: 0, size: 'large', type: 'summary' },
+          // Mobile: Stack vertically
+          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
           { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-          { id: 'reptile_cards', label: 'Your Reptiles', visible: true, order: 2, size: 'large', type: 'content' },
-          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, size: 'large', type: 'content', config: { itemCount: 5 } },
+          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'large', type: 'content', config: { itemCount: 5 } },
+          { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 3, size: 'large', type: 'content', config: { timeRange: 90 } },
           { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'large', type: 'content' },
-          { id: 'weekly_calendar', label: 'Weekly Calendar', visible: true, order: 5, size: 'xs', type: 'content' },
-          { id: 'weight_trends', label: 'Weight Trends', visible: true, order: 6, size: 'large', type: 'content', config: { timeRange: 90 } },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,

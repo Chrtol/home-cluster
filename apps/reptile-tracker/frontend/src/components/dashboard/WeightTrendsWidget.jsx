@@ -56,6 +56,12 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
           byReptile[log.reptile_id] = {
             id: log.reptile_id,
             name: log.reptile_name,
+            // Create reptile object for ReptileAvatar
+            reptile: {
+              id: log.reptile_id,
+              name: log.reptile_name,
+              avatar_photo_url: log.avatar_photo_url || null
+            },
             measurements: []
           };
         }
@@ -126,8 +132,8 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-        <div className="text-center text-muted-foreground">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+        <div className="text-center text-gray-400 text-sm">
           Loading weight trends...
         </div>
       </div>
@@ -136,8 +142,8 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
 
   if (error) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-        <div className="text-center text-red-600 dark:text-red-400">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
+        <div className="text-center text-red-400 text-sm">
           {error}
         </div>
       </div>
@@ -146,11 +152,11 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
 
   if (reptileWeights.length === 0) {
     return (
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+      <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold text-foreground">Weight Trends</h2>
+          <h2 className="text-sm font-semibold text-white">Weight Trends</h2>
         </div>
-        <div className="text-center text-muted-foreground text-sm">
+        <div className="text-center text-gray-400 text-sm">
           No weight data in the last {timeRange} days
         </div>
       </div>
@@ -158,13 +164,13 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+    <div className="bg-surface-800 rounded-xl border border-surface-600/50 p-3">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-foreground">Weight Trends</h2>
+        <h2 className="text-sm font-semibold text-white">Weight Trends</h2>
         <select
           value={timeRange}
           onChange={(e) => handleTimeRangeChange(Number(e.target.value))}
-          className="text-xs px-2 py-1 rounded border border-border bg-surface-700/50 text-foreground"
+          className="text-xs bg-surface-700 border-none rounded px-2 py-1 text-gray-400"
         >
           <option value={30}>30 days</option>
           <option value={90}>90 days</option>
@@ -176,48 +182,41 @@ const WeightTrendsWidget = ({ config = {}, size = 'small' }) => {
         {reptileWeights.map(reptile => (
           <div
             key={reptile.id}
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-700/30 transition-colors"
+            className="flex items-center gap-3"
           >
             {/* Avatar */}
             <ReptileAvatar
-              name={reptile.name}
-              species={reptile.species}
-              size="w-6 h-6"
-              className="flex-shrink-0"
+              reptile={reptile.reptile}
+              size="sm"
             />
 
-            {/* Name and current weight */}
-            <div className="flex-shrink-0 min-w-[100px]">
-              <div className="text-sm font-medium text-foreground truncate">
-                {reptile.name}
+            {/* Name, weight, and sparkline */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-300">{reptile.name}</span>
+                <span className="text-xs font-medium text-white">{reptile.currentWeight}g</span>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {reptile.currentWeight}g
+              {/* Sparkline */}
+              <div className="h-4 w-full">
+                <ResponsiveContainer width="100%" height={16}>
+                  <LineChart data={reptile.measurements}>
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-
-            {/* Sparkline */}
-            <div className="flex-1 min-w-[60px] h-6">
-              <ResponsiveContainer width="100%" height={16}>
-                <LineChart data={reptile.measurements}>
-                  <Line
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
             </div>
 
             {/* Change percentage */}
             {reptile.changePercent !== null && (
-              <div
-                className={`text-xs font-medium flex-shrink-0 ${getChangeColor(reptile.changePercent)}`}
-              >
+              <span className={`text-xs ${getChangeColor(reptile.changePercent)}`}>
                 {formatChange(reptile.changePercent)}
-              </div>
+              </span>
             )}
           </div>
         ))}
