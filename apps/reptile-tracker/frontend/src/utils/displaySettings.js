@@ -384,6 +384,71 @@ function mergeStatisticsCharts(current, imported) {
 }
 
 /**
+ * Update dashboard cards for a specific profile
+ * @param {string} profileId - Profile ID to update
+ * @param {Array} cards - Updated dashboard cards array
+ * @returns {boolean} Success status
+ */
+export function updateProfileCards(profileId, cards) {
+  const profiles = getDisplayProfiles();
+  const profileIndex = profiles.findIndex(p => p.id === profileId);
+
+  if (profileIndex === -1) return false;
+
+  profiles[profileIndex] = {
+    ...profiles[profileIndex],
+    dashboard_cards: cards,
+    updated_at: new Date().toISOString()
+  };
+
+  localStorage.setItem('display_profiles', JSON.stringify(profiles));
+
+  // Also update current session settings
+  saveDashboardCardSettings(cards);
+
+  return true;
+}
+
+/**
+ * Reset a profile's dashboard cards to default
+ * @param {string} profileId - Profile ID to reset
+ * @returns {boolean} Success status
+ */
+export function resetProfileToDefault(profileId) {
+  const profiles = getDisplayProfiles();
+  const profile = profiles.find(p => p.id === profileId);
+
+  if (!profile) return false;
+
+  // Get the appropriate default cards based on profile
+  let defaultCards;
+  if (profileId === 'mobile') {
+    defaultCards = [
+      { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+      { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+      { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'large', type: 'content', config: { itemCount: 5 } },
+      { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'large', type: 'content', interpolationMode: 'linear' },
+      { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'large', type: 'content' },
+    ];
+  } else {
+    // Standard and compact use same defaults with different item counts
+    defaultCards = [
+      { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
+      { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+      { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: profileId === 'compact' ? 3 : 5 } },
+      { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
+      { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+    ];
+  }
+
+  // Add hidden widgets to complete the list
+  const hiddenWidgets = DEFAULT_DASHBOARD_CARDS.filter(dc => !defaultCards.find(d => d.id === dc.id));
+  const fullCards = [...defaultCards, ...hiddenWidgets];
+
+  return updateProfileCards(profileId, fullCards);
+}
+
+/**
  * Reset all display settings to defaults
  */
 export function resetAllDisplaySettings() {
