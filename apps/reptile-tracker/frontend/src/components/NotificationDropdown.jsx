@@ -86,10 +86,9 @@ const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
 
   return (
     <div
-      className="fixed left-4 right-4 md:left-auto md:right-auto md:w-96 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-[9999]"
+      className="fixed left-4 right-4 md:left-auto md:right-4 md:w-96 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-[9999]"
       style={{
         top: `${position.top}px`,
-        left: window.innerWidth >= 768 ? `${position.left}px` : undefined,
       }}
     >
       {/* Header */}
