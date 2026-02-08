@@ -90,6 +90,9 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
         scheduled_date: instance.scheduled_date,
         // Use earliest_time from schedule for time display, fallback to scheduled_date
         scheduled_time: instance.schedule?.earliest_time || instance.scheduled_date,
+        // Include both earliest and latest time for range display
+        earliest_time: instance.schedule?.earliest_time,
+        latest_time: instance.schedule?.latest_time,
         schedule_type: instance.schedule?.schedule_type,
         type: instance.schedule?.schedule_type,
         // Include reptile object for ReptileAvatar
@@ -345,12 +348,20 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                         onMouseEnter={() => handleMouseEnter(schedule)}
                         onMouseLeave={handleMouseLeave}
                       >
-                        {/* Scheduled time display - show raw time if it's HH:MM format */}
-                        {schedule.scheduled_time && (
+                        {/* Scheduled time display - show range if both times exist */}
+                        {(schedule.earliest_time || schedule.scheduled_time) && (
                           <div className="text-[10px] text-muted-foreground mb-0.5">
-                            {typeof schedule.scheduled_time === 'string' && schedule.scheduled_time.match(/^\d{2}:\d{2}/)
-                              ? schedule.scheduled_time.slice(0, 5)
-                              : formatTime(schedule.scheduled_time)}
+                            {schedule.earliest_time && schedule.latest_time ? (
+                              // Show time range
+                              typeof schedule.earliest_time === 'string' && schedule.earliest_time.match(/^\d{2}:\d{2}/)
+                                ? `${schedule.earliest_time.slice(0, 5)} - ${schedule.latest_time.slice(0, 5)}`
+                                : `${formatTime(schedule.earliest_time)} - ${formatTime(schedule.latest_time)}`
+                            ) : (
+                              // Show single time
+                              typeof schedule.scheduled_time === 'string' && schedule.scheduled_time.match(/^\d{2}:\d{2}/)
+                                ? schedule.scheduled_time.slice(0, 5)
+                                : formatTime(schedule.scheduled_time)
+                            )}
                           </div>
                         )}
                         <div className="flex items-center gap-1.5">
@@ -406,12 +417,20 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                           onMouseEnter={() => handleMouseEnter(schedule)}
                           onMouseLeave={handleMouseLeave}
                         >
-                          {/* Scheduled time display - show raw time if it's HH:MM format */}
-                          {schedule.scheduled_time && (
+                          {/* Scheduled time display - show range if both times exist */}
+                          {(schedule.earliest_time || schedule.scheduled_time) && (
                             <div className="text-[10px] text-muted-foreground mb-0.5">
-                              {typeof schedule.scheduled_time === 'string' && schedule.scheduled_time.match(/^\d{2}:\d{2}/)
-                                ? schedule.scheduled_time.slice(0, 5)
-                                : formatTime(schedule.scheduled_time)}
+                              {schedule.earliest_time && schedule.latest_time ? (
+                                // Show time range
+                                typeof schedule.earliest_time === 'string' && schedule.earliest_time.match(/^\d{2}:\d{2}/)
+                                  ? `${schedule.earliest_time.slice(0, 5)} - ${schedule.latest_time.slice(0, 5)}`
+                                  : `${formatTime(schedule.earliest_time)} - ${formatTime(schedule.latest_time)}`
+                              ) : (
+                                // Show single time
+                                typeof schedule.scheduled_time === 'string' && schedule.scheduled_time.match(/^\d{2}:\d{2}/)
+                                  ? schedule.scheduled_time.slice(0, 5)
+                                  : formatTime(schedule.scheduled_time)
+                              )}
                             </div>
                           )}
                           <div className="flex items-center gap-1.5">
@@ -449,7 +468,9 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                               {schedule.supplements && schedule.supplements.length > 0 && (
                                 <div className="mb-1">
                                   <span className="text-muted-foreground">Supplements:</span>{' '}
-                                  <span className="text-foreground">{schedule.supplements.join(', ')}</span>
+                                  <span className="text-foreground">
+                                    {schedule.supplements.map(s => typeof s === 'string' ? s : s.name).join(', ')}
+                                  </span>
                                 </div>
                               )}
                               {schedule.last_logged && (
