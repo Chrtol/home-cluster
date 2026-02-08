@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Utensils, Droplet, HeartPulse } from 'lucide-react';
 
 /**
  * TaskChip - Clickable task status chip
@@ -31,6 +32,23 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
     overdue: 'bg-destructive/20 text-destructive'
   };
 
+  // Get task type icon
+  const getTaskIcon = () => {
+    const scheduleType = task.schedule_type || task.type;
+
+    switch (scheduleType) {
+      case 'feeding':
+        return Utensils;
+      case 'misting':
+        return Droplet;
+      case 'health':
+      case 'weighing':
+        return HeartPulse;
+      default:
+        return null;
+    }
+  };
+
   // Format display text
   const getDisplayText = () => {
     // Get task name from schedule data or fall back to capitalized schedule_type
@@ -57,6 +75,8 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
     return taskName;
   };
 
+  const TaskIcon = getTaskIcon();
+
   const handleClick = () => {
     if (onQuickLog) {
       onQuickLog(task);
@@ -73,7 +93,7 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
   return (
     <span
       className={cn(
-        'inline-block px-1.5 py-0.5 rounded text-xs cursor-pointer',
+        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs cursor-pointer',
         'transition-opacity hover:opacity-80',
         statusStyles[status],
         className
@@ -84,7 +104,8 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
       tabIndex={0}
       aria-label={`Quick log ${task.task_name || task.name || task.schedule_type || 'task'}`}
     >
-      {getDisplayText()}
+      {TaskIcon && <TaskIcon className="w-3 h-3" />}
+      <span>{getDisplayText()}</span>
     </span>
   );
 };
