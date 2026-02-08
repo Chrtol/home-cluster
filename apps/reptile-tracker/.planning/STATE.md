@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | GAP CLOSURE R3 (13/14 plans) |
+| Phase Status | COMPLETE (14/14 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 8 - Gap Closure Round 3
@@ -42,17 +42,17 @@ Phase 8 (Dashboard):
 08-11: Complete (gap closure R2 - QuickLog food selector, time picker)
 08-12: Complete (gap closure R3 - bug fixes: time ranges, avatars, locale, supplements)
 08-13: Complete (gap closure R3 - visual: grid gap, timeline avatars, border color)
-08-14: Pending (gap closure R3 - functional: quantity +/-, task icons, customize)
+08-14: Complete (gap closure R3 - functional: quantity +/-, task icons, customize)
 ```
 
 Progress bar:
 ```
 Phase 7:  [========] 3/3
-Phase 8:  [==========░] 13/14
-Phase 9:  [        ] 0/?
-Phase 10: [        ] 0/?
-Phase 11: [        ] 0/?
-Phase 12: [        ] 0/?
+Phase 8:  [===========] 14/14
+Phase 9:  [           ] 0/?
+Phase 10: [           ] 0/?
+Phase 11: [           ] 0/?
+Phase 12: [           ] 0/?
 ```
 
 ## Milestone Scope
@@ -66,7 +66,7 @@ Phase 12: [        ] 0/?
 **Phases:**
 ```
 Phase 7:  Foundation      Complete (3/3 plans)
-Phase 8:  Dashboard       In Progress (12/14 plans)
+Phase 8:  Dashboard       Complete (14/14 plans)
 Phase 9:  Reptile Pages   Not started
 Phase 10: Calendar/Stats  Not started
 Phase 11: Forms/Tables    Not started
@@ -112,6 +112,11 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-08 | Favorites-first food sorting | Food selector sorts reptile favorites with ❤️ first for quick access |
 | 2026-02-08 | HTML5 time input for quick log | Native time picker for accessibility and mobile compatibility |
 | 2026-02-08 | Corrected route paths | /feeding→/feed, /misting→/misting-log to match App.jsx routes |
+| 2026-02-08 | Quantity +/- buttons with min enforcement | Use Math.max(1, value - 1) to prevent quantity going below 1 in QuickLogForm |
+| 2026-02-08 | Task type icon mapping | Utensils for feeding, Droplet for misting, HeartPulse for health/weighing in TaskChip |
+| 2026-02-08 | Edit mode show-on-hover controls | Group/group-hover pattern for widget hide button and drag handle |
+| 2026-02-08 | Widget drag positioning | GripVertical in top-left, X button in top-right for clear visual hierarchy |
+| 2026-02-08 | Drag visual feedback pattern | ring-2 ring-primary on drop target, opacity-50 on dragged item |
 
 ## Reference Documents
 
@@ -131,20 +136,20 @@ Phase 8 is complete. Ready for Phase 9 (Reptile Pages):
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T22:18:21Z
-**Stopped at:** Phase 8 plan 13 complete - visual polish (grid gap, avatars, border colors)
-**Resume file:** `.planning/phases/08-dashboard/08-12-SUMMARY.md`
+**Last session:** 2026-02-08T22:25:29Z
+**Stopped at:** Phase 8 plan 14 complete - functional enhancements (quantity +/-, task icons, edit mode hide/reorder)
+**Resume file:** `.planning/phases/08-dashboard/08-14-SUMMARY.md`
 
 **Recent activity:**
+- 08-14: Functional enhancements (complete) - Quantity +/- buttons, task type icons, widget hide/reorder in edit mode
+- 08-13: Visual polish (complete) - Grid gap fix, timeline avatars, border color consistency
 - 08-12: Data display bug fixes (complete) - Time ranges, supplement tooltips, avatar consistency, locale formatting
 - 08-11: QuickLog enhancements (complete) - Food selector with favorites, time picker, route fixes
 - 08-10: Persistence and navigation (complete) - Profile-aware widget persistence, clickable avatars
 - 08-09: Visual fixes (complete) - Rounded-xl avatars, full-width header, compact timeline, notification dropdown
 - 08-08: Gap closure - visual polish (complete) - Taller sparklines (32px), alternating row colors, auto-rows-min grid
-- 08-07: Gap closure - Header & edit mode integration (complete)
-- 08-06: Gap closure - timeline & keyboard shortcuts (complete)
 
-**Phase 8 status:** IN PROGRESS - 12/14 plans executed, gap closure round 3 underway
+**Phase 8 status:** COMPLETE - All 14 plans executed, dashboard fully functional with all enhancements
 
 ---
-*State updated: 2026-02-08T22:18:00Z - Plan 08-12 complete*
+*State updated: 2026-02-08T22:25:29Z - Phase 8 complete*
