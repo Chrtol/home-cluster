@@ -3,41 +3,75 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light mode (default) */
   :root {
-    /* Cron-inspired near-black palette (matching mockup) */
-    --background: 200 14% 7%;        /* #0f1214 - Deepest background */
-    --foreground: 36 45% 90%;        /* #f0e6d6 - Warm off-white */
+    --background: 0 0% 98%;              /* #fafafa - Light gray background */
+    --foreground: 222 47% 11%;           /* #1a1f2c - Dark text */
 
-    --card: 206 14% 10%;             /* #161a1d - Card background */
-    --card-foreground: 36 45% 90%;
+    --card: 0 0% 100%;                   /* #ffffff - White cards */
+    --card-foreground: 222 47% 11%;
 
-    --popover: 206 14% 10%;          /* #161a1d - Same as card */
-    --popover-foreground: 36 45% 90%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 142 76% 36%;          /* #16a34a - Vibrant green (primary-600) */
+    --primary: 142 76% 36%;              /* #16a34a - Green (same in both modes) */
     --primary-foreground: 144 61% 98%;
 
-    --secondary: 204 14% 14%;        /* #1e2428 - Elevated surface */
+    --secondary: 220 14% 96%;            /* #f4f5f7 - Light elevated surface */
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;      /* #6b7280 - Gray text */
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;            /* #f04747 - Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;               /* #e5e7eb - Light borders */
+    --input: 220 13% 91%;
+    --ring: 142 76% 36%;
+
+    --surface: 0 0% 100%;
+    --surface-elevated: 220 14% 96%;
+
+    --radius: 0.5rem;
+  }
+
+  /* Dark mode */
+  .dark {
+    /* Cron-inspired near-black palette (matching mockup) */
+    --background: 200 14% 7%;            /* #0f1214 - Deepest background */
+    --foreground: 36 45% 90%;            /* #f0e6d6 - Warm off-white */
+
+    --card: 206 14% 10%;                 /* #161a1d - Card background */
+    --card-foreground: 36 45% 90%;
+
+    --popover: 206 14% 10%;
+    --popover-foreground: 36 45% 90%;
+
+    --primary: 142 76% 36%;              /* #16a34a - Vibrant green */
+    --primary-foreground: 144 61% 98%;
+
+    --secondary: 204 14% 14%;            /* #1e2428 - Elevated surface */
     --secondary-foreground: 36 45% 90%;
 
-    --muted: 204 14% 14%;            /* #1e2428 - Muted backgrounds */
-    --muted-foreground: 36 25% 65%;  /* #a89a87 - Muted warm text */
+    --muted: 204 14% 14%;
+    --muted-foreground: 36 25% 65%;      /* #a89a87 - Muted warm text */
 
-    --accent: 204 14% 14%;           /* #1e2428 - Accent backgrounds */
+    --accent: 204 14% 14%;
     --accent-foreground: 36 45% 90%;
 
-    --destructive: 0 84% 60%;        /* #f04747 - Red for destructive actions */
+    --destructive: 0 84% 60%;            /* #f04747 - Red */
     --destructive-foreground: 36 45% 90%;
 
-    --border: 204 14% 18%;           /* #262d33 - Subtle borders */
-    --input: 204 14% 18%;            /* #262d33 - Input borders */
-    --ring: 142 76% 36%;             /* Primary green for focus rings */
+    --border: 204 14% 18%;               /* #262d33 - Subtle borders */
+    --input: 204 14% 18%;
+    --ring: 142 76% 36%;
 
-    /* Additional surface tokens for layering */
-    --surface: 206 14% 10%;          /* #161a1d - Same as card */
-    --surface-elevated: 204 14% 14%; /* #1e2428 - Same as secondary */
-
-    --radius: 0.5rem;                /* 8px default border radius */
+    --surface: 206 14% 10%;
+    --surface-elevated: 204 14% 14%;
   }
 
   body {

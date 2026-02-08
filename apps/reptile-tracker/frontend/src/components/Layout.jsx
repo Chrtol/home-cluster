@@ -49,8 +49,8 @@ export default function Layout({ user, onLogout }) {
         onClick={onClick}
         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
           isActive
-            ? 'bg-primary/20 text-primary border-l-2 border-primary'
-            : 'text-muted-foreground hover:bg-secondary border-l-2 border-transparent'
+            ? 'bg-primary/20 text-primary'
+            : 'text-muted-foreground hover:bg-secondary'
         }`}
       >
         <Icon size={20} />
