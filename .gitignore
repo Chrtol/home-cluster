@@ -25,3 +25,4 @@ ai-activity/*
 # Log files
 *.log
 apps/reptile-tracker/.planning
+.planning
