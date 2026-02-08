@@ -44,28 +44,35 @@ Plans:
 
 ---
 
-## Phase 8: Dashboard
+## Phase 8: Dashboard ✓ Complete (with gaps)
 
 **Goal:** Transform dashboard into single pane of glass showing all reptile statuses at a glance
 
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, NAV-01, NAV-02
 
-**Plans:** 4 plans in 2 waves
+**Status:** Complete (2026-02-08)
+**Plans:** 4/4 complete
+**Verification:** 31/38 must-haves (81.6%). See 08-VERIFICATION.md.
 
 Plans:
-- [ ] 08-01-PLAN.md — Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
-- [ ] 08-02-PLAN.md — Reptile status cards widget with compact mode, drag reorder, task chips
-- [ ] 08-03-PLAN.md — Today's schedule timeline with time grouping, filters, auto-scroll, quick-log
-- [ ] 08-04-PLAN.md — Weight trends sparklines, week summary, recent activity, edit mode, widget gallery
+- [x] 08-01-PLAN.md — Compact sidebar with collapse toggle, header with greeting and quick stats, Cmd/Ctrl+K shortcut
+- [x] 08-02-PLAN.md — Reptile status cards widget with compact mode, drag reorder, task chips
+- [x] 08-03-PLAN.md — Today's schedule timeline with time grouping, filters, auto-scroll, quick-log
+- [x] 08-04-PLAN.md — Weight trends sparklines, week summary, recent activity, edit mode, widget gallery
 
 **Deliverables:**
-- [ ] Compact sidebar matching mockup
-- [ ] Reptile status cards with photo, stats, today's tasks
-- [ ] Today's schedule timeline
-- [ ] Recent activity (compact)
-- [ ] Weight trends with sparklines
-- [ ] Week summary stats
-- [ ] Preserve modularity system
+- [x] Compact sidebar matching mockup
+- [x] Reptile status cards with photo, stats, today's tasks
+- [x] Today's schedule timeline
+- [x] Recent activity (compact)
+- [x] Weight trends with sparklines
+- [x] Week summary stats
+- [x] Preserve modularity system (ProfileManager in Settings still works)
+
+**Gaps (defer to Phase 12 Polish):**
+- Header component not integrated into Dashboard layout
+- Edit mode UI not wired (components exist, EditModeControls/WidgetGallery ready)
+- Per-widget settings popover not implemented
 
 **Success:** Dashboard shows all reptile statuses at a glance, no scrolling needed for overview
 

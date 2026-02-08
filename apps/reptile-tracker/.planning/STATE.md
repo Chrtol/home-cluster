@@ -21,7 +21,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Phase Status | Complete (4/4 plans complete) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 8 - Complete
+Progress: Phase 8 - Complete (31/38 verified, 81.6%)
 ```
 Phase 7 (Foundation):
 07-01: █ Complete (shadcn/ui foundation)
@@ -33,6 +33,8 @@ Phase 8 (Dashboard):
 08-02: █ Complete (reptile status cards)
 08-03: █ Complete (quick log form & timeline)
 08-04: █ Complete (dashboard widgets & edit mode)
+       ⚠ Gaps: Header not integrated, Edit mode UI not wired
+       ProfileManager customization in Settings still works
 ```
 
 ## Milestone Scope
