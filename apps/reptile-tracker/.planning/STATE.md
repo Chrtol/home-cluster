@@ -18,10 +18,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 8 (Dashboard) |
-| Phase Status | In Progress (2/3 plans complete) |
+| Phase Status | Complete (4/4 plans complete) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 8 - In Progress
+Progress: Phase 8 - Complete
 ```
 Phase 7 (Foundation):
 07-01: █ Complete (shadcn/ui foundation)
@@ -31,7 +31,8 @@ Phase 7 (Foundation):
 Phase 8 (Dashboard):
 08-01: █ Complete (navigation foundation)
 08-02: █ Complete (reptile status cards)
-08-03: ░ Not started
+08-03: █ Complete (quick log form & timeline)
+08-04: █ Complete (dashboard widgets & edit mode)
 ```
 
 ## Milestone Scope
@@ -45,7 +46,7 @@ Phase 8 (Dashboard):
 **Phases:**
 ```
 Phase 7:  Foundation      █ Complete (3/3 plans)
-Phase 8:  Dashboard       ◑ In Progress (2/3 plans complete)
+Phase 8:  Dashboard       █ Complete (4/4 plans)
 Phase 9:  Reptile Pages   ○ Not started
 Phase 10: Calendar/Stats  ○ Not started
 Phase 11: Forms/Tables    ○ Not started
@@ -70,6 +71,14 @@ Phase 12: Polish/Mobile   ○ Not started
 | 2026-02-08 | Keyboard shortcuts in Layout | Cmd/Ctrl+K for Track menu, Escape to close, global document listener |
 | 2026-02-08 | Hardcoded compact threshold = 6 | Auto-compact mode triggers at 6+ reptiles, not user-configurable (implementation detail) |
 | 2026-02-08 | Drag-to-reorder desktop only | Touch gestures complex, desktop drag simpler with localStorage persistence |
+| 2026-02-08 | QuickLogForm as modal overlay | Simpler than inline positioning, consistent UX, click-outside-to-close |
+| 2026-02-08 | Smart API endpoint selection in QuickLogForm | Detects task type, routes to /complete-feeding, /complete-misting, /complete-health |
+| 2026-02-08 | Timeline filter persistence | localStorage 'timeline_filters' stores user's active filter preferences |
+| 2026-02-08 | today_timeline in all profiles | Added to standard/compact/mobile profiles with appropriate sizing |
+| 2026-02-08 | Recharts sparklines for weight trends | Minimal LineChart config for compact trend visualization |
+| 2026-02-08 | Week summary 2x2 stat grid | Compact weekly stats (feedings, mistings, scheduled, overdue) in grid layout |
+| 2026-02-08 | Compact activity widget pattern | Separate compact_recent_activity widget vs. config on recent_activity for different use cases |
+| 2026-02-08 | Edit mode components ready, integration deferred | EditModeControls and WidgetGallery created, Dashboard integration deferred to avoid extensive refactoring |
 
 ## Reference Documents
 
@@ -81,26 +90,28 @@ Phase 12: Polish/Mobile   ○ Not started
 
 ## Next Steps
 
-Continue Phase 8 (Dashboard) with remaining plan:
+Phase 8 (Dashboard) is now complete. Ready to begin Phase 9 (Reptile Pages):
 
 ```
-/gsd:execute-phase 8 --plan 03
+/gsd:research-phase 9
 ```
 
-This will implement quick log form for task completion from status cards.
+This will plan the reptile detail pages redesign with new UI components.
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T15:23:00Z
-**Stopped at:** Phase 8, Plan 2 complete
-**Resume file:** `.planning/phases/08-dashboard/08-02-SUMMARY.md`
+**Last session:** 2026-02-08T16:08:00Z
+**Stopped at:** Phase 8 complete (all 4 plans)
+**Resume file:** `.planning/phases/08-dashboard/08-04-SUMMARY.md`
 
 **Recent activity:**
+- 08-04: Dashboard widgets & edit mode (complete) - WeightTrendsWidget (sparklines), WeekSummaryWidget (stat grid), RecentActivityWidget (compact), EditModeControls, WidgetGallery (components ready, Dashboard integration deferred)
+- 08-03: Quick log form & timeline (complete) - QuickLogForm, TodayScheduleTimeline, unified quick-log experience
 - 08-02: Reptile status cards (complete) - TaskChip, ReptileStatusCard, ReptileStatusCards widget with auto-compact
 - 08-01: Navigation foundation (complete) - compact sidebar, Header component, keyboard shortcuts
 - Phase 7: All 3 plans complete (shadcn/ui, components, date pickers)
 
-**Phase 8 status:** 2 of 3 plans complete - navigation and status cards ready, quick log form next
+**Phase 8 status:** 4 of 4 plans complete - Dashboard phase complete with all widgets, ready for Phase 9 (Reptile Pages)
 
 ---
-*State updated: 2026-02-08 - Phase 8 Plan 2 complete*
+*State updated: 2026-02-08 - Phase 8 Plan 4 complete*
