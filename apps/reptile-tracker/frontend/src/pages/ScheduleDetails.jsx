@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Edit, Calendar, Clock, Bell, CheckCircle, XCircle, FileText, Users, User as UserIcon, Bot } from "lucide-react";
+import { Edit, Calendar, Clock, Bell, CheckCircle, XCircle, FileText, Users, User as UserIcon, Bot } from "lucide-react";
 import { getUserTimeFormat, getDayNames } from "../utils/dateFormatting";
+import PageHeader from "@/components/PageHeader";
 import ReptileNameWithAvatar from "../components/ReptileNameWithAvatar";
 
 function ScheduleDetails() {
@@ -292,34 +293,10 @@ function ScheduleDetails() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-gray-900 dark:hover:text-gray-100 mb-4"
-        >
-          <ArrowLeft size={20} />
-          Back
-        </button>
-
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {schedule.name}
-            </h1>
-            {reptile && (
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">For:</span>
-                <Link to={`/reptiles/${reptile.id}`}>
-                  <ReptileNameWithAvatar
-                    reptile={reptile}
-                    size="md"
-                    asLink={true}
-                  />
-                </Link>
-              </div>
-            )}
-          </div>
-
+      <PageHeader
+        title={schedule.name}
+        backLink={{ to: '/calendar', label: 'Back to Calendar' }}
+        actions={
           <div className="flex gap-2">
             <button
               onClick={handleLogNow}
@@ -336,8 +313,21 @@ function ScheduleDetails() {
               Edit
             </button>
           </div>
+        }
+      />
+
+      {reptile && (
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-muted-foreground">For:</span>
+          <Link to={`/reptiles/${reptile.id}`}>
+            <ReptileNameWithAvatar
+              reptile={reptile}
+              size="md"
+              asLink={true}
+            />
+          </Link>
         </div>
-      </div>
+      )}
 
       {/* Status Badges */}
       <div className="mb-6 flex gap-2">

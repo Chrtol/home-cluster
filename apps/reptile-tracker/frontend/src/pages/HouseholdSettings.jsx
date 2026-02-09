@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog } from 'lucide-react';
+import { Shield, Trash2, UserCog } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatting';
+import PageHeader from '@/components/PageHeader';
+import LoadingState from '@/components/LoadingState';
 
 export default function HouseholdSettings() {
   const [household, setHousehold] = useState(null);
@@ -97,7 +99,7 @@ export default function HouseholdSettings() {
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading household settings...</div>;
+    return <LoadingState message="Loading household settings..." />;
   }
 
   if (!household) {
@@ -108,10 +110,10 @@ export default function HouseholdSettings() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <Users size={32} className="text-primary-600 dark:text-primary-400" />
-        <h1 className="text-3xl font-bold text-foreground">Household Settings</h1>
-      </div>
+      <PageHeader
+        title="Household Settings"
+        backLink={{ to: '/settings', label: 'Back to Settings' }}
+      />
 
       {error && (
         <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
