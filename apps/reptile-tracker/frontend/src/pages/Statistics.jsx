@@ -4,6 +4,32 @@ import { TrendingUp, TrendingDown, Minus, Calendar, Droplets, Heart, Scale, Uten
 import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+// Custom Tooltip Component for Recharts
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[150px]">
+      <p className="text-sm font-semibold text-foreground mb-2">
+        {new Date(label).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </p>
+      <div className="space-y-1">
+        {payload.map((entry, index) => (
+          <div key={index} className="flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="text-muted-foreground">{entry.name}</span>
+            </div>
+            <span className="font-semibold text-foreground">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 function Statistics() {
   const [reptiles, setReptiles] = useState([]);
@@ -399,54 +425,54 @@ function Statistics() {
         <h1 className="text-3xl font-bold text-foreground">Statistics</h1>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Left: Filter Toggles - Inline and Horizontal */}
+          {/* Left: Filter Toggles - Badge Style */}
           {stats && (
             <>
               <div className="flex flex-wrap gap-2">
-                <button
+                <Badge
+                  variant={visibleData.weight ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer hover:opacity-80 transition-opacity",
+                    visibleData.weight && "bg-blue-500 hover:bg-blue-500/90"
+                  )}
                   onClick={() => toggleDataVisibility('weight')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    visibleData.weight
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-secondary text-muted-foreground'
-                  }`}
                 >
-                  <Scale size={16} className="inline mr-1" />
+                  <Scale size={14} className="inline mr-1" />
                   Weight
-                </button>
-                <button
+                </Badge>
+                <Badge
+                  variant={visibleData.feeding ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer hover:opacity-80 transition-opacity",
+                    visibleData.feeding && "bg-green-500 hover:bg-green-500/90"
+                  )}
                   onClick={() => toggleDataVisibility('feeding')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    visibleData.feeding
-                      ? 'bg-green-500 text-white'
-                      : 'bg-secondary text-muted-foreground'
-                  }`}
                 >
-                  <Calendar size={16} className="inline mr-1" />
+                  <Utensils size={14} className="inline mr-1" />
                   Feeding
-                </button>
-                <button
+                </Badge>
+                <Badge
+                  variant={visibleData.misting ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer hover:opacity-80 transition-opacity",
+                    visibleData.misting && "bg-blue-400 hover:bg-blue-400/90"
+                  )}
                   onClick={() => toggleDataVisibility('misting')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    visibleData.misting
-                      ? 'bg-blue-400 text-white'
-                      : 'bg-secondary text-muted-foreground'
-                  }`}
                 >
-                  <Droplets size={16} className="inline mr-1" />
+                  <Droplets size={14} className="inline mr-1" />
                   Misting
-                </button>
-                <button
+                </Badge>
+                <Badge
+                  variant={visibleData.health ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer hover:opacity-80 transition-opacity",
+                    visibleData.health && "bg-red-400 hover:bg-red-400/90"
+                  )}
                   onClick={() => toggleDataVisibility('health')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    visibleData.health
-                      ? 'bg-red-400 text-white'
-                      : 'bg-secondary text-muted-foreground'
-                  }`}
                 >
-                  <Heart size={16} className="inline mr-1" />
+                  <Heart size={14} className="inline mr-1" />
                   Health
-                </button>
+                </Badge>
               </div>
 
               {/* Divider */}
@@ -454,8 +480,8 @@ function Statistics() {
             </>
           )}
 
-          {/* Right: Dropdowns */}
-          <div className="flex gap-3">
+          {/* Right: Reptile Selector and Time Range */}
+          <div className="flex flex-col sm:flex-row gap-3">
             {/* Reptile Selector */}
             <select
               value={selectedReptile || ''}
@@ -469,19 +495,37 @@ function Statistics() {
               ))}
             </select>
 
-            {/* Time Range Selector */}
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(parseInt(e.target.value))}
-              className="input min-w-[140px]"
-            >
-              <option value={7}>7 days</option>
-              <option value={30}>30 days</option>
-              <option value={90}>90 days</option>
-              <option value={180}>6 months</option>
-              <option value={365}>1 year</option>
-              <option value={730}>2 years</option>
-            </select>
+            {/* Time Range Selector - Badge Style Presets */}
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={timeRange === 7 ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90 transition-colors"
+                onClick={() => setTimeRange(7)}
+              >
+                7 days
+              </Badge>
+              <Badge
+                variant={timeRange === 30 ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90 transition-colors"
+                onClick={() => setTimeRange(30)}
+              >
+                30 days
+              </Badge>
+              <Badge
+                variant={timeRange === 90 ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90 transition-colors"
+                onClick={() => setTimeRange(90)}
+              >
+                90 days
+              </Badge>
+              <Badge
+                variant={timeRange === 365 ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90 transition-colors"
+                onClick={() => setTimeRange(365)}
+              >
+                1 year
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
@@ -619,11 +663,11 @@ function Statistics() {
               </p>
               <ResponsiveContainer width="100%" height={350}>
                 <ComposedChart data={getCombinedData()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={formatDate}
-                    stroke="#9CA3AF"
+                    stroke="hsl(var(--muted-foreground))"
                   />
                   {/* Left Y-axis for Weight */}
                   {visibleData.weight && (
@@ -643,16 +687,7 @@ function Statistics() {
                       stroke="#10B981"
                     />
                   )}
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6' }}
-                    formatter={(value, name) => {
-                      if (name === 'Weight (g)') return [`${value}g`, name];
-                      if (name === 'Feedings') return [`${value}`, name];
-                      return [value, name];
-                    }}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ paddingTop: '10px' }} />
 
                   {/* Feeding Bars - Placed first to appear first in legend */}
@@ -731,22 +766,17 @@ function Statistics() {
               <h2 className="text-xl font-semibold mb-4 text-foreground">Misting Frequency</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={stats.misting_data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={formatDate}
-                    stroke="#9CA3AF"
+                    stroke="hsl(var(--muted-foreground))"
                   />
                   <YAxis
-                    label={{ value: 'Mistings', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                    stroke="#9CA3AF"
+                    label={{ value: 'Mistings', angle: -90, position: 'insideLeft' }}
+                    stroke="hsl(var(--muted-foreground))"
                   />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6' }}
-                    formatter={(value) => [`${value}`, 'Mistings']}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend />
                   <Bar
                     dataKey="count"
