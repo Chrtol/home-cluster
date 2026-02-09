@@ -14,12 +14,17 @@ const badgeVariants = cva(
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+        outline: "text-muted-foreground bg-muted/30 border-muted-foreground/30 hover:bg-muted/50",
         // Custom variants for reptile care tracking
         due: "border-transparent bg-amber-500/20 text-amber-500 dark:bg-amber-500/10 dark:text-amber-400",
         overdue: "border-transparent bg-red-500/20 text-red-500 dark:bg-red-500/10 dark:text-red-400",
         done: "border-transparent bg-green-500/20 text-green-500 dark:bg-green-500/10 dark:text-green-400",
         mist: "border-transparent bg-blue-500/20 text-blue-500 dark:bg-blue-500/10 dark:text-blue-400",
+        // Statistics data visibility active variants (avoid tw-merge conflicts)
+        weightActive: "border-transparent bg-blue-500 text-white shadow hover:bg-blue-500/90",
+        feedingActive: "border-transparent bg-green-500 text-white shadow hover:bg-green-500/90",
+        mistingActive: "border-transparent bg-blue-400 text-white shadow hover:bg-blue-400/90",
+        healthActive: "border-transparent bg-red-400 text-white shadow hover:bg-red-400/90",
       },
     },
     defaultVariants: {
