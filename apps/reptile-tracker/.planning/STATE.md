@@ -157,6 +157,8 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | react-hook-form + Zod for forms | Established validation pattern with FormField for consistent form UX |
 | 2026-02-09 | Conditional Zod validation with .refine() | Enables type-specific validation (weight vs health) in single schema |
 | 2026-02-09 | form.watch() for conditional rendering | Real-time field updates based on form state (log_type, record_type) |
+| 2026-02-09 | useFieldArray for dynamic food items | Manages repeating insect/prepared items with proper state tracking and unique IDs in FeedingLog |
+| 2026-02-09 | useWatch for reactive form values | Efficient updates when reptile/food types change, triggers refetch and conditional rendering |
 | 2026-02-09 | Badge variants for metadata display | Use secondary for categories, default/outline for type to create visual hierarchy in tables |
 | 2026-02-09 | Dialog component for forms | Replace inline modal divs with proper Dialog for better accessibility and UX |
 | 2026-02-09 | Table component for data display | Replace HTML tables with shadcn/ui Table for consistent styling and hover states |
@@ -186,6 +188,7 @@ Phase 11 is in progress (2/4 plans). Ready to continue with 11-03 (FeedingLog re
 
 **Recent activity:**
 - 11-02: FoodManagement redesign (complete) - Table, Dialog, Tabs components with Badge visual hierarchy
+- 11-03: FeedingLog redesign (complete) - useFieldArray for dynamic items, useWatch for reactive updates, conditional Zod validation
 - 11-01: Form components & simple forms (complete) - react-hook-form + Zod patterns, MistingLog and HealthLog redesigned
 - 10-03: UAT polish fixes (complete) - Removed calendar header, improved badge outline styling, explicit statistics active variants
 - 10-02: Statistics enhancements (complete) - Compact stat cards with trends, CustomTooltip, badge filters for data visibility and time range
