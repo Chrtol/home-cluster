@@ -151,9 +151,17 @@ Plans:
 
 ## Phase 11: Forms & Tables
 
-**Goal:** Redesign forms and tables with new components
+**Goal:** Redesign forms and tables with react-hook-form, shadcn/ui Table and Dialog components
 
 **Requirements:** FORM-01, FORM-02, FORM-03, FORM-04, FORM-05
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 11-01-PLAN.md -- Install dependencies, shadcn/ui Form/Select/Textarea, redesign MistingLog and HealthLog
+- [ ] 11-02-PLAN.md -- shadcn/ui Table/Dialog/Tabs, redesign FoodManagement with visual hierarchy
+- [ ] 11-03-PLAN.md -- Redesign FeedingLog with react-hook-form, useFieldArray for dynamic items
+- [ ] 11-04-PLAN.md -- Redesign ScheduleTemplateForm, SupplementRotations, NotificationHistory
 
 **Deliverables:**
 - [ ] Feed logging form redesign
