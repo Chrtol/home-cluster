@@ -1,9 +1,51 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import axios from 'axios';
-import { Edit2, Trash2, Plus } from 'lucide-react';
-import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
-import DateInput from '../components/DateInput';
+import { Edit2, Trash2 } from 'lucide-react';
+import { formatDateTime } from '../utils/dateFormatting';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
+
+// Validation schema with conditional logic
+const healthLogSchema = z.object({
+  reptile_id: z.number().min(1, "Please select a reptile"),
+  log_type: z.enum(['weight', 'health']),
+  log_date: z.string().min(1, "Date is required"),
+  log_time: z.string().regex(/^\d{2}:\d{2}$/, "Time is required (HH:MM format)"),
+  // Weight-specific fields
+  weight_grams: z.string().optional(),
+  // Health-specific fields
+  record_type: z.string().optional(),
+  title: z.string().optional(),
+  consistency: z.string().optional(),
+  notes: z.string().optional(),
+}).refine((data) => {
+  // If log_type is weight, weight_grams is required
+  if (data.log_type === 'weight') {
+    return data.weight_grams && parseFloat(data.weight_grams) > 0;
+  }
+  return true;
+}, {
+  message: "Weight is required",
+  path: ['weight_grams'],
+}).refine((data) => {
+  // If log_type is health, record_type and title are required
+  if (data.log_type === 'health') {
+    return data.record_type && data.title && data.title.length > 0;
+  }
+  return true;
+}, {
+  message: "Record type and title are required for health records",
+  path: ['title'],
+});
 
 export default function HealthLog() {
   const navigate = useNavigate();
@@ -15,60 +57,33 @@ export default function HealthLog() {
   const [existingLog, setExistingLog] = useState(null);
 
   const [reptiles, setReptiles] = useState([]);
-  const [logType, setLogType] = useState('weight');
-  const [selectedReptile, setSelectedReptile] = useState('');
-  const [logDate, setLogDate] = useState(new Date().toISOString().slice(0, 10));
-  const [logTime, setLogTime] = useState(new Date().toTimeString().slice(0, 5));
-  const [notes, setNotes] = useState('');
-  // Weight specific
-  const [weight, setWeight] = useState('');
-  // Health specific
-  const [recordType, setRecordType] = useState('observation');
-  const [title, setTitle] = useState('');
-  // Bowel movement specific
-  const [consistency, setConsistency] = useState('normal');
-
-  // Time input format state
-  const [timeFormat, setTimeFormat] = useState('24h');
-  const [hours, setHours] = useState(new Date().getHours());
-  const [minutes, setMinutes] = useState(new Date().getMinutes());
-  const [period, setPeriod] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
-
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
 
+  // Initialize form
+  const form = useForm({
+    resolver: zodResolver(healthLogSchema),
+    defaultValues: {
+      reptile_id: 0,
+      log_type: 'weight',
+      log_date: new Date().toISOString().slice(0, 10),
+      log_time: new Date().toTimeString().slice(0, 5),
+      weight_grams: '',
+      record_type: 'observation',
+      title: '',
+      consistency: 'normal',
+      notes: '',
+    },
+    mode: 'onBlur',
+  });
+
+  // Watch log_type for conditional rendering
+  const logType = form.watch('log_type');
+  const recordType = form.watch('record_type');
+
   useEffect(() => {
     const fetchData = async () => {
-      // Load user's time format preference and initialize time
-      const format = getUserTimeFormat();
-      setTimeFormat(format);
-
-      const now = new Date();
-      const currentHour24 = now.getHours();
-      const currentMinutes = now.getMinutes();
-
-      setMinutes(currentMinutes);
-
-      if (format === '12h') {
-        // Convert to 12h format
-        if (currentHour24 === 0) {
-          setHours(12);
-          setPeriod('AM');
-        } else if (currentHour24 < 12) {
-          setHours(currentHour24);
-          setPeriod('AM');
-        } else if (currentHour24 === 12) {
-          setHours(12);
-          setPeriod('PM');
-        } else {
-          setHours(currentHour24 - 12);
-          setPeriod('PM');
-        }
-      } else {
-        setHours(currentHour24);
-      }
-
       try {
         const reptilesRes = await axios.get('/api/reptiles');
         setReptiles(reptilesRes.data);
@@ -79,10 +94,10 @@ export default function HealthLog() {
             let logRes;
             if (type === 'weight') {
               logRes = await axios.get(`/api/weight/${id}`);
-              setLogType('weight');
+              form.setValue('log_type', 'weight');
             } else if (type === 'health') {
               logRes = await axios.get(`/api/health/${id}`);
-              setLogType('health');
+              form.setValue('log_type', 'health');
             }
             setExistingLog(logRes.data);
             setMode('view');
@@ -116,30 +131,26 @@ export default function HealthLog() {
 
               // Pre-fill reptile from schedule
               if (schedule?.reptile_id) {
-                setSelectedReptile(schedule.reptile_id);
+                form.setValue('reptile_id', schedule.reptile_id);
               }
 
               // Pre-fill date from instance
               if (instance.scheduled_date) {
-                setLogDate(instance.scheduled_date);
+                form.setValue('log_date', instance.scheduled_date);
               }
 
               // Pre-fill time from schedule
               if (schedule?.reminder_time || (schedule?.time_window_enabled && schedule?.earliest_time)) {
                 const timeStr = schedule.reminder_time || schedule.earliest_time;
-                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
-                setHours(timeHours);
-                setMinutes(timeMinutes);
-                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
-                setLogTime(timeStr);
+                form.setValue('log_time', timeStr);
               }
 
               // Pre-fill log type if specified in URL or from schedule
               if (logTypeParam) {
-                setLogType(logTypeParam);
+                form.setValue('log_type', logTypeParam);
               } else if (schedule?.health_category) {
                 // Map health category to record type if applicable
-                setRecordType(schedule.health_category);
+                form.setValue('record_type', schedule.health_category);
               }
             } catch (instanceErr) {
               console.error('Failed to load instance for pre-fill:', instanceErr);
@@ -151,25 +162,21 @@ export default function HealthLog() {
 
               // Pre-fill reptile from schedule
               if (schedule.reptile_id) {
-                setSelectedReptile(schedule.reptile_id);
+                form.setValue('reptile_id', schedule.reptile_id);
               }
 
               // Pre-fill time from schedule
               if (schedule.reminder_time || (schedule.time_window_enabled && schedule.earliest_time)) {
                 const timeStr = schedule.reminder_time || schedule.earliest_time;
-                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
-                setHours(timeHours);
-                setMinutes(timeMinutes);
-                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
-                setLogTime(timeStr);
+                form.setValue('log_time', timeStr);
               }
 
               // Pre-fill log type if specified in URL or from schedule
               if (logTypeParam) {
-                setLogType(logTypeParam);
+                form.setValue('log_type', logTypeParam);
               } else if (schedule.health_category) {
                 // Map health category to record type if applicable
-                setRecordType(schedule.health_category);
+                form.setValue('record_type', schedule.health_category);
               }
             } catch (scheduleErr) {
               console.error('Failed to load schedule for pre-fill:', scheduleErr);
@@ -177,17 +184,17 @@ export default function HealthLog() {
           }
 
           // Fallback to defaults if not pre-filled
-          if (!selectedReptile) {
+          if (!form.getValues('reptile_id')) {
             if (reptileId) {
-              setSelectedReptile(reptileId);
+              form.setValue('reptile_id', parseInt(reptileId));
             } else if (reptilesRes.data.length > 0) {
-              setSelectedReptile(reptilesRes.data[0].id);
+              form.setValue('reptile_id', reptilesRes.data[0].id);
             }
           }
 
           // Set log type from URL param if provided
           if (logTypeParam) {
-            setLogType(logTypeParam);
+            form.setValue('log_type', logTypeParam);
           }
         }
       } catch (err) {
@@ -198,47 +205,29 @@ export default function HealthLog() {
   }, [reptileId, id, type, searchParams]);
 
   const loadLogData = (log, logType) => {
-    setSelectedReptile(log.reptile_id);
-    setNotes(log.notes || '');
+    form.setValue('reptile_id', log.reptile_id);
+    form.setValue('notes', log.notes || log.description || '');
 
     if (logType === 'weight') {
-      setWeight(log.weight_grams);
+      form.setValue('weight_grams', String(log.weight_grams));
       const measuredAtDate = new Date(log.measured_at);
-      setLogDate(measuredAtDate.toISOString().slice(0, 10));
+      form.setValue('log_date', measuredAtDate.toISOString().slice(0, 10));
       const hour = measuredAtDate.getHours();
       const minute = measuredAtDate.getMinutes();
-      setHours(hour);
-      setMinutes(minute);
-      setPeriod(hour >= 12 ? 'PM' : 'AM');
+      form.setValue('log_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     } else if (logType === 'health') {
-      setRecordType(log.record_type);
-      setTitle(log.title);
+      form.setValue('record_type', log.record_type);
+      form.setValue('title', log.title);
       if (log.consistency) {
-        setConsistency(log.consistency);
+        form.setValue('consistency', log.consistency);
       }
       const logDateObj = new Date(log.date);
-      setLogDate(logDateObj.toISOString().slice(0, 10));
+      form.setValue('log_date', logDateObj.toISOString().slice(0, 10));
       const hour = logDateObj.getHours();
       const minute = logDateObj.getMinutes();
-      setHours(hour);
-      setMinutes(minute);
-      setPeriod(hour >= 12 ? 'PM' : 'AM');
+      form.setValue('log_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     }
   };
-
-  // Update logTime whenever hours/minutes/period change
-  useEffect(() => {
-    let hour24 = hours;
-    if (timeFormat === '12h') {
-      if (period === 'PM' && hours !== 12) {
-        hour24 = hours + 12;
-      } else if (period === 'AM' && hours === 12) {
-        hour24 = 0;
-      }
-    }
-    const timeString = `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    setLogTime(timeString);
-  }, [hours, minutes, period, timeFormat]);
 
   // Reset form when navigating from /health-log/:type/:id to /health-log
   useEffect(() => {
@@ -250,42 +239,26 @@ export default function HealthLog() {
       setSuccess('');
 
       // Reset form to defaults
-      setSelectedReptile(reptileId || (reptiles.length > 0 ? reptiles[0].id : ''));
-      setLogType('weight');
-      setLogDate(new Date().toISOString().slice(0, 10));
-      const now = new Date();
-      setHours(now.getHours());
-      setMinutes(now.getMinutes());
-      setPeriod(now.getHours() >= 12 ? 'PM' : 'AM');
-      setNotes('');
-
-      // Reset type-specific fields
-      setWeight('');
-      setRecordType('observation');
-      setTitle('');
-      setConsistency('normal');
+      form.reset({
+        reptile_id: reptileId ? parseInt(reptileId) : (reptiles.length > 0 ? reptiles[0].id : 0),
+        log_type: 'weight',
+        log_date: new Date().toISOString().slice(0, 10),
+        log_time: new Date().toTimeString().slice(0, 5),
+        weight_grams: '',
+        record_type: 'observation',
+        title: '',
+        consistency: 'normal',
+        notes: '',
+      });
     }
-  }, [id, mode, reptiles, reptileId]);
-
-  const handleHoursChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    if (timeFormat === '12h') {
-      setHours(Math.max(1, Math.min(12, numValue)));
-    } else {
-      setHours(Math.max(0, Math.min(23, numValue)));
-    }
-  };
-
-  const handleMinutesChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    setMinutes(Math.max(0, Math.min(59, numValue)));
-  };
+  }, [id, mode, reptiles, reptileId, form]);
 
   const handleDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete this ${logType === 'weight' ? 'weight' : 'health'} log?`)) return;
+    const currentLogType = form.getValues('log_type');
+    if (!window.confirm(`Are you sure you want to delete this ${currentLogType === 'weight' ? 'weight' : 'health'} log?`)) return;
 
     try {
-      if (logType === 'weight') {
+      if (currentLogType === 'weight') {
         await axios.delete(`/api/weight/${id}`);
       } else {
         await axios.delete(`/api/health/${id}`);
@@ -298,76 +271,72 @@ export default function HealthLog() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError('');
     setSuccess('');
 
-    if (!selectedReptile) {
-      setError("Please select a reptile.");
-      return;
-    }
-
-    const dateTimeString = `${logDate}T${logTime}`;
+    const dateTimeString = `${data.log_date}T${data.log_time}`;
 
     try {
       if (mode === 'edit') {
         // Edit existing log
-        if (logType === 'weight') {
+        if (data.log_type === 'weight') {
           await axios.patch(`/api/weight/${id}`, {
-            weight_grams: parseFloat(weight),
+            weight_grams: parseFloat(data.weight_grams),
             measured_at: new Date(dateTimeString).toISOString(),
-            notes,
+            notes: data.notes || null,
           });
           setSuccess('Weight log updated successfully!');
         } else {
           const payload = {
-            record_type: recordType,
-            title,
-            description: notes,
+            record_type: data.record_type,
+            title: data.title,
+            description: data.notes || null,
             date: new Date(dateTimeString).toISOString(),
           };
-          if (recordType === 'bowel_movement') {
-            payload.consistency = consistency;
+          if (data.record_type === 'bowel_movement') {
+            payload.consistency = data.consistency;
           }
           await axios.patch(`/api/health/${id}`, payload);
           setSuccess('Health record updated successfully!');
         }
         setMode('view');
         // Reload the log data
-        const logRes = await axios.get(logType === 'weight' ? `/api/weight/${id}` : `/api/health/${id}`);
+        const logRes = await axios.get(data.log_type === 'weight' ? `/api/weight/${id}` : `/api/health/${id}`);
         setExistingLog(logRes.data);
-        loadLogData(logRes.data, logType);
+        loadLogData(logRes.data, data.log_type);
       } else {
         // Create new log
-        if (logType === 'weight') {
+        if (data.log_type === 'weight') {
           const response = await axios.post('/api/weight', {
-            reptile_id: parseInt(selectedReptile),
-            weight_grams: parseFloat(weight),
+            reptile_id: data.reptile_id,
+            weight_grams: parseFloat(data.weight_grams),
             measured_at: new Date(dateTimeString).toISOString(),
-            notes
+            notes: data.notes || null,
           });
-          setSuccess(`Weight logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
+          setSuccess(`Weight logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setTimeout(() => navigate(`/health-log/weight/${response.data.id}?success=created`), 1500);
         } else {
           const payload = {
-            reptile_id: parseInt(selectedReptile),
-            record_type: recordType,
-            title,
-            description: notes,
+            reptile_id: data.reptile_id,
+            record_type: data.record_type,
+            title: data.title,
+            description: data.notes || null,
             date: new Date(dateTimeString).toISOString(),
           };
-          if (recordType === 'bowel_movement') {
-            payload.consistency = consistency;
+          if (data.record_type === 'bowel_movement') {
+            payload.consistency = data.consistency;
           }
           const response = await axios.post('/api/health', payload);
-          setSuccess(`Health record logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
+          setSuccess(`Health record logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setTimeout(() => navigate(`/health-log/health/${response.data.id}?success=created`), 1500);
         }
       }
     } catch (err) {
       console.error("Failed to submit log:", err);
-      setError(err.response?.data?.detail || "An unexpected error occurred.");
+      const errorMsg = err.response?.data?.detail || "An unexpected error occurred.";
+      setError(errorMsg);
+      form.setError('root', { message: errorMsg });
     }
   };
 
@@ -380,12 +349,12 @@ export default function HealthLog() {
             View {logType === 'weight' ? 'Weight' : 'Health'} Log
           </h1>
           <div className="flex gap-2">
-            <button onClick={() => setMode('edit')} className="btn-primary flex items-center gap-2">
+            <Button onClick={() => setMode('edit')} className="flex items-center gap-2">
               <Edit2 size={18} /> Edit
-            </button>
-            <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">
+            </Button>
+            <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400 flex items-center gap-2">
               <Trash2 size={18} /> Delete
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -481,8 +450,8 @@ export default function HealthLog() {
       <h1 className="text-3xl font-bold mb-6 text-foreground">
         {mode === 'edit' ? `Edit ${logType === 'weight' ? 'Weight' : 'Health'} Log` : 'Log Health'}
       </h1>
-      {error && <p className="text-red-500 bg-red-100 p-3 rounded mb-4">{error}</p>}
-      {success && <p className="text-green-500 bg-green-100 p-3 rounded mb-4">{success}</p>}
+      {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
+      {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
 
       {mode === 'edit' && existingLog && (
         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -492,129 +461,238 @@ export default function HealthLog() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card space-y-4">
-        <div>
-          <label htmlFor="reptile" className="block font-medium mb-1 text-muted-foreground">Reptile</label>
-          <select id="reptile" value={selectedReptile} onChange={e => setSelectedReptile(e.target.value)} className="input" required disabled={mode === 'edit'}>
-            {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </div>
-
-        <div>
-            <label className="block font-medium mb-2 text-muted-foreground">Log Type</label>
-            <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setLogType('weight')} disabled={mode === 'edit'} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'weight' ? 'bg-primary-600 text-white' : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'} ${mode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  Weight
-                </button>
-                <button type="button" onClick={() => setLogType('health')} disabled={mode === 'edit'} className={`px-4 py-2 rounded-lg font-medium transition-colors ${logType === 'health' ? 'bg-primary-600 text-white' : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'} ${mode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  Health Record
-                </button>
-            </div>
-        </div>
-
-        {logType === 'weight' ? (
-          <div>
-            <label htmlFor="weight" className="block font-medium mb-1 text-muted-foreground">Weight (grams)</label>
-            <input id="weight" type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} className="input" required />
-          </div>
-        ) : (
-          <>
-            <div>
-              <label htmlFor="recordType" className="block font-medium mb-1 text-muted-foreground">Record Type</label>
-              <select id="recordType" value={recordType} onChange={e => setRecordType(e.target.value)} className="input">
-                <option value="observation">General Observation</option>
-                <option value="shedding">Shedding</option>
-                <option value="bowel_movement">Bowel Movement</option>
-                <option value="vet_visit">Vet Visit</option>
-                <option value="medication">Medication</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="title" className="block font-medium mb-1 text-muted-foreground">Title</label>
-              <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="input" placeholder={recordType === 'shedding' ? 'e.g., Complete shed' : recordType === 'bowel_movement' ? 'e.g., Morning bowel movement' : 'Brief description'} required />
-            </div>
-            {recordType === 'bowel_movement' && (
-              <div>
-                <label htmlFor="consistency" className="block font-medium mb-1 text-muted-foreground">Consistency</label>
-                <select id="consistency" value={consistency} onChange={e => setConsistency(e.target.value)} className="input">
-                  <option value="normal">Normal</option>
-                  <option value="soft">Soft</option>
-                  <option value="hard">Hard</option>
-                  <option value="watery">Watery</option>
-                  <option value="mucus">Mucus Present</option>
-                </select>
-              </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="card space-y-4">
+          <FormField
+            control={form.control}
+            name="reptile_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-muted-foreground">Reptile</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  value={field.value ? String(field.value) : ''}
+                  disabled={mode === 'edit'}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a reptile" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {reptiles.map(r => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
             )}
-          </>
-        )}
+          />
 
-        <div className="grid grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="logDate" className="block font-medium mb-1 text-muted-foreground">Date</label>
-                <DateInput
-                    id="logDate"
-                    value={logDate}
-                    onChange={e => setLogDate(e.target.value)}
-                    className="input w-full"
-                    required
-                />
-            </div>
-            <div>
-                <label className="block font-medium mb-1 text-muted-foreground">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
-                <div className="flex gap-2">
-                    <input
-                        type="number"
-                        value={hours}
-                        onChange={e => handleHoursChange(e.target.value)}
-                        className="input w-20 text-center"
-                        min={timeFormat === '12h' ? 1 : 0}
-                        max={timeFormat === '12h' ? 12 : 23}
-                        required
-                    />
-                    <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
-                    <input
-                        type="number"
-                        value={String(minutes).padStart(2, '0')}
-                        onChange={e => handleMinutesChange(e.target.value)}
-                        className="input w-20 text-center"
-                        min="0"
-                        max="59"
-                        required
-                    />
-                    {timeFormat === '12h' && (
-                        <select
-                            value={period}
-                            onChange={e => setPeriod(e.target.value)}
-                            className="input w-20"
-                        >
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                        </select>
-                    )}
+          <FormField
+            control={form.control}
+            name="log_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-muted-foreground">Log Type</FormLabel>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => field.onChange('weight')}
+                    disabled={mode === 'edit'}
+                    variant={field.value === 'weight' ? 'default' : 'outline'}
+                  >
+                    Weight
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => field.onChange('health')}
+                    disabled={mode === 'edit'}
+                    variant={field.value === 'health' ? 'default' : 'outline'}
+                  >
+                    Health Record
+                  </Button>
                 </div>
-            </div>
-        </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div>
-            <label htmlFor="notes" className="block font-medium mb-1 text-muted-foreground">Notes (optional)</label>
-            <textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="input" placeholder={logType === 'weight' ? 'e.g., after shedding' : recordType === 'bowel_movement' ? 'Additional observations...' : 'e.g., noticed a small scratch'}/>
-        </div>
+          {logType === 'weight' ? (
+            <FormField
+              control={form.control}
+              name="weight_grams"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Weight (grams)</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 125.5"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : (
+            <>
+              <FormField
+                control={form.control}
+                name="record_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">Record Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select record type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="observation">General Observation</SelectItem>
+                        <SelectItem value="shedding">Shedding</SelectItem>
+                        <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
+                        <SelectItem value="vet_visit">Vet Visit</SelectItem>
+                        <SelectItem value="medication">Medication</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary flex-1">
-            {mode === 'edit' ? 'Update Log' : 'Save Log'}
-          </button>
-          {mode === 'edit' && (
-            <button
-              type="button"
-              onClick={() => setMode('view')}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">Title</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={
+                          recordType === 'shedding' ? 'e.g., Complete shed' :
+                          recordType === 'bowel_movement' ? 'e.g., Morning bowel movement' :
+                          'Brief description'
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {recordType === 'bowel_movement' && (
+                <FormField
+                  control={form.control}
+                  name="consistency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Consistency</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select consistency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="soft">Soft</SelectItem>
+                          <SelectItem value="hard">Hard</SelectItem>
+                          <SelectItem value="watery">Watery</SelectItem>
+                          <SelectItem value="mucus">Mucus Present</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </>
           )}
-        </div>
-      </form>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="log_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Date</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="log_time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Time</FormLabel>
+                  <FormControl>
+                    <TimePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a time"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-muted-foreground">Notes (optional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    rows={3}
+                    placeholder={
+                      logType === 'weight' ? 'e.g., after shedding' :
+                      recordType === 'bowel_movement' ? 'Additional observations...' :
+                      'e.g., noticed a small scratch'
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex gap-3">
+            <Button type="submit" className="flex-1">
+              {mode === 'edit' ? 'Update Log' : 'Save Log'}
+            </Button>
+            {mode === 'edit' && (
+              <Button
+                type="button"
+                onClick={() => setMode('view')}
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
