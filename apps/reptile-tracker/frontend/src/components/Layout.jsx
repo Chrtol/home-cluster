@@ -1,8 +1,21 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from './NotificationBell'
 import { cn } from '@/lib/utils'
+
+// Page transition variants
+const pageVariants = {
+  initial: { opacity: 0 },
+  enter: { opacity: 1 },
+  exit: { opacity: 0 }
+}
+
+const pageTransition = {
+  duration: 0.15,
+  ease: 'easeOut'
+}
 
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
@@ -46,6 +59,24 @@ export default function Layout({ user, onLogout }) {
         setTrackMenuOpen(prev => !prev)
       }
 
+      // When Track menu is open, F/M/H navigate directly
+      if (trackMenuOpen) {
+        const key = e.key.toLowerCase()
+        if (key === 'f') {
+          e.preventDefault()
+          setTrackMenuOpen(false)
+          navigate('/feed')
+        } else if (key === 'm') {
+          e.preventDefault()
+          setTrackMenuOpen(false)
+          navigate('/misting-log')
+        } else if (key === 'h') {
+          e.preventDefault()
+          setTrackMenuOpen(false)
+          navigate('/health-log')
+        }
+      }
+
       // Escape - Close any open menus
       if (e.key === 'Escape') {
         setTrackMenuOpen(false)
@@ -56,7 +87,7 @@ export default function Layout({ user, onLogout }) {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [trackMenuOpen])
 
   const handleLogout = () => {
     onLogout()
@@ -126,30 +157,33 @@ export default function Layout({ user, onLogout }) {
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/20 transition-colors border-b border-border"
               >
                 <Utensils size={20} className="text-primary" />
-                <div className="text-left">
+                <div className="text-left flex-1">
                   <div className="font-semibold text-foreground">Log Feeding</div>
                   <div className="text-xs text-muted-foreground">Record food and supplements</div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-60">F</span>
               </button>
               <button
                 onClick={() => handleOptionClick('/health-log')}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-900/20 transition-colors border-b border-border"
               >
                 <Activity size={20} className="text-green-400" />
-                <div className="text-left">
+                <div className="text-left flex-1">
                   <div className="font-semibold text-foreground">Log Health</div>
                   <div className="text-xs text-muted-foreground">Record health and weight data</div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-60">H</span>
               </button>
               <button
                 onClick={() => handleOptionClick('/misting-log')}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 transition-colors"
               >
                 <Droplets size={20} className="text-blue-400" />
-                <div className="text-left">
+                <div className="text-left flex-1">
                   <div className="font-semibold text-foreground">Log Misting</div>
                   <div className="text-xs text-muted-foreground">Record misting and humidity</div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-60">M</span>
               </button>
             </div>
           )}
@@ -175,30 +209,33 @@ export default function Layout({ user, onLogout }) {
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/20 transition-colors border-b border-border"
             >
               <Utensils size={20} className="text-primary" />
-              <div className="text-left">
+              <div className="text-left flex-1">
                 <div className="font-semibold text-foreground">Log Feeding</div>
                 <div className="text-xs text-muted-foreground">Record food and supplements</div>
               </div>
+              <span className="text-xs text-muted-foreground opacity-60 hidden xl:inline">F</span>
             </button>
             <button
               onClick={() => handleOptionClick('/health-log')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-900/20 transition-colors border-b border-border"
             >
               <Activity size={20} className="text-green-400" />
-              <div className="text-left">
+              <div className="text-left flex-1">
                 <div className="font-semibold text-foreground">Log Health</div>
                 <div className="text-xs text-muted-foreground">Record health and weight data</div>
               </div>
+              <span className="text-xs text-muted-foreground opacity-60 hidden xl:inline">H</span>
             </button>
             <button
               onClick={() => handleOptionClick('/misting-log')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 transition-colors"
             >
               <Droplets size={20} className="text-blue-400" />
-              <div className="text-left">
+              <div className="text-left flex-1">
                 <div className="font-semibold text-foreground">Log Misting</div>
                 <div className="text-xs text-muted-foreground">Record misting and humidity</div>
               </div>
+              <span className="text-xs text-muted-foreground opacity-60 hidden xl:inline">M</span>
             </button>
           </div>
         )}
@@ -443,7 +480,18 @@ export default function Layout({ user, onLogout }) {
       {/* Main Content */}
       <div className={`transition-all duration-200 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-56'}`}>
         <main className="py-6 px-4 sm:px-6 lg:px-8">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              variants={pageVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              transition={pageTransition}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -560,6 +608,7 @@ export default function Layout({ user, onLogout }) {
                   <div className="font-semibold text-foreground">Log Feeding</div>
                   <div className="text-xs text-muted-foreground">Record food and supplements</div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-60">F</span>
               </Link>
               <Link
                 to="/health-log"
@@ -571,6 +620,7 @@ export default function Layout({ user, onLogout }) {
                   <div className="font-semibold text-foreground">Log Health</div>
                   <div className="text-xs text-muted-foreground">Record health and weight data</div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-60">H</span>
               </Link>
               <Link
                 to="/misting-log"
@@ -582,6 +632,7 @@ export default function Layout({ user, onLogout }) {
                   <div className="font-semibold text-foreground">Log Misting</div>
                   <div className="text-xs text-muted-foreground">Record misting and humidity</div>
                 </div>
+                <span className="text-xs text-muted-foreground opacity-60">M</span>
               </Link>
             </div>
           </>
