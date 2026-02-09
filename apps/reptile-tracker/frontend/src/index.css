@@ -110,16 +110,4 @@
   .counter-button {
     @apply w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors;
   }
-
-  /* Masonry grid layout for dashboard widgets */
-  .masonry-grid {
-    display: flex;
-    margin-left: -12px; /* gutter size offset (gap-3 = 12px) */
-    width: auto;
-  }
-
-  .masonry-grid-column {
-    padding-left: 12px; /* gutter size */
-    background-clip: padding-box;
-  }
 }

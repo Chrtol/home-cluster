@@ -16,7 +16,6 @@ import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 import Header from '../components/Header';
 import EditModeControls from '../components/dashboard/EditModeControls';
 import WidgetGallery from '../components/dashboard/WidgetGallery';
-import Masonry from 'react-masonry-css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -2105,18 +2104,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Masonry Layout - Renders all cards in user's preferred order
-          Uses react-masonry-css for true masonry (no row height gaps) */}
-      <Masonry
-        breakpointCols={{
-          default: 4,  // 4 columns on large screens
-          1280: 3,     // 3 columns on xl screens
-          1024: 2,     // 2 columns on lg screens
-          640: 1       // 1 column on mobile
-        }}
-        className="masonry-grid"
-        columnClassName="masonry-grid-column"
-      >
+      {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing
+          Using grid-flow-dense to pack items more tightly and fill gaps */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 auto-rows-auto items-start grid-flow-dense">
         {dashboardCards
           .filter(card => card.visible)
           .map(card => {
@@ -2126,7 +2116,7 @@ export default function Dashboard() {
             return (
               <div
                 key={card.id}
-                className={`mb-3 relative group ${
+                className={`${getCardSizeClass(card.id)} relative group ${
                   dragOverWidget === card.id ? 'ring-2 ring-primary' : ''
                 } ${draggedWidget === card.id ? 'opacity-50' : ''}`}
                 draggable={isEditMode}
@@ -2143,6 +2133,16 @@ export default function Dashboard() {
                     <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
                       <GripVertical className="w-4 h-4" />
                     </div>
+                    {/* Resize button */}
+                    <button
+                      onClick={() => handleResizeWidget(card.id)}
+                      className="absolute top-2 right-10 z-10 h-6 px-1.5 bg-muted text-muted-foreground rounded flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-muted/80"
+                      title={`Resize widget (current: ${getSizeLabel(card.id)})`}
+                      aria-label={`Resize ${card.id} widget`}
+                    >
+                      <Maximize2 className="w-3 h-3" />
+                      <span className="text-[10px] font-medium">{getSizeLabel(card.id)}</span>
+                    </button>
                     {/* Hide button */}
                     <button
                       onClick={() => handleHideWidget(card.id)}
@@ -2159,7 +2159,7 @@ export default function Dashboard() {
             );
           })
         }
-      </Masonry>
+      </div>
 
       {/* QuickLogForm modal */}
       {quickLogTask && (
