@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, 
 import { formatTime, getDayNames, getUserFirstDayOfWeek, toLocalISODate } from "../utils/dateFormatting";
 import ReptileAvatar from "../components/ReptileAvatar";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 function Calendar() {
   const navigate = useNavigate();
@@ -638,53 +640,42 @@ function Calendar() {
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* Category Filters */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge
+                variant={visibleCategories.has('feeding') ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90"
                 onClick={() => toggleCategoryFilter('feeding')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  visibleCategories.has('feeding')
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
               >
                 Feeding
-              </button>
-              <button
+              </Badge>
+              <Badge
+                variant={visibleCategories.has('misting') ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90"
                 onClick={() => toggleCategoryFilter('misting')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  visibleCategories.has('misting')
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
               >
                 Misting
-              </button>
-              <button
+              </Badge>
+              <Badge
+                variant={visibleCategories.has('weighing') ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90"
                 onClick={() => toggleCategoryFilter('weighing')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  visibleCategories.has('weighing')
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
               >
                 Health
-              </button>
-              <button
+              </Badge>
+              <Badge
+                variant={visibleCategories.has('supplement') ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90"
                 onClick={() => toggleCategoryFilter('supplement')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  visibleCategories.has('supplement')
-                    ? 'bg-green-600 text-white'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
               >
                 Supplement
-              </button>
-              <button
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="cursor-pointer text-xs"
                 onClick={toggleAllCategories}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-card text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
-              </button>
+              </Badge>
             </div>
 
             {/* Divider */}
@@ -715,27 +706,25 @@ function Calendar() {
 
         {/* Reptile Filters */}
         {reptiles.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-sm font-medium text-muted-foreground">Reptiles:</span>
             {reptiles.map(reptile => (
-              <button
+              <Badge
                 key={reptile.id}
+                variant={visibleReptiles.has(reptile.id) ? "default" : "outline"}
+                className="cursor-pointer hover:bg-primary/90"
                 onClick={() => toggleReptileFilter(reptile.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  visibleReptiles.has(reptile.id)
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
               >
                 {reptile.name}
-              </button>
+              </Badge>
             ))}
-            <button
+            <Badge
+              variant="secondary"
+              className="cursor-pointer text-xs"
               onClick={toggleAllReptiles}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-card text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
-            </button>
+            </Badge>
           </div>
         )}
       </div>
@@ -1236,9 +1225,9 @@ function Calendar() {
                           {date.getDate()}
                         </div>
 
-                        {/* Desktop: Show first 2 events as text, rest as squares */}
-                        <div className="space-y-1 hidden sm:block">
-                          {dayEvents.slice(0, 2).map((event, idx) => {
+                        {/* Desktop: Show first 3 events as text, rest as squares */}
+                        <div className="space-y-0.5 hidden sm:block">
+                          {dayEvents.slice(0, 3).map((event, idx) => {
                             const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                             const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
                             const supplements = event.suggested_supplements || [];
@@ -1248,7 +1237,7 @@ function Calendar() {
                             return (
                               <div
                                 key={idx}
-                                className={`text-xs px-2 py-1 rounded truncate flex items-center gap-1 ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
+                                className={`text-[10px] px-1.5 py-0.5 rounded truncate flex items-center gap-1 ${getScheduleTypeColor(event.schedule_type, event.is_actual)}`}
                                 title={`${displayName}${detail}${supplementText ? ` + ${supplementText}` : ''}${notificationText}`}
                               >
                                 {event.is_actual && "✓ "}
@@ -1260,9 +1249,9 @@ function Calendar() {
                               </div>
                             );
                           })}
-                          {dayEvents.length > 2 && (
+                          {dayEvents.length > 3 && (
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {dayEvents.slice(2).map((event, idx) => {
+                              {dayEvents.slice(3).map((event, idx) => {
                                 const displayName = event.name || `${event.reptile_name}: ${event.schedule_type}`;
                                 const detail = event.food_category ? ` (${event.food_category})` : event.time_slot ? ` (${event.time_slot})` : '';
                                 const supplements = event.suggested_supplements || [];
@@ -1333,7 +1322,7 @@ function Calendar() {
                     key={index}
                     onClick={() => handleDateClick(date)}
                     className={`
-                      p-3 rounded-lg border transition-all cursor-pointer hover:border-primary-300 dark:hover:border-primary-600
+                      p-2 rounded-lg border transition-all cursor-pointer hover:border-primary-300 dark:hover:border-primary-600
                       ${isToday ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-border"}
                       ${isSelected ? "ring-2 ring-primary-500" : ""}
                     `}
