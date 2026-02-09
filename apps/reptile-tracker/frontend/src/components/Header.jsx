@@ -26,8 +26,13 @@ export default function Header({ user, todayStats }) {
     const now = new Date()
     const hour = now.getHours()
 
+    // Night: 00:00-04:59 (late night / very early morning)
+    if (hour < 5) return 'Good night'
+    // Morning: 05:00-11:59
     if (hour < 12) return 'Good morning'
+    // Afternoon: 12:00-17:59
     if (hour < 18) return 'Good afternoon'
+    // Evening: 18:00-23:59
     return 'Good evening'
   }
 

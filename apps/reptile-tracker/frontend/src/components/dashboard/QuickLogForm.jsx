@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { X, ExternalLink, Plus, Minus } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatting';
+import { TimePicker } from '../ui/time-picker';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -54,11 +55,16 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
         let foods = foodsRes.data;
 
         // Filter by food_category if specified in schedule
+        // Only filter if it returns results; otherwise show all foods
         const foodCategory = task?.food_category;
         if (foodCategory) {
-          foods = foods.filter(f =>
+          const filtered = foods.filter(f =>
             f.category?.toLowerCase() === foodCategory.toLowerCase()
           );
+          // Only apply filter if it matches at least one food
+          if (filtered.length > 0) {
+            foods = filtered;
+          }
         }
 
         // Get reptile favorites if available
@@ -312,16 +318,16 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
               Time
             </label>
             <div className="flex items-center gap-2">
-              <input
-                type="time"
+              <TimePicker
                 value={fedAt.toTimeString().slice(0, 5)}
-                onChange={(e) => {
-                  const [hours, minutes] = e.target.value.split(':');
+                onChange={(timeStr) => {
+                  const [hours, minutes] = timeStr.split(':');
                   const newDate = new Date();
                   newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
                   setFedAt(newDate);
                 }}
-                className="px-2 py-1.5 bg-muted border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                step={15}
+                className="h-8 text-xs"
               />
               <span className="text-xs text-muted-foreground">
                 {formatDate(fedAt)}

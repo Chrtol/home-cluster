@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { formatTime, toLocalISODate } from '../../utils/dateFormatting';
-import { CheckCircle, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { formatTime, toLocalISODate, formatDate } from '../../utils/dateFormatting';
+import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 
 /**
@@ -26,12 +26,45 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
   const [activeFilters, setActiveFilters] = useState([]);
   const [hoveredTask, setHoveredTask] = useState(null);
   const [hoverTimer, setHoverTimer] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const currentSlotRef = useRef(null);
 
   const filterTypes = config.filterTypes || ['feeding', 'misting', 'health'];
   const autoScrollToCurrent = config.autoScrollToCurrent !== false;
   const showCompletedSection = config.showCompletedSection !== false;
+
+  // Date navigation helpers
+  const navigateDate = (direction) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + direction);
+    setSelectedDate(newDate);
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  // Get display label for selected date
+  const getDateLabel = () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const selectedStr = toLocalISODate(selectedDate);
+    const todayStr = toLocalISODate(today);
+    const tomorrowStr = toLocalISODate(tomorrow);
+    const yesterdayStr = toLocalISODate(yesterday);
+
+    if (selectedStr === todayStr) return 'Today';
+    if (selectedStr === tomorrowStr) return 'Tomorrow';
+    if (selectedStr === yesterdayStr) return 'Yesterday';
+    return formatDate(selectedDate);
+  };
+
+  const isToday = toLocalISODate(selectedDate) === toLocalISODate(new Date());
 
   // Load filter state from localStorage
   useEffect(() => {
@@ -50,10 +83,10 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
     localStorage.setItem('timeline_filters', JSON.stringify(activeFilters));
   }, [activeFilters]);
 
-  // Fetch today's schedule instances
+  // Fetch schedule instances for selected date
   useEffect(() => {
     fetchSchedules();
-  }, []);
+  }, [selectedDate]);
 
   // Auto-scroll to current time slot
   useEffect(() => {
@@ -72,13 +105,13 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
       setLoading(true);
       setError(null);
 
-      const today = toLocalISODate(new Date());
+      const dateStr = toLocalISODate(selectedDate);
 
       // Use schedule-instances/calendar endpoint which returns instances with schedule details
       const response = await axios.get('/api/schedule-instances/calendar', {
         params: {
-          start_date: today,
-          end_date: today
+          start_date: dateStr,
+          end_date: dateStr
         }
       });
 
@@ -274,20 +307,62 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
     return (
       <div className="bg-card rounded-xl border border-border p-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Today</h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigateDate(-1)}
+              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={goToToday}
+              className={`text-sm font-semibold transition-colors ${isToday ? 'text-foreground' : 'text-primary hover:text-primary/80'}`}
+            >
+              {getDateLabel()}
+            </button>
+            <button
+              onClick={() => navigateDate(1)}
+              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Next day"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
           <span className="text-xs text-muted-foreground">0 tasks</span>
         </div>
-        <p className="text-sm text-muted-foreground">No scheduled tasks for today</p>
+        <p className="text-sm text-muted-foreground">No scheduled tasks for {getDateLabel().toLowerCase()}</p>
       </div>
     );
   }
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
-      {/* Header with task count */}
+      {/* Header with task count and date navigation */}
       <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-foreground">Today</h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigateDate(-1)}
+              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={goToToday}
+              className={`text-sm font-semibold transition-colors ${isToday ? 'text-foreground' : 'text-primary hover:text-primary/80'}`}
+            >
+              {getDateLabel()}
+            </button>
+            <button
+              onClick={() => navigateDate(1)}
+              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Next day"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
           <span className="text-xs text-muted-foreground">{schedules.length} tasks</span>
         </div>
 
@@ -314,7 +389,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
         <div className="p-4 text-center">
           <div className="inline-flex items-center gap-2 text-primary mb-2">
             <CheckCircle className="w-5 h-5" />
-            <span className="text-sm font-semibold">All done for today!</span>
+            <span className="text-sm font-semibold">All done for {getDateLabel().toLowerCase()}!</span>
           </div>
           <p className="text-xs text-muted-foreground">
             Great job taking care of your reptiles 🎉

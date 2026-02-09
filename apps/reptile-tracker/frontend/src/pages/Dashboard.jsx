@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical, Maximize2 } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings, updateProfileCards, resetProfileToDefault } from '../utils/displaySettings';
@@ -1086,6 +1086,31 @@ export default function Dashboard() {
     setDashboardCards(updated);
   };
 
+  const handleResizeWidget = (widgetId) => {
+    // Cycle through sizes: xs -> small -> medium -> large -> xs
+    const sizeOrder = ['xs', 'small', 'medium', 'large'];
+    const updated = dashboardCards.map(c => {
+      if (c.id !== widgetId) return c;
+      const currentIndex = sizeOrder.indexOf(c.size || 'small');
+      const nextIndex = (currentIndex + 1) % sizeOrder.length;
+      return { ...c, size: sizeOrder[nextIndex] };
+    });
+
+    // Save to the active profile
+    const activeProfileId = getActiveProfileId();
+    updateProfileCards(activeProfileId, updated);
+
+    // Update local state
+    setDashboardCards(updated);
+  };
+
+  const getSizeLabel = (cardId) => {
+    const card = dashboardCards.find(c => c.id === cardId);
+    const size = card?.size || 'small';
+    const labels = { xs: '1/4', small: '1/2', medium: '3/4', large: 'Full' };
+    return labels[size] || '1/2';
+  };
+
   // Drag and drop handlers for widget reordering
   const handleDragStart = (e, widgetId) => {
     setDraggedWidget(widgetId);
@@ -2087,6 +2112,16 @@ export default function Dashboard() {
                     <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
                       <GripVertical className="w-4 h-4" />
                     </div>
+                    {/* Resize button */}
+                    <button
+                      onClick={() => handleResizeWidget(card.id)}
+                      className="absolute top-2 right-10 z-10 h-6 px-1.5 bg-muted text-muted-foreground rounded flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-muted/80"
+                      title={`Resize widget (current: ${getSizeLabel(card.id)})`}
+                      aria-label={`Resize ${card.id} widget`}
+                    >
+                      <Maximize2 className="w-3 h-3" />
+                      <span className="text-[10px] font-medium">{getSizeLabel(card.id)}</span>
+                    </button>
                     {/* Hide button */}
                     <button
                       onClick={() => handleHideWidget(card.id)}
