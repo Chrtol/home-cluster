@@ -161,6 +161,8 @@ Plans:
 - [ ] Health log compact view
 - [ ] Misting log compact view
 - [ ] Schedule template modals
+- [ ] Supplement rotations streamlined UI
+- [ ] Notification history compact list
 - [ ] All forms using new date/time pickers
 
 **Success:** Forms feel beautiful, tables have clear hierarchy
