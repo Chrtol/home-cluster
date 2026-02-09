@@ -95,15 +95,25 @@ Plans:
 
 ## Phase 9: Reptile Pages
 
-**Goal:** Redesign reptile list and detail pages
+**Goal:** Redesign reptile list and detail pages to match new dashboard design patterns
 
 **Requirements:** REPT-01, REPT-02, REPT-03, REPT-04
 
+**Status:** Planned
+**Plans:** 4 plans in 2 waves
+
+Plans:
+- [ ] 09-01-PLAN.md -- Denser reptile list grid with badge-style household filters
+- [ ] 09-02-PLAN.md -- Improved detail header with badge-based quick stats
+- [ ] 09-03-PLAN.md -- Compact tab content styling (feedings, health, weight, misting)
+- [ ] 09-04-PLAN.md -- Photo gallery density improvements and badge filters
+
 **Deliverables:**
-- [ ] Denser reptile list grid
-- [ ] Improved detail page header
+- [ ] Denser reptile list grid (4 cols xl, 3 lg, 2 sm, 1 mobile)
+- [ ] Badge-style household filters (replacing Eye/EyeOff buttons)
+- [ ] Improved detail page header with quick stats badges
 - [ ] Compact tab content styling
-- [ ] Photo gallery improvements
+- [ ] Photo gallery with denser grid and badge category filters
 
 **Success:** Reptile pages feel consistent with new dashboard design
 
@@ -184,4 +194,4 @@ Phase 12 (Polish)    -> After all other phases complete
 | Mobile complexity | Dedicated phase (12) for mobile focus |
 
 ---
-*Last updated: 2026-02-08*
+*Last updated: 2026-02-09*
