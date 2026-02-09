@@ -88,9 +88,9 @@ function Statistics() {
   };
 
   const getWeightTrendIcon = () => {
-    if (!stats?.summary?.weight_change) return <Minus className="text-gray-400" size={20} />;
-    if (stats.summary.weight_change > 0) return <TrendingUp className="text-green-500" size={20} />;
-    return <TrendingDown className="text-red-500" size={20} />;
+    if (!stats?.summary?.weight_change) return <Minus className="text-muted-foreground" size={14} />;
+    if (stats.summary.weight_change > 0) return <TrendingUp size={14} />;
+    return <TrendingDown size={14} />;
   };
 
   const getWeightTrendColor = () => {
@@ -493,28 +493,31 @@ function Statistics() {
             <div className={`${getChartSizeClass('summary_cards')} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`}>
             {/* Weight Summary */}
             {isSummaryCardVisible('summary_weight') && (
-              <div className="card">
-                <div className="flex items-center justify-between mb-2">
+              <div className="card p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Scale size={20} className="text-purple-600 dark:text-purple-400" />
-                    <h3 className="font-semibold text-foreground">Weight</h3>
+                    <Scale size={16} className="text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Weight</h3>
                   </div>
-                  {getWeightTrendIcon()}
                 </div>
                 {stats.summary.current_weight ? (
                   <>
                     <p className="text-2xl font-bold text-foreground">
                       {stats.summary.current_weight}g
                     </p>
-                    {stats.summary.weight_change && (
-                      <p className={`text-sm ${getWeightTrendColor()}`}>
-                        {stats.summary.weight_change > 0 ? '+' : ''}
-                        {stats.summary.weight_change.toFixed(1)}g ({stats.summary.weight_change_percent?.toFixed(1)}%)
+                    {stats.summary.weight_change ? (
+                      <div className={`flex items-center gap-1 text-sm ${getWeightTrendColor()}`}>
+                        {getWeightTrendIcon()}
+                        <span>
+                          {stats.summary.weight_change > 0 ? '+' : ''}
+                          {stats.summary.weight_change.toFixed(1)}g ({stats.summary.weight_change_percent?.toFixed(1)}%)
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {stats.summary.weight_logs_count} measurements
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {stats.summary.weight_logs_count} measurements
-                    </p>
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">No weight data</p>
@@ -524,15 +527,17 @@ function Statistics() {
 
             {/* Feeding Summary */}
             {isSummaryCardVisible('summary_feeding') && (
-              <div className="card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Utensils size={20} className="text-primary-600 dark:text-primary-400" />
-                  <h3 className="font-semibold text-foreground">Feedings</h3>
+              <div className="card p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Utensils size={16} className="text-primary dark:text-primary" />
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Feedings</h3>
+                  </div>
                 </div>
                 <p className="text-2xl font-bold text-foreground">
                   {stats.summary.total_feedings}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {(stats.summary.total_feedings / (timeRange / 7)).toFixed(1)} per week avg
                 </p>
               </div>
@@ -540,15 +545,17 @@ function Statistics() {
 
             {/* Misting Summary */}
             {isSummaryCardVisible('summary_misting') && (
-              <div className="card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Droplets size={20} className="text-blue-600 dark:text-blue-400" />
-                  <h3 className="font-semibold text-foreground">Misting</h3>
+              <div className="card p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Droplets size={16} className="text-blue-600 dark:text-blue-400" />
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Misting</h3>
+                  </div>
                 </div>
                 <p className="text-2xl font-bold text-foreground">
                   {stats.summary.total_mistings}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {(stats.summary.total_mistings / (timeRange / 7)).toFixed(1)} per week avg
                 </p>
               </div>
@@ -556,16 +563,18 @@ function Statistics() {
 
             {/* Health Events Summary */}
             {isSummaryCardVisible('summary_health') && (
-              <div className="card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart size={20} className="text-red-400" />
-                  <h3 className="font-semibold text-foreground">Health Events</h3>
+              <div className="card p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Heart size={16} className="text-red-600 dark:text-red-400" />
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Health Events</h3>
+                  </div>
                 </div>
                 <p className="text-2xl font-bold text-foreground">
                   {stats.summary.total_health_events}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Logs recorded
+                <p className="text-xs text-muted-foreground">
+                  {stats.summary.total_health_events === 1 ? 'Log recorded' : 'Logs recorded'}
                 </p>
               </div>
             )}
