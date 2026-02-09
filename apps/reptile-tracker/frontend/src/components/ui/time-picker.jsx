@@ -28,11 +28,33 @@ function TimePicker({
 }) {
   const [manualInput, setManualInput] = React.useState(value || '')
   const [isOpen, setIsOpen] = React.useState(false)
+  const gridRef = React.useRef(null)
 
   // Update manual input when value changes from outside
   React.useEffect(() => {
     setManualInput(value || '')
   }, [value])
+
+  // Scroll to current time or selected value when popover opens
+  React.useEffect(() => {
+    if (isOpen && gridRef.current) {
+      // Find the time slot to scroll to (current value or current time)
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentMinute = Math.floor(now.getMinutes() / step) * step
+      const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`
+      const targetTime = value || currentTimeStr
+
+      // Find the button for the target time
+      const targetButton = gridRef.current.querySelector(`[data-time="${targetTime}"]`)
+      if (targetButton) {
+        // Small delay to ensure popover is fully rendered
+        requestAnimationFrame(() => {
+          targetButton.scrollIntoView({ block: 'center', behavior: 'instant' })
+        })
+      }
+    }
+  }, [isOpen, value, step])
 
   // Generate quick-pick times based on step
   const generateQuickPickTimes = () => {
@@ -119,10 +141,11 @@ function TimePicker({
           {/* Quick-pick grid */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Quick pick</label>
-            <div className="grid grid-cols-4 gap-1 max-h-48 overflow-y-auto">
+            <div ref={gridRef} className="grid grid-cols-4 gap-1 max-h-48 overflow-y-auto">
               {quickPickTimes.map((time) => (
                 <button
                   key={time}
+                  data-time={time}
                   onClick={() => handleQuickPick(time)}
                   className={cn(
                     'px-2 py-1.5 text-sm rounded-md transition-colors',

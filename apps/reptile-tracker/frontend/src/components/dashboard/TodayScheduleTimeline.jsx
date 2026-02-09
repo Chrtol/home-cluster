@@ -454,6 +454,9 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                           <div className="flex-1 min-w-0">
                             <div className="text-xs text-foreground truncate">
                               {schedule.reptile_name} - {scheduleType}
+                              {scheduleType === 'feeding' && schedule.food_category && (
+                                <span className="text-muted-foreground"> ({schedule.food_category})</span>
+                              )}
                             </div>
                           </div>
                           <span className="text-primary">✓</span>
@@ -479,7 +482,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                 >
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
                     {slot.label}
-                    {isCurrentSlot && <span className="ml-1 text-primary">(now)</span>}
+                    {isToday && isCurrentSlot && <span className="ml-1 text-primary">(now)</span>}
                   </div>
 
                   <div className="space-y-1">
@@ -520,6 +523,9 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
                             <div className="flex-1 min-w-0">
                               <div className="text-xs text-foreground truncate">
                                 {schedule.reptile_name} - {scheduleType}
+                                {scheduleType === 'feeding' && schedule.food_category && (
+                                  <span className="text-muted-foreground"> ({schedule.food_category})</span>
+                                )}
                               </div>
                             </div>
                             <button

@@ -55,12 +55,45 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
         let foods = foodsRes.data;
 
         // Filter by food_category if specified in schedule
-        // Only filter if it returns results; otherwise show all foods
+        // Normalize categories by lowercasing and removing trailing 's' (backend does same)
+        const normalizeCategory = (cat) => {
+          if (!cat) return '';
+          return cat.toLowerCase().replace(/s$/, '');
+        };
+
+        // Map common aliases to actual food categories
+        const categoryAliases = {
+          'salad': 'vegetable',
+          'greens': 'vegetable',
+          'veggies': 'vegetable',
+          'veg': 'vegetable',
+          'bug': 'insect',
+          'cricket': 'insect',
+          'roach': 'insect',
+          'dubia': 'insect',
+          'worm': 'worm',
+          'mealworm': 'worm',
+          'superworm': 'worm',
+          'mice': 'frozen_animal',
+          'mouse': 'frozen_animal',
+          'rat': 'frozen_animal',
+          'pinkie': 'frozen_animal',
+          'fuzzy': 'frozen_animal',
+          'rodent': 'frozen_animal',
+        };
+
         const foodCategory = task?.food_category;
         if (foodCategory) {
-          const filtered = foods.filter(f =>
-            f.category?.toLowerCase() === foodCategory.toLowerCase()
-          );
+          const normalizedScheduleCategory = normalizeCategory(foodCategory);
+          // Check if there's an alias mapping
+          const mappedCategory = categoryAliases[normalizedScheduleCategory] || normalizedScheduleCategory;
+
+          const filtered = foods.filter(f => {
+            const normalizedFoodCategory = normalizeCategory(f.category);
+            // Match either the original or mapped category
+            return normalizedFoodCategory === normalizedScheduleCategory ||
+                   normalizedFoodCategory === mappedCategory;
+          });
           // Only apply filter if it matches at least one food
           if (filtered.length > 0) {
             foods = filtered;
