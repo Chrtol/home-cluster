@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical, Maximize2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical, Maximize2, ArrowLeft, ArrowRight, PanelLeft } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings, updateProfileCards, resetProfileToDefault, getSidebarSettings, saveSidebarSettings, isMobileScreen } from '../utils/displaySettings';
@@ -2208,7 +2208,7 @@ export default function Dashboard() {
           .sort((a, b) => a.order - b.order);
 
         // On mobile, sidebar is disabled - all cards go to main
-        const showSidebar = sidebarSettings.sidebarEnabled && !isMobileScreen() && sidebarCards.length > 0;
+        const showSidebar = sidebarSettings.sidebarEnabled && !isMobileScreen() && (sidebarCards.length > 0 || isEditMode);
 
         const dragHandlers = {
           onDragStart: handleDragStart,
@@ -2221,7 +2221,7 @@ export default function Dashboard() {
         return (
           <div className={`flex gap-4 ${sidebarSettings.sidebarPosition === 'right' ? 'flex-row-reverse' : ''}`}>
             {/* Sidebar - conditionally rendered */}
-            {showSidebar && (
+            {showSidebar && sidebarCards.length > 0 && (
               <>
                 <DashboardSidebar
                   cards={sidebarCards}
@@ -2236,6 +2236,29 @@ export default function Dashboard() {
                 {/* Visual divider */}
                 <div className="w-px bg-border flex-shrink-0" />
               </>
+            )}
+
+            {/* Show empty drop zone when sidebar has no cards but in edit mode */}
+            {showSidebar && sidebarCards.length === 0 && isEditMode && (
+              <div
+                className="w-72 flex-shrink-0 border-2 border-dashed border-border rounded-xl p-4 flex items-center justify-center text-muted-foreground min-h-[200px]"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const widgetId = e.dataTransfer.getData('widgetId');
+                  if (widgetId) {
+                    handleMoveToSidebar(widgetId);
+                  }
+                }}
+              >
+                <div className="text-center">
+                  <PanelLeft className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <span className="text-sm">Drop widget here</span>
+                </div>
+              </div>
             )}
 
             {/* Main content area - 3-column grid */}
