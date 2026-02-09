@@ -5,7 +5,6 @@ import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 // Custom Tooltip Component for Recharts
 const CustomTooltip = ({ active, payload, label }) => {
@@ -430,44 +429,32 @@ function Statistics() {
             <>
               <div className="flex flex-wrap gap-2">
                 <Badge
-                  variant={visibleData.weight ? "default" : "outline"}
-                  className={cn(
-                    "cursor-pointer hover:opacity-80 transition-opacity",
-                    visibleData.weight && "bg-blue-500 hover:bg-blue-500/90"
-                  )}
+                  variant={visibleData.weight ? "weightActive" : "outline"}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => toggleDataVisibility('weight')}
                 >
                   <Scale size={14} className="inline mr-1" />
                   Weight
                 </Badge>
                 <Badge
-                  variant={visibleData.feeding ? "default" : "outline"}
-                  className={cn(
-                    "cursor-pointer hover:opacity-80 transition-opacity",
-                    visibleData.feeding && "bg-green-500 hover:bg-green-500/90"
-                  )}
+                  variant={visibleData.feeding ? "feedingActive" : "outline"}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => toggleDataVisibility('feeding')}
                 >
                   <Utensils size={14} className="inline mr-1" />
                   Feeding
                 </Badge>
                 <Badge
-                  variant={visibleData.misting ? "default" : "outline"}
-                  className={cn(
-                    "cursor-pointer hover:opacity-80 transition-opacity",
-                    visibleData.misting && "bg-blue-400 hover:bg-blue-400/90"
-                  )}
+                  variant={visibleData.misting ? "mistingActive" : "outline"}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => toggleDataVisibility('misting')}
                 >
                   <Droplets size={14} className="inline mr-1" />
                   Misting
                 </Badge>
                 <Badge
-                  variant={visibleData.health ? "default" : "outline"}
-                  className={cn(
-                    "cursor-pointer hover:opacity-80 transition-opacity",
-                    visibleData.health && "bg-red-400 hover:bg-red-400/90"
-                  )}
+                  variant={visibleData.health ? "healthActive" : "outline"}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => toggleDataVisibility('health')}
                 >
                   <Heart size={14} className="inline mr-1" />
