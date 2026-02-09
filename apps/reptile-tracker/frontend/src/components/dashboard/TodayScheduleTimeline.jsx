@@ -23,7 +23,19 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(() => {
+    // Load saved state or default to 'completed' expanded when in sidebar
+    const saved = localStorage.getItem('timeline_expanded_groups');
+    if (saved) {
+      try {
+        return new Set(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse timeline expanded groups', e);
+      }
+    }
+    // Default: expand completed section in sidebar, collapse elsewhere
+    return inSidebar ? new Set(['completed']) : new Set();
+  });
   const [activeFilters, setActiveFilters] = useState([]);
   const [hoveredTask, setHoveredTask] = useState(null);
   const [hoverTimer, setHoverTimer] = useState(null);
@@ -83,6 +95,18 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
   useEffect(() => {
     localStorage.setItem('timeline_filters', JSON.stringify(activeFilters));
   }, [activeFilters]);
+
+  // Save expanded groups state to localStorage
+  useEffect(() => {
+    localStorage.setItem('timeline_expanded_groups', JSON.stringify([...expandedGroups]));
+  }, [expandedGroups]);
+
+  // Auto-expand completed when moving to sidebar if nothing is expanded
+  useEffect(() => {
+    if (inSidebar && expandedGroups.size === 0) {
+      setExpandedGroups(new Set(['completed']));
+    }
+  }, [inSidebar]);
 
   // Fetch schedule instances for selected date
   useEffect(() => {
