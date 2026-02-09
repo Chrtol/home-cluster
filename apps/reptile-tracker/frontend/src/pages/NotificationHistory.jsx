@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, Check, CheckCheck, Trash2, Filter } from 'lucide-react';
+import { Utensils, Droplet, Heart, Bell, Check, CheckCheck, Trash2, Filter } from 'lucide-react';
 import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const NotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);
@@ -104,30 +107,48 @@ const NotificationHistory = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'schedule_reminder':
-        return '📅';
       case 'overdue_alert':
-        return '⚠️';
+        return Bell;
       case 'feeding_logged':
-        return '🍽️';
+        return Utensils;
+      case 'misting_logged':
+        return Droplet;
       case 'weight_logged':
-        return '⚖️';
       case 'health_event':
-        return '🏥';
+        return Heart;
       default:
-        return '🔔';
+        return Bell;
     }
   };
 
   const getTypeDisplayName = (type) => {
     const names = {
-      schedule_reminder: 'Reminders',
-      overdue_alert: 'Overdue Alerts',
-      feeding_logged: 'Feeding Logs',
-      weight_logged: 'Weight Logs',
-      health_event: 'Health Events',
+      schedule_reminder: 'Reminder',
+      overdue_alert: 'Overdue',
+      feeding_logged: 'Feeding',
+      weight_logged: 'Weight',
+      misting_logged: 'Misting',
+      health_event: 'Health',
       system: 'System'
     };
     return names[type] || type;
+  };
+
+  const getTypeBadgeVariant = (type) => {
+    switch (type) {
+      case 'overdue_alert':
+        return 'overdue';
+      case 'schedule_reminder':
+        return 'due';
+      case 'feeding_logged':
+      case 'weight_logged':
+      case 'misting_logged':
+        return 'done';
+      case 'health_event':
+        return 'default';
+      default:
+        return 'secondary';
+    }
   };
 
   return (
@@ -138,18 +159,18 @@ const NotificationHistory = () => {
         <p className="text-muted-foreground">View and manage your notification history</p>
       </div>
 
-      {/* Filters and Actions */}
-      <div className="bg-card rounded-lg shadow p-4 mb-4">
+      {/* Filter Controls */}
+      <div className="bg-card rounded-lg border border-border p-4 mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          {/* Filter buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Filter buttons and type selector */}
+          <div className="flex flex-wrap items-center gap-3">
             <Filter className="w-5 h-5 text-muted-foreground" />
             <div className="flex gap-2">
               {['all', 'unread', 'read'].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                  className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                     filter === f
                       ? 'bg-blue-500 text-white'
                       : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -161,42 +182,46 @@ const NotificationHistory = () => {
             </div>
 
             {/* Type filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-1 text-sm rounded-lg border border-border bg-card text-muted-foreground"
-            >
-              <option value="all">All Types</option>
-              <option value="schedule_reminder">Reminders</option>
-              <option value="overdue_alert">Overdue Alerts</option>
-              <option value="feeding_logged">Feeding Logs</option>
-              <option value="weight_logged">Weight Logs</option>
-              <option value="health_event">Health Events</option>
-            </select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="schedule_reminder">Reminders</SelectItem>
+                <SelectItem value="overdue_alert">Overdue Alerts</SelectItem>
+                <SelectItem value="feeding_logged">Feeding Logs</SelectItem>
+                <SelectItem value="weight_logged">Weight Logs</SelectItem>
+                <SelectItem value="health_event">Health Events</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Action buttons */}
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={handleMarkAllAsRead}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              size="sm"
+              className="bg-blue-500 hover:bg-blue-600"
             >
-              <CheckCheck className="w-4 h-4" />
+              <CheckCheck className="w-4 h-4 mr-2" />
               Mark All Read
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleDeleteAllRead}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              size="sm"
+              variant="outline"
+              className="text-red-600 hover:text-red-700"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4 mr-2" />
               Delete Read
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Notifications List */}
-      <div className="bg-card rounded-lg shadow">
+      {/* Notifications List - Compact */}
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-muted-foreground">
             Loading notifications...
@@ -210,66 +235,81 @@ const NotificationHistory = () => {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-4 transition-colors ${
-                  notification.is_read
-                    ? 'bg-card'
-                    : 'bg-blue-50 dark:bg-blue-900/20'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl flex-shrink-0">
-                    {getNotificationIcon(notification.notification_type)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
+          <div className="divide-y divide-border space-y-1.5">
+            {notifications.map((notification) => {
+              const Icon = getNotificationIcon(notification.notification_type);
+              return (
+                <div
+                  key={notification.id}
+                  className={`p-2.5 transition-colors ${
+                    notification.is_read
+                      ? 'bg-card hover:bg-secondary/50'
+                      : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Icon */}
+                    <div className={`flex-shrink-0 p-1.5 rounded-lg ${
+                      notification.is_read
+                        ? 'bg-secondary text-muted-foreground'
+                        : 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                    }`}>
+                      <Icon size={18} />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
                       <div
                         onClick={() => handleNotificationClick(notification)}
-                        className={`flex-1 ${notification.link ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        className={`${notification.link ? 'cursor-pointer' : ''}`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-foreground">
-                            {notification.title}
-                          </p>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                            {getTypeDisplayName(notification.notification_type)}
+                        <div className="flex items-start justify-between gap-3 mb-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`font-medium text-sm ${
+                              notification.is_read ? 'text-foreground' : 'text-blue-900 dark:text-blue-100'
+                            }`}>
+                              {notification.title}
+                            </p>
+                            <Badge variant={getTypeBadgeVariant(notification.notification_type)} className="text-xs">
+                              {getTypeDisplayName(notification.notification_type)}
+                            </Badge>
+                            {!notification.is_read && (
+                              <span className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0" />
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {notification.message.replace(/\*\*/g, '')}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                        </p>
                       </div>
+                    </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        {!notification.is_read && (
-                          <button
-                            onClick={() => handleMarkAsRead(notification.id)}
-                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                            title="Mark as read"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                        )}
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!notification.is_read && (
                         <button
-                          onClick={() => handleDelete(notification.id)}
-                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Delete notification"
+                          onClick={() => handleMarkAsRead(notification.id)}
+                          className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          title="Mark as read"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Check className="w-4 h-4" />
                         </button>
-                      </div>
+                      )}
+                      <button
+                        onClick={() => handleDelete(notification.id)}
+                        className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        title="Delete notification"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
