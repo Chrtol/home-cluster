@@ -50,8 +50,11 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       if (scheduleType !== 'feeding') return;
 
       try {
-        // Get all foods
-        const foodsRes = await axios.get('/api/foods');
+        const reptileId = task.reptile_id || task.reptile?.id;
+
+        // Get foods with reptile_id to include is_reptile_favorite status
+        const foodsUrl = reptileId ? `/api/foods?reptile_id=${reptileId}` : '/api/foods';
+        const foodsRes = await axios.get(foodsUrl);
         let foods = foodsRes.data;
 
         // Filter by food_category if specified in schedule
@@ -100,27 +103,15 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
           }
         }
 
-        // Get reptile favorites if available
-        const reptileId = task.reptile_id || task.reptile?.id;
-        if (reptileId) {
-          try {
-            const reptileRes = await axios.get(`/api/reptiles/${reptileId}`);
-            const favoriteFoodIds = reptileRes.data.favorite_food_ids || [];
-
-            // Mark favorites
-            foods = foods.map(f => ({
-              ...f,
-              isFavorite: favoriteFoodIds.includes(f.id)
-            }));
-          } catch (err) {
-            console.error('Failed to fetch reptile favorites:', err);
-          }
-        }
-
-        // Sort: favorites first with heart icon, then alphabetically
+        // Sort: reptile favorites first (❤️), then global favorites (⭐), then alphabetically
         foods.sort((a, b) => {
-          if (a.isFavorite && !b.isFavorite) return -1;
-          if (!a.isFavorite && b.isFavorite) return 1;
+          // Reptile favorites first
+          if (a.is_reptile_favorite && !b.is_reptile_favorite) return -1;
+          if (!a.is_reptile_favorite && b.is_reptile_favorite) return 1;
+          // Then global favorites
+          if (a.is_favorite && !b.is_favorite) return -1;
+          if (!a.is_favorite && b.is_favorite) return 1;
+          // Then alphabetically
           return a.name.localeCompare(b.name);
         });
 
@@ -305,11 +296,14 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
                 className="w-full px-2 py-1.5 bg-muted border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="">Select food...</option>
-                {availableFoods.map(food => (
-                  <option key={food.id} value={food.id}>
-                    {food.isFavorite ? '❤️ ' : ''}{food.name}
-                  </option>
-                ))}
+                {availableFoods.map(food => {
+                  const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                  return (
+                    <option key={food.id} value={food.id}>
+                      {prefix}{food.name}
+                    </option>
+                  );
+                })}
               </select>
 
               {selectedFoods.length > 0 && (

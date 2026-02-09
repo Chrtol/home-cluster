@@ -16,6 +16,7 @@ import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 import Header from '../components/Header';
 import EditModeControls from '../components/dashboard/EditModeControls';
 import WidgetGallery from '../components/dashboard/WidgetGallery';
+import Masonry from 'react-masonry-css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -723,6 +724,26 @@ export default function Dashboard() {
     due: todayScheduleStats.due,
     overdue: todayScheduleStats.overdue
   }), [todayScheduleStats]);
+
+  // Compute the actual due tasks list for Header dropdown
+  const dueTasks = useMemo(() => {
+    const today = new Date();
+    return weeklyEvents
+      .filter(event =>
+        event.date.toDateString() === today.toDateString() &&
+        calendarReptileFilter.has(event.reptile_id) &&
+        (event.status === 'pending' || event.status === 'missed')
+      )
+      .sort((a, b) => {
+        // Sort by status (missed/overdue first), then by time
+        if (a.status === 'missed' && b.status !== 'missed') return -1;
+        if (a.status !== 'missed' && b.status === 'missed') return 1;
+        // Then by earliest_time
+        const aTime = a.earliest_time || '23:59';
+        const bTime = b.earliest_time || '23:59';
+        return aTime.localeCompare(bTime);
+      });
+  }, [weeklyEvents, calendarReptileFilter]);
 
   if (loading) {
     return <div className="text-center text-muted-foreground">Loading dashboard...</div>;
@@ -1934,7 +1955,7 @@ export default function Dashboard() {
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-6">
       {/* Header with greeting and quick stats - full width */}
-      <Header user={user} todayStats={todayStats} />
+      <Header user={user} todayStats={todayStats} dueTasks={dueTasks} />
 
       {/* Content area with restored padding */}
       <div className="px-4 sm:px-6 lg:px-8 py-6">
@@ -2084,9 +2105,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing
-          Using grid-flow-dense to pack items more tightly and fill gaps */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 auto-rows-auto items-start grid-flow-dense">
+      {/* Masonry Layout - Renders all cards in user's preferred order
+          Uses react-masonry-css for true masonry (no row height gaps) */}
+      <Masonry
+        breakpointCols={{
+          default: 4,  // 4 columns on large screens
+          1280: 3,     // 3 columns on xl screens
+          1024: 2,     // 2 columns on lg screens
+          640: 1       // 1 column on mobile
+        }}
+        className="masonry-grid"
+        columnClassName="masonry-grid-column"
+      >
         {dashboardCards
           .filter(card => card.visible)
           .map(card => {
@@ -2096,7 +2126,7 @@ export default function Dashboard() {
             return (
               <div
                 key={card.id}
-                className={`${getCardSizeClass(card.id)} relative group ${
+                className={`mb-3 relative group ${
                   dragOverWidget === card.id ? 'ring-2 ring-primary' : ''
                 } ${draggedWidget === card.id ? 'opacity-50' : ''}`}
                 draggable={isEditMode}
@@ -2113,16 +2143,6 @@ export default function Dashboard() {
                     <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
                       <GripVertical className="w-4 h-4" />
                     </div>
-                    {/* Resize button */}
-                    <button
-                      onClick={() => handleResizeWidget(card.id)}
-                      className="absolute top-2 right-10 z-10 h-6 px-1.5 bg-muted text-muted-foreground rounded flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-muted/80"
-                      title={`Resize widget (current: ${getSizeLabel(card.id)})`}
-                      aria-label={`Resize ${card.id} widget`}
-                    >
-                      <Maximize2 className="w-3 h-3" />
-                      <span className="text-[10px] font-medium">{getSizeLabel(card.id)}</span>
-                    </button>
                     {/* Hide button */}
                     <button
                       onClick={() => handleHideWidget(card.id)}
@@ -2139,7 +2159,7 @@ export default function Dashboard() {
             );
           })
         }
-      </div>
+      </Masonry>
 
       {/* QuickLogForm modal */}
       {quickLogTask && (
