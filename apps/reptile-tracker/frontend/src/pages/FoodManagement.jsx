@@ -49,7 +49,7 @@ function FoodsTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingFood, setEditingFood] = useState(null);
   const [viewingFood, setViewingFood] = useState(null);
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -173,7 +173,7 @@ function FoodsTab() {
     }
   };
 
-  const filteredFoods = filterCategory
+  const filteredFoods = filterCategory && filterCategory !== 'all'
     ? foods.filter(f => f.category === filterCategory)
     : foods;
 
@@ -316,7 +316,7 @@ function FoodsTab() {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="insect">Insects</SelectItem>
               <SelectItem value="worms">Worms</SelectItem>
               <SelectItem value="vegetable">Vegetables</SelectItem>

@@ -87,16 +87,16 @@ function ScheduleTemplateForm() {
       name: '',
       description: '',
       species: '',
-      age_category: '',
+      age_category: '__all__',
       schedule_type: 'feeding',
       schedule_rule: 'days_of_week',
-      food_category: '',
-      time_slot: '',
-      health_category: '',
+      food_category: '__none__',
+      time_slot: '__none__',
+      health_category: '__none__',
       frequency_days: '',
       days_of_week: [],
       day_of_month: '',
-      supplement_id: '',
+      supplement_id: '__none__',
       notes: '',
       time_window_enabled: false,
       earliest_time: '',
@@ -136,16 +136,16 @@ function ScheduleTemplateForm() {
         name: template.name || '',
         description: template.description || '',
         species: template.species || '',
-        age_category: template.age_category || '',
+        age_category: template.age_category || '__all__',
         schedule_type: template.schedule_type || 'feeding',
         schedule_rule: template.schedule_rule || 'days_of_week',
-        food_category: template.food_category || '',
-        time_slot: template.time_slot || '',
-        health_category: template.health_category || '',
+        food_category: template.food_category || '__none__',
+        time_slot: template.time_slot || '__none__',
+        health_category: template.health_category || '__none__',
         frequency_days: template.frequency_days ? String(template.frequency_days) : '',
         days_of_week: template.days_of_week ? template.days_of_week.split(',').map(d => parseInt(d)) : [],
         day_of_month: template.day_of_month ? String(template.day_of_month) : '',
-        supplement_id: template.supplement_id ? String(template.supplement_id) : '',
+        supplement_id: template.supplement_id ? String(template.supplement_id) : '__none__',
         notes: template.notes || '',
         time_window_enabled: template.time_window_enabled || false,
         earliest_time: template.earliest_time || '',
@@ -168,21 +168,26 @@ function ScheduleTemplateForm() {
     form.setValue('days_of_week', newDays, { shouldValidate: true });
   }
 
+  // Helper to convert sentinel values to null
+  function toNullIfSentinel(value) {
+    return (value === '__none__' || value === '__all__' || !value) ? null : value;
+  }
+
   async function handleSubmit(values) {
     const templateData = {
       name: values.name.trim(),
       description: values.description?.trim() || null,
       species: values.species?.trim() || null,
-      age_category: values.age_category || null,
+      age_category: toNullIfSentinel(values.age_category),
       schedule_type: values.schedule_type,
       schedule_rule: values.schedule_rule,
-      food_category: values.food_category || null,
-      time_slot: values.time_slot || null,
-      health_category: values.health_category || null,
+      food_category: toNullIfSentinel(values.food_category),
+      time_slot: toNullIfSentinel(values.time_slot),
+      health_category: toNullIfSentinel(values.health_category),
       frequency_days: values.schedule_rule === 'every_x_days' && values.frequency_days ? parseInt(values.frequency_days) : null,
       days_of_week: values.schedule_rule === 'days_of_week' && values.days_of_week ? values.days_of_week.sort((a, b) => a - b).join(',') : null,
       day_of_month: values.schedule_rule === 'monthly' && values.day_of_month ? parseInt(values.day_of_month) : null,
-      supplement_id: values.supplement_id || null,
+      supplement_id: toNullIfSentinel(values.supplement_id),
       notes: values.notes?.trim() || null,
       time_window_enabled: values.time_window_enabled,
       earliest_time: values.time_window_enabled && values.earliest_time ? values.earliest_time : null,
@@ -295,7 +300,7 @@ function ScheduleTemplateForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">All Ages</SelectItem>
+                        <SelectItem value="__all__">All Ages</SelectItem>
                         <SelectItem value="hatchling">Hatchling</SelectItem>
                         <SelectItem value="juvenile">Juvenile</SelectItem>
                         <SelectItem value="adult">Adult</SelectItem>
@@ -441,7 +446,7 @@ function ScheduleTemplateForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="__none__">Not specified</SelectItem>
                         <SelectItem value="insects">Insects</SelectItem>
                         <SelectItem value="salad">Salad</SelectItem>
                         <SelectItem value="mixed">Mixed</SelectItem>
@@ -467,7 +472,7 @@ function ScheduleTemplateForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="__none__">Not specified</SelectItem>
                         <SelectItem value="morning">Morning</SelectItem>
                         <SelectItem value="midday">Midday</SelectItem>
                         <SelectItem value="afternoon">Afternoon</SelectItem>
@@ -495,7 +500,7 @@ function ScheduleTemplateForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="__none__">Not specified</SelectItem>
                         <SelectItem value="weight_check">Weight Check</SelectItem>
                         <SelectItem value="bathing">Bathing</SelectItem>
                         <SelectItem value="shedding_check">Shedding Check</SelectItem>
@@ -521,7 +526,7 @@ function ScheduleTemplateForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Select supplement...</SelectItem>
+                        <SelectItem value="__none__">Select supplement...</SelectItem>
                         {supplements.map(supplement => (
                           <SelectItem key={supplement.id} value={String(supplement.id)}>
                             {supplement.name}

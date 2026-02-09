@@ -92,14 +92,25 @@ function SupplementRotations() {
   async function loadData() {
     try {
       setLoading(true);
-      const [reptilesRes, rotationsRes, supplementsRes] = await Promise.all([
+      const [reptilesRes, supplementsRes] = await Promise.all([
         axios.get('/api/reptiles', { withCredentials: true }),
-        axios.get('/api/feeding-rotations', { withCredentials: true }),
         axios.get('/api/supplements', { withCredentials: true })
       ]);
       setReptiles(reptilesRes.data);
-      setRotations(rotationsRes.data);
       setSupplements(supplementsRes.data);
+
+      // Fetch rotations per-reptile since there's no global endpoint
+      if (reptilesRes.data.length > 0) {
+        const rotationPromises = reptilesRes.data.map(r =>
+          axios.get(`/api/feeding-rotations/reptile/${r.id}`, { withCredentials: true })
+            .then(res => res.data)
+            .catch(() => [])
+        );
+        const allRotations = await Promise.all(rotationPromises);
+        setRotations(allRotations.flat());
+      } else {
+        setRotations([]);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       alert('Failed to load data');
@@ -151,7 +162,7 @@ function SupplementRotations() {
       supplement_id: '',
       trigger_mode: 'feeding_count',
       every_n_feedings: '2',
-      applies_to_category: '',
+      applies_to_category: '__all__',
       counting_mode: 'category_only',
       application_mode: 'any_feeding',
       schedule_days_of_week: [],
@@ -171,7 +182,7 @@ function SupplementRotations() {
       supplement_id: String(rotation.supplement_id),
       trigger_mode: rotation.trigger_mode || 'feeding_count',
       every_n_feedings: rotation.every_n_feedings ? String(rotation.every_n_feedings) : '2',
-      applies_to_category: rotation.applies_to_category || '',
+      applies_to_category: rotation.applies_to_category || '__all__',
       counting_mode: rotation.counting_mode || 'category_only',
       application_mode: rotation.application_mode || 'any_feeding',
       schedule_days_of_week: rotation.schedule_days_of_week
@@ -206,7 +217,7 @@ function SupplementRotations() {
       every_n_feedings: values.trigger_mode === 'feeding_count' && values.every_n_feedings
         ? parseInt(values.every_n_feedings)
         : null,
-      applies_to_category: values.applies_to_category || null,
+      applies_to_category: values.applies_to_category === '__all__' ? null : (values.applies_to_category || null),
       counting_mode: values.counting_mode || null,
       application_mode: values.application_mode || null,
       schedule_days_of_week: values.trigger_mode === 'schedule_based' && values.schedule_days_of_week
@@ -374,7 +385,7 @@ function SupplementRotations() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">All feedings</SelectItem>
+                                <SelectItem value="__all__">All feedings</SelectItem>
                                 <SelectItem value="insects">Insects only</SelectItem>
                                 <SelectItem value="salad">Salad only</SelectItem>
                               </SelectContent>
