@@ -14,6 +14,47 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
+// Friendly name mappings
+const CATEGORY_LABELS = {
+  insect: 'Insects',
+  worms: 'Worms',
+  vegetable: 'Vegetables',
+  fruit: 'Fruits',
+  prepared: 'Prepared Foods',
+  frozen_animal: 'Frozen Animals',
+  live_rodent: 'Live Rodents',
+  fish_seafood: 'Fish/Seafood',
+  eggs: 'Eggs',
+  other: 'Other',
+};
+
+const INSECT_SIZE_LABELS = {
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
+};
+
+const ANIMAL_SIZE_LABELS = {
+  pinky: 'Pinky',
+  fuzzy: 'Fuzzy',
+  hopper: 'Hopper',
+  weaner: 'Weaner',
+  adult_small: 'Adult Small',
+  adult_medium: 'Adult Medium',
+  adult_large: 'Adult Large',
+  jumbo: 'Jumbo',
+};
+
+function getCategoryLabel(category) {
+  return CATEGORY_LABELS[category] || category;
+}
+
+function getSizeLabel(food) {
+  if (food.insect_size) return INSECT_SIZE_LABELS[food.insect_size] || food.insect_size;
+  if (food.animal_size) return ANIMAL_SIZE_LABELS[food.animal_size] || food.animal_size;
+  return null;
+}
+
 export default function FoodManagement() {
   return (
     <div>
@@ -184,10 +225,33 @@ function FoodsTab() {
       {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</p>}
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{success}</p>}
 
+      {/* Header row with filter and add button */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Filter:</span>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="insect">Insects</SelectItem>
+              <SelectItem value="worms">Worms</SelectItem>
+              <SelectItem value="vegetable">Vegetables</SelectItem>
+              <SelectItem value="fruit">Fruits</SelectItem>
+              <SelectItem value="prepared">Prepared Foods</SelectItem>
+              <SelectItem value="frozen_animal">Frozen Animals</SelectItem>
+              <SelectItem value="live_rodent">Live Rodents</SelectItem>
+              <SelectItem value="fish_seafood">Fish/Seafood</SelectItem>
+              <SelectItem value="eggs">Eggs</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} className="bg-green-600 hover:bg-green-700">
               <PlusCircle className="h-4 w-4" /> Add Food
             </Button>
           </DialogTrigger>
@@ -308,32 +372,10 @@ function FoodsTab() {
             </Form>
           </DialogContent>
         </Dialog>
-
-        <div className="w-full sm:w-auto">
-          <label className="block font-medium mb-2 text-sm text-foreground">Filter by Category</label>
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-full sm:w-64">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="insect">Insects</SelectItem>
-              <SelectItem value="worms">Worms</SelectItem>
-              <SelectItem value="vegetable">Vegetables</SelectItem>
-              <SelectItem value="fruit">Fruits</SelectItem>
-              <SelectItem value="prepared">Prepared Foods</SelectItem>
-              <SelectItem value="frozen_animal">Frozen Animals</SelectItem>
-              <SelectItem value="live_rodent">Live Rodents</SelectItem>
-              <SelectItem value="fish_seafood">Fish/Seafood</SelectItem>
-              <SelectItem value="eggs">Eggs</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Food List */}
-      <div className="rounded-md border">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -376,10 +418,10 @@ function FoodsTab() {
                   </TableCell>
                   <TableCell className="font-medium">{food.name}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{food.category}</Badge>
+                    <Badge variant="secondary">{getCategoryLabel(food.category)}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {food.insect_size || food.animal_size || '-'}
+                    {getSizeLabel(food) || '-'}
                   </TableCell>
                   <TableCell>
                     {food.is_default ? (
@@ -718,10 +760,15 @@ function SupplementsTab() {
       {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</p>}
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{success}</p>}
 
+      {/* Header row with info and add button */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4">
+        <p className="text-sm text-muted-foreground">
+          Common supplements: Calcium, Calcium with D3, Multivitamins
+        </p>
+
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} className="bg-green-600 hover:bg-green-700">
               <PlusCircle className="h-4 w-4" /> Add Supplement
             </Button>
           </DialogTrigger>
@@ -820,14 +867,10 @@ function SupplementsTab() {
             </Form>
           </DialogContent>
         </Dialog>
-
-        <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
-          Common supplements: Calcium, Calcium with D3, Multivitamins
-        </p>
       </div>
 
       {/* Supplement List */}
-      <div className="rounded-md border">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

@@ -500,19 +500,31 @@ function SupplementRotations() {
         </p>
       </div>
 
-      {/* Filter */}
-      <div className="mb-4 flex items-center gap-4">
-        <label className="text-sm font-medium text-muted-foreground">Filter by Reptile:</label>
-        <select
-          value={filterReptile}
-          onChange={(e) => setFilterReptile(e.target.value)}
-          className="px-3 py-2 border border-border rounded-lg bg-card text-foreground"
+      {/* Reptile Filter Buttons */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setFilterReptile('all')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            filterReptile === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
         >
-          <option value="all">All Reptiles</option>
-          {reptiles.map(r => (
-            <option key={r.id} value={r.id}>{r.name}</option>
-          ))}
-        </select>
+          All
+        </button>
+        {reptiles.map(r => (
+          <button
+            key={r.id}
+            onClick={() => setFilterReptile(String(r.id))}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filterReptile === String(r.id)
+                ? 'bg-blue-600 text-white'
+                : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            {r.name}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -533,46 +545,46 @@ function SupplementRotations() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Reptile</TableHead>
+                <TableHead className="pl-4">Reptile</TableHead>
                 <TableHead>Supplement</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Pattern</TableHead>
                 <TableHead>Priority</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right pr-4">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredRotations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8 pl-4">
                     No rotations found. Click "Add Rotation" to create one.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredRotations.map(rotation => (
                   <TableRow key={rotation.id}>
-                    <TableCell className="font-medium">{getReptileName(rotation.reptile_id)}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium pl-4 py-3">{getReptileName(rotation.reptile_id)}</TableCell>
+                    <TableCell className="py-3">
                       <Badge variant="default">{getSupplementName(rotation.supplement_id)}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3">
                       {rotation.applies_to_category ? (
                         <Badge variant="secondary">{rotation.applies_to_category}</Badge>
                       ) : (
                         <span className="text-muted-foreground text-sm">All</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{formatPattern(rotation)}</TableCell>
-                    <TableCell>{rotation.priority}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm py-3">{formatPattern(rotation)}</TableCell>
+                    <TableCell className="py-3">{rotation.priority}</TableCell>
+                    <TableCell className="py-3">
                       {rotation.enabled ? (
                         <Badge variant="default" className="bg-green-600">Enabled</Badge>
                       ) : (
                         <Badge variant="secondary">Disabled</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="outline"

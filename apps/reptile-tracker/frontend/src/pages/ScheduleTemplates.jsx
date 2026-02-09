@@ -947,49 +947,49 @@ function ScheduleTemplates() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      {/* Header */}
+      {/* Header with Action Buttons */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          Schedule Templates
-        </h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Schedule Templates
+          </h1>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+            >
+              <Filter size={18} />
+              Filters {speciesFilter.length > 0 && `(${speciesFilter.length})`}
+            </button>
+
+            <button
+              onClick={handleExport}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+            >
+              <Download size={18} />
+              Export
+            </button>
+
+            <button
+              onClick={() => setImportModalOpen(true)}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+            >
+              <Upload size={18} />
+              Import
+            </button>
+
+            <button
+              onClick={() => navigate('/schedule-templates/new')}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+            >
+              <Plus size={18} />
+              Create Template
+            </button>
+          </div>
+        </div>
         <p className="text-muted-foreground">
           Reusable schedule recommendations based on species and age
         </p>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <button
-          onClick={() => navigate('/schedule-templates/new')}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus size={20} />
-          Create Template
-        </button>
-
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Filter size={20} />
-          Filters {speciesFilter.length > 0 && `(${speciesFilter.length})`}
-        </button>
-
-        <button
-          onClick={handleExport}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Download size={20} />
-          Export
-        </button>
-
-        <button
-          onClick={() => setImportModalOpen(true)}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Upload size={20} />
-          Import
-        </button>
       </div>
 
       {/* Filters Panel */}
