@@ -17,11 +17,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 |--------|-------|
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
-| Current Phase | 9 (Reptile Pages) |
-| Phase Status | COMPLETE (4/4 plans) |
+| Current Phase | 10 (Calendar & Statistics) |
+| Phase Status | COMPLETE (2/2 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 9 - In Progress
+Progress: Phase 10 - In Progress
 ```
 Phase 7 (Foundation):
 07-01: Complete (shadcn/ui foundation)
@@ -51,6 +51,10 @@ Phase 9 (Reptile Pages):
 09-02: Complete (reptile detail quick stats - badges for age, feeding, weight, shed)
 09-03: Complete (compact tab content - tighter spacing, Badge components)
 09-04: Complete (photo gallery density - 5-col grid, badge filters)
+
+Phase 10 (Calendar & Statistics):
+10-01: Complete (calendar quick summary, denser events, badge filters)
+10-02: Complete (statistics stat cards with trends, chart tooltips, badge filters)
 ```
 
 Progress bar:
@@ -58,7 +62,7 @@ Progress bar:
 Phase 7:  [========] 3/3
 Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
-Phase 10: [           ] 0/?
+Phase 10: [============] 2/2
 Phase 11: [           ] 0/?
 Phase 12: [           ] 0/?
 ```
@@ -76,7 +80,7 @@ Phase 12: [           ] 0/?
 Phase 7:  Foundation      Complete (3/3 plans)
 Phase 8:  Dashboard       Complete (16/16 plans)
 Phase 9:  Reptile Pages   Complete (4/4 plans)
-Phase 10: Calendar/Stats  Not started
+Phase 10: Calendar/Stats  Complete (2/2 plans)
 Phase 11: Forms/Tables    Not started
 Phase 12: Polish/Mobile   Not started
 ```
@@ -135,6 +139,13 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | Badge-style photo category filters | Visual consistency with ReptileList badge filters, aligns with Phase 9 design pattern |
 | 2026-02-09 | Compact tab content spacing | space-y-1.5 for lists, p-2.5 for items, consistent p-4 for cards |
 | 2026-02-09 | Badge-based metadata display | Foods=secondary, supplements=outline, health types=destructive |
+| 2026-02-09 | Calendar summary header pattern | 2x2 responsive grid showing Today/Week/Completed/Overdue counts using Card component |
+| 2026-02-09 | Calendar event density: 3 events/cell | Increased from 2 to 3 visible events before overflow in month view with text-[10px] sizing |
+| 2026-02-09 | Badge filter consistency | All filter types (category, reptile) use Badge with default/outline/secondary variants |
+| 2026-02-09 | CustomTooltip for Recharts | Single reusable component with bg-card, border-border styling for theme-aware chart tooltips |
+| 2026-02-09 | Statistics badge filter colors | Data visibility badges use color-coded variants (weight=blue, feeding=green, misting=blue-400, health=red-400) |
+| 2026-02-09 | Time range badge presets | Replaced dropdown with 4 badge presets (7d, 30d, 90d, 1yr) for simpler interaction model |
+| 2026-02-09 | CSS variable chart colors | Changed hardcoded hex colors to CSS variables (--border, --muted-foreground) for theme adaptation |
 
 ## Reference Documents
 
@@ -146,29 +157,27 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 9 is complete (4/4 plans). Ready to proceed to Phase 10.
+Phase 10 is complete (2/2 plans). Ready to proceed to Phase 11 (Forms & Tables).
 
 ```
-/gsd:execute-plan 10-01
+/gsd:execute-phase 11
 ```
 
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 9 Plan 4 complete - PhotoGallery density improved with 5-column grid and badge-style filters
-**Resume file:** `.planning/phases/09-reptile-pages/09-04-SUMMARY.md`
+**Stopped at:** Phase 10 Plan 2 complete - Statistics stat cards with trends, chart tooltips, badge filters
+**Resume file:** `.planning/phases/10-calendar-statistics/10-02-SUMMARY.md`
 
 **Recent activity:**
+- 10-02: Statistics enhancements (complete) - Compact stat cards with trends, CustomTooltip, badge filters for data visibility and time range
+- 10-01: Calendar improvements (complete) - Quick day summary header, 3 events/cell, badge-style filters
 - 09-04: Photo gallery density (complete) - 5-column grid on lg screens, badge-style category filters, compact upload button
 - 09-03: Compact tab content (complete) - Tighter spacing (space-y-1.5, p-2.5), Badge components for metadata
 - 09-02: Reptile detail quick stats (complete) - Badge-based quick stats for age, feeding, weight, shed
 - 09-01: Reptile list redesign (complete) - 4-column responsive grid, badge-style filters, compact cards
-- 08-16: Layout fixes (complete) - Grid items-start alignment, activity avatar consistency
-- 08-15: QuickLog consistency (complete) - Food category filter, favorites, Escape key, Cmd+K shortcut
-- 08-14: Functional enhancements (complete) - Quantity +/- buttons, task type icons, widget hide/reorder in edit mode
-- 08-13: Visual polish (complete) - Grid gap fix, timeline avatars, border color consistency
 
-**Phase 9 status:** COMPLETE - 4/4 plans complete (reptile pages redesign fully implemented)
+**Phase 10 status:** COMPLETE - 2/2 plans complete (calendar and statistics both enhanced)
 
 ---
-*State updated: 2026-02-09 - Phase 9 Plan 4 complete*
+*State updated: 2026-02-09 - Phase 10 Plan 2 complete*
