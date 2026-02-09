@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PlusCircle, Edit2, Trash2, Star } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, Star, Utensils, Pill } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
+import EmptyState from '../components/EmptyState';
 
 // Friendly name mappings
 const CATEGORY_LABELS = {
@@ -392,8 +393,17 @@ function FoodsTab() {
           <TableBody>
             {filteredFoods.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No foods found
+                <TableCell colSpan={6}>
+                  <EmptyState
+                    icon={Utensils}
+                    title="No foods found"
+                    message={filterCategory && filterCategory !== 'all' ? "No foods in this category" : "Add foods to track in your feeding logs"}
+                    action={(!filterCategory || filterCategory === 'all') ? {
+                      label: "Add Food",
+                      onClick: handleCreate
+                    } : undefined}
+                    compact={true}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -885,8 +895,17 @@ function SupplementsTab() {
           <TableBody>
             {supplements.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  No supplements found. Add common supplements like Calcium, Calcium with D3, or Multivitamins.
+                <TableCell colSpan={4}>
+                  <EmptyState
+                    icon={Pill}
+                    title="No supplements found"
+                    message="Add common supplements like Calcium, Calcium with D3, or Multivitamins"
+                    action={{
+                      label: "Add Supplement",
+                      onClick: handleCreate
+                    }}
+                    compact={true}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

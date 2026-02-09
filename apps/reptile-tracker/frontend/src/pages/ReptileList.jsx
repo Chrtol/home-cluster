@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Home, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +7,10 @@ import { cn } from '@/lib/utils';
 import ReptileAvatar from '../components/ReptileAvatar';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
+import EmptyState from '../components/EmptyState';
 
 export default function ReptileList() {
+  const navigate = useNavigate();
   const [reptiles, setReptiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hiddenHouseholds, setHiddenHouseholds] = useState(new Set());
@@ -123,10 +125,14 @@ export default function ReptileList() {
       )}
 
       {reptiles.length === 0 ? (
-        <div className="text-center py-12 card">
-          <h2 className="text-xl font-medium text-foreground">No reptiles found</h2>
-          <p className="text-muted-foreground mt-2">Get started by adding your first reptile.</p>
-        </div>
+        <EmptyState
+          title="No reptiles found"
+          message="Get started by adding your first reptile"
+          action={{
+            label: "Add Reptile",
+            onClick: () => navigate('/reptiles/new')
+          }}
+        />
       ) : (
         <div className="space-y-6">
           {households.map(household => {
