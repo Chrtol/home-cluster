@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Utensils, Scale as ScaleIcon } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -11,6 +11,7 @@ import PhotoGallery from '../components/PhotoGallery';
 import PhotoLightbox from '../components/PhotoLightbox';
 import PhotoUpload from '../components/PhotoUpload';
 import AvatarCropper from '../components/AvatarCropper';
+import { Badge } from '@/components/ui/badge';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -67,6 +68,45 @@ const calculateAgeCategory = (dateOfBirth) => {
   if (ageInMonths < 6) return 'hatchling';
   if (ageInMonths < 18) return 'juvenile';
   return 'adult';
+};
+
+// Helper to calculate age display string
+const calculateAgeDisplay = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  const birth = new Date(dateOfBirth);
+  const today = new Date();
+  const diffTime = Math.abs(today - birth);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  const years = Math.floor(diffDays / 365);
+  const months = Math.floor((diffDays % 365) / 30);
+
+  if (years > 0) {
+    return `${years}y ${months > 0 ? `${months}mo` : ''}`;
+  } else if (months > 0) {
+    return `${months} months`;
+  } else {
+    return `${diffDays} days`;
+  }
+};
+
+// Helper to get feeding status variant
+const getFeedingStatusVariant = (lastFedDate) => {
+  if (!lastFedDate) return 'outline';
+  const days = differenceInDays(new Date(), new Date(lastFedDate));
+  if (days === 0) return 'done';    // Fed today - green
+  if (days <= 2) return 'outline';  // Recent - neutral
+  if (days <= 5) return 'due';      // Getting old - amber
+  return 'overdue';                 // Overdue - red
+};
+
+// Helper to get last fed display
+const getLastFedDisplay = (lastFedDate) => {
+  if (!lastFedDate) return 'No records';
+  const days = differenceInDays(new Date(), new Date(lastFedDate));
+  if (days === 0) return 'Today';
+  if (days === 1) return '1 day ago';
+  return `${days} days ago`;
 };
 
 export default function ReptileDetail() {
@@ -350,7 +390,7 @@ export default function ReptileDetail() {
       <FeedingRotationManager reptileId={reptile.id} reptileName={reptile.name} />
     ),
     feedings: (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {feedings.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No feeding records yet</p>
         ) : (
@@ -358,7 +398,7 @@ export default function ReptileDetail() {
             <div key={f.id} className="relative group">
               <Link
                 to={`/feed/${f.id}`}
-                className={`block p-3 border-l-4 border-green-500 dark:border-green-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                className={`block p-2.5 border-l-4 border-green-500 dark:border-green-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
                     ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
                     : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
@@ -374,24 +414,18 @@ export default function ReptileDetail() {
                     </div>
                     <div className="flex flex-wrap gap-1 items-center">
                       {f.foods && f.foods.length > 0 && f.foods.map((food, foodIdx) => (
-                        <span
-                          key={foodIdx}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200"
-                        >
-                          {food.name} ×{food.quantity || 1}
-                        </span>
+                        <Badge key={foodIdx} variant="secondary" className="text-xs h-5 px-1.5">
+                          {food.name} x{food.quantity || 1}
+                        </Badge>
                       ))}
                       {f.supplements && f.supplements.length > 0 && f.supplements.map((sup, supIdx) => (
-                        <span
-                          key={supIdx}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200"
-                        >
+                        <Badge key={supIdx} variant="outline" className="text-xs h-5 px-1.5">
                           {sup.name}
-                        </span>
+                        </Badge>
                       ))}
                     </div>
                     {f.notes && (
-                      <p className="text-xs text-muted-foreground mt-1.5 italic line-clamp-2">{f.notes}</p>
+                      <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">{f.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -419,7 +453,7 @@ export default function ReptileDetail() {
       </div>
     ),
     misting: (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {mistingLogs.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No misting records yet</p>
         ) : (
@@ -427,7 +461,7 @@ export default function ReptileDetail() {
             <div key={m.id} className="relative group">
               <Link
                 to={`/misting/${m.id}`}
-                className={`block p-3 border-l-4 border-blue-500 dark:border-blue-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                className={`block p-2.5 border-l-4 border-blue-500 dark:border-blue-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
                     ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
                     : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
@@ -471,9 +505,9 @@ export default function ReptileDetail() {
     ),
     weight: (
         <div>
-            <h3 className="text-lg font-bold mb-4 text-foreground">Weight History</h3>
+            <h3 className="text-base font-semibold mb-3 text-foreground">Weight History</h3>
             <WeightChart data={weightLogs} />
-            <div className="space-y-2 mt-6">
+            <div className="space-y-1.5 mt-4">
                 {weightLogs.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">No weight records yet</p>
                 ) : (
@@ -481,7 +515,7 @@ export default function ReptileDetail() {
                     <div key={w.id} className="relative group">
                       <Link
                         to={`/health-log/weight/${w.id}`}
-                        className={`block p-3 border-l-4 border-orange-500 dark:border-orange-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                        className={`block p-2.5 border-l-4 border-orange-500 dark:border-orange-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                           idx % 2 === 0
                             ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
                             : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
@@ -526,7 +560,7 @@ export default function ReptileDetail() {
         </div>
     ),
     health: (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {healthRecords.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No health records yet</p>
         ) : (
@@ -534,7 +568,7 @@ export default function ReptileDetail() {
             <div key={h.id} className="relative group">
               <Link
                 to={`/health-log/health/${h.id}`}
-                className={`block p-3 border-l-4 border-red-500 dark:border-red-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
+                className={`block p-2.5 border-l-4 border-red-500 dark:border-red-600 rounded-lg shadow-sm hover:shadow-md transition-all ${
                   idx % 2 === 0
                     ? 'bg-card hover:bg-green-100 dark:hover:bg-green-900/30'
                     : 'bg-secondary/30 hover:bg-green-100 dark:hover:bg-green-900/30'
@@ -546,9 +580,9 @@ export default function ReptileDetail() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <p className="text-foreground font-semibold">{h.title}</p>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 capitalize">
+                        <Badge variant="destructive" className="text-xs capitalize">
                           {h.record_type}
-                        </span>
+                        </Badge>
                         <p className="text-xs text-muted-foreground">• {formatDateShort(h.date)}</p>
                       </div>
                       {h.description && (
@@ -700,13 +734,13 @@ export default function ReptileDetail() {
       </div>
     ),
     photos: (
-      <div className="space-y-4">
-        {/* Upload Button */}
+      <div className="space-y-3">
+        {/* Upload Button - compact */}
         <button
           onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-lg text-sm transition-colors"
         >
-          <UploadIcon size={20} />
+          <UploadIcon size={16} />
           Upload Photos
         </button>
 
@@ -739,14 +773,79 @@ export default function ReptileDetail() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
-        <div className="flex items-start gap-4">
-          <ReptileAvatar reptile={reptile} size="xl" />
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{reptile.name}</h1>
-            <p className="text-muted-foreground">{reptile.species}</p>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
+        {/* Avatar - clickable to edit */}
+        <div className="flex-shrink-0">
+          <ReptileAvatar reptile={reptile} size="xl" className="cursor-pointer" onClick={handleEditAvatar} />
+        </div>
+
+        {/* Name, species, and quick stats */}
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{reptile.name}</h1>
+          <p className="text-muted-foreground mb-3">{reptile.species}</p>
+
+          {/* Quick stats badges */}
+          <div className="flex flex-wrap gap-2">
+            {/* Age badge */}
+            {reptile.date_of_birth && (
+              <Badge variant="outline" className="gap-1.5 px-2 py-1">
+                <Calendar className="w-3.5 h-3.5" />
+                <span className="text-xs">{calculateAgeDisplay(reptile.date_of_birth)}</span>
+              </Badge>
+            )}
+
+            {/* Last fed badge */}
+            {feedings.length > 0 && (
+              <Badge
+                variant={getFeedingStatusVariant(feedings[0]?.fed_at)}
+                className="gap-1.5 px-2 py-1"
+              >
+                <Utensils className="w-3.5 h-3.5" />
+                <span className="text-xs">{getLastFedDisplay(feedings[0]?.fed_at)}</span>
+              </Badge>
+            )}
+
+            {/* Weight badge */}
+            {weightLogs.length > 0 && (
+              <Badge variant="outline" className="gap-1.5 px-2 py-1">
+                <ScaleIcon className="w-3.5 h-3.5" />
+                <span className="text-xs">
+                  {weightLogs[0].weight_grams}g
+                  {weightLogs.length > 1 && (() => {
+                    const prev = weightLogs[1].weight_grams;
+                    const curr = weightLogs[0].weight_grams;
+                    if (prev && prev !== 0) {
+                      const change = ((curr - prev) / prev * 100).toFixed(1);
+                      const isPositive = parseFloat(change) > 0;
+                      return (
+                        <span className={isPositive ? 'text-primary ml-1' : 'text-destructive ml-1'}>
+                          {isPositive ? '+' : ''}{change}%
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </span>
+              </Badge>
+            )}
+
+            {/* Last shed badge - from health records */}
+            {(() => {
+              const lastShed = healthRecords.find(h => h.record_type === 'shed');
+              if (lastShed) {
+                return (
+                  <Badge variant="outline" className="gap-1.5 px-2 py-1">
+                    <Activity className="w-3.5 h-3.5" />
+                    <span className="text-xs">Shed {formatDateShort(lastShed.date)}</span>
+                  </Badge>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
+
+        {/* Action buttons */}
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link to={`/health-log/${id}`} className="btn-primary text-sm sm:text-base whitespace-nowrap">Log Health</Link>
           <Link to={`/measurements/${id}`} className="btn-secondary text-sm sm:text-base whitespace-nowrap">Measurements</Link>
@@ -795,8 +894,8 @@ export default function ReptileDetail() {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4 sm:p-6 mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl font-bold mb-4 text-foreground">Details</h2>
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
+        <h2 className="text-lg font-semibold mb-3 text-foreground">Details</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Date of Birth */}
@@ -887,7 +986,7 @@ export default function ReptileDetail() {
                 activeTab === tab
                   ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                   : 'border-transparent text-muted-foreground hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-              } whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm capitalize`}
+              } whitespace-nowrap py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm capitalize`}
             >
               {tab}
             </button>
@@ -895,7 +994,7 @@ export default function ReptileDetail() {
         </nav>
       </div>
 
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4 sm:p-6">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
         {tabs[activeTab]}
       </div>
 

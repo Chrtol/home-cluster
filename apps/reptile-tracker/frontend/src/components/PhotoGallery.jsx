@@ -3,6 +3,8 @@ import { Camera, Image as ImageIcon, Trash2, Star, Edit2, Upload, Download } fro
 import axios from 'axios';
 import AvatarCropper from './AvatarCropper';
 import { formatDate } from '../utils/dateFormatting';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 /**
  * PhotoGallery component
@@ -185,19 +187,24 @@ const PhotoGallery = ({
 
   return (
     <div className={className}>
-      {/* Category Filter - Always visible */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      {/* Category Filter */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
         {categories.map(cat => (
           <button
             key={cat.value}
             onClick={() => setSelectedCategory(cat.value)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              selectedCategory === cat.value
-                ? 'bg-blue-500 text-white'
-                : 'bg-secondary text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+            className="group"
           >
-            {cat.label}
+            <Badge
+              variant={selectedCategory === cat.value ? 'default' : 'outline'}
+              className={cn(
+                'cursor-pointer transition-colors px-2 py-0.5',
+                selectedCategory === cat.value && 'bg-primary hover:bg-primary/80',
+                selectedCategory !== cat.value && 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              )}
+            >
+              {cat.label}
+            </Badge>
           </button>
         ))}
       </div>
@@ -227,7 +234,7 @@ const PhotoGallery = ({
 
       {/* Photo Grid */}
       {!error && photos.length > 0 && (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
         {photos.map(photo => (
           <div
             key={photo.id}

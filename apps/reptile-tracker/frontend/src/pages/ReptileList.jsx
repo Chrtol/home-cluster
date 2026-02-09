@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Eye, EyeOff, Home } from 'lucide-react';
+import { Plus, Home } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import ReptileAvatar from '../components/ReptileAvatar';
 
 export default function ReptileList() {
@@ -92,20 +94,25 @@ export default function ReptileList() {
 
       {/* Household Filters */}
       {households.length > 1 && (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           {households.map(household => (
             <button
               key={household.id}
               onClick={() => toggleHousehold(household.id)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                hiddenHouseholds.has(household.id)
-                  ? 'bg-secondary text-muted-foreground'
-                  : 'bg-blue-500 text-white'
-              }`}
+              className="group"
             >
-              {hiddenHouseholds.has(household.id) ? <EyeOff size={16} /> : <Eye size={16} />}
-              {household.id !== 'no_household' && <Home size={16} />}
-              {household.name} ({household.reptiles.length})
+              <Badge
+                variant={hiddenHouseholds.has(household.id) ? 'outline' : 'default'}
+                className={cn(
+                  'cursor-pointer transition-colors gap-1.5 px-2.5 py-1',
+                  !hiddenHouseholds.has(household.id) && 'bg-primary hover:bg-primary/80',
+                  hiddenHouseholds.has(household.id) && 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {household.id !== 'no_household' && <Home className="w-3 h-3" />}
+                {household.name}
+                <span className="ml-1 opacity-70">({household.reptiles.length})</span>
+              </Badge>
             </button>
           ))}
         </div>
@@ -117,7 +124,7 @@ export default function ReptileList() {
           <p className="text-muted-foreground mt-2">Get started by adding your first reptile.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {households.map(household => {
             // Skip hidden households
             if (hiddenHouseholds.has(household.id)) return null;
@@ -125,34 +132,36 @@ export default function ReptileList() {
             return (
               <div key={household.id}>
                 {/* Household Header */}
-                <div className="mb-4">
-                  <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-                    {household.id !== 'no_household' && <Home size={24} className="text-blue-500" />}
+                <div className="mb-3">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    {household.id !== 'no_household' && <Home size={20} className="text-blue-500" />}
                     {household.name}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      ({household.reptiles.length} {household.reptiles.length === 1 ? 'reptile' : 'reptiles'})
-                    </span>
+                    <Badge variant="outline" className="ml-2">
+                      {household.reptiles.length}
+                    </Badge>
                   </h2>
-                  <div className="mt-1 h-0.5 bg-gradient-to-r from-blue-500 to-transparent"></div>
+                  <div className="mt-1 h-px bg-gradient-to-r from-border to-transparent"></div>
                 </div>
 
                 {/* Reptile Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {household.reptiles.map(reptile => (
                     <Link
                       to={`/reptiles/${reptile.id}`}
                       key={reptile.id}
-                      className="card group relative hover:shadow-lg hover:border-primary-500/50 transition-all"
+                      className="bg-card rounded-xl border border-border p-3 hover:border-primary/50 transition-all group"
                     >
-                      <div className="flex items-start gap-4">
-                        <ReptileAvatar reptile={reptile} size="lg" className="flex-shrink-0" />
+                      <div className="flex items-start gap-3">
+                        <ReptileAvatar reptile={reptile} size="md" className="flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-bold text-foreground">{reptile.name}</h3>
-                          <p className="text-muted-foreground">{reptile.species}</p>
+                          <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                            {reptile.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mb-2 truncate">{reptile.species}</p>
                           {reptile.date_of_birth && (
-                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                              Age: {calculateAge(reptile.date_of_birth)}
-                            </p>
+                            <Badge variant="outline" className="text-xs gap-1 mt-2">
+                              {calculateAge(reptile.date_of_birth)}
+                            </Badge>
                           )}
                         </div>
                       </div>
