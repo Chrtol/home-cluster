@@ -1,9 +1,55 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import axios from 'axios';
 import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2, Calendar, Heart, Star } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
-import DateInput from '../components/DateInput';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
+import { Textarea } from '@/components/ui/textarea';
+
+// Zod schema for feeding form
+const feedingSchema = z.object({
+  reptile_id: z.string().min(1, 'Please select a reptile'),
+  fed_date: z.string().min(1, 'Date is required'),
+  fed_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
+  notes: z.string().optional(),
+  include_insects: z.boolean(),
+  include_salad: z.boolean(),
+  include_prepared: z.boolean(),
+  insect_items: z.array(z.object({
+    id: z.number(),
+    food_id: z.string(),
+    quantity: z.number().min(1),
+    supplement_ids: z.array(z.number())
+  })),
+  salad_components: z.array(z.number()),
+  salad_supplements: z.array(z.number()),
+  prepared_items: z.array(z.object({
+    id: z.number(),
+    food_id: z.string(),
+    quantity: z.number().min(1),
+    supplement_ids: z.array(z.number())
+  })),
+  global_supplements: z.array(z.number())
+}).refine(data => data.include_insects || data.include_salad || data.include_prepared, {
+  message: 'Please select at least one feeding type',
+  path: ['include_insects']
+}).refine(data => !data.include_insects || data.insect_items.length > 0, {
+  message: 'Please add at least one insect item or uncheck Insects',
+  path: ['insect_items']
+}).refine(data => !data.include_salad || data.salad_components.length > 0, {
+  message: 'Please select at least one salad component or uncheck Salad',
+  path: ['salad_components']
+}).refine(data => !data.include_prepared || data.prepared_items.length > 0, {
+  message: 'Please add at least one prepared food item or uncheck Prepared Food',
+  path: ['prepared_items']
+});
 
 export default function FeedingLog() {
   const { id } = useParams();
@@ -20,51 +66,18 @@ export default function FeedingLog() {
   const [supplements, setSupplements] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state
-  const [selectedReptile, setSelectedReptile] = useState('');
-  const [fedDate, setFedDate] = useState(new Date().toISOString().slice(0, 10));
-  const [fedTime, setFedTime] = useState(new Date().toTimeString().slice(0, 5));
-  const [notes, setNotes] = useState('');
-
-  // Food type toggles
-  const [includeInsects, setIncludeInsects] = useState(true);
-  const [includeSalad, setIncludeSalad] = useState(false);
-  const [includePrepared, setIncludePrepared] = useState(false);
-
   // Show favorites only filters
   const [showOnlyFavoriteInsects, setShowOnlyFavoriteInsects] = useState(false);
   const [showOnlyFavoriteSalad, setShowOnlyFavoriteSalad] = useState(false);
   const [showOnlyFavoritePrepared, setShowOnlyFavoritePrepared] = useState(false);
 
-  // Insect feeding items (array to support multiple different insects)
-  const [insectItems, setInsectItems] = useState([]);
-
-  // Salad components
-  const [saladComponents, setSaladComponents] = useState([]);
-
-  // Prepared food items (array to support multiple different prepared foods)
-  const [preparedItems, setPreparedItems] = useState([]);
-
-  // Salad supplements (applied to salad if selected)
-  const [saladSupplements, setSaladSupplements] = useState([]);
-
-  // Global supplements (applied to entire feeding)
-  const [selectedSupplements, setSelectedSupplements] = useState([]);
-
-  // Suggested supplements from rotation rules (can be multiple)
+  // Suggested supplements from rotation rules
   const [suggestedSupplements, setSuggestedSupplements] = useState([]);
   const [showSuggestion, setShowSuggestion] = useState(false);
 
   // Track if supplements were pre-filled from a schedule instance
   const [supplementsPreFilled, setSupplementsPreFilled] = useState(false);
-  // Store the original pre-filled supplements to display in the banner
   const [originalPreFilledSupplements, setOriginalPreFilledSupplements] = useState([]);
-
-  // Time input format state
-  const [timeFormat, setTimeFormat] = useState('24h');
-  const [hours, setHours] = useState(new Date().getHours());
-  const [minutes, setMinutes] = useState(new Date().getMinutes());
-  const [period, setPeriod] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
 
   // User preferences
   const [showFavoritesFirst, setShowFavoritesFirst] = useState(true);
@@ -72,6 +85,43 @@ export default function FeedingLog() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
+
+  // Initialize form
+  const form = useForm({
+    resolver: zodResolver(feedingSchema),
+    defaultValues: {
+      reptile_id: '',
+      fed_date: new Date().toISOString().slice(0, 10),
+      fed_time: new Date().toTimeString().slice(0, 5),
+      notes: '',
+      include_insects: true,
+      include_salad: false,
+      include_prepared: false,
+      insect_items: [],
+      salad_components: [],
+      salad_supplements: [],
+      prepared_items: [],
+      global_supplements: []
+    }
+  });
+
+  // Field arrays for dynamic food items
+  const { fields: insectFields, append: appendInsect, remove: removeInsect } = useFieldArray({
+    control: form.control,
+    name: 'insect_items'
+  });
+
+  const { fields: preparedFields, append: appendPrepared, remove: removePrepared } = useFieldArray({
+    control: form.control,
+    name: 'prepared_items'
+  });
+
+  // Watch form values for conditional rendering
+  const watchReptileId = useWatch({ control: form.control, name: 'reptile_id' });
+  const watchIncludeInsects = useWatch({ control: form.control, name: 'include_insects' });
+  const watchIncludeSalad = useWatch({ control: form.control, name: 'include_salad' });
+  const watchIncludePrepared = useWatch({ control: form.control, name: 'include_prepared' });
+  const watchFedDate = useWatch({ control: form.control, name: 'fed_date' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,10 +153,8 @@ export default function FeedingLog() {
             const successParam = searchParams.get('success');
             if (successParam === 'created') {
               setViewModeSuccess('Feeding logged successfully!');
-              // Clear the query parameter from URL without reloading
               const newUrl = window.location.pathname;
               window.history.replaceState({}, '', newUrl);
-              // Auto-dismiss after 5 seconds
               setTimeout(() => setViewModeSuccess(''), 5000);
             }
           } catch (err) {
@@ -114,11 +162,10 @@ export default function FeedingLog() {
             setError('Failed to load feeding. It may not exist or you may not have permission.');
           }
         } else {
-          // Creating new feeding
+          // Creating new feeding - handle pre-fill
           const scheduleId = searchParams.get('schedule_id');
           const instanceId = searchParams.get('instance_id');
 
-          // Track if we pre-filled from a schedule
           let reptilePreFilled = false;
 
           // Check if we have an instance_id query parameter (preferred over schedule_id)
@@ -130,44 +177,41 @@ export default function FeedingLog() {
 
               // Pre-fill reptile
               if (schedule?.reptile_id) {
-                setSelectedReptile(schedule.reptile_id);
+                form.setValue('reptile_id', schedule.reptile_id.toString());
                 reptilePreFilled = true;
               }
 
               // Pre-fill date from instance
               if (instance.scheduled_date) {
-                setFedDate(instance.scheduled_date);
+                form.setValue('fed_date', instance.scheduled_date);
               }
-
-              // Don't pre-fill time - always use current time as default
 
               // Pre-fill food category toggles based on schedule
               if (schedule?.food_category) {
                 if (schedule.food_category === 'insects') {
-                  setIncludeInsects(true);
-                  setIncludeSalad(false);
-                  setIncludePrepared(false);
+                  form.setValue('include_insects', true);
+                  form.setValue('include_salad', false);
+                  form.setValue('include_prepared', false);
                 } else if (schedule.food_category === 'salad') {
-                  setIncludeInsects(false);
-                  setIncludeSalad(true);
-                  setIncludePrepared(false);
+                  form.setValue('include_insects', false);
+                  form.setValue('include_salad', true);
+                  form.setValue('include_prepared', false);
                 } else if (schedule.food_category === 'prepared') {
-                  setIncludeInsects(false);
-                  setIncludeSalad(false);
-                  setIncludePrepared(true);
+                  form.setValue('include_insects', false);
+                  form.setValue('include_salad', false);
+                  form.setValue('include_prepared', true);
                 }
               }
 
               // Pre-fill supplements from pre-calculated instance supplements
               if (instance.supplements && instance.supplements.length > 0) {
                 const suppIds = instance.supplements.map(s => s.id);
-                setSelectedSupplements(suppIds);
-                setOriginalPreFilledSupplements(suppIds); // Store original pre-filled supplements
-                setSupplementsPreFilled(true); // Mark that supplements were pre-filled
+                form.setValue('global_supplements', suppIds);
+                setOriginalPreFilledSupplements(suppIds);
+                setSupplementsPreFilled(true);
               }
             } catch (instanceErr) {
               console.error('Failed to load instance for pre-fill:', instanceErr);
-              // Continue with default initialization if instance load fails
             }
           } else if (scheduleId) {
             // Fallback to schedule_id if no instance_id
@@ -177,57 +221,49 @@ export default function FeedingLog() {
 
               // Pre-fill reptile
               if (schedule.reptile_id) {
-                setSelectedReptile(schedule.reptile_id);
+                form.setValue('reptile_id', schedule.reptile_id.toString());
                 reptilePreFilled = true;
               }
-
-              // Don't pre-fill time - always use current time as default
 
               // Pre-fill food category toggles based on schedule
               if (schedule.food_category) {
                 if (schedule.food_category === 'insects') {
-                  setIncludeInsects(true);
-                  setIncludeSalad(false);
-                  setIncludePrepared(false);
+                  form.setValue('include_insects', true);
+                  form.setValue('include_salad', false);
+                  form.setValue('include_prepared', false);
                 } else if (schedule.food_category === 'salad') {
-                  setIncludeInsects(false);
-                  setIncludeSalad(true);
-                  setIncludePrepared(false);
+                  form.setValue('include_insects', false);
+                  form.setValue('include_salad', true);
+                  form.setValue('include_prepared', false);
                 } else if (schedule.food_category === 'prepared') {
-                  setIncludeInsects(false);
-                  setIncludeSalad(false);
-                  setIncludePrepared(true);
+                  form.setValue('include_insects', false);
+                  form.setValue('include_salad', false);
+                  form.setValue('include_prepared', true);
                 }
               }
             } catch (scheduleErr) {
               console.error('Failed to load schedule for pre-fill:', scheduleErr);
-              // Continue with default initialization if schedule load fails
             }
           }
 
           // Initialize with default reptile only if we didn't pre-fill from a schedule
-          if (!reptilePreFilled) {
-            const initialReptileId = reptilesRes.data.length > 0 ? reptilesRes.data[0].id : '';
-            setSelectedReptile(initialReptileId);
+          if (!reptilePreFilled && reptilesRes.data.length > 0) {
+            form.setValue('reptile_id', reptilesRes.data[0].id.toString());
           }
 
           // Start with one insect item if insects are enabled and no items exist
-          if (includeInsects && insectItems.length === 0) {
+          if (form.getValues('include_insects') && insectFields.length === 0) {
             const insectFoods = foodsRes.data.filter(f => f.category === 'insect');
             if (insectFoods.length > 0) {
-              setInsectItems([{
+              appendInsect({
                 id: Date.now(),
-                food_id: insectFoods[0].id,
+                food_id: insectFoods[0].id.toString(),
                 quantity: 1,
                 supplement_ids: []
-              }]);
+              });
             }
           }
         }
-
-        // Load time format preference
-        const savedTimeFormat = getUserTimeFormat();
-        setTimeFormat(savedTimeFormat);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError('Failed to load data.');
@@ -238,12 +274,12 @@ export default function FeedingLog() {
     fetchData();
   }, [id, searchParams]);
 
-  // Refetch foods when selected reptile changes to include reptile-specific favorite status
+  // Refetch foods when selected reptile changes
   useEffect(() => {
     const refetchFoods = async () => {
-      if (selectedReptile) {
+      if (watchReptileId) {
         try {
-          const foodsRes = await axios.get(`/api/foods?reptile_id=${selectedReptile}`);
+          const foodsRes = await axios.get(`/api/foods?reptile_id=${watchReptileId}`);
           setFoods(foodsRes.data);
         } catch (error) {
           console.error('Failed to refetch foods:', error);
@@ -251,68 +287,62 @@ export default function FeedingLog() {
       }
     };
     refetchFoods();
-  }, [selectedReptile]);
+  }, [watchReptileId]);
 
   // Pre-select default foods when reptile is selected (only in create mode)
   useEffect(() => {
-    if (!selectedReptile || mode === 'edit' || mode === 'view') return;
+    if (!watchReptileId || mode === 'edit' || mode === 'view') return;
 
-    const selectedReptileData = reptiles.find(r => r.id === parseInt(selectedReptile));
+    const selectedReptileData = reptiles.find(r => r.id === parseInt(watchReptileId));
     if (!selectedReptileData) return;
 
     // Set default insect if configured and insects are enabled
-    if (selectedReptileData.default_insect_id && includeInsects) {
-      // Only set if no items exist or reptile just changed (clear and set default)
-      setInsectItems([{
+    if (selectedReptileData.default_insect_id && watchIncludeInsects) {
+      form.setValue('insect_items', [{
         id: Date.now(),
-        food_id: selectedReptileData.default_insect_id,
+        food_id: selectedReptileData.default_insect_id.toString(),
         quantity: 1,
         supplement_ids: []
       }]);
-    } else if (!selectedReptileData.default_insect_id && includeInsects) {
-      // Clear items if no default is configured
-      setInsectItems([]);
+    } else if (!selectedReptileData.default_insect_id && watchIncludeInsects) {
+      form.setValue('insect_items', []);
     }
 
     // Set default prepared food if configured and prepared is enabled
-    if (selectedReptileData.default_prepared_id && includePrepared) {
-      // Only set if no items exist or reptile just changed (clear and set default)
-      setPreparedItems([{
+    if (selectedReptileData.default_prepared_id && watchIncludePrepared) {
+      form.setValue('prepared_items', [{
         id: Date.now(),
-        food_id: selectedReptileData.default_prepared_id,
+        food_id: selectedReptileData.default_prepared_id.toString(),
         quantity: 1,
         supplement_ids: []
       }]);
-    } else if (!selectedReptileData.default_prepared_id && includePrepared) {
-      // Clear items if no default is configured
-      setPreparedItems([]);
+    } else if (!selectedReptileData.default_prepared_id && watchIncludePrepared) {
+      form.setValue('prepared_items', []);
     }
-  }, [selectedReptile, includeInsects, includePrepared, mode, reptiles]);
+  }, [watchReptileId, watchIncludeInsects, watchIncludePrepared, mode, reptiles]);
 
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {
     const fetchSuggestion = async () => {
-      // Don't fetch suggestions if supplements were pre-filled from instance
-      if (!selectedReptile || mode === 'view' || mode === 'edit' || supplementsPreFilled) return;
+      if (!watchReptileId || mode === 'view' || mode === 'edit' || supplementsPreFilled) return;
 
       try {
         // Determine food category based on what's enabled
         let foodCategory = null;
-        if (includeInsects && !includeSalad && !includePrepared) {
+        if (watchIncludeInsects && !watchIncludeSalad && !watchIncludePrepared) {
           foodCategory = 'insects';
-        } else if (includeSalad && !includeInsects && !includePrepared) {
+        } else if (watchIncludeSalad && !watchIncludeInsects && !watchIncludePrepared) {
           foodCategory = 'salad';
-        } else if (includeInsects || includeSalad || includePrepared) {
+        } else if (watchIncludeInsects || watchIncludeSalad || watchIncludePrepared) {
           foodCategory = 'mixed';
         }
 
         if (foodCategory) {
           const response = await axios.get(
-            `/api/feeding-rotations/reptile/${selectedReptile}/calculate`,
-            { params: { food_category: foodCategory, feeding_date: fedDate } }
+            `/api/feeding-rotations/reptile/${watchReptileId}/calculate`,
+            { params: { food_category: foodCategory, feeding_date: watchFedDate } }
           );
 
-          // API now returns an array of rotations
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
             const suggestionsWithSupplements = response.data
               .map(rotation => {
@@ -334,7 +364,6 @@ export default function FeedingLog() {
           }
         }
       } catch (error) {
-        // Silently fail if no rotation rules exist
         console.debug('No rotation suggestion:', error);
         setSuggestedSupplements([]);
         setShowSuggestion(false);
@@ -342,15 +371,16 @@ export default function FeedingLog() {
     };
 
     fetchSuggestion();
-  }, [selectedReptile, includeInsects, includeSalad, includePrepared, supplements, mode, fedDate, supplementsPreFilled]);
+  }, [watchReptileId, watchIncludeInsects, watchIncludeSalad, watchIncludePrepared, supplements, mode, watchFedDate, supplementsPreFilled]);
 
   const applyAllSuggestedSupplements = () => {
+    const currentSupplements = form.getValues('global_supplements');
     const newSupplementIds = suggestedSupplements
       .map(s => s.supplement_id)
-      .filter(id => !selectedSupplements.includes(id));
+      .filter(id => !currentSupplements.includes(id));
 
     if (newSupplementIds.length > 0) {
-      setSelectedSupplements([...selectedSupplements, ...newSupplementIds]);
+      form.setValue('global_supplements', [...currentSupplements, ...newSupplementIds]);
     }
     setShowSuggestion(false);
   };
@@ -360,27 +390,14 @@ export default function FeedingLog() {
   };
 
   const loadFeedingData = (feeding, foodsList) => {
-    setSelectedReptile(feeding.reptile_id);
-    setNotes(feeding.notes || '');
-    setSelectedSupplements(feeding.supplements?.map(s => s.id) || []);
+    form.setValue('reptile_id', feeding.reptile_id.toString());
+    form.setValue('notes', feeding.notes || '');
+    form.setValue('global_supplements', feeding.supplements?.map(s => s.id) || []);
 
     // Parse the fed_at datetime
     const fedAtDate = new Date(feeding.fed_at);
-    setFedDate(fedAtDate.toISOString().slice(0, 10));
-
-    const hour = fedAtDate.getHours();
-    const minute = fedAtDate.getMinutes();
-
-    console.log('Loading feeding data:', {
-      rawFedAt: feeding.fed_at,
-      parsedDate: fedAtDate.toString(),
-      extractedHour: hour,
-      extractedMinute: minute
-    });
-
-    setHours(hour);
-    setMinutes(minute);
-    setPeriod(hour >= 12 ? 'PM' : 'AM');
+    form.setValue('fed_date', fedAtDate.toISOString().slice(0, 10));
+    form.setValue('fed_time', `${String(fedAtDate.getHours()).padStart(2, '0')}:${String(fedAtDate.getMinutes()).padStart(2, '0')}`);
 
     // Determine which food types are included
     const insects = [];
@@ -393,19 +410,18 @@ export default function FeedingLog() {
 
       if (food.name === 'Salad' && feeding.is_salad) {
         hasSalad = true;
-        // Load salad supplements
-        setSaladSupplements(food.supplements?.map(s => s.id) || []);
+        form.setValue('salad_supplements', food.supplements?.map(s => s.id) || []);
       } else if (foodData.category === 'insect') {
         insects.push({
           id: Date.now() + Math.random(),
-          food_id: food.id,
+          food_id: food.id.toString(),
           quantity: food.quantity || 1,
           supplement_ids: food.supplements?.map(s => s.id) || []
         });
       } else if (foodData.category === 'prepared') {
         prepared.push({
           id: Date.now() + Math.random(),
-          food_id: food.id,
+          food_id: food.id.toString(),
           quantity: food.quantity || 1,
           supplement_ids: food.supplements?.map(s => s.id) || []
         });
@@ -413,135 +429,19 @@ export default function FeedingLog() {
     });
 
     // Set food type toggles
-    setIncludeInsects(insects.length > 0);
-    setIncludeSalad(hasSalad);
-    setIncludePrepared(prepared.length > 0);
+    form.setValue('include_insects', insects.length > 0);
+    form.setValue('include_salad', hasSalad);
+    form.setValue('include_prepared', prepared.length > 0);
 
     // Set food items
-    if (insects.length > 0) setInsectItems(insects);
-    if (prepared.length > 0) setPreparedItems(prepared);
-    if (hasSalad) setSaladComponents(feeding.salad_components?.map(sc => sc.id) || []);
-  };
-
-  // Update fedTime whenever hours/minutes/period change
-  useEffect(() => {
-    let hour24 = hours;
-    if (timeFormat === '12h') {
-      if (period === 'PM' && hours !== 12) {
-        hour24 = hours + 12;
-      } else if (period === 'AM' && hours === 12) {
-        hour24 = 0;
-      }
-    }
-    const timeString = `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    setFedTime(timeString);
-  }, [hours, minutes, period, timeFormat]);
-
-  // Reset form when navigating from /feed/:id to /feed
-  useEffect(() => {
-    if (!id && mode !== 'create') {
-      // Reset to create mode
-      setMode('create');
-      setExistingFeeding(null);
-      setError('');
-      setSuccess('');
-
-      // Reset form to defaults
-      setSelectedReptile(reptiles.length > 0 ? reptiles[0].id : '');
-      setFedDate(new Date().toISOString().slice(0, 10));
-      const now = new Date();
-      setHours(now.getHours());
-      setMinutes(now.getMinutes());
-      setPeriod(now.getHours() >= 12 ? 'PM' : 'AM');
-      setNotes('');
-
-      // Reset food types
-      setIncludeInsects(true);
-      setIncludeSalad(false);
-      setIncludePrepared(false);
-
-      // Reset food items
-      const insectFoods = foods.filter(f => f.category === 'insect');
-      if (insectFoods.length > 0) {
-        setInsectItems([{
-          id: Date.now(),
-          food_id: insectFoods[0].id,
-          quantity: 1,
-          supplement_ids: []
-        }]);
-      } else {
-        setInsectItems([]);
-      }
-      setSaladComponents([]);
-      setPreparedItems([]);
-
-      // Reset supplements
-      setSaladSupplements([]);
-      setSelectedSupplements([]);
-      setSuggestedSupplements([]);
-      setShowSuggestion(false);
-    }
-  }, [id, mode, reptiles, foods]);
-
-  const handleHoursChange = (value) => {
-    const numValue = parseInt(value) || (timeFormat === '12h' ? 12 : 0);
-    const maxHours = timeFormat === '12h' ? 12 : 23;
-    const minHours = timeFormat === '12h' ? 1 : 0;
-    setHours(Math.max(minHours, Math.min(maxHours, numValue)));
-  };
-
-  const handleMinutesChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    setMinutes(Math.max(0, Math.min(59, numValue)));
-  };
-
-  // Insect item management
-  const addInsectItem = () => {
-    const insectFoods = foods.filter(f => f.category === 'insect');
-    const defaultFood = insectFoods.length > 0 ? insectFoods[0].id : '';
-    setInsectItems([...insectItems, {
-      id: Date.now(),
-      food_id: defaultFood,
-      quantity: 1,
-      supplement_ids: []
-    }]);
-  };
-
-  const removeInsectItem = (itemId) => {
-    setInsectItems(insectItems.filter(item => item.id !== itemId));
-  };
-
-  const updateInsectItem = (itemId, field, value) => {
-    setInsectItems(insectItems.map(item =>
-      item.id === itemId ? { ...item, [field]: value } : item
-    ));
-  };
-
-  // Prepared food item management
-  const addPreparedItem = () => {
-    const preparedFoods = foods.filter(f => (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' || f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') && f.name !== 'Salad');
-    const defaultFood = preparedFoods.length > 0 ? preparedFoods[0].id : '';
-    setPreparedItems([...preparedItems, {
-      id: Date.now(),
-      food_id: defaultFood,
-      quantity: 1,
-      supplement_ids: []
-    }]);
-  };
-
-  const removePreparedItem = (itemId) => {
-    setPreparedItems(preparedItems.filter(item => item.id !== itemId));
-  };
-
-  const updatePreparedItem = (itemId, field, value) => {
-    setPreparedItems(preparedItems.map(item =>
-      item.id === itemId ? { ...item, [field]: value } : item
-    ));
+    if (insects.length > 0) form.setValue('insect_items', insects);
+    if (prepared.length > 0) form.setValue('prepared_items', prepared);
+    if (hasSalad) form.setValue('salad_components', feeding.salad_components?.map(sc => sc.id) || []);
   };
 
   // Quick add to reptile favorites
   const toggleReptileFavorite = async (foodId) => {
-    if (!selectedReptile) {
+    if (!watchReptileId) {
       alert('Please select a reptile first');
       return;
     }
@@ -553,9 +453,9 @@ export default function FeedingLog() {
 
     try {
       if (isCurrentlyFavorite) {
-        await axios.delete(`/api/reptiles/${selectedReptile}/favorite-foods/${foodId}`);
+        await axios.delete(`/api/reptiles/${watchReptileId}/favorite-foods/${foodId}`);
       } else {
-        await axios.post(`/api/reptiles/${selectedReptile}/favorite-foods/${foodId}`);
+        await axios.post(`/api/reptiles/${watchReptileId}/favorite-foods/${foodId}`);
       }
 
       // Update local state
@@ -565,61 +465,6 @@ export default function FeedingLog() {
     } catch (error) {
       console.error('Failed to toggle reptile favorite:', error);
       alert('Failed to update favorite status');
-    }
-  };
-
-  // Toggle salad component
-  const toggleSaladComponent = (foodId) => {
-    if (saladComponents.includes(foodId)) {
-      setSaladComponents(saladComponents.filter(id => id !== foodId));
-    } else {
-      setSaladComponents([...saladComponents, foodId]);
-    }
-  };
-
-  // Toggle supplement for a specific insect item
-  const toggleInsectSupplement = (itemId, suppId) => {
-    setInsectItems(insectItems.map(item => {
-      if (item.id === itemId) {
-        const currentSupps = item.supplement_ids || [];
-        const newSupps = currentSupps.includes(suppId)
-          ? currentSupps.filter(id => id !== suppId)
-          : [...currentSupps, suppId];
-        return { ...item, supplement_ids: newSupps };
-      }
-      return item;
-    }));
-  };
-
-  // Toggle supplement for a specific prepared item
-  const togglePreparedSupplement = (itemId, suppId) => {
-    setPreparedItems(preparedItems.map(item => {
-      if (item.id === itemId) {
-        const currentSupps = item.supplement_ids || [];
-        const newSupps = currentSupps.includes(suppId)
-          ? currentSupps.filter(id => id !== suppId)
-          : [...currentSupps, suppId];
-        return { ...item, supplement_ids: newSupps };
-      }
-      return item;
-    }));
-  };
-
-  // Toggle supplement for salad
-  const toggleSaladSupplement = (suppId) => {
-    if (saladSupplements.includes(suppId)) {
-      setSaladSupplements(saladSupplements.filter(id => id !== suppId));
-    } else {
-      setSaladSupplements([...saladSupplements, suppId]);
-    }
-  };
-
-  // Toggle global supplement
-  const toggleSupplement = (suppId) => {
-    if (selectedSupplements.includes(suppId)) {
-      setSelectedSupplements(selectedSupplements.filter(id => id !== suppId));
-    } else {
-      setSelectedSupplements([...selectedSupplements, suppId]);
     }
   };
 
@@ -636,25 +481,13 @@ export default function FeedingLog() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError('');
     setSuccess('');
 
-    if (!selectedReptile) {
-      setError("Please select a reptile.");
-      return;
-    }
-
-    // Validate at least one food type is selected
-    if (!includeInsects && !includeSalad && !includePrepared) {
-      setError("Please select at least one feeding type (Insects, Salad, or Prepared Food).");
-      return;
-    }
-
     // Construct ISO 8601 datetime WITH local timezone offset
-    const [year, month, day] = fedDate.split('-').map(Number);
-    const [hour, minute] = fedTime.split(':').map(Number);
+    const [year, month, day] = data.fed_date.split('-').map(Number);
+    const [hour, minute] = data.fed_time.split(':').map(Number);
     const localDate = new Date(year, month - 1, day, hour, minute, 0);
 
     const tzOffset = -localDate.getTimezoneOffset();
@@ -663,33 +496,21 @@ export default function FeedingLog() {
     const offsetSign = tzOffset >= 0 ? '+' : '-';
     const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
 
-    const fedAtISO = `${fedDate}T${fedTime}:00${offsetString}`;
-
-    console.log('Submitting feeding:', {
-      inputDate: fedDate,
-      inputTime: fedTime,
-      tzOffset,
-      offsetString,
-      finalISO: fedAtISO
-    });
+    const fedAtISO = `${data.fed_date}T${data.fed_time}:00${offsetString}`;
 
     let payload = {
-      reptile_id: parseInt(selectedReptile),
+      reptile_id: parseInt(data.reptile_id),
       fed_at: fedAtISO,
-      notes,
-      is_salad: includeSalad,
+      notes: data.notes || '',
+      is_salad: data.include_salad,
       foods: [],
-      supplements: selectedSupplements,
+      supplements: data.global_supplements,
       salad_components: []
     };
 
     // Add insect foods with per-item supplements
-    if (includeInsects) {
-      if (insectItems.length === 0) {
-        setError("Please add at least one insect item or uncheck Insects.");
-        return;
-      }
-      payload.foods.push(...insectItems.map(item => ({
+    if (data.include_insects) {
+      payload.foods.push(...data.insect_items.map(item => ({
         food_id: parseInt(item.food_id),
         quantity: item.quantity,
         supplement_ids: item.supplement_ids || []
@@ -697,12 +518,8 @@ export default function FeedingLog() {
     }
 
     // Add prepared foods with per-item supplements
-    if (includePrepared) {
-      if (preparedItems.length === 0) {
-        setError("Please add at least one prepared food item or uncheck Prepared Food.");
-        return;
-      }
-      payload.foods.push(...preparedItems.map(item => ({
+    if (data.include_prepared) {
+      payload.foods.push(...data.prepared_items.map(item => ({
         food_id: parseInt(item.food_id),
         quantity: item.quantity,
         supplement_ids: item.supplement_ids || []
@@ -710,12 +527,7 @@ export default function FeedingLog() {
     }
 
     // Add salad with per-salad supplements
-    if (includeSalad) {
-      if (saladComponents.length === 0) {
-        setError("Please select at least one salad component or uncheck Salad.");
-        return;
-      }
-
+    if (data.include_salad) {
       const saladFood = foods.find(f => f.name === 'Salad');
       if (!saladFood) {
         setError("Salad food item not found. Please create it in Food Management.");
@@ -725,9 +537,9 @@ export default function FeedingLog() {
       payload.foods.push({
         food_id: saladFood.id,
         quantity: 1,
-        supplement_ids: saladSupplements || []
+        supplement_ids: data.salad_supplements || []
       });
-      payload.salad_components = saladComponents;
+      payload.salad_components = data.salad_components;
     }
 
     try {
@@ -750,23 +562,19 @@ export default function FeedingLog() {
     }
   };
 
-  // Helper function to sort foods by favorites (only if preference is enabled)
+  // Helper function to sort foods by favorites
   const sortByFavorites = (foodList) => {
     if (!showFavoritesFirst) {
-      // Just sort alphabetically if preference is disabled
       return foodList.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     return foodList.sort((a, b) => {
-      // Reptile favorites first (if is_reptile_favorite exists)
       const aReptileFav = a.is_reptile_favorite || false;
       const bReptileFav = b.is_reptile_favorite || false;
       if (aReptileFav !== bReptileFav) return bReptileFav ? 1 : -1;
 
-      // Then global favorites
       if (a.is_favorite !== b.is_favorite) return b.is_favorite ? 1 : -1;
 
-      // Then alphabetically
       return a.name.localeCompare(b.name);
     });
   };
@@ -798,12 +606,12 @@ export default function FeedingLog() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-foreground">View Feeding</h1>
           <div className="flex gap-2">
-            <button onClick={() => setMode('edit')} className="btn-secondary flex items-center gap-2">
+            <Button onClick={() => setMode('edit')} variant="secondary">
               <Edit2 size={18} /> Edit
-            </button>
-            <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">
+            </Button>
+            <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400">
               <Trash2 size={18} /> Delete
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -813,7 +621,6 @@ export default function FeedingLog() {
           </div>
         )}
 
-        {/* Show schedule completion info if this feeding completed a schedule */}
         {existingFeeding.schedule_completion && (
           <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
             <div className="flex items-start gap-3">
@@ -881,7 +688,6 @@ export default function FeedingLog() {
             <div className="space-y-3">
               {existingFeeding.foods && existingFeeding.foods.length > 0 ? (
                 existingFeeding.foods.map(food => {
-                  // Don't display the "Salad" food item itself, as it's shown separately below
                   if (food.name === 'Salad' && existingFeeding.is_salad) {
                     return null;
                   }
@@ -971,7 +777,7 @@ export default function FeedingLog() {
     );
   }
 
-  // CREATE/EDIT MODE
+  // CREATE/EDIT MODE - Continue in next message due to length
   return (
     <div>
       <div className="flex justify-between items-center mb-4 sm:mb-6">
@@ -1000,544 +806,685 @@ export default function FeedingLog() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card space-y-6">
-        <div>
-          <label htmlFor="reptile" className="block font-medium mb-1">Reptile</label>
-          <select
-            id="reptile"
-            value={selectedReptile}
-            onChange={e => setSelectedReptile(e.target.value)}
-            className="input"
-            required
-            disabled={mode === 'edit'}
-          >
-            {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="card space-y-4">
+          {/* Reptile Select */}
+          <FormField
+            control={form.control}
+            name="reptile_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reptile</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} disabled={mode === 'edit'}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reptile" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {reptiles.map(r => (
+                      <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Food Type Selection Buttons */}
-        <div>
-          <label className="block font-medium mb-2 text-sm sm:text-base">Feeding Type (select one or more)</label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setIncludeInsects(!includeInsects);
-                if (!includeInsects && insectItems.length === 0 && insectFoods.length > 0) {
-                  setInsectItems([{ id: Date.now(), food_id: insectFoods[0].id, quantity: 1, supplement_ids: [] }]);
-                }
-              }}
-              className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                includeInsects
-                  ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'bg-card border-border text-muted-foreground hover:border-primary-400'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-1 sm:gap-2">
-                <Bug size={20} className="sm:w-6 sm:h-6" />
-                <span className="font-medium text-sm sm:text-base">Insects/Worms</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIncludeSalad(!includeSalad)}
-              className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                includeSalad
-                  ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'bg-card border-border text-muted-foreground hover:border-primary-400'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-1 sm:gap-2">
-                <Leaf size={20} className="sm:w-6 sm:h-6" />
-                <span className="font-medium text-sm sm:text-base">Salad</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIncludePrepared(!includePrepared);
-                if (!includePrepared && preparedItems.length === 0 && preparedFoods.length > 0) {
-                  setPreparedItems([{ id: Date.now(), food_id: preparedFoods[0].id, quantity: 1, supplement_ids: [] }]);
-                }
-              }}
-              className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                includePrepared
-                  ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'bg-card border-border text-muted-foreground hover:border-primary-400'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-1 sm:gap-2">
-                <Utensils size={20} className="sm:w-6 sm:h-6" />
-                <span className="font-medium text-sm sm:text-base">Other Food</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* INSECTS/WORMS SECTION */}
-        {includeInsects && (
-          <div className="space-y-3 p-4 bg-card/50 rounded-lg">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-              <div className="space-y-2">
-                <h3 className="font-medium text-foreground">Insects/Worms</h3>
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showOnlyFavoriteInsects}
-                    onChange={(e) => setShowOnlyFavoriteInsects(e.target.checked)}
-                    className="rounded"
-                  />
-                  Show favorites only
-                </label>
-              </div>
-              <button
+          {/* Food Type Selection Buttons */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Feeding Type (select one or more)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Button
                 type="button"
-                onClick={addInsectItem}
-                className="btn-secondary text-sm flex items-center gap-1"
+                variant={watchIncludeInsects ? "default" : "outline"}
+                className="h-auto p-3 sm:p-4"
+                onClick={() => {
+                  const newValue = !watchIncludeInsects;
+                  form.setValue('include_insects', newValue);
+                  if (newValue && insectFields.length === 0 && insectFoods.length > 0) {
+                    appendInsect({
+                      id: Date.now(),
+                      food_id: insectFoods[0].id.toString(),
+                      quantity: 1,
+                      supplement_ids: []
+                    });
+                  }
+                }}
               >
-                <Plus size={16} /> Add Another Item
-              </button>
-            </div>
-
-            {insectItems.map((item, index) => {
-              const selectedFood = foods.find(f => f.id === parseInt(item.food_id));
-              const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
-
-              return (
-                <div key={item.id} className="space-y-2 bg-card p-2 sm:p-3 rounded">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <select
-                        value={item.food_id}
-                        onChange={(e) => updateInsectItem(item.id, 'food_id', e.target.value)}
-                        className="input w-full text-sm sm:text-base"
-                      >
-                        {insectFoods.map(food => {
-                          const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
-                          return (
-                            <option key={food.id} value={food.id}>{prefix}{food.name}</option>
-                          );
-                        })}
-                      </select>
-                      {selectedReptile && (
-                        <button
-                          type="button"
-                          onClick={() => toggleReptileFavorite(item.food_id)}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
-                          title={isReptileFavorite ? "Remove from reptile's favorites" : "Add to reptile's favorites"}
-                        >
-                          <Heart
-                            size={20}
-                            className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
-                          />
-                        </button>
-                      )}
-                    </div>
-                  <div className="flex items-center justify-between sm:justify-start gap-2">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => updateInsectItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updateInsectItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                        className="input text-center w-16 sm:w-16 text-lg sm:text-base font-semibold"
-                        min="1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => updateInsectItem(item.id, 'quantity', item.quantity + 1)}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
-                      >
-                        +
-                      </button>
-                    </div>
-                    {insectItems.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeInsectItem(item.id)}
-                        className="text-red-600 dark:text-red-400 p-1 sm:p-1"
-                      >
-                        <X size={22} className="sm:w-5 sm:h-5" />
-                      </button>
-                    )}
-                  </div>
+                <div className="flex flex-col items-center gap-1 sm:gap-2">
+                  <Bug size={20} />
+                  <span className="text-sm sm:text-base">Insects/Worms</span>
                 </div>
-                {/* Per-item supplements */}
-                {supplements.length > 0 && (
-                  <div className="pl-2 sm:pl-2 border-l-2 border-border">
-                    <p className="text-xs text-muted-foreground mb-1.5">Supplements:</p>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                      {supplements.map(sup => (
-                        <label key={sup.id} className="flex items-center gap-1.5 text-xs sm:text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={(item.supplement_ids || []).includes(sup.id)}
-                            onChange={() => toggleInsectSupplement(item.id, sup.id)}
-                            className="rounded w-4 h-4"
-                          />
-                          <span className="select-none">{sup.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-            })}
-          </div>
-        )}
+              </Button>
 
-        {/* SALAD SECTION */}
-        {includeSalad && (
-          <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <div className="space-y-2">
-              <h3 className="font-medium text-foreground">Salad Components</h3>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showOnlyFavoriteSalad}
-                  onChange={(e) => setShowOnlyFavoriteSalad(e.target.checked)}
-                  className="rounded"
-                />
-                Show favorites only
-              </label>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {saladFoods.map(food => (
-                <label key={food.id} className="flex items-center gap-2 p-2 border border-border rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={saladComponents.includes(food.id)}
-                    onChange={() => toggleSaladComponent(food.id)}
-                  />
-                  <span className="text-sm flex items-center gap-1">
-                    {food.is_reptile_favorite && <Heart size={14} className="fill-red-500 text-red-500" />}
-                    {!food.is_reptile_favorite && food.is_favorite && <Star size={14} className="fill-yellow-400 text-yellow-400" />}
-                    {food.name}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {/* Salad supplements */}
-            {supplements.length > 0 && (
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-2">Supplements:</p>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {supplements.map(sup => (
-                    <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-secondary transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={saladSupplements.includes(sup.id)}
-                        onChange={() => toggleSaladSupplement(sup.id)}
-                        className="rounded w-4 h-4"
-                      />
-                      <span className="select-none">{sup.name}</span>
-                    </label>
-                  ))}
+              <Button
+                type="button"
+                variant={watchIncludeSalad ? "default" : "outline"}
+                className="h-auto p-3 sm:p-4"
+                onClick={() => form.setValue('include_salad', !watchIncludeSalad)}
+              >
+                <div className="flex flex-col items-center gap-1 sm:gap-2">
+                  <Leaf size={20} />
+                  <span className="text-sm sm:text-base">Salad</span>
                 </div>
-              </div>
+              </Button>
+
+              <Button
+                type="button"
+                variant={watchIncludePrepared ? "default" : "outline"}
+                className="h-auto p-3 sm:p-4"
+                onClick={() => {
+                  const newValue = !watchIncludePrepared;
+                  form.setValue('include_prepared', newValue);
+                  if (newValue && preparedFields.length === 0 && preparedFoods.length > 0) {
+                    appendPrepared({
+                      id: Date.now(),
+                      food_id: preparedFoods[0].id.toString(),
+                      quantity: 1,
+                      supplement_ids: []
+                    });
+                  }
+                }}
+              >
+                <div className="flex flex-col items-center gap-1 sm:gap-2">
+                  <Utensils size={20} />
+                  <span className="text-sm sm:text-base">Other Food</span>
+                </div>
+              </Button>
+            </div>
+            {form.formState.errors.include_insects && (
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.include_insects.message}</p>
             )}
           </div>
-        )}
 
-        {/* PREPARED FOOD SECTION */}
-        {includePrepared && (
-          <div className="space-y-3 p-4 bg-card/50 rounded-lg">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+          {/* INSECTS SECTION */}
+          {watchIncludeInsects && (
+            <div className="space-y-3 p-4 bg-card/50 rounded-lg">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="space-y-2">
+                  <h3 className="font-medium text-foreground">Insects/Worms</h3>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showOnlyFavoriteInsects}
+                      onChange={(e) => setShowOnlyFavoriteInsects(e.target.checked)}
+                      className="rounded"
+                    />
+                    Show favorites only
+                  </label>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => appendInsect({
+                    id: Date.now(),
+                    food_id: insectFoods.length > 0 ? insectFoods[0].id.toString() : '',
+                    quantity: 1,
+                    supplement_ids: []
+                  })}
+                >
+                  <Plus size={16} /> Add Another Item
+                </Button>
+              </div>
+
+              {insectFields.map((field, index) => {
+                const selectedFood = foods.find(f => f.id === parseInt(form.watch(`insect_items.${index}.food_id`)));
+                const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
+
+                return (
+                  <div key={field.id} className="space-y-2 bg-card p-2 sm:p-3 rounded">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`insect_items.${index}.food_id`}
+                          render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {insectFoods.map(food => {
+                                  const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                                  return (
+                                    <SelectItem key={food.id} value={food.id.toString()}>
+                                      {prefix}{food.name}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {watchReptileId && (
+                          <button
+                            type="button"
+                            onClick={() => toggleReptileFavorite(form.watch(`insect_items.${index}.food_id`))}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
+                            title={isReptileFavorite ? "Remove from reptile's favorites" : "Add to reptile's favorites"}
+                          >
+                            <Heart
+                              size={20}
+                              className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+                            />
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            onClick={() => {
+                              const currentQty = form.watch(`insect_items.${index}.quantity`);
+                              form.setValue(`insect_items.${index}.quantity`, Math.max(1, currentQty - 1));
+                            }}
+                          >
+                            -
+                          </Button>
+                          <FormField
+                            control={form.control}
+                            name={`insect_items.${index}.quantity`}
+                            render={({ field }) => (
+                              <input
+                                type="number"
+                                value={field.value}
+                                onChange={(e) => field.onChange(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="input text-center w-16 text-lg sm:text-base font-semibold"
+                                min="1"
+                              />
+                            )}
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            onClick={() => {
+                              const currentQty = form.watch(`insect_items.${index}.quantity`);
+                              form.setValue(`insect_items.${index}.quantity`, currentQty + 1);
+                            }}
+                          >
+                            +
+                          </Button>
+                        </div>
+                        {insectFields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeInsect(index)}
+                            className="text-red-600 dark:text-red-400"
+                          >
+                            <X size={22} />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Per-item supplements */}
+                    {supplements.length > 0 && (
+                      <div className="pl-2 border-l-2 border-border">
+                        <p className="text-xs text-muted-foreground mb-1.5">Supplements:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {supplements.map(sup => {
+                            const supplementIds = form.watch(`insect_items.${index}.supplement_ids`) || [];
+                            const isChecked = supplementIds.includes(sup.id);
+                            return (
+                              <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    const current = form.watch(`insect_items.${index}.supplement_ids`) || [];
+                                    const updated = isChecked
+                                      ? current.filter(id => id !== sup.id)
+                                      : [...current, sup.id];
+                                    form.setValue(`insect_items.${index}.supplement_ids`, updated);
+                                  }}
+                                  className="rounded w-4 h-4"
+                                />
+                                <span className="select-none">{sup.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {form.formState.errors.insect_items && (
+                <p className="text-sm font-medium text-destructive">{form.formState.errors.insect_items.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* SALAD SECTION */}
+          {watchIncludeSalad && (
+            <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="space-y-2">
-                <h3 className="font-medium text-foreground">Other Food</h3>
+                <h3 className="font-medium text-foreground">Salad Components</h3>
                 <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={showOnlyFavoritePrepared}
-                    onChange={(e) => setShowOnlyFavoritePrepared(e.target.checked)}
+                    checked={showOnlyFavoriteSalad}
+                    onChange={(e) => setShowOnlyFavoriteSalad(e.target.checked)}
                     className="rounded"
                   />
                   Show favorites only
                 </label>
               </div>
-              <button
-                type="button"
-                onClick={addPreparedItem}
-                className="btn-secondary text-sm flex items-center gap-1"
-              >
-                <Plus size={16} /> Add Another Item
-              </button>
-            </div>
-
-            {preparedItems.map((item, index) => {
-              const selectedFood = foods.find(f => f.id === parseInt(item.food_id));
-              const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
-
-              return (
-                <div key={item.id} className="space-y-2 bg-card p-2 sm:p-3 rounded">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <select
-                        value={item.food_id}
-                        onChange={(e) => updatePreparedItem(item.id, 'food_id', e.target.value)}
-                        className="input w-full text-sm sm:text-base"
-                      >
-                        {preparedFoods.map(food => {
-                          const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
-                          return (
-                            <option key={food.id} value={food.id}>{prefix}{food.name}</option>
-                          );
-                        })}
-                      </select>
-                      {selectedReptile && (
-                        <button
-                          type="button"
-                          onClick={() => toggleReptileFavorite(item.food_id)}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
-                          title={isReptileFavorite ? "Remove from reptile's favorites" : "Add to reptile's favorites"}
-                        >
-                          <Heart
-                            size={20}
-                            className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
-                          />
-                        </button>
-                      )}
-                    </div>
-                  <div className="flex items-center justify-between sm:justify-start gap-2">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => updatePreparedItem(item.id, 'quantity', Math.max(1, item.quantity - 1))}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
-                      >
-                        -
-                      </button>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {saladFoods.map(food => {
+                  const saladComponents = form.watch('salad_components') || [];
+                  const isChecked = saladComponents.includes(food.id);
+                  return (
+                    <label key={food.id} className="flex items-center gap-2 p-2 border border-border rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700">
                       <input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updatePreparedItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                        className="input text-center w-16 sm:w-16 text-lg sm:text-base font-semibold"
-                        min="1"
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          const current = form.watch('salad_components') || [];
+                          const updated = isChecked
+                            ? current.filter(id => id !== food.id)
+                            : [...current, food.id];
+                          form.setValue('salad_components', updated);
+                        }}
                       />
-                      <button
-                        type="button"
-                        onClick={() => updatePreparedItem(item.id, 'quantity', item.quantity + 1)}
-                        className="w-12 h-12 sm:w-10 sm:h-10 bg-secondary rounded-lg font-bold text-xl sm:text-lg hover:bg-secondary/80 active:scale-95 transition-all"
-                      >
-                        +
-                      </button>
-                    </div>
-                    {preparedItems.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removePreparedItem(item.id)}
-                        className="text-red-600 dark:text-red-400 p-1 sm:p-1"
-                      >
-                        <X size={22} className="sm:w-5 sm:h-5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {/* Per-item supplements */}
-                {supplements.length > 0 && (
-                  <div className="pl-2 sm:pl-2 border-l-2 border-border">
-                    <p className="text-xs text-muted-foreground mb-1.5">Supplements:</p>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                      {supplements.map(sup => (
-                        <label key={sup.id} className="flex items-center gap-1.5 text-xs sm:text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                      <span className="text-sm flex items-center gap-1">
+                        {food.is_reptile_favorite && <Heart size={14} className="fill-red-500 text-red-500" />}
+                        {!food.is_reptile_favorite && food.is_favorite && <Star size={14} className="fill-yellow-400 text-yellow-400" />}
+                        {food.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {form.formState.errors.salad_components && (
+                <p className="text-sm font-medium text-destructive">{form.formState.errors.salad_components.message}</p>
+              )}
+              {/* Salad supplements */}
+              {supplements.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2">Supplements:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {supplements.map(sup => {
+                      const saladSupplements = form.watch('salad_supplements') || [];
+                      const isChecked = saladSupplements.includes(sup.id);
+                      return (
+                        <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-secondary transition-colors">
                           <input
                             type="checkbox"
-                            checked={(item.supplement_ids || []).includes(sup.id)}
-                            onChange={() => togglePreparedSupplement(item.id, sup.id)}
+                            checked={isChecked}
+                            onChange={() => {
+                              const current = form.watch('salad_supplements') || [];
+                              const updated = isChecked
+                                ? current.filter(id => id !== sup.id)
+                                : [...current, sup.id];
+                              form.setValue('salad_supplements', updated);
+                            }}
                             className="rounded w-4 h-4"
                           />
                           <span className="select-none">{sup.name}</span>
                         </label>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                )}
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* SUPPLEMENT SUGGESTIONS OR PRE-FILLED BANNER */}
-        {supplementsPreFilled && originalPreFilledSupplements.length > 0 ? (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">ℹ️</span>
-                  <h4 className="font-semibold text-blue-900 dark:text-blue-300">
-                    Supplements Pre-filled from Schedule
-                  </h4>
-                </div>
-                <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
-                  The following supplements have been automatically added based on your schedule's rotation rules:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {originalPreFilledSupplements.map((suppId) => {
-                    const supp = supplements.find(s => s.id === suppId);
-                    return supp ? (
-                      <span key={suppId} className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded-lg font-medium">
-                        {supp.name}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : showSuggestion && suggestedSupplements.length > 0 ? (
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">💡</span>
-                  <h4 className="font-semibold text-green-900 dark:text-green-300">
-                    Supplement {suggestedSupplements.length > 1 ? 'Suggestions' : 'Suggestion'}
-                  </h4>
-                </div>
-                <p className="text-sm text-green-800 dark:text-green-300 mb-2">
-                  Based on your rotation rules, this feeding should include:
-                </p>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {suggestedSupplements.map((suggestion, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="px-3 py-1.5 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 rounded-lg font-medium">
-                        {suggestion.supplement.name}
-                      </span>
-                      <span className="text-xs text-green-700 dark:text-green-400">
-                        (Every {suggestion.every_n_feedings})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                {suggestedSupplements.some(s => s.notes) && (
-                  <div className="text-xs text-green-700 dark:text-green-400 italic space-y-1">
-                    {suggestedSupplements.filter(s => s.notes).map((s, idx) => (
-                      <p key={idx}>• {s.supplement.name}: {s.notes}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={applyAllSuggestedSupplements}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
-                >
-                  Apply All
-                </button>
-                <button
-                  type="button"
-                  onClick={dismissSuggestion}
-                  className="px-3 py-2 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-800 rounded-lg transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* GLOBAL SUPPLEMENTS */}
-        <div>
-          <label className="block font-medium mb-1 text-sm sm:text-base">Global Supplements (optional)</label>
-          <p className="text-xs text-muted-foreground mb-2">
-            Applied to all food items. You can also add supplements to individual items above.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {supplements.map(sup => (
-              <label key={sup.id} className="flex items-center gap-2 p-2.5 sm:p-2 border border-border rounded cursor-pointer hover:bg-secondary transition-colors">
-                <input
-                  type="checkbox"
-                  checked={selectedSupplements.includes(sup.id)}
-                  onChange={() => toggleSupplement(sup.id)}
-                  className="rounded w-4 h-4"
-                />
-                <span className="text-sm select-none">{sup.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="fedDate" className="block font-medium mb-1">Date</label>
-            <DateInput
-              id="fedDate"
-              value={fedDate}
-              onChange={e => setFedDate(e.target.value)}
-              className="input w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={hours}
-                onChange={e => handleHoursChange(e.target.value)}
-                className="input w-20 text-center"
-                min={timeFormat === '12h' ? 1 : 0}
-                max={timeFormat === '12h' ? 12 : 23}
-                required
-              />
-              <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
-              <input
-                type="number"
-                value={String(minutes).padStart(2, '0')}
-                onChange={e => handleMinutesChange(e.target.value)}
-                className="input w-20 text-center"
-                min="0"
-                max="59"
-                required
-              />
-              {timeFormat === '12h' && (
-                <select value={period} onChange={e => setPeriod(e.target.value)} className="input w-20">
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
               )}
             </div>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="notes" className="block font-medium mb-1">Notes (optional)</label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            rows={3}
-            className="input w-full"
-            placeholder="Any observations or notes about this feeding"
-          />
-        </div>
-
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary flex-1">
-            {mode === 'edit' ? 'Update Feeding' : 'Log Feeding'}
-          </button>
-          {mode === 'edit' && (
-            <button
-              type="button"
-              onClick={() => setMode('view')}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
           )}
-        </div>
-      </form>
+
+          {/* PREPARED FOOD SECTION */}
+          {watchIncludePrepared && (
+            <div className="space-y-3 p-4 bg-card/50 rounded-lg">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="space-y-2">
+                  <h3 className="font-medium text-foreground">Other Food</h3>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showOnlyFavoritePrepared}
+                      onChange={(e) => setShowOnlyFavoritePrepared(e.target.checked)}
+                      className="rounded"
+                    />
+                    Show favorites only
+                  </label>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => appendPrepared({
+                    id: Date.now(),
+                    food_id: preparedFoods.length > 0 ? preparedFoods[0].id.toString() : '',
+                    quantity: 1,
+                    supplement_ids: []
+                  })}
+                >
+                  <Plus size={16} /> Add Another Item
+                </Button>
+              </div>
+
+              {preparedFields.map((field, index) => {
+                const selectedFood = foods.find(f => f.id === parseInt(form.watch(`prepared_items.${index}.food_id`)));
+                const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
+
+                return (
+                  <div key={field.id} className="space-y-2 bg-card p-2 sm:p-3 rounded">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`prepared_items.${index}.food_id`}
+                          render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {preparedFoods.map(food => {
+                                  const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                                  return (
+                                    <SelectItem key={food.id} value={food.id.toString()}>
+                                      {prefix}{food.name}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {watchReptileId && (
+                          <button
+                            type="button"
+                            onClick={() => toggleReptileFavorite(form.watch(`prepared_items.${index}.food_id`))}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
+                            title={isReptileFavorite ? "Remove from reptile's favorites" : "Add to reptile's favorites"}
+                          >
+                            <Heart
+                              size={20}
+                              className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+                            />
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            onClick={() => {
+                              const currentQty = form.watch(`prepared_items.${index}.quantity`);
+                              form.setValue(`prepared_items.${index}.quantity`, Math.max(1, currentQty - 1));
+                            }}
+                          >
+                            -
+                          </Button>
+                          <FormField
+                            control={form.control}
+                            name={`prepared_items.${index}.quantity`}
+                            render={({ field }) => (
+                              <input
+                                type="number"
+                                value={field.value}
+                                onChange={(e) => field.onChange(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="input text-center w-16 text-lg sm:text-base font-semibold"
+                                min="1"
+                              />
+                            )}
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            onClick={() => {
+                              const currentQty = form.watch(`prepared_items.${index}.quantity`);
+                              form.setValue(`prepared_items.${index}.quantity`, currentQty + 1);
+                            }}
+                          >
+                            +
+                          </Button>
+                        </div>
+                        {preparedFields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removePrepared(index)}
+                            className="text-red-600 dark:text-red-400"
+                          >
+                            <X size={22} />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Per-item supplements */}
+                    {supplements.length > 0 && (
+                      <div className="pl-2 border-l-2 border-border">
+                        <p className="text-xs text-muted-foreground mb-1.5">Supplements:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {supplements.map(sup => {
+                            const supplementIds = form.watch(`prepared_items.${index}.supplement_ids`) || [];
+                            const isChecked = supplementIds.includes(sup.id);
+                            return (
+                              <label key={sup.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    const current = form.watch(`prepared_items.${index}.supplement_ids`) || [];
+                                    const updated = isChecked
+                                      ? current.filter(id => id !== sup.id)
+                                      : [...current, sup.id];
+                                    form.setValue(`prepared_items.${index}.supplement_ids`, updated);
+                                  }}
+                                  className="rounded w-4 h-4"
+                                />
+                                <span className="select-none">{sup.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {form.formState.errors.prepared_items && (
+                <p className="text-sm font-medium text-destructive">{form.formState.errors.prepared_items.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* SUPPLEMENT SUGGESTIONS OR PRE-FILLED BANNER */}
+          {supplementsPreFilled && originalPreFilledSupplements.length > 0 ? (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">ℹ️</span>
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-300">
+                      Supplements Pre-filled from Schedule
+                    </h4>
+                  </div>
+                  <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                    The following supplements have been automatically added based on your schedule's rotation rules:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {originalPreFilledSupplements.map((suppId) => {
+                      const supp = supplements.find(s => s.id === suppId);
+                      return supp ? (
+                        <span key={suppId} className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded-lg font-medium">
+                          {supp.name}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : showSuggestion && suggestedSupplements.length > 0 ? (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">💡</span>
+                    <h4 className="font-semibold text-green-900 dark:text-green-300">
+                      Supplement {suggestedSupplements.length > 1 ? 'Suggestions' : 'Suggestion'}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-green-800 dark:text-green-300 mb-2">
+                    Based on your rotation rules, this feeding should include:
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {suggestedSupplements.map((suggestion, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="px-3 py-1.5 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 rounded-lg font-medium">
+                          {suggestion.supplement.name}
+                        </span>
+                        <span className="text-xs text-green-700 dark:text-green-400">
+                          (Every {suggestion.every_n_feedings})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {suggestedSupplements.some(s => s.notes) && (
+                    <div className="text-xs text-green-700 dark:text-green-400 italic space-y-1">
+                      {suggestedSupplements.filter(s => s.notes).map((s, idx) => (
+                        <p key={idx}>• {s.supplement.name}: {s.notes}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={applyAllSuggestedSupplements}
+                    className="bg-green-600 text-white hover:bg-green-700"
+                  >
+                    Apply All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={dismissSuggestion}
+                    className="text-green-700 dark:text-green-300"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* GLOBAL SUPPLEMENTS */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Global Supplements (optional)</label>
+            <p className="text-xs text-muted-foreground">
+              Applied to all food items. You can also add supplements to individual items above.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {supplements.map(sup => {
+                const globalSupplements = form.watch('global_supplements') || [];
+                const isChecked = globalSupplements.includes(sup.id);
+                return (
+                  <label key={sup.id} className="flex items-center gap-2 p-2.5 sm:p-2 border border-border rounded cursor-pointer hover:bg-secondary transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        const current = form.watch('global_supplements') || [];
+                        const updated = isChecked
+                          ? current.filter(id => id !== sup.id)
+                          : [...current, sup.id];
+                        form.setValue('global_supplements', updated);
+                      }}
+                      className="rounded w-4 h-4"
+                    />
+                    <span className="text-sm select-none">{sup.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Date and Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="fed_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="fed_time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time</FormLabel>
+                  <FormControl>
+                    <TimePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Notes */}
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes (optional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    rows={3}
+                    placeholder="Any observations or notes about this feeding"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Submit buttons */}
+          <div className="flex gap-3">
+            <Button type="submit" className="flex-1">
+              {mode === 'edit' ? 'Update Feeding' : 'Log Feeding'}
+            </Button>
+            {mode === 'edit' && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setMode('view')}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
