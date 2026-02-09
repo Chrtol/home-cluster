@@ -187,7 +187,7 @@ Plans:
 **Requirements:** NAV-03, NAV-04
 
 **Status:** In Progress
-**Plans:** 6 plans
+**Plans:** 10 plans
 
 Plans:
 - [ ] 12-01-PLAN.md -- Create consistency components (PageHeader, LoadingState, ErrorState, useMediaQuery)
@@ -196,9 +196,13 @@ Plans:
 - [ ] 12-04-PLAN.md -- Apply consistency to pages batch 1 (ReptileList, FoodManagement, Statistics, Calendar, NotificationHistory, MistingLog, HealthLog)
 - [ ] 12-05-PLAN.md -- Apply consistency to pages batch 2 (FeedingLog, ScheduleTemplates, SupplementRotations, ScheduleDetails, HouseholdSettings)
 - [ ] 12-06-PLAN.md -- Final verification checkpoint
+- [ ] 12-07-PLAN.md -- Keyboard shortcuts F/M/H in Track menu
+- [ ] 12-08-PLAN.md -- Avatar border color consistency and ReptileNameWithAvatar audit
+- [ ] 12-09-PLAN.md -- EmptyState component and application
+- [ ] 12-10-PLAN.md -- Page transitions and focus indicator polish
 
 **Deliverables:**
-- [ ] Consistency components (PageHeader, LoadingState, ErrorState)
+- [ ] Consistency components (PageHeader, LoadingState, ErrorState, EmptyState)
 - [ ] useMediaQuery hook for responsive detection
 - [ ] Mobile navigation with proper touch targets (44x44px minimum)
 - [ ] Touch feedback on mobile nav items (active:scale-95)
@@ -206,6 +210,12 @@ Plans:
 - [ ] Today card completed section state persistence
 - [ ] All pages using consistent PageHeader component
 - [ ] All pages using consistent LoadingState component
+- [ ] Keyboard shortcuts F/M/H when Track menu is open
+- [ ] Avatar border color propagation fixed across all widgets
+- [ ] ReptileNameWithAvatar used in appropriate contexts
+- [ ] EmptyState component for consistent empty data displays
+- [ ] Smooth page transitions with Framer Motion
+- [ ] Consistent focus-visible indicators for accessibility
 
 **Dashboard Customization Bugs Fixed:**
 - [ ] Sidebar zone shows empty drop zone when no cards (edit mode)
