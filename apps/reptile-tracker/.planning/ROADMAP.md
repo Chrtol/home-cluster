@@ -194,6 +194,12 @@ Plans:
 - [ ] Loading states consistency
 - [ ] Error states consistency
 
+**Dashboard Customization Issues (from UAT):**
+- [ ] BUG: Moving Today card from sidebar to main area removes sidebar column permanently (can't restore without reset)
+- [ ] UX: Today card "completed" tab should not auto-minimize (plenty of vertical space available)
+- [ ] FEATURE: Allow adding other cards to sidebar column (not just Today card)
+- [ ] FEATURE: Consider additional column separators / customizable column layouts
+
 **Success:** Desktop and mobile feel equally polished, consistent visual language
 
 ---
