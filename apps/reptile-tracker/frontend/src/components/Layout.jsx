@@ -144,7 +144,7 @@ export default function Layout({ user, onLogout }) {
         <div className="relative group">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-full flex items-center justify-center p-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white transition-all shadow-lg hover:shadow-xl"
+            className="w-full flex items-center justify-center p-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white transition-all shadow-lg hover:shadow-xl focus-ring"
             title="Track (⌘K)"
           >
             <Plus size={16} strokeWidth={2.5} />
@@ -195,7 +195,7 @@ export default function Layout({ user, onLogout }) {
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all focus-ring"
         >
           <Plus size={16} strokeWidth={2.5} />
           <span>Track</span>
@@ -327,7 +327,7 @@ export default function Layout({ user, onLogout }) {
             {!sidebarCollapsed && (
               <button
                 onClick={() => setSidebarCollapsed(true)}
-                className="p-1 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:bg-secondary transition-colors focus-ring"
                 title="Collapse sidebar"
               >
                 <ChevronLeft size={16} />
@@ -364,7 +364,7 @@ export default function Layout({ user, onLogout }) {
                   </div>
                   <button
                     onClick={() => setSidebarCollapsed(false)}
-                    className="w-full flex items-center justify-center p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+                    className="w-full flex items-center justify-center p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors focus-ring"
                     title="Expand sidebar"
                   >
                     <ChevronRight size={16} />
@@ -411,7 +411,7 @@ export default function Layout({ user, onLogout }) {
             <NotificationBell />
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary"
+              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary focus-ring"
             >
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -518,7 +518,7 @@ export default function Layout({ user, onLogout }) {
             onClick={() => setMobileSchedulesMenuOpen(!mobileSchedulesMenuOpen)}
             className={cn(
               "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 flex-1",
-              "active:scale-95 transition-transform",
+              "active:scale-95 transition-transform focus-ring",
               schedulesItems.some(item => location.pathname === item.path)
                 ? 'text-primary'
                 : 'text-muted-foreground'
@@ -531,7 +531,7 @@ export default function Layout({ user, onLogout }) {
           {/* Center Track Button */}
           <button
             onClick={() => setTrackMenuOpen(!trackMenuOpen)}
-            className="relative -mt-6 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 text-white shadow-lg active:scale-95 transition-transform"
+            className="relative -mt-6 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 text-white shadow-lg active:scale-95 transition-transform focus-ring"
           >
             <Plus size={28} strokeWidth={3} />
           </button>
