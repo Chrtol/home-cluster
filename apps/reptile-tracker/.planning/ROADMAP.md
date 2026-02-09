@@ -121,28 +121,30 @@ Plans:
 
 ---
 
-## Phase 10: Calendar & Statistics Complete
+## Phase 10: Calendar & Statistics In Progress
 
 **Goal:** Improve calendar quick-view and statistics visualization
 
 **Requirements:** CAL-01, CAL-02, CAL-03, STAT-01, STAT-02, STAT-03
 
-**Status:** Complete (2026-02-09)
-**Plans:** 2/2 complete
+**Status:** UAT Gap Closure
+**Plans:** 3 plans (2 complete, 1 gap closure)
 
 Plans:
 - [x] 10-01-PLAN.md -- Calendar quick day summary header, denser event display, badge filters
 - [x] 10-02-PLAN.md -- Statistics compact stat cards with trends, chart styling, badge filters
+- [ ] 10-03-PLAN.md -- GAP CLOSURE: Remove calendar header, improve badge outline, fix statistics active badges
 
 **Deliverables:**
-- [x] Calendar: quick day summary header (4-stat grid)
+- [x] Calendar: quick day summary header (4-stat grid) - REMOVED per user feedback
 - [x] Calendar: denser event display (3 events before overflow)
 - [x] Calendar: improved filters (badge-style chips)
 - [x] Statistics: compact stat cards with trends (arrows + percentages)
 - [x] Statistics: better chart styling (CustomTooltip, theme-aware colors)
-- [x] Statistics: improved filters (badge-style, time range presets)
+- [ ] Statistics: improved filters (badge-style, time range presets) - active state fix pending
+- [ ] Badge: outline variant styling improvement
 
-**Verification:** 6/6 must-haves verified. See 10-VERIFICATION.md.
+**Verification:** 6/6 must-haves verified. See 10-VERIFICATION.md. UAT revealed 3 gaps.
 
 **Success:** Calendar shows today/week at a glance, statistics feel polished
 

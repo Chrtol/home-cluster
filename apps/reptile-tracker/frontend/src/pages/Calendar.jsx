@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale, Bell, CheckCircle, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale, Bell } from "lucide-react";
 import { formatTime, getDayNames, getUserFirstDayOfWeek, toLocalISODate } from "../utils/dateFormatting";
 import ReptileAvatar from "../components/ReptileAvatar";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -728,59 +727,6 @@ function Calendar() {
           </div>
         )}
       </div>
-
-      {/* Calendar Summary Header */}
-      <Card className="bg-card rounded-lg border border-border p-3 mb-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {/* Today's Scheduled Events */}
-          <div className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50">
-            <CalendarIcon className="h-5 w-5 text-primary mb-1" />
-            <div className="text-2xl font-bold text-foreground">
-              {getEventsForDate(new Date()).length}
-            </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
-              Today
-            </div>
-          </div>
-
-          {/* This Week's Total Events */}
-          <div className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50">
-            <Utensils className="h-5 w-5 text-blue-500 mb-1" />
-            <div className="text-2xl font-bold text-foreground">
-              {getDaysInWeek().reduce((total, date) => total + getEventsForDate(date).length, 0)}
-            </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
-              This Week
-            </div>
-          </div>
-
-          {/* Completed Today */}
-          <div className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50">
-            <CheckCircle className="h-5 w-5 text-green-500 mb-1" />
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {getEventsForDate(new Date()).filter(e => e.status === 'completed').length}
-            </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
-              Completed
-            </div>
-          </div>
-
-          {/* Overdue Count */}
-          <div className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50">
-            <AlertCircle className="h-5 w-5 text-destructive mb-1" />
-            <div className="text-2xl font-bold text-destructive">
-              {events.filter(e => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return e.date < today && e.status !== 'completed';
-              }).length}
-            </div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
-              Overdue
-            </div>
-          </div>
-        </div>
-      </Card>
 
       {/* Schedules Management Section */}
       {showSchedules && (
