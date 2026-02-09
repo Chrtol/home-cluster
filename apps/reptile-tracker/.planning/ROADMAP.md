@@ -186,19 +186,34 @@ Plans:
 
 **Requirements:** NAV-03, NAV-04
 
-**Deliverables:**
-- [ ] Mobile navigation updates
-- [ ] Consistent page headers
-- [ ] Responsive breakpoint audit
-- [ ] Animation/transition polish
-- [ ] Loading states consistency
-- [ ] Error states consistency
+**Status:** In Progress
+**Plans:** 6 plans
 
-**Dashboard Customization Issues (from UAT):**
-- [ ] BUG: Moving Today card from sidebar to main area removes sidebar column permanently (can't restore without reset)
-- [ ] UX: Today card "completed" tab should not auto-minimize (plenty of vertical space available)
-- [ ] FEATURE: Allow adding other cards to sidebar column (not just Today card)
-- [ ] FEATURE: Consider additional column separators / customizable column layouts
+Plans:
+- [ ] 12-01-PLAN.md -- Create consistency components (PageHeader, LoadingState, ErrorState, useMediaQuery)
+- [ ] 12-02-PLAN.md -- Fix dashboard sidebar bugs (empty drop zone, completed section persistence)
+- [ ] 12-03-PLAN.md -- Mobile navigation polish (44x44px touch targets, active:scale-95 feedback)
+- [ ] 12-04-PLAN.md -- Apply consistency to pages batch 1 (ReptileList, FoodManagement, Statistics, Calendar, NotificationHistory, MistingLog, HealthLog)
+- [ ] 12-05-PLAN.md -- Apply consistency to pages batch 2 (FeedingLog, ScheduleTemplates, SupplementRotations, ScheduleDetails, HouseholdSettings)
+- [ ] 12-06-PLAN.md -- Final verification checkpoint
+
+**Deliverables:**
+- [ ] Consistency components (PageHeader, LoadingState, ErrorState)
+- [ ] useMediaQuery hook for responsive detection
+- [ ] Mobile navigation with proper touch targets (44x44px minimum)
+- [ ] Touch feedback on mobile nav items (active:scale-95)
+- [ ] Dashboard sidebar bug fixes (empty drop zone in edit mode)
+- [ ] Today card completed section state persistence
+- [ ] All pages using consistent PageHeader component
+- [ ] All pages using consistent LoadingState component
+
+**Dashboard Customization Bugs Fixed:**
+- [ ] Sidebar zone shows empty drop zone when no cards (edit mode)
+- [ ] Today card completed section remembers expanded/collapsed state
+- [ ] WidgetGallery already supports zone selection (verified in research)
+
+**Deferred to v1.2:**
+- Column layout customization (Bug 4 from UAT)
 
 **Success:** Desktop and mobile feel equally polished, consistent visual language
 
