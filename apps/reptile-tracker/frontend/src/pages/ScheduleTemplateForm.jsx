@@ -1,51 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { ArrowLeft, Save, Clock } from 'lucide-react';
 import * as api from '../utils/scheduleTemplateApi';
 import axios from 'axios';
 import { getUserTimeFormat, getDayNames, getDayNumbers } from '../utils/dateFormatting';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { TimePicker } from '@/components/ui/time-picker';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+// Zod schema with conditional validation
+const templateSchema = z.object({
+  name: z.string().min(1, 'Template name is required'),
+  description: z.string().optional(),
+  species: z.string().optional(),
+  age_category: z.string().optional(),
+  schedule_type: z.enum(['feeding', 'misting', 'weighing', 'supplement']),
+  schedule_rule: z.enum(['days_of_week', 'every_x_days', 'monthly']),
+  food_category: z.string().optional(),
+  time_slot: z.string().optional(),
+  health_category: z.string().optional(),
+  frequency_days: z.string().optional(),
+  days_of_week: z.array(z.number()).optional(),
+  day_of_month: z.string().optional(),
+  supplement_id: z.string().optional(),
+  notes: z.string().optional(),
+  time_window_enabled: z.boolean(),
+  earliest_time: z.string().optional(),
+  latest_time: z.string().optional(),
+  reminder_minutes_before: z.string().optional(),
+}).refine((data) => {
+  if (data.schedule_rule === 'every_x_days') {
+    return data.frequency_days && parseInt(data.frequency_days) >= 1;
+  }
+  return true;
+}, {
+  message: 'Frequency must be at least 1 day',
+  path: ['frequency_days']
+}).refine((data) => {
+  if (data.schedule_rule === 'days_of_week') {
+    return data.days_of_week && data.days_of_week.length > 0;
+  }
+  return true;
+}, {
+  message: 'Please select at least one day',
+  path: ['days_of_week']
+}).refine((data) => {
+  if (data.schedule_rule === 'monthly') {
+    const day = parseInt(data.day_of_month);
+    return data.day_of_month && day >= 1 && day <= 31;
+  }
+  return true;
+}, {
+  message: 'Day must be between 1 and 31',
+  path: ['day_of_month']
+});
 
 function ScheduleTemplateForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
-  const userTimeFormat = getUserTimeFormat();
   const [supplements, setSupplements] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Form state
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [species, setSpecies] = useState('');
-  const [ageCategory, setAgeCategory] = useState('');
-  const [scheduleType, setScheduleType] = useState('feeding');
-  const [scheduleRule, setScheduleRule] = useState('days_of_week');
-  const [foodCategory, setFoodCategory] = useState('');
-  const [timeSlot, setTimeSlot] = useState('');
-  const [healthCategory, setHealthCategory] = useState('');
-  const [frequencyDays, setFrequencyDays] = useState('');
-  const [daysOfWeek, setDaysOfWeek] = useState([]);
-  const [dayOfMonth, setDayOfMonth] = useState('');
-  const [supplementId, setSupplementId] = useState('');
-  const [notes, setNotes] = useState('');
-
-  // Time window fields
-  const [timeWindowEnabled, setTimeWindowEnabled] = useState(false);
-  const [earliestTime, setEarliestTime] = useState('');
-  const [latestTime, setLatestTime] = useState('');
-  const [reminderMinutesBefore, setReminderMinutesBefore] = useState('');
-
-  // Time picker state for earliest time
-  const [earliestHours, setEarliestHours] = useState(9);
-  const [earliestMinutes, setEarliestMinutes] = useState(0);
-  const [earliestPeriod, setEarliestPeriod] = useState('AM');
-
-  // Time picker state for latest time
-  const [latestHours, setLatestHours] = useState(4);
-  const [latestMinutes, setLatestMinutes] = useState(0);
-  const [latestPeriod, setLatestPeriod] = useState('PM');
+  const [initialLoading, setInitialLoading] = useState(isEditing);
 
   // Build weekDays array respecting first day of week preference
   const dayNumbers = getDayNumbers();
@@ -55,37 +80,43 @@ function ScheduleTemplateForm() {
     label: dayNames[index]
   }));
 
+  // Initialize form
+  const form = useForm({
+    resolver: zodResolver(templateSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      species: '',
+      age_category: '',
+      schedule_type: 'feeding',
+      schedule_rule: 'days_of_week',
+      food_category: '',
+      time_slot: '',
+      health_category: '',
+      frequency_days: '',
+      days_of_week: [],
+      day_of_month: '',
+      supplement_id: '',
+      notes: '',
+      time_window_enabled: false,
+      earliest_time: '',
+      latest_time: '',
+      reminder_minutes_before: '',
+    }
+  });
+
+  // Watch schedule type and rule for conditional rendering
+  const scheduleType = form.watch('schedule_type');
+  const scheduleRule = form.watch('schedule_rule');
+  const timeWindowEnabled = form.watch('time_window_enabled');
+  const selectedDaysOfWeek = form.watch('days_of_week');
+
   useEffect(() => {
     fetchSupplements();
     if (isEditing) {
       fetchTemplateData();
     }
   }, []);
-
-  // Update time strings when picker values change
-  useEffect(() => {
-    let hour24 = earliestHours;
-    if (userTimeFormat === '12h') {
-      if (earliestPeriod === 'PM' && earliestHours !== 12) {
-        hour24 = earliestHours + 12;
-      } else if (earliestPeriod === 'AM' && earliestHours === 12) {
-        hour24 = 0;
-      }
-    }
-    setEarliestTime(`${String(hour24).padStart(2, '0')}:${String(earliestMinutes).padStart(2, '0')}`);
-  }, [earliestHours, earliestMinutes, earliestPeriod, userTimeFormat]);
-
-  useEffect(() => {
-    let hour24 = latestHours;
-    if (userTimeFormat === '12h') {
-      if (latestPeriod === 'PM' && latestHours !== 12) {
-        hour24 = latestHours + 12;
-      } else if (latestPeriod === 'AM' && latestHours === 12) {
-        hour24 = 0;
-      }
-    }
-    setLatestTime(`${String(hour24).padStart(2, '0')}:${String(latestMinutes).padStart(2, '0')}`);
-  }, [latestHours, latestMinutes, latestPeriod, userTimeFormat]);
 
   async function fetchSupplements() {
     try {
@@ -98,134 +129,65 @@ function ScheduleTemplateForm() {
 
   async function fetchTemplateData() {
     try {
-      setLoading(true);
+      setInitialLoading(true);
       const template = await api.getScheduleTemplate(id);
 
-      setName(template.name || '');
-      setDescription(template.description || '');
-      setSpecies(template.species || '');
-      setAgeCategory(template.age_category || '');
-      setScheduleType(template.schedule_type || 'feeding');
-      setScheduleRule(template.schedule_rule || 'days_of_week');
-      setFoodCategory(template.food_category || '');
-      setTimeSlot(template.time_slot || '');
-      setHealthCategory(template.health_category || '');
-      setFrequencyDays(template.frequency_days || '');
-      setDaysOfWeek(template.days_of_week ? template.days_of_week.split(',').map(d => parseInt(d)) : []);
-      setDayOfMonth(template.day_of_month || '');
-      setSupplementId(template.supplement_id || '');
-      setNotes(template.notes || '');
-      setTimeWindowEnabled(template.time_window_enabled || false);
-      setReminderMinutesBefore(template.reminder_minutes_before || '');
-
-      // Parse times
-      if (template.earliest_time) {
-        parseTimeString(template.earliest_time, 'earliest');
-      }
-      if (template.latest_time) {
-        parseTimeString(template.latest_time, 'latest');
-      }
+      form.reset({
+        name: template.name || '',
+        description: template.description || '',
+        species: template.species || '',
+        age_category: template.age_category || '',
+        schedule_type: template.schedule_type || 'feeding',
+        schedule_rule: template.schedule_rule || 'days_of_week',
+        food_category: template.food_category || '',
+        time_slot: template.time_slot || '',
+        health_category: template.health_category || '',
+        frequency_days: template.frequency_days ? String(template.frequency_days) : '',
+        days_of_week: template.days_of_week ? template.days_of_week.split(',').map(d => parseInt(d)) : [],
+        day_of_month: template.day_of_month ? String(template.day_of_month) : '',
+        supplement_id: template.supplement_id ? String(template.supplement_id) : '',
+        notes: template.notes || '',
+        time_window_enabled: template.time_window_enabled || false,
+        earliest_time: template.earliest_time || '',
+        latest_time: template.latest_time || '',
+        reminder_minutes_before: template.reminder_minutes_before ? String(template.reminder_minutes_before) : '',
+      });
     } catch (error) {
       console.error('Error fetching template:', error);
       alert('Failed to load template');
     } finally {
-      setLoading(false);
-    }
-  }
-
-  function parseTimeString(timeString, type) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-
-    if (type === 'earliest') {
-      if (userTimeFormat === '12h') {
-        if (hours === 0) {
-          setEarliestHours(12);
-          setEarliestPeriod('AM');
-        } else if (hours < 12) {
-          setEarliestHours(hours);
-          setEarliestPeriod('AM');
-        } else if (hours === 12) {
-          setEarliestHours(12);
-          setEarliestPeriod('PM');
-        } else {
-          setEarliestHours(hours - 12);
-          setEarliestPeriod('PM');
-        }
-      } else {
-        setEarliestHours(hours);
-      }
-      setEarliestMinutes(minutes);
-    } else {
-      if (userTimeFormat === '12h') {
-        if (hours === 0) {
-          setLatestHours(12);
-          setLatestPeriod('AM');
-        } else if (hours < 12) {
-          setLatestHours(hours);
-          setLatestPeriod('AM');
-        } else if (hours === 12) {
-          setLatestHours(12);
-          setLatestPeriod('PM');
-        } else {
-          setLatestHours(hours - 12);
-          setLatestPeriod('PM');
-        }
-      } else {
-        setLatestHours(hours);
-      }
-      setLatestMinutes(minutes);
+      setInitialLoading(false);
     }
   }
 
   function toggleDayOfWeek(day) {
-    setDaysOfWeek(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
+    const current = form.getValues('days_of_week');
+    const newDays = current.includes(day)
+      ? current.filter(d => d !== day)
+      : [...current, day];
+    form.setValue('days_of_week', newDays, { shouldValidate: true });
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-
-    // Validation
-    if (!name.trim()) {
-      alert('Please enter a template name');
-      return;
-    }
-
-    if (scheduleRule === 'every_x_days' && (!frequencyDays || frequencyDays < 1)) {
-      alert('Please enter a valid frequency in days');
-      return;
-    }
-
-    if (scheduleRule === 'days_of_week' && daysOfWeek.length === 0) {
-      alert('Please select at least one day of the week');
-      return;
-    }
-
-    if (scheduleRule === 'monthly' && (!dayOfMonth || dayOfMonth < 1 || dayOfMonth > 31)) {
-      alert('Please enter a valid day of the month (1-31)');
-      return;
-    }
-
+  async function handleSubmit(values) {
     const templateData = {
-      name: name.trim(),
-      description: description.trim() || null,
-      species: species.trim() || null,
-      age_category: ageCategory || null,
-      schedule_type: scheduleType,
-      schedule_rule: scheduleRule,
-      food_category: foodCategory || null,
-      time_slot: timeSlot || null,
-      health_category: healthCategory || null,
-      frequency_days: scheduleRule === 'every_x_days' ? parseInt(frequencyDays) : null,
-      days_of_week: scheduleRule === 'days_of_week' ? daysOfWeek.sort((a, b) => a - b).join(',') : null,
-      day_of_month: scheduleRule === 'monthly' ? parseInt(dayOfMonth) : null,
-      supplement_id: supplementId || null,
-      notes: notes.trim() || null,
-      time_window_enabled: timeWindowEnabled,
-      earliest_time: timeWindowEnabled && earliestTime ? earliestTime : null,
-      latest_time: timeWindowEnabled && latestTime ? latestTime : null,
-      reminder_minutes_before: reminderMinutesBefore ? parseInt(reminderMinutesBefore) : null,
+      name: values.name.trim(),
+      description: values.description?.trim() || null,
+      species: values.species?.trim() || null,
+      age_category: values.age_category || null,
+      schedule_type: values.schedule_type,
+      schedule_rule: values.schedule_rule,
+      food_category: values.food_category || null,
+      time_slot: values.time_slot || null,
+      health_category: values.health_category || null,
+      frequency_days: values.schedule_rule === 'every_x_days' && values.frequency_days ? parseInt(values.frequency_days) : null,
+      days_of_week: values.schedule_rule === 'days_of_week' && values.days_of_week ? values.days_of_week.sort((a, b) => a - b).join(',') : null,
+      day_of_month: values.schedule_rule === 'monthly' && values.day_of_month ? parseInt(values.day_of_month) : null,
+      supplement_id: values.supplement_id || null,
+      notes: values.notes?.trim() || null,
+      time_window_enabled: values.time_window_enabled,
+      earliest_time: values.time_window_enabled && values.earliest_time ? values.earliest_time : null,
+      latest_time: values.time_window_enabled && values.latest_time ? values.latest_time : null,
+      reminder_minutes_before: values.reminder_minutes_before ? parseInt(values.reminder_minutes_before) : null,
     };
 
     try {
@@ -246,7 +208,7 @@ function ScheduleTemplateForm() {
     }
   }
 
-  if (loading && isEditing) {
+  if (initialLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -268,393 +230,437 @@ function ScheduleTemplateForm() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-card rounded-lg p-6 space-y-6">
-        {/* Basic Information */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-border pb-2">
-            Basic Information
-          </h2>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          {/* Basic Information */}
+          <Card className="p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-border pb-2">
+              Basic Information
+            </h2>
 
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">
-              Template Name *
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Juvenile Bearded Dragon Daily Feeding"
-              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-              required
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Template Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Juvenile Bearded Dragon Daily Feeding" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe this schedule template..."
-              rows={3}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe this schedule template..." rows={3} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Species (optional)
-              </label>
-              <input
-                type="text"
-                value={species}
-                onChange={(e) => setSpecies(e.target.value)}
-                placeholder="e.g., Bearded Dragon"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="species"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Species (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Bearded Dragon" {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">Leave empty for general templates</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Leave empty for general templates
-              </p>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Age Category (optional)
-              </label>
-              <select
-                value={ageCategory}
-                onChange={(e) => setAgeCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-              >
-                <option value="">All Ages</option>
-                <option value="hatchling">Hatchling</option>
-                <option value="juvenile">Juvenile</option>
-                <option value="adult">Adult</option>
-                <option value="senior">Senior</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Schedule Configuration */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-border pb-2">
-            Schedule Configuration
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Schedule Type *
-              </label>
-              <select
-                value={scheduleType}
-                onChange={(e) => setScheduleType(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-                required
-              >
-                <option value="feeding">Feeding</option>
-                <option value="misting">Misting</option>
-                <option value="weighing">Weighing</option>
-                <option value="supplement">Supplement</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Schedule Rule *
-              </label>
-              <select
-                value={scheduleRule}
-                onChange={(e) => setScheduleRule(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-                required
-              >
-                <option value="days_of_week">Specific Days of Week</option>
-                <option value="every_x_days">Every X Days</option>
-                <option value="monthly">Monthly (Specific Day)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Schedule Rule Parameters */}
-          {scheduleRule === 'every_x_days' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Frequency (days) *
-              </label>
-              <input
-                type="number"
-                value={frequencyDays}
-                onChange={(e) => setFrequencyDays(e.target.value)}
-                min="1"
-                placeholder="e.g., 3"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-                required
+              <FormField
+                control={form.control}
+                name="age_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age Category (optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Ages" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">All Ages</SelectItem>
+                        <SelectItem value="hatchling">Hatchling</SelectItem>
+                        <SelectItem value="juvenile">Juvenile</SelectItem>
+                        <SelectItem value="adult">Adult</SelectItem>
+                        <SelectItem value="senior">Senior</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          )}
+          </Card>
 
-          {scheduleRule === 'days_of_week' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Days of Week *
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {weekDays.map(day => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => toggleDayOfWeek(day.value)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      daysOfWeek.includes(day.value)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {day.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Schedule Configuration */}
+          <Card className="p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-border pb-2">
+              Schedule Configuration
+            </h2>
 
-          {scheduleRule === 'monthly' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Day of Month (1-31) *
-              </label>
-              <input
-                type="number"
-                value={dayOfMonth}
-                onChange={(e) => setDayOfMonth(e.target.value)}
-                min="1"
-                max="31"
-                placeholder="e.g., 15"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-                required
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="schedule_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule Type *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="feeding">Feeding</SelectItem>
+                        <SelectItem value="misting">Misting</SelectItem>
+                        <SelectItem value="weighing">Weighing</SelectItem>
+                        <SelectItem value="supplement">Supplement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="schedule_rule"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule Rule *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="days_of_week">Specific Days of Week</SelectItem>
+                        <SelectItem value="every_x_days">Every X Days</SelectItem>
+                        <SelectItem value="monthly">Monthly (Specific Day)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          )}
 
-          {/* Type-specific fields */}
-          {scheduleType === 'feeding' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Food Category
-              </label>
-              <select
-                value={foodCategory}
-                onChange={(e) => setFoodCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-              >
-                <option value="">Not specified</option>
-                <option value="insects">Insects</option>
-                <option value="salad">Salad</option>
-                <option value="mixed">Mixed</option>
-              </select>
-            </div>
-          )}
+            {/* Schedule Rule Parameters */}
+            {scheduleRule === 'every_x_days' && (
+              <FormField
+                control={form.control}
+                name="frequency_days"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Frequency (days) *</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" placeholder="e.g., 3" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-          {scheduleType === 'misting' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Time Slot
-              </label>
-              <select
-                value={timeSlot}
-                onChange={(e) => setTimeSlot(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-              >
-                <option value="">Not specified</option>
-                <option value="morning">Morning</option>
-                <option value="midday">Midday</option>
-                <option value="afternoon">Afternoon</option>
-                <option value="evening">Evening</option>
-                <option value="night">Night</option>
-              </select>
-            </div>
-          )}
+            {scheduleRule === 'days_of_week' && (
+              <FormField
+                control={form.control}
+                name="days_of_week"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Days of Week *</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {weekDays.map(day => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => toggleDayOfWeek(day.value)}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            selectedDaysOfWeek?.includes(day.value)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-          {scheduleType === 'weighing' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Health Category
-              </label>
-              <select
-                value={healthCategory}
-                onChange={(e) => setHealthCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-              >
-                <option value="">Not specified</option>
-                <option value="weight_check">Weight Check</option>
-                <option value="bathing">Bathing</option>
-                <option value="shedding_check">Shedding Check</option>
-              </select>
-            </div>
-          )}
+            {scheduleRule === 'monthly' && (
+              <FormField
+                control={form.control}
+                name="day_of_month"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Day of Month (1-31) *</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" max="31" placeholder="e.g., 15" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-          {scheduleType === 'supplement' && (
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Supplement
-              </label>
-              <select
-                value={supplementId}
-                onChange={(e) => setSupplementId(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-              >
-                <option value="">Select supplement...</option>
-                {supplements.map(supplement => (
-                  <option key={supplement.id} value={supplement.id}>
-                    {supplement.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+            {/* Type-specific fields */}
+            {scheduleType === 'feeding' && (
+              <FormField
+                control={form.control}
+                name="food_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Food Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not specified" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="insects">Insects</SelectItem>
+                        <SelectItem value="salad">Salad</SelectItem>
+                        <SelectItem value="mixed">Mixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-        {/* Time Window */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={timeWindowEnabled}
-              onChange={(e) => setTimeWindowEnabled(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-              id="timeWindow"
+            {scheduleType === 'misting' && (
+              <FormField
+                control={form.control}
+                name="time_slot"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Time Slot</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not specified" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="morning">Morning</SelectItem>
+                        <SelectItem value="midday">Midday</SelectItem>
+                        <SelectItem value="afternoon">Afternoon</SelectItem>
+                        <SelectItem value="evening">Evening</SelectItem>
+                        <SelectItem value="night">Night</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {scheduleType === 'weighing' && (
+              <FormField
+                control={form.control}
+                name="health_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Health Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not specified" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="weight_check">Weight Check</SelectItem>
+                        <SelectItem value="bathing">Bathing</SelectItem>
+                        <SelectItem value="shedding_check">Shedding Check</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {scheduleType === 'supplement' && (
+              <FormField
+                control={form.control}
+                name="supplement_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplement</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select supplement..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Select supplement...</SelectItem>
+                        {supplements.map(supplement => (
+                          <SelectItem key={supplement.id} value={String(supplement.id)}>
+                            {supplement.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </Card>
+
+          {/* Time Window */}
+          <Card className="p-6 space-y-4">
+            <FormField
+              control={form.control}
+              name="time_window_enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={field.onChange}
+                      className="w-4 h-4 text-blue-600 rounded"
+                      id="timeWindow"
+                    />
+                  </FormControl>
+                  <label htmlFor="timeWindow" className="text-sm font-medium text-muted-foreground flex items-center gap-2 cursor-pointer">
+                    <Clock size={16} />
+                    Enable Time Window
+                  </label>
+                </FormItem>
+              )}
             />
-            <label htmlFor="timeWindow" className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Clock size={16} />
-              Enable Time Window
-            </label>
-          </div>
 
-          {timeWindowEnabled && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
-                  Earliest Time
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={earliestHours}
-                    onChange={(e) => setEarliestHours(Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0)))}
-                    min={userTimeFormat === '12h' ? '1' : '0'}
-                    max={userTimeFormat === '12h' ? '12' : '23'}
-                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
-                  />
-                  <span className="self-center text-muted-foreground">:</span>
-                  <input
-                    type="number"
-                    value={earliestMinutes}
-                    onChange={(e) => setEarliestMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                    min="0"
-                    max="59"
-                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
-                  />
-                  {userTimeFormat === '12h' && (
-                    <select
-                      value={earliestPeriod}
-                      onChange={(e) => setEarliestPeriod(e.target.value)}
-                      className="px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
+            {timeWindowEnabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
+                <FormField
+                  control={form.control}
+                  name="earliest_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Earliest Time</FormLabel>
+                      <FormControl>
+                        <TimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pick earliest time"
+                          step={30}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-              </div>
+                />
 
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
-                  Latest Time
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={latestHours}
-                    onChange={(e) => setLatestHours(Math.min(userTimeFormat === '12h' ? 12 : 23, Math.max(userTimeFormat === '12h' ? 1 : 0, parseInt(e.target.value) || 0)))}
-                    min={userTimeFormat === '12h' ? '1' : '0'}
-                    max={userTimeFormat === '12h' ? '12' : '23'}
-                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
-                  />
-                  <span className="self-center text-muted-foreground">:</span>
-                  <input
-                    type="number"
-                    value={latestMinutes}
-                    onChange={(e) => setLatestMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                    min="0"
-                    max="59"
-                    className="w-16 px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100 text-center"
-                  />
-                  {userTimeFormat === '12h' && (
-                    <select
-                      value={latestPeriod}
-                      onChange={(e) => setLatestPeriod(e.target.value)}
-                      className="px-2 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
+                <FormField
+                  control={form.control}
+                  name="latest_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Latest Time</FormLabel>
+                      <FormControl>
+                        <TimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pick latest time"
+                          step={30}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-              </div>
+                />
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
-                  Reminder (minutes before latest time)
-                </label>
-                <input
-                  type="number"
-                  value={reminderMinutesBefore}
-                  onChange={(e) => setReminderMinutesBefore(e.target.value)}
-                  min="0"
-                  placeholder="e.g., 30"
-                  className="w-full md:w-48 px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
+                <FormField
+                  control={form.control}
+                  name="reminder_minutes_before"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Reminder (minutes before latest time)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="e.g., 30"
+                          className="w-full md:w-48"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </Card>
 
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
-            Notes
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional notes..."
-            rows={3}
-            className="w-full px-3 py-2 border border-border rounded-lg bg-card text-gray-900 dark:text-gray-100"
-          />
-        </div>
+          {/* Notes */}
+          <Card className="p-6">
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Additional notes..." rows={3} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Card>
 
-        {/* Submit Button */}
-        <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
-          >
-            <Save size={20} />
-            {loading ? 'Saving...' : (isEditing ? 'Update Template' : 'Create Template')}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/schedule-templates')}
-            className="px-6 py-3 border border-border rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+            >
+              <Save size={20} className="mr-2" />
+              {loading ? 'Saving...' : (isEditing ? 'Update Template' : 'Create Template')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/schedule-templates')}
+              className="px-6"
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
