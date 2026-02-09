@@ -6,6 +6,8 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import PageHeader from '../components/PageHeader';
+import LoadingState from '../components/LoadingState';
 
 const NotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);
@@ -153,11 +155,10 @@ const NotificationHistory = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Notifications</h1>
-        <p className="text-muted-foreground">View and manage your notification history</p>
-      </div>
+      <PageHeader
+        title="Notifications"
+        subtitle="View and manage your notification history"
+      />
 
       {/* Filter Controls */}
       <div className="bg-card rounded-lg border border-border p-4 mb-4">
@@ -223,9 +224,7 @@ const NotificationHistory = () => {
       {/* Notifications List - Compact */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground">
-            Loading notifications...
-          </div>
+          <LoadingState message="Loading notifications..." />
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Bell className="w-16 h-16 mx-auto mb-4 opacity-50" />

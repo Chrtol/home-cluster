@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
+import PageHeader from '../components/PageHeader';
 
 // Validation schema
 const mistingSchema = z.object({
@@ -223,17 +224,20 @@ export default function MistingLog() {
   if (mode === 'view' && existingLog) {
     return (
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">View Misting Log</h1>
-          <div className="flex gap-2">
-            <Button onClick={() => setMode('edit')} className="flex items-center gap-2">
-              <Edit2 size={18} /> Edit
-            </Button>
-            <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400 flex items-center gap-2">
-              <Trash2 size={18} /> Delete
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="View Misting Log"
+          backLink={{ to: '/misting-log', label: 'Back to Misting Log' }}
+          actions={
+            <div className="flex gap-2">
+              <Button onClick={() => setMode('edit')} className="flex items-center gap-2">
+                <Edit2 size={18} /> Edit
+              </Button>
+              <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400 flex items-center gap-2">
+                <Trash2 size={18} /> Delete
+              </Button>
+            </div>
+          }
+        />
 
         {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
         {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
@@ -279,9 +283,9 @@ export default function MistingLog() {
   // CREATE/EDIT MODE
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-foreground">
-        {mode === 'edit' ? 'Edit Misting Log' : 'Log Misting'}
-      </h1>
+      <PageHeader
+        title={mode === 'edit' ? 'Edit Misting Log' : 'Log Misting'}
+      />
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
       {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
 
