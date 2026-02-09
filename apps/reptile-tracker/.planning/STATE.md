@@ -18,10 +18,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 11 (Forms & Tables) |
-| Phase Status | IN PROGRESS (2/4 plans) |
+| Phase Status | COMPLETE (4/4 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 11 - In Progress
+Progress: Phase 11 - Complete
 ```
 Phase 7 (Foundation):
 07-01: Complete (shadcn/ui foundation)
@@ -60,6 +60,8 @@ Phase 10 (Calendar & Statistics):
 Phase 11 (Forms & Tables):
 11-01: Complete (form components & simple forms - react-hook-form + Zod, MistingLog, HealthLog)
 11-02: Complete (FoodManagement redesign - Table, Dialog, Tabs, Badge visual hierarchy)
+11-03: Complete (FeedingLog redesign - useFieldArray for dynamic items, useWatch for reactive updates)
+11-04: Complete (ScheduleTemplateForm, SupplementRotations, NotificationHistory)
 ```
 
 Progress bar:
@@ -68,7 +70,7 @@ Phase 7:  [========] 3/3
 Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
-Phase 11: [======     ] 2/4
+Phase 11: [============] 4/4
 Phase 12: [           ] 0/?
 ```
 
@@ -86,7 +88,7 @@ Phase 7:  Foundation      Complete (3/3 plans)
 Phase 8:  Dashboard       Complete (16/16 plans)
 Phase 9:  Reptile Pages   Complete (4/4 plans)
 Phase 10: Calendar/Stats  Complete (3/3 plans)
-Phase 11: Forms/Tables    In Progress (2/4 plans)
+Phase 11: Forms/Tables    Complete (4/4 plans)
 Phase 12: Polish/Mobile   Not started
 ```
 
@@ -174,28 +176,25 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 11 is in progress (2/4 plans). Ready to continue with 11-03 (FeedingLog redesign).
+Phase 11 is complete (4/4 plans). Ready to proceed to Phase 12 (Polish & Mobile).
 
 ```
-/gsd:execute-phase 11
+/gsd:plan-phase 12
 ```
 
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 11 Plan 2 complete - FoodManagement redesign
-**Resume file:** `.planning/phases/11-forms-tables/11-02-SUMMARY.md`
+**Stopped at:** Phase 11 complete - all forms redesigned
+**Resume with:** Phase 12 planning
 
 **Recent activity:**
+- 11-04: Remaining forms (complete) - ScheduleTemplateForm, SupplementRotations, NotificationHistory
+- 11-03: FeedingLog redesign (complete) - useFieldArray for dynamic items, useWatch for reactive updates
 - 11-02: FoodManagement redesign (complete) - Table, Dialog, Tabs components with Badge visual hierarchy
-- 11-03: FeedingLog redesign (complete) - useFieldArray for dynamic items, useWatch for reactive updates, conditional Zod validation
 - 11-01: Form components & simple forms (complete) - react-hook-form + Zod patterns, MistingLog and HealthLog redesigned
-- 10-03: UAT polish fixes (complete) - Removed calendar header, improved badge outline styling, explicit statistics active variants
-- 10-02: Statistics enhancements (complete) - Compact stat cards with trends, CustomTooltip, badge filters for data visibility and time range
-- 10-01: Calendar improvements (complete) - Quick day summary header, 3 events/cell, badge-style filters
-- 09-04: Photo gallery density (complete) - 5-column grid on lg screens, badge-style category filters, compact upload button
 
-**Phase 11 status:** IN PROGRESS - 2/4 plans complete (form components done, FoodManagement done, FeedingLog next)
+**Phase 11 status:** COMPLETE - 4/4 plans complete (all forms redesigned with react-hook-form)
 
 ---
-*State updated: 2026-02-09 - Phase 11 Plan 2 complete*
+*State updated: 2026-02-09 - Phase 11 complete*
