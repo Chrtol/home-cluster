@@ -4,6 +4,7 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, List, Edit, Trash2, ChevronDown, ChevronUp, Clock, Utensils, Droplets, Scale, Bell } from "lucide-react";
 import { formatTime, getDayNames, getUserFirstDayOfWeek, toLocalISODate } from "../utils/dateFormatting";
 import ReptileAvatar from "../components/ReptileAvatar";
+import ReptileNameWithAvatar from "../components/ReptileNameWithAvatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import PageHeader from "../components/PageHeader";
@@ -201,6 +202,8 @@ function Calendar() {
             min_days_between: instance.schedule.min_days_between,
             reptile_name: instance.schedule.reptile.name,
             reptile_id: instance.schedule.reptile_id,
+            // Include full reptile object for ReptileNameWithAvatar
+            reptile: instance.schedule.reptile,
             name: instance.schedule.name,
             food_category: instance.schedule.food_category,
             time_slot: instance.schedule.time_slot,
@@ -928,10 +931,15 @@ function Calendar() {
                         </div>
 
                         <div className="grid grid-cols-4 gap-x-6 gap-y-2 text-sm">
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reptile</span>
-                            <span className="text-foreground font-medium">{event.reptile_name}</span>
-                          </div>
+                          {event.reptile && (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Reptile</span>
+                              <ReptileNameWithAvatar
+                                reptile={event.reptile}
+                                size="sm"
+                              />
+                            </div>
+                          )}
 
                           {event.schedule_rule && (
                             <div className="flex flex-col">

@@ -7,6 +7,7 @@ import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSetting
 import { Badge } from '@/components/ui/badge';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
+import ReptileNameWithAvatar from '../components/ReptileNameWithAvatar';
 
 // Custom Tooltip Component for Recharts
 const CustomTooltip = ({ active, payload, label }) => {
@@ -416,10 +417,24 @@ function Statistics() {
     );
   }
 
+  // Get selected reptile object
+  const currentReptile = reptiles.find(r => r.id === selectedReptile);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <PageHeader title="Statistics" className="mb-0" />
+        <div className="flex items-center gap-4">
+          <PageHeader title="Statistics" className="mb-0" />
+          {currentReptile && (
+            <>
+              <div className="hidden sm:block h-8 w-px bg-border"></div>
+              <ReptileNameWithAvatar
+                reptile={currentReptile}
+                size="md"
+              />
+            </>
+          )}
+        </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {/* Left: Filter Toggles - Badge Style */}

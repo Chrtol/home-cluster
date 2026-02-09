@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { ArrowLeft, Edit, Calendar, Clock, Bell, CheckCircle, XCircle, FileText, Users, User as UserIcon, Bot } from "lucide-react";
 import { getUserTimeFormat, getDayNames } from "../utils/dateFormatting";
+import ReptileNameWithAvatar from "../components/ReptileNameWithAvatar";
 
 function ScheduleDetails() {
   const navigate = useNavigate();
@@ -306,9 +307,16 @@ function ScheduleDetails() {
               {schedule.name}
             </h1>
             {reptile && (
-              <p className="text-muted-foreground">
-                For: <Link to={`/reptiles/${reptile.id}`} className="font-semibold text-primary-600 dark:text-primary-400 hover:underline">{reptile.name}</Link>
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">For:</span>
+                <Link to={`/reptiles/${reptile.id}`}>
+                  <ReptileNameWithAvatar
+                    reptile={reptile}
+                    size="md"
+                    asLink={true}
+                  />
+                </Link>
+              </div>
             )}
           </div>
 
