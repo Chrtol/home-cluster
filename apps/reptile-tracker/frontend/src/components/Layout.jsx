@@ -531,7 +531,7 @@ export default function Layout({ user, onLogout }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileSchedulesMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 transition-colors border-b border-border last:border-b-0"
+                    className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 active:scale-[0.98] transition-all border-b border-border last:border-b-0"
                   >
                     <Icon size={24} className="text-primary" />
                     <div className="text-left flex-1">
@@ -553,7 +553,7 @@ export default function Layout({ user, onLogout }) {
               <Link
                 to="/feed"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 transition-colors border-b border-border"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 active:scale-[0.98] transition-all border-b border-border"
               >
                 <Utensils size={24} className="text-primary" />
                 <div className="text-left flex-1">
@@ -564,7 +564,7 @@ export default function Layout({ user, onLogout }) {
               <Link
                 to="/health-log"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-green-900/20 transition-colors border-b border-border"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-green-900/20 active:scale-[0.98] transition-all border-b border-border"
               >
                 <Activity size={24} className="text-green-400" />
                 <div className="text-left flex-1">
@@ -575,7 +575,7 @@ export default function Layout({ user, onLogout }) {
               <Link
                 to="/misting-log"
                 onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-blue-900/20 transition-colors"
+                className="flex items-center gap-3 px-4 py-4 hover:bg-blue-900/20 active:scale-[0.98] transition-all"
               >
                 <Droplets size={24} className="text-blue-400" />
                 <div className="text-left flex-1">
