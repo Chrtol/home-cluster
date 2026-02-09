@@ -338,7 +338,7 @@ function Calendar() {
       ...e,
       // Mark as completed if status indicates completion
       is_completed: e.status === 'completed',
-      is_actual: false, // This is a schedule instance
+      is_actual: e.status === 'completed', // Show completed styling for completed instances
     }));
 
     console.log('[Calendar] Returning', filtered.length, 'events for', date.toDateString());
