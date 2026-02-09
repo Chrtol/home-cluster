@@ -1,48 +1,48 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PlusCircle, Edit2, Trash2, X, Star } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, Star } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 export default function FoodManagement() {
-  const [activeTab, setActiveTab] = useState('foods'); // foods, supplements
-
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6 text-foreground">Food & Supplement Management</h1>
 
-      {/* Tabs */}
-      <div className="border-b border-border mb-6">
-        <nav className="flex gap-4">
-          <button
-            onClick={() => setActiveTab('foods')}
-            className={`py-2 px-4 border-b-2 font-medium text-sm ${
-              activeTab === 'foods'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            Foods
-          </button>
-          <button
-            onClick={() => setActiveTab('supplements')}
-            className={`py-2 px-4 border-b-2 font-medium text-sm ${
-              activeTab === 'supplements'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            Supplements
-          </button>
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'foods' && <FoodsTab />}
-      {activeTab === 'supplements' && <SupplementsTab />}
+      <Tabs defaultValue="foods" className="w-full">
+        <TabsList>
+          <TabsTrigger value="foods">Foods</TabsTrigger>
+          <TabsTrigger value="supplements">Supplements</TabsTrigger>
+        </TabsList>
+        <TabsContent value="foods">
+          <FoodsTab />
+        </TabsContent>
+        <TabsContent value="supplements">
+          <SupplementsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
 // FOODS TAB COMPONENT
+const foodSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  category: z.string(),
+  insect_size: z.string().optional(),
+  animal_size: z.string().optional(),
+});
+
 function FoodsTab() {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,17 +50,20 @@ function FoodsTab() {
   const [editingFood, setEditingFood] = useState(null);
   const [viewingFood, setViewingFood] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
-
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'insect',
-    insect_size: '',
-    animal_size: '',
-    nutritional_data: {}
-  });
-
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const form = useForm({
+    resolver: zodResolver(foodSchema),
+    defaultValues: {
+      name: '',
+      category: 'insect',
+      insect_size: '',
+      animal_size: '',
+    }
+  });
+
+  const category = form.watch('category');
 
   useEffect(() => {
     fetchFoods();
@@ -80,12 +83,11 @@ function FoodsTab() {
 
   const handleCreate = () => {
     setEditingFood(null);
-    setFormData({
+    form.reset({
       name: '',
       category: 'insect',
       insect_size: '',
       animal_size: '',
-      nutritional_data: {}
     });
     setShowForm(true);
     setError('');
@@ -94,12 +96,11 @@ function FoodsTab() {
 
   const handleEdit = (food) => {
     setEditingFood(food);
-    setFormData({
+    form.reset({
       name: food.name,
       category: food.category,
       insect_size: food.insect_size || '',
       animal_size: food.animal_size || '',
-      nutritional_data: food.nutritional_data || {}
     });
     setShowForm(true);
     setError('');
@@ -132,10 +133,9 @@ function FoodsTab() {
   };
 
   const handleToggleFavorite = async (food, e) => {
-    e.stopPropagation(); // Prevent row click
+    e.stopPropagation();
     try {
       await axios.patch(`/api/foods/${food.id}/toggle-favorite`);
-      // Update local state
       setFoods(foods.map(f =>
         f.id === food.id ? { ...f, is_favorite: !f.is_favorite } : f
       ));
@@ -145,18 +145,16 @@ function FoodsTab() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError('');
     setSuccess('');
 
-    // Clean up the payload - convert empty strings to null
     const payload = {
-      name: formData.name,
-      category: formData.category,
-      insect_size: formData.insect_size || null,
-      animal_size: formData.animal_size || null,
-      nutritional_data: Object.keys(formData.nutritional_data).length > 0 ? formData.nutritional_data : null
+      name: data.name,
+      category: data.category,
+      insect_size: data.insect_size || null,
+      animal_size: data.animal_size || null,
+      nutritional_data: null
     };
 
     try {
@@ -182,429 +180,435 @@ function FoodsTab() {
   if (loading) return <p className="text-center py-12">Loading foods...</p>;
 
   return (
-    <div>
-      {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
-      {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
+    <div className="space-y-4">
+      {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</p>}
+      {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{success}</p>}
 
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 sm:gap-0 mb-6">
-        <button onClick={handleCreate} className="btn-primary flex items-center gap-2 justify-center sm:justify-start">
-          <PlusCircle size={20} /> Add Food
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogTrigger asChild>
+            <Button onClick={handleCreate}>
+              <PlusCircle className="h-4 w-4" /> Add Food
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingFood ? 'Edit Food' : 'Add Food'}</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="insect">Insect</SelectItem>
+                          <SelectItem value="worms">Worms</SelectItem>
+                          <SelectItem value="vegetable">Vegetable</SelectItem>
+                          <SelectItem value="fruit">Fruit</SelectItem>
+                          <SelectItem value="prepared">Prepared Food</SelectItem>
+                          <SelectItem value="frozen_animal">Frozen Animal</SelectItem>
+                          <SelectItem value="live_rodent">Live Rodent</SelectItem>
+                          <SelectItem value="fish_seafood">Fish/Seafood</SelectItem>
+                          <SelectItem value="eggs">Eggs</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {category === 'insect' && (
+                  <FormField
+                    control={form.control}
+                    name="insect_size"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Insect Size</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select size..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="small">Small</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="large">Large</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {category === 'frozen_animal' && (
+                  <FormField
+                    control={form.control}
+                    name="animal_size"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Animal Size</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select size..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pinky">Pinky (Newborn)</SelectItem>
+                            <SelectItem value="fuzzy">Fuzzy (Young with fur)</SelectItem>
+                            <SelectItem value="hopper">Hopper (Young, mobile)</SelectItem>
+                            <SelectItem value="weaner">Weaner (Juvenile, weaned)</SelectItem>
+                            <SelectItem value="adult_small">Adult Small</SelectItem>
+                            <SelectItem value="adult_medium">Adult Medium</SelectItem>
+                            <SelectItem value="adult_large">Adult Large</SelectItem>
+                            <SelectItem value="jumbo">Jumbo (Large rat/rabbit)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <Button type="submit" className="flex-1">
+                    {editingFood ? 'Update' : 'Create'}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setShowForm(false)} className="flex-1">
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
         <div className="w-full sm:w-auto">
-          <label className="block font-medium mb-2 text-sm sm:text-base text-foreground">Filter by Category</label>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="input w-full sm:w-64"
-          >
-            <option value="">All Categories</option>
-            <option value="insect">Insects</option>
-            <option value="worms">Worms</option>
-            <option value="vegetable">Vegetables</option>
-            <option value="fruit">Fruits</option>
-            <option value="prepared">Prepared Foods</option>
-            <option value="frozen_animal">Frozen Animals</option>
-            <option value="live_rodent">Live Rodents</option>
-            <option value="fish_seafood">Fish/Seafood</option>
-            <option value="eggs">Eggs</option>
-            <option value="other">Other</option>
-          </select>
+          <label className="block font-medium mb-2 text-sm text-foreground">Filter by Category</label>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="insect">Insects</SelectItem>
+              <SelectItem value="worms">Worms</SelectItem>
+              <SelectItem value="vegetable">Vegetables</SelectItem>
+              <SelectItem value="fruit">Fruits</SelectItem>
+              <SelectItem value="prepared">Prepared Foods</SelectItem>
+              <SelectItem value="frozen_animal">Frozen Animals</SelectItem>
+              <SelectItem value="live_rodent">Live Rodents</SelectItem>
+              <SelectItem value="fish_seafood">Fish/Seafood</SelectItem>
+              <SelectItem value="eggs">Eggs</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Food List */}
-      <div className="card">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-card">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-12"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredFoods.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-muted-foreground">
-                    No foods found
-                  </td>
-                </tr>
-              ) : (
-                filteredFoods.map(food => (
-                  <tr
-                    key={food.id}
-                    onClick={() => setViewingFood(food)}
-                    className="hover:bg-secondary/50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <button
-                        onClick={(e) => handleToggleFavorite(food, e)}
-                        className="transition-colors"
-                        title={food.is_favorite ? "Remove from favorites" : "Add to favorites"}
-                      >
-                        <Star
-                          size={18}
-                          className={food.is_favorite
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300 dark:text-gray-600 hover:text-yellow-400 dark:hover:text-yellow-400"
-                          }
-                        />
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                      {food.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {food.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {food.insect_size || food.animal_size || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {food.is_default ? (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          Default
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-secondary text-foreground">
-                          Custom
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEdit(food); }}
-                        className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 mr-4"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(food); }}
-                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12"></TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Size</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredFoods.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  No foods found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredFoods.map(food => (
+                <TableRow
+                  key={food.id}
+                  onClick={() => setViewingFood(food)}
+                  className="cursor-pointer"
+                >
+                  <TableCell>
+                    <button
+                      onClick={(e) => handleToggleFavorite(food, e)}
+                      className="transition-colors"
+                      title={food.is_favorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Star
+                        size={18}
+                        className={food.is_favorite
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300 dark:text-gray-600 hover:text-yellow-400 dark:hover:text-yellow-400"
+                        }
+                      />
+                    </button>
+                  </TableCell>
+                  <TableCell className="font-medium">{food.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{food.category}</Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {food.insect_size || food.animal_size || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {food.is_default ? (
+                      <Badge variant="default">Default</Badge>
+                    ) : (
+                      <Badge variant="outline">Custom</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); handleEdit(food); }}
+                      className="mr-2"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(food); }}
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Food Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {editingFood ? 'Edit Food' : 'Add Food'}
-                </h2>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Food Read-Only View Dialog */}
+      <Dialog open={!!viewingFood} onOpenChange={(open) => !open && setViewingFood(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewingFood?.name}</DialogTitle>
+          </DialogHeader>
+          {viewingFood && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-medium mb-1 text-foreground">Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input w-full"
-                    required
-                  />
+                  <p className="text-sm text-muted-foreground mb-2">Category</p>
+                  <p className="text-lg font-semibold text-foreground capitalize">
+                    {viewingFood.category.replace('_', ' ')}
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block font-medium mb-1 text-foreground">Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="input w-full"
-                  >
-                    <option value="insect">Insect</option>
-                    <option value="worms">Worms</option>
-                    <option value="vegetable">Vegetable</option>
-                    <option value="fruit">Fruit</option>
-                    <option value="prepared">Prepared Food</option>
-                    <option value="frozen_animal">Frozen Animal</option>
-                    <option value="live_rodent">Live Rodent</option>
-                    <option value="fish_seafood">Fish/Seafood</option>
-                    <option value="eggs">Eggs</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                {formData.category === 'insect' && (
+                {(viewingFood.insect_size || viewingFood.animal_size) && (
                   <div>
-                    <label className="block font-medium mb-1 text-foreground">Insect Size</label>
-                    <select
-                      value={formData.insect_size}
-                      onChange={(e) => setFormData({ ...formData, insect_size: e.target.value })}
-                      className="input w-full"
-                    >
-                      <option value="">Select size...</option>
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
-                    </select>
-                  </div>
-                )}
-
-                {formData.category === 'frozen_animal' && (
-                  <div>
-                    <label className="block font-medium mb-1 text-foreground">Animal Size</label>
-                    <select
-                      value={formData.animal_size}
-                      onChange={(e) => setFormData({ ...formData, animal_size: e.target.value })}
-                      className="input w-full"
-                    >
-                      <option value="">Select size...</option>
-                      <option value="pinky">Pinky (Newborn)</option>
-                      <option value="fuzzy">Fuzzy (Young with fur)</option>
-                      <option value="hopper">Hopper (Young, mobile)</option>
-                      <option value="weaner">Weaner (Juvenile, weaned)</option>
-                      <option value="adult_small">Adult Small</option>
-                      <option value="adult_medium">Adult Medium</option>
-                      <option value="adult_large">Adult Large</option>
-                      <option value="jumbo">Jumbo (Large rat/rabbit)</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4">
-                  <button type="submit" className="flex-1 btn-primary">
-                    {editingFood ? 'Update' : 'Create'}
-                  </button>
-                  <button type="button" onClick={() => setShowForm(false)} className="flex-1 btn-secondary">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Food Read-Only View Modal */}
-      {viewingFood && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {viewingFood.name}
-                </h2>
-                <button
-                  onClick={() => setViewingFood(null)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                {/* Category & Size Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Category</p>
+                    <p className="text-sm text-muted-foreground mb-2">Size</p>
                     <p className="text-lg font-semibold text-foreground capitalize">
-                      {viewingFood.category.replace('_', ' ')}
+                      {viewingFood.insect_size || viewingFood.animal_size?.replace('_', ' ')}
                     </p>
                   </div>
-                  {(viewingFood.insect_size || viewingFood.animal_size) && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Size</p>
-                      <p className="text-lg font-semibold text-foreground capitalize">
-                        {viewingFood.insect_size || viewingFood.animal_size?.replace('_', ' ')}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
+              </div>
 
-                {/* Type Badge */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Type</p>
+                {viewingFood.is_default ? (
+                  <Badge variant="default">Default Food</Badge>
+                ) : (
+                  <Badge variant="outline">Custom Food</Badge>
+                )}
+              </div>
+
+              {viewingFood.nutritional_data && Object.keys(viewingFood.nutritional_data).length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Type</p>
-                  {viewingFood.is_default ? (
-                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      Default Food
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-secondary text-foreground">
-                      Custom Food
-                    </span>
-                  )}
-                </div>
-
-                {/* Nutritional Information */}
-                {viewingFood.nutritional_data && Object.keys(viewingFood.nutritional_data).length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Nutritional Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {viewingFood.nutritional_data.protein_percent && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Protein</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.protein_percent}%
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.fat_percent && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Fat</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.fat_percent}%
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.calcium_mg_per_100g && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Calcium</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.calcium_mg_per_100g} mg/100g
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.phosphorus_mg_per_100g && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Phosphorus</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.phosphorus_mg_per_100g} mg/100g
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.calcium_phosphorus_ratio && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Ca:P Ratio</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.calcium_phosphorus_ratio}
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.vitamin_a_iu && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Vitamin A</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.vitamin_a_iu} IU
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.vitamin_c_mg && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Vitamin C</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.vitamin_c_mg} mg
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.vitamin_d3_iu && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Vitamin D3</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.vitamin_d3_iu} IU
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.vitamin_k_mcg && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Vitamin K</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.vitamin_k_mcg} mcg
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.moisture_percent && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Moisture</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.moisture_percent}%
-                          </p>
-                        </div>
-                      )}
-                      {viewingFood.nutritional_data.weight_grams && (
-                        <div className="p-4 bg-secondary/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Weight</p>
-                          <p className="text-xl font-bold text-foreground">
-                            {viewingFood.nutritional_data.weight_grams}g
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Nutritional Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {viewingFood.nutritional_data.protein_percent && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Protein</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.protein_percent}%
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.fat_percent && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Fat</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.fat_percent}%
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.calcium_mg_per_100g && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Calcium</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.calcium_mg_per_100g} mg/100g
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.phosphorus_mg_per_100g && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Phosphorus</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.phosphorus_mg_per_100g} mg/100g
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.calcium_phosphorus_ratio && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Ca:P Ratio</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.calcium_phosphorus_ratio}
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.vitamin_a_iu && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Vitamin A</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.vitamin_a_iu} IU
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.vitamin_c_mg && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Vitamin C</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.vitamin_c_mg} mg
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.vitamin_d3_iu && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Vitamin D3</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.vitamin_d3_iu} IU
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.vitamin_k_mcg && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Vitamin K</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.vitamin_k_mcg} mcg
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.moisture_percent && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Moisture</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.moisture_percent}%
+                        </p>
+                      </div>
+                    )}
+                    {viewingFood.nutritional_data.weight_grams && (
+                      <div className="p-4 bg-secondary/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Weight</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {viewingFood.nutritional_data.weight_grams}g
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {/* Notes */}
-                {viewingFood.nutritional_data?.note && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Notes</h3>
-                    <p className="text-muted-foreground">
-                      {viewingFood.nutritional_data.note}
-                    </p>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-border">
-                  <button
-                    onClick={() => {
-                      setViewingFood(null);
-                      handleEdit(viewingFood);
-                    }}
-                    className="flex-1 btn-primary flex items-center justify-center gap-2"
-                  >
-                    <Edit2 size={18} /> Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      setViewingFood(null);
-                      handleDelete(viewingFood);
-                    }}
-                    className="flex-1 btn-secondary text-red-600 dark:text-red-400 flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} /> Delete
-                  </button>
                 </div>
+              )}
+
+              {viewingFood.nutritional_data?.note && (
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Notes</h3>
+                  <p className="text-muted-foreground">
+                    {viewingFood.nutritional_data.note}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={() => {
+                    setViewingFood(null);
+                    handleEdit(viewingFood);
+                  }}
+                  className="flex-1"
+                >
+                  <Edit2 className="h-4 w-4" /> Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setViewingFood(null);
+                    handleDelete(viewingFood);
+                  }}
+                  className="flex-1 text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 // SUPPLEMENTS TAB COMPONENT
+const supplementSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  calcium_mg: z.string().optional(),
+  vitamin_d3_iu: z.string().optional(),
+  vitamin_a_iu: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 function SupplementsTab() {
   const [supplements, setSupplements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [viewingSupplement, setViewingSupplement] = useState(null);
   const [editingSupplement, setEditingSupplement] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const [formData, setFormData] = useState({
-    name: '',
-    nutritional_data: {
+  const form = useForm({
+    resolver: zodResolver(supplementSchema),
+    defaultValues: {
+      name: '',
       calcium_mg: '',
       vitamin_d3_iu: '',
       vitamin_a_iu: '',
       notes: ''
     }
   });
-
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchSupplements();
@@ -624,14 +628,12 @@ function SupplementsTab() {
 
   const handleCreate = () => {
     setEditingSupplement(null);
-    setFormData({
+    form.reset({
       name: '',
-      nutritional_data: {
-        calcium_mg: '',
-        vitamin_d3_iu: '',
-        vitamin_a_iu: '',
-        notes: ''
-      }
+      calcium_mg: '',
+      vitamin_d3_iu: '',
+      vitamin_a_iu: '',
+      notes: ''
     });
     setShowForm(true);
     setError('');
@@ -641,14 +643,12 @@ function SupplementsTab() {
   const handleEdit = (supplement) => {
     setEditingSupplement(supplement);
     const nutritional_data = supplement.nutritional_data || {};
-    setFormData({
+    form.reset({
       name: supplement.name,
-      nutritional_data: {
-        calcium_mg: nutritional_data.calcium_mg || '',
-        vitamin_d3_iu: nutritional_data.vitamin_d3_iu || '',
-        vitamin_a_iu: nutritional_data.vitamin_a_iu || '',
-        notes: nutritional_data.notes || ''
-      }
+      calcium_mg: nutritional_data.calcium_mg || '',
+      vitamin_d3_iu: nutritional_data.vitamin_d3_iu || '',
+      vitamin_a_iu: nutritional_data.vitamin_a_iu || '',
+      notes: nutritional_data.notes || ''
     });
     setShowForm(true);
     setError('');
@@ -680,21 +680,18 @@ function SupplementsTab() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError('');
     setSuccess('');
 
-    // Clean up nutritional_data - remove empty values
     const cleanedNutritionalData = {};
-    Object.keys(formData.nutritional_data).forEach(key => {
-      if (formData.nutritional_data[key]) {
-        cleanedNutritionalData[key] = formData.nutritional_data[key];
-      }
-    });
+    if (data.calcium_mg) cleanedNutritionalData.calcium_mg = data.calcium_mg;
+    if (data.vitamin_d3_iu) cleanedNutritionalData.vitamin_d3_iu = data.vitamin_d3_iu;
+    if (data.vitamin_a_iu) cleanedNutritionalData.vitamin_a_iu = data.vitamin_a_iu;
+    if (data.notes) cleanedNutritionalData.notes = data.notes;
 
     const payload = {
-      name: formData.name,
+      name: data.name,
       nutritional_data: Object.keys(cleanedNutritionalData).length > 0 ? cleanedNutritionalData : null
     };
 
@@ -717,298 +714,269 @@ function SupplementsTab() {
   if (loading) return <p className="text-center py-12">Loading supplements...</p>;
 
   return (
-    <div>
-      {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
-      {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
+    <div className="space-y-4">
+      {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</p>}
+      {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{success}</p>}
 
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
-        <button onClick={handleCreate} className="btn-primary flex items-center gap-2 justify-center sm:justify-start">
-          <PlusCircle size={20} /> Add Supplement
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4">
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogTrigger asChild>
+            <Button onClick={handleCreate}>
+              <PlusCircle className="h-4 w-4" /> Add Supplement
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingSupplement ? 'Edit Supplement' : 'Add Supplement'}</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., Calcium with D3" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="border-t pt-4">
+                  <h3 className="font-medium mb-3 text-foreground">Nutritional Information (Optional)</h3>
+                  <p className="text-sm text-muted-foreground mb-3">All values are per gram of supplement powder</p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="calcium_mg"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm">Calcium (mg/g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., 500" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="vitamin_d3_iu"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm">Vitamin D3 (IU/g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., 1000" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="vitamin_a_iu"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm">Vitamin A (IU/g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., 5000" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm">Notes</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Dosage instructions" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button type="submit" className="flex-1">
+                    {editingSupplement ? 'Update' : 'Create'}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setShowForm(false)} className="flex-1">
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
         <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
           Common supplements: Calcium, Calcium with D3, Multivitamins
         </p>
       </div>
 
       {/* Supplement List */}
-      <div className="card">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-card">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Composition</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
-              {supplements.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="px-6 py-4 text-center text-muted-foreground">
-                    No supplements found. Add common supplements like Calcium, Calcium with D3, or Multivitamins.
-                  </td>
-                </tr>
-              ) : (
-                supplements.map(supplement => {
-                  const nutritional = supplement.nutritional_data || {};
-                  const composition = [];
-                  if (nutritional.calcium_mg) composition.push(`Calcium: ${nutritional.calcium_mg}mg`);
-                  if (nutritional.vitamin_d3_iu) composition.push(`D3: ${nutritional.vitamin_d3_iu} IU`);
-                  if (nutritional.vitamin_a_iu) composition.push(`A: ${nutritional.vitamin_a_iu} IU`);
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Composition</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {supplements.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  No supplements found. Add common supplements like Calcium, Calcium with D3, or Multivitamins.
+                </TableCell>
+              </TableRow>
+            ) : (
+              supplements.map(supplement => {
+                const nutritional = supplement.nutritional_data || {};
+                const composition = [];
+                if (nutritional.calcium_mg) composition.push(`Calcium: ${nutritional.calcium_mg}mg`);
+                if (nutritional.vitamin_d3_iu) composition.push(`D3: ${nutritional.vitamin_d3_iu} IU`);
+                if (nutritional.vitamin_a_iu) composition.push(`A: ${nutritional.vitamin_a_iu} IU`);
 
-                  return (
-                    <tr
-                      key={supplement.id}
-                      onClick={() => setViewingSupplement(supplement)}
-                      className="hover:bg-secondary/50 cursor-pointer transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                        {supplement.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {composition.length > 0 ? composition.join(', ') : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {supplement.is_default ? (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                            Default
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-secondary text-foreground">
-                            Custom
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEdit(supplement); }}
-                          className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 mr-4"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(supplement); }}
-                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                return (
+                  <TableRow
+                    key={supplement.id}
+                    onClick={() => setViewingSupplement(supplement)}
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="font-medium">{supplement.name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {composition.length > 0 ? composition.join(', ') : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {supplement.is_default ? (
+                        <Badge variant="default">Default</Badge>
+                      ) : (
+                        <Badge variant="outline">Custom</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => { e.stopPropagation(); handleEdit(supplement); }}
+                        className="mr-2"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => { e.stopPropagation(); handleDelete(supplement); }}
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Supplement Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {editingSupplement ? 'Edit Supplement' : 'Add Supplement'}
-                </h2>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  ✕
-                </button>
+      {/* Supplement Read-Only View Dialog */}
+      <Dialog open={!!viewingSupplement} onOpenChange={(open) => !open && setViewingSupplement(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewingSupplement?.name}</DialogTitle>
+          </DialogHeader>
+          {viewingSupplement && (
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Type</p>
+                {viewingSupplement.is_default ? (
+                  <Badge variant="default">Default Supplement</Badge>
+                ) : (
+                  <Badge variant="outline">Custom Supplement</Badge>
+                )}
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block font-medium mb-1 text-foreground">Name *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input w-full"
-                    placeholder="e.g., Calcium with D3"
-                    required
-                  />
-                </div>
-
-                <div className="border-t border-border pt-4">
-                  <h3 className="font-medium mb-3 text-foreground">Nutritional Information (Optional)</h3>
-                  <p className="text-sm text-muted-foreground mb-3">All values are per gram of supplement powder</p>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Calcium (mg/g)</label>
-                      <input
-                        type="text"
-                        value={formData.nutritional_data.calcium_mg}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          nutritional_data: { ...formData.nutritional_data, calcium_mg: e.target.value }
-                        })}
-                        className="input w-full"
-                        placeholder="e.g., 500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Vitamin D3 (IU/g)</label>
-                      <input
-                        type="text"
-                        value={formData.nutritional_data.vitamin_d3_iu}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          nutritional_data: { ...formData.nutritional_data, vitamin_d3_iu: e.target.value }
-                        })}
-                        className="input w-full"
-                        placeholder="e.g., 1000"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Vitamin A (IU/g)</label>
-                      <input
-                        type="text"
-                        value={formData.nutritional_data.vitamin_a_iu}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          nutritional_data: { ...formData.nutritional_data, vitamin_a_iu: e.target.value }
-                        })}
-                        className="input w-full"
-                        placeholder="e.g., 5000"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-muted-foreground">Notes</label>
-                      <input
-                        type="text"
-                        value={formData.nutritional_data.notes}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          nutritional_data: { ...formData.nutritional_data, notes: e.target.value }
-                        })}
-                        className="input w-full"
-                        placeholder="e.g., Dosage instructions"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button type="submit" className="flex-1 btn-primary">
-                    {editingSupplement ? 'Update' : 'Create'}
-                  </button>
-                  <button type="button" onClick={() => setShowForm(false)} className="flex-1 btn-secondary">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Supplement Read-Only View Modal */}
-      {viewingSupplement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {viewingSupplement.name}
-                </h2>
-                <button
-                  onClick={() => setViewingSupplement(null)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                {/* Type Badge */}
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Type</p>
-                  {viewingSupplement.is_default ? (
-                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      Default Supplement
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1.5 text-sm font-semibold rounded-full bg-secondary text-foreground">
-                      Custom Supplement
-                    </span>
-                  )}
-                </div>
-
-                {/* Nutritional Information */}
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Nutritional Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-secondary/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Calcium</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {viewingSupplement.nutritional_data?.calcium_mg ? `${viewingSupplement.nutritional_data.calcium_mg} mg` : 'Not specified'}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-secondary/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Vitamin D3</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {viewingSupplement.nutritional_data?.vitamin_d3_iu ? `${viewingSupplement.nutritional_data.vitamin_d3_iu} IU` : 'Not specified'}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-secondary/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Vitamin A</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {viewingSupplement.nutritional_data?.vitamin_a_iu ? `${viewingSupplement.nutritional_data.vitamin_a_iu} IU` : 'Not specified'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {viewingSupplement.nutritional_data?.notes && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Notes</h3>
-                    <p className="text-muted-foreground">
-                      {viewingSupplement.nutritional_data.notes}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Nutritional Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-secondary/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Calcium</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {viewingSupplement.nutritional_data?.calcium_mg ? `${viewingSupplement.nutritional_data.calcium_mg} mg` : 'Not specified'}
                     </p>
                   </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-border">
-                  <button
-                    onClick={() => {
-                      setViewingSupplement(null);
-                      handleEdit(viewingSupplement);
-                    }}
-                    className="flex-1 btn-primary flex items-center justify-center gap-2"
-                  >
-                    <Edit2 size={18} /> Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      setViewingSupplement(null);
-                      handleDelete(viewingSupplement);
-                    }}
-                    className="flex-1 btn-secondary text-red-600 dark:text-red-400 flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} /> Delete
-                  </button>
-                  <button
-                    onClick={() => setViewingSupplement(null)}
-                    className="flex-1 btn-secondary"
-                  >
-                    Close
-                  </button>
+                  <div className="p-4 bg-secondary/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Vitamin D3</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {viewingSupplement.nutritional_data?.vitamin_d3_iu ? `${viewingSupplement.nutritional_data.vitamin_d3_iu} IU` : 'Not specified'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-secondary/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Vitamin A</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {viewingSupplement.nutritional_data?.vitamin_a_iu ? `${viewingSupplement.nutritional_data.vitamin_a_iu} IU` : 'Not specified'}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {viewingSupplement.nutritional_data?.notes && (
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Notes</h3>
+                  <p className="text-muted-foreground">
+                    {viewingSupplement.nutritional_data.notes}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={() => {
+                    setViewingSupplement(null);
+                    handleEdit(viewingSupplement);
+                  }}
+                  className="flex-1"
+                >
+                  <Edit2 className="h-4 w-4" /> Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setViewingSupplement(null);
+                    handleDelete(viewingSupplement);
+                  }}
+                  className="flex-1 text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setViewingSupplement(null)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
