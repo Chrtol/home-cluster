@@ -5,6 +5,8 @@ import { Plus, Home, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import ReptileAvatar from '../components/ReptileAvatar';
+import PageHeader from '../components/PageHeader';
+import LoadingState from '../components/LoadingState';
 
 export default function ReptileList() {
   const [reptiles, setReptiles] = useState([]);
@@ -79,18 +81,20 @@ export default function ReptileList() {
   };
 
   if (loading) {
-    return <div className="text-center text-muted-foreground">Loading reptiles...</div>;
+    return <LoadingState message="Loading reptiles..." />;
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Your Reptiles</h1>
-        <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
-          <Plus size={20} />
-          Add Reptile
-        </Link>
-      </div>
+      <PageHeader
+        title="Your Reptiles"
+        actions={
+          <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
+            <Plus size={20} />
+            Add Reptile
+          </Link>
+        }
+      />
 
       {/* Household Filters */}
       {households.length > 1 && (

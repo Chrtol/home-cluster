@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import PageHeader from '../components/PageHeader';
+import LoadingState from '../components/LoadingState';
 
 // Friendly name mappings
 const CATEGORY_LABELS = {
@@ -58,7 +60,7 @@ function getSizeLabel(food) {
 export default function FoodManagement() {
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-foreground">Food & Supplement Management</h1>
+      <PageHeader title="Food & Supplement Management" />
 
       <Tabs defaultValue="foods" className="w-full">
         <TabsList>
@@ -218,7 +220,7 @@ function FoodsTab() {
     ? foods.filter(f => f.category === filterCategory)
     : foods;
 
-  if (loading) return <p className="text-center py-12">Loading foods...</p>;
+  if (loading) return <LoadingState message="Loading foods..." />;
 
   return (
     <div className="space-y-4">
@@ -753,7 +755,7 @@ function SupplementsTab() {
     }
   };
 
-  if (loading) return <p className="text-center py-12">Loading supplements...</p>;
+  if (loading) return <LoadingState message="Loading supplements..." />;
 
   return (
     <div className="space-y-4">
