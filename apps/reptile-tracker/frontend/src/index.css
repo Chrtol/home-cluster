@@ -77,6 +77,27 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Global focus-visible styles for interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex="0"]:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Input elements - slightly different treatment */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-primary;
+  }
+
+  /* Cards and clickable containers */
+  .clickable:focus-visible,
+  [data-clickable]:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
 }
 
 @layer components {
@@ -109,5 +130,12 @@
 
   .counter-button {
     @apply w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors;
+  }
+}
+
+@layer utilities {
+  /* Focus Indicator Polish */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
