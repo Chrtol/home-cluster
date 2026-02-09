@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import PageHeader from '@/components/PageHeader';
 
 // Zod schema for rotation form
 const rotationSchema = z.object({
@@ -251,11 +252,9 @@ function SupplementRotations() {
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Supplement Rotations
-          </h1>
+      <PageHeader
+        title="Supplement Rotations"
+        actions={
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">
@@ -494,11 +493,9 @@ function SupplementRotations() {
               </Form>
             </DialogContent>
           </Dialog>
-        </div>
-        <p className="text-muted-foreground">
-          Manage supplement schedules and food replacements for your reptiles
-        </p>
-      </div>
+        }
+        subtitle="Manage supplement schedules and food replacements for your reptiles"
+      />
 
       {/* Reptile Filter Buttons */}
       <div className="mb-4 flex flex-wrap items-center gap-2">

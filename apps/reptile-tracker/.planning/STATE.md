@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 12 (Polish & Mobile) |
-| Phase Status | IN PROGRESS (3/? plans) |
+| Phase Status | IN PROGRESS (4/? plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 12 - In Progress
@@ -67,6 +67,7 @@ Phase 12 (Polish & Mobile):
 12-01: Complete (consistency components - PageHeader, LoadingState, ErrorState, useMediaQuery)
 12-02: Complete (dashboard customization bug fixes - sidebar zone visibility, completed section persistence)
 12-03: Complete (mobile touch targets & feedback - 44px WCAG targets, scale animations)
+12-07: Complete (Track menu keyboard shortcuts - F/M/H quick navigation with visual hints)
 ```
 
 Progress bar:
@@ -76,7 +77,7 @@ Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
 Phase 11: [============] 4/4
-Phase 12: [███        ] 3/?
+Phase 12: [████       ] 4/?
 ```
 
 ## Milestone Scope
@@ -176,6 +177,9 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | 44x44px touch targets (WCAG AAA) | Mobile nav items use min-h/min-w-[44px] for better accessibility vs 24px AA standard |
 | 2026-02-09 | Two-level touch feedback scale | active:scale-95 for primary nav (5% reduction), active:scale-[0.98] for menu items (2% reduction) |
 | 2026-02-09 | Touch target pattern established | min-h-[44px] min-w-[44px] + active:scale-* + transition-* for mobile touch interactions |
+| 2026-02-09 | Contextual keyboard shortcuts | F/M/H shortcuts only active when Track menu is open for safety |
+| 2026-02-09 | Visual keyboard hints | opacity-60 text showing available shortcuts inline with menu items |
+| 2026-02-09 | Responsive keyboard hint visibility | Desktop expanded sidebar uses hidden xl:inline for hints to reduce clutter on smaller screens |
 
 ## Reference Documents
 
@@ -187,23 +191,23 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 12 plan 03 is complete (mobile touch targets & feedback). Ready for next Phase 12 plans.
+Phase 12 plan 07 is complete (Track menu keyboard shortcuts). Ready for next Phase 12 plans.
 
 Continue with remaining Phase 12 polish and mobile optimization plans.
 
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 12-03 complete - mobile touch targets & feedback
-**Resume with:** Phase 12 plan 04 (or next available plan)
+**Stopped at:** Phase 12-07 complete - Track menu keyboard shortcuts
+**Resume with:** Phase 12 plan 08 (or next available plan)
 
 **Recent activity:**
+- 12-07: Track menu keyboard shortcuts (complete) - F/M/H quick navigation with visual hints
 - 12-03: Mobile touch targets & feedback (complete) - 44px WCAG targets, scale animations
 - 12-02: Dashboard customization bug fixes (complete) - sidebar zone visibility, completed section persistence
 - 12-01: Consistency components (complete) - PageHeader, LoadingState, ErrorState, useMediaQuery
-- 11-04: Remaining forms (complete) - ScheduleTemplateForm, SupplementRotations, NotificationHistory
 
-**Phase 12 status:** IN PROGRESS - 3/? plans complete (consistency, dashboard bug fixes, mobile touch)
+**Phase 12 status:** IN PROGRESS - 4/? plans complete (consistency, dashboard bug fixes, mobile touch, keyboard shortcuts)
 
 ---
-*State updated: 2026-02-09 - Phase 12-03 complete*
+*State updated: 2026-02-09 - Phase 12-07 complete*
