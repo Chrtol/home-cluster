@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Scale } from 'lucide-react';
+import { Utensils, Scale, Activity } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
+import EmptyState from '../EmptyState';
 
 /**
  * RecentActivityWidget - Compact recent activity list
@@ -156,9 +157,12 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
         </div>
-        <div className="text-center text-muted-foreground text-sm py-4">
-          No recent activity
-        </div>
+        <EmptyState
+          icon={Activity}
+          title="No recent activity"
+          message="Start tracking feedings and weighings to see them here"
+          compact={true}
+        />
       </div>
     );
   }

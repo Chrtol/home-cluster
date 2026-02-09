@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { formatTime, toLocalISODate, formatDate } from '../../utils/dateFormatting';
-import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, Calendar } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
+import EmptyState from '../EmptyState';
 
 /**
  * TodayScheduleTimeline - Timeline widget showing today's scheduled tasks
@@ -357,7 +358,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
           </div>
           <span className="text-xs text-muted-foreground">0 tasks</span>
         </div>
-        <p className="text-sm text-muted-foreground">No scheduled tasks for {getDateLabel().toLowerCase()}</p>
+        <EmptyState
+          icon={Calendar}
+          title={`No tasks for ${getDateLabel().toLowerCase()}`}
+          message="No scheduled tasks on this day"
+          compact={true}
+        />
       </div>
     );
   }
