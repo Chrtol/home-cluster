@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { Textarea } from '@/components/ui/textarea';
+import PageHeader from '@/components/PageHeader';
+import LoadingState from '@/components/LoadingState';
 
 // Zod schema for feeding form
 const feedingSchema = z.object({
@@ -596,24 +598,27 @@ export default function FeedingLog() {
   );
 
   if (loading) {
-    return <div className="text-center text-muted-foreground">Loading...</div>;
+    return <LoadingState />;
   }
 
   // VIEW MODE
   if (mode === 'view' && existingFeeding) {
     return (
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">View Feeding</h1>
-          <div className="flex gap-2">
-            <Button onClick={() => setMode('edit')} variant="secondary">
-              <Edit2 size={18} /> Edit
-            </Button>
-            <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400">
-              <Trash2 size={18} /> Delete
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="View Feeding"
+          backLink={{ to: '/feed', label: 'Back to Feed' }}
+          actions={
+            <>
+              <Button onClick={() => setMode('edit')} variant="secondary">
+                <Edit2 size={18} /> Edit
+              </Button>
+              <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400">
+                <Trash2 size={18} /> Delete
+              </Button>
+            </>
+          }
+        />
 
         {viewModeSuccess && (
           <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -780,11 +785,9 @@ export default function FeedingLog() {
   // CREATE/EDIT MODE - Continue in next message due to length
   return (
     <div>
-      <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-          {mode === 'edit' ? 'Edit Feeding' : 'Log Feeding'}
-        </h1>
-      </div>
+      <PageHeader
+        title={mode === 'edit' ? 'Edit Feeding' : 'Log Feeding'}
+      />
 
       {mode === 'edit' && existingFeeding && (
         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">

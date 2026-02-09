@@ -163,7 +163,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
           id: instance.schedule.reptile.id,
           name: instance.schedule.reptile.name,
           species: instance.schedule.reptile.species,
-          avatar_photo_url: instance.schedule.reptile.avatar_photo_url
+          avatar_photo_url: instance.schedule.reptile.avatar_photo_url,
+          avatar_border_color: instance.schedule.reptile.avatar_border_color
         } : null,
         reptile_name: instance.schedule?.reptile?.name,
         notes: instance.schedule?.notes,
