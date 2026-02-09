@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 10 (Calendar & Statistics) |
-| Phase Status | COMPLETE (2/2 plans) |
+| Phase Status | COMPLETE (3/3 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 10 - In Progress
@@ -55,6 +55,7 @@ Phase 9 (Reptile Pages):
 Phase 10 (Calendar & Statistics):
 10-01: Complete (calendar quick summary, denser events, badge filters)
 10-02: Complete (statistics stat cards with trends, chart tooltips, badge filters)
+10-03: Complete (UAT polish - removed calendar header, badge outline styling, statistics active variants)
 ```
 
 Progress bar:
@@ -62,7 +63,7 @@ Progress bar:
 Phase 7:  [========] 3/3
 Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
-Phase 10: [============] 2/2
+Phase 10: [============] 3/3
 Phase 11: [           ] 0/?
 Phase 12: [           ] 0/?
 ```
@@ -80,7 +81,7 @@ Phase 12: [           ] 0/?
 Phase 7:  Foundation      Complete (3/3 plans)
 Phase 8:  Dashboard       Complete (16/16 plans)
 Phase 9:  Reptile Pages   Complete (4/4 plans)
-Phase 10: Calendar/Stats  Complete (2/2 plans)
+Phase 10: Calendar/Stats  Complete (3/3 plans)
 Phase 11: Forms/Tables    Not started
 Phase 12: Polish/Mobile   Not started
 ```
@@ -146,6 +147,9 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | Statistics badge filter colors | Data visibility badges use color-coded variants (weight=blue, feeding=green, misting=blue-400, health=red-400) |
 | 2026-02-09 | Time range badge presets | Replaced dropdown with 4 badge presets (7d, 30d, 90d, 1yr) for simpler interaction model |
 | 2026-02-09 | CSS variable chart colors | Changed hardcoded hex colors to CSS variables (--border, --muted-foreground) for theme adaptation |
+| 2026-02-09 | Explicit badge active variants | weightActive, feedingActive, mistingActive, healthActive variants to avoid tailwind-merge conflicts |
+| 2026-02-09 | Muted badge outline styling | bg-muted/30, border-muted-foreground/30 for subtle inactive appearance |
+| 2026-02-09 | Calendar summary header removed | UAT feedback: redundant with existing calendar data display |
 
 ## Reference Documents
 
@@ -166,18 +170,18 @@ Phase 10 is complete (2/2 plans). Ready to proceed to Phase 11 (Forms & Tables).
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 10 Plan 2 complete - Statistics stat cards with trends, chart tooltips, badge filters
-**Resume file:** `.planning/phases/10-calendar-statistics/10-02-SUMMARY.md`
+**Stopped at:** Phase 10 Plan 3 complete - UAT polish fixes
+**Resume file:** `.planning/phases/10-calendar-statistics/10-03-SUMMARY.md`
 
 **Recent activity:**
+- 10-03: UAT polish fixes (complete) - Removed calendar header, improved badge outline styling, explicit statistics active variants
 - 10-02: Statistics enhancements (complete) - Compact stat cards with trends, CustomTooltip, badge filters for data visibility and time range
 - 10-01: Calendar improvements (complete) - Quick day summary header, 3 events/cell, badge-style filters
 - 09-04: Photo gallery density (complete) - 5-column grid on lg screens, badge-style category filters, compact upload button
 - 09-03: Compact tab content (complete) - Tighter spacing (space-y-1.5, p-2.5), Badge components for metadata
 - 09-02: Reptile detail quick stats (complete) - Badge-based quick stats for age, feeding, weight, shed
-- 09-01: Reptile list redesign (complete) - 4-column responsive grid, badge-style filters, compact cards
 
-**Phase 10 status:** COMPLETE - 2/2 plans complete (calendar and statistics both enhanced)
+**Phase 10 status:** COMPLETE - 3/3 plans complete (calendar, statistics, and UAT polish all done)
 
 ---
-*State updated: 2026-02-09 - Phase 10 Plan 2 complete*
+*State updated: 2026-02-09 - Phase 10 Plan 3 complete*
