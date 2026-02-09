@@ -5,6 +5,8 @@ import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
 import { Badge } from '@/components/ui/badge';
+import PageHeader from '../components/PageHeader';
+import LoadingState from '../components/LoadingState';
 
 // Custom Tooltip Component for Recharts
 const CustomTooltip = ({ active, payload, label }) => {
@@ -398,17 +400,13 @@ function Statistics() {
   };
 
   if (loading && !stats) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading statistics...</div>
-      </div>
-    );
+    return <LoadingState message="Loading statistics..." />;
   }
 
   if (reptiles.length === 0) {
     return (
       <div>
-        <h1 className="text-3xl font-bold mb-6 text-foreground">Statistics</h1>
+        <PageHeader title="Statistics" />
         <div className="card">
           <p className="text-muted-foreground">
             No reptiles found. Add a reptile to start tracking statistics.
@@ -421,7 +419,7 @@ function Statistics() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-3xl font-bold text-foreground">Statistics</h1>
+        <PageHeader title="Statistics" className="mb-0" />
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {/* Left: Filter Toggles - Badge Style */}
