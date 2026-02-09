@@ -121,19 +121,28 @@ Plans:
 
 ---
 
-## Phase 10: Calendar & Statistics
+## Phase 10: Calendar & Statistics Complete
 
 **Goal:** Improve calendar quick-view and statistics visualization
 
 **Requirements:** CAL-01, CAL-02, CAL-03, STAT-01, STAT-02, STAT-03
 
+**Status:** Complete (2026-02-09)
+**Plans:** 2/2 complete
+
+Plans:
+- [x] 10-01-PLAN.md -- Calendar quick day summary header, denser event display, badge filters
+- [x] 10-02-PLAN.md -- Statistics compact stat cards with trends, chart styling, badge filters
+
 **Deliverables:**
-- [ ] Calendar: quick day summary header
-- [ ] Calendar: denser event display
-- [ ] Calendar: improved filters
-- [ ] Statistics: compact stat cards
-- [ ] Statistics: better chart styling
-- [ ] Statistics: improved filters
+- [x] Calendar: quick day summary header (4-stat grid)
+- [x] Calendar: denser event display (3 events before overflow)
+- [x] Calendar: improved filters (badge-style chips)
+- [x] Statistics: compact stat cards with trends (arrows + percentages)
+- [x] Statistics: better chart styling (CustomTooltip, theme-aware colors)
+- [x] Statistics: improved filters (badge-style, time range presets)
+
+**Verification:** 6/6 must-haves verified. See 10-VERIFICATION.md.
 
 **Success:** Calendar shows today/week at a glance, statistics feel polished
 
