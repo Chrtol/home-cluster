@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format, differenceInDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Utensils, Scale as ScaleIcon } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -419,7 +419,7 @@ export default function ReptileDetail() {
                         </Badge>
                       ))}
                       {f.supplements && f.supplements.length > 0 && f.supplements.map((sup, supIdx) => (
-                        <Badge key={supIdx} variant="outline" className="text-xs h-5 px-1.5">
+                        <Badge key={supIdx} variant="mist" className="text-xs h-5 px-1.5">
                           {sup.name}
                         </Badge>
                       ))}
@@ -784,60 +784,64 @@ export default function ReptileDetail() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{reptile.name}</h1>
           <p className="text-muted-foreground mb-3">{reptile.species}</p>
 
-          {/* Quick stats badges */}
-          <div className="flex flex-wrap gap-2">
-            {/* Age badge */}
+          {/* Quick stats - inline style matching dashboard cards */}
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            {/* Age */}
             {reptile.date_of_birth && (
-              <Badge variant="outline" className="gap-1.5 px-2 py-1">
-                <Calendar className="w-3.5 h-3.5" />
-                <span className="text-xs">{calculateAgeDisplay(reptile.date_of_birth)}</span>
-              </Badge>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span>{calculateAgeDisplay(reptile.date_of_birth)}</span>
+              </div>
             )}
 
-            {/* Last fed badge */}
+            {/* Last fed */}
             {feedings.length > 0 && (
-              <Badge
-                variant={getFeedingStatusVariant(feedings[0]?.fed_at)}
-                className="gap-1.5 px-2 py-1"
-              >
-                <Utensils className="w-3.5 h-3.5" />
-                <span className="text-xs">{getLastFedDisplay(feedings[0]?.fed_at)}</span>
-              </Badge>
-            )}
-
-            {/* Weight badge */}
-            {weightLogs.length > 0 && (
-              <Badge variant="outline" className="gap-1.5 px-2 py-1">
-                <ScaleIcon className="w-3.5 h-3.5" />
-                <span className="text-xs">
-                  {weightLogs[0].weight_grams}g
-                  {weightLogs.length > 1 && (() => {
-                    const prev = weightLogs[1].weight_grams;
-                    const curr = weightLogs[0].weight_grams;
-                    if (prev && prev !== 0) {
-                      const change = ((curr - prev) / prev * 100).toFixed(1);
-                      const isPositive = parseFloat(change) > 0;
-                      return (
-                        <span className={isPositive ? 'text-primary ml-1' : 'text-destructive ml-1'}>
-                          {isPositive ? '+' : ''}{change}%
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()}
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🍽️</span>
+                <span className={
+                  getFeedingStatusVariant(feedings[0]?.fed_at) === 'done' ? 'text-primary' :
+                  getFeedingStatusVariant(feedings[0]?.fed_at) === 'due' ? 'text-amber-500' :
+                  getFeedingStatusVariant(feedings[0]?.fed_at) === 'overdue' ? 'text-destructive' :
+                  'text-muted-foreground'
+                }>
+                  {getLastFedDisplay(feedings[0]?.fed_at)}
                 </span>
-              </Badge>
+              </div>
             )}
 
-            {/* Last shed badge - from health records */}
+            {/* Weight */}
+            {weightLogs.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg text-amber-500">{'\u2696\uFE0F'}</span>
+                <span className="text-muted-foreground">
+                  {weightLogs[0].weight_grams}g
+                </span>
+                {weightLogs.length > 1 && (() => {
+                  const prev = weightLogs[1].weight_grams;
+                  const curr = weightLogs[0].weight_grams;
+                  if (prev && prev !== 0) {
+                    const change = ((curr - prev) / prev * 100).toFixed(1);
+                    const isPositive = parseFloat(change) > 0;
+                    return (
+                      <span className={isPositive ? 'text-primary' : 'text-destructive'}>
+                        {isPositive ? '+' : ''}{change}%
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+
+            {/* Last shed */}
             {(() => {
               const lastShed = healthRecords.find(h => h.record_type === 'shed');
               if (lastShed) {
                 return (
-                  <Badge variant="outline" className="gap-1.5 px-2 py-1">
-                    <Activity className="w-3.5 h-3.5" />
-                    <span className="text-xs">Shed {formatDateShort(lastShed.date)}</span>
-                  </Badge>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    <span>Shed {formatDateShort(lastShed.date)}</span>
+                  </div>
                 );
               }
               return null;

@@ -196,11 +196,11 @@ const PhotoGallery = ({
             className="group"
           >
             <Badge
-              variant={selectedCategory === cat.value ? 'default' : 'outline'}
+              variant={selectedCategory === cat.value ? 'default' : 'secondary'}
               className={cn(
                 'cursor-pointer transition-colors px-2 py-0.5',
                 selectedCategory === cat.value && 'bg-primary hover:bg-primary/80',
-                selectedCategory !== cat.value && 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                selectedCategory !== cat.value && 'hover:bg-secondary/80'
               )}
             >
               {cat.label}

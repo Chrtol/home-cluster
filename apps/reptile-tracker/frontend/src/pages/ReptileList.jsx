@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Home } from 'lucide-react';
+import { Plus, Home, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -102,11 +102,11 @@ export default function ReptileList() {
               className="group"
             >
               <Badge
-                variant={hiddenHouseholds.has(household.id) ? 'outline' : 'default'}
+                variant={hiddenHouseholds.has(household.id) ? 'secondary' : 'default'}
                 className={cn(
                   'cursor-pointer transition-colors gap-1.5 px-2.5 py-1',
                   !hiddenHouseholds.has(household.id) && 'bg-primary hover:bg-primary/80',
-                  hiddenHouseholds.has(household.id) && 'text-muted-foreground hover:text-foreground'
+                  hiddenHouseholds.has(household.id) && 'opacity-60 hover:opacity-100'
                 )}
               >
                 {household.id !== 'no_household' && <Home className="w-3 h-3" />}
@@ -136,7 +136,7 @@ export default function ReptileList() {
                   <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     {household.id !== 'no_household' && <Home size={20} className="text-blue-500" />}
                     {household.name}
-                    <Badge variant="outline" className="ml-2">
+                    <Badge variant="secondary" className="ml-2">
                       {household.reptiles.length}
                     </Badge>
                   </h2>
@@ -159,9 +159,10 @@ export default function ReptileList() {
                           </h3>
                           <p className="text-xs text-muted-foreground mb-2 truncate">{reptile.species}</p>
                           {reptile.date_of_birth && (
-                            <Badge variant="outline" className="text-xs gap-1 mt-2">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <Calendar className="w-3 h-3 text-primary" />
                               {calculateAge(reptile.date_of_birth)}
-                            </Badge>
+                            </div>
                           )}
                         </div>
                       </div>
