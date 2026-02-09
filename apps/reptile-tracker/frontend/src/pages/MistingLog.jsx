@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import axios from 'axios';
-import { Edit2, Trash2, Plus } from 'lucide-react';
-import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
-import DateInput from '../components/DateInput';
+import { Edit2, Trash2 } from 'lucide-react';
+import { formatDateTime } from '../utils/dateFormatting';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
+
+// Validation schema
+const mistingSchema = z.object({
+  reptile_id: z.number().min(1, "Please select a reptile"),
+  misted_at_date: z.string().min(1, "Date is required"),
+  misted_at_time: z.string().regex(/^\d{2}:\d{2}$/, "Time is required (HH:MM format)"),
+  notes: z.string().optional(),
+});
 
 export default function MistingLog() {
   const navigate = useNavigate();
@@ -15,52 +31,24 @@ export default function MistingLog() {
   const [existingLog, setExistingLog] = useState(null);
 
   const [reptiles, setReptiles] = useState([]);
-  const [selectedReptile, setSelectedReptile] = useState('');
-  const [mistingDate, setMistingDate] = useState(new Date().toISOString().slice(0, 10));
-  const [mistingTime, setMistingTime] = useState(new Date().toTimeString().slice(0, 5));
-  const [notes, setNotes] = useState('');
-
-  // Time input format state
-  const [timeFormat, setTimeFormat] = useState('24h');
-  const [hours, setHours] = useState(new Date().getHours());
-  const [minutes, setMinutes] = useState(new Date().getMinutes());
-  const [period, setPeriod] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
-
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
 
+  // Initialize form
+  const form = useForm({
+    resolver: zodResolver(mistingSchema),
+    defaultValues: {
+      reptile_id: 0,
+      misted_at_date: new Date().toISOString().slice(0, 10),
+      misted_at_time: new Date().toTimeString().slice(0, 5),
+      notes: '',
+    },
+    mode: 'onBlur',
+  });
+
   useEffect(() => {
     const fetchData = async () => {
-      // Load user's time format preference and initialize time
-      const format = getUserTimeFormat();
-      setTimeFormat(format);
-
-      const now = new Date();
-      const currentHour24 = now.getHours();
-      const currentMinutes = now.getMinutes();
-
-      setMinutes(currentMinutes);
-
-      if (format === '12h') {
-        // Convert to 12h format
-        if (currentHour24 === 0) {
-          setHours(12);
-          setPeriod('AM');
-        } else if (currentHour24 < 12) {
-          setHours(currentHour24);
-          setPeriod('AM');
-        } else if (currentHour24 === 12) {
-          setHours(12);
-          setPeriod('PM');
-        } else {
-          setHours(currentHour24 - 12);
-          setPeriod('PM');
-        }
-      } else {
-        setHours(currentHour24);
-      }
-
       try {
         const reptilesRes = await axios.get('/api/reptiles');
         setReptiles(reptilesRes.data);
@@ -100,22 +88,18 @@ export default function MistingLog() {
 
               // Pre-fill reptile from schedule
               if (schedule?.reptile_id) {
-                setSelectedReptile(schedule.reptile_id);
+                form.setValue('reptile_id', schedule.reptile_id);
               }
 
               // Pre-fill date from instance
               if (instance.scheduled_date) {
-                setMistingDate(instance.scheduled_date);
+                form.setValue('misted_at_date', instance.scheduled_date);
               }
 
               // Pre-fill time from schedule
               if (schedule?.reminder_time || (schedule?.time_window_enabled && schedule?.earliest_time)) {
                 const timeStr = schedule.reminder_time || schedule.earliest_time;
-                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
-                setHours(timeHours);
-                setMinutes(timeMinutes);
-                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
-                setMistingTime(timeStr);
+                form.setValue('misted_at_time', timeStr);
               }
             } catch (instanceErr) {
               console.error('Failed to load instance for pre-fill:', instanceErr);
@@ -127,17 +111,13 @@ export default function MistingLog() {
 
               // Pre-fill reptile from schedule
               if (schedule.reptile_id) {
-                setSelectedReptile(schedule.reptile_id);
+                form.setValue('reptile_id', schedule.reptile_id);
               }
 
               // Pre-fill time from schedule
               if (schedule.reminder_time || (schedule.time_window_enabled && schedule.earliest_time)) {
                 const timeStr = schedule.reminder_time || schedule.earliest_time;
-                const [timeHours, timeMinutes] = timeStr.split(':').map(Number);
-                setHours(timeHours);
-                setMinutes(timeMinutes);
-                setPeriod(timeHours >= 12 ? 'PM' : 'AM');
-                setMistingTime(timeStr);
+                form.setValue('misted_at_time', timeStr);
               }
             } catch (scheduleErr) {
               console.error('Failed to load schedule for pre-fill:', scheduleErr);
@@ -145,11 +125,11 @@ export default function MistingLog() {
           }
 
           // Fallback to defaults if not pre-filled
-          if (!selectedReptile) {
+          if (!form.getValues('reptile_id')) {
             if (reptileId) {
-              setSelectedReptile(reptileId);
+              form.setValue('reptile_id', parseInt(reptileId));
             } else if (reptilesRes.data.length > 0) {
-              setSelectedReptile(reptilesRes.data[0].id);
+              form.setValue('reptile_id', reptilesRes.data[0].id);
             }
           }
         }
@@ -161,34 +141,17 @@ export default function MistingLog() {
   }, [reptileId, id, searchParams]);
 
   const loadLogData = (log) => {
-    setSelectedReptile(log.reptile_id);
-    setNotes(log.notes || '');
+    form.setValue('reptile_id', log.reptile_id);
+    form.setValue('notes', log.notes || '');
 
     // Parse the misted_at datetime
     const mistedAtDate = new Date(log.misted_at);
-    setMistingDate(mistedAtDate.toISOString().slice(0, 10));
+    form.setValue('misted_at_date', mistedAtDate.toISOString().slice(0, 10));
 
     const hour = mistedAtDate.getHours();
     const minute = mistedAtDate.getMinutes();
-
-    setHours(hour);
-    setMinutes(minute);
-    setPeriod(hour >= 12 ? 'PM' : 'AM');
+    form.setValue('misted_at_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
   };
-
-  // Update mistingTime whenever hours/minutes/period change
-  useEffect(() => {
-    let hour24 = hours;
-    if (timeFormat === '12h') {
-      if (period === 'PM' && hours !== 12) {
-        hour24 = hours + 12;
-      } else if (period === 'AM' && hours === 12) {
-        hour24 = 0;
-      }
-    }
-    const timeString = `${String(hour24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    setMistingTime(timeString);
-  }, [hours, minutes, period, timeFormat]);
 
   // Reset form when navigating from /misting/:id to /misting
   useEffect(() => {
@@ -200,29 +163,14 @@ export default function MistingLog() {
       setSuccess('');
 
       // Reset form to defaults
-      setSelectedReptile(reptileId || (reptiles.length > 0 ? reptiles[0].id : ''));
-      setMistingDate(new Date().toISOString().slice(0, 10));
-      const now = new Date();
-      setHours(now.getHours());
-      setMinutes(now.getMinutes());
-      setPeriod(now.getHours() >= 12 ? 'PM' : 'AM');
-      setNotes('');
+      form.reset({
+        reptile_id: reptileId ? parseInt(reptileId) : (reptiles.length > 0 ? reptiles[0].id : 0),
+        misted_at_date: new Date().toISOString().slice(0, 10),
+        misted_at_time: new Date().toTimeString().slice(0, 5),
+        notes: '',
+      });
     }
-  }, [id, mode, reptiles, reptileId]);
-
-  const handleHoursChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    if (timeFormat === '12h') {
-      setHours(Math.max(1, Math.min(12, numValue)));
-    } else {
-      setHours(Math.max(0, Math.min(23, numValue)));
-    }
-  };
-
-  const handleMinutesChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    setMinutes(Math.max(0, Math.min(59, numValue)));
-  };
+  }, [id, mode, reptiles, reptileId, form]);
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this misting log?')) return;
@@ -237,40 +185,37 @@ export default function MistingLog() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError('');
     setSuccess('');
 
-    if (!selectedReptile) {
-      setError("Please select a reptile.");
-      return;
-    }
-
-    const dateTimeString = `${mistingDate}T${mistingTime}`;
+    // Combine date + time into ISO format
+    const dateTimeString = `${data.misted_at_date}T${data.misted_at_time}`;
 
     try {
       if (mode === 'edit') {
         const response = await axios.patch(`/api/misting/${id}`, {
           misted_at: new Date(dateTimeString).toISOString(),
-          notes,
+          notes: data.notes || null,
         });
         setSuccess('Misting log updated successfully!');
         // Redirect to read-only view
         setTimeout(() => navigate(`/misting/${id}`), 1500);
       } else {
         const response = await axios.post('/api/misting', {
-          reptile_id: parseInt(selectedReptile),
+          reptile_id: data.reptile_id,
           misted_at: new Date(dateTimeString).toISOString(),
-          notes
+          notes: data.notes || null,
         });
-        setSuccess(`Misting logged for ${reptiles.find(r => r.id === parseInt(selectedReptile))?.name}.`);
+        setSuccess(`Misting logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
         // Redirect to read-only view
         setTimeout(() => navigate(`/misting/${response.data.id}?success=created`), 1500);
       }
     } catch (err) {
       console.error("Failed to submit misting log:", err);
-      setError(err.response?.data?.detail || "An unexpected error occurred.");
+      const errorMsg = err.response?.data?.detail || "An unexpected error occurred.";
+      setError(errorMsg);
+      form.setError('root', { message: errorMsg });
     }
   };
 
@@ -281,12 +226,12 @@ export default function MistingLog() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-foreground">View Misting Log</h1>
           <div className="flex gap-2">
-            <button onClick={() => setMode('edit')} className="btn-primary flex items-center gap-2">
+            <Button onClick={() => setMode('edit')} className="flex items-center gap-2">
               <Edit2 size={18} /> Edit
-            </button>
-            <button onClick={handleDelete} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">
+            </Button>
+            <Button onClick={handleDelete} variant="secondary" className="text-red-600 dark:text-red-400 flex items-center gap-2">
               <Trash2 size={18} /> Delete
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -348,95 +293,109 @@ export default function MistingLog() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card space-y-4">
-        <div>
-          <label htmlFor="reptile" className="block font-medium mb-1 text-muted-foreground">Reptile</label>
-          <select
-            id="reptile"
-            value={selectedReptile}
-            onChange={e => setSelectedReptile(e.target.value)}
-            className="input"
-            required
-            disabled={mode === 'edit'}
-          >
-            {reptiles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="card space-y-4">
+          <FormField
+            control={form.control}
+            name="reptile_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-muted-foreground">Reptile</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  value={field.value ? String(field.value) : ''}
+                  disabled={mode === 'edit'}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a reptile" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {reptiles.map(r => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="mistingDate" className="block font-medium mb-1 text-muted-foreground">Date</label>
-            <DateInput
-              id="mistingDate"
-              value={mistingDate}
-              onChange={e => setMistingDate(e.target.value)}
-              className="input w-full"
-              required
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="misted_at_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Date</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="misted_at_time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Time</FormLabel>
+                  <FormControl>
+                    <TimePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a time"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-          <div>
-            <label className="block font-medium mb-1 text-muted-foreground">Time ({timeFormat === '12h' ? '12h' : '24h'})</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={hours}
-                onChange={e => handleHoursChange(e.target.value)}
-                className="input w-20 text-center"
-                min={timeFormat === '12h' ? 1 : 0}
-                max={timeFormat === '12h' ? 12 : 23}
-                required
-              />
-              <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
-              <input
-                type="number"
-                value={String(minutes).padStart(2, '0')}
-                onChange={e => handleMinutesChange(e.target.value)}
-                className="input w-20 text-center"
-                min="0"
-                max="59"
-                required
-              />
-              {timeFormat === '12h' && (
-                <select
-                  value={period}
-                  onChange={e => setPeriod(e.target.value)}
-                  className="input w-20"
-                >
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
-              )}
-            </div>
-          </div>
-        </div>
 
-        <div>
-          <label htmlFor="notes" className="block font-medium mb-1 text-muted-foreground">Notes (optional)</label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            rows="3"
-            className="input"
-            placeholder="e.g., increased humidity for shedding"
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-muted-foreground">Notes (optional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    rows={3}
+                    placeholder="e.g., increased humidity for shedding"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary flex-1">
-            {mode === 'edit' ? 'Update Misting Log' : 'Save Misting Log'}
-          </button>
-          {mode === 'edit' && (
-            <button
-              type="button"
-              onClick={() => setMode('view')}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+          <div className="flex gap-3">
+            <Button type="submit" className="flex-1">
+              {mode === 'edit' ? 'Update Misting Log' : 'Save Misting Log'}
+            </Button>
+            {mode === 'edit' && (
+              <Button
+                type="button"
+                onClick={() => setMode('view')}
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
