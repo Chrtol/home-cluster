@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
-import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical, Maximize2 } from 'lucide-react';
+import { Utensils, Clock, Calendar, AlertCircle, CheckCircle, TrendingUp, Scale, Droplets, Activity, ChevronUp, Filter, Bell, ChevronLeft, ChevronRight, Plus, X, GripVertical, Maximize2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { formatDateTime, formatTime, getUserFirstDayOfWeek, toLocalISODate } from '../utils/dateFormatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings, updateProfileCards, resetProfileToDefault } from '../utils/displaySettings';
+import { getDashboardCardSettings, getChartSettings, isCalendarExtraSmall, applyProfile, getActiveProfileId, saveDashboardCardSettings, resetDashboardCardSettings, updateProfileCards, resetProfileToDefault, getSidebarSettings, saveSidebarSettings, isMobileScreen } from '../utils/displaySettings';
+import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 import ReptileAvatar from '../components/ReptileAvatar';
 import ReptileStatusCards from '../components/dashboard/ReptileStatusCards';
 import TodayScheduleTimeline from '../components/dashboard/TodayScheduleTimeline';
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [showWidgetGallery, setShowWidgetGallery] = useState(false); // Widget gallery modal
   const [draggedWidget, setDraggedWidget] = useState(null); // Widget being dragged
   const [dragOverWidget, setDragOverWidget] = useState(null); // Widget being dragged over
+  const [sidebarSettings, setSidebarSettings] = useState({ sidebarEnabled: true, sidebarPosition: 'left' }); // Sidebar settings
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -68,6 +70,7 @@ export default function Dashboard() {
     // Load the settings
     setDashboardCards(getDashboardCardSettings());
     setChartSettings(getChartSettings());
+    setSidebarSettings(getSidebarSettings());
 
     // Check if calendar is XS to hide supplements and force 1-day view
     const calendarIsXS = isCalendarExtraSmall();
@@ -1018,20 +1021,19 @@ export default function Dashboard() {
     return card ? card.visible : true; // Default to visible if not found
   };
 
-  // Helper function to get card size class
+  // Helper function to get card size class (for main zone, 3-column grid)
   const getCardSizeClass = (cardId) => {
     const card = dashboardCards.find(c => c.id === cardId);
-    if (!card || !card.size) return 'col-span-1';
+    // Sidebar cards have no size class - they're always full width of sidebar
+    if (!card || card.zone === 'sidebar') return '';
 
     switch (card.size) {
-      case 'xs':
-        return 'col-span-1'; // 1/4 width on desktop (in 4-column grid)
       case 'small':
-        return 'col-span-1 sm:col-span-2'; // 1/3 width (spans 2 cols in 4-col grid, but takes only 1 in smaller grids)
+        return 'col-span-1'; // 1/3 width in 3-col grid
       case 'medium':
-        return 'col-span-1 sm:col-span-3'; // 2/3 width (spans 3 cols in 4-col grid)
+        return 'col-span-1 sm:col-span-2'; // 2/3 width
       case 'large':
-        return 'col-span-1 sm:col-span-4'; // Full width (spans all 4 cols)
+        return 'col-span-1 sm:col-span-3'; // Full width
       default:
         return 'col-span-1';
     }
@@ -1076,11 +1078,21 @@ export default function Dashboard() {
     setDashboardCards(getDashboardCardSettings());
   };
 
-  const handleAddWidget = (widgetId) => {
-    // Add widget to visible cards and save to active profile
+  const handleAddWidget = (widgetId, zone = 'main') => {
+    // Add widget to visible cards in the specified zone
     const cards = [...dashboardCards];
+    // Get max order in target zone
+    const zoneCards = cards.filter(c => c.zone === zone);
+    const maxOrder = zoneCards.length > 0 ? Math.max(...zoneCards.map(c => c.order)) + 1 : 0;
+
     const updated = cards.map(c =>
-      c.id === widgetId ? { ...c, visible: true } : c
+      c.id === widgetId ? {
+        ...c,
+        visible: true,
+        zone,
+        order: maxOrder,
+        size: zone === 'sidebar' ? undefined : (c.size || 'medium')
+      } : c
     );
 
     // Save to the active profile (desktop or mobile)
@@ -1107,8 +1119,8 @@ export default function Dashboard() {
   };
 
   const handleResizeWidget = (widgetId) => {
-    // Cycle through sizes: xs -> small -> medium -> large -> xs
-    const sizeOrder = ['xs', 'small', 'medium', 'large'];
+    // Cycle through sizes: small -> medium -> large -> small (3-col grid)
+    const sizeOrder = ['small', 'medium', 'large'];
     const updated = dashboardCards.map(c => {
       if (c.id !== widgetId) return c;
       const currentIndex = sizeOrder.indexOf(c.size || 'small');
@@ -1124,11 +1136,47 @@ export default function Dashboard() {
     setDashboardCards(updated);
   };
 
+  const handleMoveToSidebar = (widgetId) => {
+    // Move widget from main zone to sidebar
+    const updated = dashboardCards.map(c => {
+      if (c.id !== widgetId) return c;
+      // Get max order in sidebar zone
+      const sidebarCards = dashboardCards.filter(card => card.zone === 'sidebar');
+      const maxOrder = sidebarCards.length > 0 ? Math.max(...sidebarCards.map(card => card.order)) + 1 : 0;
+      return { ...c, zone: 'sidebar', order: maxOrder, size: undefined };
+    });
+
+    // Save to the active profile
+    const activeProfileId = getActiveProfileId();
+    updateProfileCards(activeProfileId, updated);
+
+    // Update local state
+    setDashboardCards(updated);
+  };
+
+  const handleMoveToMain = (widgetId) => {
+    // Move widget from sidebar to main zone
+    const updated = dashboardCards.map(c => {
+      if (c.id !== widgetId) return c;
+      // Get max order in main zone
+      const mainCards = dashboardCards.filter(card => card.zone === 'main');
+      const maxOrder = mainCards.length > 0 ? Math.max(...mainCards.map(card => card.order)) + 1 : 0;
+      return { ...c, zone: 'main', order: maxOrder, size: 'medium' };
+    });
+
+    // Save to the active profile
+    const activeProfileId = getActiveProfileId();
+    updateProfileCards(activeProfileId, updated);
+
+    // Update local state
+    setDashboardCards(updated);
+  };
+
   const getSizeLabel = (cardId) => {
     const card = dashboardCards.find(c => c.id === cardId);
     const size = card?.size || 'small';
-    const labels = { xs: '1/4', small: '1/2', medium: '3/4', large: 'Full' };
-    return labels[size] || '1/2';
+    const labels = { small: '1/3', medium: '2/3', large: 'Full' };
+    return labels[size] || '1/3';
   };
 
   // Drag and drop handlers for widget reordering
@@ -1156,20 +1204,62 @@ export default function Dashboard() {
       return;
     }
 
-    // Find indices
-    const draggedIndex = dashboardCards.findIndex(c => c.id === draggedWidget);
-    const targetIndex = dashboardCards.findIndex(c => c.id === targetWidgetId);
+    const draggedCard = dashboardCards.find(c => c.id === draggedWidget);
+    const targetCard = dashboardCards.find(c => c.id === targetWidgetId);
 
-    if (draggedIndex === -1 || targetIndex === -1) {
+    if (!draggedCard || !targetCard) {
       setDraggedWidget(null);
       setDragOverWidget(null);
       return;
     }
 
-    // Reorder array
-    const updated = [...dashboardCards];
-    const [removed] = updated.splice(draggedIndex, 1);
-    updated.splice(targetIndex, 0, removed);
+    let updated = [...dashboardCards];
+
+    // Check if crossing zones
+    if (draggedCard.zone !== targetCard.zone) {
+      // Move to target zone and update zone-specific order
+      updated = updated.map(c => {
+        if (c.id === draggedWidget) {
+          return {
+            ...c,
+            zone: targetCard.zone,
+            size: targetCard.zone === 'sidebar' ? undefined : (c.size || 'medium'),
+            order: targetCard.order
+          };
+        }
+        // Shift orders in target zone for cards after the drop position
+        if (c.zone === targetCard.zone && c.order >= targetCard.order && c.id !== draggedWidget) {
+          return { ...c, order: c.order + 1 };
+        }
+        return c;
+      });
+    } else {
+      // Same zone - reorder within zone
+      const zoneCards = dashboardCards
+        .filter(c => c.zone === draggedCard.zone)
+        .sort((a, b) => a.order - b.order);
+
+      const draggedZoneIndex = zoneCards.findIndex(c => c.id === draggedWidget);
+      const targetZoneIndex = zoneCards.findIndex(c => c.id === targetWidgetId);
+
+      if (draggedZoneIndex !== -1 && targetZoneIndex !== -1) {
+        const [removed] = zoneCards.splice(draggedZoneIndex, 1);
+        zoneCards.splice(targetZoneIndex, 0, removed);
+
+        // Update orders within the zone
+        const orderMap = new Map();
+        zoneCards.forEach((card, index) => {
+          orderMap.set(card.id, index);
+        });
+
+        updated = dashboardCards.map(c => {
+          if (orderMap.has(c.id)) {
+            return { ...c, order: orderMap.get(c.id) };
+          }
+          return c;
+        });
+      }
+    }
 
     // Save to active profile
     const activeProfileId = getActiveProfileId();
@@ -1197,6 +1287,7 @@ export default function Dashboard() {
               config={card?.config || {}}
               size={card?.size || 'small'}
               onQuickLog={handleQuickLog}
+              inSidebar={card?.zone === 'sidebar'}
             />
           );
         }
@@ -2104,62 +2195,155 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Unified Grid Layout - Renders all cards in user's preferred order with custom sizing
-          Using grid-flow-dense to pack items more tightly and fill gaps */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 auto-rows-auto items-start grid-flow-dense">
-        {dashboardCards
-          .filter(card => card.visible)
-          .map(card => {
-            const content = renderCard(card.id);
-            if (!content) return null;
+      {/* Split Layout - Sidebar + Main Grid
+          Sidebar: Fixed width, independent vertical stacking
+          Main: 3-column grid with responsive sizing */}
+      {(() => {
+        // Filter cards into zones
+        const sidebarCards = dashboardCards
+          .filter(card => card.visible && card.zone === 'sidebar')
+          .sort((a, b) => a.order - b.order);
+        const mainCards = dashboardCards
+          .filter(card => card.visible && card.zone === 'main')
+          .sort((a, b) => a.order - b.order);
 
-            return (
-              <div
-                key={card.id}
-                className={`${getCardSizeClass(card.id)} relative group ${
-                  dragOverWidget === card.id ? 'ring-2 ring-primary' : ''
-                } ${draggedWidget === card.id ? 'opacity-50' : ''}`}
-                draggable={isEditMode}
-                onDragStart={(e) => handleDragStart(e, card.id)}
-                onDragOver={(e) => handleDragOver(e, card.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, card.id)}
-                onDragEnd={handleDragEnd}
-              >
-                {/* Edit mode controls */}
-                {isEditMode && (
-                  <>
-                    {/* Drag handle */}
-                    <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
-                      <GripVertical className="w-4 h-4" />
+        // On mobile, sidebar is disabled - all cards go to main
+        const showSidebar = sidebarSettings.sidebarEnabled && !isMobileScreen() && sidebarCards.length > 0;
+
+        const dragHandlers = {
+          onDragStart: handleDragStart,
+          onDragOver: handleDragOver,
+          onDragLeave: handleDragLeave,
+          onDrop: handleDrop,
+          onDragEnd: handleDragEnd
+        };
+
+        return (
+          <div className={`flex gap-4 ${sidebarSettings.sidebarPosition === 'right' ? 'flex-row-reverse' : ''}`}>
+            {/* Sidebar - conditionally rendered */}
+            {showSidebar && (
+              <>
+                <DashboardSidebar
+                  cards={sidebarCards}
+                  isEditMode={isEditMode}
+                  onHide={handleHideWidget}
+                  onMoveToMain={handleMoveToMain}
+                  renderCard={renderCard}
+                  dragHandlers={dragHandlers}
+                  draggedWidget={draggedWidget}
+                  dragOverWidget={dragOverWidget}
+                />
+                {/* Visual divider */}
+                <div className="w-px bg-border flex-shrink-0" />
+              </>
+            )}
+
+            {/* Main content area - 3-column grid */}
+            <div className="flex-1 min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
+                {mainCards.map(card => {
+                  const content = renderCard(card.id);
+                  if (!content) return null;
+
+                  return (
+                    <div
+                      key={card.id}
+                      className={`${getCardSizeClass(card.id)} relative group ${
+                        dragOverWidget === card.id ? 'ring-2 ring-primary' : ''
+                      } ${draggedWidget === card.id ? 'opacity-50' : ''}`}
+                      draggable={isEditMode}
+                      onDragStart={(e) => handleDragStart(e, card.id)}
+                      onDragOver={(e) => handleDragOver(e, card.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, card.id)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      {/* Edit mode controls */}
+                      {isEditMode && (
+                        <>
+                          {/* Drag handle */}
+                          <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
+                            <GripVertical className="w-4 h-4" />
+                          </div>
+                          {/* Move to sidebar button */}
+                          {showSidebar && (
+                            <button
+                              onClick={() => handleMoveToSidebar(card.id)}
+                              className="absolute top-2 left-10 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-muted/80"
+                              title="Move to sidebar"
+                              aria-label={`Move ${card.id} to sidebar`}
+                            >
+                              <ArrowLeft className="w-3 h-3" />
+                            </button>
+                          )}
+                          {/* Resize button */}
+                          <button
+                            onClick={() => handleResizeWidget(card.id)}
+                            className="absolute top-2 right-10 z-10 h-6 px-1.5 bg-muted text-muted-foreground rounded flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-muted/80"
+                            title={`Resize widget (current: ${getSizeLabel(card.id)})`}
+                            aria-label={`Resize ${card.id} widget`}
+                          >
+                            <Maximize2 className="w-3 h-3" />
+                            <span className="text-[10px] font-medium">{getSizeLabel(card.id)}</span>
+                          </button>
+                          {/* Hide button */}
+                          <button
+                            onClick={() => handleHideWidget(card.id)}
+                            className="absolute top-2 right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-destructive/90"
+                            title="Hide widget"
+                            aria-label={`Hide ${card.id} widget`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                      {content}
                     </div>
-                    {/* Resize button */}
-                    <button
-                      onClick={() => handleResizeWidget(card.id)}
-                      className="absolute top-2 right-10 z-10 h-6 px-1.5 bg-muted text-muted-foreground rounded flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-muted/80"
-                      title={`Resize widget (current: ${getSizeLabel(card.id)})`}
-                      aria-label={`Resize ${card.id} widget`}
+                  );
+                })}
+
+                {/* If sidebar is disabled, also render sidebar cards in main */}
+                {!showSidebar && sidebarCards.map(card => {
+                  const content = renderCard(card.id);
+                  if (!content) return null;
+
+                  return (
+                    <div
+                      key={card.id}
+                      className={`col-span-1 sm:col-span-3 relative group ${
+                        dragOverWidget === card.id ? 'ring-2 ring-primary' : ''
+                      } ${draggedWidget === card.id ? 'opacity-50' : ''}`}
+                      draggable={isEditMode}
+                      onDragStart={(e) => handleDragStart(e, card.id)}
+                      onDragOver={(e) => handleDragOver(e, card.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, card.id)}
+                      onDragEnd={handleDragEnd}
                     >
-                      <Maximize2 className="w-3 h-3" />
-                      <span className="text-[10px] font-medium">{getSizeLabel(card.id)}</span>
-                    </button>
-                    {/* Hide button */}
-                    <button
-                      onClick={() => handleHideWidget(card.id)}
-                      className="absolute top-2 right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-destructive/90"
-                      title="Hide widget"
-                      aria-label={`Hide ${card.id} widget`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </>
-                )}
-                {content}
+                      {isEditMode && (
+                        <>
+                          <div className="absolute top-2 left-2 z-10 w-6 h-6 bg-muted text-muted-foreground rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md cursor-grab active:cursor-grabbing">
+                            <GripVertical className="w-4 h-4" />
+                          </div>
+                          <button
+                            onClick={() => handleHideWidget(card.id)}
+                            className="absolute top-2 right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-destructive/90"
+                            title="Hide widget"
+                            aria-label={`Hide ${card.id} widget`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                      {content}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })
-        }
-      </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* QuickLogForm modal */}
       {quickLogTask && (
@@ -2187,6 +2371,7 @@ export default function Dashboard() {
           availableWidgets={dashboardCards}
           onAddWidget={handleAddWidget}
           onClose={() => setShowWidgetGallery(false)}
+          sidebarEnabled={sidebarSettings.sidebarEnabled && !isMobileScreen()}
         />
       </div>
     </div>

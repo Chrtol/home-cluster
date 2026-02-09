@@ -13,30 +13,39 @@
  *   - id: unique identifier
  *   - label: display name
  *   - visible: default visibility
- *   - order: default position
- *   - size: 'xs' (1/4), 'small' (1/3), 'medium' (2/3), 'large' (full-width)
+ *   - order: default position within zone
+ *   - zone: 'sidebar' | 'main' - which layout zone the card belongs to
+ *   - size: 'small' (1/3), 'medium' (2/3), 'large' (full-width) - only applies to main zone
  *   - type: 'summary' (small stat cards) or 'content' (larger content cards)
  *   - interpolationMode: 'linear' | 'step' | 'none' (only for weight-related charts)
  */
 const DEFAULT_DASHBOARD_CARDS = [
-  // Hero section: Reptile status cards (3 cols) + Today timeline (1 col) = 4 cols
-  { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
-  { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-  // Bottom row: Recent Activity (2) + Weight Chart (1) + This Week (1) = 4 cols
-  { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
-  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
-  { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+  // Sidebar zone - tall widgets that stack independently
+  { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 0, zone: 'sidebar', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+  // Main zone - 3-column grid
+  { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+  { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 1, zone: 'main', size: 'medium', type: 'content', interpolationMode: 'linear' },
+  { id: 'week_summary', label: 'This Week', visible: true, order: 2, zone: 'main', size: 'small', type: 'content' },
+  { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, zone: 'main', size: 'small', type: 'content', config: { itemCount: 5 } },
   // Alternative widgets (hidden by default)
-  { id: 'today_summary', label: 'Today Summary', visible: false, order: 5, size: 'large', type: 'summary' },
-  { id: 'weekly_calendar', label: 'Weekly Calendar', visible: false, order: 6, size: 'large', type: 'content' },
-  { id: 'weight_trends', label: 'Weight Trends', visible: false, order: 7, size: 'xs', type: 'content', config: { timeRange: 90 } },
-  { id: 'reptile_cards', label: 'Your Reptiles (Legacy)', visible: false, order: 8, size: 'small', type: 'content' },
-  { id: 'recent_activity', label: 'Recent Activity (Full)', visible: false, order: 9, size: 'medium', type: 'content' },
+  { id: 'today_summary', label: 'Today Summary', visible: false, order: 4, zone: 'main', size: 'large', type: 'summary' },
+  { id: 'weekly_calendar', label: 'Weekly Calendar', visible: false, order: 5, zone: 'main', size: 'large', type: 'content' },
+  { id: 'weight_trends', label: 'Weight Trends', visible: false, order: 6, zone: 'main', size: 'small', type: 'content', config: { timeRange: 90 } },
+  { id: 'reptile_cards', label: 'Your Reptiles (Legacy)', visible: false, order: 7, zone: 'main', size: 'medium', type: 'content' },
+  { id: 'recent_activity', label: 'Recent Activity (Full)', visible: false, order: 8, zone: 'main', size: 'medium', type: 'content' },
   // Summary cards
-  { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 10, size: 'large', type: 'summary' },
-  { id: 'health_summary', label: 'Health Summary', visible: false, order: 11, size: 'large', type: 'summary' },
-  { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 12, size: 'large', type: 'summary' },
+  { id: 'weekly_summary', label: 'Weekly Summary', visible: false, order: 9, zone: 'main', size: 'large', type: 'summary' },
+  { id: 'health_summary', label: 'Health Summary', visible: false, order: 10, zone: 'main', size: 'large', type: 'summary' },
+  { id: 'schedule_summary', label: 'Schedule Summary', visible: false, order: 11, zone: 'main', size: 'large', type: 'summary' },
 ];
+
+/**
+ * Default sidebar settings
+ */
+const DEFAULT_SIDEBAR_SETTINGS = {
+  sidebarEnabled: true,
+  sidebarPosition: 'left', // 'left' | 'right'
+};
 
 export function getDashboardCardSettings() {
   const stored = localStorage.getItem('dashboard_cards');
@@ -53,9 +62,12 @@ export function getDashboardCardSettings() {
       .filter(card => validCardIds.has(card.id))
       .map(card => {
         const defaultCard = DEFAULT_DASHBOARD_CARDS.find(c => c.id === card.id);
+        // Migration: add zone property if missing
+        const zone = card.zone || defaultCard.zone || (card.id === 'today_timeline' ? 'sidebar' : 'main');
         return {
           ...card,
-          size: card.size || defaultCard.size,
+          zone,
+          size: card.zone === 'sidebar' ? undefined : (card.size || defaultCard.size),
           type: card.type || defaultCard.type,
           interpolationMode: card.interpolationMode || defaultCard.interpolationMode
         };
@@ -74,6 +86,30 @@ export function getDashboardCardSettings() {
     console.error('Failed to parse dashboard card settings', e);
     return DEFAULT_DASHBOARD_CARDS;
   }
+}
+
+/**
+ * Get sidebar settings from localStorage
+ * @returns {Object} Sidebar settings (sidebarEnabled, sidebarPosition)
+ */
+export function getSidebarSettings() {
+  const stored = localStorage.getItem('sidebar_settings');
+  if (!stored) return DEFAULT_SIDEBAR_SETTINGS;
+
+  try {
+    return { ...DEFAULT_SIDEBAR_SETTINGS, ...JSON.parse(stored) };
+  } catch (e) {
+    console.error('Failed to parse sidebar settings', e);
+    return DEFAULT_SIDEBAR_SETTINGS;
+  }
+}
+
+/**
+ * Save sidebar settings to localStorage
+ * @param {Object} settings - Sidebar settings to save
+ */
+export function saveSidebarSettings(settings) {
+  localStorage.setItem('sidebar_settings', JSON.stringify(settings));
 }
 
 export function saveDashboardCardSettings(cards) {
@@ -423,21 +459,24 @@ export function resetProfileToDefault(profileId) {
   // Get the appropriate default cards based on profile
   let defaultCards;
   if (profileId === 'mobile') {
+    // Mobile: All in main zone, stacked vertically (sidebar disabled on mobile)
     defaultCards = [
-      { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
-      { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-      { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'large', type: 'content', config: { itemCount: 5 } },
-      { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'large', type: 'content', interpolationMode: 'linear' },
-      { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'large', type: 'content' },
+      { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+      { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, zone: 'main', size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+      { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, zone: 'main', size: 'large', type: 'content', config: { itemCount: 5 } },
+      { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, zone: 'main', size: 'large', type: 'content', interpolationMode: 'linear' },
+      { id: 'week_summary', label: 'This Week', visible: true, order: 4, zone: 'main', size: 'large', type: 'content' },
     ];
   } else {
-    // Standard and compact use same defaults with different item counts
+    // Standard and compact use zone-based layout
     defaultCards = [
-      { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
-      { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-      { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: profileId === 'compact' ? 3 : 5 } },
-      { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
-      { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+      // Sidebar zone
+      { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 0, zone: 'sidebar', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+      // Main zone - 3-col grid
+      { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+      { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 1, zone: 'main', size: 'medium', type: 'content', interpolationMode: 'linear' },
+      { id: 'week_summary', label: 'This Week', visible: true, order: 2, zone: 'main', size: 'small', type: 'content' },
+      { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, zone: 'main', size: 'small', type: 'content', config: { itemCount: profileId === 'compact' ? 3 : 5 } },
     ];
   }
 
@@ -505,13 +544,13 @@ export function getDisplayProfiles() {
       id: 'standard',
       name: 'Standard',
       dashboard_cards: [
-        // Hero row: Reptile status cards (3 cols) + Today timeline (1 col) = 4 cols
-        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
-        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-        // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
-        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
-        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
-        { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+        // Sidebar zone
+        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 0, zone: 'sidebar', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+        // Main zone - 3-col grid
+        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 1, zone: 'main', size: 'medium', type: 'content', interpolationMode: 'linear' },
+        { id: 'week_summary', label: 'This Week', visible: true, order: 2, zone: 'main', size: 'small', type: 'content' },
+        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, zone: 'main', size: 'small', type: 'content', config: { itemCount: 5 } },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -525,13 +564,13 @@ export function getDisplayProfiles() {
       id: 'compact',
       name: 'Compact',
       dashboard_cards: [
-        // Hero row: Reptile status cards (3 cols) + Today timeline (1 col) = 4 cols
-        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
-        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-        // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
-        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 3 } },
-        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
-        { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+        // Sidebar zone
+        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 0, zone: 'sidebar', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+        // Main zone - 3-col grid
+        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 1, zone: 'main', size: 'medium', type: 'content', interpolationMode: 'linear' },
+        { id: 'week_summary', label: 'This Week', visible: true, order: 2, zone: 'main', size: 'small', type: 'content' },
+        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, zone: 'main', size: 'small', type: 'content', config: { itemCount: 3 } },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -545,12 +584,12 @@ export function getDisplayProfiles() {
       id: 'mobile',
       name: 'Mobile',
       dashboard_cards: [
-        // Mobile: Stack vertically
-        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
-        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'large', type: 'content', config: { itemCount: 5 } },
-        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'large', type: 'content', interpolationMode: 'linear' },
-        { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'large', type: 'content' },
+        // Mobile: All in main zone, stacked vertically (sidebar disabled on mobile)
+        { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+        { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, zone: 'main', size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+        { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, zone: 'main', size: 'large', type: 'content', config: { itemCount: 5 } },
+        { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, zone: 'main', size: 'large', type: 'content', interpolationMode: 'linear' },
+        { id: 'week_summary', label: 'This Week', visible: true, order: 4, zone: 'main', size: 'large', type: 'content' },
       ],
       statistics_charts: DEFAULT_STATISTICS_CHARTS,
       chart_settings: DEFAULT_CHART_SETTINGS,
@@ -577,13 +616,13 @@ export function getDisplayProfiles() {
         id: 'standard',
         name: 'Standard',
         dashboard_cards: [
-          // Hero row: Reptile status cards (3 cols) + Today timeline (1 col) = 4 cols
-          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
-          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-          // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
-          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 5 } },
-          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
-          { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+          // Sidebar zone
+          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 0, zone: 'sidebar', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+          // Main zone - 3-col grid
+          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 1, zone: 'main', size: 'medium', type: 'content', interpolationMode: 'linear' },
+          { id: 'week_summary', label: 'This Week', visible: true, order: 2, zone: 'main', size: 'small', type: 'content' },
+          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, zone: 'main', size: 'small', type: 'content', config: { itemCount: 5 } },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,
@@ -600,13 +639,13 @@ export function getDisplayProfiles() {
         id: 'compact',
         name: 'Compact',
         dashboard_cards: [
-          // Hero row: Reptile status cards (3 cols) + Today timeline (1 col) = 4 cols
-          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'medium', type: 'content', config: { showAge: true, showWeight: true } },
-          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'xs', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-          // Bottom row: Recent Activity (2) + Weight Trends (1) + This Week (1) = 4 cols
-          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'small', type: 'content', config: { itemCount: 3 } },
-          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'xs', type: 'content', interpolationMode: 'linear' },
-          { id: 'week_summary', label: 'This Week', visible: false, order: 4, size: 'xs', type: 'content' },
+          // Sidebar zone
+          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 0, zone: 'sidebar', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+          // Main zone - 3-col grid
+          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 1, zone: 'main', size: 'medium', type: 'content', interpolationMode: 'linear' },
+          { id: 'week_summary', label: 'This Week', visible: true, order: 2, zone: 'main', size: 'small', type: 'content' },
+          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 3, zone: 'main', size: 'small', type: 'content', config: { itemCount: 3 } },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,
@@ -623,12 +662,12 @@ export function getDisplayProfiles() {
         id: 'mobile',
         name: 'Mobile',
         dashboard_cards: [
-          // Mobile: Stack vertically
-          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
-          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
-          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, size: 'large', type: 'content', config: { itemCount: 5 } },
-          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, size: 'large', type: 'content', interpolationMode: 'linear' },
-          { id: 'week_summary', label: 'This Week', visible: true, order: 4, size: 'large', type: 'content' },
+          // Mobile: All in main zone, stacked vertically (sidebar disabled on mobile)
+          { id: 'reptile_status_cards', label: 'Reptile Status Cards', visible: true, order: 0, zone: 'main', size: 'large', type: 'content', config: { showAge: true, showWeight: true } },
+          { id: 'today_timeline', label: "Today's Schedule", visible: true, order: 1, zone: 'main', size: 'large', type: 'content', config: { filterTypes: ['feeding', 'misting', 'health'], autoScrollToCurrent: true, showCompletedSection: true } },
+          { id: 'compact_recent_activity', label: 'Recent Activity (Compact)', visible: true, order: 2, zone: 'main', size: 'large', type: 'content', config: { itemCount: 5 } },
+          { id: 'weight_chart', label: 'Weight Tracking', visible: true, order: 3, zone: 'main', size: 'large', type: 'content', interpolationMode: 'linear' },
+          { id: 'week_summary', label: 'This Week', visible: true, order: 4, zone: 'main', size: 'large', type: 'content' },
         ],
         statistics_charts: DEFAULT_STATISTICS_CHARTS,
         chart_settings: DEFAULT_CHART_SETTINGS,

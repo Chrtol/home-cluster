@@ -15,10 +15,11 @@ import ReptileAvatar from '../ReptileAvatar';
  *
  * Props:
  * - config: Widget configuration (filterTypes, autoScrollToCurrent, showCompletedSection)
- * - size: Widget size ('xs', 'small', 'medium', 'large')
+ * - size: Widget size ('small', 'medium', 'large')
  * - onQuickLog: Handler to open quick-log form (from Dashboard)
+ * - inSidebar: boolean - Whether this widget is in the sidebar zone (no max-height constraint)
  */
-const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
+const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSidebar = false }) => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -399,7 +400,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog }) => {
 
       {/* Timeline content */}
       {!allDone && (
-        <div className="max-h-96 overflow-y-auto">
+        <div className={inSidebar ? "overflow-y-auto" : "max-h-96 overflow-y-auto"}>
           {/* Completed tasks section */}
           {showCompletedSection && completedSchedules.length > 0 && (
             <div className="border-b border-border">

@@ -1,4 +1,5 @@
-import { X, Plus, Check, Calendar, TrendingUp, Activity, Scale, Droplets, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { X, Plus, Check, Calendar, TrendingUp, Activity, Scale, Droplets, Clock, PanelLeft, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -7,15 +8,18 @@ import { motion, AnimatePresence } from 'framer-motion';
  * Shows available widgets with:
  * - Visual preview/icon
  * - Name and description
+ * - Zone selector (sidebar or main)
  * - Add button (disabled if already visible)
  *
  * Props:
  * - isOpen: boolean - Whether modal is open
  * - availableWidgets: array - List of all widgets with visibility status
- * - onAddWidget: function(widgetId) - Handler for adding a widget
+ * - onAddWidget: function(widgetId, zone) - Handler for adding a widget to a zone
  * - onClose: function - Close modal handler
+ * - sidebarEnabled: boolean - Whether sidebar zone is available
  */
-const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
+const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose, sidebarEnabled = true }) => {
+  const [selectedZones, setSelectedZones] = useState({}); // { widgetId: 'sidebar' | 'main' }
   if (!isOpen) return null;
 
   // Widget metadata for display
@@ -83,7 +87,21 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
   };
 
   const handleAddWidget = (widgetId) => {
-    onAddWidget(widgetId);
+    const zone = selectedZones[widgetId] || 'main';
+    onAddWidget(widgetId, zone);
+    // Reset zone selection for this widget
+    setSelectedZones(prev => {
+      const next = { ...prev };
+      delete next[widgetId];
+      return next;
+    });
+  };
+
+  const toggleZone = (widgetId) => {
+    setSelectedZones(prev => ({
+      ...prev,
+      [widgetId]: prev[widgetId] === 'sidebar' ? 'main' : 'sidebar'
+    }));
   };
 
   return (
@@ -157,16 +175,36 @@ const WidgetGallery = ({ isOpen, availableWidgets, onAddWidget, onClose }) => {
                     {isVisible ? (
                       <div className="flex items-center gap-2 text-xs text-primary font-medium">
                         <Check size={14} />
-                        Active
+                        Active ({widget.zone || 'main'})
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleAddWidget(widget.id)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
-                      >
-                        <Plus size={14} />
-                        Add Widget
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {/* Zone selector */}
+                        {sidebarEnabled && (
+                          <button
+                            onClick={() => toggleZone(widget.id)}
+                            className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-lg border transition-colors ${
+                              (selectedZones[widget.id] || 'main') === 'sidebar'
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/50'
+                            }`}
+                            title={`Add to ${(selectedZones[widget.id] || 'main') === 'sidebar' ? 'sidebar' : 'main area'}`}
+                          >
+                            {(selectedZones[widget.id] || 'main') === 'sidebar' ? (
+                              <><PanelLeft size={12} /> Sidebar</>
+                            ) : (
+                              <><LayoutGrid size={12} /> Main</>
+                            )}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleAddWidget(widget.id)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
+                        >
+                          <Plus size={14} />
+                          Add
+                        </button>
+                      </div>
                     )}
                   </motion.div>
                 );
