@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 12 (Polish & Mobile) |
-| Phase Status | IN PROGRESS (1/? plans) |
+| Phase Status | IN PROGRESS (2/? plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 12 - In Progress
@@ -65,6 +65,7 @@ Phase 11 (Forms & Tables):
 
 Phase 12 (Polish & Mobile):
 12-01: Complete (consistency components - PageHeader, LoadingState, ErrorState, useMediaQuery)
+12-02: Complete (dashboard customization bug fixes - sidebar zone visibility, completed section persistence)
 ```
 
 Progress bar:
@@ -74,7 +75,7 @@ Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
 Phase 11: [============] 4/4
-Phase 12: [█          ] 1/?
+Phase 12: [██         ] 2/?
 ```
 
 ## Milestone Scope
@@ -168,6 +169,9 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | Dialog component for forms | Replace inline modal divs with proper Dialog for better accessibility and UX |
 | 2026-02-09 | Table component for data display | Replace HTML tables with shadcn/ui Table for consistent styling and hover states |
 | 2026-02-09 | Tabs component for navigation | Replace custom tab implementation with shadcn/ui Tabs for consistent styling |
+| 2026-02-09 | Sidebar zone empty state with drop zone | Show dashed border drop zone when sidebar has no cards in edit mode for clear visual feedback |
+| 2026-02-09 | Timeline expanded groups persistence | Persist Today card completed section state in localStorage for consistent UX across sessions |
+| 2026-02-09 | Auto-expand completed in sidebar | Default to expanded completed section when Today widget is in sidebar for better vertical space usage |
 
 ## Reference Documents
 
@@ -179,23 +183,23 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 12 plan 01 is complete (consistency components). Ready for next Phase 12 plans.
+Phase 12 plan 02 is complete (dashboard customization bug fixes). Ready for next Phase 12 plans.
 
 Continue with remaining Phase 12 polish and mobile optimization plans.
 
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 12-01 complete - consistency components
-**Resume with:** Phase 12 plan 02
+**Stopped at:** Phase 12-02 complete - dashboard customization bug fixes
+**Resume with:** Phase 12 plan 03
 
 **Recent activity:**
+- 12-02: Dashboard customization bug fixes (complete) - sidebar zone visibility, completed section persistence
 - 12-01: Consistency components (complete) - PageHeader, LoadingState, ErrorState, useMediaQuery
 - 11-04: Remaining forms (complete) - ScheduleTemplateForm, SupplementRotations, NotificationHistory
 - 11-03: FeedingLog redesign (complete) - useFieldArray for dynamic items, useWatch for reactive updates
-- 11-02: FoodManagement redesign (complete) - Table, Dialog, Tabs components with Badge visual hierarchy
 
-**Phase 12 status:** IN PROGRESS - 1/? plans complete (consistency components created)
+**Phase 12 status:** IN PROGRESS - 2/? plans complete (consistency components, dashboard bug fixes)
 
 ---
-*State updated: 2026-02-09 - Phase 12-01 complete*
+*State updated: 2026-02-09 - Phase 12-02 complete*

@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import NotificationBell from './NotificationBell'
+import { cn } from '@/lib/utils'
 
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
@@ -452,11 +453,13 @@ export default function Layout({ user, onLogout }) {
           {/* Dashboard */}
           <Link
             to="/"
-            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+            className={cn(
+              "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 flex-1",
+              "active:scale-95 transition-transform",
               location.pathname === '/'
                 ? 'text-primary'
                 : 'text-muted-foreground'
-            }`}
+            )}
           >
             <Home size={22} />
             <span className="text-xs mt-1 truncate">Dashboard</span>
@@ -465,11 +468,13 @@ export default function Layout({ user, onLogout }) {
           {/* Schedules (expandable) */}
           <button
             onClick={() => setMobileSchedulesMenuOpen(!mobileSchedulesMenuOpen)}
-            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+            className={cn(
+              "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 flex-1",
+              "active:scale-95 transition-transform",
               schedulesItems.some(item => location.pathname === item.path)
                 ? 'text-primary'
                 : 'text-muted-foreground'
-            }`}
+            )}
           >
             <Calendar size={22} />
             <span className="text-xs mt-1 truncate">Schedules</span>
@@ -478,7 +483,7 @@ export default function Layout({ user, onLogout }) {
           {/* Center Track Button */}
           <button
             onClick={() => setTrackMenuOpen(!trackMenuOpen)}
-            className="relative -mt-6 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 text-white shadow-lg"
+            className="relative -mt-6 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 text-white shadow-lg active:scale-95 transition-transform"
           >
             <Plus size={28} strokeWidth={3} />
           </button>
@@ -486,11 +491,13 @@ export default function Layout({ user, onLogout }) {
           {/* Reptiles */}
           <Link
             to="/reptiles"
-            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+            className={cn(
+              "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 flex-1",
+              "active:scale-95 transition-transform",
               location.pathname === '/reptiles'
                 ? 'text-primary'
                 : 'text-muted-foreground'
-            }`}
+            )}
           >
             <List size={22} />
             <span className="text-xs mt-1 truncate">Reptiles</span>
@@ -499,11 +506,13 @@ export default function Layout({ user, onLogout }) {
           {/* Statistics */}
           <Link
             to="/stats"
-            className={`flex flex-col items-center px-2 py-2 min-w-0 flex-1 ${
+            className={cn(
+              "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 flex-1",
+              "active:scale-95 transition-transform",
               location.pathname === '/stats'
                 ? 'text-primary'
                 : 'text-muted-foreground'
-            }`}
+            )}
           >
             <BarChart3 size={22} />
             <span className="text-xs mt-1 truncate">Statistics</span>
