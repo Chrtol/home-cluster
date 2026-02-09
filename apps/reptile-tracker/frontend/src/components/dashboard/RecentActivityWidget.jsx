@@ -47,13 +47,14 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         axios.get('/api/reptiles')
       ]);
 
-      // Create reptile lookup map for avatar URLs
+      // Create reptile lookup map for avatar URLs and border colors
       const reptilesMap = {};
       (reptilesRes.data || []).forEach(r => {
         reptilesMap[r.id] = {
           id: r.id,
           name: r.name,
-          avatar_photo_url: r.avatar_photo_url
+          avatar_photo_url: r.avatar_photo_url,
+          avatar_border_color: r.avatar_border_color
         };
       });
 
@@ -78,7 +79,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
           reptile: reptilesMap[f.reptile_id] || (f.reptile ? {
             id: f.reptile.id,
             name: f.reptile.name,
-            avatar_photo_url: f.reptile.avatar_photo_url
+            avatar_photo_url: f.reptile.avatar_photo_url,
+            avatar_border_color: f.reptile.avatar_border_color
           } : null),
           timestamp: f.fed_at,
           summary: summary + supplementText,
@@ -105,7 +107,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
           reptile: reptileFromMap || {
             id: w.reptile_id,
             name: w.reptile_name,
-            avatar_photo_url: null
+            avatar_photo_url: null,
+            avatar_border_color: null
           },
           timestamp: w.measured_at,
           summary: 'Weight recorded',
