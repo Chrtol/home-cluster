@@ -7,7 +7,6 @@ import ReptileAvatar from "../components/ReptileAvatar";
 import ReptileNameWithAvatar from "../components/ReptileNameWithAvatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import PageHeader from "../components/PageHeader";
 import LoadingState from "../components/LoadingState";
 
 function Calendar() {
@@ -633,38 +632,34 @@ function Calendar() {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 mb-6">
-        {/* Header with title, category filters, and action buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <PageHeader
-            title="Calendar"
-            className="mb-0"
-            actions={
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowSchedules(!showSchedules)}
-                  className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <List size={20} />
-                  <span className="hidden sm:inline">Manage Schedules</span>
-                  <span className="sm:hidden">Schedules</span>
-                  {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
-                <button
-                  onClick={() => navigate("/schedule-create")}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  <Plus size={20} />
-                  <span className="hidden sm:inline">Add Schedule</span>
-                  <span className="sm:hidden">Add</span>
-                </button>
-              </div>
-            }
-          />
+      {/* Header row with title and action buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Calendar</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSchedules(!showSchedules)}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <List size={20} />
+            <span className="hidden sm:inline">Manage Schedules</span>
+            <span className="sm:hidden">Schedules</span>
+            {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          <button
+            onClick={() => navigate("/schedule-create")}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <Plus size={20} />
+            <span className="hidden sm:inline">Add Schedule</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        </div>
+      </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Category Filters */}
-            <div className="flex flex-wrap items-center gap-1.5">
+      {/* Filters row */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+        {/* Category Filters */}
+        <div className="flex flex-wrap items-center gap-1.5">
               <Badge
                 variant={visibleCategories.has('feeding') ? "default" : "outline"}
                 className="cursor-pointer hover:bg-primary/90"
@@ -701,9 +696,6 @@ function Calendar() {
                 {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
               </Badge>
             </div>
-
-          </div>
-        </div>
 
         {/* Reptile Filters */}
         {reptiles.length > 0 && (

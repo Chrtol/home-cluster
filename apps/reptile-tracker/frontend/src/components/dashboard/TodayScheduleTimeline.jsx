@@ -24,11 +24,14 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Track if we loaded from localStorage to avoid auto-expand overriding saved state
+  const loadedFromStorageRef = useRef(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {
     // Load saved state or default to 'completed' expanded when in sidebar
     const saved = localStorage.getItem('timeline_expanded_groups');
     if (saved) {
       try {
+        loadedFromStorageRef.current = true;
         return new Set(JSON.parse(saved));
       } catch (e) {
         console.error('Failed to parse timeline expanded groups', e);
@@ -103,8 +106,9 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
   }, [expandedGroups]);
 
   // Auto-expand completed when moving to sidebar if nothing is expanded
+  // Skip if we loaded state from localStorage (respect user's saved preference)
   useEffect(() => {
-    if (inSidebar && expandedGroups.size === 0) {
+    if (inSidebar && expandedGroups.size === 0 && !loadedFromStorageRef.current) {
       setExpandedGroups(new Set(['completed']));
     }
   }, [inSidebar]);

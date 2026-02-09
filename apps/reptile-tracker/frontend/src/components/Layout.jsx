@@ -421,11 +421,20 @@ export default function Layout({ user, onLogout }) {
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-40">
+        <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)}></div>
-          <div className="absolute inset-y-0 right-0 w-64 bg-card shadow-xl">
+          <div className="absolute inset-y-0 right-0 w-64 bg-card border-l border-border shadow-xl">
             <div className="flex flex-col h-full">
-              <div className="px-4 py-6 border-b border-border">
+              <div className="px-4 py-4 border-b border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-semibold text-foreground">Menu</span>
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="p-2 -mr-2 rounded-lg text-muted-foreground hover:bg-secondary active:scale-95 transition-all focus-ring"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     <span className="text-lg font-medium text-primary">
@@ -608,7 +617,6 @@ export default function Layout({ user, onLogout }) {
                   <div className="font-semibold text-foreground">Log Feeding</div>
                   <div className="text-xs text-muted-foreground">Record food and supplements</div>
                 </div>
-                <span className="text-xs text-muted-foreground opacity-60">F</span>
               </Link>
               <Link
                 to="/health-log"
@@ -620,7 +628,6 @@ export default function Layout({ user, onLogout }) {
                   <div className="font-semibold text-foreground">Log Health</div>
                   <div className="text-xs text-muted-foreground">Record health and weight data</div>
                 </div>
-                <span className="text-xs text-muted-foreground opacity-60">H</span>
               </Link>
               <Link
                 to="/misting-log"
@@ -632,7 +639,6 @@ export default function Layout({ user, onLogout }) {
                   <div className="font-semibold text-foreground">Log Misting</div>
                   <div className="text-xs text-muted-foreground">Record misting and humidity</div>
                 </div>
-                <span className="text-xs text-muted-foreground opacity-60">M</span>
               </Link>
             </div>
           </>

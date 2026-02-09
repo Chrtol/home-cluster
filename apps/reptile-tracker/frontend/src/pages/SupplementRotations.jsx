@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import PageHeader from '@/components/PageHeader';
+import ReptileNameWithAvatar from '@/components/ReptileNameWithAvatar';
 
 // Zod schema for rotation form
 const rotationSchema = z.object({
@@ -562,7 +563,16 @@ function SupplementRotations() {
               ) : (
                 filteredRotations.map(rotation => (
                   <TableRow key={rotation.id}>
-                    <TableCell className="font-medium pl-4 py-3">{getReptileName(rotation.reptile_id)}</TableCell>
+                    <TableCell className="font-medium pl-4 py-3">
+                      {(() => {
+                        const reptile = reptiles.find(r => r.id === rotation.reptile_id);
+                        return reptile ? (
+                          <ReptileNameWithAvatar reptile={reptile} size="sm" />
+                        ) : (
+                          <span className="text-muted-foreground">Unknown</span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="py-3">
                       <Badge variant="default">{getSupplementName(rotation.supplement_id)}</Badge>
                     </TableCell>
