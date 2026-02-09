@@ -17,11 +17,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 |--------|-------|
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
-| Current Phase | 10 (Calendar & Statistics) |
-| Phase Status | COMPLETE (3/3 plans) |
+| Current Phase | 11 (Forms & Tables) |
+| Phase Status | IN PROGRESS (1/4 plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 10 - In Progress
+Progress: Phase 11 - In Progress
 ```
 Phase 7 (Foundation):
 07-01: Complete (shadcn/ui foundation)
@@ -56,6 +56,9 @@ Phase 10 (Calendar & Statistics):
 10-01: Complete (calendar quick summary, denser events, badge filters)
 10-02: Complete (statistics stat cards with trends, chart tooltips, badge filters)
 10-03: Complete (UAT polish - removed calendar header, badge outline styling, statistics active variants)
+
+Phase 11 (Forms & Tables):
+11-01: Complete (form components & simple forms - react-hook-form + Zod, MistingLog, HealthLog)
 ```
 
 Progress bar:
@@ -64,7 +67,7 @@ Phase 7:  [========] 3/3
 Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
-Phase 11: [           ] 0/?
+Phase 11: [===        ] 1/4
 Phase 12: [           ] 0/?
 ```
 
@@ -82,7 +85,7 @@ Phase 7:  Foundation      Complete (3/3 plans)
 Phase 8:  Dashboard       Complete (16/16 plans)
 Phase 9:  Reptile Pages   Complete (4/4 plans)
 Phase 10: Calendar/Stats  Complete (3/3 plans)
-Phase 11: Forms/Tables    Not started
+Phase 11: Forms/Tables    In Progress (1/4 plans)
 Phase 12: Polish/Mobile   Not started
 ```
 
@@ -150,6 +153,9 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | Explicit badge active variants | weightActive, feedingActive, mistingActive, healthActive variants to avoid tailwind-merge conflicts |
 | 2026-02-09 | Muted badge outline styling | bg-muted/30, border-muted-foreground/30 for subtle inactive appearance |
 | 2026-02-09 | Calendar summary header removed | UAT feedback: redundant with existing calendar data display |
+| 2026-02-09 | react-hook-form + Zod for forms | Established validation pattern with FormField for consistent form UX |
+| 2026-02-09 | Conditional Zod validation with .refine() | Enables type-specific validation (weight vs health) in single schema |
+| 2026-02-09 | form.watch() for conditional rendering | Real-time field updates based on form state (log_type, record_type) |
 
 ## Reference Documents
 
@@ -161,7 +167,7 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 10 is complete (2/2 plans). Ready to proceed to Phase 11 (Forms & Tables).
+Phase 11 is in progress (1/4 plans). Ready to continue with 11-02 (FeedingLog redesign).
 
 ```
 /gsd:execute-phase 11
@@ -170,18 +176,18 @@ Phase 10 is complete (2/2 plans). Ready to proceed to Phase 11 (Forms & Tables).
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 10 Plan 3 complete - UAT polish fixes
-**Resume file:** `.planning/phases/10-calendar-statistics/10-03-SUMMARY.md`
+**Stopped at:** Phase 11 Plan 1 complete - Form components and simple forms
+**Resume file:** `.planning/phases/11-forms-tables/11-01-SUMMARY.md`
 
 **Recent activity:**
+- 11-01: Form components & simple forms (complete) - react-hook-form + Zod patterns, MistingLog and HealthLog redesigned
 - 10-03: UAT polish fixes (complete) - Removed calendar header, improved badge outline styling, explicit statistics active variants
 - 10-02: Statistics enhancements (complete) - Compact stat cards with trends, CustomTooltip, badge filters for data visibility and time range
 - 10-01: Calendar improvements (complete) - Quick day summary header, 3 events/cell, badge-style filters
 - 09-04: Photo gallery density (complete) - 5-column grid on lg screens, badge-style category filters, compact upload button
 - 09-03: Compact tab content (complete) - Tighter spacing (space-y-1.5, p-2.5), Badge components for metadata
-- 09-02: Reptile detail quick stats (complete) - Badge-based quick stats for age, feeding, weight, shed
 
-**Phase 10 status:** COMPLETE - 3/3 plans complete (calendar, statistics, and UAT polish all done)
+**Phase 11 status:** IN PROGRESS - 1/4 plans complete (form components done, FeedingLog next)
 
 ---
-*State updated: 2026-02-09 - Phase 10 Plan 3 complete*
+*State updated: 2026-02-09 - Phase 11 Plan 1 complete*
