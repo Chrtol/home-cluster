@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, RefreshCw, Check } from 'lucide-react';
 import { getDayNames, getDayNumbers } from '../utils/dateFormatting';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -547,6 +547,7 @@ function SupplementRotations() {
                 <TableHead>Category</TableHead>
                 <TableHead>Pattern</TableHead>
                 <TableHead>Priority</TableHead>
+                <TableHead className="text-center">Exclusive</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right pr-4">Actions</TableHead>
               </TableRow>
@@ -554,7 +555,7 @@ function SupplementRotations() {
             <TableBody>
               {filteredRotations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8 pl-4">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8 pl-4">
                     No rotations found. Click "Add Rotation" to create one.
                   </TableCell>
                 </TableRow>
@@ -574,6 +575,11 @@ function SupplementRotations() {
                     </TableCell>
                     <TableCell className="text-sm py-3">{formatPattern(rotation)}</TableCell>
                     <TableCell className="py-3">{rotation.priority}</TableCell>
+                    <TableCell className="text-center py-3">
+                      {rotation.is_exclusive && (
+                        <Check size={18} className="text-primary mx-auto" />
+                      )}
+                    </TableCell>
                     <TableCell className="py-3">
                       {rotation.enabled ? (
                         <Badge variant="default" className="bg-green-600">Enabled</Badge>
