@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 12 (Polish & Mobile) |
-| Phase Status | IN PROGRESS (6/? plans) |
+| Phase Status | IN PROGRESS (9/? plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 12 - In Progress
@@ -68,8 +68,11 @@ Phase 12 (Polish & Mobile):
 12-02: Complete (dashboard customization bug fixes - sidebar zone visibility, completed section persistence)
 12-03: Complete (mobile touch targets & feedback - 44px WCAG targets, scale animations)
 12-07: Complete (Track menu keyboard shortcuts - F/M/H quick navigation with visual hints)
+12-04: Complete (consistency batch 1 - ReptileList, FoodManagement, Statistics, Calendar with PageHeader)
+12-05: Complete (consistency batch 2 - ScheduleTemplates, SupplementRotations, ScheduleDetails, HouseholdSettings)
 12-08: Complete (avatar border colors & component usage - ReptileNameWithAvatar in detail pages)
 12-09: Complete (EmptyState component - reusable empty states with icons, messages, actions)
+12-10: Complete (page transitions & focus indicators - 150ms fade, focus-visible accessibility)
 ```
 
 Progress bar:
@@ -79,7 +82,7 @@ Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
 Phase 11: [============] 4/4
-Phase 12: [██████     ] 6/?
+Phase 12: [█████████  ] 9/?
 ```
 
 ## Milestone Scope
@@ -185,6 +188,9 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | EmptyState component with compact mode | Reusable component for consistent empty states - supports icon, title, message, action button, compact mode for widgets |
 | 2026-02-09 | Conditional actions in empty states | Action buttons only shown when contextually appropriate (e.g., not shown in filtered views) |
 | 2026-02-09 | Contextual empty state icons | Each empty state uses appropriate icon (Calendar, Activity, Inbox, Utensils, Pill) for visual recognition |
+| 2026-02-09 | Page transitions 150ms fade | Framer Motion AnimatePresence with 150ms easeOut for subtle, fast route transitions |
+| 2026-02-09 | focus-visible over focus | Focus indicators only show on keyboard navigation, not mouse clicks for better UX |
+| 2026-02-09 | focus-ring utility class | Consistent ring-2 ring-primary styling applied via utility class to custom interactive elements |
 
 ## Reference Documents
 
@@ -196,23 +202,23 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 12 plan 09 is complete (EmptyState component). Ready for next Phase 12 plans.
+Phase 12 plan 05 is complete (consistency batch 2). Ready for next Phase 12 plans.
 
 Continue with remaining Phase 12 polish and mobile optimization plans.
 
 ## Session Continuity
 
 **Last session:** 2026-02-09
-**Stopped at:** Phase 12-09 complete - EmptyState component
-**Resume with:** Phase 12 plan 10 (or next available plan)
+**Stopped at:** Phase 12-10 complete - page transitions & focus indicators
+**Resume with:** Phase 12 plan 11 (or next available plan)
 
 **Recent activity:**
+- 12-10: Page transitions & focus indicators (complete) - 150ms fade, focus-visible accessibility
 - 12-09: EmptyState component (complete) - reusable empty states with icons, messages, actions
+- 12-08: Avatar border colors & component usage (complete) - ReptileNameWithAvatar in detail pages
 - 12-07: Track menu keyboard shortcuts (complete) - F/M/H quick navigation with visual hints
-- 12-03: Mobile touch targets & feedback (complete) - 44px WCAG targets, scale animations
-- 12-02: Dashboard customization bug fixes (complete) - sidebar zone visibility, completed section persistence
 
-**Phase 12 status:** IN PROGRESS - 5/? plans complete (consistency, dashboard bug fixes, mobile touch, keyboard shortcuts, empty states)
+**Phase 12 status:** IN PROGRESS - 9/? plans complete (consistency components, dashboard bug fixes, mobile touch, consistency batches 1-2, keyboard shortcuts, avatars, empty states, page transitions)
 
 ---
-*State updated: 2026-02-09 - Phase 12-09 complete*
+*State updated: 2026-02-09 - Phase 12-05 complete*
