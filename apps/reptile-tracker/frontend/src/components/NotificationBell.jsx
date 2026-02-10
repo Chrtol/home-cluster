@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import axios from 'axios';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import NotificationDropdown from './NotificationDropdown';
 
 const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState(null);
-  const dropdownRef = useRef(null);
-  const buttonRef = useRef(null);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -19,23 +17,6 @@ const NotificationBell = () => {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Close dropdown on outside click
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
   const fetchUnreadCount = async () => {
     try {
       const response = await axios.get('/api/notifications/unread-count');
@@ -45,48 +26,37 @@ const NotificationBell = () => {
     }
   };
 
-  const handleToggle = () => {
-    if (!isOpen && buttonRef.current) {
-      // Get button position when opening
-      const rect = buttonRef.current.getBoundingClientRect();
-      setButtonPosition({
-        top: rect.bottom + 8, // 8px below the button
-        left: rect.left,
-        right: window.innerWidth - rect.right,
-      });
-    }
-    setIsOpen(!isOpen);
-  };
-
   const handleNotificationRead = () => {
     // Refresh unread count when a notification is marked as read
     fetchUnreadCount();
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        ref={buttonRef}
-        onClick={handleToggle}
-        className="relative p-2 text-muted-foreground hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
-        aria-label="Notifications"
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors focus-ring"
+          aria-label="Notifications"
+        >
+          <Bell className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-destructive-foreground bg-destructive rounded-full">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 sm:w-96 p-0"
+        align="end"
+        sideOffset={8}
       >
-        <Bell className="w-6 h-6" />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      {isOpen && buttonPosition && (
         <NotificationDropdown
           onClose={() => setIsOpen(false)}
           onNotificationRead={handleNotificationRead}
-          position={buttonPosition}
         />
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

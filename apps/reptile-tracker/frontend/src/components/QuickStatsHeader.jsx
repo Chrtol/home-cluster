@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Utensils, Droplets, Heart, Clock } from 'lucide-react'
+import axios from 'axios'
 
 /**
  * QuickStatsHeader - Displays "due today" stats in the persistent header
@@ -13,11 +14,28 @@ export default function QuickStatsHeader() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/dashboard')
-        if (response.ok) {
-          const data = await response.json()
-          setWeeklyInstances(data.weekly_instances || [])
+        // Calculate week range (same as Dashboard)
+        const today = new Date()
+        const weekStart = new Date(today)
+        weekStart.setDate(today.getDate() - today.getDay())
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+
+        const toLocalISODate = (date) => {
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
         }
+
+        const response = await axios.get('/api/bulk/dashboard', {
+          params: {
+            week_start: toLocalISODate(weekStart),
+            week_end: toLocalISODate(weekEnd)
+          }
+        })
+
+        setWeeklyInstances(response.data.weekly_instances || [])
       } catch (error) {
         console.error('Failed to fetch quick stats:', error)
       } finally {

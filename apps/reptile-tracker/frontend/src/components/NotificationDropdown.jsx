@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Check, CheckCheck, ExternalLink, Bell } from 'lucide-react';
+import { Check, CheckCheck, ExternalLink, Bell, Utensils, Scale, Activity, Calendar, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
-const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
+const NotificationDropdown = ({ onClose, onNotificationRead }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -70,71 +70,66 @@ const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'schedule_reminder':
-        return '📅';
+        return <Calendar className="w-5 h-5 text-primary" />;
       case 'overdue_alert':
-        return '⚠️';
+        return <AlertTriangle className="w-5 h-5 text-destructive" />;
       case 'feeding_logged':
-        return '🍽️';
+        return <Utensils className="w-5 h-5 text-primary" />;
       case 'weight_logged':
-        return '⚖️';
+        return <Scale className="w-5 h-5 text-purple-500" />;
       case 'health_event':
-        return '🏥';
+        return <Activity className="w-5 h-5 text-green-500" />;
       default:
-        return '🔔';
+        return <Bell className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   return (
-    <div
-      className="fixed left-4 right-4 md:left-auto md:right-4 md:w-96 bg-card rounded-lg shadow-lg border border-border overflow-hidden z-[9999]"
-      style={{
-        top: `${position.top}px`,
-      }}
-    >
+    <div className="overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex justify-between items-center bg-secondary">
-        <h3 className="text-lg font-semibold text-foreground">
+      <div className="px-4 py-3 border-b border-border flex justify-between items-center">
+        <h3 className="text-sm font-semibold text-foreground">
           Notifications
         </h3>
         <button
           onClick={handleMarkAllAsRead}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
+          className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
         >
-          <CheckCheck className="w-4 h-4" />
+          <CheckCheck className="w-3.5 h-3.5" />
           Mark all read
         </button>
       </div>
 
       {/* Notifications list */}
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-80 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-center text-muted-foreground">
+          <div className="p-4 text-center text-muted-foreground text-sm">
             Loading...
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>No notifications yet</p>
+            <Bell className="w-10 h-10 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No notifications yet</p>
           </div>
         ) : (
-          <div>
+          <div className="divide-y divide-border">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
                 onClick={() => handleNotificationClick(notification)}
-                className={`px-4 py-3 border-b border-border cursor-pointer transition-colors ${
+                className={`px-4 py-3 cursor-pointer transition-colors ${
                   notification.is_read
-                    ? 'bg-card hover:bg-gray-50 dark:hover:bg-gray-750'
-                    : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                    ? 'hover:bg-muted/50'
+                    : 'bg-primary/5 hover:bg-primary/10'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl flex-shrink-0">
+                  <div className="flex-shrink-0 mt-0.5">
                     {getNotificationIcon(notification.notification_type)}
-                  </span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium text-foreground text-sm">
+                      <p className={`text-sm ${notification.is_read ? 'text-foreground' : 'font-medium text-foreground'}`}>
                         {notification.title}
                       </p>
                       {!notification.is_read && (
@@ -143,22 +138,22 @@ const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
                             e.stopPropagation();
                             handleMarkAsRead(notification.id);
                           }}
-                          className="flex-shrink-0 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                          className="flex-shrink-0 text-primary hover:text-primary/80 transition-colors"
                           title="Mark as read"
                         >
                           <Check className="w-4 h-4" />
                         </button>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                       {notification.message.replace(/\*\*/g, '')}
                     </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                    <div className="flex items-center justify-between mt-1.5">
+                      <p className="text-[10px] text-muted-foreground">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </p>
                       {notification.link && (
-                        <ExternalLink className="w-3 h-3 text-gray-400" />
+                        <ExternalLink className="w-3 h-3 text-muted-foreground" />
                       )}
                     </div>
                   </div>
@@ -171,13 +166,13 @@ const NotificationDropdown = ({ onClose, onNotificationRead, position }) => {
 
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="px-4 py-3 border-t border-border bg-secondary">
+        <div className="px-4 py-2.5 border-t border-border">
           <button
             onClick={() => {
-              navigate('/notifications');
+              navigate('/notification-history');
               onClose();
             }}
-            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+            className="w-full text-center text-xs text-primary hover:text-primary/80 font-medium transition-colors"
           >
             View all notifications
           </button>
