@@ -223,12 +223,12 @@ v1.1 UI Overhaul milestone complete. All phases (7-13) finished.
 ## Session Continuity
 
 **Last session:** 2026-02-10
-**Stopped at:** Phase 13 Plan 06 complete - Force dark mode on non-authenticated pages
+**Stopped at:** Phase 13 Plan 05 complete - Fix SelectItem empty value crashes in ReptileForm and ScheduleForm
 **Resume with:** Phase 13 complete (6/6 plans). Ready for next milestone planning or UAT clarification.
 
 **Recent activity:**
 - 13-06: Force dark mode on non-auth pages (complete) - eliminate light mode flash before OIDC redirect
-- 13-05: Fix SelectItem crashes (complete) - ReptileForm and ScheduleForm value="" prop handling
+- 13-05: Fix SelectItem crashes (complete) - ReptileForm and ScheduleForm value="" prop handling using __none__ sentinel
 - 13-04: ScheduleForm v1.1 styling (complete) - visual-only Card/Badge/Input components
 - 13-03: Settings & ReptileForm (complete) - shadcn/ui Tabs, react-hook-form + Zod
 - 13-02: Utility pages redesign (complete) - Login, Onboarding, AcceptInvite with shadcn/ui
@@ -237,4 +237,4 @@ v1.1 UI Overhaul milestone complete. All phases (7-13) finished.
 **Phase 13 status:** COMPLETE - 6/6 plans complete (4 core + 2 gap closure)
 
 ---
-*State updated: 2026-02-10 - Completed plan 13-06 (Phase 13 complete with gap closure)*
+*State updated: 2026-02-10 - Completed plan 13-05 (SelectItem value="" fix using __none__ sentinel pattern)*
