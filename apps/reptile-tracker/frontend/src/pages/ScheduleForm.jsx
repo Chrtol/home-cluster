@@ -3,6 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { ArrowLeft, Save, Clock, Users, User as UserIcon } from "lucide-react";
 import { getUserTimeFormat, getDayNames, getDayNumbers } from "../utils/dateFormatting";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import PageHeader from '../components/PageHeader';
 
 function ScheduleForm() {
   const navigate = useNavigate();
@@ -489,713 +498,669 @@ function ScheduleForm() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-foreground">
-          {isEditing ? 'Edit Schedule' : 'Create Schedule'}
-        </h1>
-        <button
-          onClick={() => navigate("/calendar")}
-          className="flex items-center gap-2 text-muted-foreground hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft size={20} />
-          <span>Back to Calendar</span>
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title={isEditing ? 'Edit Schedule' : 'Create Schedule'}
+        backLink={{ to: '/schedules', label: 'Back to Schedules' }}
+      />
 
-      <form onSubmit={handleSubmit} className="card space-y-6">
-        {/* Reptile Selection */}
-        <div>
-          <label className="block text-sm font-semibold text-muted-foreground mb-2">
-            Reptile *
-          </label>
-          <select
-            value={reptileId}
-            onChange={(e) => setReptileId(e.target.value)}
-            required
-            className="input-field"
-          >
-            <option value="">Select a reptile</option>
-            {reptiles.map((reptile) => (
-              <option key={reptile.id} value={reptile.id}>
-                {reptile.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>Select the reptile and schedule details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Reptile Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="reptile">Reptile *</Label>
+              <Select value={reptileId} onValueChange={setReptileId} required>
+                <SelectTrigger id="reptile">
+                  <SelectValue placeholder="Select a reptile" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reptiles.map((reptile) => (
+                    <SelectItem key={reptile.id} value={String(reptile.id)}>
+                      {reptile.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Schedule Name */}
-        <div>
-          <label className="block text-sm font-semibold text-muted-foreground mb-2">
-            Schedule Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Morning Insects, Evening Salad"
-            className="input-field"
-          />
-          <p className="text-sm text-muted-foreground mt-1">
-            Optional: Give this schedule a friendly name for easy identification
-          </p>
-        </div>
+            {/* Schedule Name */}
+            <div className="space-y-2">
+              <Label htmlFor="scheduleName">Schedule Name</Label>
+              <Input
+                id="scheduleName"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Morning Insects, Evening Salad"
+              />
+              <p className="text-sm text-muted-foreground">
+                Optional: Give this schedule a friendly name for easy identification
+              </p>
+            </div>
 
-        {/* Schedule Type */}
-        <div>
-          <label className="block text-sm font-semibold text-muted-foreground mb-2">
-            Schedule Type *
-          </label>
-          <select
-            value={scheduleType}
-            onChange={(e) => setScheduleType(e.target.value)}
-            required
-            className="input-field"
-          >
-            <option value="feeding">Feeding</option>
-            <option value="misting">Misting</option>
-            <option value="weighing">Health</option>
-            <option value="supplement">Supplement</option>
-          </select>
-        </div>
+            {/* Schedule Type */}
+            <div className="space-y-2">
+              <Label htmlFor="scheduleType">Schedule Type *</Label>
+              <Select value={scheduleType} onValueChange={setScheduleType} required>
+                <SelectTrigger id="scheduleType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="feeding">Feeding</SelectItem>
+                  <SelectItem value="misting">Misting</SelectItem>
+                  <SelectItem value="weighing">Health</SelectItem>
+                  <SelectItem value="supplement">Supplement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Schedule Mode (Fixed vs Requirement) */}
-        <div>
-          <label className="block text-sm font-semibold text-muted-foreground mb-2">
-            Schedule Mode *
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              type="button"
-              onClick={() => setScheduleMode("fixed")}
-              className={`px-3 py-3 rounded-lg border-2 transition-all ${
-                scheduleMode === "fixed"
-                  ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                  : "border-border text-muted-foreground hover:border-primary-400"
-              }`}
-            >
-              <div className="font-semibold text-sm">Fixed</div>
-              <div className="text-xs mt-1 opacity-75">
-                Calendar-based
+            {/* Schedule Mode */}
+            <div className="space-y-2">
+              <Label>Schedule Mode *</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <Badge
+                  variant={scheduleMode === "fixed" ? "default" : "outline"}
+                  className="cursor-pointer justify-center py-3 px-3 h-auto flex-col items-center gap-1"
+                  onClick={() => setScheduleMode("fixed")}
+                >
+                  <div className="font-semibold text-sm">Fixed</div>
+                  <div className="text-xs opacity-75">Calendar-based</div>
+                </Badge>
+                <Badge
+                  variant={scheduleMode === "interval" ? "default" : "outline"}
+                  className="cursor-pointer justify-center py-3 px-3 h-auto flex-col items-center gap-1"
+                  onClick={() => setScheduleMode("interval")}
+                >
+                  <div className="font-semibold text-sm">Interval</div>
+                  <div className="text-xs opacity-75">Time-based</div>
+                </Badge>
+                <Badge
+                  variant={scheduleMode === "dependent" ? "default" : "outline"}
+                  className="cursor-pointer justify-center py-3 px-3 h-auto flex-col items-center gap-1"
+                  onClick={() => setScheduleMode("dependent")}
+                >
+                  <div className="font-semibold text-sm">Dependent</div>
+                  <div className="text-xs opacity-75">Event-triggered</div>
+                </Badge>
               </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setScheduleMode("interval")}
-              className={`px-3 py-3 rounded-lg border-2 transition-all ${
-                scheduleMode === "interval"
-                  ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                  : "border-border text-muted-foreground hover:border-primary-400"
-              }`}
-            >
-              <div className="font-semibold text-sm">Interval</div>
-              <div className="text-xs mt-1 opacity-75">
-                Time-based
+              <p className="text-sm text-muted-foreground">
+                {scheduleMode === "fixed"
+                  ? "Schedule occurs on specific dates or days of the week"
+                  : scheduleMode === "interval"
+                  ? "Time interval between events with min/max day constraints (e.g., every 3-4 days)"
+                  : "Triggered when another schedule is completed (e.g., weigh after every 3rd feeding)"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Type-specific fields */}
+        {scheduleType === "feeding" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Food Category</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="foodCategory">Food Category</Label>
+                <Select value={foodCategory} onValueChange={setFoodCategory}>
+                  <SelectTrigger id="foodCategory">
+                    <SelectValue placeholder="Not specified" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Not specified</SelectItem>
+                    <SelectItem value="insects">Insects/Worms</SelectItem>
+                    <SelectItem value="salad">Salad/Vegetables</SelectItem>
+                    <SelectItem value="frozen">Frozen Prey (Rodents)</SelectItem>
+                    <SelectItem value="prepared">Prepared Diet (CGD, Repashy, etc.)</SelectItem>
+                    <SelectItem value="mixed">Mixed (Multiple Types)</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Optional: Specify what type of food this feeding is for
+                </p>
               </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setScheduleMode("dependent")}
-              className={`px-3 py-3 rounded-lg border-2 transition-all ${
-                scheduleMode === "dependent"
-                  ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                  : "border-border text-muted-foreground hover:border-primary-400"
-              }`}
-            >
-              <div className="font-semibold text-sm">Dependent</div>
-              <div className="text-xs mt-1 opacity-75">
-                Event-triggered
+            </CardContent>
+          </Card>
+        )}
+
+        {scheduleType === "misting" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Time Slot</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="timeSlot">Time Slot</Label>
+                <Select value={timeSlot} onValueChange={setTimeSlot}>
+                  <SelectTrigger id="timeSlot">
+                    <SelectValue placeholder="Not specified" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Not specified</SelectItem>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="midday">Midday</SelectItem>
+                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="evening">Evening</SelectItem>
+                    <SelectItem value="night">Night</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Optional: Specify the time of day for misting
+                </p>
               </div>
-            </button>
-          </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {scheduleMode === "fixed"
-              ? "Schedule occurs on specific dates or days of the week"
-              : scheduleMode === "interval"
-              ? "Time interval between events with min/max day constraints (e.g., every 3-4 days)"
-              : "Triggered when another schedule is completed (e.g., weigh after every 3rd feeding)"}
-          </p>
-        </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {scheduleType === "weighing" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Health Activity Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="healthCategory">Health Activity Type</Label>
+                <Select value={healthCategory} onValueChange={setHealthCategory}>
+                  <SelectTrigger id="healthCategory">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weight_check">Weight Check</SelectItem>
+                    <SelectItem value="bathing">Bathing</SelectItem>
+                    <SelectItem value="shedding_check">Shedding Check</SelectItem>
+                    <SelectItem value="health_inspection">Health Inspection</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Specify what type of health activity this schedule is for
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {scheduleType === "supplement" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Supplement Selection</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="supplement">Supplement</Label>
+                <Select value={supplementId} onValueChange={setSupplementId}>
+                  <SelectTrigger id="supplement">
+                    <SelectValue placeholder="Select a supplement (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Select a supplement (optional)</SelectItem>
+                    {supplements.map((supplement) => (
+                      <SelectItem key={supplement.id} value={String(supplement.id)}>
+                        {supplement.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Schedule Rules - only for fixed mode */}
+        {scheduleMode === "fixed" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Schedule Rules</CardTitle>
+              <CardDescription>Define when this schedule should occur</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="scheduleRule">Schedule Rule *</Label>
+                <Select value={scheduleRule} onValueChange={setScheduleRule} required>
+                  <SelectTrigger id="scheduleRule">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="days_of_week">Specific Days of Week</SelectItem>
+                    <SelectItem value="every_x_days">Every X Days</SelectItem>
+                    <SelectItem value="monthly">Monthly (Specific Day)</SelectItem>
+                    <SelectItem value="dependent">Dependent on Another Schedule</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {scheduleRule === "every_x_days" && (
+                <div className="space-y-2">
+                  <Label htmlFor="frequencyDays">Frequency (Days) *</Label>
+                  <Input
+                    id="frequencyDays"
+                    type="number"
+                    min="1"
+                    value={frequencyDays}
+                    onChange={(e) => setFrequencyDays(e.target.value)}
+                    required
+                    placeholder="e.g., 3 for every 3 days"
+                  />
+                </div>
+              )}
+
+              {scheduleRule === "days_of_week" && (
+                <div className="space-y-2">
+                  <Label>Days of Week *</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {weekDays.map((day) => (
+                      <Badge
+                        key={day.value}
+                        variant={daysOfWeek.includes(day.value) ? "default" : "outline"}
+                        className="cursor-pointer justify-center py-3"
+                        onClick={() => toggleDayOfWeek(day.value)}
+                      >
+                        {day.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {scheduleRule === "monthly" && (
+                <div className="space-y-2">
+                  <Label htmlFor="dayOfMonth">Day of Month *</Label>
+                  <Input
+                    id="dayOfMonth"
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={dayOfMonth}
+                    onChange={(e) => setDayOfMonth(e.target.value)}
+                    required
+                    placeholder="e.g., 15 for the 15th of each month"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Interval Mode Fields */}
         {scheduleMode === "interval" && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                  Min Days Between *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={minDaysBetween}
-                  onChange={(e) => setMinDaysBetween(e.target.value)}
-                  required
-                  placeholder="e.g., 3"
-                  className="input-field"
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Minimum time to wait (HARD constraint)
+          <Card>
+            <CardHeader>
+              <CardTitle>Interval Settings</CardTitle>
+              <CardDescription>Define time-based scheduling rules</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minDaysBetween">Min Days Between *</Label>
+                  <Input
+                    id="minDaysBetween"
+                    type="number"
+                    min="1"
+                    value={minDaysBetween}
+                    onChange={(e) => setMinDaysBetween(e.target.value)}
+                    required
+                    placeholder="e.g., 3"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Minimum time to wait (HARD constraint)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maxDaysBetween">Max Days Between *</Label>
+                  <Input
+                    id="maxDaysBetween"
+                    type="number"
+                    min={minDaysBetween || "1"}
+                    value={maxDaysBetween}
+                    onChange={(e) => setMaxDaysBetween(e.target.value)}
+                    required
+                    placeholder="e.g., 4"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Maximum allowed time (HARD constraint)
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quotaPeriod">Period Tracking</Label>
+                <Select value={quotaPeriod} onValueChange={setQuotaPeriod}>
+                  <SelectTrigger id="quotaPeriod">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  How to group feeding counts for display (informational only)
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                  Max Days Between *
-                </label>
-                <input
-                  type="number"
-                  min={minDaysBetween || "1"}
-                  value={maxDaysBetween}
-                onChange={(e) => setMaxDaysBetween(e.target.value)}
-                required
-                placeholder="e.g., 4"
-                className="input-field"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Maximum allowed time (HARD constraint)
-              </p>
-            </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                Period Tracking
-              </label>
-              <select
-                value={quotaPeriod}
-                onChange={(e) => setQuotaPeriod(e.target.value)}
-                className="input-field"
-              >
-                <option value="week">Week</option>
-                <option value="month">Month</option>
-              </select>
-              <p className="text-sm text-muted-foreground mt-1">
-                How to group feeding counts for display (informational only)
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                Suggested Days (Optional)
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {weekDays.map((day) => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => toggleSuggestedDay(day.value)}
-                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                      suggestedDays.includes(day.value)
-                        ? "border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                        : "border-border text-muted-foreground hover:border-green-400"
-                    }`}
-                  >
-                    {day.label}
-                  </button>
-                ))}
+              <div className="space-y-2">
+                <Label>Suggested Days (Optional)</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {weekDays.map((day) => (
+                    <Badge
+                      key={day.value}
+                      variant={suggestedDays.includes(day.value) ? "default" : "outline"}
+                      className="cursor-pointer justify-center py-3"
+                      onClick={() => toggleSuggestedDay(day.value)}
+                    >
+                      {day.label}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Calendar instances will appear on these days (adapts to actual completion)
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Calendar instances will appear on these days (adapts to actual completion)
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* Food Category (only for feeding schedules) */}
-        {scheduleType === "feeding" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Food Category
-            </label>
-            <select
-              value={foodCategory}
-              onChange={(e) => setFoodCategory(e.target.value)}
-              className="input-field"
-            >
-              <option value="">Not specified</option>
-              <option value="insects">Insects/Worms</option>
-              <option value="salad">Salad/Vegetables</option>
-              <option value="frozen">Frozen Prey (Rodents)</option>
-              <option value="prepared">Prepared Diet (CGD, Repashy, etc.)</option>
-              <option value="mixed">Mixed (Multiple Types)</option>
-              <option value="other">Other</option>
-            </select>
-            <p className="text-sm text-muted-foreground mt-1">
-              Optional: Specify what type of food this feeding is for
-            </p>
-          </div>
-        )}
-
-        {/* Time Slot (only for misting schedules) */}
-        {scheduleType === "misting" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Time Slot
-            </label>
-            <select
-              value={timeSlot}
-              onChange={(e) => setTimeSlot(e.target.value)}
-              className="input-field"
-            >
-              <option value="">Not specified</option>
-              <option value="morning">Morning</option>
-              <option value="midday">Midday</option>
-              <option value="afternoon">Afternoon</option>
-              <option value="evening">Evening</option>
-              <option value="night">Night</option>
-            </select>
-            <p className="text-sm text-muted-foreground mt-1">
-              Optional: Specify the time of day for misting
-            </p>
-          </div>
-        )}
-
-        {/* Health Category (only for health/weighing schedules) */}
-        {scheduleType === "weighing" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Health Activity Type
-            </label>
-            <select
-              value={healthCategory}
-              onChange={(e) => setHealthCategory(e.target.value)}
-              className="input-field"
-            >
-              <option value="weight_check">Weight Check</option>
-              <option value="bathing">Bathing</option>
-              <option value="shedding_check">Shedding Check</option>
-              <option value="health_inspection">Health Inspection</option>
-            </select>
-            <p className="text-sm text-muted-foreground mt-1">
-              Specify what type of health activity this schedule is for
-            </p>
-          </div>
-        )}
-
-        {/* Supplement Selection (only for supplement schedules) */}
-        {scheduleType === "supplement" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Supplement
-            </label>
-            <select
-              value={supplementId}
-              onChange={(e) => setSupplementId(e.target.value)}
-              className="input-field"
-            >
-              <option value="">Select a supplement (optional)</option>
-              {supplements.map((supplement) => (
-                <option key={supplement.id} value={supplement.id}>
-                  {supplement.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Schedule Rule (only for fixed mode) */}
-        {scheduleMode === "fixed" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Schedule Rule *
-            </label>
-            <select
-              value={scheduleRule}
-              onChange={(e) => setScheduleRule(e.target.value)}
-              required
-              className="input-field"
-            >
-              <option value="days_of_week">Specific Days of Week</option>
-              <option value="every_x_days">Every X Days</option>
-              <option value="monthly">Monthly (Specific Day)</option>
-              <option value="dependent">Dependent on Another Schedule</option>
-            </select>
-          </div>
-        )}
-
-        {/* Rule-specific fields (only for fixed mode) */}
-        {scheduleMode === "fixed" && (
-          <>
-        {scheduleRule === "every_x_days" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Frequency (Days) *
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={frequencyDays}
-              onChange={(e) => setFrequencyDays(e.target.value)}
-              required
-              placeholder="e.g., 3 for every 3 days"
-              className="input-field"
-            />
-          </div>
-        )}
-
-        {scheduleRule === "days_of_week" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Days of Week *
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {weekDays.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => toggleDayOfWeek(day.value)}
-                  className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                    daysOfWeek.includes(day.value)
-                      ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                      : "border-border text-muted-foreground hover:border-primary-400"
-                  }`}
-                >
-                  {day.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {scheduleRule === "monthly" && (
-          <div>
-            <label className="block text-sm font-semibold text-muted-foreground mb-2">
-              Day of Month *
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              value={dayOfMonth}
-              onChange={(e) => setDayOfMonth(e.target.value)}
-              required
-              placeholder="e.g., 15 for the 15th of each month"
-              className="input-field"
-            />
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Dependent Mode Fields */}
         {scheduleMode === "dependent" && (
-          <>
-            <div>
-              <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                Parent Schedule *
-              </label>
-              <select
-                value={parentScheduleId}
-                onChange={(e) => setParentScheduleId(e.target.value)}
-                required
-                className="input-field"
-              >
-                <option value="">Select a parent schedule</option>
-                {schedules.length === 0 ? (
-                  <option disabled>No available parent schedules for this reptile</option>
-                ) : (
-                  schedules.map((schedule) => {
-                    // Create a descriptive label
-                    let label = `${schedule.schedule_type}`;
-                    if (schedule.name) {
-                      label += ` - ${schedule.name}`;
-                    }
-                    if (schedule.schedule_rule === "every_x_days") {
-                      label += ` (Every ${schedule.frequency_days} days)`;
-                    } else if (schedule.schedule_rule === "days_of_week") {
-                      const days = schedule.days_of_week.split(",").map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][parseInt(d)]);
-                      label += ` (${days.join(", ")})`;
-                    } else if (schedule.schedule_rule === "monthly") {
-                      label += ` (Day ${schedule.day_of_month} of month)`;
-                    }
-                    return (
-                      <option key={schedule.id} value={schedule.id}>
-                        {label}
-                      </option>
-                    );
-                  })
+          <Card>
+            <CardHeader>
+              <CardTitle>Dependent Schedule Settings</CardTitle>
+              <CardDescription>Configure event-triggered scheduling</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="parentSchedule">Parent Schedule *</Label>
+                <Select value={parentScheduleId} onValueChange={setParentScheduleId} required>
+                  <SelectTrigger id="parentSchedule">
+                    <SelectValue placeholder="Select a parent schedule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schedules.length === 0 ? (
+                      <SelectItem value="" disabled>No available parent schedules for this reptile</SelectItem>
+                    ) : (
+                      schedules.map((schedule) => {
+                        let label = `${schedule.schedule_type}`;
+                        if (schedule.name) {
+                          label += ` - ${schedule.name}`;
+                        }
+                        if (schedule.schedule_rule === "every_x_days") {
+                          label += ` (Every ${schedule.frequency_days} days)`;
+                        } else if (schedule.schedule_rule === "days_of_week") {
+                          const days = schedule.days_of_week.split(",").map(d => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][parseInt(d)]);
+                          label += ` (${days.join(", ")})`;
+                        } else if (schedule.schedule_rule === "monthly") {
+                          label += ` (Day ${schedule.day_of_month} of month)`;
+                        }
+                        return (
+                          <SelectItem key={schedule.id} value={String(schedule.id)}>
+                            {label}
+                          </SelectItem>
+                        );
+                      })
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  This schedule will trigger based on occurrences of the parent schedule. Only non-dependent schedules can be parents.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dependentRule">Dependent Rule *</Label>
+                <Select value={dependentRule} onValueChange={setDependentRule} required>
+                  <SelectTrigger id="dependentRule">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="every_occurrence">Every Occurrence</SelectItem>
+                    <SelectItem value="every_nth">Every Nth Occurrence</SelectItem>
+                    <SelectItem value="specific_days">Specific Days of Week</SelectItem>
+                    <SelectItem value="once_per_day">Once Per Day (First Occurrence Only)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {dependentRule === "once_per_day" && (
+                  <p className="text-sm text-muted-foreground">
+                    Will trigger once per day when the parent schedule occurs. Perfect for daily supplements that should be given with one feeding per day (you choose which feeding when logging).
+                  </p>
                 )}
-              </select>
-              <p className="text-sm text-muted-foreground mt-1">
-                This schedule will trigger based on occurrences of the parent schedule. Only non-dependent schedules can be parents.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                Dependent Rule *
-              </label>
-              <select
-                value={dependentRule}
-                onChange={(e) => setDependentRule(e.target.value)}
-                required
-                className="input-field"
-              >
-                <option value="every_occurrence">Every Occurrence</option>
-                <option value="every_nth">Every Nth Occurrence</option>
-                <option value="specific_days">Specific Days of Week</option>
-                <option value="once_per_day">Once Per Day (First Occurrence Only)</option>
-              </select>
-              {dependentRule === "once_per_day" && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Will trigger once per day when the parent schedule occurs. Perfect for daily supplements that should be given with one feeding per day (you choose which feeding when logging).
-                </p>
-              )}
-            </div>
-
-            {dependentRule === "every_nth" && (
-              <div>
-                <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                  Occurrence Frequency *
-                </label>
-                <input
-                  type="number"
-                  min="2"
-                  value={dependentFrequency}
-                  onChange={(e) => setDependentFrequency(e.target.value)}
-                  required
-                  placeholder="e.g., 2 for every 2nd occurrence"
-                  className="input-field"
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Example: "2" means every 2nd feeding, "3" means every 3rd feeding
-                </p>
               </div>
-            )}
 
-            {dependentRule === "specific_days" && (
-              <div>
-                <label className="block text-sm font-semibold text-muted-foreground mb-2">
-                  Days of Week *
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {weekDays.map((day) => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleDependentDay(day.value)}
-                      className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                        dependentDays.includes(day.value)
-                          ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-                          : "border-border text-muted-foreground hover:border-primary-400"
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
+              {dependentRule === "every_nth" && (
+                <div className="space-y-2">
+                  <Label htmlFor="dependentFrequency">Occurrence Frequency *</Label>
+                  <Input
+                    id="dependentFrequency"
+                    type="number"
+                    min="2"
+                    value={dependentFrequency}
+                    onChange={(e) => setDependentFrequency(e.target.value)}
+                    required
+                    placeholder="e.g., 2 for every 2nd occurrence"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Example: "2" means every 2nd feeding, "3" means every 3rd feeding
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Only trigger on parent schedule occurrences that fall on these days
-                </p>
-              </div>
-            )}
-          </>
-        )}
-          </>
-        )}
+              )}
 
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-semibold text-muted-foreground mb-2">
-            Notes
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows="3"
-            placeholder="Add any notes about this schedule..."
-            className="input-field"
-          />
-        </div>
+              {dependentRule === "specific_days" && (
+                <div className="space-y-2">
+                  <Label>Days of Week *</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {weekDays.map((day) => (
+                      <Badge
+                        key={day.value}
+                        variant={dependentDays.includes(day.value) ? "default" : "outline"}
+                        className="cursor-pointer justify-center py-3"
+                        onClick={() => toggleDependentDay(day.value)}
+                      >
+                        {day.label}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Only trigger on parent schedule occurrences that fall on these days
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Time Window Settings */}
-        <div className="border-t border-border pt-6">
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              type="checkbox"
-              id="timeWindowEnabled"
-              checked={timeWindowEnabled}
-              onChange={(e) => setTimeWindowEnabled(e.target.checked)}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="timeWindowEnabled" className="text-sm font-semibold text-muted-foreground">
-              Enable Time Window
-            </label>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Set a time range when this activity should be completed. Useful for basking reptiles that need to eat after warming up.
-          </p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Time Window</CardTitle>
+            <CardDescription>Set a time range for completion</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="timeWindowEnabled"
+                checked={timeWindowEnabled}
+                onCheckedChange={setTimeWindowEnabled}
+              />
+              <Label htmlFor="timeWindowEnabled" className="cursor-pointer">
+                Enable Time Window
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Set a time range when this activity should be completed. Useful for basking reptiles that need to eat after warming up.
+            </p>
 
-          {timeWindowEnabled && (
-            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Earliest Time
-                  </label>
+            {timeWindowEnabled && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-6 border-l-2 border-primary">
+                <div className="space-y-2">
+                  <Label>Earliest Time</Label>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="number"
                       value={earliestHours}
                       onChange={e => handleEarliestHoursChange(e.target.value)}
-                      className="input-field w-20 text-center"
+                      className="w-20 text-center"
                       min={userTimeFormat === '12h' ? 1 : 0}
                       max={userTimeFormat === '12h' ? 12 : 23}
                       required
                     />
                     <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
-                    <input
+                    <Input
                       type="number"
                       value={String(earliestMinutes).padStart(2, '0')}
                       onChange={e => handleEarliestMinutesChange(e.target.value)}
-                      className="input-field w-20 text-center"
+                      className="w-20 text-center"
                       min="0"
                       max="59"
                       required
                     />
                     {userTimeFormat === '12h' && (
-                      <select
-                        value={earliestPeriod}
-                        onChange={e => setEarliestPeriod(e.target.value)}
-                        className="input-field w-20"
-                      >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
+                      <Select value={earliestPeriod} onValueChange={setEarliestPeriod}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    When the feeding window opens
-                  </p>
+                  <p className="text-xs text-muted-foreground">When the feeding window opens</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Latest Time
-                  </label>
+                <div className="space-y-2">
+                  <Label>Latest Time</Label>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="number"
                       value={latestHours}
                       onChange={e => handleLatestHoursChange(e.target.value)}
-                      className="input-field w-20 text-center"
+                      className="w-20 text-center"
                       min={userTimeFormat === '12h' ? 1 : 0}
                       max={userTimeFormat === '12h' ? 12 : 23}
                       required
                     />
                     <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
-                    <input
+                    <Input
                       type="number"
                       value={String(latestMinutes).padStart(2, '0')}
                       onChange={e => handleLatestMinutesChange(e.target.value)}
-                      className="input-field w-20 text-center"
+                      className="w-20 text-center"
                       min="0"
                       max="59"
                       required
                     />
                     {userTimeFormat === '12h' && (
-                      <select
-                        value={latestPeriod}
-                        onChange={e => setLatestPeriod(e.target.value)}
-                        className="input-field w-20"
-                      >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
+                      <Select value={latestPeriod} onValueChange={setLatestPeriod}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    When the feeding must be completed by
-                  </p>
+                  <p className="text-xs text-muted-foreground">When the feeding must be completed by</p>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Auto-Complete Settings */}
-        <div className="border-t border-border pt-6">
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              type="checkbox"
-              id="autoCompleteEnabled"
-              checked={autoCompleteEnabled}
-              onChange={(e) => setAutoCompleteEnabled(e.target.checked)}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="autoCompleteEnabled" className="text-sm font-semibold text-muted-foreground">
-              Enable Auto-Complete
-            </label>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Automatically mark this schedule as completed if not manually logged. Useful for daily repetitive tasks like salad feeding or misting.
-          </p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Auto-Complete</CardTitle>
+            <CardDescription>Automatically mark tasks as completed</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="autoCompleteEnabled"
+                checked={autoCompleteEnabled}
+                onCheckedChange={setAutoCompleteEnabled}
+              />
+              <Label htmlFor="autoCompleteEnabled" className="cursor-pointer">
+                Enable Auto-Complete
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Automatically mark this schedule as completed if not manually logged. Useful for daily repetitive tasks like salad feeding or misting.
+            </p>
 
-          {autoCompleteEnabled && (
-            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Hours After Window
-                </label>
-                <input
+            {autoCompleteEnabled && (
+              <div className="pl-6 border-l-2 border-primary space-y-2">
+                <Label htmlFor="autoCompleteHours">Hours After Window</Label>
+                <Input
+                  id="autoCompleteHours"
                   type="number"
                   value={autoCompleteHoursAfter}
                   onChange={(e) => setAutoCompleteHoursAfter(e.target.value)}
-                  className="input-field w-32"
+                  className="w-32"
                   min="0"
                   max="24"
                   required
                 />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground">
                   {timeWindowEnabled
                     ? "Hours after the latest time to auto-complete this schedule"
                     : "Hours after end of day (11:59 PM) to auto-complete this schedule"}
                 </p>
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                <p className="text-xs text-amber-600 dark:text-amber-400">
                   Note: Auto-completed instances can be manually marked as "missed" or "skipped" if needed
                 </p>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Flexible Completion Window Settings - Only for fixed schedules */}
+        {/* Flexible Completion Window - Only for fixed schedules */}
         {scheduleMode === "fixed" && (
-          <div className="border-t border-border pt-6">
-            <div className="flex items-center gap-3 mb-4">
-              <input
-                type="checkbox"
-                id="flexibleCompletionEnabled"
-                checked={flexibleCompletionEnabled}
-                onChange={(e) => setFlexibleCompletionEnabled(e.target.checked)}
-                className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="flexibleCompletionEnabled" className="text-sm font-semibold text-muted-foreground">
-                Enable Flexible Completion Window
-              </label>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Allow completing this schedule within a range of days (e.g., feeding 1 day early or late). Useful when your schedule varies slightly from day to day.
-            </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Flexible Completion Window</CardTitle>
+              <CardDescription>Allow completing tasks within a date range</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="flexibleCompletionEnabled"
+                  checked={flexibleCompletionEnabled}
+                  onCheckedChange={setFlexibleCompletionEnabled}
+                />
+                <Label htmlFor="flexibleCompletionEnabled" className="cursor-pointer">
+                  Enable Flexible Completion Window
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Allow completing this schedule within a range of days (e.g., feeding 1 day early or late). Useful when your schedule varies slightly from day to day.
+              </p>
 
-            {flexibleCompletionEnabled && (
-              <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Completion Window (±days)
-                  </label>
-                  <input
+              {flexibleCompletionEnabled && (
+                <div className="pl-6 border-l-2 border-primary space-y-2">
+                  <Label htmlFor="flexibleDays">Completion Window (±days)</Label>
+                  <Input
+                    id="flexibleDays"
                     type="number"
                     value={flexibleCompletionDays}
                     onChange={(e) => setFlexibleCompletionDays(e.target.value)}
-                    className="input-field w-32"
+                    className="w-32"
                     min="1"
                     max="7"
                     required
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground">
                     Activities can be logged {flexibleCompletionDays} day(s) before or after the scheduled date
                   </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
                     Example: With ±{flexibleCompletionDays} days, a schedule on Wednesday can be completed {(() => {
                       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                       const wednesday = 3;
@@ -1206,187 +1171,190 @@ function ScheduleForm() {
                     })()}
                   </p>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Notification Settings */}
-        <div className="border-t border-border pt-6">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="notificationsEnabled"
-              checked={notificationsEnabled}
-              onChange={(e) => setNotificationsEnabled(e.target.checked)}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="notificationsEnabled" className="text-sm font-semibold text-muted-foreground cursor-pointer">
-              Enable notifications for this schedule
-            </label>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 ml-8">
-            Receive reminder alerts and overdue warnings according to your notification preferences in Settings
-          </p>
-
-          {/* Channel selection */}
-          {notificationsEnabled && availableChannels.length > 0 && (
-            <div className="mt-3 ml-8 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-              <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">
-                Select notification channels (click to toggle):
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {availableChannels.map(channel => {
-                  const isSelected = selectedChannelIds.includes(channel.id);
-                  return (
-                    <button
-                      key={channel.id}
-                      type="button"
-                      onClick={() => toggleChannelSelection(channel.id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 border-2 rounded-lg text-xs font-medium transition-all ${
-                        isSelected
-                          ? 'bg-primary-100 dark:bg-primary-900/40 border-primary-500 dark:border-primary-500 text-primary-900 dark:text-primary-100'
-                          : 'bg-card border-border text-muted-foreground hover:border-primary-400 dark:hover:border-primary-600'
-                      }`}
-                    >
-                      {channel.household_wide ? (
-                        <Users size={14} className="flex-shrink-0" />
-                      ) : (
-                        <UserIcon size={14} className="flex-shrink-0" />
-                      )}
-                      <span className="font-semibold">{channel.name}</span>
-                      <span className="text-muted-foreground">({getChannelTypeDisplay(channel.webhook_type)})</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-blue-800 dark:text-blue-200 mt-2">
-                <Users size={12} className="inline mr-1" />
-                = Household channel (shared with all members) •
-                <UserIcon size={12} className="inline mx-1" />
-                = Personal channel
-              </p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Notifications</CardTitle>
+            <CardDescription>Configure notification preferences</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="notificationsEnabled"
+                checked={notificationsEnabled}
+                onCheckedChange={setNotificationsEnabled}
+              />
+              <Label htmlFor="notificationsEnabled" className="cursor-pointer">
+                Enable notifications for this schedule
+              </Label>
             </div>
-          )}
+            <p className="text-xs text-muted-foreground">
+              Receive reminder alerts and overdue warnings according to your notification preferences in Settings
+            </p>
 
-          {notificationsEnabled && availableChannels.length === 0 && (
-            <div className="mt-3 ml-8 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
-              <p className="text-xs text-amber-900 dark:text-amber-100">
-                No notification channels configured. Go to Settings → Notifications to add channels.
-              </p>
-            </div>
-          )}
-
-          {/* Reminder Time */}
-          {notificationsEnabled && (
-            <div className="mt-4 ml-8">
-              <div className="flex items-center gap-3 mb-3">
-                <input
-                  type="checkbox"
-                  id="reminderEnabled"
-                  checked={reminderEnabled}
-                  onChange={(e) => setReminderEnabled(e.target.checked)}
-                  className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                />
-                <label htmlFor="reminderEnabled" className="text-sm font-medium text-muted-foreground">
-                  Set reminder time
-                </label>
-              </div>
-
-              {reminderEnabled && (
-                <>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Reminder Time
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={reminderHours}
-                      onChange={e => handleReminderHoursChange(e.target.value)}
-                      className="input-field w-20 text-center"
-                      min={userTimeFormat === '12h' ? 1 : 0}
-                      max={userTimeFormat === '12h' ? 12 : 23}
-                      required
-                    />
-                    <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
-                    <input
-                      type="number"
-                      value={String(reminderMinutes).padStart(2, '0')}
-                      onChange={e => handleReminderMinutesChange(e.target.value)}
-                      className="input-field w-20 text-center"
-                      min="0"
-                      max="59"
-                      required
-                    />
-                    {userTimeFormat === '12h' && (
-                      <select
-                        value={reminderPeriod}
-                        onChange={e => setReminderPeriod(e.target.value)}
-                        className="input-field w-20"
+            {notificationsEnabled && availableChannels.length > 0 && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg space-y-2">
+                <p className="text-xs font-medium text-blue-900 dark:text-blue-100">
+                  Select notification channels (click to toggle):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {availableChannels.map(channel => {
+                    const isSelected = selectedChannelIds.includes(channel.id);
+                    return (
+                      <Badge
+                        key={channel.id}
+                        variant={isSelected ? "default" : "outline"}
+                        className="cursor-pointer gap-1.5"
+                        onClick={() => toggleChannelSelection(channel.id)}
                       >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
+                        {channel.household_wide ? (
+                          <Users size={14} className="flex-shrink-0" />
+                        ) : (
+                          <UserIcon size={14} className="flex-shrink-0" />
+                        )}
+                        <span className="font-semibold">{channel.name}</span>
+                        <span className="text-muted-foreground">({getChannelTypeDisplay(channel.webhook_type)})</span>
+                      </Badge>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-blue-800 dark:text-blue-200">
+                  <Users size={12} className="inline mr-1" />
+                  = Household channel (shared with all members) •
+                  <UserIcon size={12} className="inline mx-1" />
+                  = Personal channel
+                </p>
+              </div>
+            )}
+
+            {notificationsEnabled && availableChannels.length === 0 && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                <p className="text-xs text-amber-900 dark:text-amber-100">
+                  No notification channels configured. Go to Settings → Notifications to add channels.
+                </p>
+              </div>
+            )}
+
+            {notificationsEnabled && (
+              <div className="pl-6 border-l-2 border-primary space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="reminderEnabled"
+                    checked={reminderEnabled}
+                    onCheckedChange={setReminderEnabled}
+                  />
+                  <Label htmlFor="reminderEnabled" className="cursor-pointer">
+                    Set reminder time
+                  </Label>
+                </div>
+
+                {reminderEnabled && (
+                  <div className="space-y-2">
+                    <Label>Reminder Time</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        value={reminderHours}
+                        onChange={e => handleReminderHoursChange(e.target.value)}
+                        className="w-20 text-center"
+                        min={userTimeFormat === '12h' ? 1 : 0}
+                        max={userTimeFormat === '12h' ? 12 : 23}
+                        required
+                      />
+                      <span className="flex items-center text-xl font-bold text-muted-foreground">:</span>
+                      <Input
+                        type="number"
+                        value={String(reminderMinutes).padStart(2, '0')}
+                        onChange={e => handleReminderMinutesChange(e.target.value)}
+                        className="w-20 text-center"
+                        min="0"
+                        max="59"
+                        required
+                      />
+                      {userTimeFormat === '12h' && (
+                        <Select value={reminderPeriod} onValueChange={setReminderPeriod}>
+                          <SelectTrigger className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="AM">AM</SelectItem>
+                            <SelectItem value="PM">PM</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {timeWindowEnabled
+                        ? "Get reminded at this specific time (must be within the time window)"
+                        : "Get reminded at this specific time"}
+                    </p>
+
+                    {!isReminderTimeValid() && (
+                      <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded">
+                        <p className="text-xs text-red-800 dark:text-red-200">
+                          Reminder time must be between the earliest and latest times
+                        </p>
+                      </div>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {timeWindowEnabled
-                      ? "Get reminded at this specific time (must be within the time window)"
-                      : "Get reminded at this specific time"}
-                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-                  {/* Validation message */}
-                  {!isReminderTimeValid() && (
-                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded">
-                      <p className="text-xs text-red-800 dark:text-red-200">
-                        Reminder time must be between the earliest and latest times
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        {/* Notes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Add any notes about this schedule..."
+            />
+          </CardContent>
+        </Card>
 
         {/* Enabled Toggle */}
-        <div className="border-t border-border pt-6">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="enabled"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="enabled" className="text-sm font-semibold text-muted-foreground">
-              Enable this schedule
-            </label>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="enabled"
+                checked={enabled}
+                onCheckedChange={setEnabled}
+              />
+              <Label htmlFor="enabled" className="cursor-pointer">
+                Enable this schedule
+              </Label>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Submit Button */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-border">
-          <button
+        {/* Submit Buttons */}
+        <div className="flex justify-end gap-3">
+          <Button
             type="button"
+            variant="outline"
             onClick={() => navigate("/calendar")}
-            className="px-6 py-3 rounded-lg border border-border text-muted-foreground hover:bg-secondary transition-colors"
           >
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save size={20} />
-            <span>
-              {loading
-                ? (isEditing ? "Saving..." : "Creating...")
-                : (isEditing ? "Save Changes" : "Create Schedule")
-              }
-            </span>
-          </button>
+          </Button>
+          <Button type="submit" disabled={loading}>
+            <Save size={20} className="mr-2" />
+            {loading
+              ? (isEditing ? "Saving..." : "Creating...")
+              : (isEditing ? "Save Changes" : "Create Schedule")
+            }
+          </Button>
         </div>
       </form>
     </div>
