@@ -232,22 +232,22 @@ Plans:
 
 ---
 
-## Phase 13: Activity History & Remaining Pages - UAT Gap Closure
+## Phase 13: Activity History & Remaining Pages Complete
 
 **Goal:** Create activity history page and apply visual consistency to remaining pages
 
 **Requirements:** ACT-01
 
-**Status:** UAT Gap Closure (4/4 plans complete, 2 gap closure plans pending)
-**Plans:** 6 plans (4 complete + 2 gap closure)
+**Status:** Complete (2026-02-10)
+**Plans:** 6/6 complete
 
 Plans:
 - [x] 13-01-PLAN.md -- Activity history page with shadcn/ui Pagination, badge filters, date range, reptile filter
 - [x] 13-02-PLAN.md -- Visual consistency for utility pages (Login, Onboarding, AcceptInvite with Card/Button)
 - [x] 13-03-PLAN.md -- Settings tabs with shadcn/ui Tabs, ReptileForm with react-hook-form
 - [x] 13-04-PLAN.md -- ScheduleForm styling (visual only), Dashboard "View all" link wiring
-- [ ] 13-05-PLAN.md -- GAP CLOSURE: Fix ReptileForm and ScheduleForm SelectItem value="" crashes
-- [ ] 13-06-PLAN.md -- GAP CLOSURE: Force dark mode on non-authenticated pages
+- [x] 13-05-PLAN.md -- GAP CLOSURE: Fix ReptileForm and ScheduleForm SelectItem value="" crashes
+- [x] 13-06-PLAN.md -- GAP CLOSURE: Force dark mode on non-authenticated pages
 
 **Deliverables:**
 - [x] Activity history page (/activity)
@@ -262,17 +262,17 @@ Plans:
 - [x] Settings page with shadcn/ui Tabs
 - [x] ReptileForm with react-hook-form + shadcn/ui Form
 - [x] ScheduleForm with v1.1 styling (visual only, preserve logic)
-- [ ] ReptileForm renders without crashing (GAP: SelectItem value="")
-- [ ] ScheduleForm renders without crashing (GAP: SelectItem value="")
-- [ ] Non-auth pages default to dark mode (GAP: brief light mode flash)
+- [x] ReptileForm renders without crashing (sentinel pattern: __none__)
+- [x] ScheduleForm renders without crashing (sentinel pattern: __none__)
+- [x] Non-auth pages default to dark mode (useEffect + classList.add)
 
-**Verification:** 12/12 must-haves verified. See 13-VERIFICATION.md.
+**Verification:** 14/14 must-haves verified. See 13-VERIFICATION.md.
 
-**UAT Gaps Found (4):**
-1. **BLOCKER:** ReptileForm crashes with "Select.Item must have value prop that is not an empty string"
-2. **BLOCKER:** ScheduleForm crashes with same error
-3. **MINOR:** Non-auth pages (Login, Onboarding, AcceptInvite) show light mode briefly before OIDC redirect
-4. **MAJOR:** ActivityHistory title - user reported "wrong type of title" but PageHeader is used correctly (needs clarification)
+**UAT Gaps Closed:**
+1. ✓ ReptileForm SelectItem crash — fixed with `__none__` sentinel pattern
+2. ✓ ScheduleForm SelectItem crash — fixed with `__none__` sentinel pattern
+3. ✓ Non-auth pages light mode flash — fixed with dark mode useEffect on mount
+4. ActivityHistory title — follows PageHeader pattern (deferred, needs user clarification)
 
 **Success:** Users can view complete activity history from dashboard; all pages feel visually consistent; forms render without crashing
 
