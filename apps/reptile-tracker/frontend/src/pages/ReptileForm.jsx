@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { Home } from 'lucide-react';
 import DateInput from '../components/DateInput';
+import { getDefaultHouseholdId } from '../utils/householdSettings';
 
 export default function ReptileForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const householdId = searchParams.get('household');
+    const householdIdParam = searchParams.get('household');
     const isEditing = !!id && id !== 'new'; // Correctly determine if editing
 
     const [name, setName] = useState('');
@@ -23,6 +25,10 @@ export default function ReptileForm() {
     const [speciesList, setSpeciesList] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [filteredSpecies, setFilteredSpecies] = useState([]);
+
+    // Household selection state
+    const [households, setHouseholds] = useState([]);
+    const [selectedHouseholdId, setSelectedHouseholdId] = useState('');
 
     // Calculate age category from date of birth and species
     const calculateAgeCategory = (dateOfBirth, species) => {
@@ -71,6 +77,38 @@ export default function ReptileForm() {
                 // Non-critical error, continue without autocomplete
             });
 
+        // Fetch user's households for the dropdown (only needed when creating)
+        if (!isEditing) {
+            axios.get('/api/households/me')
+                .then(res => {
+                    setHouseholds(res.data);
+                    // Determine initial household selection
+                    if (res.data.length > 0) {
+                        // Priority: URL param > default household > first household
+                        if (householdIdParam) {
+                            // Check if the param matches a valid household
+                            const validHousehold = res.data.find(h => h.id === parseInt(householdIdParam));
+                            if (validHousehold) {
+                                setSelectedHouseholdId(householdIdParam);
+                            } else {
+                                // Invalid param, fall back to default or first
+                                const defaultId = getDefaultHouseholdId();
+                                const defaultHousehold = res.data.find(h => h.id === defaultId);
+                                setSelectedHouseholdId(defaultHousehold ? String(defaultId) : String(res.data[0].id));
+                            }
+                        } else {
+                            // No URL param, check for default household
+                            const defaultId = getDefaultHouseholdId();
+                            const defaultHousehold = res.data.find(h => h.id === defaultId);
+                            setSelectedHouseholdId(defaultHousehold ? String(defaultId) : String(res.data[0].id));
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch households:", err);
+                });
+        }
+
         if (isEditing) {
             axios.get(`/api/reptiles/${id}`)
                 .then(res => {
@@ -90,7 +128,7 @@ export default function ReptileForm() {
                     setError("Could not load reptile data.");
                 });
         }
-    }, [id, isEditing]);
+    }, [id, isEditing, householdIdParam]);
 
     // Auto-calculate age category when date of birth or species changes (if auto mode is enabled)
     useEffect(() => {
@@ -114,8 +152,8 @@ export default function ReptileForm() {
             // Only save age_category if manually set (not auto mode)
             age_category: ageCategoryAuto ? null : (ageCategory || null),
             sex: sex || null,
-            // Include household_id if provided via URL query param (for multi-household support)
-            ...(householdId && !isEditing && { household_id: parseInt(householdId) })
+            // Include household_id when creating (for multi-household support)
+            ...(selectedHouseholdId && !isEditing && { household_id: parseInt(selectedHouseholdId) })
         };
 
         try {
@@ -136,6 +174,29 @@ export default function ReptileForm() {
             <h1 className="text-3xl font-bold mb-6 text-foreground">{isEditing ? 'Edit Reptile' : 'Add New Reptile'}</h1>
             {error && <p className="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
             <form onSubmit={handleSubmit} className="bg-card rounded-lg shadow-md p-6 border border-border space-y-4">
+                {/* Household selector - only show when creating and user has multiple households */}
+                {!isEditing && households.length > 1 && (
+                    <div>
+                        <label htmlFor="household" className="block font-medium mb-1 text-muted-foreground">
+                            <Home className="inline w-4 h-4 mr-1" />
+                            Household
+                        </label>
+                        <select
+                            id="household"
+                            value={selectedHouseholdId}
+                            onChange={(e) => setSelectedHouseholdId(e.target.value)}
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-card text-foreground"
+                        >
+                            {households.map(h => (
+                                <option key={h.id} value={h.id}>{h.name}</option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Select which household this reptile belongs to
+                        </p>
+                    </div>
+                )}
+
                 <div>
                     <label htmlFor="name" className="block font-medium mb-1 text-muted-foreground">Name</label>
                     <input

@@ -23,6 +23,11 @@ import {
   hasCustomStatisticsSettings,
   copyGlobalSettingsToReptile
 } from '../utils/displaySettings';
+import {
+  getDefaultHouseholdId,
+  setDefaultHouseholdId,
+  isDefaultHousehold
+} from '../utils/householdSettings';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, notifications, templates, household
@@ -1053,6 +1058,12 @@ function HouseholdSection() {
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, invitations
   const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [defaultHouseholdId, setDefaultHouseholdIdState] = useState(getDefaultHouseholdId());
+
+  const handleSetDefault = (householdId) => {
+    setDefaultHouseholdId(householdId);
+    setDefaultHouseholdIdState(householdId);
+  };
 
   useEffect(() => {
     const fetchHouseholds = async () => {
@@ -1481,7 +1492,9 @@ function HouseholdSection() {
                   className="input flex-1"
                 >
                   {households.map(h => (
-                    <option key={h.id} value={h.id}>{h.name}</option>
+                    <option key={h.id} value={h.id}>
+                      {h.name}{h.id === defaultHouseholdId ? ' ★' : ''}
+                    </option>
                   ))}
                 </select>
                 {!showCreateForm && !showJoinForm && (
@@ -1561,7 +1574,14 @@ function HouseholdSection() {
                       <>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="text-lg font-semibold text-foreground">{selectedHousehold.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-semibold text-foreground">{selectedHousehold.name}</h3>
+                              {selectedHousehold.id === defaultHouseholdId && (
+                                <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full">
+                                  Default
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">Created {new Date(selectedHousehold.created_at).toLocaleDateString()}</p>
                           </div>
                           <div className="flex gap-2">
@@ -1578,7 +1598,16 @@ function HouseholdSection() {
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          {/* Set as default button - only show if not already default and user has multiple households */}
+                          {households.length > 1 && selectedHousehold.id !== defaultHouseholdId && (
+                            <button
+                              onClick={() => handleSetDefault(selectedHousehold.id)}
+                              className="btn-secondary text-sm"
+                            >
+                              Set as Default
+                            </button>
+                          )}
                           {canManage && (
                             <button
                               onClick={() => {
