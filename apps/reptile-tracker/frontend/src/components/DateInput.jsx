@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getUserDateFormat } from '../utils/dateFormatting';
+import { cn } from '@/lib/utils';
 
 /**
  * Custom date input that respects user's date format preference
@@ -125,7 +126,10 @@ export default function DateInput({ value, onChange, className = '', required = 
       onChange={handleChange}
       onBlur={handleBlur}
       placeholder={getPlaceholder()}
-      className={className}
+      className={cn(
+        "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
       required={required}
       {...props}
     />
