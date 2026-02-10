@@ -9,6 +9,16 @@ export default function AcceptInvite() {
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
+  // Force dark mode for non-authenticated page
+  useEffect(() => {
+    const root = document.documentElement;
+    const hadDark = root.classList.contains('dark');
+    root.classList.add('dark');
+    return () => {
+      if (!hadDark) root.classList.remove('dark');
+    };
+  }, []);
+
   useEffect(() => {
     const code = searchParams.get('code');
     if (!code) {
