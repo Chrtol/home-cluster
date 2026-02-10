@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import LoadingState from '../components/LoadingState';
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
@@ -51,13 +53,36 @@ export default function AcceptInvite() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-card rounded-lg shadow-md p-8 border border-border max-w-md w-full mx-4 text-center">
-        {status === 'loading' && <p className="text-muted-foreground">Joining household...</p>}
-        {status === 'success' && <p className="text-green-600 dark:text-green-300">{message}</p>}
-        {status === 'error' && <p className="text-red-600 dark:text-red-300">{message}</p>}
-        {status === 'idle' && <p className="text-muted-foreground">Processing invitation...</p>}
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
+      <Card className="max-w-md w-full">
+        <CardContent className="p-8 text-center">
+          {status === 'loading' && (
+            <div>
+              <LoadingState compact />
+              <p className="text-muted-foreground mt-4">Joining household...</p>
+            </div>
+          )}
+          {status === 'success' && (
+            <div>
+              <div className="text-4xl mb-4">✓</div>
+              <p className="text-green-600 dark:text-green-400 font-medium">{message}</p>
+              <p className="text-muted-foreground text-sm mt-2">Redirecting to settings...</p>
+            </div>
+          )}
+          {status === 'error' && (
+            <div>
+              <div className="text-4xl mb-4">✕</div>
+              <p className="text-destructive font-medium">{message}</p>
+            </div>
+          )}
+          {status === 'idle' && (
+            <div>
+              <LoadingState compact />
+              <p className="text-muted-foreground mt-4">Processing invitation...</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
