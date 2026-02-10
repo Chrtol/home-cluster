@@ -5,6 +5,7 @@ import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTime
 import NotificationsTab from '../components/NotificationsTab_new';
 import NotificationTemplatesTab from '../components/NotificationTemplatesTab';
 import ProfileManager from '../components/ProfileManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   getDashboardCardSettings,
   saveDashboardCardSettings,
@@ -30,79 +31,50 @@ import {
 } from '../utils/householdSettings';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('preferences'); // preferences, display, notifications, templates, household
-
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6 text-foreground">Settings</h1>
 
-      {/* Tabs */}
-      <div className="border-b border-border mb-6">
-        <nav className="flex gap-4 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('preferences')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'preferences'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
+      <Tabs defaultValue="preferences" className="w-full">
+        <TabsList className="w-full justify-start mb-6 overflow-x-auto">
+          <TabsTrigger value="preferences" className="flex items-center gap-2">
             <SettingsIcon size={18} />
             Preferences
-          </button>
-          <button
-            onClick={() => setActiveTab('display')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'display'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="display" className="flex items-center gap-2">
             <Layout size={18} />
             Display
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'notifications'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell size={18} />
             Notifications
-          </button>
-          <button
-            onClick={() => setActiveTab('templates')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'templates'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-2">
             <SettingsIcon size={18} />
             Templates
-          </button>
-          <button
-            onClick={() => setActiveTab('household')}
-            className={`flex items-center gap-2 py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'household'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="household" className="flex items-center gap-2">
             <Users size={18} />
             Household
-          </button>
-        </nav>
-      </div>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Tab Content */}
-      {activeTab === 'preferences' && <PreferencesTab />}
-      {activeTab === 'display' && <DisplayTab />}
-      {activeTab === 'notifications' && <NotificationsTab />}
-      {activeTab === 'templates' && <NotificationTemplatesTab />}
-      {activeTab === 'household' && <HouseholdSection />}
+        <TabsContent value="preferences">
+          <PreferencesTab />
+        </TabsContent>
+        <TabsContent value="display">
+          <DisplayTab />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <NotificationsTab />
+        </TabsContent>
+        <TabsContent value="templates">
+          <NotificationTemplatesTab />
+        </TabsContent>
+        <TabsContent value="household">
+          <HouseholdSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -1055,7 +1027,6 @@ function HouseholdSection() {
   const [joinCode, setJoinCode] = useState('');
   const [editingHouseholdId, setEditingHouseholdId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [activeTab, setActiveTab] = useState('overview'); // overview, users, invitations
   const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [defaultHouseholdId, setDefaultHouseholdIdState] = useState(getDefaultHouseholdId());
@@ -1487,7 +1458,6 @@ function HouseholdSection() {
                   onChange={(e) => {
                     const household = households.find(h => h.id === parseInt(e.target.value));
                     setSelectedHousehold(household);
-                    setActiveTab('overview');
                   }}
                   className="input flex-1"
                 >
@@ -1510,323 +1480,301 @@ function HouseholdSection() {
               </div>
 
               {/* Tabs */}
-              <div className="border-b border-border mb-4">
-                <nav className="flex gap-4 overflow-x-auto">
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === 'overview'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="w-full justify-start mb-4 overflow-x-auto">
+                  <TabsTrigger value="overview">
                     Overview
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('users')}
-                    className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === 'users'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
+                  </TabsTrigger>
+                  <TabsTrigger value="users">
                     Users ({members.length})
-                  </button>
+                  </TabsTrigger>
                   {canManage && (
-                    <button
-                      onClick={() => setActiveTab('invitations')}
-                      className={`py-2 px-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                        activeTab === 'invitations'
-                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                      }`}
-                    >
+                    <TabsTrigger value="invitations">
                       Invitations ({invitations.length})
-                    </button>
+                    </TabsTrigger>
                   )}
-                </nav>
-              </div>
+                </TabsList>
 
-              {/* Tab Content */}
-              {activeTab === 'overview' && (
-                <div className="space-y-4">
-                  <div className="p-4 border border-border rounded-lg">
-                    {editingHouseholdId === selectedHousehold.id ? (
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="input w-full"
-                          placeholder="Household name"
-                          onKeyDown={(e) => e.key === 'Enter' && updateHouseholdName(selectedHousehold.id)}
-                        />
-                        <div className="flex gap-2">
-                          <button onClick={() => updateHouseholdName(selectedHousehold.id)} disabled={creating} className="btn-primary">
-                            {creating ? 'Saving...' : 'Save'}
-                          </button>
-                          <button onClick={() => { setEditingHouseholdId(null); setEditName(''); }} className="btn-secondary">
-                            Cancel
-                          </button>
+                {/* Tab Content */}
+                <TabsContent value="overview">
+                  <div className="space-y-4">
+                    <div className="p-4 border border-border rounded-lg">
+                      {editingHouseholdId === selectedHousehold.id ? (
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="input w-full"
+                            placeholder="Household name"
+                            onKeyDown={(e) => e.key === 'Enter' && updateHouseholdName(selectedHousehold.id)}
+                          />
+                          <div className="flex gap-2">
+                            <button onClick={() => updateHouseholdName(selectedHousehold.id)} disabled={creating} className="btn-primary">
+                              {creating ? 'Saving...' : 'Save'}
+                            </button>
+                            <button onClick={() => { setEditingHouseholdId(null); setEditName(''); }} className="btn-secondary">
+                              Cancel
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-semibold text-foreground">{selectedHousehold.name}</h3>
-                              {selectedHousehold.id === defaultHouseholdId && (
-                                <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full">
-                                  Default
-                                </span>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-semibold text-foreground">{selectedHousehold.name}</h3>
+                                {selectedHousehold.id === defaultHouseholdId && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full">
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">Created {new Date(selectedHousehold.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              {isOwner && (
+                                <button
+                                  onClick={() => {
+                                    setEditingHouseholdId(selectedHousehold.id);
+                                    setEditName(selectedHousehold.name);
+                                  }}
+                                  className="btn-secondary text-sm"
+                                >
+                                  Edit Name
+                                </button>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">Created {new Date(selectedHousehold.created_at).toLocaleDateString()}</p>
                           </div>
-                          <div className="flex gap-2">
-                            {isOwner && (
+                          <div className="flex flex-wrap gap-2">
+                            {/* Set as default button - only show if not already default and user has multiple households */}
+                            {households.length > 1 && selectedHousehold.id !== defaultHouseholdId && (
                               <button
-                                onClick={() => {
-                                  setEditingHouseholdId(selectedHousehold.id);
-                                  setEditName(selectedHousehold.name);
-                                }}
+                                onClick={() => handleSetDefault(selectedHousehold.id)}
                                 className="btn-secondary text-sm"
                               >
-                                Edit Name
+                                Set as Default
                               </button>
                             )}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {/* Set as default button - only show if not already default and user has multiple households */}
-                          {households.length > 1 && selectedHousehold.id !== defaultHouseholdId && (
+                            {canManage && (
+                              <button
+                                onClick={() => {
+                                  createInvite(selectedHousehold.id);
+                                }}
+                                disabled={creating}
+                                className="btn-primary"
+                              >
+                                Create Invite
+                              </button>
+                            )}
                             <button
-                              onClick={() => handleSetDefault(selectedHousehold.id)}
-                              className="btn-secondary text-sm"
-                            >
-                              Set as Default
-                            </button>
-                          )}
-                          {canManage && (
-                            <button
-                              onClick={() => {
-                                createInvite(selectedHousehold.id);
-                                setActiveTab('invitations');
-                              }}
+                              onClick={() => leaveHousehold(selectedHousehold.id)}
                               disabled={creating}
-                              className="btn-primary"
+                              className="btn-secondary text-red-600 dark:text-red-400"
                             >
-                              Create Invite
+                              Leave Household
                             </button>
-                          )}
-                          <button
-                            onClick={() => leaveHousehold(selectedHousehold.id)}
-                            disabled={creating}
-                            className="btn-secondary text-red-600 dark:text-red-400"
-                          >
-                            Leave Household
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="p-4 border border-border rounded-lg bg-secondary">
-                    <h4 className="font-medium text-foreground mb-2">Quick Stats</h4>
-                    <div className={`grid ${canManage ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
-                      <div>
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{members.length}</p>
-                        <p className="text-sm text-muted-foreground">Members</p>
-                      </div>
-                      {canManage && (
-                        <div>
-                          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{invitations.filter(i => !i.expires_at || new Date(i.expires_at) > new Date()).length}</p>
-                          <p className="text-sm text-muted-foreground">Active Invites</p>
-                        </div>
+                          </div>
+                        </>
                       )}
                     </div>
+
+                    <div className="p-4 border border-border rounded-lg bg-secondary">
+                      <h4 className="font-medium text-foreground mb-2">Quick Stats</h4>
+                      <div className={`grid ${canManage ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                        <div>
+                          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{members.length}</p>
+                          <p className="text-sm text-muted-foreground">Members</p>
+                        </div>
+                        {canManage && (
+                          <div>
+                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{invitations.filter(i => !i.expires_at || new Date(i.expires_at) > new Date()).length}</p>
+                            <p className="text-sm text-muted-foreground">Active Invites</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {activeTab === 'users' && (
-                <div className="space-y-4">
-                  {!isAdmin && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 px-4 py-3 rounded mb-4">
-                      <div className="flex items-center gap-2">
-                        <Shield size={20} />
-                        <p className="text-sm">
-                          You are a <strong>{userRole || 'member'}</strong>. Only owners and admins can manage member roles.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {members.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground">No members found</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {members.map(member => (
-                        <div
-                          key={member.user_id}
-                          className="flex items-center justify-between p-4 bg-card/50 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <h3 className="font-medium text-foreground">{member.name}</h3>
-                            <p className="text-sm text-muted-foreground">{member.email}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                              Joined {new Date(member.joined_at).toLocaleDateString()}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            {getRoleBadge(member.access_level)}
-
-                            {isAdmin && member.user_id !== currentUserId && (
-                              <div className="flex gap-2">
-                                <select
-                                  value={member.access_level}
-                                  onChange={(e) => handleRoleChange(member.user_id, e.target.value)}
-                                  className="input py-1 px-2 text-sm"
-                                  disabled={creating}
-                                >
-                                  <option value="viewer">Viewer</option>
-                                  <option value="caretaker">Caretaker</option>
-                                  <option value="manager">Manager</option>
-                                  <option value="admin">Admin</option>
-                                  <option value="owner">Owner</option>
-                                </select>
-
-                                <button
-                                  onClick={() => removeMember(member.user_id)}
-                                  className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
-                                  title="Remove member"
-                                  disabled={creating}
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                      <div className="mt-6 pt-6 border-t border-border">
-                        <h3 className="font-semibold text-foreground mb-3">Role Permissions</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
-                            <span className="text-muted-foreground"> Full household control (members, invitations, reptiles)</span>
-                          </div>
-                          <div>
-                            <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
-                            <span className="text-muted-foreground"> Can manage members, invitations, and reptiles</span>
-                          </div>
-                          <div>
-                            <strong className="text-yellow-600 dark:text-yellow-400">Manager:</strong>
-                            <span className="text-muted-foreground"> Can edit reptiles and create invitations</span>
-                          </div>
-                          <div>
-                            <strong className="text-green-600 dark:text-green-400">Caretaker:</strong>
-                            <span className="text-muted-foreground"> Can log feedings, misting, weights</span>
-                          </div>
-                          <div>
-                            <strong className="text-muted-foreground">Viewer:</strong>
-                            <span className="text-muted-foreground"> Can only view reptiles and logs</span>
-                          </div>
+                <TabsContent value="users">
+                  <div className="space-y-4">
+                    {!isAdmin && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 px-4 py-3 rounded mb-4">
+                        <div className="flex items-center gap-2">
+                          <Shield size={20} />
+                          <p className="text-sm">
+                            You are a <strong>{userRole || 'member'}</strong>. Only owners and admins can manage member roles.
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
 
-              {activeTab === 'invitations' && (
-                <div className="space-y-4">
-                  {inviteLink && inviteCode && (
-                    <div className="p-4 border border-dashed border-border rounded-lg bg-green-50 dark:bg-green-900/20 mb-4">
-                      <h3 className="font-semibold text-foreground mb-3">Invitation Created!</h3>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-muted-foreground mb-1">Invitation Code</label>
-                          <div className="flex gap-2">
-                            <input readOnly value={inviteCode} className="input flex-1 font-mono text-sm" />
-                            <button onClick={copyCode} className="btn-secondary whitespace-nowrap">Copy</button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-muted-foreground mb-1">Invitation Link</label>
-                          <div className="flex gap-2">
-                            <input readOnly value={inviteLink} className="input flex-1 text-sm" />
-                            <button onClick={copyLink} className="btn-secondary whitespace-nowrap">Copy</button>
-                          </div>
-                        </div>
-                        <button onClick={() => { setInviteLink(''); setInviteCode(''); }} className="btn-secondary text-sm">
-                          Dismiss
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {invitations.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No invitations yet</p>
-                      <button
-                        onClick={() => createInvite(selectedHousehold.id)}
-                        disabled={creating}
-                        className="btn-primary"
-                      >
-                        Create First Invite
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {invitations.map(inv => {
-                        const isExpired = inv.expires_at && new Date(inv.expires_at) < new Date();
-                        const isMaxedOut = inv.max_uses && inv.used_count >= inv.max_uses;
-                        const isActive = !isExpired && !isMaxedOut;
-
-                        return (
-                          <div key={inv.id} className="p-4 border border-border rounded-lg flex justify-between items-center">
+                    {members.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">No members found</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {members.map(member => (
+                          <div
+                            key={member.user_id}
+                            className="flex items-center justify-between p-4 bg-card/50 rounded-lg"
+                          >
                             <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <code className="text-sm font-mono bg-card px-2 py-1 rounded">
-                                  {inv.code}
-                                </code>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  isActive
-                                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                                    : 'bg-card text-muted-foreground'
-                                }`}>
-                                  {isActive ? 'Active' : isExpired ? 'Expired' : 'Maxed Out'}
-                                </span>
-                              </div>
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                <span>Used {inv.used_count || 0} time{inv.used_count !== 1 ? 's' : ''}</span>
-                                {inv.max_uses && <span> (max: {inv.max_uses})</span>}
-                                {inv.expires_at && <span> • Expires {new Date(inv.expires_at).toLocaleDateString()}</span>}
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Created {new Date(inv.created_at).toLocaleDateString()}
+                              <h3 className="font-medium text-foreground">{member.name}</h3>
+                              <p className="text-sm text-muted-foreground">{member.email}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                Joined {new Date(member.joined_at).toLocaleDateString()}
                               </p>
                             </div>
-                            {isOwner && (
-                              <button
-                                onClick={() => deleteInvitation(inv.id)}
-                                disabled={creating}
-                                className="btn-secondary text-red-600 dark:text-red-400"
-                              >
-                                Revoke
-                              </button>
-                            )}
+
+                            <div className="flex items-center gap-3">
+                              {getRoleBadge(member.access_level)}
+
+                              {isAdmin && member.user_id !== currentUserId && (
+                                <div className="flex gap-2">
+                                  <select
+                                    value={member.access_level}
+                                    onChange={(e) => handleRoleChange(member.user_id, e.target.value)}
+                                    className="input py-1 px-2 text-sm"
+                                    disabled={creating}
+                                  >
+                                    <option value="viewer">Viewer</option>
+                                    <option value="caretaker">Caretaker</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="owner">Owner</option>
+                                  </select>
+
+                                  <button
+                                    onClick={() => removeMember(member.user_id)}
+                                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                                    title="Remove member"
+                                    disabled={creating}
+                                  >
+                                    <Trash2 size={18} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+                        ))}
+
+                        <div className="mt-6 pt-6 border-t border-border">
+                          <h3 className="font-semibold text-foreground mb-3">Role Permissions</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <strong className="text-blue-600 dark:text-blue-400">Owner:</strong>
+                              <span className="text-muted-foreground"> Full household control (members, invitations, reptiles)</span>
+                            </div>
+                            <div>
+                              <strong className="text-purple-600 dark:text-purple-400">Admin:</strong>
+                              <span className="text-muted-foreground"> Can manage members, invitations, and reptiles</span>
+                            </div>
+                            <div>
+                              <strong className="text-yellow-600 dark:text-yellow-400">Manager:</strong>
+                              <span className="text-muted-foreground"> Can edit reptiles and create invitations</span>
+                            </div>
+                            <div>
+                              <strong className="text-green-600 dark:text-green-400">Caretaker:</strong>
+                              <span className="text-muted-foreground"> Can log feedings, misting, weights</span>
+                            </div>
+                            <div>
+                              <strong className="text-muted-foreground">Viewer:</strong>
+                              <span className="text-muted-foreground"> Can only view reptiles and logs</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="invitations">
+                  <div className="space-y-4">
+                    {inviteLink && inviteCode && (
+                      <div className="p-4 border border-dashed border-border rounded-lg bg-green-50 dark:bg-green-900/20 mb-4">
+                        <h3 className="font-semibold text-foreground mb-3">Invitation Created!</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">Invitation Code</label>
+                            <div className="flex gap-2">
+                              <input readOnly value={inviteCode} className="input flex-1 font-mono text-sm" />
+                              <button onClick={copyCode} className="btn-secondary whitespace-nowrap">Copy</button>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">Invitation Link</label>
+                            <div className="flex gap-2">
+                              <input readOnly value={inviteLink} className="input flex-1 text-sm" />
+                              <button onClick={copyLink} className="btn-secondary whitespace-nowrap">Copy</button>
+                            </div>
+                          </div>
+                          <button onClick={() => { setInviteLink(''); setInviteCode(''); }} className="btn-secondary text-sm">
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {invitations.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground mb-4">No invitations yet</p>
+                        <button
+                          onClick={() => createInvite(selectedHousehold.id)}
+                          disabled={creating}
+                          className="btn-primary"
+                        >
+                          Create First Invite
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {invitations.map(inv => {
+                          const isExpired = inv.expires_at && new Date(inv.expires_at) < new Date();
+                          const isMaxedOut = inv.max_uses && inv.used_count >= inv.max_uses;
+                          const isActive = !isExpired && !isMaxedOut;
+
+                          return (
+                            <div key={inv.id} className="p-4 border border-border rounded-lg flex justify-between items-center">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <code className="text-sm font-mono bg-card px-2 py-1 rounded">
+                                    {inv.code}
+                                  </code>
+                                  <span className={`text-xs px-2 py-1 rounded-full ${
+                                    isActive
+                                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                      : 'bg-card text-muted-foreground'
+                                  }`}>
+                                    {isActive ? 'Active' : isExpired ? 'Expired' : 'Maxed Out'}
+                                  </span>
+                                </div>
+                                <div className="mt-1 text-sm text-muted-foreground">
+                                  <span>Used {inv.used_count || 0} time{inv.used_count !== 1 ? 's' : ''}</span>
+                                  {inv.max_uses && <span> (max: {inv.max_uses})</span>}
+                                  {inv.expires_at && <span> • Expires {new Date(inv.expires_at).toLocaleDateString()}</span>}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Created {new Date(inv.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              {isOwner && (
+                                <button
+                                  onClick={() => deleteInvitation(inv.id)}
+                                  disabled={creating}
+                                  className="btn-secondary text-red-600 dark:text-red-400"
+                                >
+                                  Revoke
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </>

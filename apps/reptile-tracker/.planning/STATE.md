@@ -17,11 +17,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 |--------|-------|
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
-| Current Phase | 12 (Polish & Mobile) |
-| Phase Status | IN PROGRESS (9/? plans) |
+| Current Phase | 13 (Activity History & Remaining Pages) |
+| Phase Status | IN PROGRESS (2/? plans) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
-Progress: Phase 12 - In Progress
+Progress: Phase 13 - In Progress
 ```
 Phase 7 (Foundation):
 07-01: Complete (shadcn/ui foundation)
@@ -67,12 +67,17 @@ Phase 12 (Polish & Mobile):
 12-01: Complete (consistency components - PageHeader, LoadingState, ErrorState, useMediaQuery)
 12-02: Complete (dashboard customization bug fixes - sidebar zone visibility, completed section persistence)
 12-03: Complete (mobile touch targets & feedback - 44px WCAG targets, scale animations)
-12-07: Complete (Track menu keyboard shortcuts - F/M/H quick navigation with visual hints)
 12-04: Complete (consistency batch 1 - ReptileList, FoodManagement, Statistics, Calendar with PageHeader)
 12-05: Complete (consistency batch 2 - ScheduleTemplates, SupplementRotations, ScheduleDetails, HouseholdSettings)
+12-06: Complete (final verification checkpoint - human verification of all Phase 12 changes)
+12-07: Complete (Track menu keyboard shortcuts - F/M/H quick navigation with visual hints)
 12-08: Complete (avatar border colors & component usage - ReptileNameWithAvatar in detail pages)
 12-09: Complete (EmptyState component - reusable empty states with icons, messages, actions)
 12-10: Complete (page transitions & focus indicators - 150ms fade, focus-visible accessibility)
+
+Phase 13 (Activity History & Remaining Pages):
+13-01: Complete (ActivityHistory page - filter by reptile/type, pagination, EmptyState)
+13-02: Complete (utility pages redesign - Login, Onboarding, AcceptInvite with shadcn/ui)
 ```
 
 Progress bar:
@@ -82,7 +87,8 @@ Phase 8:  [============] 16/16
 Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
 Phase 11: [============] 4/4
-Phase 12: [█████████  ] 9/?
+Phase 12: [============] 10/10
+Phase 13: [==] 2/?
 ```
 
 ## Milestone Scope
@@ -191,6 +197,9 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-09 | Page transitions 150ms fade | Framer Motion AnimatePresence with 150ms easeOut for subtle, fast route transitions |
 | 2026-02-09 | focus-visible over focus | Focus indicators only show on keyboard navigation, not mouse clicks for better UX |
 | 2026-02-09 | focus-ring utility class | Consistent ring-2 ring-primary styling applied via utility class to custom interactive elements |
+| 2026-02-10 | bg-secondary for utility page backgrounds | Simplified from gradients to design tokens for cleaner code with same visual result |
+| 2026-02-10 | LoadingState component for async operations | Reused existing LoadingState component in AcceptInvite for consistency with Phase 12 patterns |
+| 2026-02-10 | Button variant usage in utility pages | Used variant="link" for back buttons instead of raw text-primary classes |
 
 ## Reference Documents
 
@@ -202,23 +211,23 @@ Phase 12: Polish/Mobile   Not started
 
 ## Next Steps
 
-Phase 13 in progress. Plan 13-01 complete.
+Phase 13 in progress. Plans 13-01 and 13-02 complete.
 
 Remaining Phase 13 work: Additional plans as needed for Activity History & Remaining Pages.
 
 ## Session Continuity
 
 **Last session:** 2026-02-10
-**Stopped at:** Phase 13 Plan 01 complete - ActivityHistory page with filters and pagination
+**Stopped at:** Phase 13 Plan 02 complete - utility pages redesigned with shadcn/ui
 **Resume with:** Continue Phase 13 remaining plans
 
 **Recent activity:**
-- 13-01: ActivityHistory page (complete) - badge filters for type/reptile/date, client-side pagination
+- 13-02: Utility pages redesign (complete) - Login, Onboarding, AcceptInvite with shadcn/ui
+- 13-01: ActivityHistory page (complete) - filter by reptile/type, pagination, EmptyState
 - 12-10: Page transitions & focus indicators (complete) - 150ms fade, focus-visible accessibility
 - 12-09: EmptyState component (complete) - reusable empty states with icons, messages, actions
-- 12-08: Avatar border colors & component usage (complete) - ReptileNameWithAvatar in detail pages
 
-**Phase 13 status:** IN PROGRESS - 1/? plans complete
+**Phase 13 status:** IN PROGRESS - 2/? plans complete
 
 ---
-*State updated: 2026-02-10 - Completed plan 13-01*
+*State updated: 2026-02-10 - Completed plan 13-02*
