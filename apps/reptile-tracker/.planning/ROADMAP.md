@@ -181,76 +181,87 @@ Plans:
 
 ---
 
-## Phase 12: Polish & Mobile
+## Phase 12: Polish & Mobile Complete
 
 **Goal:** Consistency pass and mobile optimization
 
 **Requirements:** NAV-03, NAV-04
 
-**Status:** In Progress
-**Plans:** 10 plans
+**Status:** Complete (2026-02-10)
+**Plans:** 10/10 complete
 
 Plans:
-- [ ] 12-01-PLAN.md -- Create consistency components (PageHeader, LoadingState, ErrorState, useMediaQuery)
-- [ ] 12-02-PLAN.md -- Fix dashboard sidebar bugs (empty drop zone, completed section persistence)
-- [ ] 12-03-PLAN.md -- Mobile navigation polish (44x44px touch targets, active:scale-95 feedback)
-- [ ] 12-04-PLAN.md -- Apply consistency to pages batch 1 (ReptileList, FoodManagement, Statistics, Calendar, NotificationHistory, MistingLog, HealthLog)
-- [ ] 12-05-PLAN.md -- Apply consistency to pages batch 2 (FeedingLog, ScheduleTemplates, SupplementRotations, ScheduleDetails, HouseholdSettings)
-- [ ] 12-06-PLAN.md -- Final verification checkpoint
-- [ ] 12-07-PLAN.md -- Keyboard shortcuts F/M/H in Track menu
-- [ ] 12-08-PLAN.md -- Avatar border color consistency and ReptileNameWithAvatar audit
-- [ ] 12-09-PLAN.md -- EmptyState component and application
-- [ ] 12-10-PLAN.md -- Page transitions and focus indicator polish
+- [x] 12-01-PLAN.md -- Create consistency components (PageHeader, LoadingState, ErrorState, useMediaQuery)
+- [x] 12-02-PLAN.md -- Fix dashboard sidebar bugs (empty drop zone, completed section persistence)
+- [x] 12-03-PLAN.md -- Mobile navigation polish (44x44px touch targets, active:scale-95 feedback)
+- [x] 12-04-PLAN.md -- Apply consistency to pages batch 1 (ReptileList, FoodManagement, Statistics, Calendar, NotificationHistory, MistingLog, HealthLog)
+- [x] 12-05-PLAN.md -- Apply consistency to pages batch 2 (FeedingLog, ScheduleTemplates, SupplementRotations, ScheduleDetails, HouseholdSettings)
+- [x] 12-06-PLAN.md -- Final verification checkpoint
+- [x] 12-07-PLAN.md -- Keyboard shortcuts F/M/H in Track menu
+- [x] 12-08-PLAN.md -- Avatar border color consistency and ReptileNameWithAvatar audit
+- [x] 12-09-PLAN.md -- EmptyState component and application
+- [x] 12-10-PLAN.md -- Page transitions and focus indicator polish
 
 **Deliverables:**
-- [ ] Consistency components (PageHeader, LoadingState, ErrorState, EmptyState)
-- [ ] useMediaQuery hook for responsive detection
-- [ ] Mobile navigation with proper touch targets (44x44px minimum)
-- [ ] Touch feedback on mobile nav items (active:scale-95)
-- [ ] Dashboard sidebar bug fixes (empty drop zone in edit mode)
-- [ ] Today card completed section state persistence
-- [ ] All pages using consistent PageHeader component
-- [ ] All pages using consistent LoadingState component
-- [ ] Keyboard shortcuts F/M/H when Track menu is open
-- [ ] Avatar border color propagation fixed across all widgets
-- [ ] ReptileNameWithAvatar used in appropriate contexts
-- [ ] EmptyState component for consistent empty data displays
-- [ ] Smooth page transitions with Framer Motion
-- [ ] Consistent focus-visible indicators for accessibility
+- [x] Consistency components (PageHeader, LoadingState, ErrorState, EmptyState)
+- [x] useMediaQuery hook for responsive detection
+- [x] Mobile navigation with proper touch targets (44x44px minimum)
+- [x] Touch feedback on mobile nav items (active:scale-95)
+- [x] Dashboard sidebar bug fixes (empty drop zone in edit mode)
+- [x] Today card completed section state persistence
+- [x] All pages using consistent PageHeader component
+- [x] All pages using consistent LoadingState component
+- [x] Keyboard shortcuts F/M/H when Track menu is open
+- [x] Avatar border color propagation fixed across all widgets
+- [x] ReptileNameWithAvatar used in appropriate contexts
+- [x] EmptyState component for consistent empty data displays
+- [x] Smooth page transitions with Framer Motion
+- [x] Consistent focus-visible indicators for accessibility
 
 **Dashboard Customization Bugs Fixed:**
-- [ ] Sidebar zone shows empty drop zone when no cards (edit mode)
-- [ ] Today card completed section remembers expanded/collapsed state
-- [ ] WidgetGallery already supports zone selection (verified in research)
+- [x] Sidebar zone shows empty drop zone when no cards (edit mode)
+- [x] Today card completed section remembers expanded/collapsed state
+- [x] WidgetGallery already supports zone selection (verified in research)
 
 **Deferred to v1.2:**
 - Column layout customization (Bug 4 from UAT)
+
+**Verification:** Human-verified on desktop and mobile viewports. See 12-06-SUMMARY.md.
 
 **Success:** Desktop and mobile feel equally polished, consistent visual language
 
 ---
 
-## Phase 13: Activity History
+## Phase 13: Activity History & Remaining Pages
 
-**Goal:** Create dedicated activity history page accessible from dashboard "View all" button
+**Goal:** Create activity history page and apply visual consistency to remaining pages
 
 **Requirements:** ACT-01
 
 **Status:** Not Started
-**Plans:** TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 13-01-PLAN.md -- Activity history page with filters, pagination, and search
+- [ ] 13-01-PLAN.md -- Activity history page with shadcn/ui Pagination, badge filters, date range, reptile filter
+- [ ] 13-02-PLAN.md -- Visual consistency for utility pages (Login, Onboarding, AcceptInvite with Card/Button)
+- [ ] 13-03-PLAN.md -- Settings tabs with shadcn/ui Tabs, ReptileForm with react-hook-form
+- [ ] 13-04-PLAN.md -- ScheduleForm styling (visual only), Dashboard "View all" link wiring
 
 **Deliverables:**
-- [ ] Activity history page (/activity or /history)
+- [ ] Activity history page (/activity)
 - [ ] Filter by activity type (feeding, misting, health, weight)
 - [ ] Filter by reptile
 - [ ] Date range filter
-- [ ] Pagination or infinite scroll
+- [ ] Pagination (page size 25)
 - [ ] Dashboard "View all" button links to activity page
+- [ ] Login page with v1.1 styling (Card, Button components)
+- [ ] Onboarding wizard with v1.1 styling (Card, Button, Input)
+- [ ] AcceptInvite page with v1.1 styling (Card)
+- [ ] Settings page with shadcn/ui Tabs
+- [ ] ReptileForm with react-hook-form + shadcn/ui Form
+- [ ] ScheduleForm with v1.1 styling (visual only, preserve logic)
 
-**Success:** Users can view complete activity history from dashboard
+**Success:** Users can view complete activity history from dashboard; all pages feel visually consistent
 
 ---
 
@@ -272,8 +283,9 @@ Phase 13 (Activity)  -> After Phase 12
 |------|------------|
 | shadcn/ui integration issues | Phase 7 is foundation-only, validates approach early |
 | Breaking existing functionality | Each phase maintains backward compatibility |
-| Scope creep | Settings/Onboarding explicitly excluded |
+| Scope creep | Settings/Onboarding added to Phase 13 for visual consistency |
 | Mobile complexity | Dedicated phase (12) for mobile focus |
+| ScheduleForm complexity | Visual-only styling, no react-hook-form conversion |
 
 ---
-*Last updated: 2026-02-09*
+*Last updated: 2026-02-10*
