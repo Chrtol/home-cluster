@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { getUserTimezone } from '../utils/dateFormatting'
-import NotificationBell from './NotificationBell'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Utensils, Droplets, Heart, Clock } from 'lucide-react'
 
@@ -171,21 +170,20 @@ export default function Header({ user, todayStats, dueTasks = [] }) {
   const firstName = user?.name?.split(' ')[0] || 'there'
 
   return (
-    <header className="px-6 py-4 border-b border-border bg-secondary/30">
+    <div className="px-4 sm:px-6 lg:px-8 py-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-foreground">
             {getGreeting()}, {firstName}
-          </h1>
+          </h2>
           <p className="text-xs text-muted-foreground">
             {formatDate(currentDate)}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {renderQuickStats()}
-          <NotificationBell />
         </div>
       </div>
-    </header>
+    </div>
   )
 }

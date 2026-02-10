@@ -17,6 +17,25 @@ const pageTransition = {
   ease: 'easeOut'
 }
 
+// Page title mapping
+const getPageTitle = (pathname) => {
+  if (pathname === '/') return 'Dashboard'
+  if (pathname === '/reptiles') return 'Reptiles'
+  if (pathname.startsWith('/reptiles/')) return 'Reptile Details'
+  if (pathname === '/calendar') return 'Calendar'
+  if (pathname === '/stats') return 'Statistics'
+  if (pathname === '/feed') return 'Log Feeding'
+  if (pathname === '/health-log') return 'Log Health'
+  if (pathname === '/misting-log') return 'Log Misting'
+  if (pathname === '/food-management') return 'Food Management'
+  if (pathname === '/schedule-templates') return 'Schedule Templates'
+  if (pathname === '/supplement-rotations') return 'Supplement Rotations'
+  if (pathname === '/notification-history') return 'Notifications'
+  if (pathname === '/settings') return 'Settings'
+  if (pathname === '/household') return 'Household'
+  return null
+}
+
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -488,6 +507,24 @@ export default function Layout({ user, onLogout }) {
 
       {/* Main Content */}
       <div className={`transition-all duration-200 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-56'}`}>
+        {/* Desktop Top Header */}
+        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between gap-4 px-6 py-3 border-b border-border bg-card/80 backdrop-blur-sm">
+          <h1 className="text-lg font-semibold text-foreground">
+            {getPageTitle(location.pathname)}
+          </h1>
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-foreground">{user?.name?.split(' ')[0] || 'User'}</span>
+            </div>
+          </div>
+        </header>
+
         <main className="py-6 px-4 sm:px-6 lg:px-8">
           <AnimatePresence mode="wait">
             <motion.div

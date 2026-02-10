@@ -2043,15 +2043,14 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-6">
-      {/* Header with greeting and quick stats - full width */}
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-6">
+      {/* Welcome section with greeting and quick stats */}
       <Header user={user} todayStats={todayStats} dueTasks={dueTasks} />
 
       {/* Content area with restored padding */}
-      <div className="px-4 sm:px-6 lg:px-8 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 pb-6">
         {/* Edit mode controls bar */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-muted-foreground">Dashboard</span>
+        <div className="flex items-center justify-end mb-4">
           <EditModeControls
             isEditMode={isEditMode}
             onToggleEditMode={handleToggleEditMode}

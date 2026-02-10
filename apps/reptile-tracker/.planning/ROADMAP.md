@@ -1,7 +1,7 @@
 # Roadmap: v1.1 UI Overhaul
 
 **Milestone:** v1.1
-**Phases:** 7-12 (continuing from v1.0)
+**Phases:** 7-13 (continuing from v1.0)
 **Created:** 2026-02-07
 
 ## Overview
@@ -13,6 +13,7 @@ Phase 9:  Reptile Pages       -> List and detail pages
 Phase 10: Calendar & Stats    -> Calendar quick-view, statistics improvements
 Phase 11: Forms & Tables      -> Feed logging, food table, pickers
 Phase 12: Polish & Mobile     -> Consistency pass, mobile optimization
+Phase 13: Activity History    -> Activity history page, "View all" from dashboard
 ```
 
 ---
@@ -229,6 +230,30 @@ Plans:
 
 ---
 
+## Phase 13: Activity History
+
+**Goal:** Create dedicated activity history page accessible from dashboard "View all" button
+
+**Requirements:** ACT-01
+
+**Status:** Not Started
+**Plans:** TBD
+
+Plans:
+- [ ] 13-01-PLAN.md -- Activity history page with filters, pagination, and search
+
+**Deliverables:**
+- [ ] Activity history page (/activity or /history)
+- [ ] Filter by activity type (feeding, misting, health, weight)
+- [ ] Filter by reptile
+- [ ] Date range filter
+- [ ] Pagination or infinite scroll
+- [ ] Dashboard "View all" button links to activity page
+
+**Success:** Users can view complete activity history from dashboard
+
+---
+
 ## Dependencies
 
 ```
@@ -238,6 +263,7 @@ Phase 9 (Reptile)    -> Can start after Phase 7, parallel with Phase 8
 Phase 10 (Cal/Stat)  -> Can start after Phase 7
 Phase 11 (Forms)     -> Depends on Phase 7 (pickers)
 Phase 12 (Polish)    -> After all other phases complete
+Phase 13 (Activity)  -> After Phase 12
 ```
 
 ## Risk Mitigation
