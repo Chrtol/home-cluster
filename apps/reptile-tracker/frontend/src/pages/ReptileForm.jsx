@@ -21,10 +21,10 @@ const reptileSchema = z.object({
   species: z.string().min(1, 'Species is required'),
   date_of_birth: z.string().optional(),
   notes: z.string().optional(),
-  has_uvb: z.enum(['', 'true', 'false']).optional(),
+  has_uvb: z.enum(['__none__', 'true', 'false']).optional(),
   length: z.string().optional(),
-  age_category: z.enum(['', 'hatchling', 'juvenile', 'adult', 'gravid']).optional(),
-  sex: z.enum(['', 'male', 'female', 'unknown']).optional(),
+  age_category: z.enum(['__none__', 'hatchling', 'juvenile', 'adult', 'gravid']).optional(),
+  sex: z.enum(['__none__', 'male', 'female', 'unknown']).optional(),
   household_id: z.string().optional()
 });
 
@@ -85,10 +85,10 @@ export default function ReptileForm() {
       species: '',
       date_of_birth: '',
       notes: '',
-      has_uvb: '',
+      has_uvb: '__none__',
       length: '',
-      age_category: '',
-      sex: '',
+      age_category: '__none__',
+      sex: '__none__',
       household_id: ''
     }
   });
@@ -147,10 +147,10 @@ export default function ReptileForm() {
             species: res.data.species || '',
             date_of_birth: res.data.date_of_birth ? res.data.date_of_birth.split('T')[0] : '',
             notes: res.data.notes || '',
-            has_uvb: res.data.has_uvb === null ? '' : res.data.has_uvb ? 'true' : 'false',
+            has_uvb: res.data.has_uvb === null ? '__none__' : res.data.has_uvb ? 'true' : 'false',
             length: res.data.length ? String(res.data.length) : '',
-            age_category: res.data.age_category || '',
-            sex: res.data.sex || '',
+            age_category: res.data.age_category || '__none__',
+            sex: res.data.sex || '__none__',
             household_id: ''
           });
           // If age_category is set, assume manual mode
@@ -192,11 +192,11 @@ export default function ReptileForm() {
       species: data.species,
       date_of_birth: data.date_of_birth || null,
       notes: data.notes || null,
-      has_uvb: data.has_uvb === '' ? null : data.has_uvb === 'true',
+      has_uvb: data.has_uvb === '__none__' ? null : data.has_uvb === 'true',
       length: data.length ? parseInt(data.length) : null,
       // Only save age_category if manually set (not auto mode)
-      age_category: ageCategoryAuto ? null : (data.age_category || null),
-      sex: data.sex || null,
+      age_category: ageCategoryAuto ? null : (data.age_category === '__none__' ? null : data.age_category),
+      sex: data.sex === '__none__' ? null : data.sex,
       // Include household_id when creating
       ...(data.household_id && !isEditing && { household_id: parseInt(data.household_id) })
     };
@@ -364,7 +364,7 @@ export default function ReptileForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="__none__">Not specified</SelectItem>
                         <SelectItem value="unknown">Unknown</SelectItem>
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
@@ -389,7 +389,7 @@ export default function ReptileForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="__none__">Not specified</SelectItem>
                         <SelectItem value="true">Yes - Has UVB lighting</SelectItem>
                         <SelectItem value="false">No - No UVB lighting</SelectItem>
                       </SelectContent>
@@ -456,7 +456,7 @@ export default function ReptileForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Not specified</SelectItem>
+                        <SelectItem value="__none__">Not specified</SelectItem>
                         <SelectItem value="hatchling">Hatchling</SelectItem>
                         <SelectItem value="juvenile">Juvenile</SelectItem>
                         <SelectItem value="adult">Adult</SelectItem>
