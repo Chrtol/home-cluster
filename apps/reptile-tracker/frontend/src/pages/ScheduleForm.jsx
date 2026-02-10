@@ -39,8 +39,8 @@ function ScheduleForm() {
   const [scheduleType, setScheduleType] = useState("feeding");
   const [scheduleMode, setScheduleMode] = useState("fixed");  // "fixed", "interval", or "dependent"
   const [scheduleRule, setScheduleRule] = useState("days_of_week");
-  const [foodCategory, setFoodCategory] = useState("");
-  const [timeSlot, setTimeSlot] = useState("");
+  const [foodCategory, setFoodCategory] = useState("__none__");
+  const [timeSlot, setTimeSlot] = useState("__none__");
   const [healthCategory, setHealthCategory] = useState("");
   const [frequencyDays, setFrequencyDays] = useState("");
   const [daysOfWeek, setDaysOfWeek] = useState([]);
@@ -49,7 +49,7 @@ function ScheduleForm() {
   const [dependentRule, setDependentRule] = useState("every_occurrence");
   const [dependentFrequency, setDependentFrequency] = useState("");
   const [dependentDays, setDependentDays] = useState([]);
-  const [supplementId, setSupplementId] = useState("");
+  const [supplementId, setSupplementId] = useState("__none__");
   const [notes, setNotes] = useState("");
   const [enabled, setEnabled] = useState(true);
 
@@ -178,8 +178,8 @@ function ScheduleForm() {
       setScheduleType(schedule.schedule_type);
       setScheduleMode(schedule.schedule_mode || "fixed");
       setScheduleRule(schedule.schedule_rule);
-      setFoodCategory(schedule.food_category || "");
-      setTimeSlot(schedule.time_slot || "");
+      setFoodCategory(schedule.food_category || "__none__");
+      setTimeSlot(schedule.time_slot || "__none__");
       setHealthCategory(schedule.health_category || "");
 
       // Load interval mode fields
@@ -194,7 +194,7 @@ function ScheduleForm() {
       setDependentRule(schedule.dependent_rule || "every_occurrence");
       setDependentFrequency(schedule.dependent_frequency || "");
       setDependentDays(schedule.dependent_days ? schedule.dependent_days.split(",").map(Number) : []);
-      setSupplementId(schedule.supplement_id || "");
+      setSupplementId(schedule.supplement_id ? String(schedule.supplement_id) : "__none__");
       setNotes(schedule.notes || "");
       setEnabled(schedule.enabled);
 
@@ -432,10 +432,10 @@ function ScheduleForm() {
       }
 
       // Add type-specific fields
-      if (scheduleType === "feeding" && foodCategory) {
+      if (scheduleType === "feeding" && foodCategory && foodCategory !== "__none__") {
         scheduleData.food_category = foodCategory;
       }
-      if (scheduleType === "misting" && timeSlot) {
+      if (scheduleType === "misting" && timeSlot && timeSlot !== "__none__") {
         scheduleData.time_slot = timeSlot;
       }
       if (scheduleType === "weighing" && healthCategory) {
@@ -452,7 +452,7 @@ function ScheduleForm() {
       }
 
       // Add supplement for supplement schedules
-      if (scheduleType === "supplement" && supplementId) {
+      if (scheduleType === "supplement" && supplementId && supplementId !== "__none__") {
         scheduleData.supplement_id = parseInt(supplementId);
       }
 
@@ -612,7 +612,7 @@ function ScheduleForm() {
                     <SelectValue placeholder="Not specified" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Not specified</SelectItem>
+                    <SelectItem value="__none__">Not specified</SelectItem>
                     <SelectItem value="insects">Insects/Worms</SelectItem>
                     <SelectItem value="salad">Salad/Vegetables</SelectItem>
                     <SelectItem value="frozen">Frozen Prey (Rodents)</SelectItem>
@@ -642,7 +642,7 @@ function ScheduleForm() {
                     <SelectValue placeholder="Not specified" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Not specified</SelectItem>
+                    <SelectItem value="__none__">Not specified</SelectItem>
                     <SelectItem value="morning">Morning</SelectItem>
                     <SelectItem value="midday">Midday</SelectItem>
                     <SelectItem value="afternoon">Afternoon</SelectItem>
@@ -698,7 +698,7 @@ function ScheduleForm() {
                     <SelectValue placeholder="Select a supplement (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Select a supplement (optional)</SelectItem>
+                    <SelectItem value="__none__">No supplement</SelectItem>
                     {supplements.map((supplement) => (
                       <SelectItem key={supplement.id} value={String(supplement.id)}>
                         {supplement.name}
@@ -882,7 +882,7 @@ function ScheduleForm() {
                   </SelectTrigger>
                   <SelectContent>
                     {schedules.length === 0 ? (
-                      <SelectItem value="" disabled>No available parent schedules for this reptile</SelectItem>
+                      <SelectItem value="__none__" disabled>No available parent schedules for this reptile</SelectItem>
                     ) : (
                       schedules.map((schedule) => {
                         let label = `${schedule.schedule_type}`;
