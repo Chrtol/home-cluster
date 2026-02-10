@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -13,17 +16,6 @@ export default function Onboarding() {
 
   // Join household state
   const [inviteCode, setInviteCode] = useState('');
-
-  // Apply dark mode by default (same logic as Layout component)
-  useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode');
-    const isDark = savedMode === null ? true : savedMode === 'true';
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   const handleCreateHousehold = async (e) => {
     e.preventDefault();
@@ -86,173 +78,169 @@ export default function Onboarding() {
           </p>
         </div>
 
-        <div className="bg-card rounded-lg shadow-lg p-8">
-          {step === 'choice' && (
-            <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8">
+            {step === 'choice' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-4">
+                    How would you like to get started?
+                  </h2>
+                  <p className="text-muted-foreground mb-6">
+                    Households let you share reptile care with family, friends, or caretakers.
+                    You must be part of a household to use Reptile Tracker.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card
+                    className="cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => setStep('create')}
+                  >
+                    <CardContent className="p-6">
+                      <div className="text-4xl mb-3">🏠</div>
+                      <CardTitle className="text-xl mb-2">Create New Household</CardTitle>
+                      <CardDescription>Start fresh and invite others to join you</CardDescription>
+                    </CardContent>
+                  </Card>
+
+                  <Card
+                    className="cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => setStep('join')}
+                  >
+                    <CardContent className="p-6">
+                      <div className="text-4xl mb-3">🔗</div>
+                      <CardTitle className="text-xl mb-2">Join Existing Household</CardTitle>
+                      <CardDescription>Use an invitation code to join someone else's household</CardDescription>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            {step === 'create' && (
               <div>
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setStep('choice');
+                    setError('');
+                    setHouseholdName('');
+                  }}
+                  className="mb-4 px-0"
+                >
+                  ← Back
+                </Button>
+
                 <h2 className="text-2xl font-bold text-foreground mb-4">
-                  How would you like to get started?
+                  Create New Household
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Households let you share reptile care with family, friends, or caretakers.
-                  You must be part of a household to use Reptile Tracker.
+                  Choose a name for your household (e.g., "Smith Family", "My Reptiles", "Reptile Room")
                 </p>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={() => setStep('create')}
-                  className="p-6 border-2 border-border rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors text-left group"
-                >
-                  <div className="text-4xl mb-3">🏠</div>
-                  <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400">
-                    Create New Household
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Start fresh and invite others to join you
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => setStep('join')}
-                  className="p-6 border-2 border-border rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors text-left group"
-                >
-                  <div className="text-4xl mb-3">🔗</div>
-                  <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400">
-                    Join Existing Household
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Use an invitation code to join someone else's household
-                  </p>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === 'create' && (
-            <div>
-              <button
-                onClick={() => {
-                  setStep('choice');
-                  setError('');
-                  setHouseholdName('');
-                }}
-                className="text-primary-600 dark:text-primary-400 hover:underline mb-4 flex items-center gap-2"
-              >
-                ← Back
-              </button>
-
-              <h2 className="text-2xl font-bold text-foreground mb-4">
-                Create New Household
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Choose a name for your household (e.g., "Smith Family", "My Reptiles", "Reptile Room")
-              </p>
-
-              <form onSubmit={handleCreateHousehold} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Household Name
-                  </label>
-                  <input
-                    type="text"
-                    value={householdName}
-                    onChange={(e) => setHouseholdName(e.target.value)}
-                    placeholder="My Household"
-                    className="input w-full"
-                    autoFocus
-                    required
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+                <form onSubmit={handleCreateHousehold} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Household Name
+                    </label>
+                    <Input
+                      type="text"
+                      value={householdName}
+                      onChange={(e) => setHouseholdName(e.target.value)}
+                      placeholder="My Household"
+                      autoFocus
+                      required
+                    />
                   </div>
-                )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary w-full"
+                  {error && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <p className="text-destructive text-sm">{error}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? 'Creating...' : 'Create Household'}
+                  </Button>
+                </form>
+              </div>
+            )}
+
+            {step === 'join' && (
+              <div>
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setStep('choice');
+                    setError('');
+                    setInviteCode('');
+                  }}
+                  className="mb-4 px-0"
                 >
-                  {loading ? 'Creating...' : 'Create Household'}
-                </button>
-              </form>
-            </div>
-          )}
+                  ← Back
+                </Button>
 
-          {step === 'join' && (
-            <div>
-              <button
-                onClick={() => {
-                  setStep('choice');
-                  setError('');
-                  setInviteCode('');
-                }}
-                className="text-primary-600 dark:text-primary-400 hover:underline mb-4 flex items-center gap-2"
-              >
-                ← Back
-              </button>
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Join Existing Household
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Enter the invitation code you received from the household owner
+                </p>
 
-              <h2 className="text-2xl font-bold text-foreground mb-4">
-                Join Existing Household
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Enter the invitation code you received from the household owner
-              </p>
-
-              <form onSubmit={handleJoinHousehold} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Invitation Code
-                  </label>
-                  <input
-                    type="text"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value)}
-                    placeholder="ABC123XYZ"
-                    className="input w-full font-mono"
-                    autoFocus
-                    required
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+                <form onSubmit={handleJoinHousehold} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Invitation Code
+                    </label>
+                    <Input
+                      type="text"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                      placeholder="ABC123XYZ"
+                      className="font-mono"
+                      autoFocus
+                      required
+                    />
                   </div>
-                )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary w-full"
-                >
-                  {loading ? 'Joining...' : 'Join Household'}
-                </button>
-              </form>
-            </div>
-          )}
+                  {error && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <p className="text-destructive text-sm">{error}</p>
+                    </div>
+                  )}
 
-          {step === 'complete' && (
-            <div className="text-center py-8">
-              <div className="text-6xl mb-6">🎉</div>
-              <h2 className="text-2xl font-bold text-foreground mb-4">
-                All Set!
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Your household is ready. You can now start tracking your reptiles!
-              </p>
-              <button
-                onClick={handleComplete}
-                className="btn-primary"
-              >
-                Go to Dashboard
-              </button>
-            </div>
-          )}
-        </div>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? 'Joining...' : 'Join Household'}
+                  </Button>
+                </form>
+              </div>
+            )}
+
+            {step === 'complete' && (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-6">🎉</div>
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  All Set!
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Your household is ready. You can now start tracking your reptiles!
+                </p>
+                <Button onClick={handleComplete}>
+                  Go to Dashboard
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>
