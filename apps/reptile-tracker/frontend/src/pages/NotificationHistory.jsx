@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Droplet, Heart, Bell, Check, CheckCheck, Trash2, Filter } from 'lucide-react';
+import { Utensils, Droplet, Heart, Bell, Check, CheckCheck, Trash2, Filter, Calendar, AlertTriangle, Scale, Activity } from 'lucide-react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -109,17 +109,19 @@ const NotificationHistory = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'schedule_reminder':
+        return <Calendar className="w-[18px] h-[18px] text-primary" />;
       case 'overdue_alert':
-        return Bell;
+        return <AlertTriangle className="w-[18px] h-[18px] text-destructive" />;
       case 'feeding_logged':
-        return Utensils;
-      case 'misting_logged':
-        return Droplet;
+        return <Utensils className="w-[18px] h-[18px] text-primary" />;
       case 'weight_logged':
+        return <Scale className="w-[18px] h-[18px] text-purple-500" />;
+      case 'misting_logged':
+        return <Droplet className="w-[18px] h-[18px] text-blue-500" />;
       case 'health_event':
-        return Heart;
+        return <Activity className="w-[18px] h-[18px] text-green-500" />;
       default:
-        return Bell;
+        return <Bell className="w-[18px] h-[18px] text-muted-foreground" />;
     }
   };
 
@@ -173,8 +175,8 @@ const NotificationHistory = () => {
                   onClick={() => setFilter(f)}
                   className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                     filter === f
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:bg-muted'
                   }`}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -203,7 +205,6 @@ const NotificationHistory = () => {
             <Button
               onClick={handleMarkAllAsRead}
               size="sm"
-              className="bg-blue-500 hover:bg-blue-600"
             >
               <CheckCheck className="w-4 h-4 mr-2" />
               Mark All Read
@@ -212,7 +213,7 @@ const NotificationHistory = () => {
               onClick={handleDeleteAllRead}
               size="sm"
               variant="outline"
-              className="text-red-600 hover:text-red-700"
+              className="text-destructive hover:text-destructive"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Read
@@ -227,88 +228,85 @@ const NotificationHistory = () => {
           <LoadingState message="Loading notifications..." />
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            <Bell className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">No notifications found</p>
-            <p className="text-sm mt-2">
+            <Bell className="w-12 h-12 mx-auto mb-3 opacity-40" />
+            <p className="text-base font-medium">No notifications found</p>
+            <p className="text-sm mt-1">
               {filter === 'unread' ? 'All caught up!' : 'Notifications will appear here'}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border space-y-1.5">
-            {notifications.map((notification) => {
-              const Icon = getNotificationIcon(notification.notification_type);
-              return (
-                <div
-                  key={notification.id}
-                  className={`p-2.5 transition-colors ${
+          <div className="divide-y divide-border">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-3 transition-colors ${
+                  notification.is_read
+                    ? 'hover:bg-muted/50'
+                    : 'bg-primary/5 hover:bg-primary/10'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Icon */}
+                  <div className={`flex-shrink-0 p-1.5 rounded-lg ${
                     notification.is_read
-                      ? 'bg-card hover:bg-secondary/50'
-                      : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Icon */}
-                    <div className={`flex-shrink-0 p-1.5 rounded-lg ${
-                      notification.is_read
-                        ? 'bg-secondary text-muted-foreground'
-                        : 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
-                    }`}>
-                      <Icon size={18} />
-                    </div>
+                      ? 'bg-secondary'
+                      : 'bg-primary/10'
+                  }`}>
+                    {getNotificationIcon(notification.notification_type)}
+                  </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div
-                        onClick={() => handleNotificationClick(notification)}
-                        className={`${notification.link ? 'cursor-pointer' : ''}`}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className={`font-medium text-sm ${
-                              notification.is_read ? 'text-foreground' : 'text-blue-900 dark:text-blue-100'
-                            }`}>
-                              {notification.title}
-                            </p>
-                            <Badge variant={getTypeBadgeVariant(notification.notification_type)} className="text-xs">
-                              {getTypeDisplayName(notification.notification_type)}
-                            </Badge>
-                            {!notification.is_read && (
-                              <span className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0" />
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                          </span>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`${notification.link ? 'cursor-pointer' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`text-sm ${
+                            notification.is_read ? 'text-foreground' : 'font-medium text-foreground'
+                          }`}>
+                            {notification.title}
+                          </p>
+                          <Badge variant={getTypeBadgeVariant(notification.notification_type)} className="text-xs">
+                            {getTypeDisplayName(notification.notification_type)}
+                          </Badge>
+                          {!notification.is_read && (
+                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {notification.message.replace(/\*\*/g, '')}
-                        </p>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {!notification.is_read && (
-                        <button
-                          onClick={() => handleMarkAsRead(notification.id)}
-                          className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          title="Mark as read"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(notification.id)}
-                        className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                        title="Delete notification"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {notification.message.replace(/\*\*/g, '')}
+                      </p>
                     </div>
                   </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {!notification.is_read && (
+                      <button
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        title="Mark as read"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(notification.id)}
+                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                      title="Delete notification"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>

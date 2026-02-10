@@ -31,7 +31,7 @@ const getPageTitle = (pathname) => {
   if (pathname === '/food-management') return 'Food Management'
   if (pathname === '/schedule-templates') return 'Schedule Templates'
   if (pathname === '/supplement-rotations') return 'Supplement Rotations'
-  if (pathname === '/notification-history') return 'Notifications'
+  if (pathname === '/notifications') return 'Notifications'
   if (pathname === '/settings') return 'Settings'
   if (pathname === '/household') return 'Household'
   return null

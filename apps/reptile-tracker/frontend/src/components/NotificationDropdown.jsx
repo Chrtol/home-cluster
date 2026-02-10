@@ -169,7 +169,7 @@ const NotificationDropdown = ({ onClose, onNotificationRead }) => {
         <div className="px-4 py-2.5 border-t border-border">
           <button
             onClick={() => {
-              navigate('/notification-history');
+              navigate('/notifications');
               onClose();
             }}
             className="w-full text-center text-xs text-primary hover:text-primary/80 font-medium transition-colors"
