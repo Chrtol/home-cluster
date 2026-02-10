@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -982,10 +981,12 @@ function ScheduleForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="timeWindowEnabled"
                 checked={timeWindowEnabled}
-                onCheckedChange={setTimeWindowEnabled}
+                onChange={(e) => setTimeWindowEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
               />
               <Label htmlFor="timeWindowEnabled" className="cursor-pointer">
                 Enable Time Window
@@ -1083,10 +1084,12 @@ function ScheduleForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="autoCompleteEnabled"
                 checked={autoCompleteEnabled}
-                onCheckedChange={setAutoCompleteEnabled}
+                onChange={(e) => setAutoCompleteEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
               />
               <Label htmlFor="autoCompleteEnabled" className="cursor-pointer">
                 Enable Auto-Complete
@@ -1131,10 +1134,12 @@ function ScheduleForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id="flexibleCompletionEnabled"
                   checked={flexibleCompletionEnabled}
-                  onCheckedChange={setFlexibleCompletionEnabled}
+                  onChange={(e) => setFlexibleCompletionEnabled(e.target.checked)}
+                  className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
                 />
                 <Label htmlFor="flexibleCompletionEnabled" className="cursor-pointer">
                   Enable Flexible Completion Window
@@ -1184,10 +1189,12 @@ function ScheduleForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="notificationsEnabled"
                 checked={notificationsEnabled}
-                onCheckedChange={setNotificationsEnabled}
+                onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
               />
               <Label htmlFor="notificationsEnabled" className="cursor-pointer">
                 Enable notifications for this schedule
@@ -1243,10 +1250,12 @@ function ScheduleForm() {
             {notificationsEnabled && (
               <div className="pl-6 border-l-2 border-primary space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     id="reminderEnabled"
                     checked={reminderEnabled}
-                    onCheckedChange={setReminderEnabled}
+                    onChange={(e) => setReminderEnabled(e.target.checked)}
+                    className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
                   />
                   <Label htmlFor="reminderEnabled" className="cursor-pointer">
                     Set reminder time
@@ -1327,10 +1336,12 @@ function ScheduleForm() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="enabled"
                 checked={enabled}
-                onCheckedChange={setEnabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
               />
               <Label htmlFor="enabled" className="cursor-pointer">
                 Enable this schedule
