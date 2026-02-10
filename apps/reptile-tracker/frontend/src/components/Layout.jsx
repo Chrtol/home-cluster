@@ -28,7 +28,7 @@ const getPageTitle = (pathname) => {
   if (pathname === '/feed') return 'Log Feeding'
   if (pathname === '/health-log') return 'Log Health'
   if (pathname === '/misting-log') return 'Log Misting'
-  if (pathname === '/food-management') return 'Food Management'
+  if (pathname === '/foods') return 'Food & Supplement Management'
   if (pathname === '/schedule-templates') return 'Schedule Templates'
   if (pathname === '/supplement-rotations') return 'Supplement Rotations'
   if (pathname === '/notifications') return 'Notifications'

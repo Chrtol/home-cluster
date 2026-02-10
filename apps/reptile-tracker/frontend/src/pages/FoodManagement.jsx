@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 
@@ -61,8 +60,6 @@ function getSizeLabel(food) {
 export default function FoodManagement() {
   return (
     <div>
-      <PageHeader title="Food & Supplement Management" />
-
       <Tabs defaultValue="foods" className="w-full">
         <TabsList>
           <TabsTrigger value="foods">Foods</TabsTrigger>

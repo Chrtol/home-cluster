@@ -946,14 +946,10 @@ function ScheduleTemplates() {
   const uniqueAgeCategories = [...new Set(templates.map(t => t.age_category).filter(Boolean))];
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Header with Action Buttons */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Schedule Templates
-          </h1>
-          <div className="flex flex-wrap gap-2">
+    <div>
+      {/* Action Buttons */}
+      <div className="flex justify-end mb-4">
+        <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
@@ -985,11 +981,7 @@ function ScheduleTemplates() {
               <Plus size={18} />
               Create Template
             </button>
-          </div>
         </div>
-        <p className="text-muted-foreground">
-          Reusable schedule recommendations based on species and age
-        </p>
       </div>
 
       {/* Filters Panel */}

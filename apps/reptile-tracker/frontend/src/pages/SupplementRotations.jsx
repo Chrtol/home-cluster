@@ -14,7 +14,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import PageHeader from '@/components/PageHeader';
 import ReptileNameWithAvatar from '@/components/ReptileNameWithAvatar';
 
 // Zod schema for rotation form
@@ -252,17 +251,15 @@ function SupplementRotations() {
 
   return (
     <div>
-      {/* Header */}
-      <PageHeader
-        title="Supplement Rotations"
-        actions={
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">
-                <Plus size={20} className="mr-2" />
-                Add Rotation
-              </Button>
-            </DialogTrigger>
+      {/* Action Button */}
+      <div className="flex justify-end mb-4">
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">
+              <Plus size={20} className="mr-2" />
+              Add Rotation
+            </Button>
+          </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -493,10 +490,8 @@ function SupplementRotations() {
                 </form>
               </Form>
             </DialogContent>
-          </Dialog>
-        }
-        subtitle="Manage supplement schedules and food replacements for your reptiles"
-      />
+        </Dialog>
+      </div>
 
       {/* Reptile Filter Buttons */}
       <div className="mb-4 flex flex-wrap items-center gap-2">

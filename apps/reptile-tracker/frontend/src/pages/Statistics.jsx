@@ -5,7 +5,6 @@ import axios from 'axios';
 import { getDayNames, getUserFirstDayOfWeek } from '../utils/dateFormatting';
 import { getStatisticsChartSettings, getWeightInterpolationMode, getChartSettings, hasCustomStatisticsSettings } from '../utils/displaySettings';
 import { Badge } from '@/components/ui/badge';
-import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import ReptileNameWithAvatar from '../components/ReptileNameWithAvatar';
 
@@ -406,13 +405,10 @@ function Statistics() {
 
   if (reptiles.length === 0) {
     return (
-      <div>
-        <PageHeader title="Statistics" />
-        <div className="card">
-          <p className="text-muted-foreground">
-            No reptiles found. Add a reptile to start tracking statistics.
-          </p>
-        </div>
+      <div className="card">
+        <p className="text-muted-foreground">
+          No reptiles found. Add a reptile to start tracking statistics.
+        </p>
       </div>
     );
   }
@@ -424,15 +420,11 @@ function Statistics() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <PageHeader title="Statistics" className="mb-0" />
           {currentReptile && (
-            <>
-              <div className="hidden sm:block h-8 w-px bg-border"></div>
-              <ReptileNameWithAvatar
-                reptile={currentReptile}
-                size="md"
-              />
-            </>
+            <ReptileNameWithAvatar
+              reptile={currentReptile}
+              size="md"
+            />
           )}
         </div>
 

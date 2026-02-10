@@ -632,28 +632,25 @@ function Calendar() {
 
   return (
     <div>
-      {/* Header row with title and action buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Calendar</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowSchedules(!showSchedules)}
-            className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            <List size={20} />
-            <span className="hidden sm:inline">Manage Schedules</span>
-            <span className="sm:hidden">Schedules</span>
-            {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-          <button
-            onClick={() => navigate("/schedule-create")}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Add Schedule</span>
-            <span className="sm:hidden">Add</span>
-          </button>
-        </div>
+      {/* Action buttons */}
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={() => setShowSchedules(!showSchedules)}
+          className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        >
+          <List size={20} />
+          <span className="hidden sm:inline">Manage Schedules</span>
+          <span className="sm:hidden">Schedules</span>
+          {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        <button
+          onClick={() => navigate("/schedule-create")}
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          <Plus size={20} />
+          <span className="hidden sm:inline">Add Schedule</span>
+          <span className="sm:hidden">Add</span>
+        </button>
       </div>
 
       {/* Filters row */}

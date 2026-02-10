@@ -5,7 +5,6 @@ import { Plus, Home, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import ReptileAvatar from '../components/ReptileAvatar';
-import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 
@@ -88,15 +87,13 @@ export default function ReptileList() {
 
   return (
     <div>
-      <PageHeader
-        title="Your Reptiles"
-        actions={
-          <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
-            <Plus size={20} />
-            Add Reptile
-          </Link>
-        }
-      />
+      {/* Action bar */}
+      <div className="flex justify-end mb-4">
+        <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
+          <Plus size={20} />
+          Add Reptile
+        </Link>
+      </div>
 
       {/* Household Filters */}
       {households.length > 1 && (
