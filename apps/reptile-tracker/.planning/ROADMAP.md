@@ -232,34 +232,36 @@ Plans:
 
 ---
 
-## Phase 13: Activity History & Remaining Pages
+## Phase 13: Activity History & Remaining Pages Complete
 
 **Goal:** Create activity history page and apply visual consistency to remaining pages
 
 **Requirements:** ACT-01
 
-**Status:** Not Started
-**Plans:** 4 plans
+**Status:** Complete (2026-02-10)
+**Plans:** 4/4 complete
 
 Plans:
-- [ ] 13-01-PLAN.md -- Activity history page with shadcn/ui Pagination, badge filters, date range, reptile filter
-- [ ] 13-02-PLAN.md -- Visual consistency for utility pages (Login, Onboarding, AcceptInvite with Card/Button)
-- [ ] 13-03-PLAN.md -- Settings tabs with shadcn/ui Tabs, ReptileForm with react-hook-form
-- [ ] 13-04-PLAN.md -- ScheduleForm styling (visual only), Dashboard "View all" link wiring
+- [x] 13-01-PLAN.md -- Activity history page with shadcn/ui Pagination, badge filters, date range, reptile filter
+- [x] 13-02-PLAN.md -- Visual consistency for utility pages (Login, Onboarding, AcceptInvite with Card/Button)
+- [x] 13-03-PLAN.md -- Settings tabs with shadcn/ui Tabs, ReptileForm with react-hook-form
+- [x] 13-04-PLAN.md -- ScheduleForm styling (visual only), Dashboard "View all" link wiring
 
 **Deliverables:**
-- [ ] Activity history page (/activity)
-- [ ] Filter by activity type (feeding, misting, health, weight)
-- [ ] Filter by reptile
-- [ ] Date range filter
-- [ ] Pagination (page size 25)
-- [ ] Dashboard "View all" button links to activity page
-- [ ] Login page with v1.1 styling (Card, Button components)
-- [ ] Onboarding wizard with v1.1 styling (Card, Button, Input)
-- [ ] AcceptInvite page with v1.1 styling (Card)
-- [ ] Settings page with shadcn/ui Tabs
-- [ ] ReptileForm with react-hook-form + shadcn/ui Form
-- [ ] ScheduleForm with v1.1 styling (visual only, preserve logic)
+- [x] Activity history page (/activity)
+- [x] Filter by activity type (feeding, misting, health, weight)
+- [x] Filter by reptile
+- [x] Date range filter
+- [x] Pagination (page size 25)
+- [x] Dashboard "View all" button links to activity page
+- [x] Login page with v1.1 styling (Card, Button components)
+- [x] Onboarding wizard with v1.1 styling (Card, Button, Input)
+- [x] AcceptInvite page with v1.1 styling (Card)
+- [x] Settings page with shadcn/ui Tabs
+- [x] ReptileForm with react-hook-form + shadcn/ui Form
+- [x] ScheduleForm with v1.1 styling (visual only, preserve logic)
+
+**Verification:** 12/12 must-haves verified. See 13-VERIFICATION.md.
 
 **Success:** Users can view complete activity history from dashboard; all pages feel visually consistent
 
