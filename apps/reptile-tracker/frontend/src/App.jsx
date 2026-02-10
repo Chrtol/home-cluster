@@ -26,6 +26,7 @@ import ScheduleTemplates from './pages/ScheduleTemplates';
 import ScheduleTemplateForm from './pages/ScheduleTemplateForm';
 import SupplementRotations from './pages/SupplementRotations';
 import NotificationHistory from './pages/NotificationHistory';
+import ActivityHistory from './pages/ActivityHistory';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -161,6 +162,7 @@ function App() {
           // Authenticated with household - normal app
           <Route element={<Layout user={user} onLogout={handleLogout} />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/activity" element={<ActivityHistory />} />
             <Route path="/reptiles" element={<ReptileList />} />
             <Route path="/reptiles/new" element={<ReptileForm />} />
             <Route path="/reptiles/:id" element={<ReptileDetail />} />
