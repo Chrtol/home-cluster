@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [showWidgetGallery, setShowWidgetGallery] = useState(false); // Widget gallery modal
   const [draggedWidget, setDraggedWidget] = useState(null); // Widget being dragged
   const [dragOverWidget, setDragOverWidget] = useState(null); // Widget being dragged over
+  const [mainZoneDropActive, setMainZoneDropActive] = useState(false); // Drop zone active for main area
   const [sidebarSettings, setSidebarSettings] = useState({ sidebarEnabled: true, sidebarPosition: 'left' }); // Sidebar settings
 
   // Weekly calendar state
@@ -720,33 +721,6 @@ export default function Dashboard() {
     return { due, overdue, completed };
   }, [weeklyEvents, calendarReptileFilter]);
 
-  // Compute today stats for Header - maps to Header's expected format
-  const todayStats = useMemo(() => ({
-    done: todayScheduleStats.completed,
-    due: todayScheduleStats.due,
-    overdue: todayScheduleStats.overdue
-  }), [todayScheduleStats]);
-
-  // Compute the actual due tasks list for Header dropdown
-  const dueTasks = useMemo(() => {
-    const today = new Date();
-    return weeklyEvents
-      .filter(event =>
-        event.date.toDateString() === today.toDateString() &&
-        calendarReptileFilter.has(event.reptile_id) &&
-        (event.status === 'pending' || event.status === 'missed')
-      )
-      .sort((a, b) => {
-        // Sort by status (missed/overdue first), then by time
-        if (a.status === 'missed' && b.status !== 'missed') return -1;
-        if (a.status !== 'missed' && b.status === 'missed') return 1;
-        // Then by earliest_time
-        const aTime = a.earliest_time || '23:59';
-        const bTime = b.earliest_time || '23:59';
-        return aTime.localeCompare(bTime);
-      });
-  }, [weeklyEvents, calendarReptileFilter]);
-
   if (loading) {
     return <div className="text-center text-muted-foreground">Loading dashboard...</div>;
   }
@@ -1183,6 +1157,7 @@ export default function Dashboard() {
   const handleDragStart = (e, widgetId) => {
     setDraggedWidget(widgetId);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('widgetId', widgetId);
   };
 
   const handleDragOver = (e, widgetId) => {
@@ -2044,20 +2019,20 @@ export default function Dashboard() {
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-6">
-      {/* Welcome section with greeting and quick stats */}
-      <Header user={user} todayStats={todayStats} dueTasks={dueTasks} />
-
-      {/* Content area with restored padding */}
-      <div className="px-4 sm:px-6 lg:px-8 pb-6">
-        {/* Edit mode controls bar */}
-        <div className="flex items-center justify-end mb-4">
+      {/* Welcome section with greeting and customize button */}
+      <Header
+        user={user}
+        actions={
           <EditModeControls
             isEditMode={isEditMode}
             onToggleEditMode={handleToggleEditMode}
             onResetLayout={handleResetLayout}
           />
-        </div>
+        }
+      />
 
+      {/* Content area with restored padding */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-6">
       {/* Day Events Modal */}
       {selectedDate && (
         <div
@@ -2227,6 +2202,7 @@ export default function Dashboard() {
                   isEditMode={isEditMode}
                   onHide={handleHideWidget}
                   onMoveToMain={handleMoveToMain}
+                  onMoveToSidebar={handleMoveToSidebar}
                   renderCard={renderCard}
                   dragHandlers={dragHandlers}
                   draggedWidget={draggedWidget}
@@ -2361,6 +2337,31 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
+
+                {/* Drop zone at bottom of main grid for adding cards from sidebar */}
+                {isEditMode && showSidebar && (
+                  <div
+                    className={`col-span-1 sm:col-span-3 min-h-[80px] border-2 border-dashed rounded-xl flex items-center justify-center text-sm text-muted-foreground transition-colors ${
+                      mainZoneDropActive ? 'border-primary bg-primary/10' : 'border-border'
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setMainZoneDropActive(true);
+                    }}
+                    onDragLeave={() => setMainZoneDropActive(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setMainZoneDropActive(false);
+                      const widgetId = e.dataTransfer.getData('widgetId');
+                      if (widgetId) {
+                        handleMoveToMain(widgetId);
+                      }
+                    }}
+                  >
+                    Drop here
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { GripVertical, X, ArrowRight } from 'lucide-react';
 
 /**
@@ -12,6 +13,7 @@ import { GripVertical, X, ArrowRight } from 'lucide-react';
  * - isEditMode: boolean - Whether edit mode is active
  * - onHide: function(cardId) - Handler to hide a widget
  * - onMoveToMain: function(cardId) - Handler to move widget to main zone
+ * - onMoveToSidebar: function(cardId) - Handler to move widget to sidebar zone
  * - renderCard: function(cardId) - Render function for card content
  * - dragHandlers: object - Drag event handlers from parent
  * - draggedWidget: string - ID of widget being dragged
@@ -22,11 +24,13 @@ const DashboardSidebar = ({
   isEditMode,
   onHide,
   onMoveToMain,
+  onMoveToSidebar,
   renderCard,
   dragHandlers,
   draggedWidget,
   dragOverWidget
 }) => {
+  const [zoneDropActive, setZoneDropActive] = useState(false);
   if (cards.length === 0 && !isEditMode) {
     return null;
   }
@@ -83,6 +87,31 @@ const DashboardSidebar = ({
           </div>
         );
       })}
+
+      {/* Drop zone at bottom of sidebar for adding cards */}
+      {isEditMode && onMoveToSidebar && (
+        <div
+          className={`min-h-[80px] border-2 border-dashed rounded-xl flex items-center justify-center text-sm text-muted-foreground transition-colors ${
+            zoneDropActive ? 'border-primary bg-primary/10' : 'border-border'
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            setZoneDropActive(true);
+          }}
+          onDragLeave={() => setZoneDropActive(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setZoneDropActive(false);
+            const widgetId = e.dataTransfer.getData('widgetId');
+            if (widgetId) {
+              onMoveToSidebar(widgetId);
+            }
+          }}
+        >
+          Drop here
+        </div>
+      )}
     </div>
   );
 };

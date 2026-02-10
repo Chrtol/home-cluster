@@ -3,6 +3,7 @@ import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utens
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from './NotificationBell'
+import QuickStatsHeader from './QuickStatsHeader'
 import { cn } from '@/lib/utils'
 
 // Page transition variants
@@ -512,16 +513,9 @@ export default function Layout({ user, onLogout }) {
           <h1 className="text-lg font-semibold text-foreground">
             {getPageTitle(location.pathname)}
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <QuickStatsHeader />
             <NotificationBell />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
-              <span className="text-sm font-medium text-foreground">{user?.name?.split(' ')[0] || 'User'}</span>
-            </div>
           </div>
         </header>
 
