@@ -18,7 +18,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-07)
 | Current Milestone | v1.1 UI Overhaul |
 | Milestone Status | IN PROGRESS |
 | Current Phase | 13 (Activity History & Remaining Pages) |
-| Phase Status | COMPLETE (4/4 plans) |
+| Phase Status | COMPLETE (6/6 plans including gap closure) |
 | Requirements | 22 total (see REQUIREMENTS.md) |
 
 Progress: Phase 13 - In Progress
@@ -80,6 +80,8 @@ Phase 13 (Activity History & Remaining Pages):
 13-02: Complete (utility pages redesign - Login, Onboarding, AcceptInvite with shadcn/ui)
 13-03: Complete (Settings tabs & ReptileForm - shadcn/ui Tabs, react-hook-form + Zod)
 13-04: Complete (ScheduleForm v1.1 styling - visual-only Card/Badge/Input components)
+13-05: Complete (gap closure - ReptileForm and ScheduleForm SelectItem value="" crashes fixed)
+13-06: Complete (gap closure - force dark mode on non-authenticated pages)
 ```
 
 Progress bar:
@@ -90,7 +92,7 @@ Phase 9:  [============] 4/4
 Phase 10: [============] 3/3
 Phase 11: [============] 4/4
 Phase 12: [============] 10/10
-Phase 13: [====] 4/4
+Phase 13: [======] 6/6
 ```
 
 ## Milestone Scope
@@ -202,6 +204,7 @@ Phase 12: Polish/Mobile   Not started
 | 2026-02-10 | bg-secondary for utility page backgrounds | Simplified from gradients to design tokens for cleaner code with same visual result |
 | 2026-02-10 | LoadingState component for async operations | Reused existing LoadingState component in AcceptInvite for consistency with Phase 12 patterns |
 | 2026-02-10 | Button variant usage in utility pages | Used variant="link" for back buttons instead of raw text-primary classes |
+| 2026-02-10 | Force dark mode on non-authenticated pages | Login, Onboarding, AcceptInvite force 'dark' class on mount to eliminate light mode flash before OIDC redirect |
 
 ## Reference Documents
 
@@ -220,16 +223,18 @@ v1.1 UI Overhaul milestone complete. All phases (7-13) finished.
 ## Session Continuity
 
 **Last session:** 2026-02-10
-**Stopped at:** Phase 13 Plan 04 complete - ScheduleForm v1.1 styling (visual-only)
-**Resume with:** Phase 13 complete. Ready for next milestone planning.
+**Stopped at:** Phase 13 Plan 06 complete - Force dark mode on non-authenticated pages
+**Resume with:** Phase 13 complete (6/6 plans). Ready for next milestone planning or UAT clarification.
 
 **Recent activity:**
+- 13-06: Force dark mode on non-auth pages (complete) - eliminate light mode flash before OIDC redirect
+- 13-05: Fix SelectItem crashes (complete) - ReptileForm and ScheduleForm value="" prop handling
 - 13-04: ScheduleForm v1.1 styling (complete) - visual-only Card/Badge/Input components
 - 13-03: Settings & ReptileForm (complete) - shadcn/ui Tabs, react-hook-form + Zod
 - 13-02: Utility pages redesign (complete) - Login, Onboarding, AcceptInvite with shadcn/ui
 - 13-01: ActivityHistory page (complete) - filter by reptile/type, pagination, EmptyState
 
-**Phase 13 status:** COMPLETE - 4/4 plans complete
+**Phase 13 status:** COMPLETE - 6/6 plans complete (4 core + 2 gap closure)
 
 ---
-*State updated: 2026-02-10 - Completed plan 13-04 (Phase 13 complete)*
+*State updated: 2026-02-10 - Completed plan 13-06 (Phase 13 complete with gap closure)*
