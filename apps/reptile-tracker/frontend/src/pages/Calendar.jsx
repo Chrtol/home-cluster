@@ -632,91 +632,94 @@ function Calendar() {
 
   return (
     <div>
-      {/* Action buttons */}
-      <div className="flex justify-end gap-2 mb-4">
-        <button
-          onClick={() => setShowSchedules(!showSchedules)}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-        >
-          <List size={20} />
-          <span className="hidden sm:inline">Manage Schedules</span>
-          <span className="sm:hidden">Schedules</span>
-          {showSchedules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-        <button
-          onClick={() => navigate("/schedule-create")}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <Plus size={20} />
-          <span className="hidden sm:inline">Add Schedule</span>
-          <span className="sm:hidden">Add</span>
-        </button>
-      </div>
-
-      {/* Filters row */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-        {/* Category Filters */}
-        <div className="flex flex-wrap items-center gap-1.5">
-              <Badge
-                variant={visibleCategories.has('feeding') ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/90"
-                onClick={() => toggleCategoryFilter('feeding')}
-              >
-                Feeding
-              </Badge>
-              <Badge
-                variant={visibleCategories.has('misting') ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/90"
-                onClick={() => toggleCategoryFilter('misting')}
-              >
-                Misting
-              </Badge>
-              <Badge
-                variant={visibleCategories.has('weighing') ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/90"
-                onClick={() => toggleCategoryFilter('weighing')}
-              >
-                Health
-              </Badge>
-              <Badge
-                variant={visibleCategories.has('supplement') ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/90"
-                onClick={() => toggleCategoryFilter('supplement')}
-              >
-                Supplement
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="cursor-pointer text-xs"
-                onClick={toggleAllCategories}
-              >
-                {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
-              </Badge>
-            </div>
-
-        {/* Reptile Filters */}
-        {reptiles.length > 0 && (
+      {/* Filters & Action buttons row */}
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-6">
+        {/* Left side: Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
+          {/* Category Filters */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm font-medium text-muted-foreground">Reptiles:</span>
-            {reptiles.map(reptile => (
-              <Badge
-                key={reptile.id}
-                variant={visibleReptiles.has(reptile.id) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/90"
-                onClick={() => toggleReptileFilter(reptile.id)}
-              >
-                {reptile.name}
-              </Badge>
-            ))}
+            <Badge
+              variant={visibleCategories.has('feeding') ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/90"
+              onClick={() => toggleCategoryFilter('feeding')}
+            >
+              Feeding
+            </Badge>
+            <Badge
+              variant={visibleCategories.has('misting') ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/90"
+              onClick={() => toggleCategoryFilter('misting')}
+            >
+              Misting
+            </Badge>
+            <Badge
+              variant={visibleCategories.has('weighing') ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/90"
+              onClick={() => toggleCategoryFilter('weighing')}
+            >
+              Health
+            </Badge>
+            <Badge
+              variant={visibleCategories.has('supplement') ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/90"
+              onClick={() => toggleCategoryFilter('supplement')}
+            >
+              Supplement
+            </Badge>
             <Badge
               variant="secondary"
               className="cursor-pointer text-xs"
-              onClick={toggleAllReptiles}
+              onClick={toggleAllCategories}
             >
-              {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
+              {visibleCategories.size === 4 ? 'Hide All' : 'Show All'}
             </Badge>
           </div>
-        )}
+
+          {/* Reptile Filters */}
+          {reptiles.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-sm font-medium text-muted-foreground">Reptiles:</span>
+              {reptiles.map(reptile => (
+                <Badge
+                  key={reptile.id}
+                  variant={visibleReptiles.has(reptile.id) ? "default" : "outline"}
+                  className="cursor-pointer hover:bg-primary/90"
+                  onClick={() => toggleReptileFilter(reptile.id)}
+                >
+                  {reptile.name}
+                </Badge>
+              ))}
+              <Badge
+                variant="secondary"
+                className="cursor-pointer text-xs"
+                onClick={toggleAllReptiles}
+              >
+                {visibleReptiles.size === reptiles.length ? 'Hide All' : 'Show All'}
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {/* Right side: Action buttons */}
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => setShowSchedules(!showSchedules)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-foreground rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+          >
+            <List size={18} />
+            <span className="hidden sm:inline">Manage Schedules</span>
+            <span className="sm:hidden">Schedules</span>
+            {showSchedules ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          <button
+            onClick={() => navigate("/schedule-create")}
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Add Schedule</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        </div>
       </div>
 
       {/* Schedules Management Section */}

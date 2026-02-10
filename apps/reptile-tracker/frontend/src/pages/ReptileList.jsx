@@ -87,39 +87,51 @@ export default function ReptileList() {
 
   return (
     <div>
-      {/* Action bar */}
-      <div className="flex justify-end mb-4">
+      {/* Household Filters & Action Bar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        {/* Left side: Household filters (or empty space) */}
+        <div className="flex flex-wrap gap-2">
+          {households.length > 1 ? (
+            households.map(household => (
+              <div key={household.id} className="flex items-center gap-1">
+                <button
+                  onClick={() => toggleHousehold(household.id)}
+                  className="group"
+                >
+                  <Badge
+                    variant={hiddenHouseholds.has(household.id) ? 'secondary' : 'default'}
+                    className={cn(
+                      'cursor-pointer transition-colors gap-1.5 px-2.5 py-1',
+                      !hiddenHouseholds.has(household.id) && 'bg-primary hover:bg-primary/80',
+                      hiddenHouseholds.has(household.id) && 'opacity-60 hover:opacity-100'
+                    )}
+                  >
+                    {household.id !== 'no_household' && <Home className="w-3 h-3" />}
+                    {household.name}
+                    <span className="ml-1 opacity-70">({household.reptiles.length})</span>
+                  </Badge>
+                </button>
+                {/* Per-household add button */}
+                {household.id !== 'no_household' && (
+                  <Link
+                    to={`/reptiles/new?household=${household.id}`}
+                    className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                    title={`Add reptile to ${household.name}`}
+                  >
+                    <Plus size={16} />
+                  </Link>
+                )}
+              </div>
+            ))
+          ) : null}
+        </div>
+
+        {/* Right side: Main Add button */}
         <Link to="/reptiles/new" className="btn-primary flex items-center gap-2">
           <Plus size={20} />
           Add Reptile
         </Link>
       </div>
-
-      {/* Household Filters */}
-      {households.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          {households.map(household => (
-            <button
-              key={household.id}
-              onClick={() => toggleHousehold(household.id)}
-              className="group"
-            >
-              <Badge
-                variant={hiddenHouseholds.has(household.id) ? 'secondary' : 'default'}
-                className={cn(
-                  'cursor-pointer transition-colors gap-1.5 px-2.5 py-1',
-                  !hiddenHouseholds.has(household.id) && 'bg-primary hover:bg-primary/80',
-                  hiddenHouseholds.has(household.id) && 'opacity-60 hover:opacity-100'
-                )}
-              >
-                {household.id !== 'no_household' && <Home className="w-3 h-3" />}
-                {household.name}
-                <span className="ml-1 opacity-70">({household.reptiles.length})</span>
-              </Badge>
-            </button>
-          ))}
-        </div>
-      )}
 
       {reptiles.length === 0 ? (
         <EmptyState

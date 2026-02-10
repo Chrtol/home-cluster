@@ -65,7 +65,7 @@ class ReptileBase(BaseModel):
 
 
 class ReptileCreate(ReptileBase):
-    pass
+    household_id: Optional[int] = None  # Optional: assign to specific household
 
 
 class ReptileUpdate(BaseModel):

@@ -125,20 +125,32 @@ async def create_reptile(
 ):
     """Create a new reptile (requires household membership)"""
 
-    # Get user's primary household (first household they're a member of)
-    household_result = await db.execute(
+    # Get all households the user is a member of
+    user_households_result = await db.execute(
         select(household_members.c.household_id)
         .where(household_members.c.user_id == current_user.id)
-        .limit(1)
     )
-    household_id = household_result.scalar_one_or_none()
+    user_household_ids = [row[0] for row in user_households_result.fetchall()]
 
     # Require household membership
-    if not household_id:
+    if not user_household_ids:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You must be a member of a household to create reptiles. Please create or join a household first.",
         )
+
+    # Determine target household
+    if reptile.household_id:
+        # Validate user is a member of the specified household
+        if reptile.household_id not in user_household_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only create reptiles in households you are a member of.",
+            )
+        household_id = reptile.household_id
+    else:
+        # Fall back to first household
+        household_id = user_household_ids[0]
 
     # Count existing reptiles in household to assign next color from palette
     count_result = await db.execute(
@@ -148,9 +160,11 @@ async def create_reptile(
     reptile_count = count_result.scalar() or 0
     default_border_color = AVATAR_BORDER_COLORS[reptile_count % len(AVATAR_BORDER_COLORS)]
 
+    # Exclude household_id from model_dump since we're setting it explicitly
+    reptile_data = reptile.model_dump(exclude={'household_id'})
     new_reptile = Reptile(
-        **reptile.model_dump(),
-        household_id=household_id,  # Automatically assign to user's household
+        **reptile_data,
+        household_id=household_id,  # Assign to specified or default household
         avatar_border_color=default_border_color,  # Assign default color from palette
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),

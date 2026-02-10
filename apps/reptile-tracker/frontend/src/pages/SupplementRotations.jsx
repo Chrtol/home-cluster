@@ -251,12 +251,40 @@ function SupplementRotations() {
 
   return (
     <div>
-      {/* Action Button */}
-      <div className="flex justify-end mb-4">
+      {/* Reptile Filter Buttons & Action Button */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        {/* Left side: Reptile filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setFilterReptile('all')}
+            className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
+              filterReptile === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            All
+          </button>
+          {reptiles.map(r => (
+            <button
+              key={r.id}
+              onClick={() => setFilterReptile(String(r.id))}
+              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
+                filterReptile === String(r.id)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Right side: Add button */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">
-              <Plus size={20} className="mr-2" />
+            <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700 shrink-0">
+              <Plus size={18} className="mr-1.5" />
               Add Rotation
             </Button>
           </DialogTrigger>
@@ -491,33 +519,6 @@ function SupplementRotations() {
               </Form>
             </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Reptile Filter Buttons */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => setFilterReptile('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filterReptile === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          All
-        </button>
-        {reptiles.map(r => (
-          <button
-            key={r.id}
-            onClick={() => setFilterReptile(String(r.id))}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterReptile === String(r.id)
-                ? 'bg-blue-600 text-white'
-                : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            {r.name}
-          </button>
-        ))}
       </div>
 
       {loading ? (

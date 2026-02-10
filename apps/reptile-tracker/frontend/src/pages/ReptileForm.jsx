@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import DateInput from '../components/DateInput';
 
 export default function ReptileForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const householdId = searchParams.get('household');
     const isEditing = !!id && id !== 'new'; // Correctly determine if editing
 
     const [name, setName] = useState('');
@@ -111,7 +113,9 @@ export default function ReptileForm() {
             length: length ? parseInt(length) : null,
             // Only save age_category if manually set (not auto mode)
             age_category: ageCategoryAuto ? null : (ageCategory || null),
-            sex: sex || null
+            sex: sex || null,
+            // Include household_id if provided via URL query param (for multi-household support)
+            ...(householdId && !isEditing && { household_id: parseInt(householdId) })
         };
 
         try {
