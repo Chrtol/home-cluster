@@ -3,6 +3,11 @@ set -euo pipefail
 
 cd /app
 
+# Create photos directory in dev (volume may need the directory to exist)
+if [ "${ENVIRONMENT:-}" = "development" ]; then
+  mkdir -p /app/photos 2>/dev/null || true
+fi
+
 # Ensure Python can import the local `app` package when Alembic runs
 # (some environments don't automatically include the CWD in sys.path when
 # running the alembic CLI). Export PYTHONPATH so `from app.config import ...`
