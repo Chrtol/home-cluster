@@ -59,6 +59,12 @@ async def lifespan(app: FastAPI):
         else:
             logger.info("Database already contains data - skipping seed")
 
+        # Seed development test data (reptiles, history, edge cases)
+        # Only runs in development when no reptiles exist
+        if settings.environment == "development":
+            from app.seed_dev_data import seed_dev_test_data
+            await seed_dev_test_data(session)
+
     # Clean up duplicate templates after seeding
     async with async_session_maker() as session:
         from app.cleanup_templates import cleanup_duplicate_templates
