@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 15 of 15 (Frontend Hot Reload & DX Polish)
-Plan: 1 of 1 in current phase
-Status: Complete
-Last activity: 2026-02-11 — Completed Phase 15 Plan 01 (Frontend Hot Reload & DX Polish)
+Plan: 2 of 2 in current phase
+Status: Phase Complete — v1.2 Milestone Achieved
+Last activity: 2026-02-11 — Completed Phase 15 Plan 02 (Database Auto-Seeding & HMR Verification)
 
-Progress: [██████████████████████] 100% (62 of 62 estimated plans complete)
+Progress: [██████████████████████] 100% (All phases complete - v1.2 shipped)
 
 ## Performance Metrics
 
@@ -44,6 +44,8 @@ Progress: [██████████████████████] 1
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-11: Check Food table for existing records before seeding (efficient single-query emptiness check)
+- 2026-02-11: Log seeding decisions explicitly (developer visibility into startup behavior)
 - 2026-02-11: Use file polling for Docker file watching (inotify doesn't work in Docker)
 - 2026-02-11: Hardcode backend:8000 in Vite proxy (server-side needs Docker service name)
 - 2026-02-11: Mount source files individually vs COPY in Dockerfile (enables HMR)
@@ -68,6 +70,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 15 Plan 01
-Resume file: .planning/phases/15-frontend-hot-reload-dx-polish/15-01-SUMMARY.md
-Next action: All phases complete - project at v1.1 milestone
+Stopped at: Completed Phase 15 Plan 02 - v1.2 Milestone Complete
+Resume file: .planning/phases/15-frontend-hot-reload-dx-polish/15-02-SUMMARY.md
+Next action: v1.2 complete - plan next milestone or begin feature work
