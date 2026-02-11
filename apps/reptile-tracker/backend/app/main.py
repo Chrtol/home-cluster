@@ -43,10 +43,21 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized successfully")
 
-    # Seed default foods and supplements on startup
+    # Seed default foods and supplements on startup (only if database is empty)
     async with async_session_maker() as session:
-        await seed_database(session)
-    logger.info("Default foods and supplements seeded")
+        from sqlalchemy import select
+        from app.models import Food
+
+        # Check if database already has data
+        result = await session.execute(select(Food).limit(1))
+        existing_food = result.scalar_one_or_none()
+
+        if existing_food is None:
+            logger.info("Empty database detected - seeding with default data")
+            await seed_database(session)
+            logger.info("Database seeded successfully")
+        else:
+            logger.info("Database already contains data - skipping seed")
 
     # Clean up duplicate templates after seeding
     async with async_session_maker() as session:
