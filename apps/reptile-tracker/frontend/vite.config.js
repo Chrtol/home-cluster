@@ -25,6 +25,14 @@ export default defineConfig({
       '/api': {
         target: 'http://backend:8000',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('[Proxy] Request:', req.method, req.url, '→', 'http://backend:8000' + req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('[Proxy] Response:', proxyRes.statusCode, req.url);
+          });
+        },
       },
       '/auth': {
         target: 'http://backend:8000',

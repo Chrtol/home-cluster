@@ -160,8 +160,8 @@ async def create_reptile(
     reptile_count = count_result.scalar() or 0
     default_border_color = AVATAR_BORDER_COLORS[reptile_count % len(AVATAR_BORDER_COLORS)]
 
-    # Exclude household_id from model_dump since we're setting it explicitly
-    reptile_data = reptile.model_dump(exclude={'household_id'})
+    # Exclude fields we're setting explicitly
+    reptile_data = reptile.model_dump(exclude={'household_id', 'avatar_border_color'})
     new_reptile = Reptile(
         **reptile_data,
         household_id=household_id,  # Assign to specified or default household

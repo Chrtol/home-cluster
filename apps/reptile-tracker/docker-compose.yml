@@ -98,7 +98,8 @@ services:
       # CRITICAL: Exclude node_modules (use container's version)
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:8000
+      # Empty VITE_API_URL so axios uses relative URLs → goes through Vite proxy
+      - VITE_API_URL=
     depends_on:
       - backend
 
