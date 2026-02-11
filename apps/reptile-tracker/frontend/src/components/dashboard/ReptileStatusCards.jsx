@@ -56,7 +56,8 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
         })
       ]);
 
-      let reptilesData = reptilesRes.data;
+      // Ensure we have an array (API might return error object on failure)
+      let reptilesData = Array.isArray(reptilesRes.data) ? reptilesRes.data : [];
 
       // Get saved order from localStorage
       const savedOrder = localStorage.getItem('reptile_card_order');
@@ -73,9 +74,9 @@ const ReptileStatusCards = ({ config = {}, size = 'large', onQuickLog }) => {
         }
       }
 
-      // Process schedule instances into task format
-      const instances = instancesRes.data || [];
-      const bulkData = bulkDataRes.data;
+      // Process schedule instances into task format (ensure array)
+      const instances = Array.isArray(instancesRes.data) ? instancesRes.data : [];
+      const bulkData = bulkDataRes.data || {};
 
       const enrichedReptiles = reptilesData.map(reptile => {
         // Find today's tasks for this reptile from schedule instances

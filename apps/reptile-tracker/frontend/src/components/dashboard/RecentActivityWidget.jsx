@@ -49,8 +49,10 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       ]);
 
       // Create reptile lookup map for avatar URLs and border colors
+      // Use Array.isArray() since error responses may be objects, not arrays
       const reptilesMap = {};
-      (reptilesRes.data || []).forEach(r => {
+      const reptilesData = Array.isArray(reptilesRes.data) ? reptilesRes.data : [];
+      reptilesData.forEach(r => {
         reptilesMap[r.id] = {
           id: r.id,
           name: r.name,
@@ -59,7 +61,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         };
       });
 
-      const feedings = (feedingsRes.data || []).map(f => {
+      const feedingsData = Array.isArray(feedingsRes.data) ? feedingsRes.data : [];
+      const feedings = feedingsData.map(f => {
         // Build summary from foods array
         const foodItems = f.foods || [];
         const totalItems = foodItems.reduce((sum, food) => sum + (food.quantity || 1), 0);
@@ -91,7 +94,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         };
       });
 
-      const allWeighings = (weighingsRes.data || [])
+      const weighingsData = Array.isArray(weighingsRes.data) ? weighingsRes.data : [];
+      const allWeighings = weighingsData
         .sort((a, b) => new Date(b.measured_at) - new Date(a.measured_at))
         .slice(0, itemCount * 2);
 
