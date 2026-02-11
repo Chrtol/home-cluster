@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 14 of 15 (Development Infrastructure & Auth Bypass)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 14-01-PLAN.md (Development Infrastructure)
+Last activity: 2026-02-11 — Completed 14-02-PLAN.md (Development Auth Bypass)
 
-Progress: [████████████████████░] 81% (57 of 59 estimated plans complete)
+Progress: [████████████████████░] 83% (58 of 59 estimated plans complete)
 
 ## Performance Metrics
 
@@ -44,13 +44,14 @@ Progress: [████████████████████░] 81% 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-11: Use exact "development" match for auth bypass (not "!= production") - fail-safe approach
+- 2026-02-11: /auth/dev-status returns 404 in production (security - hide auth internals)
 - 2026-02-11: SECRET_KEY and OIDC_CLIENT_SECRET have development defaults (docker compose up without .env)
 - 2026-02-11: Removed deprecated version field from docker-compose.yml (Compose v2 best practice)
 - 2026-02-11: SQL_ECHO defaults to false (less noisy development)
 - 2026-02-11: Dev auth bypass uses environment check inside get_current_user (not dependency_overrides)
 - 2026-02-10: Force dark mode on non-auth pages (eliminates light mode flash)
 - 2026-02-09: 44x44px WCAG touch targets (mobile accessibility compliance)
-- 2026-02-08: Sidebar collapse persisted to localStorage (consistent UX)
 
 ### Pending Todos
 
@@ -63,6 +64,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 14-01-PLAN.md
-Resume file: .planning/phases/14-development-infrastructure-auth-bypass/14-02-PLAN.md
-Next action: Continue phase 14 execution (plan 02: auth bypass implementation)
+Stopped at: Completed 14-02-PLAN.md
+Resume file: .planning/phases/14-development-infrastructure-auth-bypass/14-03-PLAN.md
+Next action: Continue phase 14 execution (plan 03: Docker Compose development environment)
