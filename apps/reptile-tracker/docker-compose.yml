@@ -61,11 +61,16 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: python celery_worker.py
+    entrypoint: /app/entrypoint-celery.sh
     environment:
       DATABASE_URL: postgresql+asyncpg://reptile_tracker:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/reptile_tracker
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:-dev_secret_key_DO_NOT_USE_IN_PRODUCTION}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-not-used-in-dev}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-not-used-in-dev}
+      OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-http://localhost:8000/auth/.well-known/openid-configuration}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       ENVIRONMENT: development
     depends_on:
       postgres:

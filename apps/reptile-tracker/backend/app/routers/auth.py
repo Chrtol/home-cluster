@@ -217,7 +217,7 @@ async def dev_status(
             "sql_echo": settings.sql_echo,
             "frontend_url": settings.frontend_url,
         },
-        "message": "Development auth bypass is active. All requests authenticated as dev@localhost."
+        "message": "Development auth bypass is active. All requests authenticated as dev@local.dev."
     }
 
 

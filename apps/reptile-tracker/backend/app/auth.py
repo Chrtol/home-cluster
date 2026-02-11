@@ -116,16 +116,16 @@ async def get_current_user(
 
     Development mode: Bypasses authentication and returns dev@localhost user
     """
-    # Development bypass: auto-login as dev@localhost
+    # Development bypass: auto-login as dev@local.dev
     if settings.environment == "development":
-        result = await db.execute(select(User).where(User.email == "dev@localhost"))
+        result = await db.execute(select(User).where(User.email == "dev@local.dev"))
         user = result.scalar_one_or_none()
 
         if not user:
             # Auto-create dev user on first request
             user = User(
                 oidc_sub="dev-bypass-local",
-                email="dev@localhost",
+                email="dev@local.dev",
                 name="Local Developer",
                 created_at=datetime.now(timezone.utc),
                 last_login=datetime.now(timezone.utc),
@@ -133,7 +133,7 @@ async def get_current_user(
             db.add(user)
             await db.commit()
             await db.refresh(user)
-            logger.info("Created dev@localhost user for development mode")
+            logger.info("Created dev@local.dev user for development mode")
 
         logger.debug(f"Development auth bypass: using {user.email}")
         return user
