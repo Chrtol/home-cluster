@@ -103,8 +103,13 @@ function ScheduleTemplates() {
         axios.get(`${API_BASE_URL}/api/reptiles`, { withCredentials: true }),
       ]);
 
+      // Defensive array checks for all response data
+      const scheduleTemplates = Array.isArray(templatesData) ? templatesData : [];
+      const supplementRotations = Array.isArray(supplementRotationsData?.data) ? supplementRotationsData.data : [];
+      const reptilesList = Array.isArray(reptilesData?.data) ? reptilesData.data : [];
+
       // Convert supplement rotation templates to schedule template format for display
-      const rotationsAsTemplates = supplementRotationsData.data.map(rotation => ({
+      const rotationsAsTemplates = supplementRotations.map(rotation => ({
         ...rotation,
         name: rotation.name, // Already has proper name from backend
         schedule_type: 'supplement_rotation', // Mark as rotation
@@ -120,7 +125,7 @@ function ScheduleTemplates() {
       }));
 
       // Merge schedule templates and supplement rotations
-      const allTemplates = [...templatesData, ...rotationsAsTemplates];
+      const allTemplates = [...scheduleTemplates, ...rotationsAsTemplates];
 
       // Normalize template species to ensure it's always a string
       const normalizedTemplates = allTemplates.map(t => ({
@@ -130,7 +135,7 @@ function ScheduleTemplates() {
       setTemplates(normalizedTemplates);
 
       // Normalize reptile species to ensure it's always a string
-      const normalizedReptiles = reptilesData.data.map(r => ({
+      const normalizedReptiles = reptilesList.map(r => ({
         ...r,
         species: typeof r.species === 'string' ? r.species : String(r.species || '')
       }));
@@ -138,6 +143,8 @@ function ScheduleTemplates() {
     } catch (error) {
       console.error('Error loading data:', error);
       alert('Failed to load schedule templates');
+      setTemplates([]);
+      setReptiles([]);
     } finally {
       setLoading(false);
     }

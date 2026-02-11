@@ -81,12 +81,15 @@ function Statistics() {
   const fetchReptiles = async () => {
     try {
       const res = await axios.get('/api/reptiles');
-      setReptiles(res.data);
-      if (res.data.length > 0) {
-        setSelectedReptile(res.data[0].id);
+      // Defensive check for array response
+      const reptilesData = Array.isArray(res.data) ? res.data : [];
+      setReptiles(reptilesData);
+      if (reptilesData.length > 0) {
+        setSelectedReptile(reptilesData[0].id);
       }
     } catch (e) {
       console.error('Failed to fetch reptiles', e);
+      setReptiles([]);
     } finally {
       setLoading(false);
     }
@@ -97,9 +100,27 @@ function Statistics() {
     setLoading(true);
     try {
       const res = await axios.get(`/api/stats/comprehensive/${selectedReptile}?days=${timeRange}`);
-      setStats(res.data);
+      // Defensive check - ensure nested arrays are arrays
+      const statsData = res.data || {};
+      if (statsData.feeding_data && !Array.isArray(statsData.feeding_data)) {
+        statsData.feeding_data = [];
+      }
+      if (statsData.weight_data && !Array.isArray(statsData.weight_data)) {
+        statsData.weight_data = [];
+      }
+      if (statsData.misting_data && !Array.isArray(statsData.misting_data)) {
+        statsData.misting_data = [];
+      }
+      if (statsData.health_data && !Array.isArray(statsData.health_data)) {
+        statsData.health_data = [];
+      }
+      if (statsData.food_data && !Array.isArray(statsData.food_data)) {
+        statsData.food_data = [];
+      }
+      setStats(statsData);
     } catch (e) {
       console.error('Failed to fetch stats', e);
+      setStats(null);
     } finally {
       setLoading(false);
     }

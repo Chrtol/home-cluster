@@ -119,15 +119,18 @@ function Calendar() {
   const fetchReptiles = async () => {
     try {
       const response = await axios.get("/api/reptiles");
-      setReptiles(response.data);
+      // Defensive check for array response
+      const reptilesData = Array.isArray(response.data) ? response.data : [];
+      setReptiles(reptilesData);
 
       // Initialize all reptiles as visible if no saved filters or if saved filter is empty
       const savedFilters = localStorage.getItem('calendar_reptile_filters');
       if (!savedFilters || (savedFilters && JSON.parse(savedFilters).length === 0)) {
-        setVisibleReptiles(new Set(response.data.map(r => r.id)));
+        setVisibleReptiles(new Set(reptilesData.map(r => r.id)));
       }
     } catch (error) {
       console.error("Error fetching reptiles:", error);
+      setReptiles([]);
     }
   };
 
@@ -159,20 +162,27 @@ function Calendar() {
         }
       });
 
-      const data = bulkResponse.data;
+      const data = bulkResponse.data || {};
+
+      // Defensive array checks for all response fields
+      const schedulesList = Array.isArray(data.schedules) ? data.schedules : [];
+      const rotationsList = Array.isArray(data.feeding_rotations) ? data.feeding_rotations : [];
+      const feedingsList = Array.isArray(data.feedings) ? data.feedings : [];
+      const mistingsList = Array.isArray(data.mistings) ? data.mistings : [];
+      const instancesList = Array.isArray(data.instances) ? data.instances : [];
 
       // Set schedules and rotations (already have reptile_name from backend)
-      setSchedules(data.schedules);
-      setFeedingRotations(data.feeding_rotations);
+      setSchedules(schedulesList);
+      setFeedingRotations(rotationsList);
       setQuotaStatuses(data.quota_statuses || {});
 
       // Set past feedings and mistings
-      const feedingsWithType = data.feedings.map(f => ({
+      const feedingsWithType = feedingsList.map(f => ({
         ...f,
         reptile_name: f.reptile?.name || 'Unknown',
         type: 'feeding'
       }));
-      const mistingsWithType = data.mistings.map(m => ({
+      const mistingsWithType = mistingsList.map(m => ({
         ...m,
         reptile_name: m.reptile?.name || 'Unknown',
         type: 'misting'
@@ -182,7 +192,7 @@ function Calendar() {
       setMistings(mistingsWithType);
 
       // Transform instances to event format
-      const instanceEvents = data.instances
+      const instanceEvents = instancesList
         .filter(instance => instance.schedule && instance.schedule.reptile)
         .map(instance => {
           // Parse date as local time to avoid timezone issues
@@ -222,6 +232,10 @@ function Calendar() {
     } catch (error) {
       console.error("Error fetching calendar data:", error);
       setEvents([]);
+      setSchedules([]);
+      setFeedingRotations([]);
+      setFeedings([]);
+      setMistings([]);
     } finally {
       setLoading(false);
     }

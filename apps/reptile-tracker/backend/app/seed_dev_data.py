@@ -6,7 +6,7 @@ Only runs when:
 2. No reptiles exist in the database (idempotent)
 
 Creates:
-- Dev user (dev@localhost) and household
+- Dev user (dev@local.dev) and household - matches auth.py dev bypass
 - 4 reptiles with different species
 - 60-90 days of activity history per reptile
 - Schedules with instances (including 1 overdue)
@@ -86,11 +86,12 @@ async def create_dev_user_and_household(db: AsyncSession) -> tuple[User, Househo
     db.add(household)
     await db.flush()
 
-    # Create user
+    # Create user - must match auth.py dev bypass credentials
+    # auth.py looks for email="dev@local.dev" and creates oidc_sub="dev-bypass-local"
     user = User(
-        oidc_sub="dev-local-user",
-        email="dev@localhost",
-        name="Dev User",
+        oidc_sub="dev-bypass-local",
+        email="dev@local.dev",
+        name="Local Developer",
         timezone="America/New_York"
     )
     db.add(user)
@@ -241,28 +242,36 @@ async def create_feedings_history(db: AsyncSession, reptile: Reptile, user: User
         db.add(feeding)
         await db.flush()
 
-        # Add food items
+        # Add food items - track added foods to avoid duplicates (composite PK)
+        added_food_ids = set()
+
         if reptile.species == "Bearded Dragon":
             # Mix: insects and vegetables
             if food_selection.get("insects"):
                 insect = fake.random_element(food_selection["insects"])
-                await db.execute(
-                    feeding_foods.insert().values(
-                        feeding_id=feeding.id,
-                        food_id=insect.id,
-                        quantity=fake.random_int(5, 10)
-                    )
-                )
-            if food_selection.get("vegetables"):
-                for _ in range(fake.random_int(2, 4)):
-                    veg = fake.random_element(food_selection["vegetables"])
+                if insect.id not in added_food_ids:
+                    added_food_ids.add(insect.id)
                     await db.execute(
                         feeding_foods.insert().values(
                             feeding_id=feeding.id,
-                            food_id=veg.id,
-                            quantity=1
+                            food_id=insect.id,
+                            quantity=fake.random_int(5, 10)
                         )
                     )
+            if food_selection.get("vegetables"):
+                # Pick unique vegetables
+                num_veggies = min(fake.random_int(2, 4), len(food_selection["vegetables"]))
+                selected_veggies = fake.random_elements(food_selection["vegetables"], length=num_veggies, unique=True)
+                for veg in selected_veggies:
+                    if veg.id not in added_food_ids:
+                        added_food_ids.add(veg.id)
+                        await db.execute(
+                            feeding_foods.insert().values(
+                                feeding_id=feeding.id,
+                                food_id=veg.id,
+                                quantity=1
+                            )
+                        )
         elif reptile.species == "Leopard Gecko":
             # Insects only
             if food_selection.get("insects"):
@@ -406,7 +415,7 @@ async def seed_dev_test_data(db: AsyncSession):
     2. No reptiles exist in the database (idempotent)
 
     Creates:
-    - Dev user (dev@localhost) and household
+    - Dev user (dev@local.dev) and household - matches auth.py dev bypass
     - 4 reptiles with different species
     - 60-90 days of activity history per reptile
     - Schedules with instances (including 1 overdue)

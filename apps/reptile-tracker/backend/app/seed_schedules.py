@@ -796,7 +796,7 @@ async def seed_care_guidelines(db: AsyncSession):
 
         # ========== GENERAL SUPPLEMENT GUIDELINES ==========
         CareGuideline(
-            species=None,  # General for all species
+            species="_general",  # Placeholder for general guidelines (applies to all species)
             age_category=None,
             guideline_type="supplements",
             title="Reptile Supplement Guidelines",
