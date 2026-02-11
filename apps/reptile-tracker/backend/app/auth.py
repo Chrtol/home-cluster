@@ -113,7 +113,32 @@ async def get_current_user(
     """
     Get current user from JWT token (supports both Bearer token and secure cookie)
     M-4 Fix: Improved exception handling with specific errors
+
+    Development mode: Bypasses authentication and returns dev@localhost user
     """
+    # Development bypass: auto-login as dev@localhost
+    if settings.environment == "development":
+        result = await db.execute(select(User).where(User.email == "dev@localhost"))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            # Auto-create dev user on first request
+            user = User(
+                oidc_sub="dev-bypass-local",
+                email="dev@localhost",
+                name="Local Developer",
+                created_at=datetime.now(timezone.utc),
+                last_login=datetime.now(timezone.utc),
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            logger.info("Created dev@localhost user for development mode")
+
+        logger.debug(f"Development auth bypass: using {user.email}")
+        return user
+
+    # Production: normal authentication flow continues below...
     # Try to get token from Authorization header first, then fall back to cookie
     token = None
     if credentials:
