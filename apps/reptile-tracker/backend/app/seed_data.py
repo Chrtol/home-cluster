@@ -1,9 +1,9 @@
 """
-Seed database with default foods and supplements
+Seed database with default foods, supplements, and notification templates
 """
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models import Food, Supplement, FoodCategory, InsectSize
+from app.models import Food, Supplement, FoodCategory, InsectSize, NotificationTemplate
 from datetime import datetime
 
 
@@ -760,6 +760,140 @@ async def seed_supplements(db: AsyncSession):
     await db.commit()
 
 
+async def seed_notification_templates(db: AsyncSession):
+    """Seed default system notification templates"""
+
+    # Check if system templates already exist
+    result = await db.execute(
+        select(NotificationTemplate).where(
+            NotificationTemplate.template_type == "system",
+            NotificationTemplate.user_id.is_(None)
+        ).limit(1)
+    )
+    if result.scalar_one_or_none():
+        return  # Already seeded
+
+    templates = [
+        # Schedule reminder templates
+        NotificationTemplate(
+            name="Default Schedule Reminder",
+            template_type="system",
+            trigger_type="schedule_reminder",
+            user_id=None,
+            title_template="🔔 {schedule_name} Reminder",
+            message_template="{reptile_name} is due for {schedule_name}. Scheduled for {scheduled_date}.",
+            channel_type=None,  # Applies to all channels
+            priority=100,
+            is_active=True,
+            applies_to_description="Default reminder for any schedule type"
+        ),
+        NotificationTemplate(
+            name="Feeding Reminder",
+            template_type="system",
+            trigger_type="schedule_reminder",
+            user_id=None,
+            title_template="🍽️ Feeding Time for {reptile_name}",
+            message_template="{reptile_name} is due for feeding. {supplements_text}",
+            channel_type=None,
+            schedule_type_filter="feeding",
+            priority=50,
+            is_active=True,
+            applies_to_description="Reminder specifically for feeding schedules"
+        ),
+
+        # Overdue alert templates
+        NotificationTemplate(
+            name="Default Overdue Alert",
+            template_type="system",
+            trigger_type="overdue_alert",
+            user_id=None,
+            title_template="⚠️ Overdue: {schedule_name}",
+            message_template="{reptile_name}'s {schedule_name} is overdue! Was due on {scheduled_date}.",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            applies_to_description="Default alert for any overdue schedule"
+        ),
+        NotificationTemplate(
+            name="Feeding Overdue Alert",
+            template_type="system",
+            trigger_type="overdue_alert",
+            user_id=None,
+            title_template="🚨 {reptile_name} - Feeding Overdue!",
+            message_template="{reptile_name}'s feeding is overdue by {days_overdue} day(s). Last fed: {last_completed_date}.",
+            channel_type=None,
+            schedule_type_filter="feeding",
+            priority=50,
+            is_active=True,
+            applies_to_description="Alert specifically for overdue feedings"
+        ),
+
+        # Feeding logged templates
+        NotificationTemplate(
+            name="Feeding Logged Confirmation",
+            template_type="system",
+            trigger_type="feeding_logged",
+            user_id=None,
+            title_template="✅ Feeding Logged",
+            message_template="{reptile_name} was fed {food_summary}. {supplements_text}",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            applies_to_description="Confirmation when a feeding is logged"
+        ),
+
+        # Discord-specific templates with rich formatting
+        NotificationTemplate(
+            name="Discord Schedule Reminder",
+            template_type="system",
+            trigger_type="schedule_reminder",
+            user_id=None,
+            title_template="🔔 {schedule_name} Reminder",
+            message_template="{reptile_name} is due for {schedule_name}",
+            channel_type="discord",
+            priority=75,
+            is_active=True,
+            discord_config={
+                "color": 3447003,  # Blue
+                "fields": [
+                    {"name": "Reptile", "value": "{reptile_name}", "inline": True},
+                    {"name": "Schedule", "value": "{schedule_name}", "inline": True},
+                    {"name": "Due", "value": "{scheduled_date}", "inline": True}
+                ],
+                "footer": {"text": "Reptile Tracker"}
+            },
+            applies_to_description="Rich Discord embed for schedule reminders"
+        ),
+        NotificationTemplate(
+            name="Discord Overdue Alert",
+            template_type="system",
+            trigger_type="overdue_alert",
+            user_id=None,
+            title_template="⚠️ OVERDUE: {schedule_name}",
+            message_template="{reptile_name}'s {schedule_name} is overdue!",
+            channel_type="discord",
+            priority=75,
+            is_active=True,
+            discord_config={
+                "color": 15158332,  # Red
+                "fields": [
+                    {"name": "Reptile", "value": "{reptile_name}", "inline": True},
+                    {"name": "Schedule", "value": "{schedule_name}", "inline": True},
+                    {"name": "Days Overdue", "value": "{days_overdue}", "inline": True}
+                ],
+                "footer": {"text": "Reptile Tracker - Please attend to this soon!"}
+            },
+            applies_to_description="Rich Discord embed for overdue alerts"
+        ),
+    ]
+
+    for template in templates:
+        db.add(template)
+
+    await db.commit()
+    print("System notification templates seeded successfully!")
+
+
 async def seed_database(db: AsyncSession):
     """Seed all default data"""
     await seed_foods(db)
@@ -778,5 +912,11 @@ async def seed_database(db: AsyncSession):
         await seed_supplement_rotation_data(db)
     except Exception as e:
         print(f"Note: Supplement rotation template seeding skipped (tables may not exist yet): {e}")
+
+    # Seed system notification templates
+    try:
+        await seed_notification_templates(db)
+    except Exception as e:
+        print(f"Note: Notification template seeding skipped (tables may not exist yet): {e}")
 
     print("Database seeded successfully!")
