@@ -58,7 +58,26 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
+      - ./photos:/app/photos
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python celery_worker.py
+    environment:
+      DATABASE_URL: postgresql+asyncpg://reptile_tracker:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/reptile_tracker
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_DO_NOT_USE_IN_PRODUCTION}
+      ENVIRONMENT: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
 
   frontend:
     build:

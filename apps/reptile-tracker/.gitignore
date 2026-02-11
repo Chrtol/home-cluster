@@ -34,3 +34,6 @@ yarn-error.log*
 # Database
 *.db
 *.sqlite
+
+# Local photo storage
+photos/
