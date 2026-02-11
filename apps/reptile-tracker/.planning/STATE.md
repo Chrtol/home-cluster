@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass.
-**Current focus:** Phase 14 - Development Infrastructure & Auth Bypass
+**Current focus:** Phase 15 - Frontend Hot Reload & DX Polish
 
 ## Current Position
 
-Phase: 14 of 15 (Development Infrastructure & Auth Bypass)
-Plan: 3 of 3 in current phase
+Phase: 15 of 15 (Frontend Hot Reload & DX Polish)
+Plan: 1 of 1 in current phase
 Status: Complete
-Last activity: 2026-02-11 — Completed Phase 14 (Development Infrastructure & Auth Bypass)
+Last activity: 2026-02-11 — Completed Phase 15 Plan 01 (Frontend Hot Reload & DX Polish)
 
-Progress: [█████████████████████] 87% (61 of 62 estimated plans complete)
+Progress: [██████████████████████] 100% (62 of 62 estimated plans complete)
 
 ## Performance Metrics
 
@@ -44,6 +44,9 @@ Progress: [█████████████████████] 87% 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-11: Use file polling for Docker file watching (inotify doesn't work in Docker)
+- 2026-02-11: Hardcode backend:8000 in Vite proxy (server-side needs Docker service name)
+- 2026-02-11: Mount source files individually vs COPY in Dockerfile (enables HMR)
 - 2026-02-11: Frontend JS error (t.reduce) is API/frontend contract mismatch, tracked separately from Phase 14
 - 2026-02-11: Use exact "development" match for auth bypass (not "!= production") - fail-safe approach
 - 2026-02-11: /auth/dev-status returns 404 in production (security - hide auth internals)
@@ -65,6 +68,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 14
-Resume file: .planning/phases/15-frontend-hot-reload-dx-polish/
-Next action: Plan and execute Phase 15 (Frontend Hot Reload & DX Polish)
+Stopped at: Completed Phase 15 Plan 01
+Resume file: .planning/phases/15-frontend-hot-reload-dx-polish/15-01-SUMMARY.md
+Next action: All phases complete - project at v1.1 milestone
