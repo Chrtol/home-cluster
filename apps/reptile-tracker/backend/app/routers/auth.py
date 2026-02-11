@@ -191,6 +191,36 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+@router.get("/dev-status")
+async def dev_status(
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Development-only endpoint to check auth bypass status.
+    Returns 404 in production to avoid exposing auth internals.
+    """
+    if settings.environment != "development":
+        raise HTTPException(status_code=404, detail="Not found")
+
+    return {
+        "environment": settings.environment,
+        "auth_bypass_active": True,
+        "current_user": {
+            "id": current_user.id,
+            "email": current_user.email,
+            "name": current_user.name,
+            "oidc_sub": current_user.oidc_sub,
+        },
+        "settings": {
+            "cookie_secure": settings.cookie_secure,
+            "sql_echo": settings.sql_echo,
+            "frontend_url": settings.frontend_url,
+        },
+        "message": "Development auth bypass is active. All requests authenticated as dev@localhost."
+    }
+
+
 @router.patch("/me", response_model=User)
 async def update_me(
     user_update: UserUpdate,
