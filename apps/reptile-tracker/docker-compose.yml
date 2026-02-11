@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -35,20 +33,18 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      # H-2 Fix: Removed default secrets - must be provided via .env file or export
       DATABASE_URL: postgresql+asyncpg://reptile_tracker:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/reptile_tracker
-      SECRET_KEY: ${SECRET_KEY:?ERROR - SECRET_KEY must be set in environment}
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_DO_NOT_USE_IN_PRODUCTION}
       REDIS_URL: redis://redis:6379/0
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-reptile-tracker}
-      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?ERROR - OIDC_CLIENT_SECRET must be set}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-not-used-in-dev}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-not-used-in-dev}
       OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-http://localhost:8000/auth/.well-known/openid-configuration}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       WEBHOOK_URL: ${WEBHOOK_URL:-}
-      # Security settings for development
       ENVIRONMENT: development
-      SQL_ECHO: "true"
-      COOKIE_SECURE: "false"  # Set to true in production with HTTPS
+      SQL_ECHO: "false"
+      COOKIE_SECURE: "false"
     ports:
       - "8000:8000"
     depends_on:
