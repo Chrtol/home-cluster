@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass.
-**Current focus:** Phase 15 - Frontend Hot Reload & DX Polish
+**Current focus:** v1.2 Milestone Complete - No active phase
 
 ## Current Position
 
-Phase: 15 of 15 (Frontend Hot Reload & DX Polish)
-Plan: 2 of 2 in current phase
-Status: Phase Complete — v1.2 Milestone Achieved
-Last activity: 2026-02-11 — Completed Phase 15 Plan 02 (Database Auto-Seeding & HMR Verification)
+Phase: 16 of 16 (Test Data Seeding) — COMPLETE
+Plan: 1 of 1 in current phase
+Status: v1.2 Milestone Shipped
+Last activity: 2026-02-11 — Completed Phase 16 UAT (5/6 passed, 1 minor UI polish)
 
 Progress: [██████████████████████] 100% (All phases complete - v1.2 shipped)
 
@@ -70,6 +70,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 15 Plan 02 - v1.2 Milestone Complete
-Resume file: .planning/phases/15-frontend-hot-reload-dx-polish/15-02-SUMMARY.md
-Next action: v1.2 complete - plan next milestone or begin feature work
+Stopped at: Completed Phase 16 UAT - v1.2 Milestone Shipped
+Resume file: .planning/phases/16-test-data-seeding/16-UAT.md
+Next action: Plan v1.3 milestone or ad-hoc feature work
+
+## Deferred Items
+
+- Shed status indicator on dashboard/list cards (minor UI polish from Phase 16 UAT)
