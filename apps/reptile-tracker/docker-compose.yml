@@ -86,6 +86,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:80"
+    volumes:
+      # Mount development nginx config with API proxy (production uses Envoy Gateway)
+      - ./frontend/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
     environment:
