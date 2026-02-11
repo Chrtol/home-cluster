@@ -17,6 +17,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -25,6 +38,7 @@ services:
       # H-2 Fix: Removed default secrets - must be provided via .env file or export
       DATABASE_URL: postgresql+asyncpg://reptile_tracker:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/reptile_tracker
       SECRET_KEY: ${SECRET_KEY:?ERROR - SECRET_KEY must be set in environment}
+      REDIS_URL: redis://redis:6379/0
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-reptile-tracker}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?ERROR - OIDC_CLIENT_SECRET must be set}
       OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-http://localhost:8000/auth/.well-known/openid-configuration}
@@ -39,6 +53,8 @@ services:
       - "8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
@@ -57,3 +73,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
