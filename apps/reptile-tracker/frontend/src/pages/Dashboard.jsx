@@ -155,21 +155,23 @@ export default function Dashboard() {
           }
         });
 
-        const data = bulkResponse.data;
+        const data = bulkResponse.data || {};
 
-        // Set basic data
-        setReptiles(data.reptiles);
-        setRecentFeedings(data.recent_feedings);
-        setSchedules(data.schedules);
-        setFeedingRotations(data.feeding_rotations);
-        setWeeklyFeedings(data.weekly_feedings);
-        setWeeklyMistings(data.weekly_mistings);
+        // Set basic data (defensive array checks for cached/malformed responses)
+        setReptiles(Array.isArray(data.reptiles) ? data.reptiles : []);
+        setRecentFeedings(Array.isArray(data.recent_feedings) ? data.recent_feedings : []);
+        setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
+        setFeedingRotations(Array.isArray(data.feeding_rotations) ? data.feeding_rotations : []);
+        setWeeklyFeedings(Array.isArray(data.weekly_feedings) ? data.weekly_feedings : []);
+        setWeeklyMistings(Array.isArray(data.weekly_mistings) ? data.weekly_mistings : []);
         setQuotaStatuses(data.quota_statuses || {});
 
         // Process weight data
         const weightArray = [];
-        Object.entries(data.weight_data).forEach(([reptileId, weights]) => {
-          weights.forEach(w => weightArray.push({ ...w, reptile_id: parseInt(reptileId) }));
+        const weightData = data.weight_data && typeof data.weight_data === 'object' ? data.weight_data : {};
+        Object.entries(weightData).forEach(([reptileId, weights]) => {
+          const weightsArr = Array.isArray(weights) ? weights : [];
+          weightsArr.forEach(w => weightArray.push({ ...w, reptile_id: parseInt(reptileId) }));
         });
         setWeightData(weightArray);
 
@@ -179,7 +181,8 @@ export default function Dashboard() {
         const healthMap = {};
         const weighingMap = {};
 
-        Object.entries(data.last_activity).forEach(([reptileId, activity]) => {
+        const lastActivity = data.last_activity && typeof data.last_activity === 'object' ? data.last_activity : {};
+        Object.entries(lastActivity).forEach(([reptileId, activity]) => {
           const id = parseInt(reptileId);
 
           if (activity.last_feeding && activity.last_feeding.length > 0) {
@@ -199,9 +202,10 @@ export default function Dashboard() {
         });
 
         // Get last weighing from weight_data
-        Object.entries(data.weight_data).forEach(([reptileId, weights]) => {
-          if (weights.length > 0) {
-            weighingMap[parseInt(reptileId)] = weights[0].weighed_at;
+        Object.entries(weightData).forEach(([reptileId, weights]) => {
+          const weightsArr = Array.isArray(weights) ? weights : [];
+          if (weightsArr.length > 0) {
+            weighingMap[parseInt(reptileId)] = weightsArr[0].weighed_at;
           }
         });
 
@@ -212,9 +216,11 @@ export default function Dashboard() {
 
         // Build recent activity
         const allActivity = [];
+        const safeRecentFeedings = Array.isArray(data.recent_feedings) ? data.recent_feedings : [];
+        const safeReptiles = Array.isArray(data.reptiles) ? data.reptiles : [];
 
         // Add recent feedings
-        data.recent_feedings.forEach(feeding => {
+        safeRecentFeedings.forEach(feeding => {
           allActivity.push({
             type: 'feeding',
             id: `feeding-${feeding.id}`,
@@ -227,8 +233,8 @@ export default function Dashboard() {
         });
 
         // Add recent mistings and health from last_activity
-        Object.entries(data.last_activity).forEach(([reptileId, activity]) => {
-          const reptile = data.reptiles.find(r => r.id === parseInt(reptileId));
+        Object.entries(lastActivity).forEach(([reptileId, activity]) => {
+          const reptile = safeReptiles.find(r => r.id === parseInt(reptileId));
           if (!reptile) return;
 
           if (activity.last_misting && activity.last_misting.length > 0) {
@@ -265,7 +271,7 @@ export default function Dashboard() {
           type: 'weight',
           id: `weight-${w.id}`,
           timestamp: new Date(w.weighed_at),
-          reptile: data.reptiles.find(r => r.id === w.reptile_id),
+          reptile: safeReptiles.find(r => r.id === w.reptile_id),
           data: w,
           icon: Scale,
           color: 'purple'
@@ -277,7 +283,8 @@ export default function Dashboard() {
         setRecentActivity(allActivity.slice(0, 10));
 
         // Transform instances to event format
-        const instanceEvents = data.weekly_instances
+        const safeWeeklyInstances = Array.isArray(data.weekly_instances) ? data.weekly_instances : [];
+        const instanceEvents = safeWeeklyInstances
           .filter(instance => instance.schedule && instance.schedule.reptile)
           .map(instance => {
             // Parse date as local time to avoid timezone issues

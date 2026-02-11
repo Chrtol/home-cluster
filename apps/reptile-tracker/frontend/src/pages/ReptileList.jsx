@@ -18,9 +18,10 @@ export default function ReptileList() {
     const fetchReptiles = async () => {
       try {
         const response = await axios.get('/api/reptiles');
-        setReptiles(response.data);
+        setReptiles(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Failed to fetch reptiles:', error);
+        setReptiles([]);
       } finally {
         setLoading(false);
       }
@@ -28,8 +29,11 @@ export default function ReptileList() {
     fetchReptiles();
   }, []);
 
+  // Ensure reptiles is always an array (defensive against cached/malformed responses)
+  const safeReptiles = Array.isArray(reptiles) ? reptiles : [];
+
   // Group reptiles by household
-  const groupedReptiles = reptiles.reduce((groups, reptile) => {
+  const groupedReptiles = safeReptiles.reduce((groups, reptile) => {
     const householdKey = reptile.household?.id || 'no_household';
     const householdName = reptile.household?.name || 'No Household';
 
@@ -133,7 +137,7 @@ export default function ReptileList() {
         </Link>
       </div>
 
-      {reptiles.length === 0 ? (
+      {safeReptiles.length === 0 ? (
         <EmptyState
           title="No reptiles found"
           message="Get started by adding your first reptile"
