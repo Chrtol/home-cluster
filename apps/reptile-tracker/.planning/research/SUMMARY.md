@@ -1,342 +1,254 @@
 # Project Research Summary
 
-**Project:** Reptile Tracker Local Development Environment
-**Domain:** Docker Compose development environment for existing FastAPI + React + Celery application
-**Researched:** 2026-02-11
+**Project:** Reptile Tracker v1.3 Engagement & Awareness
+**Domain:** Pet Care Tracking with Gamification
+**Researched:** 2026-02-12
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The Reptile Tracker needs a local development environment that eliminates the 3-6 minute CI/CD deployment loop currently blocking rapid iteration. Research shows the standard approach is Docker Compose orchestrating all services (PostgreSQL, Redis, Celery worker, backend API, frontend dev server) with development-specific configurations for authentication bypass, hot reload, and service health checks. The recommended stack uses Redis 8.6.0-alpine (100% compatible with production Dragonfly), Vite dev server with polling-based HMR for Docker volume watching, and FastAPI dependency injection for environment-gated auth bypass.
+v1.3 adds lightweight gamification and intelligent notifications to Reptile Tracker without replacing existing workflows. Research shows that streak tracking (40-60% higher engagement when combined with milestones) and notification digests (35% higher engagement vs individual alerts) are table stakes in modern habit-tracking apps, but reptile-specific applications rarely implement them. This creates a differentiation opportunity while addressing the core problem of helping owners stay consistent with care routines.
 
-The critical success factors are: (1) Development auth bypass that cannot leak to production through explicit environment allowlisting, (2) Vite HMR configuration with usePolling for Docker file watching, (3) Celery worker startup coordination with Redis using health checks and broker retry configuration, and (4) Volume permission handling for photo storage. All changes must be additive to preserve production deployment - no modifications to existing production code paths.
+The recommended approach leverages the existing React 18 + FastAPI + PostgreSQL stack with one strategic addition: canvas-confetti for performant celebration animations (< 10KB gzipped). All new features derive data from existing tables (schedule_completions, health_records) rather than duplicating storage, minimizing schema changes while maintaining data integrity. The scheduler infrastructure already supports digest notifications via APScheduler patterns.
 
-Key risks include authentication bypass accidentally enabled in production (mitigate with conditional route registration and startup validation), Vite HMR silently failing in Docker (mitigate with explicit polling configuration and acceptance testing), and volume permission conflicts between development bind mounts and production persistent volumes (mitigate with named volumes and entrypoint permission fixes). Implementation should proceed in phased iterations to minimize integration risk and validate each service independently before full-stack integration.
+Key risks include gamification burnout (streaks creating anxiety rather than motivation), notification fatigue (67% of users ignore alerts when volume too high), and integration breaking existing auto-complete logic. Mitigation: implement streak forgiveness mechanisms, enforce notification frequency caps, and isolate new features behind clean integration boundaries with feature flags for rollback capability.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The research converges on a production-parity approach using Docker Compose to orchestrate local equivalents of all production services. Redis 8.6.0-alpine replaces Dragonfly (100% protocol compatible), local PostgreSQL 16 matches CloudNative-PG version, and Celery worker uses the same backend code with development environment variables. Frontend switches from production nginx serving to Vite dev server for hot module replacement.
+v1.3 requires minimal stack changes. The existing React + shadcn/ui + Tailwind CSS frontend handles all UI needs except confetti animations. The FastAPI backend with APScheduler already supports notification digest patterns. Single addition: canvas-confetti library (< 10KB gzipped, framework-agnostic, used by OpenAI and Adobe) for celebration effects.
 
 **Core technologies:**
-- **Docker Compose 3.8+**: Service orchestration - industry standard for multi-container development, provides dependency management and consistent environments
-- **Redis 8.6.0-alpine**: Celery message broker - latest stable (Feb 2026), production uses Dragonfly which is 100% Redis compatible
-- **Vite Dev Server 5.4.11**: Frontend hot reload - requires Docker-specific config (host: true, usePolling: true) to work with volume mounts
-- **FastAPI dependency injection**: Auth bypass mechanism - app.dependency_overrides pattern allows environment-gated substitution without modifying route handlers
-- **Multi-stage Dockerfiles**: Separate development and production stages - development includes debug tools, production remains minimal and secure
+- **canvas-confetti 1.9.4:** Performant celebration animations — industry standard with web worker support for off-main-thread rendering
+- **Existing framer-motion 12.33.0:** Non-confetti animations (scale, fade transitions) — already in stack
+- **Existing date-fns 3.6.0:** Birthday countdown calculations — `differenceInDays()` function sufficient
+- **Existing lucide-react:** Birthday/celebration iconography (Cake, PartyPopper, Sparkle) — no new icon library needed
+- **Existing APScheduler 3.10.4:** Notification digest scheduling — no backend library additions required
 
-**Critical version compatibilities:**
-- celery==5.4.0 compatible with redis==5.2.0 Python client
-- Redis 5.2.0 Python client supports Redis server 3.x-8.x
-- Vite 5.4.11 requires Node 18+ (using Node 20 LTS)
-- FastAPI 0.115.0 requires Pydantic v2 (already using 2.9.2)
+**What NOT to use:**
+- react-confetti (larger bundle, less performant than canvas-confetti)
+- moment.js (deprecated, use existing date-fns)
+- Separate streak/gamification libraries (custom logic is simple, no premature abstraction)
 
 ### Expected Features
 
-Development environments have evolved from "just run the app" to "instant feedback with production parity." Developers expect sub-10 second change-to-browser cycles, zero-friction testing without external dependencies, and one-command setup/teardown.
-
 **Must have (table stakes):**
-- **Single command startup** - `docker compose up` starts entire stack - users expect this as industry standard
-- **Hot reload for code changes** - Backend with uvicorn --reload, frontend with Vite HMR - required for rapid iteration
-- **No external dependencies** - Must work offline without Authentik OIDC - currently blocks local development
-- **Background worker support** - Celery/Redis for async tasks - notifications won't work without this
-- **Service health checks** - Know when stack is ready, prevent startup race conditions
-- **Auto-migrations on startup** - Prevents "forgot to migrate" errors - already implemented in entrypoint.sh
-- **Photo storage that works** - Test photo uploads without S3/NFS - needs volume mount with correct permissions
+- **Streak tracking** — Expected in all habit apps since 2020; research shows users assume visual feedback for consistency exists
+- **Birthday reminders** — Universal in pet apps; countdown widget + morning notification standard
+- **Completion celebrations** — Visual feedback (confetti) expected for task completion in 2026 apps
+- **Shedding tracking** — Reptile-specific: all major reptile apps track shed cycle with visual indicators
+- **Daily digest notifications** — Batch notifications reduce fatigue; 35% higher engagement vs individual reminders
+- **Smart notification suppression** — Don't send reminder if task already complete; expected behavior to prevent annoyance
 
-**Should have (competitive advantage):**
-- **Development auth bypass** - Auto-login as dev@localhost when ENVIRONMENT=development - eliminates 3-6 minute CI/CD loop for testing
-- **Seeded test data** - Start with realistic data immediately using existing seed_data.py
-- **Production parity** - Same stack as production (Postgres, Redis pattern, Celery) ensures bugs caught locally
-- **Watch mode with live logs** - `docker compose logs -f` for real-time debugging
-- **One-command teardown** - `docker compose down -v` resets to clean state
+**Should have (competitive differentiators):**
+- **Brumation tracking** — Rare in competitors (only ReptiWare has it); addresses seasonal hibernation care needs
+- **Streak freeze/grace periods** — Science-based forgiveness reduces anxiety while maintaining habit benefits
+- **Health status indicators** — Dashboard badges ("In Shed", "Brumating") for instant status awareness
+- **Window expiry notifications** — Proactive "Feed in next 2 hours" alerts vs reactive overdue notifications
+- **Weekly planner digest** — Sunday preview helps users plan care routines; borrowed from Reptile Rocket pattern
 
 **Defer (v2+):**
-- **Flower for Celery monitoring** - Helpful for debugging background jobs but not blocking (port 5555 UI)
-- **VSCode devcontainer configuration** - Nice for consistency but docker-compose is sufficient
-- **Pre-commit hooks for linting** - Quality feature, not required for basic dev
-- **Local S3 emulator (MinIO)** - Only if S3 backend becomes critical to test locally
+- **Shed forecast (AI)** — HIGH complexity, requires ML expertise and training data
+- **Smart notification timing** — Need user behavior data before optimizing send times
+- **Leaderboards/social features** — Privacy concerns, scope creep beyond personal tracking
+- **5-level celebration system** — Start with basic confetti, escalate based on user engagement
 
-**Anti-features to avoid:**
-- Shared dev database - causes state conflicts, hard to reset, migration hell
-- Pre-built images for dev - must rebuild to see code changes, use volume mounts instead
-- Auto-watch everything - high CPU usage, watch only src/ not node_modules/venv
-- Mock external services - doesn't catch integration bugs, use real Postgres/Redis in containers
+**Anti-features (avoid):**
+- **Confetti on every action** — Habituation destroys meaning; reserve for genuinely celebratory moments
+- **Immediate push for all events** — Notification fatigue; batch into digest instead
+- **Complex points/badges/leaderboards** — Cognitive load without clear value; focus on intrinsic motivation
+- **Real-time countdown timers** — Creates anxiety, not habit formation
 
 ### Architecture Approach
 
-The integration architecture is additive only - new development-specific services and configuration files that leave production deployment untouched. Backend gains a development stage in its Dockerfile and conditional auth bypass dependency registration. Frontend gets a separate Dockerfile.dev for Vite dev server (production continues using multi-stage nginx build). All configuration switches on a single ENVIRONMENT variable.
+v1.3 extends the existing architecture without rebuilding core systems. Follow the "derive, don't duplicate" pattern: calculate streaks and health status from authoritative data sources (schedule_completions, health_records) rather than storing redundant status fields. Cache expensive calculations (streaks) but derive lightweight operations (birthday checks, health status) in real-time to prevent sync bugs.
 
 **Major components:**
 
-1. **Development Auth Bypass** - New `get_dev_user()` function in auth.py registered via `app.dependency_overrides[get_current_user]` only when ENVIRONMENT=development. Creates/returns mock user without OIDC validation. Completely isolated from production code paths.
+1. **Streak Calculation (`app/streaks.py`)** — Computes consecutive completion days from schedule_completions history; caches results in new `reptile_streaks` table with invalidation on activity
+2. **Health Status Derivation (`app/health_status.py`)** — Queries health_records for active shed/brumation events (start without completion); no new tables, pure derivation
+3. **Birthday Logic (`app/birthday.py`)** — Pure functions for birthday detection and age calculation using existing reptiles.date_of_birth; timezone-aware comparisons mandatory
+4. **Notification Planner (`app/scheduler/planner.py`)** — Groups schedule instances into daily digests; adds digest_mode flag to existing notification_settings table
+5. **Smart Notification Logic (`app/scheduler/jobs.py` modifications)** — Checks real-time instance status before sending; skips notifications for completed tasks or expired time windows
+6. **Frontend Components (`dashboard/`, `celebrations/`)** — StreakBadge, HealthStatusBadge, BirthdayOverlay, confetti wrapper utility
 
-2. **Docker Compose Service Stack** - Extends existing docker-compose.yml with redis, celery-worker, celery-beat services. Modifies backend to use development Dockerfile stage with volume mounts for hot reload. Replaces frontend nginx with Vite dev server using new Dockerfile.dev.
-
-3. **Environment Configuration** - .env file (gitignored) with development-specific overrides: REDIS_URL=redis://redis:6379/0, COOKIE_SECURE=false, ENVIRONMENT=development. Triggers all dev-specific behavior without code changes.
-
-4. **Volume Management** - Code directories mounted for hot reload (./backend/app, ./frontend/src), named volume for photo storage (avoids permission issues), postgres_data volume for database persistence (already exists).
-
-5. **Service Coordination** - Health checks for postgres and redis with depends_on: service_healthy to prevent startup races. Celery worker configured with broker_connection_retry_on_startup=True for Redis timing tolerance.
-
-**Data flow changes:**
-- **Production auth:** Browser → Authentik OIDC → Backend validates → JWT in cookie → API requests
-- **Development auth:** Browser → API request → get_dev_user() override → Mock user → Response
-- **Celery production:** Backend → Dragonfly cluster → Celery worker (K8s pod) → Database
-- **Celery development:** Backend → Redis (local) → Celery worker (docker container) → PostgreSQL (local)
-- **Frontend production:** npm run build → dist/ → Nginx serves static → Browser
-- **Frontend development:** npm run dev → Vite dev server → HMR WebSocket → Browser auto-updates
-
-**Integration points:**
-- Backend to Redis to Celery: REDIS_URL environment variable (already supported in celery_app.py)
-- Frontend to Backend: Vite proxy in vite.config.js for /api and /auth (already configured)
-- Backend to Database: DATABASE_URL with service name `postgres:5432` (not localhost)
-- Photo storage: LOCAL_STORAGE_PATH=/app/photos with docker volume mount
+**Key patterns:**
+- **Derive from source:** Query health_records for active shed, don't store `is_shedding` boolean (prevents sync bugs)
+- **Cache with invalidation:** Store expensive streak calculations, invalidate on activity completion
+- **Extend existing tables:** Add columns to notification_settings for digest preferences vs creating new tables
+- **Smart job execution:** Check real-time state before executing scheduled notifications (status may change between planning and sending)
 
 ### Critical Pitfalls
 
-Research identified 7 critical pitfalls that have blocked similar local development implementations. The top three are authentication bypass leaking to production, Vite HMR silently failing in Docker, and Celery startup race conditions with Redis.
+1. **Aggressive Gamification Causing Burnout** — Streak anxiety becomes obligation, not motivation; users abandon app after first break. Prevention: implement streak forgiveness (grace periods), show lifetime completions prominently, make streaks opt-in, use recovery messaging when breaks occur.
 
-1. **Authentication bypass leaks into production** - Use explicit allowlist `ENVIRONMENT == "development"` never negative conditions. Register bypass routes conditionally at startup, not just guard them. Add production health check that verifies bypass routes return 404. Create separate app/auth_dev.py module. Phase 1 prevention essential.
+2. **Notification Fatigue from Over-Notifying** — 71% of users uninstall apps with excessive notifications; 67% ignore alerts when volume too high. Prevention: enforce frequency caps (max 3-5/day per reptile), batch into digest, skip redundant notifications (check completion status), respect quiet hours.
 
-2. **Vite HMR silent failure in Docker** - Code changes don't trigger hot reload because file watchers don't detect changes across Docker volume boundaries. Add `server.watch.usePolling: true` and `server.host: '0.0.0.0'` to vite.config.js. Use bind mount for src/ but separate volume for node_modules. Test HMR works as part of phase acceptance criteria. Phase 2 critical.
+3. **Birthday Features Feeling Gimmicky** — Full-screen confetti blocking urgent tasks, celebrations for approximate dates feel disingenuous. Prevention: subtle by default (small emoji on card), opt-in confetti, dismissible immediately, respect context (no celebrations during critical flows).
 
-3. **Celery startup race with Redis** - Worker crashes with "Cannot connect to redis" even though Redis container is healthy. Health checks verify Redis container ready but not that it's accepting connections. Verify Celery >= 5.3 for broker_connection_retry_on_startup, add retry loop in entrypoint-celery.sh, use broker_connection_retry=True as backup. Phase 2 essential for notifications.
+4. **Overlapping Health States Creating Confusion** — Reptile simultaneously "shedding" and "brumating" with unclear priorities. Prevention: explicit priority hierarchy (Critical Health > Brumating > Shedding > Normal), state validation on entry, completion enforcement (can't complete shed without matching start).
 
-4. **Volume permission hell for photo storage** - Backend container (UID 1000 appuser) cannot write to /app/photos volume. Use named volume (not bind mount), add entrypoint chown step before switching to appuser, or run container as root in development (acceptable tradeoff). Test photo upload in phase acceptance criteria. Phase 2 blocker.
+5. **Weight Change Alerts with Poor Thresholds** — Fixed 10% threshold triggers false positives (post-feeding weight, scale variance, young reptiles growing). Prevention: species-aware thresholds, age-adjusted alerts, minimum absolute change requirement, baseline period (3+ measurements before alerting).
 
-5. **Secure cookie flag breaks localhost development** - COOKIE_SECURE=true causes cookies set but never sent back by browser over HTTP. Set COOKIE_SECURE=false explicitly in docker-compose.yml environment. Add startup warning log when COOKIE_SECURE=false and ENVIRONMENT=production. Document this as acceptable dev/prod gap. Phase 1 auth testing blocker.
+6. **Daily Planner Missing Critical Items** — Digest shows "3 tasks due" but misses overdue items; includes completed tasks if auto-complete timing wrong. Prevention: run auto-complete BEFORE planner generation, re-query real-time status when building digest, include overdue section.
+
+7. **Integration Breaking Existing Auto-Complete** — New features inadvertently change completion behavior or timestamps. Prevention: read-only observation pattern (features observe completion events, don't modify logic), separate transaction boundaries, preserve existing test coverage, feature flags for rollback.
+
+8. **Feature Onboarding Overwhelming Existing Users** — All features enabled-by-default after update without explanation; confusion causes frustration. Prevention: feature announcement modal, progressive disclosure (enable one feature per week), opt-in for gamification, rollback capability via feature flags.
 
 ## Implications for Roadmap
 
-Research suggests a two-phase approach with optional polish phase. Phase 1 establishes the development authentication and service infrastructure. Phase 2 adds frontend hot reload and validates full-stack integration. This order minimizes risk by validating backend changes independently before tackling the more finicky Vite HMR configuration.
+Based on research, suggested phase structure prioritizes core infrastructure before user-facing features, then delivers value incrementally while avoiding pitfall combinations.
 
-### Phase 1: Development Infrastructure & Auth Bypass
-**Rationale:** Backend auth bypass is the highest-value feature (eliminates 3-6 minute CI/CD loop) and has the lowest integration risk. Establishing Redis and environment configuration creates foundation for Celery integration. All changes are additive with strong production isolation.
+### Phase 1: Streak Tracking Foundation
+**Rationale:** Core engagement mechanic; simple counter logic with no external dependencies. Build forgiveness into core logic from start (don't bolt on later).
+**Delivers:** Backend streak calculation, caching table, API endpoints
+**Addresses:** Streak tracking (table stakes feature)
+**Avoids:** Aggressive gamification burnout (implement grace periods immediately)
+**Research flag:** Standard patterns, skip research-phase (date comparison logic well-documented)
 
-**Delivers:**
-- Docker Compose with Redis service
-- Development auth bypass (auto-login as dev@localhost)
-- Environment-based configuration (.env file with dev defaults)
-- Backend development Dockerfile stage with hot reload
-- Celery worker service for background tasks
+### Phase 2: Dashboard Status Indicators
+**Rationale:** Leverages existing data (schedule_completions for streaks, date_of_birth for birthdays); no new data sources needed. Low-complexity visual enhancements.
+**Delivers:** StreakBadge component, birthday countdown widget, health status badges (in-shed/brumating)
+**Uses:** Existing lucide-react icons, shadcn/ui Badge component, Tailwind styling
+**Addresses:** Dashboard health indicators (table stakes), birthday countdown (table stakes)
+**Avoids:** Feature onboarding overload (incremental UI additions, not big-bang redesign)
+**Research flag:** Standard patterns, skip research-phase (component patterns established in v1.0-v1.2)
 
-**Addresses features:**
-- Development auth bypass (table stakes - no external dependencies)
-- Background worker support (table stakes - Celery/Redis)
-- Service health checks (table stakes - startup coordination)
+### Phase 3: Celebration Animations
+**Rationale:** Builds on Phase 1 streak tracking; requires streak milestone detection already implemented. Confetti library addition is isolated change.
+**Delivers:** canvas-confetti integration, confetti trigger on streak milestones and birthdays, prefers-reduced-motion support
+**Implements:** Celebrations component with imperative API wrapper
+**Addresses:** Completion celebrations (table stakes feature)
+**Avoids:** Gimmicky birthdays (dismissible overlay, opt-in confetti), over-confetti-ing (milestone-only triggers)
+**Research flag:** Library integration only, skip research-phase (canvas-confetti API well-documented)
 
-**Avoids pitfalls:**
-- Pitfall 1: Auth bypass leaks to production - conditional registration, startup validation
-- Pitfall 5: Secure cookie breaks localhost - COOKIE_SECURE=false in docker-compose
-- Pitfall 6: Environment variable sprawl - .env.example, gitignore, fail-fast for secrets
+### Phase 4: Health Status Derivation
+**Rationale:** Uses existing health_records table; pure derivation logic, no schema changes. Independent of gamification features.
+**Delivers:** Shedding cycle tracking (start → complete flow), brumation tracking, status derivation functions
+**Uses:** Existing health_records table with record_type field
+**Addresses:** Shedding tracking (table stakes), brumation tracking (differentiator)
+**Avoids:** Overlapping health states (explicit priority hierarchy, state validation)
+**Research flag:** State machine logic, consider research-phase if edge cases unclear (concurrent shed+brumation handling)
 
-**Technical scope:**
-- Add Redis 8.6.0-alpine to docker-compose.yml with health check
-- Create backend/Dockerfile multi-stage (development + production stages)
-- Implement get_dev_user() in backend/app/auth.py
-- Add dependency override in backend/app/main.py lifespan startup
-- Create .env.example and update docker-compose.yml environment variables
-- Add celery-worker service to docker-compose.yml
-- Configure volume mounts for backend hot reload
+### Phase 5: Smart Notification System
+**Rationale:** Prerequisite for notification planner and weight alerts; establishes frequency caps and suppression logic that all notification types will use.
+**Delivers:** Real-time status check before notification send, frequency cap enforcement, quiet hours respect
+**Uses:** Existing APScheduler job execution hooks
+**Addresses:** Smart notification suppression (table stakes)
+**Avoids:** Notification fatigue (frequency caps), planner missing items (real-time status checks), breaking auto-complete (read-only observation)
+**Research flag:** Integration-heavy, consider research-phase for APScheduler hook patterns and transaction boundaries
 
-**Acceptance criteria:**
-- `docker compose up` starts all services without errors
-- curl API endpoints return 200 without OIDC tokens
-- Backend code changes reload without container restart
-- Celery worker starts and connects to Redis successfully
-- Photo upload creates file in mounted volume
-- Starting with ENVIRONMENT=production prevents auth bypass
+### Phase 6: Notification Planner (Digest)
+**Rationale:** Builds on Phase 5 smart notification system; requires frequency caps and suppression logic already working. Complex scheduling logic.
+**Delivers:** Daily digest generation, digest mode user preference, notification batching, overdue section inclusion
+**Uses:** APScheduler cron job, existing instance_generator patterns
+**Addresses:** Daily digest notifications (table stakes)
+**Avoids:** Notification fatigue (batching reduces volume), planner missing items (execution ordering, overdue inclusion)
+**Research flag:** Standard notification patterns, skip research-phase (APScheduler scheduling well-documented)
 
-### Phase 2: Frontend Hot Reload & Full Stack Integration
-**Rationale:** With backend working independently, frontend can be integrated with confidence. Vite HMR is the most finicky piece (Docker file watching) so isolating it reduces debugging complexity. Full-stack testing validates service coordination.
+### Phase 7: Weight Change Alerts
+**Rationale:** Independent feature with complex threshold logic; defer to avoid blocking other features. Requires species-aware configuration.
+**Delivers:** Weight trend analysis, species/age-adjusted thresholds, alert cooldown logic
+**Uses:** Python standard library for percentage calculations, existing weight history
+**Addresses:** Weight change alerts (table stakes in pet health apps)
+**Avoids:** Poor weight thresholds (species-aware defaults, baseline establishment)
+**Research flag:** Needs research-phase for species-specific threshold data and edge case handling
 
-**Delivers:**
-- Vite dev server with Docker-compatible HMR
-- Frontend auth bypass (skips OIDC redirect)
-- Photo storage volume with correct permissions
-- Complete local development workflow documentation
-
-**Addresses features:**
-- Hot reload for code changes (table stakes - frontend)
-- Fast feedback loop (table stakes - sub-10 second)
-- Photo uploads work locally (table stakes)
-- Single command startup/teardown (table stakes)
-
-**Avoids pitfalls:**
-- Pitfall 2: Vite HMR silent failure - usePolling config, acceptance testing
-- Pitfall 3: Celery startup race - health check dependencies verified
-- Pitfall 4: Volume permission hell - named volume with entrypoint chown
-- Pitfall 7: Frontend nginx proxy - skip nginx, use Vite dev server directly
-
-**Technical scope:**
-- Create frontend/Dockerfile.dev for Vite dev server
-- Modify frontend/vite.config.js for Docker (host, polling, HMR)
-- Update docker-compose.yml frontend service to use Dockerfile.dev
-- Add frontend auth bypass (conditional OIDC based on VITE_DEV_MODE)
-- Create frontend/.env.development
-- Configure photo_storage named volume
-- Add entrypoint permission fix for photo directory
-
-**Acceptance criteria:**
-- Change React component, verify page updates without F5 (HMR working)
-- Frontend loads at localhost:3000 and makes successful API calls
-- Upload photo from frontend, verify file persists in volume
-- `docker compose down -v && docker compose up` succeeds (clean state reset)
-- Fresh checkout can be started by following README instructions
-
-### Phase 3: Polish & Developer Experience (Optional)
-**Rationale:** With core functionality working, enhance developer experience and documentation. These features are nice-to-have and can be deferred if time-constrained.
-
-**Delivers:**
-- Seeded test data on first startup
-- Flower for Celery monitoring (port 5555)
-- Comprehensive troubleshooting documentation
-- docker-compose.override.yml.example for personal customization
-
-**Addresses features:**
-- Seeded test data (should-have - competitive advantage)
-- Celery worker visibility (should-have - debugging)
-- Development-specific logging (should-have)
-
-**Technical scope:**
-- Modify entrypoint.sh to run seed_data.py when database is empty
-- Add flower service to docker-compose.yml
-- Write comprehensive LOCAL_DEVELOPMENT.md
-- Add troubleshooting section with common issues
-- Create docker-compose.override.yml.example
+### Phase 8: Integration Testing & Polish
+**Rationale:** After all features implemented, validate integration doesn't break existing flows and user experience is cohesive.
+**Delivers:** Feature flags, progressive rollout capability, feature announcement modal, E2E test coverage
+**Addresses:** Feature onboarding (progressive disclosure)
+**Avoids:** Breaking auto-complete (full regression suite), onboarding overload (gradual enablement)
+**Research flag:** Standard testing patterns, skip research-phase
 
 ### Phase Ordering Rationale
 
-**Why Phase 1 before Phase 2:**
-- Backend auth bypass has higher value (eliminates CI/CD loop) and lower risk (well-documented pattern)
-- Redis and Celery needed regardless of frontend work, can be validated independently
-- Environment configuration foundation used by both backend and frontend
-- Frontend depends on working backend API, so backend must work first
+- **Phases 1-3 form gamification core:** Streak tracking → visual indicators → celebrations. Sequential delivery prevents "celebration without streaks" confusion.
+- **Phase 4 independent:** Health status derivation has no dependencies on gamification features; can run parallel to Phase 3 if resources allow.
+- **Phases 5-6 layered:** Smart notification system (frequency caps, suppression) must exist before digest planner to prevent notification fatigue from day one.
+- **Phase 7 deferred:** Weight alerts are independent, complex, and lower priority than core engagement features. Can ship v1.3 without this if schedule tight.
+- **Phase 8 mandatory:** Integration testing and feature flags are non-negotiable for safe deployment; "done" means "tested and rollback-ready."
 
-**Why Phase 2 can't be parallelized:**
-- Frontend auth bypass depends on backend auth bypass working (needs API endpoints to function)
-- Vite HMR testing requires working backend to validate API calls during reload
-- Volume permission issues affect both backend (code) and frontend (node_modules)
-
-**Why Phase 3 is optional:**
-- Seeded data enhances UX but isn't blocking - manual data creation works
-- Flower is debugging convenience, not requirement (celery logs work)
-- Documentation can be written after patterns emerge from usage
-
-**How this avoids pitfalls:**
-- Phase 1 addresses auth bypass (Pitfall 1), cookie security (Pitfall 5), environment variables (Pitfall 6) before other work
-- Phase 2 addresses Vite HMR (Pitfall 2), Celery race (Pitfall 3), permissions (Pitfall 4) when infrastructure is stable
-- Phased approach allows validation at each step rather than debugging full stack at once
+**Dependency notes:**
+- Phase 2 requires Phase 1 (can't display streak badges without streak calculation)
+- Phase 3 requires Phase 1 (confetti triggers on streak milestones)
+- Phase 6 requires Phase 5 (digest inherits frequency cap and suppression logic)
+- Phases 2, 4, 5 can partially overlap (different subsystems)
 
 ### Research Flags
 
 **Phases needing deeper research during planning:**
-- None - this is a well-documented domain with established patterns. All technologies use standard practices (Docker Compose, FastAPI dependency injection, Vite dev server).
+- **Phase 5 (Smart Notification System):** Complex integration with existing APScheduler infrastructure; needs research on transaction boundaries, hook points, and failure isolation patterns to avoid breaking auto-complete
+- **Phase 7 (Weight Change Alerts):** Sparse documentation on reptile-specific weight thresholds by species/age; needs research or expert consultation for threshold configuration
 
 **Phases with standard patterns (skip research-phase):**
-- Phase 1: Docker Compose + FastAPI development mode - extensive documentation, multiple 2026 guides
-- Phase 2: Vite HMR in Docker - known configuration, multiple implementation guides
-- Phase 3: Seeding and monitoring - straightforward implementations
-
-**Validation during implementation:**
-- Vite HMR polling interval tuning - may need adjustment based on project size (start with 1000ms)
-- Celery worker concurrency - default is fine for dev, document if changes needed
-- Database migration order - existing entrypoint.sh handles this, just verify it works
+- **Phase 1 (Streak Tracking):** Date comparison and counter logic well-documented in habit tracker patterns
+- **Phase 2 (Dashboard Indicators):** Component composition patterns established in v1.0-v1.2 codebase
+- **Phase 3 (Celebration Animations):** canvas-confetti API straightforward, framer-motion already in use
+- **Phase 4 (Health Status):** Consider research-phase only if state machine edge cases (concurrent shed+brumation) prove unclear during requirements
+- **Phase 6 (Notification Planner):** APScheduler cron job patterns and digest formatting well-established
+- **Phase 8 (Integration Testing):** Standard testing practices, existing Playwright setup
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Docker Compose + Redis + Celery is industry standard, well-documented pattern. Version compatibilities verified from official documentation. |
-| Features | HIGH | Development environment feature expectations well-established (hot reload, auth bypass, service orchestration). Anti-features identified from community consensus. |
-| Architecture | HIGH | FastAPI dependency injection pattern for auth bypass well-documented. Multi-stage Dockerfiles are best practice. Integration points already exist in codebase. |
-| Pitfalls | HIGH | All pitfalls sourced from official GitHub issues, production incident reports, and 2026 guides. Mitigation strategies verified across multiple sources. |
+| Stack | HIGH | canvas-confetti verified via npm/bundlephobia; existing stack (framer-motion, date-fns, APScheduler) confirmed sufficient for all features |
+| Features | HIGH | Streak/notification/birthday patterns validated across multiple habit and pet tracking apps; reptile-specific features (shedding, brumation) confirmed in competitor analysis |
+| Architecture | HIGH | Integration points verified against existing codebase (models.py, scheduler/core.py, routers/stats.py); derive-don't-duplicate pattern prevents sync bugs |
+| Pitfalls | MEDIUM-HIGH | Gamification burnout and notification fatigue patterns well-documented with quantitative research; reptile-specific edge cases (overlapping health states) inferred from general state machine pitfalls |
 
 **Overall confidence:** HIGH
 
-Research confidence is exceptionally high because:
-1. Every recommendation is backed by official documentation or multiple 2026 guides
-2. Existing codebase already has most infrastructure (entrypoint.sh migrations, celery_app.py Redis support, vite.config.js proxy)
-3. Changes are additive only - no modifications to production code paths
-4. All technologies are current stable versions with active communities
-5. Pitfalls sourced from actual production issues, not theoretical concerns
+Research provides clear implementation path with verified stack choices, feature prioritization backed by engagement data, and architecture patterns that minimize risk to existing functionality.
 
 ### Gaps to Address
 
-**Minor gaps requiring validation during implementation:**
-
-- **Celery 5.3+ verification** - Need to confirm current celery version supports broker_connection_retry_on_startup. If <5.3, add retry loop in entrypoint-celery.sh. Resolution: Check requirements.txt, update if needed.
-
-- **Vite polling interval tuning** - 1000ms is recommended starting point but may need adjustment based on project size and developer machine performance. Resolution: Start with 1000ms, document if developers need to adjust.
-
-- **Photo volume permissions on macOS/Windows** - Docker Desktop handles volumes differently than Linux. Named volume approach should work but needs testing on all platforms. Resolution: Document platform-specific issues in troubleshooting section, provide bind mount alternative.
-
-- **Frontend auth bypass UX** - Research focused on backend bypass, frontend implementation less documented. May need iteration on user experience (auto-login vs manual dev mode toggle). Resolution: Start with simple auto-login when VITE_DEV_MODE=true, iterate based on feedback.
-
-**No gaps requiring pre-implementation research:**
-- All recommended technologies are current and actively maintained
-- Integration patterns are well-established
-- Pitfall mitigations are specific and actionable
-- Phase structure maps directly to technical dependencies
+- **Species-specific weight thresholds:** Research found general pet health thresholds (10% variance standard) but reptile-specific data sparse. Plan: Start with conservative 10% threshold, add per-reptile override in settings UI, collect data for species-specific defaults in v1.4.
+- **Concurrent health state priority:** Architecture document proposes priority hierarchy (Critical Health > Brumating > Shedding) but doesn't specify user workflow for resolving stuck states. Plan: Validate priority display during Phase 4 requirements; add "Clear stale status" admin action if needed.
+- **Streak freeze milestone thresholds:** Research shows STRIK app awards freezes at 7/21 days but doesn't specify how many freezes at each milestone. Plan: Defer freeze feature to v1.4; implement basic grace period in v1.3 first.
+- **Birthday exact vs approximate handling:** Features document suggests only celebrating exact birth dates, but codebase may not have exact/approximate flag on date_of_birth field. Plan: Check schema during Phase 2; if flag missing, celebrate all birthdays (simpler) or add user preference to disable birthday celebrations per reptile.
 
 ## Sources
 
 ### Primary (HIGH confidence)
 
-**Stack recommendations:**
-- Docker Hub - Redis Official Image (redis:8.6.0-alpine version verification)
-- Celery Documentation - Using Redis (broker configuration, version compatibility)
-- Docker Compose Environment Variables (env_file and environment patterns)
-- FastAPI Best Practices 2026 (dependency injection for development mode)
-- Dockerizing React with Vite Hot Reload (Vite Docker configuration)
+**Stack Research:**
+- [canvas-confetti npm](https://www.npmjs.com/package/canvas-confetti) — Version 1.9.4, bundle size verification
+- [canvas-confetti GitHub](https://github.com/catdad/canvas-confetti) — Official API documentation
+- [Bundlephobia canvas-confetti](https://bundlephobia.com/package/canvas-confetti) — Confirmed < 10KB gzipped
+- [framer-motion npm](https://www.npmjs.com/package/framer-motion) — Version 12.34.0 compatibility
+- [date-fns documentation](https://date-fns.org/) — differenceInDays() function for birthday countdown
+- [lucide-react icon directory](https://lucide.dev/icons/) — Cake, PartyPopper, Sparkle icons confirmed
 
-**Feature expectations:**
-- Speedscale - The Ultimate Guide to Dev Environment Setup
-- GitHub - Optimize local dev environments for better onboarding
-- Nucamp - Docker for Full Stack Developers in 2026
-- TestDriven.io - Flask/Celery/Redis Docker Compose patterns
-- Docker Development Workflow - Hot Reloading (volume mounting patterns)
+**Feature Research:**
+- [Plotline: Streaks and Milestones for Gamification](https://www.plotline.so/blog/streaks-for-gamification-in-mobile-apps) — 40-60% engagement increase data
+- [Braze notification digest research](https://www.courier.com/blog/how-to-reduce-notification-fatigue-7-proven-product-strategies-for-saas) — 35% higher engagement for batched notifications
+- [STRIK Streak Tracker App](https://play.google.com/store/apps/details?id=com.hugocodes.strik) — Science-based freeze mechanics pattern
+- [Reptile Rocket Pet Tracker](https://apps.apple.com/us/app/reptile-rocket-pet-tracker/id1558082005) — Shedding log patterns
+- [ReptiWare](https://reptiware.com/) — Brumation feature as competitive differentiator
+- [PitPat Dog Weight Tracker](https://www.pitpat.com/app/weight/) — 10% variance threshold industry standard
 
-**Architecture patterns:**
-- TestDriven.io - The Definitive Guide to Celery and FastAPI Dockerizing
-- FastAPI Advanced Testing - Testing Dependencies with Overrides
-- Pydantic Settings Management - Official documentation
-- Docker Compose Production Best Practices - Official documentation
-- Use single Dockerfile for development and production (multi-stage patterns)
-
-**Pitfall prevention:**
-- FastAPI Security Pitfalls - Medium article with production incident examples
-- Vite Docker HMR Discussion (GitHub issue 14007) - solutions for silent HMR failure
-- Docker Compose Health Checks - Last9 comprehensive guide
-- OneUpTime - Fix Permission Denied Docker Volumes (2026 guide)
-- Docker Compose depends_on with Health Checks (startup coordination)
-- Localhost Cookies Developer's Guide 2026 (COOKIE_SECURE behavior)
+**Architecture Research:**
+- Reptile Tracker codebase (`backend/app/models.py`, `scheduler/core.py`, `routers/stats.py`) — Verified integration points
+- Reptile Tracker v1.1/v1.2 documentation — Established shadcn/ui component patterns
 
 ### Secondary (MEDIUM confidence)
 
-- Medium - Dockerizing React with Vite Hot Reload (hands-on guide)
-- DevOpsDirective - Docker Development Workflow Hot Reloading course
-- Medium - Flask Environment Specific Configurations (pattern examples)
-- Release.com - 6 Docker Compose Best Practices for Dev and Prod
-- Vite Server Options (official documentation for HMR config)
+**Pitfalls Research:**
+- [The over-confetti-ing of digital experiences](https://uxdesign.cc/the-over-confetti-ing-of-digital-experiences-af523745db19) — Habituation anti-patterns
+- [Atlassian: Fighting alert fatigue](https://www.atlassian.com/incident-management/on-call/alert-fatigue) — 67% ignored alerts, 2000+ alerts/week data
+- [Appbot: Push Notification Best Practices 2026](https://appbot.co/blog/app-push-notifications-2026-best-practices/) — 71% uninstall rate due to excessive notifications
+- [Understanding State Machines: Developer's Guide](https://medium.com/@melekcharradi/understanding-state-machines-a-developers-guide-to-predictable-application-logic-d3df50e3e621) — State machine pitfalls (3×5=15 interactions vs explicit 5)
+- [Designing Streaks for Long-Term Growth](https://www.mindtheproduct.com/designing-streaks-for-long-term-user-growth/) — Streak anxiety and recovery messaging patterns
 
-### Tertiary (LOW confidence, validated against primary sources)
+### Tertiary (LOW confidence, needs validation)
 
-- GitHub community discussions on FastAPI dependency overrides
-- Medium blog posts on FastAPI dependency injection patterns
-- Stack Overflow solutions for Docker volume permissions
-- Various 2026-dated guides on Docker Compose development workflows
-
-**Research quality notes:**
-- All recommendations verified across minimum 2 sources
-- Official documentation prioritized over blog posts
-- 2026-dated sources used to ensure current best practices
-- Existing codebase analyzed to validate compatibility
-- No recommendations based on single source or unverified claims
-- Version numbers verified from official registries (Docker Hub, PyPI, npm)
+- [Petivity App weight monitoring](https://www.petivity.com/pages/petivity-app) — Real-time weight alerts mentioned but threshold details not specified
+- [The Reptile Keeper AI shed forecast](https://thereptilekeeper.com/) — Feature confirmed but implementation details proprietary
 
 ---
-*Research completed: 2026-02-11*
+*Research completed: 2026-02-12*
 *Ready for roadmap: yes*
