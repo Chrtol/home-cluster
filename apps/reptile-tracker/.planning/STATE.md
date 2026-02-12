@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 17 of 25 (Streak Tracking Foundation)
-Plan: 01 of ? (in progress)
-Status: Plan 17-01 completed
-Last activity: 2026-02-12 — Completed 17-01-PLAN.md (Streak Tracking Foundation)
+Plan: 02 of 02 (complete)
+Status: Phase 17 complete
+Last activity: 2026-02-12 — Completed 17-02-PLAN.md (Event-Driven Streak Updates & API)
 
-Progress: [████████████████░░░░] 63/TBD plans (16 phases complete, Phase 17 in progress)
+Progress: [████████████████░░░░] 64/TBD plans (17 phases complete)
 
 ## Performance Metrics
 
@@ -46,12 +46,13 @@ Progress: [████████████████░░░░] 63/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-12: SQLAlchemy after_insert event for automatic streak updates (atomic with completion insert)
+- 2026-02-12: Synchronous Redis client in event listener (events run in sync context)
+- 2026-02-12: Graceful cache degradation (cache failures don't break API)
 - 2026-02-12: v1.3 phase ordering prioritizes dependencies (streaks before celebrations, health status before badges)
 - 2026-02-11: Check Food table for existing records before seeding (efficient single-query emptiness check)
 - 2026-02-11: Use file polling for Docker file watching (inotify doesn't work in Docker)
 - 2026-02-11: Use exact "development" match for auth bypass (not "!= production") - fail-safe approach
-- 2026-02-11: /auth/dev-status returns 404 in production (security - hide auth internals)
-- 2026-02-11: Dev auth bypass uses environment check inside get_current_user (not dependency_overrides)
 
 ### From v1.3 Research
 
@@ -92,9 +93,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Plan 17-01 complete (Streak Tracking Foundation)
-Resume file: .planning/phases/17-streak-tracking-foundation/17-01-SUMMARY.md
-Next action: Continue with Phase 17 Plan 02 (integration with completion workflow)
+Stopped at: Phase 17 complete (Streak Tracking Foundation)
+Resume file: .planning/phases/17-streak-tracking-foundation/17-02-SUMMARY.md
+Next action: Begin Phase 18 (Health Status Derivation)
 
 ## Deferred Items
 
