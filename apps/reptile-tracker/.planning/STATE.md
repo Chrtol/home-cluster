@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 17 of 25 (Streak Tracking Foundation)
-Plan: 02 of 02 (complete)
+Plan: 03 of 03 (complete)
 Status: Phase 17 complete
-Last activity: 2026-02-12 — Completed 17-02-PLAN.md (Event-Driven Streak Updates & API)
+Last activity: 2026-02-12 — Completed 17-03-PLAN.md (Zero-State Fix for Reptiles Without Users)
 
-Progress: [████████████████░░░░] 64/TBD plans (17 phases complete — verified)
+Progress: [████████████████░░░░] 65/TBD plans (17 phases complete — verified)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [████████████████░░░░] 64/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-12: Zero-state fallback for missing streak records (no database write for reptiles without users)
 - 2026-02-12: SQLAlchemy after_insert event for automatic streak updates (atomic with completion insert)
 - 2026-02-12: Synchronous Redis client in event listener (events run in sync context)
 - 2026-02-12: Graceful cache degradation (cache failures don't break API)
@@ -94,7 +95,7 @@ None yet.
 
 Last session: 2026-02-12
 Stopped at: Phase 17 complete (Streak Tracking Foundation)
-Resume file: .planning/phases/17-streak-tracking-foundation/17-02-SUMMARY.md
+Resume file: .planning/phases/17-streak-tracking-foundation/17-03-SUMMARY.md
 Next action: Begin Phase 18 (Health Status Derivation)
 
 ## Deferred Items
