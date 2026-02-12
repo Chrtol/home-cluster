@@ -325,6 +325,18 @@ class HealthRecord(HealthRecordBase):
         from_attributes = True
 
 
+class HealthStatus(BaseModel):
+    """Derived health status for a reptile"""
+    status: str  # 'normal', 'shedding', 'brumating'
+    priority: int
+    active_since: Optional[datetime] = None
+    days_in_state: Optional[int] = None
+    description: str
+
+    class Config:
+        from_attributes = True
+
+
 # Misting log schemas
 class MistingLogBase(BaseModel):
     misted_at: datetime

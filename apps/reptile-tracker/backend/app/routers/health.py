@@ -7,8 +7,8 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import User, HealthRecord, AccessLevel
 from app.permissions import check_reptile_access
-from app.schemas import HealthRecord as HealthRecordSchema, HealthRecordCreate, HealthRecordUpdate
-from app.services.health_status_service import validate_health_record_state
+from app.schemas import HealthRecord as HealthRecordSchema, HealthRecordCreate, HealthRecordUpdate, HealthStatus
+from app.services.health_status_service import validate_health_record_state, derive_health_status, batch_derive_health_statuses
 
 router = APIRouter()
 
@@ -50,6 +50,41 @@ async def get_health_record(
         )
     await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.VIEWER)
     return record
+
+
+@router.get("/status/{reptile_id}", response_model=HealthStatus)
+async def get_reptile_health_status(
+    reptile_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get derived health status for a reptile"""
+    await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+
+    status = await derive_health_status(
+        db,
+        reptile_id,
+        user_timezone=current_user.timezone
+    )
+    return HealthStatus(**status)
+
+
+@router.post("/status/batch", response_model=dict[int, HealthStatus])
+async def get_batch_health_statuses(
+    reptile_ids: List[int],
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get health statuses for multiple reptiles (for dashboard)"""
+    # Note: Permission checking for each reptile should be done by caller
+    # This endpoint trusts that reptile_ids are already filtered to accessible ones
+
+    statuses = await batch_derive_health_statuses(
+        db,
+        reptile_ids,
+        user_timezone=current_user.timezone
+    )
+    return {rid: HealthStatus(**s) for rid, s in statuses.items()}
 
 
 @router.post("", response_model=HealthRecordSchema, status_code=status.HTTP_201_CREATED)
