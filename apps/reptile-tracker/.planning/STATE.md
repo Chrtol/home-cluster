@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 17 of 25 (Streak Tracking Foundation)
-Plan: 03 of 03 (complete)
-Status: Phase 17 complete
-Last activity: 2026-02-12 — Completed 17-03-PLAN.md (Zero-State Fix for Reptiles Without Users)
+Phase: 18 of 25 (Health Status Derivation)
+Plan: 01 of TBD (in progress)
+Status: Phase 18 in progress
+Last activity: 2026-02-12 — Completed 18-01-PLAN.md (Health Status Derivation Service)
 
-Progress: [████████████████░░░░] 65/TBD plans (17 phases complete — verified)
+Progress: [████████████████░░░░] 66/TBD plans (17 phases complete, Phase 18 started)
 
 ## Performance Metrics
 
@@ -46,6 +46,10 @@ Progress: [████████████████░░░░] 65/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-12: LEFT JOIN self-join pattern for event-sourced state derivation (detects unclosed shed/brumation events)
+- 2026-02-12: State transition validation at API layer before database insert (prevents invalid state data)
+- 2026-02-12: Health status priority hierarchy CRITICAL > BRUMATING > SHEDDING > NORMAL (for multi-state handling)
+- 2026-02-12: Timezone-aware date calculations for "days in state" (prevents DST off-by-one errors)
 - 2026-02-12: Zero-state fallback for missing streak records (no database write for reptiles without users)
 - 2026-02-12: SQLAlchemy after_insert event for automatic streak updates (atomic with completion insert)
 - 2026-02-12: Synchronous Redis client in event listener (events run in sync context)
@@ -94,9 +98,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 17 complete (Streak Tracking Foundation)
-Resume file: .planning/phases/17-streak-tracking-foundation/17-03-SUMMARY.md
-Next action: Begin Phase 18 (Health Status Derivation)
+Stopped at: Phase 18 Plan 01 complete (Health Status Derivation Service)
+Resume file: .planning/phases/18-health-status-derivation/18-01-SUMMARY.md
+Next action: Continue Phase 18 with next plan (if planned)
 
 ## Deferred Items
 
