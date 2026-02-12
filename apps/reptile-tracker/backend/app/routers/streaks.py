@@ -112,9 +112,18 @@ async def get_streak(
     streak = await get_streak_for_reptile(db, reptile_id)
 
     if not streak:
-        # No streak record yet - create one
-        streak = await update_streak_for_reptile(db, reptile_id)
-        await db.commit()
+        # No streak record - return zero-state (matches batch endpoint behavior)
+        streak_data = {
+            "reptile_id": reptile_id,
+            "current_streak": 0,
+            "last_completion_date": None,
+            "grace_days_remaining": 1,  # Default grace period
+            "grace_period_days": 1,
+            "longest_streak": 0,
+        }
+        # Cache the zero-state too
+        await set_cached_streak(reptile_id, streak_data)
+        return StreakResponse(**streak_data)
 
     streak_data = {
         "reptile_id": streak.reptile_id,
