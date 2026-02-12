@@ -102,7 +102,7 @@ async def create_health_record(
             db,
             record.reptile_id,
             record.record_type,
-            record.title
+            record.event_type
         )
 
     new_record = HealthRecord(
