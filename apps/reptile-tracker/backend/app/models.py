@@ -1023,3 +1023,28 @@ class UserNotification(Base):
 
     # Relationships
     user = relationship("User", lazy="select")
+
+
+class ReptileStreak(Base):
+    """Tracks streak state per reptile for gamification"""
+    __tablename__ = "reptile_streaks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+
+    # Current streak state
+    current_streak = Column(Integer, nullable=False, default=0)
+    last_completion_date = Column(Date, nullable=True)  # Last date with completed schedule
+
+    # Grace period tracking
+    grace_days_remaining = Column(Integer, nullable=False, default=0)
+    grace_period_days = Column(Integer, nullable=False, default=1)  # Configurable forgiveness window
+
+    # Historical tracking (for future use)
+    longest_streak = Column(Integer, nullable=False, default=0)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    reptile = relationship("Reptile", backref="streak")
