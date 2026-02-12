@@ -94,6 +94,14 @@ class NotificationType(str, PyEnum):
     SYSTEM = "system"
 
 
+class HealthEventType(str, PyEnum):
+    """Type of health event for state tracking"""
+    START = "start"        # Begin a state (shed started, brumation started)
+    COMPLETE = "complete"  # Successfully end a cycle (shed completed)
+    END = "end"            # End a period (brumation ended)
+    OBSERVATION = "observation"  # General health note, no state change
+
+
 class ScheduleMode(str, PyEnum):
     """Mode of schedule operation"""
     FIXED = "fixed"  # Fixed dates/days (calendar-based schedules)
@@ -371,6 +379,7 @@ class HealthRecord(Base):
     record_type = Column(String, nullable=False)  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+    event_type = Column(String(20), nullable=True)  # start, complete, end, observation (nullable for backward compatibility)
 
     # Bowel movement specific fields
     consistency = Column(String, nullable=True)  # "normal", "soft", "hard", "watery", "mucus"
