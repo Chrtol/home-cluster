@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 18 of 25 (Health Status Derivation)
-Plan: 02 of 02 (complete)
-Status: Phase 18 complete
-Last activity: 2026-02-12 — Completed 18-02-PLAN.md (Health Status API)
+Plan: 03 of 03 (complete, gap closure)
+Status: Phase 18 complete (with gap closure)
+Last activity: 2026-02-12 — Completed 18-03-PLAN.md (Health Status Gap Closure)
 
-Progress: [████████████████░░░░] 68/TBD plans (18 phases complete)
+Progress: [████████████████░░░░] 69/TBD plans (18 phases complete)
 
 ## Performance Metrics
 
@@ -46,11 +46,13 @@ Progress: [████████████████░░░░] 68/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-12: Boolean flags (is_shedding, is_brumating) replace single status enum - reptiles can be both states simultaneously
+- 2026-02-12: event_type field replaces title parsing for state detection - explicit, validated, locale-independent
+- 2026-02-12: Migration 0079 backfills existing records by title pattern for zero-downtime deployment
 - 2026-02-12: Batch health status query uses IN clause for 2 queries total regardless of reptile count (avoids N+1 problem)
 - 2026-02-12: Batch endpoint trusts caller filtered reptile_ids to accessible ones (permission check upstream)
 - 2026-02-12: LEFT JOIN self-join pattern for event-sourced state derivation (detects unclosed shed/brumation events)
 - 2026-02-12: State transition validation at API layer before database insert (prevents invalid state data)
-- 2026-02-12: Health status priority hierarchy CRITICAL > BRUMATING > SHEDDING > NORMAL (for multi-state handling)
 - 2026-02-12: Timezone-aware date calculations for "days in state" (prevents DST off-by-one errors)
 - 2026-02-12: Zero-state fallback for missing streak records (no database write for reptiles without users)
 - 2026-02-12: SQLAlchemy after_insert event for automatic streak updates (atomic with completion insert)
@@ -100,8 +102,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 18 complete (Health Status API)
-Resume file: .planning/phases/18-health-status-derivation/18-02-SUMMARY.md
+Stopped at: Phase 18 complete with gap closure (explicit event_type, boolean flags)
+Resume file: .planning/phases/18-health-status-derivation/18-03-SUMMARY.md
 Next action: Continue v1.3 with Phase 19 (Dashboard Health Indicators)
 
 ## Deferred Items
