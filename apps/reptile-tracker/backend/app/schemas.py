@@ -296,6 +296,7 @@ class HealthRecordBase(BaseModel):
     record_type: str  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
     title: str
     description: Optional[str] = None
+    event_type: Optional[str] = None  # start, complete, end, observation
     consistency: Optional[str] = None  # For bowel movements: "normal", "soft", "hard", "watery", "mucus"
     photo_url: Optional[str] = None  # For bowel movement photos
     date: datetime
@@ -309,6 +310,7 @@ class HealthRecordUpdate(BaseModel):
     record_type: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
+    event_type: Optional[str] = None
     consistency: Optional[str] = None
     photo_url: Optional[str] = None
     date: Optional[datetime] = None
@@ -326,12 +328,14 @@ class HealthRecord(HealthRecordBase):
 
 
 class HealthStatus(BaseModel):
-    """Derived health status for a reptile"""
-    status: str  # 'normal', 'shedding', 'brumating'
-    priority: int
-    active_since: Optional[datetime] = None
-    days_in_state: Optional[int] = None
-    description: str
+    """Derived health status for a reptile - supports multiple simultaneous states"""
+    is_shedding: bool = False
+    is_brumating: bool = False
+    shedding_since: Optional[datetime] = None
+    brumating_since: Optional[datetime] = None
+    days_shedding: Optional[int] = None
+    days_brumating: Optional[int] = None
+    description: str  # Human-readable summary
 
     class Config:
         from_attributes = True
