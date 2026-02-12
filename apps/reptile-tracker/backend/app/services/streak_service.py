@@ -241,3 +241,134 @@ async def get_streaks_for_reptiles(
     )
     streaks = result.scalars().all()
     return {s.reptile_id: s for s in streaks}
+
+
+# Event-driven streak updates
+from sqlalchemy import event
+from sqlalchemy.orm import Session
+from app.celery_app import REDIS_URL
+
+
+def _recalculate_streak_sync(connection, reptile_id: int):
+    """
+    Synchronous streak recalculation for use in event listener.
+
+    Event listeners run in sync context during flush, so we use raw SQL
+    rather than async session operations.
+    """
+    from datetime import datetime
+    from sqlalchemy import text
+
+    # Get user timezone (simplified - get from first user associated with reptile)
+    timezone_result = connection.execute(
+        text("""
+            SELECT u.timezone FROM users u
+            JOIN reptile_access ra ON ra.user_id = u.id
+            WHERE ra.reptile_id = :reptile_id
+            LIMIT 1
+        """),
+        {"reptile_id": reptile_id}
+    )
+    row = timezone_result.fetchone()
+    user_timezone = row[0] if row else "UTC"
+
+    # Get "today" in user's timezone
+    tz = ZoneInfo(user_timezone)
+    user_today = datetime.now(tz=tz).date()
+
+    # Get completion dates (last 365 days)
+    cutoff_date = user_today - timedelta(days=365)
+    completions_result = connection.execute(
+        text("""
+            SELECT DISTINCT scheduled_date FROM schedule_completions
+            WHERE reptile_id = :reptile_id
+            AND status IN ('completed_on_time', 'completed_late')
+            AND scheduled_date >= :cutoff_date
+            ORDER BY scheduled_date DESC
+        """),
+        {"reptile_id": reptile_id, "cutoff_date": cutoff_date}
+    )
+    completion_dates = [row[0] for row in completions_result.fetchall()]
+
+    # Get or create streak record
+    streak_result = connection.execute(
+        text("SELECT id, grace_period_days, longest_streak FROM reptile_streaks WHERE reptile_id = :reptile_id"),
+        {"reptile_id": reptile_id}
+    )
+    streak_row = streak_result.fetchone()
+
+    grace_period_days = streak_row[1] if streak_row else 1
+    existing_longest = streak_row[2] if streak_row else 0
+
+    # Calculate streak
+    streak_data = calculate_streak_from_completions(
+        completion_dates,
+        user_today,
+        grace_period_days,
+    )
+
+    new_longest = max(existing_longest, streak_data['longest_streak'])
+
+    if streak_row:
+        # Update existing
+        connection.execute(
+            text("""
+                UPDATE reptile_streaks SET
+                    current_streak = :current_streak,
+                    last_completion_date = :last_completion_date,
+                    grace_days_remaining = :grace_days_remaining,
+                    longest_streak = :longest_streak,
+                    updated_at = NOW()
+                WHERE reptile_id = :reptile_id
+            """),
+            {
+                "reptile_id": reptile_id,
+                "current_streak": streak_data['current_streak'],
+                "last_completion_date": streak_data['last_completion_date'],
+                "grace_days_remaining": streak_data['grace_days_remaining'],
+                "longest_streak": new_longest,
+            }
+        )
+    else:
+        # Insert new
+        connection.execute(
+            text("""
+                INSERT INTO reptile_streaks
+                (reptile_id, current_streak, last_completion_date, grace_days_remaining, grace_period_days, longest_streak, created_at, updated_at)
+                VALUES (:reptile_id, :current_streak, :last_completion_date, :grace_days_remaining, :grace_period_days, :longest_streak, NOW(), NOW())
+            """),
+            {
+                "reptile_id": reptile_id,
+                "current_streak": streak_data['current_streak'],
+                "last_completion_date": streak_data['last_completion_date'],
+                "grace_days_remaining": streak_data['grace_days_remaining'],
+                "grace_period_days": grace_period_days,
+                "longest_streak": new_longest,
+            }
+        )
+
+
+def _invalidate_streak_cache_sync(reptile_id: int):
+    """
+    Synchronous cache invalidation for use in event listener.
+    """
+    import redis as sync_redis
+    try:
+        r = sync_redis.from_url(REDIS_URL)
+        r.delete(f"streak:reptile:{reptile_id}")
+    except Exception:
+        # Cache invalidation failure is non-fatal
+        pass
+
+
+@event.listens_for(ScheduleCompletion, 'after_insert')
+def on_schedule_completion_created(mapper, connection, target):
+    """
+    Trigger streak recalculation when a ScheduleCompletion is created.
+
+    Runs in same transaction as completion insert for consistency.
+    """
+    # Only recalculate for actual completions, not pending/missed
+    if target.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+        _recalculate_streak_sync(connection, target.reptile_id)
+        _invalidate_streak_cache_sync(target.reptile_id)
