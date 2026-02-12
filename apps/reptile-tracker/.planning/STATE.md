@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 18 of 25 (Health Status Derivation)
-Plan: 01 of TBD (in progress)
-Status: Phase 18 in progress
-Last activity: 2026-02-12 — Completed 18-01-PLAN.md (Health Status Derivation Service)
+Plan: 02 of 02 (complete)
+Status: Phase 18 complete
+Last activity: 2026-02-12 — Completed 18-02-PLAN.md (Health Status API)
 
-Progress: [████████████████░░░░] 66/TBD plans (17 phases complete, Phase 18 started)
+Progress: [████████████████░░░░] 68/TBD plans (18 phases complete)
 
 ## Performance Metrics
 
@@ -46,6 +46,8 @@ Progress: [████████████████░░░░] 66/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-12: Batch health status query uses IN clause for 2 queries total regardless of reptile count (avoids N+1 problem)
+- 2026-02-12: Batch endpoint trusts caller filtered reptile_ids to accessible ones (permission check upstream)
 - 2026-02-12: LEFT JOIN self-join pattern for event-sourced state derivation (detects unclosed shed/brumation events)
 - 2026-02-12: State transition validation at API layer before database insert (prevents invalid state data)
 - 2026-02-12: Health status priority hierarchy CRITICAL > BRUMATING > SHEDDING > NORMAL (for multi-state handling)
@@ -98,9 +100,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 18 Plan 01 complete (Health Status Derivation Service)
-Resume file: .planning/phases/18-health-status-derivation/18-01-SUMMARY.md
-Next action: Continue Phase 18 with next plan (if planned)
+Stopped at: Phase 18 complete (Health Status API)
+Resume file: .planning/phases/18-health-status-derivation/18-02-SUMMARY.md
+Next action: Continue v1.3 with Phase 19 (Dashboard Health Indicators)
 
 ## Deferred Items
 
