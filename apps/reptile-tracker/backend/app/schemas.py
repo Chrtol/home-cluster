@@ -1239,3 +1239,22 @@ class Measurement(MeasurementBase):
 
     class Config:
         from_attributes = True
+
+
+# Streak schemas
+class StreakResponse(BaseModel):
+    """Streak data for a reptile"""
+    reptile_id: int
+    current_streak: int
+    last_completion_date: Optional[date] = None
+    grace_days_remaining: int
+    grace_period_days: int
+    longest_streak: int
+
+    class Config:
+        from_attributes = True
+
+
+class StreaksListResponse(BaseModel):
+    """Multiple streaks (for dashboard)"""
+    streaks: dict[int, StreakResponse]  # reptile_id -> streak
