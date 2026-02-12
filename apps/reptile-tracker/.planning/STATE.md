@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass.
-**Current focus:** v1.3 Engagement & Awareness — Phase 17 ready to plan
+**Current focus:** v1.3 Engagement & Awareness — Phase 18 complete, Phase 19 next
 
 ## Current Position
 
