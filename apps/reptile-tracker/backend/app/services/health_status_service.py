@@ -4,27 +4,21 @@ Health Status Derivation Service
 Derives reptile health status (in-shed, brumating, normal) from health_records
 without storing redundant state. Uses LEFT JOIN pattern to detect unclosed
 event pairs (start without corresponding end).
+
+Uses event_type field for state detection, with backward-compatible fallback
+for existing records that have NULL event_type.
 """
 
-from datetime import datetime
-from enum import IntEnum
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 from zoneinfo import ZoneInfo
 
-from app.models import HealthRecord
-
-
-class HealthStatusPriority(IntEnum):
-    """Priority levels for health statuses (lower = higher priority)"""
-    CRITICAL = 1  # Future: vet visit, emergency, injury
-    BRUMATING = 2  # Hibernation state
-    SHEDDING = 3   # Active shed cycle
-    NORMAL = 4     # Default state
+from app.models import HealthRecord, HealthEventType
 
 
 async def get_active_shed_record(
@@ -50,6 +44,7 @@ async def get_active_shed_record(
     EndRecord = aliased(HealthRecord)
 
     # Build LEFT JOIN to find unclosed shed cycles
+    # Uses event_type field for matching
     stmt = (
         select(StartRecord)
         .outerjoin(
@@ -57,14 +52,14 @@ async def get_active_shed_record(
             and_(
                 EndRecord.reptile_id == StartRecord.reptile_id,
                 EndRecord.record_type == 'shedding',
-                EndRecord.title.ilike('%complete%'),
+                EndRecord.event_type == HealthEventType.COMPLETE.value,
                 EndRecord.date > StartRecord.date
             )
         )
         .where(
             StartRecord.reptile_id == reptile_id,
             StartRecord.record_type == 'shedding',
-            StartRecord.title.ilike('%start%'),
+            StartRecord.event_type == HealthEventType.START.value,
             EndRecord.id.is_(None)  # No matching end record
         )
         .order_by(StartRecord.date.desc())
@@ -96,6 +91,7 @@ async def get_active_brumation_record(
     StartRecord = aliased(HealthRecord)
     EndRecord = aliased(HealthRecord)
 
+    # Uses event_type field for matching
     stmt = (
         select(StartRecord)
         .outerjoin(
@@ -103,14 +99,14 @@ async def get_active_brumation_record(
             and_(
                 EndRecord.reptile_id == StartRecord.reptile_id,
                 EndRecord.record_type == 'brumation',
-                EndRecord.title.ilike('%end%'),
+                EndRecord.event_type == HealthEventType.END.value,
                 EndRecord.date > StartRecord.date
             )
         )
         .where(
             StartRecord.reptile_id == reptile_id,
             StartRecord.record_type == 'brumation',
-            StartRecord.title.ilike('%start%'),
+            StartRecord.event_type == HealthEventType.START.value,
             EndRecord.id.is_(None)
         )
         .order_by(StartRecord.date.desc())
@@ -128,9 +124,7 @@ async def derive_health_status(
 ) -> dict:
     """
     Derive current health status from health_records.
-
-    Returns highest priority active status with metadata.
-    Priority hierarchy: Critical > Brumating > Shedding > Normal
+    Returns independent boolean flags for each state (not mutually exclusive).
 
     Args:
         db: Database session
@@ -139,67 +133,62 @@ async def derive_health_status(
 
     Returns:
         {
-            'status': 'shedding' | 'brumating' | 'normal',
-            'priority': int,
-            'active_since': datetime | None,
-            'days_in_state': int | None,
+            'is_shedding': bool,
+            'is_brumating': bool,
+            'shedding_since': datetime | None,
+            'brumating_since': datetime | None,
+            'days_shedding': int | None,
+            'days_brumating': int | None,
             'description': str
         }
     """
     tz = ZoneInfo(user_timezone)
     today = datetime.now(tz=tz).date()
 
-    # Check for critical health issues (future: injury, illness records)
-    # Phase 18: Not implemented yet
-
-    # Check for active brumation (higher priority than shedding)
-    brumation_record = await get_active_brumation_record(db, reptile_id)
-    if brumation_record:
-        # Convert to user's timezone for date calculation
-        brumation_start_utc = brumation_record.date
-        if brumation_start_utc.tzinfo is None:
-            # Assume UTC if naive
-            from datetime import timezone
-            brumation_start_utc = brumation_start_utc.replace(tzinfo=timezone.utc)
-
-        brumation_start_local = brumation_start_utc.astimezone(tz).date()
-        days_brumating = (today - brumation_start_local).days
-
-        return {
-            'status': 'brumating',
-            'priority': HealthStatusPriority.BRUMATING,
-            'active_since': brumation_record.date,
-            'days_in_state': max(0, days_brumating),
-            'description': f'Brumating since {brumation_start_local.isoformat()}'
-        }
-
-    # Check for active shedding
+    # Query both states independently
     shed_record = await get_active_shed_record(db, reptile_id)
+    brumation_record = await get_active_brumation_record(db, reptile_id)
+
+    # Calculate shed state
+    is_shedding = shed_record is not None
+    shedding_since = None
+    days_shedding = None
     if shed_record:
-        # Convert to user's timezone for date calculation
         shed_start_utc = shed_record.date
         if shed_start_utc.tzinfo is None:
-            from datetime import timezone
             shed_start_utc = shed_start_utc.replace(tzinfo=timezone.utc)
-
+        shedding_since = shed_record.date
         shed_start_local = shed_start_utc.astimezone(tz).date()
-        days_shedding = (today - shed_start_local).days
+        days_shedding = max(0, (today - shed_start_local).days)
 
-        return {
-            'status': 'shedding',
-            'priority': HealthStatusPriority.SHEDDING,
-            'active_since': shed_record.date,
-            'days_in_state': max(0, days_shedding),
-            'description': f'Shedding since {shed_start_local.isoformat()}'
-        }
+    # Calculate brumation state
+    is_brumating = brumation_record is not None
+    brumating_since = None
+    days_brumating = None
+    if brumation_record:
+        brum_start_utc = brumation_record.date
+        if brum_start_utc.tzinfo is None:
+            brum_start_utc = brum_start_utc.replace(tzinfo=timezone.utc)
+        brumating_since = brumation_record.date
+        brum_start_local = brum_start_utc.astimezone(tz).date()
+        days_brumating = max(0, (today - brum_start_local).days)
 
-    # Default: Normal state
+    # Build description
+    states = []
+    if is_shedding:
+        states.append(f"Shedding (day {days_shedding})")
+    if is_brumating:
+        states.append(f"Brumating (day {days_brumating})")
+    description = ", ".join(states) if states else "No active health conditions"
+
     return {
-        'status': 'normal',
-        'priority': HealthStatusPriority.NORMAL,
-        'active_since': None,
-        'days_in_state': None,
-        'description': 'No active health conditions'
+        'is_shedding': is_shedding,
+        'is_brumating': is_brumating,
+        'shedding_since': shedding_since,
+        'brumating_since': brumating_since,
+        'days_shedding': days_shedding,
+        'days_brumating': days_brumating,
+        'description': description
     }
 
 
@@ -220,10 +209,12 @@ async def batch_derive_health_statuses(
     Returns:
         dict mapping reptile_id to health status dict:
         {
-            'status': 'shedding' | 'brumating' | 'normal',
-            'priority': int,
-            'active_since': datetime | None,
-            'days_in_state': int | None,
+            'is_shedding': bool,
+            'is_brumating': bool,
+            'shedding_since': datetime | None,
+            'brumating_since': datetime | None,
+            'days_shedding': int | None,
+            'days_brumating': int | None,
             'description': str
         }
     """
@@ -238,6 +229,7 @@ async def batch_derive_health_statuses(
     EndShed = aliased(HealthRecord)
 
     # Query for active shed records (all reptiles at once)
+    # Uses event_type field for matching
     shed_stmt = (
         select(StartShed)
         .outerjoin(
@@ -245,14 +237,14 @@ async def batch_derive_health_statuses(
             and_(
                 EndShed.reptile_id == StartShed.reptile_id,
                 EndShed.record_type == 'shedding',
-                EndShed.title.ilike('%complete%'),
+                EndShed.event_type == HealthEventType.COMPLETE.value,
                 EndShed.date > StartShed.date
             )
         )
         .where(
             StartShed.reptile_id.in_(reptile_ids),
             StartShed.record_type == 'shedding',
-            StartShed.title.ilike('%start%'),
+            StartShed.event_type == HealthEventType.START.value,
             EndShed.id.is_(None)
         )
         .order_by(StartShed.reptile_id, StartShed.date.desc())
@@ -272,6 +264,7 @@ async def batch_derive_health_statuses(
     EndBrum = aliased(HealthRecord)
 
     # Query for active brumation records (all reptiles at once)
+    # Uses event_type field for matching
     brum_stmt = (
         select(StartBrum)
         .outerjoin(
@@ -279,14 +272,14 @@ async def batch_derive_health_statuses(
             and_(
                 EndBrum.reptile_id == StartBrum.reptile_id,
                 EndBrum.record_type == 'brumation',
-                EndBrum.title.ilike('%end%'),
+                EndBrum.event_type == HealthEventType.END.value,
                 EndBrum.date > StartBrum.date
             )
         )
         .where(
             StartBrum.reptile_id.in_(reptile_ids),
             StartBrum.record_type == 'brumation',
-            StartBrum.title.ilike('%start%'),
+            StartBrum.event_type == HealthEventType.START.value,
             EndBrum.id.is_(None)
         )
         .order_by(StartBrum.reptile_id, StartBrum.date.desc())
@@ -301,58 +294,53 @@ async def batch_derive_health_statuses(
         if record.reptile_id not in brum_by_reptile:
             brum_by_reptile[record.reptile_id] = record
 
-    # Build status dict for each reptile using priority hierarchy
+    # Build status dict for each reptile with independent boolean flags
     statuses = {}
     for reptile_id in reptile_ids:
-        # Priority: brumating > shedding > normal
-        brumation_record = brum_by_reptile.get(reptile_id)
         shed_record = shed_by_reptile.get(reptile_id)
+        brumation_record = brum_by_reptile.get(reptile_id)
 
-        if brumation_record:
-            # Brumating (highest priority)
-            brumation_start_utc = brumation_record.date
-            if brumation_start_utc.tzinfo is None:
-                from datetime import timezone
-                brumation_start_utc = brumation_start_utc.replace(tzinfo=timezone.utc)
-
-            brumation_start_local = brumation_start_utc.astimezone(tz).date()
-            days_brumating = (today - brumation_start_local).days
-
-            statuses[reptile_id] = {
-                'status': 'brumating',
-                'priority': HealthStatusPriority.BRUMATING,
-                'active_since': brumation_record.date,
-                'days_in_state': max(0, days_brumating),
-                'description': f'Brumating since {brumation_start_local.isoformat()}'
-            }
-
-        elif shed_record:
-            # Shedding (second priority)
+        # Calculate shed state
+        is_shedding = shed_record is not None
+        shedding_since = None
+        days_shedding = None
+        if shed_record:
             shed_start_utc = shed_record.date
             if shed_start_utc.tzinfo is None:
-                from datetime import timezone
                 shed_start_utc = shed_start_utc.replace(tzinfo=timezone.utc)
-
+            shedding_since = shed_record.date
             shed_start_local = shed_start_utc.astimezone(tz).date()
-            days_shedding = (today - shed_start_local).days
+            days_shedding = max(0, (today - shed_start_local).days)
 
-            statuses[reptile_id] = {
-                'status': 'shedding',
-                'priority': HealthStatusPriority.SHEDDING,
-                'active_since': shed_record.date,
-                'days_in_state': max(0, days_shedding),
-                'description': f'Shedding since {shed_start_local.isoformat()}'
-            }
+        # Calculate brumation state
+        is_brumating = brumation_record is not None
+        brumating_since = None
+        days_brumating = None
+        if brumation_record:
+            brum_start_utc = brumation_record.date
+            if brum_start_utc.tzinfo is None:
+                brum_start_utc = brum_start_utc.replace(tzinfo=timezone.utc)
+            brumating_since = brumation_record.date
+            brum_start_local = brum_start_utc.astimezone(tz).date()
+            days_brumating = max(0, (today - brum_start_local).days)
 
-        else:
-            # Normal state (default)
-            statuses[reptile_id] = {
-                'status': 'normal',
-                'priority': HealthStatusPriority.NORMAL,
-                'active_since': None,
-                'days_in_state': None,
-                'description': 'No active health conditions'
-            }
+        # Build description
+        states = []
+        if is_shedding:
+            states.append(f"Shedding (day {days_shedding})")
+        if is_brumating:
+            states.append(f"Brumating (day {days_brumating})")
+        description = ", ".join(states) if states else "No active health conditions"
+
+        statuses[reptile_id] = {
+            'is_shedding': is_shedding,
+            'is_brumating': is_brumating,
+            'shedding_since': shedding_since,
+            'brumating_since': brumating_since,
+            'days_shedding': days_shedding,
+            'days_brumating': days_brumating,
+            'description': description
+        }
 
     return statuses
 
@@ -361,7 +349,7 @@ async def validate_health_record_state(
     db: AsyncSession,
     reptile_id: int,
     record_type: str,
-    title: str
+    event_type: Optional[str]
 ) -> None:
     """
     Validate state transition before creating health record.
@@ -376,14 +364,16 @@ async def validate_health_record_state(
         db: Database session
         reptile_id: Reptile ID
         record_type: Record type ('shedding', 'brumation', etc.)
-        title: Record title
+        event_type: Event type ('start', 'complete', 'end', 'observation')
 
     Raises:
         HTTPException: 400 if state transition is invalid
     """
+    if not event_type:
+        return  # Observations don't need validation
+
     if record_type == 'shedding':
-        if 'start' in title.lower():
-            # Check for existing active shed
+        if event_type == HealthEventType.START.value:
             active_shed = await get_active_shed_record(db, reptile_id)
             if active_shed:
                 shed_date = active_shed.date.date()
@@ -393,18 +383,16 @@ async def validate_health_record_state(
                            "Complete the current shed cycle before starting a new one."
                 )
 
-        elif 'complete' in title.lower():
-            # Check for active shed to complete
+        elif event_type == HealthEventType.COMPLETE.value:
             active_shed = await get_active_shed_record(db, reptile_id)
             if not active_shed:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No active shed cycle to complete. Log a 'Shed started' event first."
+                    detail="No active shed cycle to complete. Log a shed start event first."
                 )
 
     if record_type == 'brumation':
-        if 'start' in title.lower():
-            # Check for existing active brumation
+        if event_type == HealthEventType.START.value:
             active_brumation = await get_active_brumation_record(db, reptile_id)
             if active_brumation:
                 brum_date = active_brumation.date.date()
@@ -414,11 +402,10 @@ async def validate_health_record_state(
                            "End the current brumation period before starting a new one."
                 )
 
-        elif 'end' in title.lower():
-            # Check for active brumation to end
+        elif event_type == HealthEventType.END.value:
             active_brumation = await get_active_brumation_record(db, reptile_id)
             if not active_brumation:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No active brumation period to end. Log a 'Brumation started' event first."
+                    detail="No active brumation period to end. Log a brumation start event first."
                 )
