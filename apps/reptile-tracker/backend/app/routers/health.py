@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import User, HealthRecord, AccessLevel
 from app.permissions import check_reptile_access
 from app.schemas import HealthRecord as HealthRecordSchema, HealthRecordCreate, HealthRecordUpdate
+from app.services.health_status_service import validate_health_record_state
 
 router = APIRouter()
 
@@ -59,6 +60,16 @@ async def create_health_record(
 ):
     """Create a new health record"""
     await check_reptile_access(db, current_user, record.reptile_id, AccessLevel.MANAGER)
+
+    # Validate state transition for shedding and brumation records
+    if record.record_type in ['shedding', 'brumation']:
+        await validate_health_record_state(
+            db,
+            record.reptile_id,
+            record.record_type,
+            record.title
+        )
+
     new_record = HealthRecord(
         **record.model_dump(exclude={"date"}),
         date=record.date or datetime.now(timezone.utc),
