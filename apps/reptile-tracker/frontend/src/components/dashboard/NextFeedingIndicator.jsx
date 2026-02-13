@@ -1,64 +1,78 @@
-import { isToday, isTomorrow, format, parseISO } from 'date-fns';
+import { isToday, isTomorrow, format } from 'date-fns';
 import { Clock } from 'lucide-react';
 
 /**
- * NextFeedingIndicator displays next scheduled feeding time
+ * NextFeedingIndicator - Shows next scheduled feeding time
  *
- * Shows absolute time format (Today 6pm, Tomorrow 10am, Mon 6pm) for
- * the next pending feeding schedule instance. Hidden when no pending
- * feeding or when explicitly hidden (e.g., reptile is brumating).
- *
- * @param {Object} props
- * @param {Array} props.scheduleInstances - Array of schedule instances from dashboard data
- * @param {number} props.reptileId - Reptile ID to filter instances
- * @param {boolean} props.isHidden - When true, hide the indicator (caller decides when)
- * @returns {JSX.Element|null} Time display or null if no feeding or hidden
+ * Handles both API schedule instances (with scheduled_date string and status)
+ * and calculated weekly events (with date object, no status).
  */
 const NextFeedingIndicator = ({ scheduleInstances, reptileId, isHidden }) => {
-  // Hide indicator when explicitly requested (e.g., brumating)
   if (isHidden) return null;
-
-  // Hide when no schedule instances available
   if (!scheduleInstances || scheduleInstances.length === 0) return null;
 
-  // Find next pending feeding instance
   const now = new Date();
-  const nextFeeding = scheduleInstances
-    .filter(inst =>
-      inst.reptile_id === reptileId &&
-      inst.schedule_type === 'feeding' &&
-      inst.status === 'pending' &&
-      new Date(inst.scheduled_date) >= now
-    )
-    .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+  // Set to start of today for date comparison
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Hide when no upcoming feeding found
+  // Find next feeding - handle both data formats
+  const nextFeeding = scheduleInstances
+    .filter(inst => {
+      // Must be a feeding schedule
+      if (inst.schedule_type !== 'feeding') return false;
+
+      // Get the date (could be Date object or string)
+      const eventDate = inst.date instanceof Date
+        ? inst.date
+        : inst.scheduled_date
+          ? new Date(inst.scheduled_date)
+          : null;
+
+      if (!eventDate) return false;
+
+      // Must be today or in the future
+      const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+      if (eventDay < today) return false;
+
+      // If status exists, must be pending (not completed/missed)
+      // If no status (calculated events), assume it's upcoming
+      if (inst.status && inst.status !== 'pending') return false;
+
+      return true;
+    })
+    .sort((a, b) => {
+      const dateA = a.date instanceof Date ? a.date : new Date(a.scheduled_date);
+      const dateB = b.date instanceof Date ? b.date : new Date(b.scheduled_date);
+      return dateA - dateB;
+    })[0];
+
   if (!nextFeeding) return null;
 
-  /**
-   * Format next feeding as absolute time
-   * Returns format: "Today 6pm", "Tomorrow 10am", "Mon 2pm"
-   */
+  // Format the next feeding time
   const formatNextFeeding = (instance) => {
-    const date = parseISO(instance.scheduled_date);
-    const time = instance.time_range_start || '12:00:00'; // Default noon if no time
+    const date = instance.date instanceof Date
+      ? instance.date
+      : new Date(instance.scheduled_date);
 
-    // Determine date label
+    // Date part
     let dateStr;
     if (isToday(date)) {
       dateStr = 'Today';
     } else if (isTomorrow(date)) {
       dateStr = 'Tomorrow';
     } else {
-      dateStr = format(date, 'EEE'); // Mon, Tue, etc.
+      dateStr = format(date, 'EEE');
     }
 
-    // Format time as "6pm" or "10am"
-    const [hours, minutes] = time.split(':').map(Number);
-    const timeDate = new Date(2000, 0, 1, hours, minutes);
-    const timeStr = format(timeDate, 'ha').toLowerCase(); // 6pm, 10am
+    // Time part - use earliest_time or time_range_start
+    const timeStr = instance.earliest_time || instance.time_range_start;
+    if (timeStr) {
+      const [hours] = timeStr.split(':').map(Number);
+      const timeDate = new Date(2000, 0, 1, hours, 0);
+      return `${dateStr} ${format(timeDate, 'ha').toLowerCase()}`;
+    }
 
-    return `${dateStr} ${timeStr}`;
+    return dateStr;
   };
 
   return (

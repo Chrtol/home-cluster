@@ -1,39 +1,44 @@
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
+import { Sparkles, Moon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 /**
- * HealthStatusBadge - Displays active health states (shedding and/or brumating)
+ * HealthStatusBadge - Compact icon indicators for shedding/brumating
  *
- * @param {Object} healthStatus - Health status object from Phase 18 API
- * @param {boolean} healthStatus.is_shedding - Whether reptile is shedding
- * @param {boolean} healthStatus.is_brumating - Whether reptile is brumating
- * @param {number} healthStatus.days_shedding - Days in current shedding cycle
- * @param {number} healthStatus.days_brumating - Days in current brumation cycle
+ * Redesigned: Small icon badges with native tooltips.
+ * Colors: Warm amber for shedding (renewal), cool indigo for brumating (sleep).
  */
 export default function HealthStatusBadge({ healthStatus }) {
-  // Return null if no health status or no active states
   if (!healthStatus || (!healthStatus.is_shedding && !healthStatus.is_brumating)) {
     return null
   }
 
   return (
-    <>
+    <div className="flex items-center gap-1">
       {healthStatus.is_shedding && (
-        <Badge
-          variant="outline"
-          className="border-amber-500 text-amber-500"
+        <div
+          className={cn(
+            "flex items-center justify-center w-6 h-6 rounded-full",
+            "bg-amber-500/20 text-amber-400",
+            "cursor-help transition-colors hover:bg-amber-500/30"
+          )}
+          title={`Shedding · Day ${healthStatus.days_shedding}`}
         >
-          Shedding day {healthStatus.days_shedding}
-        </Badge>
+          <Sparkles className="w-3.5 h-3.5" />
+        </div>
       )}
       {healthStatus.is_brumating && (
-        <Badge
-          variant="outline"
-          className="border-purple-500 text-purple-500"
+        <div
+          className={cn(
+            "flex items-center justify-center w-6 h-6 rounded-full",
+            "bg-indigo-500/20 text-indigo-400",
+            "cursor-help transition-colors hover:bg-indigo-500/30"
+          )}
+          title={`Brumating · Day ${healthStatus.days_brumating}`}
         >
-          Brumating day {healthStatus.days_brumating}
-        </Badge>
+          <Moon className="w-3.5 h-3.5" />
+        </div>
       )}
-    </>
+    </div>
   )
 }

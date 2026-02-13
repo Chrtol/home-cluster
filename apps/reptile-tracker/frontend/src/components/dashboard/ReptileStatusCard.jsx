@@ -244,21 +244,18 @@ const ReptileStatusCard = ({
             >
               {reptile.name}
             </h3>
+            {/* Status indicators - top right */}
             {showFull && (
-              <span className="text-xs text-muted-foreground">
-                {calculateAge(reptile.date_of_birth || reptile.hatch_date)}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <HealthStatusBadge healthStatus={healthStatus} />
+                <StreakBadge streak={streak} />
+                <BirthdayBadge dateOfBirth={reptile.date_of_birth || reptile.hatch_date} />
+                <span className="text-xs text-muted-foreground ml-1">
+                  {calculateAge(reptile.date_of_birth || reptile.hatch_date)}
+                </span>
+              </div>
             )}
           </div>
-
-          {/* Status badges row - priority order: Health > Streak > Birthday */}
-          {showFull && (
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              <HealthStatusBadge healthStatus={healthStatus} />
-              <StreakBadge streak={streak} />
-              <BirthdayBadge dateOfBirth={reptile.date_of_birth || reptile.hatch_date} />
-            </div>
-          )}
 
           {showFull && (
             <>

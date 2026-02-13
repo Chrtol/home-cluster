@@ -1,40 +1,31 @@
 import React from 'react'
 import { Flame } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 
 /**
- * StreakBadge - Displays activity streak with milestone colors and detail popover
+ * StreakBadge - Compact flame icon with streak count and detail popover
  *
- * @param {Object} streak - Streak object from Phase 17 API
- * @param {number} streak.current_streak - Current active streak days
- * @param {number} streak.longest_streak - All-time longest streak
- * @param {number} streak.grace_days_remaining - Days left in grace period
- * @param {number} streak.grace_period_days - Total grace period length
- * @param {string} streak.last_completion_date - ISO date of last completion
+ * Redesigned: Small circular badge with flame icon and number.
+ * Colors: Warm orange gradient based on milestone (brighter = higher streak).
  */
 export default function StreakBadge({ streak }) {
-  // Return null if no streak or no active streak
   if (!streak || streak.current_streak === 0) {
     return null
   }
 
-  // Determine milestone variant based on streak count
-  const getMilestoneVariant = (count) => {
-    if (count >= 100) return 'streak-platinum'
-    if (count >= 30) return 'streak-gold'
-    if (count >= 7) return 'streak-bronze'
-    return 'streak-active'
+  // Color intensity based on milestone
+  const getColors = (count) => {
+    if (count >= 100) return { bg: 'bg-yellow-500/25', text: 'text-yellow-400', glow: 'shadow-yellow-500/20' }
+    if (count >= 30) return { bg: 'bg-amber-500/25', text: 'text-amber-400', glow: 'shadow-amber-500/20' }
+    if (count >= 7) return { bg: 'bg-orange-500/25', text: 'text-orange-400', glow: 'shadow-orange-500/20' }
+    return { bg: 'bg-orange-500/15', text: 'text-orange-400/80', glow: '' }
   }
 
-  const variant = getMilestoneVariant(streak.current_streak)
-
-  // Check if in grace period
+  const colors = getColors(streak.current_streak)
   const isGracePeriod = streak.grace_days_remaining < streak.grace_period_days
 
-  // Format last completion date
   const lastCompletionText = streak.last_completion_date
     ? formatDistanceToNow(new Date(streak.last_completion_date), { addSuffix: true })
     : 'Never'
@@ -42,37 +33,42 @@ export default function StreakBadge({ streak }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Badge
-          variant={variant}
+        <button
           className={cn(
-            'inline-flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105',
-            isGracePeriod && 'opacity-60'
+            "flex items-center gap-1 px-2 h-6 rounded-full text-xs font-medium",
+            "transition-all hover:scale-105 cursor-pointer",
+            colors.bg, colors.text,
+            colors.glow && `shadow-sm ${colors.glow}`,
+            isGracePeriod && 'opacity-50'
           )}
-          title={`${streak.current_streak} day streak (tap for details)`}
         >
-          <Flame className="h-3.5 w-3.5" />
+          <Flame className="w-3 h-3" />
           <span>{streak.current_streak}</span>
-        </Badge>
+        </button>
       </PopoverTrigger>
-      <PopoverContent>
+      <PopoverContent className="w-48 p-3" side="bottom" align="end">
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Streak Stats</h4>
-          <div className="space-y-1 text-sm">
-            <div>
-              <span className="text-muted-foreground">Current: </span>
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <Flame className="w-4 h-4 text-orange-400" />
+            Streak Stats
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Current</span>
               <span className="font-medium">{streak.current_streak} days</span>
             </div>
-            <div>
-              <span className="text-muted-foreground">Longest: </span>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Longest</span>
               <span className="font-medium">{streak.longest_streak} days</span>
             </div>
             {isGracePeriod && (
-              <div className="text-amber-500">
-                Grace days left: {streak.grace_days_remaining} of {streak.grace_period_days}
+              <div className="flex justify-between text-amber-400">
+                <span>Grace left</span>
+                <span>{streak.grace_days_remaining}/{streak.grace_period_days}</span>
               </div>
             )}
-            <div>
-              <span className="text-muted-foreground">Last completed: </span>
+            <div className="flex justify-between pt-1 border-t border-border">
+              <span className="text-muted-foreground">Last done</span>
               <span className="font-medium">{lastCompletionText}</span>
             </div>
           </div>

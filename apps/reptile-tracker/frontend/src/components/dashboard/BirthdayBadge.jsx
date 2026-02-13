@@ -1,25 +1,21 @@
 import { differenceInDays } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { Cake } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
- * BirthdayBadge displays birthday countdown with tiered visual escalation
+ * BirthdayBadge - Compact cake icon with birthday countdown
  *
- * Shows countdown only within 30 days of birthday. Visual urgency increases
- * as birthday approaches (4 tiers: approaching, soon, imminent, today).
- *
- * @param {Object} props
- * @param {string|null} props.dateOfBirth - ISO date string (YYYY-MM-DD) or null
- * @returns {JSX.Element|null} Badge component or null if no birthday or > 30 days away
+ * Redesigned: Small circular badge with cake icon and native tooltip.
+ * Colors: Violet/fuchsia gradient (celebratory, works well in dark mode).
+ * Shows only within 30 days of birthday.
  */
 const BirthdayBadge = ({ dateOfBirth }) => {
-  // Hide badge when date of birth is unknown
   if (!dateOfBirth) return null;
 
   const today = new Date();
   const birthDate = new Date(dateOfBirth);
 
-  // Calculate next birthday (this year or next year)
+  // Calculate next birthday
   const thisYearBirthday = new Date(
     today.getFullYear(),
     birthDate.getMonth(),
@@ -29,37 +25,53 @@ const BirthdayBadge = ({ dateOfBirth }) => {
     ? new Date(today.getFullYear() + 1, birthDate.getMonth(), birthDate.getDate())
     : thisYearBirthday;
 
-  // Calculate days until birthday
   const daysUntil = differenceInDays(nextBirthday, today);
 
-  // Only show countdown within 30 days
+  // Only show within 30 days
   if (daysUntil > 30) return null;
 
-  /**
-   * Get badge variant based on days until birthday
-   * 4-tier escalation: approaching (30d), soon (7d), imminent (3d), today
-   */
-  const getVariant = (days) => {
-    if (days === 0) return 'birthday-today';
-    if (days <= 3) return 'birthday-imminent';
-    if (days <= 7) return 'birthday-soon';
-    return 'birthday-approaching';
+  // Color intensity increases as birthday approaches
+  const getColors = (days) => {
+    if (days === 0) return {
+      bg: 'bg-fuchsia-500',
+      text: 'text-white',
+      glow: 'shadow-lg shadow-fuchsia-500/40',
+      animate: 'animate-pulse'
+    };
+    if (days <= 3) return {
+      bg: 'bg-fuchsia-500/30',
+      text: 'text-fuchsia-300',
+      glow: 'shadow-sm shadow-fuchsia-500/20'
+    };
+    if (days <= 7) return {
+      bg: 'bg-violet-500/25',
+      text: 'text-violet-400'
+    };
+    return {
+      bg: 'bg-violet-500/15',
+      text: 'text-violet-400/70'
+    };
   };
 
-  /**
-   * Get natural language text for birthday countdown
-   */
   const getText = (days) => {
-    if (days === 0) return 'Birthday today!';
-    if (days === 1) return 'Birthday tomorrow';
-    return `in ${days} days`;
+    if (days === 0) return 'Birthday today! 🎉';
+    if (days === 1) return 'Birthday tomorrow!';
+    return `Birthday in ${days} days`;
   };
+
+  const colors = getColors(daysUntil);
 
   return (
-    <Badge variant={getVariant(daysUntil)} className="flex items-center gap-1">
-      <Cake className="w-3 h-3" />
-      {getText(daysUntil)}
-    </Badge>
+    <div
+      className={cn(
+        "flex items-center justify-center w-6 h-6 rounded-full",
+        "cursor-help transition-all",
+        colors.bg, colors.text, colors.glow, colors.animate
+      )}
+      title={getText(daysUntil)}
+    >
+      <Cake className="w-3.5 h-3.5" />
+    </div>
   );
 };
 
