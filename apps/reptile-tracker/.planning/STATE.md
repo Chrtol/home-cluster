@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 19 of 25 (Health Logging UI)
-Plan: 01 of 01 (complete)
+Plan: 02 of 02 (complete)
 Status: Phase 19 complete
-Last activity: 2026-02-13 — Completed 19-01-PLAN.md (Shedding & Brumation Events)
+Last activity: 2026-02-13 — Completed 19-02-PLAN.md (Health Status Awareness)
 
-Progress: [████████████████░░░░] 70/TBD plans (19 phases complete)
+Progress: [████████████████░░░░] 71/TBD plans (19 phases complete)
 
 ## Performance Metrics
 
@@ -46,6 +46,10 @@ Progress: [████████████████░░░░] 70/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Health status fetched on reptile selection in create mode only (view/edit shows historical context)
+- 2026-02-13: Auto-select valid state transition when only one option available (UX improvement)
+- 2026-02-13: Log Another button keeps reptile selection to support rapid logging workflows
+- 2026-02-13: Success action buttons replace auto-navigation for better user control
 - 2026-02-12: Boolean flags (is_shedding, is_brumating) replace single status enum - reptiles can be both states simultaneously
 - 2026-02-12: event_type field replaces title parsing for state detection - explicit, validated, locale-independent
 - 2026-02-12: Migration 0079 backfills existing records by title pattern for zero-downtime deployment
@@ -102,8 +106,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 19 complete (Health Logging UI - Shedding & Brumation Events)
-Resume file: .planning/phases/19-health-logging-ui/19-01-SUMMARY.md
+Stopped at: Phase 19 complete (Health Logging UI - Health Status Awareness)
+Resume file: .planning/phases/19-health-logging-ui/19-02-SUMMARY.md
 Next action: Continue v1.3 with Phase 20 (Dashboard Badges)
 
 ## Deferred Items
