@@ -186,6 +186,7 @@ function App() {
             <Route path="/misting-log" element={<MistingLog />} />
             <Route path="/misting-log/:reptileId" element={<MistingLog />} />
             <Route path="/misting/:id" element={<MistingLog />} />
+            <Route path="/measurements" element={<Measurements />} />
             <Route path="/measurements/:reptileId" element={<Measurements />} />
             <Route path="/foods" element={<FoodManagement />} />
             <Route path="/notifications" element={<NotificationHistory />} />
