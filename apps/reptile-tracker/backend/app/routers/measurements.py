@@ -73,6 +73,20 @@ async def create_measurement(
         logged_by_user_id=current_user.id
     )
     db.add(new_measurement)
+
+    # Update reptile length for length-type measurements (svl, total_length)
+    if measurement.measurement_type in ('svl', 'total_length') and measurement.unit in ('cm', 'mm', 'in'):
+        result = await db.execute(select(Reptile).where(Reptile.id == measurement.reptile_id))
+        reptile = result.scalar_one_or_none()
+        if reptile:
+            # Convert to centimeters (reptile.length is stored in cm as Integer)
+            length_cm = measurement.value
+            if measurement.unit == 'mm':
+                length_cm = measurement.value / 10
+            elif measurement.unit == 'in':
+                length_cm = measurement.value * 2.54
+            reptile.length = int(round(length_cm))
+
     await db.commit()
     await db.refresh(new_measurement)
     return new_measurement

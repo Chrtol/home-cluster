@@ -1343,7 +1343,6 @@ export default function HealthLog() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="observation">General Observation</SelectItem>
-                        <SelectItem value="shedding">Shedding</SelectItem>
                         <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
                         <SelectItem value="vet_visit">Vet Visit</SelectItem>
                         <SelectItem value="medication">Medication</SelectItem>
