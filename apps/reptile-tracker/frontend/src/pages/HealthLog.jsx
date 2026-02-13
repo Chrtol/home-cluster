@@ -234,10 +234,18 @@ export default function HealthLog() {
     if (!healthStatus) return null;
     const parts = [];
     if (healthStatus.is_shedding) {
-      parts.push(`In shed${healthStatus.days_shedding ? ` (${healthStatus.days_shedding} days)` : ''}`);
+      if (healthStatus.days_shedding) {
+        parts.push(`Shedding for ${healthStatus.days_shedding} days`);
+      } else {
+        parts.push('Shedding');
+      }
     }
     if (healthStatus.is_brumating) {
-      parts.push(`Brumating${healthStatus.days_brumating ? ` (${healthStatus.days_brumating} days)` : ''}`);
+      if (healthStatus.days_brumating) {
+        parts.push(`Brumating for ${healthStatus.days_brumating} days`);
+      } else {
+        parts.push('Brumating');
+      }
     }
     return parts.length > 0 ? parts.join(', ') : null;
   };
@@ -376,6 +384,8 @@ export default function HealthLog() {
   // Fetch health status when reptile is selected (create mode only)
   useEffect(() => {
     if (mode === 'create' && watchedReptileId && watchedReptileId > 0) {
+      // Reset event_subtype when reptile changes to prevent old selection from persisting
+      form.setValue('event_subtype', '');
       fetchHealthStatus(watchedReptileId);
     } else {
       setHealthStatus(null);
