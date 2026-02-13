@@ -25,6 +25,16 @@ const badgeVariants = cva(
         feedingActive: "border-transparent bg-green-500 text-white shadow hover:bg-green-500/90",
         mistingActive: "border-transparent bg-blue-400 text-white shadow hover:bg-blue-400/90",
         healthActive: "border-transparent bg-red-400 text-white shadow hover:bg-red-400/90",
+        // Streak milestone variants (warm color progression)
+        "streak-active": "border-transparent bg-orange-500/20 text-orange-500",
+        "streak-bronze": "border-transparent bg-orange-600/30 text-orange-600",
+        "streak-gold": "border-transparent bg-amber-500/30 text-amber-500",
+        "streak-platinum": "border-transparent bg-yellow-500/30 text-yellow-500 font-bold",
+        // Birthday countdown variants (pink escalation)
+        "birthday-approaching": "border-transparent bg-pink-500/10 text-pink-500",
+        "birthday-soon": "border-transparent bg-pink-500/20 text-pink-600",
+        "birthday-imminent": "border-transparent bg-pink-500/30 text-pink-700 font-semibold",
+        "birthday-today": "border-transparent bg-pink-500 text-white shadow font-bold",
       },
     },
     defaultVariants: {
