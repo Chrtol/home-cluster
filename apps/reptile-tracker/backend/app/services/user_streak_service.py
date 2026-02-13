@@ -1,9 +1,12 @@
 """
 User Streak Calculation Service
 
-Tracks user-level engagement across all assigned reptiles with consecutive-miss logic.
-Unlike reptile streaks (consecutive days), user streaks break after 2 missed tasks in a row.
-Supports shared responsibility and freeze/vacation mode.
+Tracks user-level engagement across all assigned reptiles.
+- Each manual task completion increments streak by 1
+- Any completion resets consecutive_misses to 0
+- Missing 2 tasks in a row (consecutive_misses >= 2) resets streak to 0
+- Miss tracking happens when schedule instances expire without completion
+- Supports shared responsibility and freeze/vacation mode
 """
 
 from datetime import date, datetime, timezone as tz
@@ -409,6 +412,8 @@ def on_schedule_completion_created(mapper, connection, target):
     user_lookup = {row[0]: row[1] for row in users_result.fetchall()}
 
     # Update streak for each responsible user
+    # Per spec: each task completion increments streak and resets consecutive_misses
+    # Streak breaks after 2 consecutive MISSED TASKS (tracked separately when tasks expire)
     for user_id in schedule_users:
         # Get or create UserStreak
         streak_result = connection.execute(
@@ -418,7 +423,7 @@ def on_schedule_completion_created(mapper, connection, target):
         streak_row = streak_result.fetchone()
 
         if streak_row:
-            # Update existing
+            # Each completion: increment streak, reset consecutive_misses
             new_streak = streak_row[1] + 1
             new_longest = max(streak_row[2], new_streak)
 
@@ -451,7 +456,7 @@ def on_schedule_completion_created(mapper, connection, target):
                     {"user_id": user_id, "freeze_days": freeze_days}
                 )
         else:
-            # Insert new
+            # Insert new - first completion ever
             connection.execute(
                 text("""
                     INSERT INTO user_streaks

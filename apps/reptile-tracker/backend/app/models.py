@@ -214,6 +214,9 @@ class Reptile(Base):
     # Active/inactive status (for hiding reptiles without deleting them)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
+    # Streak tracking enabled for this reptile
+    streak_enabled = Column(Boolean, default=True, nullable=False)
+
     # UVB lighting setup (for schedule recommendations)
     has_uvb = Column(Boolean, nullable=True)  # null = not specified, True = has UVB, False = no UVB
 

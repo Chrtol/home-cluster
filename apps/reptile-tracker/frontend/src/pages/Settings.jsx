@@ -29,6 +29,7 @@ import {
   setDefaultHouseholdId,
   isDefaultHousehold
 } from '../utils/householdSettings';
+import { DatePicker } from '@/components/ui/date-picker';
 
 export default function Settings() {
   return (
@@ -1022,18 +1023,72 @@ function DisplayTab() {
 
 // STREAK & VACATION TAB COMPONENT
 function StreakVacationTab() {
+  const [streakEnabled, setStreakEnabled] = useState(() => {
+    const saved = localStorage.getItem('streak_tracking_enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [userStreak, setUserStreak] = useState(null);
   const [scheduledFreezes, setScheduledFreezes] = useState([]);
+  const [reptiles, setReptiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [vacationStart, setVacationStart] = useState('');
   const [vacationEnd, setVacationEnd] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
+  const toggleStreakEnabled = (enabled) => {
+    setStreakEnabled(enabled);
+    localStorage.setItem('streak_tracking_enabled', JSON.stringify(enabled));
+  };
+
+  const fetchReptiles = async () => {
+    try {
+      const response = await axios.get('/api/reptiles');
+      setReptiles(response.data.filter(r => r.is_active));
+    } catch (err) {
+      console.error('Failed to fetch reptiles:', err);
+    }
+  };
+
+  const toggleReptileStreak = async (reptileId, enabled) => {
+    try {
+      await axios.put(`/api/reptiles/${reptileId}`, { streak_enabled: enabled });
+      setReptiles(prev => prev.map(r =>
+        r.id === reptileId ? { ...r, streak_enabled: enabled } : r
+      ));
+    } catch (err) {
+      console.error('Failed to toggle reptile streak:', err);
+      setError('Failed to update reptile streak setting');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const toggleAllReptileStreaks = async (enabled) => {
+    try {
+      // Update all reptiles in parallel
+      await Promise.all(reptiles.map(r =>
+        axios.put(`/api/reptiles/${r.id}`, { streak_enabled: enabled })
+      ));
+      setReptiles(prev => prev.map(r => ({ ...r, streak_enabled: enabled })));
+    } catch (err) {
+      console.error('Failed to toggle all reptile streaks:', err);
+      setError('Failed to update reptile streak settings');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const allReptileStreaksEnabled = reptiles.length > 0 && reptiles.every(r => r.streak_enabled);
+  const someReptileStreaksEnabled = reptiles.some(r => r.streak_enabled);
+
   useEffect(() => {
-    fetchStreakData();
-    fetchScheduledFreezes();
-  }, []);
+    fetchReptiles();
+    if (streakEnabled) {
+      fetchStreakData();
+      fetchScheduledFreezes();
+    } else {
+      setLoading(false);
+    }
+  }, [streakEnabled]);
 
   const fetchStreakData = async () => {
     try {
@@ -1130,14 +1185,6 @@ function StreakVacationTab() {
     ? Math.ceil((new Date(vacationEnd) - new Date(vacationStart)) / (1000 * 60 * 60 * 24)) + 1
     : 0;
 
-  if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading streak data...</div>;
-  }
-
-  if (!userStreak) {
-    return <div className="text-center py-8 text-muted-foreground">No streak data available</div>;
-  }
-
   return (
     <div>
       {success && (
@@ -1155,9 +1202,93 @@ function StreakVacationTab() {
       <div className="card space-y-6">
         <div>
           <h2 className="text-xl font-semibold mb-4 text-foreground">Streak & Vacation Mode</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Manage your care streak and plan vacations. Freeze days protect your streak when you're away.
-          </p>
+
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between p-4 border-2 border-border rounded-lg mb-6">
+            <div>
+              <div className="font-medium text-foreground">Enable Streak Tracking</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Track your care streak and earn freeze days at milestones
+              </p>
+            </div>
+            <button
+              onClick={() => toggleStreakEnabled(!streakEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                streakEnabled ? 'bg-primary' : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  streakEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Per-Reptile Streak Toggles */}
+          {reptiles.length > 0 && (
+            <div className="border-2 border-border rounded-lg mb-6 overflow-hidden">
+              <div className="p-4 bg-secondary/30 border-b border-border flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-foreground">Reptile Care Streaks</div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Enable or disable streak tracking for individual reptiles
+                  </p>
+                </div>
+                <button
+                  onClick={() => toggleAllReptileStreaks(!allReptileStreaksEnabled)}
+                  disabled={!streakEnabled}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    allReptileStreaksEnabled && streakEnabled ? 'bg-primary' : someReptileStreaksEnabled && streakEnabled ? 'bg-primary/50' : 'bg-muted'
+                  } ${!streakEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={allReptileStreaksEnabled ? 'Disable all' : 'Enable all'}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      allReptileStreaksEnabled || someReptileStreaksEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="divide-y divide-border">
+                {reptiles.map(reptile => (
+                  <div key={reptile.id} className="flex items-center justify-between p-4">
+                    <span className="font-medium text-foreground">{reptile.name}</span>
+                    <button
+                      onClick={() => toggleReptileStreak(reptile.id, !reptile.streak_enabled)}
+                      disabled={!streakEnabled}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        reptile.streak_enabled && streakEnabled ? 'bg-primary' : 'bg-muted'
+                      } ${!streakEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          reptile.streak_enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!streakEnabled && (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Streak tracking is disabled. Enable it above to see your streak and manage vacation mode.
+            </p>
+          )}
+
+          {streakEnabled && loading && (
+            <div className="text-center py-8 text-muted-foreground">Loading streak data...</div>
+          )}
+
+          {streakEnabled && !loading && !userStreak && (
+            <div className="text-center py-8 text-muted-foreground">No streak data available</div>
+          )}
+
+          {streakEnabled && !loading && userStreak && (
+            <>
 
           {/* Current Streak */}
           <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg mb-6">
@@ -1204,29 +1335,40 @@ function StreakVacationTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Start Date</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={vacationStart}
-                  onChange={(e) => setVacationStart(e.target.value)}
-                  className="input w-full"
+                  onChange={setVacationStart}
+                  minDate={new Date()}
+                  placeholder="Select start date"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">End Date</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={vacationEnd}
-                  onChange={(e) => setVacationEnd(e.target.value)}
-                  min={vacationStart}
-                  className="input w-full"
+                  onChange={setVacationEnd}
+                  minDate={vacationStart ? new Date(vacationStart) : new Date()}
+                  placeholder="Select end date"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <span className="text-sm text-muted-foreground">
-                {vacationDays > 0 ? `${vacationDays} day${vacationDays !== 1 ? 's' : ''} (${vacationDays} freeze days will be used)` : 'Select dates to see duration'}
-              </span>
+              <div className="text-sm">
+                {vacationDays > 0 ? (
+                  vacationDays > userStreak.available_freeze_days ? (
+                    <span className="text-red-500">
+                      Not enough freeze days: need {vacationDays}, have {userStreak.available_freeze_days}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {vacationDays} day{vacationDays !== 1 ? 's' : ''} ({vacationDays} freeze days will be used)
+                    </span>
+                  )
+                ) : (
+                  <span className="text-muted-foreground">Select dates to see duration</span>
+                )}
+              </div>
               <button
                 onClick={scheduleVacation}
                 disabled={vacationDays > userStreak.available_freeze_days || !vacationStart || !vacationEnd}
@@ -1261,6 +1403,7 @@ function StreakVacationTab() {
               ))}
             </div>
           )}
+          </>)}
         </div>
       </div>
     </div>

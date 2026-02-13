@@ -80,9 +80,9 @@ async def check_overdue_schedules():
 
                             # Update user streaks for responsible users (only for manual schedules)
                             if is_schedule_manual(schedule):
-                                responsible_users = get_responsible_users(db, schedule.id, schedule.reptile_id)
+                                responsible_users = await get_responsible_users(db, schedule.id, schedule.reptile_id)
                                 for user_id in responsible_users:
-                                    increment_user_miss(db, user_id, yesterday)
+                                    await increment_user_miss(db, user_id, yesterday)
                                 await db.commit()
 
                         # Get reptile

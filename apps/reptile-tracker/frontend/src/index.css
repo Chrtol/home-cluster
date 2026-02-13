@@ -139,3 +139,63 @@
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
+
+/* React Day Picker v9 theme overrides */
+.rdp-root {
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--primary) / 0.2);
+  --rdp-selected-border: 2px solid hsl(var(--primary));
+  --rdp-today-color: hsl(var(--primary));
+  --rdp-range_start-date-background-color: hsl(var(--primary));
+  --rdp-range_end-date-background-color: hsl(var(--primary));
+  --rdp-range_middle-background-color: hsl(var(--primary) / 0.2);
+}
+
+/* Selected day styling */
+.rdp-selected .rdp-day_button {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+/* Today styling */
+.rdp-today:not(.rdp-selected) .rdp-day_button {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  font-weight: 600;
+}
+
+/* Hover styling */
+.rdp-day_button:hover:not(:disabled) {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* Weekday headers */
+.rdp-weekday {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Month/Year caption */
+.rdp-caption_label {
+  color: hsl(var(--foreground));
+}
+
+/* Navigation buttons */
+.rdp-button_previous,
+.rdp-button_next {
+  color: hsl(var(--foreground));
+}
+
+.rdp-chevron {
+  fill: hsl(var(--foreground)) !important;
+}
+
+/* Day cells */
+.rdp-day_button {
+  color: hsl(var(--foreground));
+}
+
+/* Outside days (prev/next month) */
+.rdp-outside .rdp-day_button {
+  color: hsl(var(--muted-foreground));
+}

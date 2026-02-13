@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { format, parse } from 'date-fns'
+import { format, parse, startOfDay } from 'date-fns'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -83,8 +83,10 @@ function DatePicker({
           selected={selectedDate}
           onSelect={handleSelect}
           disabled={(date) => {
-            if (minDate && date < minDate) return true
-            if (maxDate && date > maxDate) return true
+            // Compare dates at start of day to avoid time issues
+            const dateStart = startOfDay(date)
+            if (minDate && dateStart < startOfDay(minDate)) return true
+            if (maxDate && dateStart > startOfDay(maxDate)) return true
             return false
           }}
           weekStartsOn={firstDayOfWeek}
@@ -171,8 +173,10 @@ function DateRangePicker({
           selected={selectedRange}
           onSelect={handleSelect}
           disabled={(date) => {
-            if (minDate && date < minDate) return true
-            if (maxDate && date > maxDate) return true
+            // Compare dates at start of day to avoid time issues
+            const dateStart = startOfDay(date)
+            if (minDate && dateStart < startOfDay(minDate)) return true
+            if (maxDate && dateStart > startOfDay(maxDate)) return true
             return false
           }}
           weekStartsOn={firstDayOfWeek}
