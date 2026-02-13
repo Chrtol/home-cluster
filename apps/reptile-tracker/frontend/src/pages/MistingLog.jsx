@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import PageHeader from '../components/PageHeader';
+import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 
 // Validation schema
 const mistingSchema = z.object({
@@ -208,6 +209,12 @@ export default function MistingLog() {
           misted_at: new Date(dateTimeString).toISOString(),
           notes: data.notes || null,
         });
+
+        // Dispatch attribution event if completing for another user
+        if (response.data.attribution) {
+          notifyStreakAttribution(response.data.attribution);
+        }
+
         setSuccess(`Misting logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
         // Redirect to read-only view
         setTimeout(() => navigate(`/misting/${response.data.id}?success=created`), 1500);

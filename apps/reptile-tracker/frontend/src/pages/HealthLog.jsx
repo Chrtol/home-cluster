@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import PageHeader from '../components/PageHeader';
+import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 
 // Validation schema with conditional logic
 const healthLogSchema = z.object({
@@ -553,6 +554,12 @@ export default function HealthLog() {
             measured_at: new Date(dateTimeString).toISOString(),
             notes: data.notes || null,
           });
+
+          // Dispatch attribution event if completing for another user
+          if (response.data.attribution) {
+            notifyStreakAttribution(response.data.attribution);
+          }
+
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
           setLastLogType('weight');
@@ -568,6 +575,12 @@ export default function HealthLog() {
             date: new Date(dateTimeString).toISOString(),
           };
           const response = await axios.post('/api/health', payload);
+
+          // Dispatch attribution event if completing for another user
+          if (response.data.attribution) {
+            notifyStreakAttribution(response.data.attribution);
+          }
+
           setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
           setLastLogType('health');

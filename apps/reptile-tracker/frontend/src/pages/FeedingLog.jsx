@@ -14,6 +14,7 @@ import { TimePicker } from '@/components/ui/time-picker';
 import { Textarea } from '@/components/ui/textarea';
 import PageHeader from '@/components/PageHeader';
 import LoadingState from '@/components/LoadingState';
+import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 
 // Zod schema for feeding form
 const feedingSchema = z.object({
@@ -555,6 +556,12 @@ export default function FeedingLog() {
         loadFeedingData(feedingRes.data, foods);
       } else {
         const response = await axios.post('/api/feedings', payload);
+
+        // Dispatch attribution event if completing for another user
+        if (response.data.attribution) {
+          notifyStreakAttribution(response.data.attribution);
+        }
+
         setSuccess('Feeding logged successfully!');
         setTimeout(() => navigate(`/feed/${response.data.id}?success=created`), 1500);
       }
