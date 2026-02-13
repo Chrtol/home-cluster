@@ -130,6 +130,12 @@ export default function HealthLog() {
     return parts.length > 0 ? parts.join(', ') : null;
   };
 
+  // Determine valid state transitions
+  const canStartShedding = mode === 'create' && !healthStatus?.is_shedding;
+  const canCompleteShedding = mode === 'create' && healthStatus?.is_shedding;
+  const canStartBrumation = mode === 'create' && !healthStatus?.is_brumating;
+  const canEndBrumation = mode === 'create' && healthStatus?.is_brumating;
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -260,6 +266,27 @@ export default function HealthLog() {
       setHealthStatus(null);
     }
   }, [reptileId, mode]);
+
+  // Auto-select valid option when log type changes and only one option is valid
+  useEffect(() => {
+    if (mode !== 'create' || !healthStatus) return;
+
+    if (logType === 'shedding' && !eventSubtype) {
+      if (canStartShedding && !canCompleteShedding) {
+        form.setValue('event_subtype', 'start');
+      } else if (!canStartShedding && canCompleteShedding) {
+        form.setValue('event_subtype', 'complete');
+      }
+    }
+
+    if (logType === 'brumation' && !eventSubtype) {
+      if (canStartBrumation && !canEndBrumation) {
+        form.setValue('event_subtype', 'start');
+      } else if (!canStartBrumation && canEndBrumation) {
+        form.setValue('event_subtype', 'end');
+      }
+    }
+  }, [logType, healthStatus, mode, eventSubtype, canStartShedding, canCompleteShedding, canStartBrumation, canEndBrumation, form]);
 
   // Helper function to generate auto-title for shedding/brumation
   const getAutoTitle = (logType, subtype) => {
@@ -686,21 +713,32 @@ export default function HealthLog() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
-                      onClick={() => field.onChange('start')}
-                      disabled={mode === 'edit'}
+                      onClick={() => {
+                        field.onChange('start');
+                      }}
+                      disabled={mode === 'edit' || !canStartShedding}
                       variant={field.value === 'start' ? 'default' : 'outline'}
+                      className={!canStartShedding && mode === 'create' ? 'opacity-50 cursor-not-allowed' : ''}
+                      title={!canStartShedding && mode === 'create' ? 'Already shedding' : ''}
                     >
                       Started Shedding
                     </Button>
                     <Button
                       type="button"
-                      onClick={() => field.onChange('complete')}
-                      disabled={mode === 'edit'}
+                      onClick={() => {
+                        field.onChange('complete');
+                      }}
+                      disabled={mode === 'edit' || !canCompleteShedding}
                       variant={field.value === 'complete' ? 'default' : 'outline'}
+                      className={!canCompleteShedding && mode === 'create' ? 'opacity-50 cursor-not-allowed' : ''}
+                      title={!canCompleteShedding && mode === 'create' ? 'Not currently shedding' : ''}
                     >
                       Shed Complete
                     </Button>
                   </div>
+                  {mode === 'create' && healthStatusLoading && (
+                    <p className="text-sm text-muted-foreground">Loading status...</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -722,21 +760,32 @@ export default function HealthLog() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
-                      onClick={() => field.onChange('start')}
-                      disabled={mode === 'edit'}
+                      onClick={() => {
+                        field.onChange('start');
+                      }}
+                      disabled={mode === 'edit' || !canStartBrumation}
                       variant={field.value === 'start' ? 'default' : 'outline'}
+                      className={!canStartBrumation && mode === 'create' ? 'opacity-50 cursor-not-allowed' : ''}
+                      title={!canStartBrumation && mode === 'create' ? 'Already brumating' : ''}
                     >
                       Started Brumating
                     </Button>
                     <Button
                       type="button"
-                      onClick={() => field.onChange('end')}
-                      disabled={mode === 'edit'}
+                      onClick={() => {
+                        field.onChange('end');
+                      }}
+                      disabled={mode === 'edit' || !canEndBrumation}
                       variant={field.value === 'end' ? 'default' : 'outline'}
+                      className={!canEndBrumation && mode === 'create' ? 'opacity-50 cursor-not-allowed' : ''}
+                      title={!canEndBrumation && mode === 'create' ? 'Not currently brumating' : ''}
                     >
                       Ended Brumation
                     </Button>
                   </div>
+                  {mode === 'create' && healthStatusLoading && (
+                    <p className="text-sm text-muted-foreground">Loading status...</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
