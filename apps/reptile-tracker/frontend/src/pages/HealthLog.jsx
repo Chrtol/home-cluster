@@ -74,6 +74,9 @@ export default function HealthLog() {
   const [viewModeSuccess, setViewModeSuccess] = useState('');
   const [healthStatus, setHealthStatus] = useState(null);
   const [healthStatusLoading, setHealthStatusLoading] = useState(false);
+  const [showSuccessActions, setShowSuccessActions] = useState(false);
+  const [lastCreatedId, setLastCreatedId] = useState(null);
+  const [lastLogType, setLastLogType] = useState(null);
 
   // Initialize form
   const form = useForm({
@@ -365,6 +368,33 @@ export default function HealthLog() {
     }
   }, [id, mode, reptiles, reptileId, form]);
 
+  const handleLogAnother = () => {
+    setShowSuccessActions(false);
+    setSuccess('');
+    setLastCreatedId(null);
+    setLastLogType(null);
+
+    // Reset form but keep reptile selection
+    const currentReptile = form.getValues('reptile_id');
+    form.reset({
+      reptile_id: currentReptile,
+      log_type: 'weight',
+      log_date: new Date().toISOString().slice(0, 10),
+      log_time: new Date().toTimeString().slice(0, 5),
+      weight_grams: '',
+      record_type: 'observation',
+      title: '',
+      consistency: 'normal',
+      notes: '',
+      event_subtype: '',
+    });
+
+    // Refresh health status for continued logging
+    if (currentReptile && currentReptile > 0) {
+      fetchHealthStatus(currentReptile);
+    }
+  };
+
   const handleDelete = async () => {
     const currentLogType = form.getValues('log_type');
     if (!window.confirm(`Are you sure you want to delete this ${currentLogType === 'weight' ? 'weight' : 'health'} log?`)) return;
@@ -438,7 +468,9 @@ export default function HealthLog() {
             notes: data.notes || null,
           });
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
-          setTimeout(() => navigate(`/health-log/weight/${response.data.id}?success=created`), 1500);
+          setLastCreatedId(response.data.id);
+          setLastLogType('weight');
+          setShowSuccessActions(true);
         } else if (data.log_type === 'shedding' || data.log_type === 'brumation') {
           // Shedding or brumation event
           const payload = {
@@ -451,7 +483,9 @@ export default function HealthLog() {
           };
           const response = await axios.post('/api/health', payload);
           setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
-          setTimeout(() => navigate(`/health-log/health/${response.data.id}?success=created`), 1500);
+          setLastCreatedId(response.data.id);
+          setLastLogType('health');
+          setShowSuccessActions(true);
         } else {
           const payload = {
             reptile_id: data.reptile_id,
@@ -465,7 +499,9 @@ export default function HealthLog() {
           }
           const response = await axios.post('/api/health', payload);
           setSuccess(`Health record logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
-          setTimeout(() => navigate(`/health-log/health/${response.data.id}?success=created`), 1500);
+          setLastCreatedId(response.data.id);
+          setLastLogType('health');
+          setShowSuccessActions(true);
         }
       }
     } catch (err) {
@@ -612,7 +648,29 @@ export default function HealthLog() {
           'Log Health'}
       />
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
-      {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
+      {success && (
+        <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">
+          <p className="text-green-500 dark:text-green-400">{success}</p>
+          {showSuccessActions && (
+            <div className="flex gap-3 mt-4">
+              <Button onClick={handleLogAnother} variant="default">
+                Log Another
+              </Button>
+              <Button onClick={() => navigate('/')} variant="outline">
+                Go to Dashboard
+              </Button>
+              {lastCreatedId && (
+                <Button
+                  onClick={() => navigate(`/health-log/${lastLogType}/${lastCreatedId}`)}
+                  variant="ghost"
+                >
+                  View Record
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {mode === 'edit' && existingLog && (
         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -622,7 +680,8 @@ export default function HealthLog() {
         </div>
       )}
 
-      <Form {...form}>
+      {!showSuccessActions && (
+        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="card space-y-4">
           <FormField
             control={form.control}
@@ -964,6 +1023,7 @@ export default function HealthLog() {
           </div>
         </form>
       </Form>
+      )}
     </div>
   );
 }
