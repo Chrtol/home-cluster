@@ -1316,3 +1316,46 @@ class HouseholdResponsibilityOverview(BaseModel):
     """Overview of all responsibility assignments in household"""
     is_single_user: bool
     reptiles: dict[int, ReptileResponsibilityResponse]
+
+
+# User streak schemas
+class UserStreakResponse(BaseModel):
+    """User streak data with freeze status"""
+    user_id: int
+    current_streak: int
+    consecutive_misses: int
+    longest_streak: int
+    total_freeze_days: int
+    available_freeze_days: int
+    last_completion_at: Optional[datetime] = None
+    is_frozen_today: bool
+    next_milestone: Optional[int] = None  # 7, 30, 100, or 365
+    days_to_milestone: Optional[int] = None
+
+
+class FreezeScheduleRequest(BaseModel):
+    """Request to schedule a vacation freeze"""
+    start_date: date
+    end_date: date
+
+
+class FreezeResponse(BaseModel):
+    """Freeze period information"""
+    id: int
+    freeze_type: str  # 'manual' or 'scheduled'
+    start_date: date
+    end_date: date
+    days_deducted: int
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class CompletionAttributionResponse(BaseModel):
+    """Attribution data for cross-user completions"""
+    credited_to_user_id: int
+    credited_to_name: str
+    completed_by_user_id: int
+    message: str
+    milestone_reached: Optional[int] = None  # 7, 30, 100, or 365 if milestone just achieved
