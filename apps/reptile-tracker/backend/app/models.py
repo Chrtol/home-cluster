@@ -14,6 +14,7 @@ from sqlalchemy import (
     Text,
     Table,
     JSON,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -1057,3 +1058,45 @@ class ReptileStreak(Base):
 
     # Relationships
     reptile = relationship("Reptile", backref="streak")
+
+
+class ReptileResponsibility(Base):
+    """Tracks responsibility assignments at reptile level (junction table with metadata)"""
+    __tablename__ = "reptile_responsibility"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    assigned_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    assigned_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Unique constraint - no duplicate assignments
+    __table_args__ = (
+        UniqueConstraint('reptile_id', 'user_id', name='uq_reptile_user'),
+    )
+
+    # Relationships
+    reptile = relationship("Reptile", backref="responsibility_assignments")
+    user = relationship("User", foreign_keys=[user_id], backref="reptile_responsibilities")
+    assigned_by = relationship("User", foreign_keys=[assigned_by_user_id])
+
+
+class ScheduleResponsibility(Base):
+    """Tracks responsibility assignments at schedule level (overrides reptile-level assignments)"""
+    __tablename__ = "schedule_responsibility"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    assigned_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    assigned_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Unique constraint - no duplicate assignments
+    __table_args__ = (
+        UniqueConstraint('schedule_id', 'user_id', name='uq_schedule_user'),
+    )
+
+    # Relationships
+    schedule = relationship("Schedule", backref="responsibility_assignments")
+    user = relationship("User", foreign_keys=[user_id], backref="schedule_responsibilities")
+    assigned_by = relationship("User", foreign_keys=[assigned_by_user_id])
