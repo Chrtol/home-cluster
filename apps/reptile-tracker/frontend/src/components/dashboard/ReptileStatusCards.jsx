@@ -15,7 +15,6 @@ import ReptileStatusCard from './ReptileStatusCard';
  * - config: Widget config from displaySettings (showAge, showWeight)
  * - size: Widget size ('small', 'medium', 'large')
  * - onQuickLog: Handler for task chip clicks (passed to cards)
- * - streakData: { reptile_id: streak_obj } - batch streak data from Dashboard
  * - healthStatusData: { reptile_id: health_status } - batch health status data from Dashboard
  * - scheduleInstances: All schedule instances for next feeding calculation
  */
@@ -23,9 +22,8 @@ const ReptileStatusCards = ({
   config = {},
   size = 'large',
   onQuickLog,
-  streakData = {},           // NEW: { reptile_id: streak_obj }
-  healthStatusData = {},     // NEW: { reptile_id: health_status }
-  scheduleInstances = [],    // NEW: all schedule instances for next feeding
+  healthStatusData = {},     // { reptile_id: health_status }
+  scheduleInstances = [],    // All schedule instances for next feeding
 }) => {
   const [reptiles, setReptiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -250,7 +248,6 @@ const ReptileStatusCards = ({
             }}
             onQuickLog={onQuickLog}
             index={index}
-            streak={streakData[reptile.id] || null}
             healthStatus={healthStatusData[reptile.id] || null}
             scheduleInstances={scheduleInstances.filter(inst => inst.reptile_id === reptile.id)}
           />

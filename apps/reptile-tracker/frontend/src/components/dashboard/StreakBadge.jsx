@@ -41,6 +41,7 @@ export default function StreakBadge({ streak }) {
             colors.glow && `shadow-sm ${colors.glow}`,
             isGracePeriod && 'opacity-50'
           )}
+          title={`${streak.current_streak} day care streak (click for details)`}
         >
           <Flame className="w-3 h-3" />
           <span>{streak.current_streak}</span>
@@ -50,7 +51,7 @@ export default function StreakBadge({ streak }) {
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-sm font-medium">
             <Flame className="w-4 h-4 text-orange-400" />
-            Streak Stats
+            Care Streak
           </div>
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">

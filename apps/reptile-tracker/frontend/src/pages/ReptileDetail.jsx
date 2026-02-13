@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format, differenceInDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Flame } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -119,6 +119,7 @@ export default function ReptileDetail() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [favoriteFoods, setFavoriteFoods] = useState([]);
   const [allFoods, setAllFoods] = useState([]);
+  const [streakData, setStreakData] = useState(null);
   const [activeTab, setActiveTab] = useState('feedings');
   const [loading, setLoading] = useState(true);
 
@@ -151,6 +152,16 @@ export default function ReptileDetail() {
         setHealthRecords(healthRes.data);
         setFavoriteFoods(favFoodsRes.data);
         setAllFoods(allFoodsRes.data);
+
+        // Fetch streak data separately (non-critical)
+        try {
+          const streakRes = await axios.get(`/api/streaks/?reptile_ids=${id}`);
+          if (streakRes.data.streaks && streakRes.data.streaks[id]) {
+            setStreakData(streakRes.data.streaks[id]);
+          }
+        } catch (err) {
+          console.error('Failed to fetch streak data:', err);
+        }
       } catch (error) {
         console.error('Failed to fetch reptile details:', error);
       } finally {
@@ -846,6 +857,14 @@ export default function ReptileDetail() {
               }
               return null;
             })()}
+
+            {/* Care streak */}
+            {streakData && streakData.current_streak > 0 && (
+              <div className="flex items-center gap-1.5 text-muted-foreground" title={`Longest: ${streakData.longest_streak} days`}>
+                <Flame className="w-4 h-4 text-orange-500" />
+                <span>{streakData.current_streak}d streak</span>
+              </div>
+            )}
           </div>
         </div>
 

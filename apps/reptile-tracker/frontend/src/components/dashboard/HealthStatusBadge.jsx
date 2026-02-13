@@ -1,12 +1,13 @@
 import React from 'react'
-import { Sparkles, Moon } from 'lucide-react'
+import { Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SnakeIcon from '@/components/icons/SnakeIcon'
 
 /**
- * HealthStatusBadge - Compact icon indicators for shedding/brumating
+ * HealthStatusBadge - Compact pill badges showing shedding/brumating with day count
  *
- * Redesigned: Small icon badges with native tooltips.
- * Colors: Warm amber for shedding (renewal), cool indigo for brumating (sleep).
+ * Colors: Cyan/teal for shedding (skin renewal), indigo for brumating (sleep).
+ * Distinct from streak badge which uses orange/amber.
  */
 export default function HealthStatusBadge({ healthStatus }) {
   if (!healthStatus || (!healthStatus.is_shedding && !healthStatus.is_brumating)) {
@@ -18,25 +19,27 @@ export default function HealthStatusBadge({ healthStatus }) {
       {healthStatus.is_shedding && (
         <div
           className={cn(
-            "flex items-center justify-center w-6 h-6 rounded-full",
-            "bg-amber-500/20 text-amber-400",
-            "cursor-help transition-colors hover:bg-amber-500/30"
+            "flex items-center gap-1 px-2 h-6 rounded-full text-xs font-medium",
+            "bg-cyan-500/20 text-cyan-400",
+            "cursor-help transition-colors hover:bg-cyan-500/30"
           )}
-          title={`Shedding · Day ${healthStatus.days_shedding}`}
+          title="Shedding"
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <SnakeIcon className="w-3 h-3" />
+          <span>{healthStatus.days_shedding}d</span>
         </div>
       )}
       {healthStatus.is_brumating && (
         <div
           className={cn(
-            "flex items-center justify-center w-6 h-6 rounded-full",
+            "flex items-center gap-1 px-2 h-6 rounded-full text-xs font-medium",
             "bg-indigo-500/20 text-indigo-400",
             "cursor-help transition-colors hover:bg-indigo-500/30"
           )}
-          title={`Brumating · Day ${healthStatus.days_brumating}`}
+          title="Brumating"
         >
-          <Moon className="w-3.5 h-3.5" />
+          <Moon className="w-3 h-3" />
+          <span>{healthStatus.days_brumating}d</span>
         </div>
       )}
     </div>

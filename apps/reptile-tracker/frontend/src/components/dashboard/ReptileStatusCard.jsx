@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, startOfDay } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReptileAvatar from '../ReptileAvatar';
 import TaskChip from './TaskChip';
 import HealthStatusBadge from './HealthStatusBadge';
-import StreakBadge from './StreakBadge';
 import BirthdayBadge from './BirthdayBadge';
 import NextFeedingIndicator from './NextFeedingIndicator';
 
@@ -35,9 +34,8 @@ const ReptileStatusCard = ({
   onReorder = null,
   onQuickLog,
   index = 0,
-  streak = null,           // NEW: streak data for this reptile
-  healthStatus = null,     // NEW: health status for this reptile
-  scheduleInstances = [],  // NEW: schedule instances for next feeding
+  healthStatus = null,     // Health status for this reptile
+  scheduleInstances = [],  // Schedule instances for next feeding
 }) => {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -98,8 +96,21 @@ const ReptileStatusCard = ({
     none: 'bg-primary'
   };
 
+  // Check if today is the reptile's birthday
+  const isBirthdayToday = () => {
+    const dateOfBirth = reptile.date_of_birth || reptile.hatch_date;
+    if (!dateOfBirth) return false;
+    const today = startOfDay(new Date());
+    const birthDate = new Date(dateOfBirth);
+    return today.getMonth() === birthDate.getMonth() &&
+           today.getDate() === birthDate.getDate();
+  };
+
+  const isBirthday = isBirthdayToday();
+
   // Border styling per user decision
   const getBorderClass = () => {
+    if (isBirthday) return 'border-fuchsia-500/50';
     if (taskStatus === 'overdue') return 'border-destructive';
     return 'border-border hover:border-primary/50';
   };
@@ -186,6 +197,7 @@ const ReptileStatusCard = ({
         getBorderClass(),
         isDragging && 'opacity-50',
         isCompact && !isExpanded && 'cursor-pointer',
+        isBirthday && 'shadow-lg shadow-fuchsia-500/30 ring-1 ring-fuchsia-500/40',
         'group'
       )}
       draggable={!isCompact && onReorder} // Only draggable in full mode
@@ -248,11 +260,7 @@ const ReptileStatusCard = ({
             {showFull && (
               <div className="flex items-center gap-1.5">
                 <HealthStatusBadge healthStatus={healthStatus} />
-                <StreakBadge streak={streak} />
                 <BirthdayBadge dateOfBirth={reptile.date_of_birth || reptile.hatch_date} />
-                <span className="text-xs text-muted-foreground ml-1">
-                  {calculateAge(reptile.date_of_birth || reptile.hatch_date)}
-                </span>
               </div>
             )}
           </div>

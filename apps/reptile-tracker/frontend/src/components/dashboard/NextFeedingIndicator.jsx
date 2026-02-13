@@ -1,5 +1,6 @@
 import { isToday, isTomorrow, format } from 'date-fns';
-import { Clock } from 'lucide-react';
+import { Utensils } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * NextFeedingIndicator - Shows next scheduled feeding time
@@ -75,9 +76,32 @@ const NextFeedingIndicator = ({ scheduleInstances, reptileId, isHidden }) => {
     return dateStr;
   };
 
+  // Color based on urgency
+  const getColors = () => {
+    const date = nextFeeding.date instanceof Date
+      ? nextFeeding.date
+      : new Date(nextFeeding.scheduled_date);
+
+    if (isToday(date)) {
+      return { bg: 'bg-emerald-500/20', text: 'text-emerald-400' };
+    }
+    if (isTomorrow(date)) {
+      return { bg: 'bg-emerald-500/15', text: 'text-emerald-400/80' };
+    }
+    return { bg: 'bg-slate-500/15', text: 'text-slate-400' };
+  };
+
+  const colors = getColors();
+
   return (
-    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-      <Clock className="w-3 h-3" />
+    <div
+      className={cn(
+        "flex items-center gap-1 px-2 h-6 rounded-full text-xs font-medium",
+        colors.bg, colors.text
+      )}
+      title="Next feeding"
+    >
+      <Utensils className="w-3 h-3" />
       <span>{formatNextFeeding(nextFeeding)}</span>
     </div>
   );

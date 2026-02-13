@@ -28,7 +28,6 @@ export default function Dashboard() {
   const [feedingData, setFeedingData] = useState({});
   const [mistingData, setMistingData] = useState({});
   const [healthData, setHealthData] = useState({});
-  const [streakData, setStreakData] = useState({}); // { reptile_id: streak_obj }
   const [healthStatusData, setHealthStatusData] = useState({}); // { reptile_id: health_status }
   const [loading, setLoading] = useState(true);
   const [dashboardCards, setDashboardCards] = useState([]);
@@ -321,18 +320,9 @@ export default function Dashboard() {
 
         setWeeklyEvents(instanceEvents);
 
-        // Batch fetch streaks and health statuses for all reptiles
+        // Batch fetch health statuses for all reptiles
         if (Array.isArray(data.reptiles) && data.reptiles.length > 0) {
           const reptileIds = data.reptiles.map(r => r.id);
-
-          // Fetch streaks (GET with comma-separated IDs per Phase 17 API)
-          try {
-            const streaksResponse = await axios.get(`/api/streaks/?reptile_ids=${reptileIds.join(',')}`);
-            setStreakData(streaksResponse.data.streaks || {});
-          } catch (error) {
-            console.error('Failed to fetch streaks:', error);
-            setStreakData({});
-          }
 
           // Fetch health statuses (POST with array per Phase 18 API)
           try {
@@ -1306,7 +1296,6 @@ export default function Dashboard() {
               config={card?.config || { showAge: true, showWeight: true }}
               size={card?.size || 'large'}
               onQuickLog={handleQuickLog}
-              streakData={streakData}
               healthStatusData={healthStatusData}
               scheduleInstances={weeklyEvents}
             />
