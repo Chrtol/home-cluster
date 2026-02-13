@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format, differenceInDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Flame } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -795,25 +795,27 @@ export default function ReptileDetail() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{reptile.name}</h1>
           <p className="text-muted-foreground mb-3">{reptile.species}</p>
 
-          {/* Quick stats - inline style matching dashboard cards */}
-          <div className="flex flex-wrap items-center gap-3 text-sm">
+          {/* Quick stats - with labels for clarity */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             {/* Age */}
             {reptile.date_of_birth && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
+              <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-primary" />
-                <span>{calculateAgeDisplay(reptile.date_of_birth)}</span>
+                <span className="text-muted-foreground">Age:</span>
+                <span className="text-foreground">{calculateAgeDisplay(reptile.date_of_birth)}</span>
               </div>
             )}
 
             {/* Last fed */}
             {feedings.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <span className="text-lg">🍽️</span>
+                <span className="text-base">🍽️</span>
+                <span className="text-muted-foreground">Fed:</span>
                 <span className={
                   getFeedingStatusVariant(feedings[0]?.fed_at) === 'done' ? 'text-primary' :
                   getFeedingStatusVariant(feedings[0]?.fed_at) === 'due' ? 'text-amber-500' :
                   getFeedingStatusVariant(feedings[0]?.fed_at) === 'overdue' ? 'text-destructive' :
-                  'text-muted-foreground'
+                  'text-foreground'
                 }>
                   {getLastFedDisplay(feedings[0]?.fed_at)}
                 </span>
@@ -823,8 +825,9 @@ export default function ReptileDetail() {
             {/* Weight */}
             {weightLogs.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <span className="text-lg text-amber-500">{'\u2696\uFE0F'}</span>
-                <span className="text-muted-foreground">
+                <Scale className="w-4 h-4 text-amber-500" />
+                <span className="text-muted-foreground">Weight:</span>
+                <span className="text-foreground">
                   {weightLogs[0].weight_grams}g
                 </span>
                 {weightLogs.length > 1 && (() => {
@@ -835,7 +838,7 @@ export default function ReptileDetail() {
                     const isPositive = parseFloat(change) > 0;
                     return (
                       <span className={isPositive ? 'text-primary' : 'text-destructive'}>
-                        {isPositive ? '+' : ''}{change}%
+                        ({isPositive ? '+' : ''}{change}%)
                       </span>
                     );
                   }
@@ -849,9 +852,10 @@ export default function ReptileDetail() {
               const lastShed = healthRecords.find(h => h.record_type === 'shed');
               if (lastShed) {
                 return (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Activity className="w-4 h-4 text-blue-500" />
-                    <span>Shed {formatDateShort(lastShed.date)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-cyan-500" />
+                    <span className="text-muted-foreground">Last Shed:</span>
+                    <span className="text-foreground">{formatDateShort(lastShed.date)}</span>
                   </div>
                 );
               }
@@ -860,9 +864,10 @@ export default function ReptileDetail() {
 
             {/* Care streak */}
             {streakData && streakData.current_streak > 0 && (
-              <div className="flex items-center gap-1.5 text-muted-foreground" title={`Longest: ${streakData.longest_streak} days`}>
-                <Flame className="w-4 h-4 text-orange-500" />
-                <span>{streakData.current_streak}d streak</span>
+              <div className="flex items-center gap-1.5" title={`Your longest streak: ${streakData.longest_streak} days`}>
+                <Heart className="w-4 h-4 text-rose-500" />
+                <span className="text-muted-foreground">Care Streak:</span>
+                <span className="text-rose-400">{streakData.current_streak} days</span>
               </div>
             )}
           </div>
