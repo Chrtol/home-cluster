@@ -159,17 +159,17 @@ export default function HealthLog() {
   const logType = form.watch('log_type');
   const recordType = form.watch('record_type');
   const eventSubtype = form.watch('event_subtype');
-  const reptileId = form.watch('reptile_id');
+  const watchedReptileId = form.watch('reptile_id');
 
   // Fetch health status for selected reptile
-  const fetchHealthStatus = async (reptileId) => {
-    if (!reptileId || reptileId === 0) {
+  const fetchHealthStatus = async (selectedId) => {
+    if (!selectedId || selectedId === 0) {
       setHealthStatus(null);
       return;
     }
     try {
       setHealthStatusLoading(true);
-      const response = await axios.get(`/api/health/status/${reptileId}`);
+      const response = await axios.get(`/api/health/status/${selectedId}`);
       setHealthStatus(response.data);
     } catch (error) {
       console.error('Failed to fetch health status:', error);
@@ -322,12 +322,12 @@ export default function HealthLog() {
 
   // Fetch health status when reptile is selected (create mode only)
   useEffect(() => {
-    if (mode === 'create' && reptileId && reptileId > 0) {
-      fetchHealthStatus(reptileId);
+    if (mode === 'create' && watchedReptileId && watchedReptileId > 0) {
+      fetchHealthStatus(watchedReptileId);
     } else {
       setHealthStatus(null);
     }
-  }, [reptileId, mode]);
+  }, [watchedReptileId, mode]);
 
   // Auto-select valid option when log type changes and only one option is valid
   useEffect(() => {
@@ -571,6 +571,76 @@ export default function HealthLog() {
     }
   };
 
+  // Load history data for history view
+  const loadHistory = async (reptileFilter = 'all') => {
+    setHistoryLoading(true);
+    try {
+      const reptilesToFetch = reptileFilter === 'all' ? reptiles : reptiles.filter(r => String(r.id) === reptileFilter);
+
+      // Fetch weight logs and health records for each reptile
+      const allData = await Promise.all(
+        reptilesToFetch.map(async (reptile) => {
+          const [weightRes, healthRes] = await Promise.all([
+            axios.get(`/api/weight/reptile/${reptile.id}`).catch(() => ({ data: [] })),
+            axios.get(`/api/health/reptile/${reptile.id}`).catch(() => ({ data: [] }))
+          ]);
+
+          // Normalize weight logs
+          const weights = (weightRes.data || []).map(w => ({
+            id: `weight-${w.id}`,
+            rawId: w.id,
+            type: 'weight',
+            eventType: null,
+            recordType: null,
+            reptile_id: reptile.id,
+            date: w.measured_at,
+            data: { weight_grams: w.weight_grams },
+            notes: w.notes,
+            displayLink: `/health-log/weight/${w.id}`
+          }));
+
+          // Normalize health records
+          const health = (healthRes.data || []).map(h => ({
+            id: `health-${h.id}`,
+            rawId: h.id,
+            type: h.record_type === 'shedding' ? 'shedding' :
+                  h.record_type === 'brumation' ? 'brumation' : 'observation',
+            eventType: h.event_type || null,
+            recordType: h.record_type,
+            reptile_id: reptile.id,
+            date: h.date,
+            data: { title: h.title, record_type: h.record_type },
+            notes: h.description,
+            displayLink: `/health-log/health/${h.id}`
+          }));
+
+          return [...weights, ...health];
+        })
+      );
+
+      // Flatten and sort by date descending
+      const combined = allData.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
+      setHistory(combined);
+    } catch (err) {
+      console.error('Failed to load history:', err);
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Computed filtered history based on event type filter
+  const filteredHistory = history.filter(item => {
+    if (filterEventType === 'all') return true;
+    return item.type === filterEventType;
+  });
+
+  // Load history when entering history view
+  useEffect(() => {
+    if (searchParams.get('view') === 'history' && reptiles.length > 0) {
+      loadHistory(filterReptile);
+    }
+  }, [searchParams, reptiles.length]);
 
   // HISTORY VIEW
   if (searchParams.get('view') === 'history') {
@@ -768,7 +838,7 @@ export default function HealthLog() {
                  logType === 'shedding' ? 'Shedding Event' :
                  logType === 'brumation' ? 'Brumation Event' : 'Health'} Log` :
           'Log Health'}
-   
+      />
 
       {/* View toggle (only in create mode, not edit) */}
       {!id && mode === 'create' && (
@@ -781,7 +851,6 @@ export default function HealthLog() {
           </Button>
         </div>
       )}
-   />
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
       {success && (
         <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">
