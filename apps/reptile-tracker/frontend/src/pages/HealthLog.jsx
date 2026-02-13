@@ -18,7 +18,7 @@ import PageHeader from '../components/PageHeader';
 // Validation schema with conditional logic
 const healthLogSchema = z.object({
   reptile_id: z.number().min(1, "Please select a reptile"),
-  log_type: z.enum(['weight', 'health']),
+  log_type: z.enum(['weight', 'health', 'shedding', 'brumation']),
   log_date: z.string().min(1, "Date is required"),
   log_time: z.string().regex(/^\d{2}:\d{2}$/, "Time is required (HH:MM format)"),
   // Weight-specific fields
@@ -28,6 +28,8 @@ const healthLogSchema = z.object({
   title: z.string().optional(),
   consistency: z.string().optional(),
   notes: z.string().optional(),
+  // Shedding/Brumation-specific fields
+  event_subtype: z.string().optional(),
 }).refine((data) => {
   // If log_type is weight, weight_grams is required
   if (data.log_type === 'weight') {
@@ -46,6 +48,15 @@ const healthLogSchema = z.object({
 }, {
   message: "Record type and title are required for health records",
   path: ['title'],
+}).refine((data) => {
+  // If log_type is shedding or brumation, event_subtype is required
+  if (data.log_type === 'shedding' || data.log_type === 'brumation') {
+    return data.event_subtype && data.event_subtype.length > 0;
+  }
+  return true;
+}, {
+  message: "Event subtype is required for shedding and brumation events",
+  path: ['event_subtype'],
 });
 
 export default function HealthLog() {
@@ -75,6 +86,7 @@ export default function HealthLog() {
       title: '',
       consistency: 'normal',
       notes: '',
+      event_subtype: '',
     },
     mode: 'onBlur',
   });
@@ -82,6 +94,7 @@ export default function HealthLog() {
   // Watch log_type for conditional rendering
   const logType = form.watch('log_type');
   const recordType = form.watch('record_type');
+  const eventSubtype = form.watch('event_subtype');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -205,6 +218,28 @@ export default function HealthLog() {
     fetchData();
   }, [reptileId, id, type, searchParams]);
 
+  // Helper function to generate auto-title for shedding/brumation
+  const getAutoTitle = (logType, subtype) => {
+    if (logType === 'shedding') {
+      return subtype === 'start' ? 'Started shedding' : 'Shed complete';
+    }
+    if (logType === 'brumation') {
+      return subtype === 'start' ? 'Started brumation' : 'Ended brumation';
+    }
+    return '';
+  };
+
+  // Helper function to format event type for display
+  const formatEventType = (recordType, eventType) => {
+    if (recordType === 'shedding') {
+      return eventType === 'start' ? 'Started Shedding' : 'Shed Complete';
+    }
+    if (recordType === 'brumation') {
+      return eventType === 'start' ? 'Started Brumating' : 'Ended Brumation';
+    }
+    return '';
+  };
+
   const loadLogData = (log, logType) => {
     form.setValue('reptile_id', log.reptile_id);
     form.setValue('notes', log.notes || log.description || '');
@@ -217,10 +252,16 @@ export default function HealthLog() {
       const minute = measuredAtDate.getMinutes();
       form.setValue('log_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     } else if (logType === 'health') {
-      form.setValue('record_type', log.record_type);
-      form.setValue('title', log.title);
-      if (log.consistency) {
-        form.setValue('consistency', log.consistency);
+      // Check if this is a shedding or brumation record
+      if ((log.record_type === 'shedding' || log.record_type === 'brumation') && log.event_type) {
+        form.setValue('log_type', log.record_type);
+        form.setValue('event_subtype', log.event_type);
+      } else {
+        form.setValue('record_type', log.record_type);
+        form.setValue('title', log.title);
+        if (log.consistency) {
+          form.setValue('consistency', log.consistency);
+        }
       }
       const logDateObj = new Date(log.date);
       form.setValue('log_date', logDateObj.toISOString().slice(0, 10));
@@ -288,6 +329,17 @@ export default function HealthLog() {
             notes: data.notes || null,
           });
           setSuccess('Weight log updated successfully!');
+        } else if (data.log_type === 'shedding' || data.log_type === 'brumation') {
+          // Shedding or brumation event (event_type cannot be changed in edit mode)
+          const payload = {
+            record_type: data.log_type,
+            event_type: data.event_subtype,
+            title: getAutoTitle(data.log_type, data.event_subtype),
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
+          };
+          await axios.patch(`/api/health/${id}`, payload);
+          setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event updated successfully!`);
         } else {
           const payload = {
             record_type: data.record_type,
@@ -317,6 +369,19 @@ export default function HealthLog() {
           });
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setTimeout(() => navigate(`/health-log/weight/${response.data.id}?success=created`), 1500);
+        } else if (data.log_type === 'shedding' || data.log_type === 'brumation') {
+          // Shedding or brumation event
+          const payload = {
+            reptile_id: data.reptile_id,
+            record_type: data.log_type,
+            event_type: data.event_subtype,
+            title: getAutoTitle(data.log_type, data.event_subtype),
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
+          };
+          const response = await axios.post('/api/health', payload);
+          setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
+          setTimeout(() => navigate(`/health-log/health/${response.data.id}?success=created`), 1500);
         } else {
           const payload = {
             reptile_id: data.reptile_id,
@@ -343,10 +408,15 @@ export default function HealthLog() {
 
   // VIEW MODE
   if (mode === 'view' && existingLog) {
+    const isSheddingOrBrumation = logType === 'shedding' || logType === 'brumation';
+    const viewTitle = logType === 'weight' ? 'Weight' :
+                     logType === 'shedding' ? 'Shedding Event' :
+                     logType === 'brumation' ? 'Brumation Event' : 'Health';
+
     return (
       <div>
         <PageHeader
-          title={`View ${logType === 'weight' ? 'Weight' : 'Health'} Log`}
+          title={`View ${viewTitle} Log`}
           backLink={{ to: '/health-log', label: 'Back to Health Log' }}
           actions={
             <div className="flex gap-2">
@@ -395,6 +465,21 @@ export default function HealthLog() {
                 <p className="text-sm text-muted-foreground mb-1">Measured at</p>
                 <p className="text-lg font-medium text-foreground">
                   {formatDateTime(existingLog.measured_at)}
+                </p>
+              </div>
+            </>
+          ) : isSheddingOrBrumation ? (
+            <>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Event Type</p>
+                <p className="text-lg font-medium text-foreground">
+                  {formatEventType(existingLog.record_type, existingLog.event_type)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Date</p>
+                <p className="text-lg font-medium text-foreground">
+                  {formatDateTime(existingLog.date)}
                 </p>
               </div>
             </>
@@ -450,7 +535,11 @@ export default function HealthLog() {
   return (
     <div>
       <PageHeader
-        title={mode === 'edit' ? `Edit ${logType === 'weight' ? 'Weight' : 'Health'} Log` : 'Log Health'}
+        title={mode === 'edit' ?
+          `Edit ${logType === 'weight' ? 'Weight' :
+                 logType === 'shedding' ? 'Shedding Event' :
+                 logType === 'brumation' ? 'Brumation Event' : 'Health'} Log` :
+          'Log Health'}
       />
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
       {success && <p className="text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">{success}</p>}
@@ -517,11 +606,89 @@ export default function HealthLog() {
                   >
                     Health Record
                   </Button>
+                  <Button
+                    type="button"
+                    onClick={() => field.onChange('shedding')}
+                    disabled={mode === 'edit'}
+                    variant={field.value === 'shedding' ? 'default' : 'outline'}
+                  >
+                    Shedding
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => field.onChange('brumation')}
+                    disabled={mode === 'edit'}
+                    variant={field.value === 'brumation' ? 'default' : 'outline'}
+                  >
+                    Brumation
+                  </Button>
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {logType === 'shedding' && (
+            <FormField
+              control={form.control}
+              name="event_subtype"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Event Type</FormLabel>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => field.onChange('start')}
+                      disabled={mode === 'edit'}
+                      variant={field.value === 'start' ? 'default' : 'outline'}
+                    >
+                      Started Shedding
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => field.onChange('complete')}
+                      disabled={mode === 'edit'}
+                      variant={field.value === 'complete' ? 'default' : 'outline'}
+                    >
+                      Shed Complete
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {logType === 'brumation' && (
+            <FormField
+              control={form.control}
+              name="event_subtype"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">Event Type</FormLabel>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => field.onChange('start')}
+                      disabled={mode === 'edit'}
+                      variant={field.value === 'start' ? 'default' : 'outline'}
+                    >
+                      Started Brumating
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => field.onChange('end')}
+                      disabled={mode === 'edit'}
+                      variant={field.value === 'end' ? 'default' : 'outline'}
+                    >
+                      Ended Brumation
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {logType === 'weight' ? (
             <FormField
@@ -542,7 +709,7 @@ export default function HealthLog() {
                 </FormItem>
               )}
             />
-          ) : (
+          ) : logType === 'health' ? (
             <>
               <FormField
                 control={form.control}
@@ -617,7 +784,7 @@ export default function HealthLog() {
                 />
               )}
             </>
-          )}
+          ) : null}
 
           <div className="grid grid-cols-2 gap-4">
             <FormField
