@@ -268,6 +268,15 @@ export default function UserStreakDisplay() {
  * @param {string} attribution.credited_to_name - Name of user receiving credit
  * @param {number} attribution.completed_by_user_id - User who completed task
  * @param {number} attribution.credited_to_user_id - User receiving credit
+ *
+ * @example
+ * // In FeedingForm.jsx after successful submission:
+ * import { notifyStreakAttribution } from './UserStreakDisplay'
+ *
+ * const response = await axios.post('/api/feeding', data)
+ * if (response.data.attribution) {
+ *   notifyStreakAttribution(response.data.attribution)
+ * }
  */
 export function notifyStreakAttribution(attribution) {
   window.dispatchEvent(new CustomEvent('task-completed', {
