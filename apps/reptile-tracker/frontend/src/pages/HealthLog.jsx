@@ -89,6 +89,23 @@ const HistoryItem = ({ item, reptiles, navigate }) => {
 
   const getEventBadge = () => {
     if (item.type === 'weight') return { label: 'Weight', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' };
+    if (item.type === 'measurement') {
+      // Format measurement type label
+      let typeLabel = 'Measurement';
+      if (item.data?.measurement_type === 'custom' && item.data?.custom_label) {
+        typeLabel = item.data.custom_label;
+      } else if (item.data?.measurement_type) {
+        // Convert snake_case to Title Case
+        typeLabel = item.data.measurement_type
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+      return {
+        label: typeLabel,
+        color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      };
+    }
     if (item.recordType === 'shedding') {
       const subtype = item.eventType === 'start' ? 'Started' : 'Complete';
       return { label: `Shedding ${subtype}`, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' };
@@ -123,7 +140,12 @@ const HistoryItem = ({ item, reptiles, navigate }) => {
               {item.data.weight_grams}g
             </p>
           )}
-          {item.data?.title && item.type !== 'weight' && (
+          {item.type === 'measurement' && (
+            <p className="text-lg font-semibold text-foreground mt-1">
+              {item.data.value} {item.data.unit}
+            </p>
+          )}
+          {item.data?.title && item.type !== 'weight' && item.type !== 'measurement' && (
             <p className="text-sm text-foreground mt-1">{item.data.title}</p>
           )}
           {item.notes && (
@@ -626,12 +648,13 @@ export default function HealthLog() {
     try {
       const reptilesToFetch = reptileFilter === 'all' ? reptiles : reptiles.filter(r => String(r.id) === reptileFilter);
 
-      // Fetch weight logs and health records for each reptile
+      // Fetch weight logs, health records, and measurements for each reptile
       const allData = await Promise.all(
         reptilesToFetch.map(async (reptile) => {
-          const [weightRes, healthRes] = await Promise.all([
+          const [weightRes, healthRes, measurementRes] = await Promise.all([
             axios.get(`/api/weight/reptile/${reptile.id}`).catch(() => ({ data: [] })),
-            axios.get(`/api/health/reptile/${reptile.id}`).catch(() => ({ data: [] }))
+            axios.get(`/api/health/reptile/${reptile.id}`).catch(() => ({ data: [] })),
+            axios.get(`/api/measurements/reptile/${reptile.id}`).catch(() => ({ data: [] }))
           ]);
 
           // Normalize weight logs
@@ -663,7 +686,26 @@ export default function HealthLog() {
             displayLink: `/health-log/health/${h.id}`
           }));
 
-          return [...weights, ...health];
+          // Normalize measurements
+          const measurements = (measurementRes.data || []).map(m => ({
+            id: `measurement-${m.id}`,
+            rawId: m.id,
+            type: 'measurement',
+            eventType: null,
+            recordType: null,
+            reptile_id: reptile.id,
+            date: m.measured_at,
+            data: {
+              measurement_type: m.measurement_type,
+              custom_label: m.custom_label,
+              value: m.value,
+              unit: m.unit
+            },
+            notes: m.notes,
+            displayLink: `/health-log/measurement/${m.id}`
+          }));
+
+          return [...weights, ...health, ...measurements];
         })
       );
 
@@ -728,6 +770,7 @@ export default function HealthLog() {
             <SelectContent>
               <SelectItem value="all">All Events</SelectItem>
               <SelectItem value="weight">Weight</SelectItem>
+              <SelectItem value="measurement">Measurements</SelectItem>
               <SelectItem value="shedding">Shedding</SelectItem>
               <SelectItem value="brumation">Brumation</SelectItem>
               <SelectItem value="observation">Observations</SelectItem>
