@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import confetti from 'canvas-confetti'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Flame, Snowflake, Trophy, Calendar, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -44,18 +45,23 @@ export default function UserStreakDisplay() {
     return () => clearInterval(interval)
   }, [])
 
-  // Attribution toast handler
+  // Attribution toast handler and milestone celebration
   useEffect(() => {
     const handleTaskComplete = (event) => {
-      const { credited_to_name, completed_by_user_id, credited_to_user_id } = event.detail
+      const { credited_to_name, completed_by_user_id, credited_to_user_id, milestone_reached } = event.detail
 
-      // Only show toast if completing for someone else
+      // Attribution toast - only show if completing for someone else
       if (completed_by_user_id !== credited_to_user_id) {
         setToastMessage(`Completed for ${credited_to_name} - their streak continues!`)
         setShowToast(true)
 
         // Hide toast after 5 seconds
         setTimeout(() => setShowToast(false), 5000)
+      }
+
+      // Milestone celebration!
+      if (milestone_reached) {
+        triggerMilestoneCelebration(milestone_reached)
       }
 
       // Refetch streak data
@@ -96,6 +102,49 @@ export default function UserStreakDisplay() {
     if (misses === 1) return 'One more miss breaks streak!'
     if (misses === 2) return 'Streak broken - complete tasks to restart'
     return `${misses} consecutive misses`
+  }
+
+  const getMilestoneColors = (milestone) => {
+    switch(milestone) {
+      case 7: return ['#CD7F32', '#D97706'] // Bronze
+      case 30: return ['#FFD700', '#F59E0B'] // Gold
+      case 100: return ['#E5E4E2', '#A3A3A3'] // Platinum
+      case 365: return ['#B9F2FF', '#9333EA'] // Diamond
+      default: return ['#FF6B6B', '#FF8E53']
+    }
+  }
+
+  const getMilestoneBadge = (milestone) => {
+    switch(milestone) {
+      case 7: return '7-Day Bronze Streak'
+      case 30: return '30-Day Gold Streak'
+      case 100: return '100-Day Platinum Streak'
+      case 365: return '365-Day Diamond Streak'
+      default: return `${milestone}-Day Streak`
+    }
+  }
+
+  const triggerMilestoneCelebration = (milestone) => {
+    // Fire confetti
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: getMilestoneColors(milestone)
+    })
+
+    // Show toast with milestone badge
+    const badgeText = getMilestoneBadge(milestone)
+    setToastMessage(
+      <div className="flex items-center gap-2">
+        <Trophy className="w-5 h-5 text-amber-500" />
+        <span>{badgeText} Unlocked!</span>
+      </div>
+    )
+    setShowToast(true)
+
+    // Hide toast after 5 seconds
+    setTimeout(() => setShowToast(false), 5000)
   }
 
   // Loading state
