@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 20 of 25 (Dashboard Status Indicators)
-Plan: 2 of TBD complete
+Plan: 3 of TBD complete
 Status: In progress
-Last activity: 2026-02-13 — Completed 20-02-PLAN.md (BirthdayBadge and NextFeedingIndicator)
+Last activity: 2026-02-13 — Completed 20-03-PLAN.md (Dashboard integration of status badges)
 
-Progress: [████████████████░░░░] 78/TBD plans (Phase 19 COMPLETE, Phase 20 in progress)
+Progress: [████████████████░░░░] 79/TBD plans (Phase 19 COMPLETE, Phase 20 in progress)
 
 ## Performance Metrics
 
@@ -46,6 +46,9 @@ Progress: [████████████████░░░░] 78/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Dashboard centralizes batch data fetching for streaks and health statuses (not ReptileStatusCards)
+- 2026-02-13: Separate try/catch for streak and health batch fetches (graceful degradation)
+- 2026-02-13: Filter scheduleInstances per reptile in ReptileStatusCards (filtering logic close to usage)
 - 2026-02-13: Birthday badge hidden when date_of_birth null or > 30 days away
 - 2026-02-13: Next feeding uses absolute time format (Today 6pm) per UX research
 - 2026-02-13: NextFeedingIndicator accepts isHidden prop for caller control (brumation state)
@@ -130,9 +133,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 20-02-PLAN.md (BirthdayBadge and NextFeedingIndicator components)
-Resume file: .planning/phases/20-dashboard-status-indicators/20-02-SUMMARY.md
-Next action: Continue Phase 20 with remaining plans (StreakBadge, HealthStatusBadge, dashboard integration)
+Stopped at: Completed 20-03-PLAN.md (Dashboard integration of status badges)
+Resume file: .planning/phases/20-dashboard-status-indicators/20-03-SUMMARY.md
+Next action: Continue Phase 20 or proceed to Phase 21 (Celebration Animations) per roadmap
 
 ## Deferred Items
 
