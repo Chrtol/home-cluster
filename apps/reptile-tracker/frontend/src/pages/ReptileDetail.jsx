@@ -11,6 +11,7 @@ import PhotoGallery from '../components/PhotoGallery';
 import PhotoLightbox from '../components/PhotoLightbox';
 import PhotoUpload from '../components/PhotoUpload';
 import AvatarCropper from '../components/AvatarCropper';
+import ResponsibilityManager from '../components/ResponsibilityManager';
 import { Badge } from '@/components/ui/badge';
 
 // A new component for the weight chart
@@ -122,6 +123,7 @@ export default function ReptileDetail() {
   const [streakData, setStreakData] = useState(null);
   const [activeTab, setActiveTab] = useState('feedings');
   const [loading, setLoading] = useState(true);
+  const [isSingleUserHousehold, setIsSingleUserHousehold] = useState(true);
 
   // Photo states
   const [photos, setPhotos] = useState([]);
@@ -161,6 +163,15 @@ export default function ReptileDetail() {
           }
         } catch (err) {
           console.error('Failed to fetch streak data:', err);
+        }
+
+        // Fetch household status for responsibility UI (non-critical)
+        try {
+          const responsibilityRes = await axios.get('/api/responsibilities/overview');
+          setIsSingleUserHousehold(responsibilityRes.data.is_single_user_household);
+        } catch (err) {
+          console.error('Failed to fetch responsibility overview:', err);
+          // Default to single-user (hide responsibility UI on error)
         }
       } catch (error) {
         console.error('Failed to fetch reptile details:', error);
@@ -921,6 +932,17 @@ export default function ReptileDetail() {
           <button onClick={handleDelete} className="btn-danger text-sm sm:text-base">Delete</button>
         </div>
       </div>
+
+      {/* Care Responsibility - only shows for multi-user households */}
+      {!isSingleUserHousehold && (
+        <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
+          <h2 className="text-lg font-semibold mb-3 text-foreground flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Care Responsibility
+          </h2>
+          <ResponsibilityManager reptileId={parseInt(id)} />
+        </div>
+      )}
 
       <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
         <h2 className="text-lg font-semibold mb-3 text-foreground">Details</h2>
