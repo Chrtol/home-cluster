@@ -1274,3 +1274,45 @@ class StreakResponse(BaseModel):
 class StreaksListResponse(BaseModel):
     """Multiple streaks (for dashboard)"""
     streaks: dict[int, StreakResponse]  # reptile_id -> streak
+
+
+# Responsibility assignment schemas
+class ResponsibilityAssignment(BaseModel):
+    """Individual responsibility assignment"""
+    user_id: int
+    assigned_at: datetime
+    assigned_by_user_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ReptileResponsibilityResponse(BaseModel):
+    """Responsibility assignments for a reptile"""
+    reptile_id: int
+    assignments: List[ResponsibilityAssignment]
+    is_unassigned: bool  # True if no assignments = everyone responsible
+
+    class Config:
+        from_attributes = True
+
+
+class ScheduleResponsibilityResponse(BaseModel):
+    """Responsibility assignments for a schedule"""
+    schedule_id: int
+    assignments: List[ResponsibilityAssignment]
+    inherits_from_reptile: bool  # True if no schedule-level override
+
+    class Config:
+        from_attributes = True
+
+
+class ResponsibilityUpdate(BaseModel):
+    """Update responsibility assignments (replaces all)"""
+    user_ids: List[int]
+
+
+class HouseholdResponsibilityOverview(BaseModel):
+    """Overview of all responsibility assignments in household"""
+    is_single_user: bool
+    reptiles: dict[int, ReptileResponsibilityResponse]
