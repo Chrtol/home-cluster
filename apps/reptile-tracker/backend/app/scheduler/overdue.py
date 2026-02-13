@@ -18,6 +18,9 @@ from app.models import Schedule, ScheduleCompletion, Reptile, User, Notification
 # Note: is_within_quiet_hours imported inside function to avoid circular import with core.py
 from .notifications import send_overdue_alert
 
+# Import user streak service for miss tracking
+from app.services.user_streak_service import increment_user_miss, get_responsible_users, is_schedule_manual
+
 logger = logging.getLogger(__name__)
 
 
@@ -74,6 +77,13 @@ async def check_overdue_schedules():
                         if completion.status == CompletionStatus.PENDING:
                             completion.status = CompletionStatus.MISSED
                             await db.commit()
+
+                            # Update user streaks for responsible users (only for manual schedules)
+                            if is_schedule_manual(schedule):
+                                responsible_users = get_responsible_users(db, schedule.id, schedule.reptile_id)
+                                for user_id in responsible_users:
+                                    increment_user_miss(db, user_id, yesterday)
+                                await db.commit()
 
                         # Get reptile
                         reptile = await db.get(Reptile, schedule.reptile_id)
