@@ -45,6 +45,10 @@ export default function Settings() {
             <Layout size={18} />
             Display
           </TabsTrigger>
+          <TabsTrigger value="streak" className="flex items-center gap-2">
+            <Shield size={18} />
+            Streak & Vacation
+          </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell size={18} />
             Notifications
@@ -61,6 +65,9 @@ export default function Settings() {
 
         <TabsContent value="preferences">
           <PreferencesTab />
+        </TabsContent>
+        <TabsContent value="streak">
+          <StreakVacationTab />
         </TabsContent>
         <TabsContent value="display">
           <DisplayTab />
@@ -1007,6 +1014,253 @@ function DisplayTab() {
               <span>600px</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// STREAK & VACATION TAB COMPONENT
+function StreakVacationTab() {
+  const [userStreak, setUserStreak] = useState(null);
+  const [scheduledFreezes, setScheduledFreezes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [vacationStart, setVacationStart] = useState('');
+  const [vacationEnd, setVacationEnd] = useState('');
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchStreakData();
+    fetchScheduledFreezes();
+  }, []);
+
+  const fetchStreakData = async () => {
+    try {
+      const response = await axios.get('/api/user-streaks/me');
+      setUserStreak(response.data);
+    } catch (err) {
+      console.error('Failed to fetch user streak:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchScheduledFreezes = async () => {
+    try {
+      const response = await axios.get('/api/user-streaks/me/freeze/history');
+      setScheduledFreezes(response.data.filter(f => f.status === 'scheduled'));
+    } catch (err) {
+      console.error('Failed to fetch scheduled freezes:', err);
+    }
+  };
+
+  const toggleManualFreeze = async () => {
+    try {
+      await axios.post('/api/user-streaks/me/freeze');
+      setSuccess('Freeze toggled successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      fetchStreakData();
+    } catch (err) {
+      console.error('Failed to toggle freeze:', err);
+      setError(err.response?.data?.detail || 'Failed to toggle freeze');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const scheduleVacation = async () => {
+    if (!vacationStart || !vacationEnd) {
+      setError('Please select both start and end dates');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    const startDate = new Date(vacationStart);
+    const endDate = new Date(vacationEnd);
+    const vacationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (vacationDays > (userStreak?.available_freeze_days || 0)) {
+      setError(`Not enough freeze days available. You need ${vacationDays} but only have ${userStreak?.available_freeze_days || 0}`);
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      await axios.post('/api/user-streaks/me/freeze/schedule', {
+        start_date: vacationStart,
+        end_date: vacationEnd
+      });
+      setSuccess('Vacation freeze scheduled successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      setVacationStart('');
+      setVacationEnd('');
+      fetchStreakData();
+      fetchScheduledFreezes();
+    } catch (err) {
+      console.error('Failed to schedule vacation:', err);
+      setError(err.response?.data?.detail || 'Failed to schedule vacation');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const cancelFreeze = async (freezeId) => {
+    if (!confirm('Cancel this scheduled freeze? Freeze days will be refunded if not started yet.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/user-streaks/me/freeze/${freezeId}`);
+      setSuccess('Scheduled freeze cancelled successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      fetchStreakData();
+      fetchScheduledFreezes();
+    } catch (err) {
+      console.error('Failed to cancel freeze:', err);
+      setError(err.response?.data?.detail || 'Failed to cancel freeze');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const formatDateDisplay = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
+  };
+
+  const vacationDays = vacationStart && vacationEnd
+    ? Math.ceil((new Date(vacationEnd) - new Date(vacationStart)) / (1000 * 60 * 60 * 24)) + 1
+    : 0;
+
+  if (loading) {
+    return <div className="text-center py-8 text-muted-foreground">Loading streak data...</div>;
+  }
+
+  if (!userStreak) {
+    return <div className="text-center py-8 text-muted-foreground">No streak data available</div>;
+  }
+
+  return (
+    <div>
+      {success && (
+        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
+          {success}
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <div className="card space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Streak & Vacation Mode</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Manage your care streak and plan vacations. Freeze days protect your streak when you're away.
+          </p>
+
+          {/* Current Streak */}
+          <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg mb-6">
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">Current Streak</div>
+              <div className="text-3xl font-bold text-orange-500">{userStreak.current_streak} days</div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground mb-1">Freeze Days Available</div>
+              <div className="text-2xl font-semibold text-foreground">{userStreak.available_freeze_days} days</div>
+            </div>
+          </div>
+
+          {/* Manual Freeze Toggle */}
+          <div className="flex items-center justify-between py-4 px-4 border-2 border-border rounded-lg mb-6">
+            <div className="flex-1">
+              <div className="font-medium text-foreground">Emergency Freeze</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Pause streak tracking immediately (uses 1 freeze day)
+              </p>
+            </div>
+            <button
+              onClick={toggleManualFreeze}
+              disabled={userStreak.available_freeze_days === 0 && !userStreak.is_frozen_today}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                userStreak.is_frozen_today
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-secondary text-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {userStreak.is_frozen_today ? 'End Freeze' : 'Freeze Now'}
+            </button>
+          </div>
+
+          {/* Schedule Vacation */}
+          <div className="py-4 px-4 border-2 border-border rounded-lg mb-6 space-y-4">
+            <div>
+              <div className="font-medium text-foreground">Schedule Vacation</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Plan ahead: freeze days are deducted upfront when scheduling
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Start Date</label>
+                <input
+                  type="date"
+                  value={vacationStart}
+                  onChange={(e) => setVacationStart(e.target.value)}
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">End Date</label>
+                <input
+                  type="date"
+                  value={vacationEnd}
+                  onChange={(e) => setVacationEnd(e.target.value)}
+                  min={vacationStart}
+                  className="input w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm text-muted-foreground">
+                {vacationDays > 0 ? `${vacationDays} day${vacationDays !== 1 ? 's' : ''} (${vacationDays} freeze days will be used)` : 'Select dates to see duration'}
+              </span>
+              <button
+                onClick={scheduleVacation}
+                disabled={vacationDays > userStreak.available_freeze_days || !vacationStart || !vacationEnd}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Schedule Freeze
+              </button>
+            </div>
+          </div>
+
+          {/* Scheduled Freezes List */}
+          {scheduledFreezes.length > 0 && (
+            <div className="space-y-2">
+              <div className="font-medium text-foreground mb-2">Scheduled Freezes</div>
+              {scheduledFreezes.map(freeze => (
+                <div key={freeze.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
+                  <div>
+                    <span className="text-sm font-medium text-foreground">
+                      {formatDateDisplay(freeze.start_date)} - {formatDateDisplay(freeze.end_date)}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({freeze.days_deducted} day{freeze.days_deducted !== 1 ? 's' : ''})
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => cancelFreeze(freeze.id)}
+                    className="btn-secondary text-sm text-red-600 dark:text-red-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
