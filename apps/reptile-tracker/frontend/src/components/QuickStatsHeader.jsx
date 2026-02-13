@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Utensils, Droplets, Heart, Clock } from 'lucide-react'
 import axios from 'axios'
+import UserStreakDisplay from './UserStreakDisplay'
 
 /**
  * QuickStatsHeader - Displays "due today" stats in the persistent header
@@ -124,8 +125,12 @@ export default function QuickStatsHeader() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-4 px-3 py-1.5 rounded-lg bg-secondary/50">
-        <span className="text-xs text-muted-foreground">...</span>
+      <div className="flex items-center gap-3">
+        <UserStreakDisplay />
+        <div className="h-4 w-px bg-border"></div>
+        <div className="flex items-center gap-4 px-3 py-1.5 rounded-lg bg-secondary/50">
+          <span className="text-xs text-muted-foreground">...</span>
+        </div>
       </div>
     )
   }
@@ -134,23 +139,34 @@ export default function QuickStatsHeader() {
 
   if (totalPending === 0 && stats.done > 0) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10">
-        <span className="w-2 h-2 rounded-full bg-primary"></span>
-        <span className="text-xs font-medium text-foreground">All done today!</span>
+      <div className="flex items-center gap-3">
+        <UserStreakDisplay />
+        <div className="h-4 w-px bg-border"></div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10">
+          <span className="w-2 h-2 rounded-full bg-primary"></span>
+          <span className="text-xs font-medium text-foreground">All done today!</span>
+        </div>
       </div>
     )
   }
 
   if (totalPending === 0 && stats.done === 0) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
-        <span className="text-xs text-muted-foreground">No tasks today</span>
+      <div className="flex items-center gap-3">
+        <UserStreakDisplay />
+        <div className="h-4 w-px bg-border"></div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+          <span className="text-xs text-muted-foreground">No tasks today</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-4 px-3 py-1.5 rounded-lg bg-secondary/50">
+    <div className="flex items-center gap-3">
+      <UserStreakDisplay />
+      <div className="h-4 w-px bg-border"></div>
+      <div className="flex items-center gap-4 px-3 py-1.5 rounded-lg bg-secondary/50">
       {totalPending > 0 && (
         <Popover>
           <PopoverTrigger asChild>
@@ -220,6 +236,7 @@ export default function QuickStatsHeader() {
           </span>
         </div>
       )}
+      </div>
     </div>
   )
 }

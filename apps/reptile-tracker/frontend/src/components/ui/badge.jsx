@@ -30,6 +30,7 @@ const badgeVariants = cva(
         "streak-bronze": "border-transparent bg-orange-600/30 text-orange-600",
         "streak-gold": "border-transparent bg-amber-500/30 text-amber-500",
         "streak-platinum": "border-transparent bg-yellow-500/30 text-yellow-500 font-bold",
+        "streak-diamond": "border-transparent bg-purple-500/30 text-purple-400 font-bold ring-1 ring-purple-500/50",
         // Birthday countdown variants (pink escalation)
         "birthday-approaching": "border-transparent bg-pink-500/10 text-pink-500",
         "birthday-soon": "border-transparent bg-pink-500/20 text-pink-600",
