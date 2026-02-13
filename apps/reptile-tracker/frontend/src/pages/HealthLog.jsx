@@ -72,6 +72,8 @@ export default function HealthLog() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
+  const [healthStatus, setHealthStatus] = useState(null);
+  const [healthStatusLoading, setHealthStatusLoading] = useState(false);
 
   // Initialize form
   const form = useForm({
@@ -95,6 +97,38 @@ export default function HealthLog() {
   const logType = form.watch('log_type');
   const recordType = form.watch('record_type');
   const eventSubtype = form.watch('event_subtype');
+  const reptileId = form.watch('reptile_id');
+
+  // Fetch health status for selected reptile
+  const fetchHealthStatus = async (reptileId) => {
+    if (!reptileId || reptileId === 0) {
+      setHealthStatus(null);
+      return;
+    }
+    try {
+      setHealthStatusLoading(true);
+      const response = await axios.get(`/api/health/status/${reptileId}`);
+      setHealthStatus(response.data);
+    } catch (error) {
+      console.error('Failed to fetch health status:', error);
+      setHealthStatus(null);
+    } finally {
+      setHealthStatusLoading(false);
+    }
+  };
+
+  // Helper to format current status display
+  const formatCurrentStatus = () => {
+    if (!healthStatus) return null;
+    const parts = [];
+    if (healthStatus.is_shedding) {
+      parts.push(`In shed${healthStatus.days_shedding ? ` (${healthStatus.days_shedding} days)` : ''}`);
+    }
+    if (healthStatus.is_brumating) {
+      parts.push(`Brumating${healthStatus.days_brumating ? ` (${healthStatus.days_brumating} days)` : ''}`);
+    }
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -217,6 +251,15 @@ export default function HealthLog() {
     };
     fetchData();
   }, [reptileId, id, type, searchParams]);
+
+  // Fetch health status when reptile is selected (create mode only)
+  useEffect(() => {
+    if (mode === 'create' && reptileId && reptileId > 0) {
+      fetchHealthStatus(reptileId);
+    } else {
+      setHealthStatus(null);
+    }
+  }, [reptileId, mode]);
 
   // Helper function to generate auto-title for shedding/brumation
   const getAutoTitle = (logType, subtype) => {
@@ -635,6 +678,11 @@ export default function HealthLog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-muted-foreground">Event Type</FormLabel>
+                  {mode === 'create' && formatCurrentStatus() && (
+                    <div className="mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-900 dark:text-blue-100">
+                      Current status: {formatCurrentStatus()}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
@@ -666,6 +714,11 @@ export default function HealthLog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-muted-foreground">Event Type</FormLabel>
+                  {mode === 'create' && formatCurrentStatus() && (
+                    <div className="mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-900 dark:text-blue-100">
+                      Current status: {formatCurrentStatus()}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
