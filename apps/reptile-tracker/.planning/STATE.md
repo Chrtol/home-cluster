@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 19 of 25 (Health Logging UI)
-Plan: 03 of 03 (complete)
-Status: Phase 19 complete
-Last activity: 2026-02-13 — Completed 19-03-PLAN.md (Unified History View & Measurements Deprecation)
+Phase: 19.1 of 25 (Measurements Feature Restoration - INSERTED)
+Plan: 00 of TBD (not planned)
+Status: Phase 19.1 inserted - needs planning
+Last activity: 2026-02-13 — Inserted Phase 19.1 for urgent measurements restoration
 
-Progress: [████████████████░░░░] 72/TBD plans (19 phases complete)
+Progress: [████████████████░░░░] 72/TBD plans (19 phases complete, 1 inserted)
 
 ## Performance Metrics
 
@@ -71,6 +71,10 @@ Recent decisions affecting current work:
 - 2026-02-11: Use file polling for Docker file watching (inotify doesn't work in Docker)
 - 2026-02-11: Use exact "development" match for auth bypass (not "!= production") - fail-safe approach
 
+### Roadmap Evolution
+
+- Phase 19.1 inserted after Phase 19: Measurements Feature Restoration (URGENT) - restore custom measurements, measurement recording UI, and measurement type customization lost in Phase 19 deprecation
+
 ### From v1.3 Research
 
 Key patterns for upcoming phases:
@@ -110,9 +114,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 19 complete (Health Logging UI - Unified History View)
-Resume file: .planning/phases/19-health-logging-ui/19-03-SUMMARY.md
-Next action: Continue v1.3 with Phase 20 (Dashboard Badges)
+Stopped at: Phase 19.1 inserted (Measurements Feature Restoration)
+Resume file: N/A (phase not yet planned)
+Next action: Plan Phase 19.1 with /gsd:plan-phase 19.1
 
 ## Deferred Items
 
