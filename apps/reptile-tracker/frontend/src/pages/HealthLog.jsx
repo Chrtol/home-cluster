@@ -59,6 +59,59 @@ const healthLogSchema = z.object({
   path: ['event_subtype'],
 });
 
+
+// History Item Component
+const HistoryItem = ({ item, reptiles, navigate }) => {
+  const reptile = reptiles.find(r => r.id === item.reptile_id);
+
+  const getEventBadge = () => {
+    if (item.type === 'weight') return { label: 'Weight', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' };
+    if (item.recordType === 'shedding') {
+      const subtype = item.eventType === 'start' ? 'Started' : 'Complete';
+      return { label: `Shedding ${subtype}`, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' };
+    }
+    if (item.recordType === 'brumation') {
+      const subtype = item.eventType === 'start' ? 'Started' : 'Ended';
+      return { label: `Brumation ${subtype}`, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' };
+    }
+    return { label: item.data?.record_type?.replace('_', ' ') || 'Observation', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' };
+  };
+
+  const badge = getEventBadge();
+
+  return (
+    <div
+      className="card p-4 cursor-pointer hover:bg-accent/50 transition-colors"
+      onClick={() => navigate(item.displayLink)}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium text-foreground">{reptile?.name || 'Unknown'}</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+              {badge.label}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {formatDateTime(item.date)}
+          </p>
+          {item.type === 'weight' && (
+            <p className="text-lg font-semibold text-foreground mt-1">
+              {item.data.weight_grams}g
+            </p>
+          )}
+          {item.data?.title && item.type !== 'weight' && (
+            <p className="text-sm text-foreground mt-1">{item.data.title}</p>
+          )}
+          {item.notes && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.notes}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function HealthLog() {
   const navigate = useNavigate();
   const { reptileId, id, type } = useParams(); // Get reptileId, id, and type from URL
@@ -74,6 +127,12 @@ export default function HealthLog() {
   const [viewModeSuccess, setViewModeSuccess] = useState('');
   const [healthStatus, setHealthStatus] = useState(null);
   const [healthStatusLoading, setHealthStatusLoading] = useState(false);
+
+  // History view state
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [filterReptile, setFilterReptile] = useState('all');
+  const [filterEventType, setFilterEventType] = useState('all');
   const [showSuccessActions, setShowSuccessActions] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState(null);
   const [lastLogType, setLastLogType] = useState(null);
@@ -512,6 +571,69 @@ export default function HealthLog() {
     }
   };
 
+
+  // HISTORY VIEW
+  if (searchParams.get('view') === 'history') {
+    return (
+      <div>
+        <PageHeader title="Health Log History" />
+
+        {/* View toggle */}
+        <div className="flex gap-2 mb-6">
+          <Button variant="outline" onClick={() => navigate('/health-log')}>
+            Log Event
+          </Button>
+          <Button variant="default">
+            View History
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          <Select value={filterReptile} onValueChange={(value) => { setFilterReptile(value); loadHistory(value); }}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Reptiles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Reptiles</SelectItem>
+              {reptiles.map(r => (
+                <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterEventType} onValueChange={setFilterEventType}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Event Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              <SelectItem value="weight">Weight</SelectItem>
+              <SelectItem value="shedding">Shedding</SelectItem>
+              <SelectItem value="brumation">Brumation</SelectItem>
+              <SelectItem value="observation">Observations</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* History list */}
+        {historyLoading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        ) : filteredHistory.length === 0 ? (
+          <div className="card p-8 text-center">
+            <p className="text-muted-foreground">No health events found.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredHistory.map(item => (
+              <HistoryItem key={item.id} item={item} reptiles={reptiles} navigate={navigate} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // VIEW MODE
   if (mode === 'view' && existingLog) {
     const isSheddingOrBrumation = logType === 'shedding' || logType === 'brumation';
@@ -646,7 +768,20 @@ export default function HealthLog() {
                  logType === 'shedding' ? 'Shedding Event' :
                  logType === 'brumation' ? 'Brumation Event' : 'Health'} Log` :
           'Log Health'}
-      />
+   
+
+      {/* View toggle (only in create mode, not edit) */}
+      {!id && mode === 'create' && (
+        <div className="flex gap-2 mb-6">
+          <Button variant="default">
+            Log Event
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/health-log?view=history')}>
+            View History
+          </Button>
+        </div>
+      )}
+   />
       {error && <p className="text-red-500 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">{error}</p>}
       {success && (
         <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">
