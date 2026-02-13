@@ -18,7 +18,7 @@ import PageHeader from '../components/PageHeader';
 // Validation schema with conditional logic
 const healthLogSchema = z.object({
   reptile_id: z.number().min(1, "Please select a reptile"),
-  log_type: z.enum(['weight', 'health', 'shedding', 'brumation']),
+  log_type: z.enum(['weight', 'health', 'shedding', 'brumation', 'measurement']),
   log_date: z.string().min(1, "Date is required"),
   log_time: z.string().regex(/^\d{2}:\d{2}$/, "Time is required (HH:MM format)"),
   // Weight-specific fields
@@ -30,6 +30,11 @@ const healthLogSchema = z.object({
   notes: z.string().optional(),
   // Shedding/Brumation-specific fields
   event_subtype: z.string().optional(),
+  // Measurement-specific fields
+  measurement_type: z.string().optional(),
+  measurement_value: z.string().optional(),
+  measurement_unit: z.string().optional(),
+  custom_label: z.string().optional(),
 }).refine((data) => {
   // If log_type is weight, weight_grams is required
   if (data.log_type === 'weight') {
@@ -57,6 +62,24 @@ const healthLogSchema = z.object({
 }, {
   message: "Event subtype is required for shedding and brumation events",
   path: ['event_subtype'],
+}).refine((data) => {
+  // If log_type is measurement, measurement fields are required
+  if (data.log_type === 'measurement') {
+    return data.measurement_type && data.measurement_value && data.measurement_unit;
+  }
+  return true;
+}, {
+  message: "Measurement type, value, and unit are required",
+  path: ['measurement_type'],
+}).refine((data) => {
+  // If measurement_type is custom, custom_label is required
+  if (data.log_type === 'measurement' && data.measurement_type === 'custom') {
+    return data.custom_label && data.custom_label.length > 0;
+  }
+  return true;
+}, {
+  message: "Custom label is required for custom measurements",
+  path: ['custom_label'],
 });
 
 
@@ -151,6 +174,10 @@ export default function HealthLog() {
       consistency: 'normal',
       notes: '',
       event_subtype: '',
+      measurement_type: '',
+      measurement_value: '',
+      measurement_unit: '',
+      custom_label: '',
     },
     mode: 'onBlur',
   });
@@ -160,6 +187,7 @@ export default function HealthLog() {
   const recordType = form.watch('record_type');
   const eventSubtype = form.watch('event_subtype');
   const watchedReptileId = form.watch('reptile_id');
+  const measurementType = form.watch('measurement_type');
 
   // Fetch health status for selected reptile
   const fetchHealthStatus = async (selectedId) => {
@@ -446,6 +474,10 @@ export default function HealthLog() {
       consistency: 'normal',
       notes: '',
       event_subtype: '',
+      measurement_type: '',
+      measurement_value: '',
+      measurement_unit: '',
+      custom_label: '',
     });
 
     // Refresh health status for continued logging
@@ -955,6 +987,14 @@ export default function HealthLog() {
                   >
                     Brumation
                   </Button>
+                  <Button
+                    type="button"
+                    onClick={() => field.onChange('measurement')}
+                    disabled={mode === 'edit'}
+                    variant={field.value === 'measurement' ? 'default' : 'outline'}
+                  >
+                    Measurement
+                  </Button>
                 </div>
                 <FormMessage />
               </FormItem>
@@ -1053,6 +1093,94 @@ export default function HealthLog() {
                 </FormItem>
               )}
             />
+          )}
+
+          {logType === 'measurement' && (
+            <>
+              <FormField
+                control={form.control}
+                name="measurement_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">What are you measuring?</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select measurement type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="svl">Snout-Vent Length (SVL)</SelectItem>
+                        <SelectItem value="total_length">Total Length</SelectItem>
+                        <SelectItem value="humidity">Humidity</SelectItem>
+                        <SelectItem value="temperature">Temperature</SelectItem>
+                        <SelectItem value="shell_length">Shell Length (Turtles)</SelectItem>
+                        <SelectItem value="custom">Custom Measurement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {measurementType === 'custom' && (
+                <FormField
+                  control={form.control}
+                  name="custom_label"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Custom Measurement Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., Tail width, Horn length" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="measurement_value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Value</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} placeholder="0.0" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="measurement_unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Unit</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="cm">Centimeters (cm)</SelectItem>
+                          <SelectItem value="mm">Millimeters (mm)</SelectItem>
+                          <SelectItem value="in">Inches (in)</SelectItem>
+                          <SelectItem value="%">Percent (%)</SelectItem>
+                          <SelectItem value="C">Celsius (C)</SelectItem>
+                          <SelectItem value="F">Fahrenheit (F)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
           )}
 
           {logType === 'weight' ? (
