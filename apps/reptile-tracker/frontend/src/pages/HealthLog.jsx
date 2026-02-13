@@ -261,6 +261,9 @@ export default function HealthLog() {
             if (type === 'weight') {
               logRes = await axios.get(`/api/weight/${id}`);
               form.setValue('log_type', 'weight');
+            } else if (type === 'measurement') {
+              logRes = await axios.get(`/api/measurements/${id}`);
+              form.setValue('log_type', 'measurement');
             } else if (type === 'health') {
               logRes = await axios.get(`/api/health/${id}`);
               form.setValue('log_type', 'health');
@@ -433,6 +436,18 @@ export default function HealthLog() {
       const hour = measuredAtDate.getHours();
       const minute = measuredAtDate.getMinutes();
       form.setValue('log_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
+    } else if (logType === 'measurement') {
+      form.setValue('measurement_type', log.measurement_type);
+      form.setValue('measurement_value', String(log.value));
+      form.setValue('measurement_unit', log.unit);
+      if (log.custom_label) {
+        form.setValue('custom_label', log.custom_label);
+      }
+      const measuredAtDate = new Date(log.measured_at);
+      form.setValue('log_date', measuredAtDate.toISOString().slice(0, 10));
+      const hour = measuredAtDate.getHours();
+      const minute = measuredAtDate.getMinutes();
+      form.setValue('log_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     } else if (logType === 'health') {
       // Check if this is a shedding or brumation record
       if ((log.record_type === 'shedding' || log.record_type === 'brumation') && log.event_type) {
@@ -510,11 +525,16 @@ export default function HealthLog() {
 
   const handleDelete = async () => {
     const currentLogType = form.getValues('log_type');
-    if (!window.confirm(`Are you sure you want to delete this ${currentLogType === 'weight' ? 'weight' : 'health'} log?`)) return;
+    if (!window.confirm(`Are you sure you want to delete this ${
+      currentLogType === 'weight' ? 'weight' :
+      currentLogType === 'measurement' ? 'measurement' : 'health'
+    } log?`)) return;
 
     try {
       if (currentLogType === 'weight') {
         await axios.delete(`/api/weight/${id}`);
+      } else if (currentLogType === 'measurement') {
+        await axios.delete(`/api/measurements/${id}`);
       } else {
         await axios.delete(`/api/health/${id}`);
       }
@@ -542,6 +562,16 @@ export default function HealthLog() {
             notes: data.notes || null,
           });
           setSuccess('Weight log updated successfully!');
+        } else if (data.log_type === 'measurement') {
+          await axios.patch(`/api/measurements/${id}`, {
+            measurement_type: data.measurement_type,
+            value: parseFloat(data.measurement_value),
+            unit: data.measurement_unit,
+            custom_label: data.measurement_type === 'custom' ? data.custom_label : null,
+            measured_at: new Date(dateTimeString).toISOString(),
+            notes: data.notes || null,
+          });
+          setSuccess('Measurement updated successfully!');
         } else if (data.log_type === 'shedding' || data.log_type === 'brumation') {
           // Shedding or brumation event (event_type cannot be changed in edit mode)
           const payload = {
@@ -568,9 +598,19 @@ export default function HealthLog() {
         }
         setMode('view');
         // Reload the log data
-        const logRes = await axios.get(data.log_type === 'weight' ? `/api/weight/${id}` : `/api/health/${id}`);
-        setExistingLog(logRes.data);
-        loadLogData(logRes.data, data.log_type);
+        if (data.log_type === 'weight') {
+          const logRes = await axios.get(`/api/weight/${id}`);
+          setExistingLog(logRes.data);
+          loadLogData(logRes.data, 'weight');
+        } else if (data.log_type === 'measurement') {
+          const logRes = await axios.get(`/api/measurements/${id}`);
+          setExistingLog(logRes.data);
+          loadLogData(logRes.data, 'measurement');
+        } else {
+          const logRes = await axios.get(`/api/health/${id}`);
+          setExistingLog(logRes.data);
+          loadLogData(logRes.data, data.log_type);
+        }
       } else {
         // Create new log
         if (data.log_type === 'weight') {
@@ -801,7 +841,8 @@ export default function HealthLog() {
     const isSheddingOrBrumation = logType === 'shedding' || logType === 'brumation';
     const viewTitle = logType === 'weight' ? 'Weight' :
                      logType === 'shedding' ? 'Shedding Event' :
-                     logType === 'brumation' ? 'Brumation Event' : 'Health';
+                     logType === 'brumation' ? 'Brumation Event' :
+                     logType === 'measurement' ? 'Measurement' : 'Health';
 
     return (
       <div>
@@ -849,6 +890,29 @@ export default function HealthLog() {
                 <p className="text-sm text-muted-foreground mb-1">Weight</p>
                 <p className="text-lg font-medium text-foreground">
                   {existingLog.weight_grams}g
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Measured at</p>
+                <p className="text-lg font-medium text-foreground">
+                  {formatDateTime(existingLog.measured_at)}
+                </p>
+              </div>
+            </>
+          ) : logType === 'measurement' ? (
+            <>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Measurement Type</p>
+                <p className="text-lg font-medium text-foreground capitalize">
+                  {existingLog.measurement_type === 'custom'
+                    ? existingLog.custom_label
+                    : existingLog.measurement_type?.replace('_', ' ')}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Value</p>
+                <p className="text-lg font-medium text-foreground">
+                  {existingLog.value} {existingLog.unit}
                 </p>
               </div>
               <div>
