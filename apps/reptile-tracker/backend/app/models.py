@@ -1100,3 +1100,53 @@ class ScheduleResponsibility(Base):
     schedule = relationship("Schedule", backref="responsibility_assignments")
     user = relationship("User", foreign_keys=[user_id], backref="schedule_responsibilities")
     assigned_by = relationship("User", foreign_keys=[assigned_by_user_id])
+
+
+class UserStreak(Base):
+    """Tracks user-level streak state with consecutive-miss logic (Duolingo-style)"""
+    __tablename__ = "user_streaks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+
+    # Streak state
+    current_streak = Column(Integer, nullable=False, default=0)  # Consecutive task completions without 2 misses
+    consecutive_misses = Column(Integer, nullable=False, default=0)  # Resets to 0 on any completion
+    longest_streak = Column(Integer, nullable=False, default=0)  # Historical best
+
+    # Freeze days (vacation/streak protection)
+    total_freeze_days = Column(Integer, nullable=False, default=7)  # Earned freeze days available
+    used_freeze_days = Column(Integer, nullable=False, default=0)  # Freeze days consumed
+
+    # Timestamps
+    last_completion_at = Column(DateTime(timezone=True), nullable=True)  # When user last completed a task
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", backref="user_streak")
+
+
+class UserStreakFreeze(Base):
+    """Tracks freeze periods for streak protection (manual or scheduled)"""
+    __tablename__ = "user_streak_freezes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Freeze configuration
+    freeze_type = Column(String(20), nullable=False)  # 'manual' or 'scheduled'
+    start_date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=False, index=True)
+    days_deducted = Column(Integer, nullable=False)  # Freeze days consumed for this period
+    is_active = Column(Boolean, nullable=False, default=True)  # Can be cancelled
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Index for efficient date range queries
+    __table_args__ = (
+        UniqueConstraint('user_id', 'start_date', 'end_date', name='idx_user_freeze_dates'),
+    )
+
+    # Relationships
+    user = relationship("User", backref="streak_freezes")
