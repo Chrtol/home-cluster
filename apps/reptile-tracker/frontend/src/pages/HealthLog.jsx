@@ -396,22 +396,24 @@ export default function HealthLog() {
   useEffect(() => {
     if (mode !== 'create' || !healthStatus) return;
 
-    if (logType === 'shedding' && !eventSubtype) {
-      if (canStartShedding && !canCompleteShedding) {
-        form.setValue('event_subtype', 'start');
-      } else if (!canStartShedding && canCompleteShedding) {
+    if (logType === 'shedding') {
+      // If only one option is valid, auto-select it
+      if (canCompleteShedding && !canStartShedding) {
         form.setValue('event_subtype', 'complete');
+      } else if (canStartShedding && !canCompleteShedding) {
+        form.setValue('event_subtype', 'start');
       }
+      // If both options available, don't auto-select (let user choose)
     }
 
-    if (logType === 'brumation' && !eventSubtype) {
-      if (canStartBrumation && !canEndBrumation) {
-        form.setValue('event_subtype', 'start');
-      } else if (!canStartBrumation && canEndBrumation) {
+    if (logType === 'brumation') {
+      if (canEndBrumation && !canStartBrumation) {
         form.setValue('event_subtype', 'end');
+      } else if (canStartBrumation && !canEndBrumation) {
+        form.setValue('event_subtype', 'start');
       }
     }
-  }, [logType, healthStatus, mode, eventSubtype, canStartShedding, canCompleteShedding, canStartBrumation, canEndBrumation, form]);
+  }, [logType, healthStatus, mode, canStartShedding, canCompleteShedding, canStartBrumation, canEndBrumation, form]);
 
   // Helper function to generate auto-title for shedding/brumation
   const getAutoTitle = (logType, subtype) => {
