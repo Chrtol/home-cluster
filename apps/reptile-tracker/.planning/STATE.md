@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 20.5 of 25 (User Gamification System)
-Plan: 1 of TBD complete
+Plan: 2 of TBD complete
 Status: In progress
-Last activity: 2026-02-13 — Completed 20.5-01-PLAN.md (Responsibility assignment foundation)
+Last activity: 2026-02-13 — Completed 20.5-02-PLAN.md (User-level streak calculation)
 
-Progress: [████████████████░░░░] 80/TBD plans (Phase 20 complete, Phase 20.5 in progress)
+Progress: [████████████████░░░░] 81/TBD plans (Phase 20 complete, Phase 20.5 in progress)
 
 ## Performance Metrics
 
@@ -46,6 +46,12 @@ Progress: [████████████████░░░░] 80/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Consecutive-miss logic for user streaks (breaks after 2 misses, not time-based)
+- 2026-02-13: Only manual-completion schedules count toward streak (auto-complete excluded)
+- 2026-02-13: Freeze days protect streak during vacation (tasks still due, notifications still fire)
+- 2026-02-13: Milestone rewards at 7, 30, 100, 365 days (1, 2, 3, 5 freeze days)
+- 2026-02-13: Any co-responsible user's completion credits all co-responsible users
+- 2026-02-13: Scheduled freezes deduct days upfront (manual freezes are emergency 1-day)
 - 2026-02-13: Support shared responsibility (multiple users per reptile/schedule) for co-parenting scenarios
 - 2026-02-13: Junction tables with metadata (assigned_at, assigned_by) for audit trail
 - 2026-02-13: Self-removal allowed anytime for user autonomy
@@ -138,9 +144,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 20.5-01-PLAN.md (Responsibility assignment foundation)
-Resume file: .planning/phases/20.5-user-gamification-system/20.5-01-SUMMARY.md
-Next action: Continue Phase 20.5 with plan 02 (User-level streak calculation) or proceed to next phase per roadmap
+Stopped at: Completed 20.5-02-PLAN.md (User-level streak calculation)
+Resume file: .planning/phases/20.5-user-gamification-system/20.5-02-SUMMARY.md
+Next action: Continue Phase 20.5 with plan 03 (Gamification UI) or proceed to next phase per roadmap
 
 ## Deferred Items
 
