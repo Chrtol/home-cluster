@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar } from 'lucide-react';
+import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
@@ -36,7 +36,7 @@ const ActivityHistory = () => {
 
   // Filter state
   const [filters, setFilters] = useState({
-    types: new Set(['feeding', 'misting', 'health', 'weight']),
+    types: new Set(['feeding', 'misting', 'health', 'weight', 'shedding', 'brumation', 'measurement']),
     reptileId: null,
     dateRange: 'all', // '7d', '30d', '90d', 'all'
   });
@@ -53,15 +53,14 @@ const ActivityHistory = () => {
       setLoading(true);
       setError(null);
 
-      const [feedingsRes, weighingsRes, reptilesRes] = await Promise.all([
-        axios.get('/api/feedings'),
-        axios.get('/api/weight/dashboard'),
-        axios.get('/api/reptiles')
-      ]);
+      // Fetch reptiles first to get the lookup map
+      const reptilesRes = await axios.get('/api/reptiles');
+      const reptilesList = reptilesRes.data || [];
+      setReptiles(reptilesList);
 
       // Create reptile lookup map
       const reptilesMap = {};
-      (reptilesRes.data || []).forEach(r => {
+      reptilesList.forEach(r => {
         reptilesMap[r.id] = {
           id: r.id,
           name: r.name,
@@ -70,7 +69,26 @@ const ActivityHistory = () => {
         };
       });
 
-      setReptiles(reptilesRes.data || []);
+      // Fetch all data types in parallel
+      const [feedingsRes, weighingsRes] = await Promise.all([
+        axios.get('/api/feedings'),
+        axios.get('/api/weight/dashboard')
+      ]);
+
+      // Fetch health records and measurements per reptile
+      const healthAndMeasurements = await Promise.all(
+        reptilesList.map(async (reptile) => {
+          const [healthRes, measurementRes] = await Promise.all([
+            axios.get(`/api/health/reptile/${reptile.id}`).catch(() => ({ data: [] })),
+            axios.get(`/api/measurements/reptile/${reptile.id}`).catch(() => ({ data: [] }))
+          ]);
+          return {
+            reptileId: reptile.id,
+            health: healthRes.data || [],
+            measurements: measurementRes.data || []
+          };
+        })
+      );
 
       // Process feedings
       const feedings = (feedingsRes.data || []).map(f => {
@@ -109,7 +127,7 @@ const ActivityHistory = () => {
         return {
           type: 'weight',
           icon: Scale,
-          iconColor: 'text-amber-500',
+          iconColor: 'text-blue-500',
           reptile_id: w.reptile_id,
           reptile_name: reptileFromMap?.name || w.reptile_name || 'Unknown',
           reptile: reptileFromMap || {
@@ -126,8 +144,93 @@ const ActivityHistory = () => {
         };
       });
 
+      // Process health records (shedding, brumation, observations)
+      const healthRecords = healthAndMeasurements.flatMap(({ reptileId, health }) => {
+        const reptileFromMap = reptilesMap[reptileId];
+        return health.map(h => {
+          // Determine type and summary based on record_type and event_type
+          let type = 'health';
+          let icon = ActivityIcon;
+          let iconColor = 'text-gray-500';
+          let summary = h.title || 'Health record';
+
+          if (h.record_type === 'shedding') {
+            type = 'shedding';
+            icon = Heart;
+            iconColor = 'text-amber-500';
+            const subtype = h.event_type === 'start' ? 'Started' : 'Complete';
+            summary = `Shedding ${subtype}`;
+          } else if (h.record_type === 'brumation') {
+            type = 'brumation';
+            icon = Snowflake;
+            iconColor = 'text-purple-500';
+            const subtype = h.event_type === 'start' ? 'Started' : 'Ended';
+            summary = `Brumation ${subtype}`;
+          }
+
+          return {
+            type,
+            icon,
+            iconColor,
+            reptile_id: reptileId,
+            reptile_name: reptileFromMap?.name || 'Unknown',
+            reptile: reptileFromMap,
+            timestamp: h.date,
+            summary,
+            prominentValue: null,
+            detailLink: `/health-log/health/${h.id}`,
+            notes: h.description
+          };
+        });
+      });
+
+      // Measurement type friendly names
+      const measurementTypeNames = {
+        svl: 'Snout-Vent Length (SVL)',
+        total_length: 'Total Length',
+        shell_length: 'Shell Length',
+        head_width: 'Head Width',
+        tail_length: 'Tail Length',
+        humidity: 'Humidity',
+        temperature: 'Temperature'
+      };
+
+      // Process measurements
+      const measurements = healthAndMeasurements.flatMap(({ reptileId, measurements: measurementData }) => {
+        const reptileFromMap = reptilesMap[reptileId];
+        return measurementData.map(m => {
+          // Format measurement type label
+          let typeLabel = 'Measurement';
+          if (m.measurement_type === 'custom' && m.custom_label) {
+            typeLabel = m.custom_label;
+          } else if (m.measurement_type && measurementTypeNames[m.measurement_type]) {
+            typeLabel = measurementTypeNames[m.measurement_type];
+          } else if (m.measurement_type) {
+            // Fallback: convert snake_case to Title Case
+            typeLabel = m.measurement_type
+              .split('_')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+          }
+
+          return {
+            type: 'measurement',
+            icon: Ruler,
+            iconColor: 'text-green-500',
+            reptile_id: reptileId,
+            reptile_name: reptileFromMap?.name || 'Unknown',
+            reptile: reptileFromMap,
+            timestamp: m.measured_at,
+            summary: typeLabel,
+            prominentValue: `${m.value} ${m.unit}`,
+            detailLink: `/health-log/measurement/${m.id}`,
+            notes: m.notes
+          };
+        });
+      });
+
       // Combine and sort
-      const combined = [...feedings, ...weighings];
+      const combined = [...feedings, ...weighings, ...healthRecords, ...measurements];
       combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       setActivities(combined);
@@ -234,7 +337,7 @@ const ActivityHistory = () => {
     <div>
       <PageHeader
         title="Activity History"
-        subtitle="View and filter all reptile activities including feedings, misting, health logs, and weight records"
+        subtitle="View and filter all reptile activities including feedings, misting, health events, weight, shedding, brumation, and measurements"
       />
 
       {/* Filters Section */}
@@ -288,6 +391,39 @@ const ActivityHistory = () => {
             >
               <Scale className="w-3 h-3 mr-1" />
               Weight
+            </Badge>
+            <Badge
+              variant={filters.types.has('shedding') ? 'default' : 'outline'}
+              className={cn(
+                'cursor-pointer transition-colors',
+                filters.types.has('shedding') && 'bg-amber-600 hover:bg-amber-600/80'
+              )}
+              onClick={() => toggleTypeFilter('shedding')}
+            >
+              <Heart className="w-3 h-3 mr-1" />
+              Shedding
+            </Badge>
+            <Badge
+              variant={filters.types.has('brumation') ? 'default' : 'outline'}
+              className={cn(
+                'cursor-pointer transition-colors',
+                filters.types.has('brumation') && 'bg-purple-600 hover:bg-purple-600/80'
+              )}
+              onClick={() => toggleTypeFilter('brumation')}
+            >
+              <Snowflake className="w-3 h-3 mr-1" />
+              Brumation
+            </Badge>
+            <Badge
+              variant={filters.types.has('measurement') ? 'default' : 'outline'}
+              className={cn(
+                'cursor-pointer transition-colors',
+                filters.types.has('measurement') && 'bg-green-600 hover:bg-green-600/80'
+              )}
+              onClick={() => toggleTypeFilter('measurement')}
+            >
+              <Ruler className="w-3 h-3 mr-1" />
+              Measurements
             </Badge>
           </div>
         </div>

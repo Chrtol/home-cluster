@@ -112,6 +112,23 @@ async def update_measurement(
     for field, value in update_data.items():
         setattr(measurement, field, value)
 
+    # Update reptile length for length-type measurements (svl, total_length)
+    # Use updated values if provided, otherwise use existing measurement values
+    m_type = update_data.get('measurement_type', measurement.measurement_type)
+    m_unit = update_data.get('unit', measurement.unit)
+    m_value = update_data.get('value', measurement.value)
+
+    if m_type in ('svl', 'total_length') and m_unit in ('cm', 'mm', 'in'):
+        result = await db.execute(select(Reptile).where(Reptile.id == measurement.reptile_id))
+        reptile = result.scalar_one_or_none()
+        if reptile:
+            length_cm = m_value
+            if m_unit == 'mm':
+                length_cm = m_value / 10
+            elif m_unit == 'in':
+                length_cm = m_value * 2.54
+            reptile.length = int(round(length_cm))
+
     await db.commit()
     await db.refresh(measurement)
     return measurement
