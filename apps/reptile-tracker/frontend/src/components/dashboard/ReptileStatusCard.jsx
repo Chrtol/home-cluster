@@ -5,6 +5,10 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReptileAvatar from '../ReptileAvatar';
 import TaskChip from './TaskChip';
+import HealthStatusBadge from './HealthStatusBadge';
+import StreakBadge from './StreakBadge';
+import BirthdayBadge from './BirthdayBadge';
+import NextFeedingIndicator from './NextFeedingIndicator';
 
 /**
  * ReptileStatusCard - Individual reptile status card for dashboard
@@ -30,7 +34,10 @@ const ReptileStatusCard = ({
   isCompact = false,
   onReorder = null,
   onQuickLog,
-  index = 0
+  index = 0,
+  streak = null,           // NEW: streak data for this reptile
+  healthStatus = null,     // NEW: health status for this reptile
+  scheduleInstances = [],  // NEW: schedule instances for next feeding
 }) => {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -244,6 +251,15 @@ const ReptileStatusCard = ({
             )}
           </div>
 
+          {/* Status badges row - priority order: Health > Streak > Birthday */}
+          {showFull && (
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <HealthStatusBadge healthStatus={healthStatus} />
+              <StreakBadge streak={streak} />
+              <BirthdayBadge dateOfBirth={reptile.date_of_birth || reptile.hatch_date} />
+            </div>
+          )}
+
           {showFull && (
             <>
               <p className="text-xs text-muted-foreground mb-2">{reptile.species}</p>
@@ -266,6 +282,12 @@ const ReptileStatusCard = ({
                     )}
                   </div>
                 )}
+                {/* Next feeding indicator - hide when brumating */}
+                <NextFeedingIndicator
+                  scheduleInstances={scheduleInstances}
+                  reptileId={reptile.id}
+                  isHidden={healthStatus?.is_brumating}
+                />
               </div>
             </>
           )}
