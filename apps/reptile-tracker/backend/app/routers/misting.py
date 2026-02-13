@@ -78,7 +78,43 @@ async def create_misting_log(
 
     await db.commit()
     await db.refresh(new_log)
-    return new_log
+
+    # Calculate attribution if log was assigned to a schedule
+    attribution = None
+    if new_log.schedule_completion_id:
+        from app.models import ScheduleCompletion as ScheduleCompletionModel
+        completion_result = await db.execute(
+            select(ScheduleCompletionModel).where(ScheduleCompletionModel.id == new_log.schedule_completion_id)
+        )
+        completion = completion_result.scalar_one_or_none()
+
+        if completion:
+            from app.services.user_streak_service import get_completion_attribution
+            from sqlalchemy.orm import Session as SyncSession
+            sync_db = SyncSession(bind=db.get_bind())
+            try:
+                attribution_data = get_completion_attribution(
+                    sync_db,
+                    schedule_id=completion.schedule_id,
+                    reptile_id=log.reptile_id,
+                    completed_by_user_id=current_user.id
+                )
+                if attribution_data:
+                    attribution = attribution_data
+            finally:
+                sync_db.close()
+
+    # Return as dict with attribution
+    return {
+        "id": new_log.id,
+        "reptile_id": new_log.reptile_id,
+        "misted_at": new_log.misted_at,
+        "notes": new_log.notes,
+        "created_at": new_log.created_at,
+        "schedule_completion_id": new_log.schedule_completion_id,
+        "logged_by_user_id": new_log.logged_by_user_id,
+        "attribution": attribution,
+    }
 
 
 @router.patch("/{log_id}", response_model=MistingLogSchema)

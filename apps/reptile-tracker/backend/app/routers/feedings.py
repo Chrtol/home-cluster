@@ -250,6 +250,35 @@ async def create_feeding(
     # Try to assign to a matching schedule
     await assign_feeding_to_schedule(db, new_feeding)
 
+    # Calculate attribution if feeding was assigned to a schedule
+    attribution = None
+    if new_feeding.schedule_completion_id:
+        # Get the schedule completion to find schedule_id
+        from app.models import ScheduleCompletion as ScheduleCompletionModel
+        completion_result = await db.execute(
+            select(ScheduleCompletionModel).where(ScheduleCompletionModel.id == new_feeding.schedule_completion_id)
+        )
+        completion = completion_result.scalar_one_or_none()
+
+        if completion:
+            from app.services.user_streak_service import get_completion_attribution
+            # Use sync version of get_completion_attribution by passing sync db
+            # Note: The service expects sync Session, but we have AsyncSession
+            # We'll need to use the sync connection within the async context
+            from sqlalchemy.orm import Session as SyncSession
+            sync_db = SyncSession(bind=db.get_bind())
+            try:
+                attribution_data = get_completion_attribution(
+                    sync_db,
+                    schedule_id=completion.schedule_id,
+                    reptile_id=feeding.reptile_id,
+                    completed_by_user_id=current_user.id
+                )
+                if attribution_data:
+                    attribution = attribution_data
+            finally:
+                sync_db.close()
+
     # Process requirement-based schedules (weekly quota tracking)
     # Determine food category from the feeding
     food_category = None
@@ -365,6 +394,7 @@ async def create_feeding(
             for f in new_feeding.salad_components
         ],
         "created_at": new_feeding.created_at,
+        "attribution": attribution,
     }
 
     # Send notification if configured

@@ -236,6 +236,7 @@ class Feeding(BaseModel):
     salad_components: List[Food]
     schedule_completion_id: Optional[int] = None
     created_at: datetime
+    attribution: Optional["CompletionAttributionResponse"] = None
 
     @field_serializer('fed_at', 'created_at')
     def serialize_datetime(self, dt: datetime, _info):
@@ -322,6 +323,7 @@ class HealthRecord(HealthRecordBase):
     created_at: datetime
     logged_by_user_id: Optional[int] = None
     logged_by: Optional[UserSimple] = None
+    attribution: Optional["CompletionAttributionResponse"] = None
 
     class Config:
         from_attributes = True
@@ -365,6 +367,7 @@ class MistingLog(MistingLogBase):
     logged_by_user_id: Optional[int] = None
     logged_by: Optional[UserSimple] = None
     schedule_completion: Optional["ScheduleCompletion"] = None
+    attribution: Optional["CompletionAttributionResponse"] = None
 
     class Config:
         from_attributes = True
