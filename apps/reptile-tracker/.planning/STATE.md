@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 20 of 25 (Dashboard Status Indicators)
-Plan: 3 of TBD complete
+Phase: 20.5 of 25 (User Gamification System)
+Plan: 1 of TBD complete
 Status: In progress
-Last activity: 2026-02-13 — Completed 20-03-PLAN.md (Dashboard integration of status badges)
+Last activity: 2026-02-13 — Completed 20.5-01-PLAN.md (Responsibility assignment foundation)
 
-Progress: [████████████████░░░░] 79/TBD plans (Phase 19 COMPLETE, Phase 20 in progress)
+Progress: [████████████████░░░░] 80/TBD plans (Phase 20 complete, Phase 20.5 in progress)
 
 ## Performance Metrics
 
@@ -46,6 +46,11 @@ Progress: [████████████████░░░░] 79/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Support shared responsibility (multiple users per reptile/schedule) for co-parenting scenarios
+- 2026-02-13: Junction tables with metadata (assigned_at, assigned_by) for audit trail
+- 2026-02-13: Self-removal allowed anytime for user autonomy
+- 2026-02-13: Mid-day responsibility changes take immediate effect (no scheduling needed)
+- 2026-02-13: Unassigned reptiles accessible to all household members by default
 - 2026-02-13: Dashboard centralizes batch data fetching for streaks and health statuses (not ReptileStatusCards)
 - 2026-02-13: Separate try/catch for streak and health batch fetches (graceful degradation)
 - 2026-02-13: Filter scheduleInstances per reptile in ReptileStatusCards (filtering logic close to usage)
@@ -133,9 +138,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 20-03-PLAN.md (Dashboard integration of status badges)
-Resume file: .planning/phases/20-dashboard-status-indicators/20-03-SUMMARY.md
-Next action: Continue Phase 20 or proceed to Phase 21 (Celebration Animations) per roadmap
+Stopped at: Completed 20.5-01-PLAN.md (Responsibility assignment foundation)
+Resume file: .planning/phases/20.5-user-gamification-system/20.5-01-SUMMARY.md
+Next action: Continue Phase 20.5 with plan 02 (User-level streak calculation) or proceed to next phase per roadmap
 
 ## Deferred Items
 
