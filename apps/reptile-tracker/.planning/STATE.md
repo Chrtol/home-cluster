@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 20.5 of 25 (User Gamification System)
-Plan: 2 of TBD complete
+Plan: 3 of TBD complete
 Status: In progress
-Last activity: 2026-02-13 — Completed 20.5-02-PLAN.md (User-level streak calculation)
+Last activity: 2026-02-14 — Completed 20.5-03-PLAN.md (Gamification UI)
 
-Progress: [████████████████░░░░] 81/TBD plans (Phase 20 complete, Phase 20.5 in progress)
+Progress: [████████████████░░░░] 82/TBD plans (Phase 20 complete, Phase 20.5 in progress)
 
 ## Performance Metrics
 
@@ -46,6 +46,10 @@ Progress: [████████████████░░░░] 81/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-14: Event-driven attribution toast system using CustomEvents for loose coupling between components
+- 2026-02-14: Graceful degradation on streak API error (component hides rather than showing error state)
+- 2026-02-14: Animated flame for streaks > 7 days for visual milestone achievement feedback
+- 2026-02-14: Manual freeze toggle in streak popover for emergency vacation mode activation
 - 2026-02-13: Consecutive-miss logic for user streaks (breaks after 2 misses, not time-based)
 - 2026-02-13: Only manual-completion schedules count toward streak (auto-complete excluded)
 - 2026-02-13: Freeze days protect streak during vacation (tasks still due, notifications still fire)
@@ -143,10 +147,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Completed 20.5-02-PLAN.md (User-level streak calculation)
-Resume file: .planning/phases/20.5-user-gamification-system/20.5-02-SUMMARY.md
-Next action: Continue Phase 20.5 with plan 03 (Gamification UI) or proceed to next phase per roadmap
+Last session: 2026-02-14
+Stopped at: Completed 20.5-03-PLAN.md (Gamification UI)
+Resume file: .planning/phases/20.5-user-gamification-system/20.5-03-SUMMARY.md
+Next action: Continue Phase 20.5 with plan 04 (Integration and Testing) or proceed to next phase per roadmap
 
 ## Deferred Items
 
