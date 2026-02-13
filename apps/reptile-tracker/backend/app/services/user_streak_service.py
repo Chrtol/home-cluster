@@ -9,7 +9,7 @@ Supports shared responsibility and freeze/vacation mode.
 from datetime import date, datetime, timezone as tz
 from typing import List, Dict, Optional
 from sqlalchemy import select, and_, or_, text
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import event
 
 from app.models import (
@@ -32,7 +32,7 @@ MILESTONE_REWARDS = {
 }
 
 
-def get_responsible_users(db: Session, schedule_id: int, reptile_id: int) -> List[int]:
+async def get_responsible_users(db: AsyncSession, schedule_id: int, reptile_id: int) -> List[int]:
     """
     Get list of user IDs responsible for a schedule/reptile.
 
@@ -45,19 +45,21 @@ def get_responsible_users(db: Session, schedule_id: int, reptile_id: int) -> Lis
         List of user_id integers
     """
     # Check schedule-level responsibility first (override)
-    schedule_users = db.execute(
+    result = await db.execute(
         select(ScheduleResponsibility.user_id)
         .where(ScheduleResponsibility.schedule_id == schedule_id)
-    ).scalars().all()
+    )
+    schedule_users = result.scalars().all()
 
     if schedule_users:
         return list(schedule_users)
 
     # Fall back to reptile-level responsibility
-    reptile_users = db.execute(
+    result = await db.execute(
         select(ReptileResponsibility.user_id)
         .where(ReptileResponsibility.reptile_id == reptile_id)
-    ).scalars().all()
+    )
+    reptile_users = result.scalars().all()
 
     if reptile_users:
         return list(reptile_users)
@@ -65,7 +67,7 @@ def get_responsible_users(db: Session, schedule_id: int, reptile_id: int) -> Lis
     # Default: all household members are responsible
     # Get household via reptile, then all members
     from app.models import Reptile, household_members
-    result = db.execute(
+    result = await db.execute(
         select(household_members.c.user_id)
         .join(Reptile, Reptile.household_id == household_members.c.household_id)
         .where(Reptile.id == reptile_id)
@@ -87,7 +89,7 @@ def is_schedule_manual(schedule: Schedule) -> bool:
     return not schedule.auto_complete_enabled
 
 
-def is_user_frozen(db: Session, user_id: int, check_date: date) -> bool:
+async def is_user_frozen(db: AsyncSession, user_id: int, check_date: date) -> bool:
     """
     Check if user has an active freeze covering the given date.
 
@@ -99,7 +101,7 @@ def is_user_frozen(db: Session, user_id: int, check_date: date) -> bool:
     Returns:
         True if user is frozen on check_date, False otherwise
     """
-    result = db.execute(
+    result = await db.execute(
         select(UserStreakFreeze)
         .where(
             and_(
@@ -109,12 +111,12 @@ def is_user_frozen(db: Session, user_id: int, check_date: date) -> bool:
                 UserStreakFreeze.end_date >= check_date,
             )
         )
-    ).first()
+    )
 
-    return result is not None
+    return result.first() is not None
 
 
-def check_milestone_and_award_freeze(db: Session, user_id: int, new_streak: int) -> Optional[int]:
+async def check_milestone_and_award_freeze(db: AsyncSession, user_id: int, new_streak: int) -> Optional[int]:
     """
     Check if new streak hits a milestone and award freeze days.
 
@@ -132,19 +134,20 @@ def check_milestone_and_award_freeze(db: Session, user_id: int, new_streak: int)
     # Award freeze days
     freeze_days = MILESTONE_REWARDS[new_streak]
 
-    user_streak = db.execute(
+    result = await db.execute(
         select(UserStreak).where(UserStreak.user_id == user_id)
-    ).scalar_one_or_none()
+    )
+    user_streak = result.scalar_one_or_none()
 
     if user_streak:
         user_streak.total_freeze_days += freeze_days
-        db.flush()
+        await db.flush()
 
     return new_streak
 
 
-def update_user_streak_on_completion(
-    db: Session,
+async def update_user_streak_on_completion(
+    db: AsyncSession,
     user_id: int,
     completed_by_user_id: int,
     user_lookup: Dict[int, str]
@@ -172,14 +175,15 @@ def update_user_streak_on_completion(
         - milestone_reached (optional)
     """
     # Get or create UserStreak
-    user_streak = db.execute(
+    result = await db.execute(
         select(UserStreak).where(UserStreak.user_id == user_id)
-    ).scalar_one_or_none()
+    )
+    user_streak = result.scalar_one_or_none()
 
     if not user_streak:
         user_streak = UserStreak(user_id=user_id)
         db.add(user_streak)
-        db.flush()
+        await db.flush()
 
     # Reset consecutive misses
     user_streak.consecutive_misses = 0
@@ -195,9 +199,9 @@ def update_user_streak_on_completion(
     user_streak.last_completion_at = datetime.now(tz.utc)
 
     # Check milestone
-    milestone = check_milestone_and_award_freeze(db, user_id, user_streak.current_streak)
+    milestone = await check_milestone_and_award_freeze(db, user_id, user_streak.current_streak)
 
-    db.flush()
+    await db.flush()
 
     return {
         'credited_to_user_id': user_id,
@@ -207,7 +211,7 @@ def update_user_streak_on_completion(
     }
 
 
-def increment_user_miss(db: Session, user_id: int, miss_date: date):
+async def increment_user_miss(db: AsyncSession, user_id: int, miss_date: date):
     """
     Increment consecutive miss counter for a user.
 
@@ -222,18 +226,19 @@ def increment_user_miss(db: Session, user_id: int, miss_date: date):
         miss_date: Date of the missed task
     """
     # Skip if user is frozen
-    if is_user_frozen(db, user_id, miss_date):
+    if await is_user_frozen(db, user_id, miss_date):
         return
 
     # Get or create UserStreak
-    user_streak = db.execute(
+    result = await db.execute(
         select(UserStreak).where(UserStreak.user_id == user_id)
-    ).scalar_one_or_none()
+    )
+    user_streak = result.scalar_one_or_none()
 
     if not user_streak:
         user_streak = UserStreak(user_id=user_id)
         db.add(user_streak)
-        db.flush()
+        await db.flush()
 
     # Increment miss counter
     user_streak.consecutive_misses += 1
@@ -243,26 +248,27 @@ def increment_user_miss(db: Session, user_id: int, miss_date: date):
         user_streak.current_streak = 0
         user_streak.consecutive_misses = 0
 
-    db.flush()
+    await db.flush()
 
 
-def get_user_streak(db: Session, user_id: int) -> Optional[Dict]:
+async def get_user_streak(db: AsyncSession, user_id: int) -> Optional[Dict]:
     """
     Get current user streak data.
 
     Returns:
         UserStreakResponse dict or None
     """
-    user_streak = db.execute(
+    result = await db.execute(
         select(UserStreak).where(UserStreak.user_id == user_id)
-    ).scalar_one_or_none()
+    )
+    user_streak = result.scalar_one_or_none()
 
     if not user_streak:
         return None
 
     # Check if frozen today
     today = date.today()
-    is_frozen = is_user_frozen(db, user_id, today)
+    is_frozen = await is_user_frozen(db, user_id, today)
 
     # Calculate available freeze days
     available_freeze = user_streak.total_freeze_days - user_streak.used_freeze_days
@@ -290,8 +296,8 @@ def get_user_streak(db: Session, user_id: int) -> Optional[Dict]:
     }
 
 
-def get_completion_attribution(
-    db: Session,
+async def get_completion_attribution(
+    db: AsyncSession,
     schedule_id: int,
     reptile_id: int,
     completed_by_user_id: int
@@ -308,7 +314,7 @@ def get_completion_attribution(
     Returns:
         CompletionAttributionResponse dict or None if no attribution needed
     """
-    responsible_users = get_responsible_users(db, schedule_id, reptile_id)
+    responsible_users = await get_responsible_users(db, schedule_id, reptile_id)
 
     # If completer is the only responsible user, no attribution needed
     if completed_by_user_id in responsible_users and len(responsible_users) == 1:
@@ -320,9 +326,10 @@ def get_completion_attribution(
         return None
 
     # Return attribution for first credited user (primary display)
-    credited_user = db.execute(
+    result = await db.execute(
         select(User).where(User.id == credited_users[0])
-    ).scalar_one_or_none()
+    )
+    credited_user = result.scalar_one_or_none()
 
     if not credited_user:
         return None
@@ -337,6 +344,7 @@ def get_completion_attribution(
 
 
 # Event-driven user streak updates
+# Note: Event listener uses sync connection (not async) since it runs in after_insert
 @event.listens_for(ScheduleCompletion, 'after_insert')
 def on_schedule_completion_created(mapper, connection, target):
     """
