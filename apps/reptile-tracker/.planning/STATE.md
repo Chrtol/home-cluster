@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 19 of 25 (Health Logging UI)
-Plan: 4 of 4 complete
-Status: Phase 19 COMPLETE
-Last activity: 2026-02-13 — Completed 19-04-PLAN.md (UAT gap closure)
+Phase: 20 of 25 (Dashboard Status Indicators)
+Plan: 2 of TBD complete
+Status: In progress
+Last activity: 2026-02-13 — Completed 20-02-PLAN.md (BirthdayBadge and NextFeedingIndicator)
 
-Progress: [████████████████░░░░] 77/TBD plans (Phase 19 COMPLETE, including 19.1 inserted phase)
+Progress: [████████████████░░░░] 78/TBD plans (Phase 19 COMPLETE, Phase 20 in progress)
 
 ## Performance Metrics
 
@@ -46,6 +46,10 @@ Progress: [████████████████░░░░] 77/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Birthday badge hidden when date_of_birth null or > 30 days away
+- 2026-02-13: Next feeding uses absolute time format (Today 6pm) per UX research
+- 2026-02-13: NextFeedingIndicator accepts isHidden prop for caller control (brumation state)
+- 2026-02-13: Clock icon used for next feeding (distinct from utensil icon for last feeding)
 - 2026-02-13: Health status format "Shedding for X days" (more natural language than "In shed (X days)")
 - 2026-02-13: event_subtype resets when reptile changes to prevent stale selections
 - 2026-02-13: Auto-select always sets value when only one option valid (ignores previous value)
@@ -126,9 +130,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 19-04-PLAN.md (Phase 19 COMPLETE)
-Resume file: .planning/phases/19-health-logging-ui/19-04-SUMMARY.md
-Next action: Phase 19 complete (UAT gaps closed). Ready for Phase 20 (Dashboard Badges & CTAs) per v1.3 roadmap
+Stopped at: Completed 20-02-PLAN.md (BirthdayBadge and NextFeedingIndicator components)
+Resume file: .planning/phases/20-dashboard-status-indicators/20-02-SUMMARY.md
+Next action: Continue Phase 20 with remaining plans (StreakBadge, HealthStatusBadge, dashboard integration)
 
 ## Deferred Items
 
