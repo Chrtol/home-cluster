@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 19.1 of 25 (Measurements Feature Restoration - INSERTED)
-Plan: 01 of TBD (in progress)
-Status: Phase 19.1 in progress - Plan 01 complete
-Last activity: 2026-02-13 — Completed 19.1-01-PLAN.md (Measurement log type in Health Log)
+Plan: 2 of 2 complete
+Status: Phase 19.1 COMPLETE
+Last activity: 2026-02-13 — Completed 19.1-02-PLAN.md (Measurement history integration & CRUD)
 
-Progress: [████████████████░░░░] 73/TBD plans (19 phases complete, 1 plan in Phase 19.1)
+Progress: [████████████████░░░░] 74/TBD plans (19.1 complete, 19 phases total complete)
 
 ## Performance Metrics
 
@@ -46,6 +46,10 @@ Progress: [████████████████░░░░] 73/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Green badge color for measurements in history (distinct from weight=blue, shedding=amber, brumation=purple)
+- 2026-02-13: Title case formatting for measurement type labels (split snake_case, capitalize words)
+- 2026-02-13: Custom label takes precedence over formatted type in measurement display
+- 2026-02-13: Three-way fetch in loadHistory for complete event data (weight, health, measurements)
 - 2026-02-13: Use plain 'C' and 'F' for temperature units (not degree symbol) to avoid encoding issues
 - 2026-02-13: Measurement button placed after Brumation in log type selector
 - 2026-02-13: Custom label required only when measurement_type='custom'
@@ -118,9 +122,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 19.1-01-PLAN.md
-Resume file: .planning/phases/19.1-measurements-feature-restoration/19.1-01-SUMMARY.md
-Next action: Continue Phase 19.1 with additional plans for measurements display/history
+Stopped at: Completed 19.1-02-PLAN.md (Phase 19.1 COMPLETE)
+Resume file: .planning/phases/19.1-measurements-feature-restoration/19.1-02-SUMMARY.md
+Next action: Phase 19.1 complete - measurements feature fully restored. Resume v1.3 roadmap at Phase 20 (Dashboard Badges & CTAs)
 
 ## Deferred Items
 
