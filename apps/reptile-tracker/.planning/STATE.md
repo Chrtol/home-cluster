@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 19.1 of 25 (Measurements Feature Restoration - INSERTED)
-Plan: 00 of TBD (not planned)
-Status: Phase 19.1 inserted - needs planning
-Last activity: 2026-02-13 — Inserted Phase 19.1 for urgent measurements restoration
+Plan: 01 of TBD (in progress)
+Status: Phase 19.1 in progress - Plan 01 complete
+Last activity: 2026-02-13 — Completed 19.1-01-PLAN.md (Measurement log type in Health Log)
 
-Progress: [████████████████░░░░] 72/TBD plans (19 phases complete, 1 inserted)
+Progress: [████████████████░░░░] 73/TBD plans (19 phases complete, 1 plan in Phase 19.1)
 
 ## Performance Metrics
 
@@ -46,6 +46,10 @@ Progress: [████████████████░░░░] 72/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-13: Use plain 'C' and 'F' for temperature units (not degree symbol) to avoid encoding issues
+- 2026-02-13: Measurement button placed after Brumation in log type selector
+- 2026-02-13: Custom label required only when measurement_type='custom'
+- 2026-02-13: Track lastLogType as 'measurement' for post-submission navigation
 - 2026-02-13: Combined API fetching for history (separate weight/health endpoints, normalize client-side)
 - 2026-02-13: Client-side event type filtering (adequate performance for typical data volumes)
 - 2026-02-13: Measurements page redirect vs removal (keep route, replace with redirect for backward compatibility)
@@ -114,9 +118,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 19.1 inserted (Measurements Feature Restoration)
-Resume file: N/A (phase not yet planned)
-Next action: Plan Phase 19.1 with /gsd:plan-phase 19.1
+Stopped at: Completed 19.1-01-PLAN.md
+Resume file: .planning/phases/19.1-measurements-feature-restoration/19.1-01-SUMMARY.md
+Next action: Continue Phase 19.1 with additional plans for measurements display/history
 
 ## Deferred Items
 
