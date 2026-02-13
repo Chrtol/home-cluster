@@ -577,6 +577,23 @@ export default function HealthLog() {
           setLastCreatedId(response.data.id);
           setLastLogType('health');
           setShowSuccessActions(true);
+        } else if (data.log_type === 'measurement') {
+          const response = await axios.post('/api/measurements', {
+            reptile_id: data.reptile_id,
+            measurement_type: data.measurement_type,
+            value: parseFloat(data.measurement_value),
+            unit: data.measurement_unit,
+            custom_label: data.measurement_type === 'custom' ? data.custom_label : null,
+            measured_at: new Date(dateTimeString).toISOString(),
+            notes: data.notes || null,
+          });
+          const typeLabel = data.measurement_type === 'custom'
+            ? data.custom_label
+            : data.measurement_type.replace('_', ' ');
+          setSuccess(`${typeLabel} measurement logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
+          setLastCreatedId(response.data.id);
+          setLastLogType('measurement');
+          setShowSuccessActions(true);
         } else {
           const payload = {
             reptile_id: data.reptile_id,
@@ -868,7 +885,8 @@ export default function HealthLog() {
         title={mode === 'edit' ?
           `Edit ${logType === 'weight' ? 'Weight' :
                  logType === 'shedding' ? 'Shedding Event' :
-                 logType === 'brumation' ? 'Brumation Event' : 'Health'} Log` :
+                 logType === 'brumation' ? 'Brumation Event' :
+                 logType === 'measurement' ? 'Measurement' : 'Health'} Log` :
           'Log Health'}
       />
 
