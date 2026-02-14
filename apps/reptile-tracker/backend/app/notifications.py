@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 #   - expiry_alert: Sent when time window is closing
 #   - frequency_cap_summary: Sent when frequency cap is reached instead of suppressing silently
 #
+# Planner digest triggers (Phase 23):
+#   - daily_planner: Daily digest of tasks for the day
+#   - weekly_planner: Weekly digest of tasks for the next 7 days
+#
 # =============================================================================
 # Template Variables (SafeDict pattern - missing keys return empty string)
 # =============================================================================
@@ -47,6 +51,12 @@ logger = logging.getLogger(__name__)
 #   window_end        - Schedule window end time (formatted per user locale)
 #   follow_up_number  - Which follow-up this is (1, 2, etc.)
 #   notifications_suppressed - Count of suppressed notifications (for frequency cap summary)
+#
+# Planner digest variables (Phase 23):
+#   date              - Formatted date for daily planner (e.g., "Monday, February 14")
+#   start_date        - Start date for weekly planner (e.g., "February 14")
+#   end_date          - End date for weekly planner (e.g., "February 20")
+#   message           - Pre-formatted message body (built by digest.py)
 # =============================================================================
 
 # M-3 Fix: Define blocked IP ranges for SSRF protection
