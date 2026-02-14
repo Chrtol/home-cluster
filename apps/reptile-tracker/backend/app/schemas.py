@@ -1057,6 +1057,13 @@ class NotificationSettingsBase(BaseModel):
     frequency_cap_per_reptile: int = 5  # Max notifications per reptile per day (0 = unlimited)
     frequency_cap_mode: str = "silent"  # "silent" or "summary"
 
+    # Planner digest settings (Phase 23)
+    daily_planner_enabled: bool = False
+    daily_planner_time: Optional[time] = None
+    weekly_planner_enabled: bool = False
+    weekly_planner_day: int = 0  # 0=Sunday, 6=Saturday
+    digest_format: str = "grouped"  # "grouped" or "individual"
+
 
 class NotificationSettingsUpdate(BaseModel):
     webhook_enabled: Optional[bool] = None
@@ -1072,6 +1079,13 @@ class NotificationSettingsUpdate(BaseModel):
     frequency_cap_enabled: Optional[bool] = None
     frequency_cap_per_reptile: Optional[int] = None
     frequency_cap_mode: Optional[str] = None  # "silent" or "summary"
+
+    # Planner digest settings (Phase 23)
+    daily_planner_enabled: Optional[bool] = None
+    daily_planner_time: Optional[time] = None
+    weekly_planner_enabled: Optional[bool] = None
+    weekly_planner_day: Optional[int] = None
+    digest_format: Optional[str] = None
 
 
 class NotificationSettingsSchema(NotificationSettingsBase):
