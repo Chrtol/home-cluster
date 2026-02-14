@@ -239,7 +239,7 @@ async def send_schedule_reminder_task(
 
                 # Try to get active supplement rotations for this reptile
                 from app.models import FeedingRotation, Supplement
-                from sqlalchemy import select, and_
+                # Note: select and and_ already imported at module level
                 rotation_result = await db.execute(
                     select(FeedingRotation)
                     .where(
