@@ -795,6 +795,178 @@ function NotificationsTab() {
         </div>
       </div>
 
+      {/* Planner Digests Section - Phase 23 */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Planner Digests</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Receive a summary of scheduled tasks at your preferred time.
+        </p>
+
+        <div className="space-y-4">
+          {/* Daily Planner */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-foreground">Daily Planner</label>
+                <p className="text-xs text-muted-foreground">Morning digest of today's tasks</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={dailyPlannerEnabled}
+                  onChange={(e) => setDailyPlannerEnabled(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-muted after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {dailyPlannerEnabled && (
+              <div className="ml-4 pl-4 border-l-2 border-border space-y-3">
+                {/* Delivery Time */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Delivery Time
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={plannerHours}
+                      onChange={(e) => setPlannerHours(Number(e.target.value))}
+                      className="bg-background border border-border rounded-md px-2 py-1 text-sm"
+                    >
+                      {(userTimeFormat === '12h' ? [12,1,2,3,4,5,6,7,8,9,10,11] : Array.from({length: 24}, (_, i) => i)).map(h => (
+                        <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
+                      ))}
+                    </select>
+                    <span>:</span>
+                    <select
+                      value={plannerMinutes}
+                      onChange={(e) => setPlannerMinutes(Number(e.target.value))}
+                      className="bg-background border border-border rounded-md px-2 py-1 text-sm"
+                    >
+                      {[0, 30].map(m => (
+                        <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
+                      ))}
+                    </select>
+                    {userTimeFormat === '12h' && (
+                      <select
+                        value={plannerPeriod}
+                        onChange={(e) => setPlannerPeriod(e.target.value)}
+                        className="bg-background border border-border rounded-md px-2 py-1 text-sm"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Time is in your timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Weekly Planner */}
+          <div className="space-y-3 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-foreground">Weekly Planner</label>
+                <p className="text-xs text-muted-foreground">Preview of the week's tasks</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={weeklyPlannerEnabled}
+                  onChange={(e) => setWeeklyPlannerEnabled(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-muted after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {weeklyPlannerEnabled && (
+              <div className="ml-4 pl-4 border-l-2 border-border space-y-3">
+                {/* Day Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Send On
+                  </label>
+                  <select
+                    value={weeklyPlannerDay}
+                    onChange={(e) => setWeeklyPlannerDay(Number(e.target.value))}
+                    className="bg-background border border-border rounded-md px-3 py-2 text-sm w-full"
+                  >
+                    <option value={0}>Sunday</option>
+                    <option value={1}>Monday</option>
+                    <option value={2}>Tuesday</option>
+                    <option value={3}>Wednesday</option>
+                    <option value={4}>Thursday</option>
+                    <option value={5}>Friday</option>
+                    <option value={6}>Saturday</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Sent at the same time as daily planner
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Digest Format (applies to both) */}
+          {(dailyPlannerEnabled || weeklyPlannerEnabled) && (
+            <div className="space-y-3 pt-4 border-t border-border">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Digest Format
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="digestFormat"
+                      value="grouped"
+                      checked={digestFormat === 'grouped'}
+                      onChange={(e) => setDigestFormat(e.target.value)}
+                      className="text-primary focus:ring-primary"
+                    />
+                    <div>
+                      <span className="text-sm text-foreground">Single message</span>
+                      <p className="text-xs text-muted-foreground">All tasks in one notification</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="digestFormat"
+                      value="individual"
+                      checked={digestFormat === 'individual'}
+                      onChange={(e) => setDigestFormat(e.target.value)}
+                      className="text-primary focus:ring-primary"
+                    />
+                    <div>
+                      <span className="text-sm text-foreground">Individual notifications</span>
+                      <p className="text-xs text-muted-foreground">One notification per task</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save Button */}
+          <div className="pt-4">
+            <button
+              onClick={savePlannerSettings}
+              disabled={savingPreferences}
+              className="btn-primary"
+            >
+              {savingPreferences ? 'Saving...' : 'Save Planner Settings'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Notification Channels */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
