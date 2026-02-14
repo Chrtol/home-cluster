@@ -38,6 +38,17 @@ from .core import (
 # Re-export overdue detection from overdue.py
 from .overdue import check_overdue_schedules
 
+# Re-export digest functions from digest.py (Phase 23 - Notification Planner)
+from .digest import (
+    get_pending_instances_for_date,
+    get_overdue_instances_for_user,
+    get_weekly_instances,
+    build_daily_digest_message,
+    build_weekly_digest_message,
+    build_task_line,
+    build_individual_task_message,
+)
+
 __all__ = [
     "scheduler",
     "start_scheduler",
@@ -55,4 +66,12 @@ __all__ = [
     "is_within_quiet_hours",
     "schedule_autocomplete_for_instance",
     "check_overdue_schedules",
+    # Digest functions (Phase 23)
+    "get_pending_instances_for_date",
+    "get_overdue_instances_for_user",
+    "get_weekly_instances",
+    "build_daily_digest_message",
+    "build_weekly_digest_message",
+    "build_task_line",
+    "build_individual_task_message",
 ]
