@@ -33,6 +33,8 @@ from .core import (
     send_interval_warning_notification,
     is_within_quiet_hours,
     schedule_autocomplete_for_instance,
+    # On-demand planner scheduling (Phase 23 fix)
+    schedule_planner_for_user,
 )
 
 # Re-export overdue detection from overdue.py
@@ -66,6 +68,8 @@ __all__ = [
     "is_within_quiet_hours",
     "schedule_autocomplete_for_instance",
     "check_overdue_schedules",
+    # On-demand planner scheduling (Phase 23 fix)
+    "schedule_planner_for_user",
     # Digest functions (Phase 23)
     "get_pending_instances_for_date",
     "get_overdue_instances_for_user",

@@ -1475,6 +1475,82 @@ async def execute_weekly_planner_delivery(user_id: int, start_date: py_date):
         logger.error(f"Error executing weekly planner delivery for user {user_id}: {e}", exc_info=True)
 
 
+async def schedule_planner_for_user(user_id: int):
+    """
+    Schedule planner digest delivery for a specific user on-demand.
+
+    Called when user saves planner settings, so they don't have to wait
+    for the midnight cron job to take effect.
+
+    Schedules:
+    - Daily planner for today (if enabled and delivery time hasn't passed)
+    - Weekly planner for today (if enabled and today is the configured day)
+    """
+    async with async_session_maker() as db:
+        # Get user and settings
+        result = await db.execute(
+            select(User, NotificationSettings)
+            .join(NotificationSettings, User.id == NotificationSettings.user_id)
+            .where(User.id == user_id)
+        )
+        row = result.first()
+        if not row:
+            logger.warning(f"Cannot schedule planner for user {user_id}: not found or no settings")
+            return
+
+        user, settings = row
+        user_tz = ZoneInfo(user.timezone) if user.timezone else ZoneInfo("UTC")
+        now_utc = datetime.now(timezone.utc)
+        today_local = datetime.now(user_tz).date()
+
+        # Default delivery time
+        delivery_time_local = settings.daily_planner_time or py_time(8, 0)
+
+        delivery_datetime_local = datetime.combine(
+            today_local,
+            delivery_time_local,
+            tzinfo=user_tz
+        )
+        delivery_datetime_utc = delivery_datetime_local.astimezone(timezone.utc)
+
+        # Check if delivery time is still in the future
+        time_in_future = delivery_datetime_utc > now_utc
+
+        # Schedule daily planner if enabled and time hasn't passed
+        if settings.daily_planner_enabled and time_in_future:
+            job_id = f"daily_planner_{user_id}_{today_local.isoformat()}"
+
+            scheduler.add_job(
+                func=execute_daily_planner_delivery,
+                trigger='date',
+                run_date=delivery_datetime_utc,
+                args=[user_id, today_local],
+                id=job_id,
+                replace_existing=True,
+                misfire_grace_time=3600
+            )
+            logger.info(f"On-demand scheduled daily planner for user {user.email} at {delivery_datetime_utc}")
+
+        # Schedule weekly planner if enabled, today is the right day, and time hasn't passed
+        if settings.weekly_planner_enabled and time_in_future:
+            configured_day = settings.weekly_planner_day or 0  # 0=Sunday
+            today_day = (today_local.weekday() + 1) % 7  # Convert to Sunday=0
+
+            if today_day == configured_day:
+                job_id = f"weekly_planner_{user_id}_{today_local.isoformat()}"
+
+                scheduler.add_job(
+                    func=execute_weekly_planner_delivery,
+                    trigger='date',
+                    run_date=delivery_datetime_utc,
+                    args=[user_id, today_local],
+                    id=job_id,
+                    replace_existing=True,
+                    misfire_grace_time=3600
+                )
+                logger.info(f"On-demand scheduled weekly planner for user {user.email} at {delivery_datetime_utc}")
+
+
 async def start_scheduler():
     """Start the notification scheduler"""
     global scheduler

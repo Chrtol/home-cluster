@@ -535,7 +535,7 @@ function NotificationsTab() {
           </div>
         )}
 
-        {success && (
+        {success && !success.includes('Planner') && (
           <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <p className="text-green-800 dark:text-green-200 text-sm">{success}</p>
           </div>
@@ -962,6 +962,13 @@ function NotificationsTab() {
                   </label>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && success.includes('Planner') && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="text-green-800 dark:text-green-200 text-sm">{success}</p>
             </div>
           )}
 

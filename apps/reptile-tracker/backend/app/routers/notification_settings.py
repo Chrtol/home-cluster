@@ -10,7 +10,7 @@ from app.auth import get_current_user
 from app.schemas import NotificationSettingsSchema, NotificationSettingsUpdate
 from app.notifications import validate_webhook_url, send_webhook_notification
 from app.notification_utils import ensure_in_app_channel
-from app.scheduler import create_in_app_notification
+from app.scheduler import create_in_app_notification, schedule_planner_for_user
 
 router = APIRouter(prefix="/api/notification-settings", tags=["notification-settings"])
 
@@ -86,6 +86,17 @@ async def create_or_update_notification_settings(
 
     await db.commit()
     await db.refresh(settings)
+
+    # Check if planner settings were updated - if so, schedule immediately
+    planner_fields = {
+        'daily_planner_enabled', 'daily_planner_time',
+        'weekly_planner_enabled', 'weekly_planner_day'
+    }
+    updated_fields = set(settings_data.model_dump(exclude_unset=True).keys())
+    if planner_fields & updated_fields:
+        # Schedule planner for today if settings allow (time in future, etc.)
+        await schedule_planner_for_user(current_user.id)
+
     return settings
 
 
