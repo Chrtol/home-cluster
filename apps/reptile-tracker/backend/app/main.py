@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
     Replaces deprecated @app.on_event("startup") and @app.on_event("shutdown").
     """
     # Startup
-    logger.info(f"Starting Reptile Tracker API v2.0.1 in {settings.environment} mode")
+    logger.info(f"Starting Reptile Tracker API v2.0.2 in {settings.environment} mode")
 
     # H-2 Fix: Validate secret key on startup
     if settings.secret_key in ["your-secret-key-here-change-in-production", "dev_secret_key_change_in_production"]:
@@ -134,7 +134,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Reptile Tracker API",
     description="API for tracking reptile feeding schedules, health, and weight",
-    version="2.0.1",  # Testing CI/CD with timestamp-based image tags
+    version="2.0.2",  # Phase 22 smart notifications
     redirect_slashes=False,  # Disable automatic slash redirects to avoid 307s that break auth cookies
     lifespan=lifespan,  # Use lifespan context manager for startup/shutdown
 )
