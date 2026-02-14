@@ -17,6 +17,11 @@ function NotificationsTab() {
   const [quietHoursEnd, setQuietHoursEnd] = useState('08:00');
   const [savingPreferences, setSavingPreferences] = useState(false);
 
+  // Frequency cap settings (Phase 22)
+  const [frequencyCapEnabled, setFrequencyCapEnabled] = useState(true);
+  const [frequencyCapPerReptile, setFrequencyCapPerReptile] = useState(5);
+  const [frequencyCapMode, setFrequencyCapMode] = useState('silent');
+
   // Time picker state for quiet hours start
   const [startHours, setStartHours] = useState(22);
   const [startMinutes, setStartMinutes] = useState(0);
@@ -70,6 +75,11 @@ function NotificationsTab() {
           setQuietHoursEnabled(settingsRes.data.quiet_hours_enabled || false);
           setQuietHoursStart(settingsRes.data.quiet_hours_start || '22:00');
           setQuietHoursEnd(settingsRes.data.quiet_hours_end || '08:00');
+
+          // Load frequency cap settings (Phase 22)
+          setFrequencyCapEnabled(settingsRes.data.frequency_cap_enabled !== undefined ? settingsRes.data.frequency_cap_enabled : true);
+          setFrequencyCapPerReptile(settingsRes.data.frequency_cap_per_reptile !== undefined ? settingsRes.data.frequency_cap_per_reptile : 5);
+          setFrequencyCapMode(settingsRes.data.frequency_cap_mode || 'silent');
         }
       } catch (err) {
         // 404 is okay, means no settings yet
@@ -209,7 +219,11 @@ function NotificationsTab() {
         quiet_hours_end: quietHoursEnabled ? quietHoursEnd : null,
         webhook_enabled: false, // Legacy field
         webhook_url: '',
-        webhook_type: 'discord'
+        webhook_type: 'discord',
+        // Frequency cap settings (Phase 22)
+        frequency_cap_enabled: frequencyCapEnabled,
+        frequency_cap_per_reptile: parseInt(frequencyCapPerReptile) || 5,
+        frequency_cap_mode: frequencyCapMode
       });
 
       setSuccess('Notification preferences saved!');
@@ -613,6 +627,104 @@ function NotificationsTab() {
               </div>
             )}
           </div>
+
+          <button
+            onClick={handleSavePreferences}
+            disabled={savingPreferences}
+            className="btn-primary mt-2"
+          >
+            {savingPreferences ? 'Saving...' : 'Save Preferences'}
+          </button>
+        </div>
+      </div>
+
+      {/* Notification Frequency Cap */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Notification Frequency Cap</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Prevent notification overload by limiting how many notifications you receive per reptile per day.
+        </p>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={frequencyCapEnabled}
+              onChange={(e) => setFrequencyCapEnabled(e.target.checked)}
+              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-foreground">Enable Frequency Cap</div>
+              <div className="text-sm text-muted-foreground">
+                Limit the number of notifications per reptile per day
+              </div>
+            </div>
+          </label>
+
+          {frequencyCapEnabled && (
+            <div className="ml-7 space-y-4 pt-2 border-t border-border">
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Max Notifications Per Reptile Per Day
+                </label>
+                <input
+                  type="number"
+                  value={frequencyCapPerReptile}
+                  onChange={(e) => setFrequencyCapPerReptile(e.target.value)}
+                  min="0"
+                  max="50"
+                  className="input-field w-24"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {parseInt(frequencyCapPerReptile) === 0
+                    ? 'Unlimited notifications (cap disabled)'
+                    : `After ${frequencyCapPerReptile} notifications for a reptile, additional notifications will be ${frequencyCapMode === 'silent' ? 'suppressed' : 'summarized'}`
+                  }
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  When Limit is Reached
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="frequencyCapMode"
+                      value="silent"
+                      checked={frequencyCapMode === 'silent'}
+                      onChange={(e) => setFrequencyCapMode(e.target.value)}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <div>
+                      <div className="font-medium text-foreground">Suppress Silently</div>
+                      <div className="text-sm text-muted-foreground">
+                        Additional notifications are quietly dropped
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="frequencyCapMode"
+                      value="summary"
+                      checked={frequencyCapMode === 'summary'}
+                      onChange={(e) => setFrequencyCapMode(e.target.value)}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <div>
+                      <div className="font-medium text-foreground">Send Summary</div>
+                      <div className="text-sm text-muted-foreground">
+                        When limit is reached, send a summary notification instead
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleSavePreferences}
