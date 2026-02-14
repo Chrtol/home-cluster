@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Flame } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
@@ -13,6 +13,8 @@ import PhotoUpload from '../components/PhotoUpload';
 import AvatarCropper from '../components/AvatarCropper';
 import ResponsibilityManager from '../components/ResponsibilityManager';
 import { Badge } from '@/components/ui/badge';
+import { useCelebrations } from '../contexts/CelebrationContext';
+import { cn } from '@/lib/utils';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -134,6 +136,20 @@ export default function ReptileDetail() {
   const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(null);
   const [autoOpenCropperAfterUpload, setAutoOpenCropperAfterUpload] = useState(false);
   const [croppingPhotoId, setCroppingPhotoId] = useState(null); // Track which photo we're cropping
+
+  const { celebrationsEnabled } = useCelebrations();
+
+  // Check if today is the reptile's birthday
+  const isBirthdayToday = () => {
+    const dateOfBirth = reptile?.date_of_birth || reptile?.hatch_date;
+    if (!dateOfBirth) return false;
+    const today = startOfDay(new Date());
+    const birthDate = new Date(dateOfBirth);
+    return today.getMonth() === birthDate.getMonth() &&
+           today.getDate() === birthDate.getDate();
+  };
+
+  const isBirthday = reptile && celebrationsEnabled && isBirthdayToday();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -794,8 +810,20 @@ export default function ReptileDetail() {
   };
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
+    <div className={cn(
+      isBirthday && 'relative'
+    )}>
+      {/* Birthday festive glow overlay - subtle gradient accent */}
+      {isBirthday && (
+        <div className="absolute inset-0 -z-10 overflow-hidden rounded-xl pointer-events-none">
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-fuchsia-500/10 blur-3xl rounded-full" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-violet-500/10 blur-3xl rounded-full" />
+        </div>
+      )}
+      <div className={cn(
+        "flex flex-col sm:flex-row sm:items-start gap-4 mb-6 p-4 rounded-xl transition-all",
+        isBirthday && "bg-gradient-to-r from-fuchsia-500/5 via-transparent to-violet-500/5 ring-1 ring-fuchsia-500/20"
+      )}>
         {/* Avatar - clickable to edit */}
         <div className="flex-shrink-0">
           <ReptileAvatar reptile={reptile} size="xl" className="cursor-pointer" onClick={handleEditAvatar} />
@@ -944,7 +972,10 @@ export default function ReptileDetail() {
         </div>
       )}
 
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
+      <div className={cn(
+        "bg-card rounded-lg shadow-sm border p-4 mb-4",
+        isBirthday ? "border-fuchsia-500/30 shadow-lg shadow-fuchsia-500/10" : "border-border"
+      )}>
         <h2 className="text-lg font-semibold mb-3 text-foreground">Details</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
