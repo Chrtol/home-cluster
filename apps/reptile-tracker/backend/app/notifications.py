@@ -16,6 +16,39 @@ from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
 
 logger = logging.getLogger(__name__)
 
+# =============================================================================
+# Supported Trigger Types
+# =============================================================================
+# Core triggers:
+#   - schedule_reminder: Sent when a schedule is due
+#   - overdue_alert: Sent when a schedule instance was not completed on time
+#   - feeding_logged: Placeholder for feeding completion notifications
+#
+# Smart notification triggers (Phase 22):
+#   - follow_up_reminder: Sent X minutes after main reminder if task still not complete
+#   - expiry_alert: Sent when time window is closing
+#   - frequency_cap_summary: Sent when frequency cap is reached instead of suppressing silently
+#
+# =============================================================================
+# Template Variables (SafeDict pattern - missing keys return empty string)
+# =============================================================================
+# Common variables (all triggers):
+#   reptile_name, schedule_name, schedule_type, schedule_url, schedule_id, emoji
+#
+# Schedule reminder variables:
+#   scheduled_date, due_date, time_window, time_window_display, notes,
+#   food_category, supplement_name
+#
+# Overdue alert variables:
+#   missed_date, food_category, supplement_name
+#
+# Smart notification variables (Phase 22):
+#   window_start      - Schedule window start time (formatted per user locale)
+#   window_end        - Schedule window end time (formatted per user locale)
+#   follow_up_number  - Which follow-up this is (1, 2, etc.)
+#   notifications_suppressed - Count of suppressed notifications (for frequency cap summary)
+# =============================================================================
+
 # M-3 Fix: Define blocked IP ranges for SSRF protection
 BLOCKED_IP_RANGES = [
     ipaddress.ip_network("10.0.0.0/8"),          # Private network
@@ -354,6 +387,10 @@ def _create_discord_embed(
         "schedule_reminder": 3447003,  # Blue
         "overdue_alert": 15158332,     # Red
         "feeding_logged": 3066993,     # Green
+        # Smart notification triggers (Phase 22)
+        "follow_up_reminder": 16750899,    # Orange (follow-up urgency)
+        "expiry_alert": 16711680,          # Bright red (window closing)
+        "frequency_cap_summary": 10181046, # Purple (summary/informational)
     }
 
     # Use template color if available, otherwise fallback to defaults
@@ -422,6 +459,15 @@ def _create_discord_embed(
                     "value": f"[{link_text}]({full_url})",
                     "inline": False
                 })
+            # Smart notification fields (Phase 22)
+            elif field_name == "window_start" and context.get("window_start"):
+                fields.append({"name": "Window Start", "value": context["window_start"], "inline": True})
+            elif field_name == "window_end" and context.get("window_end"):
+                fields.append({"name": "Window End", "value": context["window_end"], "inline": True})
+            elif field_name == "follow_up_number" and context.get("follow_up_number"):
+                fields.append({"name": "Follow-up #", "value": str(context["follow_up_number"]), "inline": True})
+            elif field_name == "notifications_suppressed" and context.get("notifications_suppressed"):
+                fields.append({"name": "Tasks Suppressed", "value": str(context["notifications_suppressed"]), "inline": True})
 
         embed["fields"] = fields
 
