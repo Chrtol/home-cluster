@@ -2,16 +2,17 @@
 
 ## Current Position
 
-**Phase:** 22 of 25 (Smart Notification System)
-**Plan:** 5 of 5 complete
-**Status:** Phase complete
-**Last activity:** 2026-02-14 - Completed 22-05-PLAN.md (Smart Notification UI Configuration)
+**Phase:** 23 of 25 (Notification Planner)
+**Plan:** 1 of N in progress
+**Status:** In progress
+**Last activity:** 2026-02-14 - Completed 23-01-PLAN.md (Planner Digest Schema)
 
 ### Progress
 ```
 Phase 20: Complete
 Phase 21: Complete (celebration animations)
 Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
+Phase 23: In progress (notification planner: 23-01 ✓)
 ```
 
 ---
@@ -43,13 +44,24 @@ Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05
 | 22-05 | Smart Notifications section only visible when notifications enabled | Clean UX, hide complexity when not relevant | Users see options only when they need them |
 | 22-05 | Expiry alert section only visible when time window enabled | Logical dependency - expiry makes no sense without window | Prevents confusion from non-applicable options |
 | 22-05 | Warning for expiry offset exceeding window (non-blocking) | Flexibility for advanced users | Users can configure edge cases intentionally |
+| 23-01 | weekly_planner_day uses 0-6 integer (Sunday=0) | Matches Python's weekday() + 1 % 7 pattern and cron notation | Consistent with common scheduling conventions |
+| 23-01 | daily_planner_time is nullable Time type | Defaults to 08:00 in application logic/UI layer | Flexible default time handling |
+| 23-01 | digest_format defaults to "grouped" | Single message with all tasks is default, opt-in for individual | Reduces notification noise by default |
+| 23-01 | Planner fields in NotificationSettings model | Extended existing model vs separate table | Simpler architecture, planner settings are per-user preferences |
 
 ---
 
 ## Active Context
 
-**Current subsystem:** Smart Notification System (complete)
+**Current subsystem:** Notification Planner (in progress)
 **Key patterns:**
+- Planner digest settings stored in NotificationSettings model
+- weekly_planner_day uses Integer 0-6 (Sunday=0, Saturday=6)
+- daily_planner_time stored as Time type (user's timezone context)
+- digest_format enum: "grouped" or "individual"
+- Planner settings follow same pattern as quiet hours (enabled boolean + time/day configuration)
+
+**Previous subsystem:** Smart Notification System (complete)
 - Smart notification fields on Schedule model (follow-up, expiry alert)
 - Frequency tracking via PostgreSQL table with composite index
 - Per-schedule notification customization via ScheduleForm UI
@@ -57,16 +69,13 @@ Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05
 - New template trigger types: follow_up_reminder, expiry_alert, frequency_cap_summary
 - New template variables: window_start, window_end, follow_up_number, notifications_suppressed
 - Completion check at fire time (NOTIF-01)
-- Frequency cap integration in celery tasks
-- Follow-up scheduling from main reminder (22-04)
-- Expiry alert scheduling alongside main reminder (22-04)
-- Collapsible settings sections pattern (22-05)
 
 **Key files to remember:**
-- `backend/app/models.py` - Schedule with smart notification fields, NotificationFrequencyTracking model
-- `backend/app/schemas.py` - Pydantic schemas for smart notification fields (22-05)
+- `backend/app/models.py` - NotificationSettings with planner digest fields (23-01)
+- `backend/app/schemas.py` - Pydantic schemas for planner settings (23-01)
+- `backend/migrations/versions/0085_add_planner_digest_settings.py` - Alembic migration for Phase 23 (23-01)
 - `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22 models
-- `backend/migrations/versions/0083_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
+- `backend/migrations/versions/0084_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
 - `backend/app/notifications.py` - Notification service with new trigger types and template variables
 - `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (22-03)
 - `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
@@ -80,16 +89,16 @@ Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05
 
 ## Blockers & Concerns
 
-None currently. Phase 22 complete.
+None currently. Phase 23-01 complete - database schema and API layer ready for planner digest generation.
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 22-05 complete (Smart Notification UI Configuration)
-**Resume from:** Phase 23 or testing/documentation plans
-**Resume file:** N/A - Phase 22 complete
+**Stopped at:** Plan 23-01 complete (Planner Digest Schema)
+**Resume from:** Phase 23-02 (Planner digest generation and scheduling logic)
+**Resume file:** .planning/phases/23-notification-planner/23-01-SUMMARY.md
 
 ---
 
@@ -115,6 +124,8 @@ None currently. Phase 22 complete.
 | 22-04 | send_follow_up_reminder_task / send_expiry_alert_task | Celery delivery with template support |
 | 22-05 | shadcn-ui/collapsible | Collapsible sections for advanced settings |
 | 22-05 | Collapsible settings sections pattern | Hide complexity until needed |
+| 23-01 | Planner digest schema fields | Daily/weekly planner enabled, time/day, digest format in NotificationSettings |
+| 23-01 | Migration 0085 | Planner digest settings columns with proper defaults |
 
 ---
 
@@ -137,13 +148,26 @@ Plans completed:
 
 ---
 
-## Next Steps
+## Phase 23 Progress
 
-1. Phase 22 Smart Notification System is complete
-2. Ready for Phase 23 or other feature work
-3. Consider integration testing for notification flows
-4. Consider user documentation for new features
+**Notification Planner - In Progress**
+
+Plans completed:
+- 23-01: Planner digest schema (database and API layer)
+
+Next up:
+- 23-02: Planner digest generation and scheduling logic
+- 23-03: Frontend UI for planner settings
 
 ---
 
-*Last updated: 2026-02-14T15:20:00Z*
+## Next Steps
+
+1. Phase 23-01 complete - database schema ready
+2. Next: Build digest generation logic (query upcoming tasks, format messages)
+3. Next: Build scheduler jobs (daily at configured time, weekly on configured day)
+4. Next: Frontend UI for configuring planner settings
+
+---
+
+*Last updated: 2026-02-14T20:07:10Z*
