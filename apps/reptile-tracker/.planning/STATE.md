@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 20.5 of 25 (User Gamification System)
-Plan: 3 of TBD complete
+Phase: 21 of 25 (Celebration Animations)
+Plan: 2 of TBD complete
 Status: In progress
-Last activity: 2026-02-14 — Completed 20.5-03-PLAN.md (Gamification UI)
+Last activity: 2026-02-14 — Completed 21-02-PLAN.md (Confetti System)
 
-Progress: [████████████████░░░░] 82/TBD plans (Phase 20 complete, Phase 20.5 in progress)
+Progress: [████████████████░░░░] 85/TBD plans (Phase 20.5 complete, Phase 21 in progress)
 
 ## Performance Metrics
 
@@ -46,6 +46,9 @@ Progress: [████████████████░░░░] 82/TBD 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 2026-02-14: Confetti triggers after API success confirmation (not optimistic) to avoid false celebrations
+- 2026-02-14: Click-anywhere or Escape key dismisses confetti early for user control
+- 2026-02-14: Subtle confetti (30 particles, 1s) for task completions, dramatic (150 particles, 3s, multi-origin) for milestones
 - 2026-02-14: Event-driven attribution toast system using CustomEvents for loose coupling between components
 - 2026-02-14: Graceful degradation on streak API error (component hides rather than showing error state)
 - 2026-02-14: Animated flame for streaks > 7 days for visual milestone achievement feedback
@@ -148,9 +151,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 20.5-03-PLAN.md (Gamification UI)
-Resume file: .planning/phases/20.5-user-gamification-system/20.5-03-SUMMARY.md
-Next action: Continue Phase 20.5 with plan 04 (Integration and Testing) or proceed to next phase per roadmap
+Stopped at: Completed 21-02-PLAN.md (Confetti System)
+Resume file: .planning/phases/21-celebration-animations/21-02-SUMMARY.md
+Next action: Continue Phase 21 with next plan or proceed to next phase per roadmap
 
 ## Deferred Items
 
