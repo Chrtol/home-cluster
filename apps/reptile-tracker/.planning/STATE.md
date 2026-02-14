@@ -2,15 +2,16 @@
 
 ## Current Position
 
-**Phase:** 21 of 25 (Celebration Animations)
-**Plan:** 3 of TBD complete
+**Phase:** 22 of 25 (Smart Notification System)
+**Plan:** 1 of TBD complete
 **Status:** In progress
-**Last activity:** 2026-02-14 - Completed 21-03-PLAN.md (Birthday Hat Overlay & Festive Styling)
+**Last activity:** 2026-02-14 - Completed 22-01-PLAN.md (Database Models for Smart Notifications)
 
 ### Progress
 ```
-Phase 20: █ Complete
-Phase 21: █░░░ In progress (3/TBD complete: 21-01, 21-03)
+Phase 20: Complete
+Phase 21: Complete (celebration animations)
+Phase 22: In progress (1/TBD complete: 22-01)
 ```
 
 ---
@@ -26,27 +27,27 @@ Phase 21: █░░░ In progress (3/TBD complete: 21-01, 21-03)
 | 21-03 | Party hat positioned top-left, angled left (-rotate-12) | Classic party hat orientation, matches user vision | Consistent visual appearance across all avatar sizes |
 | 21-03 | Static hat (no animation) | Per user requirements, keeps UI subtle | Lower cognitive load, respects reduced-motion preferences |
 | 21-03 | Festive styling matches ReptileStatusCard pattern | Visual consistency across birthday elements | Unified celebration aesthetic (fuchsia/violet theme) |
+| 22-01 | Frequency cap defaults to 5 per reptile per day | Balance between notification usefulness and spam prevention | Users receive reasonable notifications without overwhelming |
+| 22-01 | Frequency cap enabled by default | Safer default to prevent notification fatigue | New users protected from notification spam out-of-box |
+| 22-01 | Frequency cap mode defaults to "silent" | Less intrusive than summary mode | Suppressed notifications don't generate additional notifications |
+| 22-01 | Use PostgreSQL table for frequency tracking | Easier queries and cleanup vs Redis | Simpler architecture, consistent with existing data patterns |
 
 ---
 
 ## Active Context
 
-**Current subsystem:** UI / Celebrations / Birthday Features
+**Current subsystem:** Backend / Notifications / Smart Notification System
 **Key patterns:**
-- React Context for global UI state
-- Backend-synced frontend preferences via /auth/me
-- Accessibility-first defaults (respect prefers-reduced-motion)
-- Birthday detection via date-fns (month/day equality check)
-- Conditional overlay rendering with responsive sizing
-- Celebration-aware styling (fuchsia/violet theme)
+- Smart notification fields on Schedule model (follow-up, expiry alert)
+- Frequency tracking via PostgreSQL table with composite index
+- Per-schedule notification customization
+- Per-user notification settings with frequency caps
 
 **Key files to remember:**
-- `frontend/src/contexts/CelebrationContext.jsx` - Global celebration state provider
-- `backend/app/models.py` - User model with celebrations_enabled
-- `frontend/src/pages/Settings.jsx` - Preferences UI with celebrations toggle
-- `frontend/src/components/PartyHatIcon.jsx` - Birthday hat SVG component
-- `frontend/src/components/ReptileAvatar.jsx` - Avatar with birthday hat overlay
-- `frontend/src/pages/ReptileDetail.jsx` - Detail page with festive styling
+- `backend/app/models.py` - Schedule with smart notification fields, NotificationFrequencyTracking model
+- `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22
+- `backend/app/notifications.py` - Notification service (to be extended)
+- `backend/app/scheduler.py` - APScheduler integration (to be extended)
 
 ---
 
@@ -59,9 +60,9 @@ None currently.
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 21-03 complete (Birthday Hat Overlay & Festive Styling)
-**Resume from:** Next plan in phase 21 (other celebration animations)
-**Resume file:** `.planning/phases/21-celebration-animations/21-04-PLAN.md` (if exists)
+**Stopped at:** Plan 22-01 complete (Database Models for Smart Notifications)
+**Resume from:** Next plan in phase 22 (completion suppression logic, follow-up scheduler, frequency cap enforcement)
+**Resume file:** `.planning/phases/22-smart-notification-system/22-02-PLAN.md` (if exists)
 
 ---
 
@@ -74,17 +75,18 @@ None currently.
 | 21-03 | PartyHatIcon component | Birthday hat SVG with violet/fuchsia theme |
 | 21-03 | Birthday detection pattern (date-fns) | Month/day equality check for annual birthdays |
 | 21-03 | Conditional overlay rendering | Responsive hat sizing and positioning |
+| 22-01 | NotificationFrequencyTracking model | Per-reptile daily notification count tracking |
+| 22-01 | Smart notification Schedule fields | Follow-up reminders and expiry alerts per schedule |
 
 ---
 
 ## Next Steps
 
-1. Continue phase 21 with other celebration animations and features
-2. Each feature should check `celebrationsEnabled` from CelebrationContext before showing
-3. All celebration features will respect user preference set in Settings
-4. Birthday hat system is complete and working across all avatar instances
-5. Festive styling pattern established for birthday elements (fuchsia/violet theme)
+1. Implement completion suppression logic (22-02)
+2. Implement follow-up reminder scheduler (22-03)
+3. Implement frequency cap enforcement (22-04)
+4. All smart notification features will use the database models created in 22-01
 
 ---
 
-*Last updated: 2026-02-14T12:55:32Z*
+*Last updated: 2026-02-14T14:56:00Z*

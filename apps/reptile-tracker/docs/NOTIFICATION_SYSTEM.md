@@ -172,6 +172,23 @@ Requirement-based schedules use `schedule_reminder` trigger type with different 
 - **`period_ending_soon`**: Period ending soon with quota not met
 - **`quota_exceeded`**: Fed more than quota frequency this period
 
+### Smart Notification Triggers (Phase 22)
+
+4. **`follow_up_reminder`**
+   - Sent X minutes after main reminder if task still not complete
+   - Uses Schedule.follow_up_delay_minutes for timing
+   - Only one follow-up per main reminder (no infinite chains)
+
+5. **`expiry_alert`**
+   - Sent when time window is closing (offset from window start)
+   - Uses Schedule.expiry_alert_offset_minutes for timing
+   - Only fires if task still not complete
+
+6. **`frequency_cap_summary`**
+   - Sent when frequency cap is reached (instead of suppressing silently)
+   - Only if NotificationSettings.frequency_cap_mode = "summary"
+   - Includes count of suppressed notifications
+
 ## Available Template Variables
 
 ### Common Variables (All Triggers)
@@ -215,6 +232,15 @@ Requirement-based schedules use `schedule_reminder` trigger type with different 
 | `{days_since_last}` | Days since last feeding | 5 |
 | `{max_days_between}` | Maximum days allowed | 7 |
 | `{warning_type}` | Type of quota warning | "max_days_approaching" |
+
+### Smart Notification Variables (Phase 22)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{window_start}` | Schedule window start time | "08:00" |
+| `{window_end}` | Schedule window end time | "10:00" |
+| `{follow_up_number}` | Which follow-up this is | "1", "2" |
+| `{notifications_suppressed}` | Count of suppressed notifications | "3" |
 
 ## Template Examples
 
