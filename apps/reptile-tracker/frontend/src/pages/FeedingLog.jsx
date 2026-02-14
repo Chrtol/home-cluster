@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import PageHeader from '@/components/PageHeader';
 import LoadingState from '@/components/LoadingState';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
+import { useConfetti } from '../hooks/useConfetti';
+import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
 
 // Zod schema for feeding form
 const feedingSchema = z.object({
@@ -58,6 +60,7 @@ export default function FeedingLog() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { triggerSubtle, isActive, dismiss } = useConfetti();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -562,6 +565,7 @@ export default function FeedingLog() {
           notifyStreakAttribution(response.data.attribution);
         }
 
+        triggerSubtle();
         setSuccess('Feeding logged successfully!');
         setTimeout(() => navigate(`/feed/${response.data.id}?success=created`), 1500);
       }
@@ -785,6 +789,7 @@ export default function FeedingLog() {
             </div>
           )}
         </div>
+        <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
       </div>
     );
   }
@@ -1495,6 +1500,7 @@ export default function FeedingLog() {
           </div>
         </form>
       </Form>
+      <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
     </div>
   );
 }

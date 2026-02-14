@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Utensils, Droplet, HeartPulse } from 'lucide-react';
+import { useConfetti } from '../../hooks/useConfetti';
+import ConfettiDismissOverlay from '../ConfettiDismissOverlay';
 
 /**
  * TaskChip - Clickable task status chip
@@ -13,6 +15,8 @@ import { Utensils, Droplet, HeartPulse } from 'lucide-react';
  * - className: Additional CSS classes
  */
 const TaskChip = ({ task, onQuickLog, className = '' }) => {
+  const { triggerSubtle, isActive, dismiss } = useConfetti();
+
   if (!task) return null;
 
   // Determine task status for styling
@@ -91,22 +95,25 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
   };
 
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs cursor-pointer',
-        'transition-opacity hover:opacity-80',
-        statusStyles[status],
-        className
-      )}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`Quick log ${task.task_name || task.name || task.schedule_type || 'task'}`}
-    >
-      {TaskIcon && <TaskIcon className="w-3 h-3" />}
-      <span>{getDisplayText()}</span>
-    </span>
+    <>
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs cursor-pointer',
+          'transition-opacity hover:opacity-80',
+          statusStyles[status],
+          className
+        )}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-label={`Quick log ${task.task_name || task.name || task.schedule_type || 'task'}`}
+      >
+        {TaskIcon && <TaskIcon className="w-3 h-3" />}
+        <span>{getDisplayText()}</span>
+      </span>
+      <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
+    </>
   );
 };
 

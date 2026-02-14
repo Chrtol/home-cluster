@@ -15,6 +15,8 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import PageHeader from '../components/PageHeader';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
+import { useConfetti } from '../hooks/useConfetti';
+import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
 
 // Validation schema with conditional logic
 const healthLogSchema = z.object({
@@ -87,6 +89,7 @@ export default function HealthLog() {
   const navigate = useNavigate();
   const { reptileId, id, type } = useParams(); // Get reptileId, id, and type from URL
   const [searchParams] = useSearchParams();
+  const { triggerSubtle, isActive, dismiss } = useConfetti();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -560,6 +563,7 @@ export default function HealthLog() {
             notifyStreakAttribution(response.data.attribution);
           }
 
+          triggerSubtle();
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
           setLastLogType('weight');
@@ -581,6 +585,7 @@ export default function HealthLog() {
             notifyStreakAttribution(response.data.attribution);
           }
 
+          triggerSubtle();
           setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
           setLastLogType('health');
@@ -598,6 +603,7 @@ export default function HealthLog() {
           const typeLabel = data.measurement_type === 'custom'
             ? data.custom_label
             : data.measurement_type.replace('_', ' ');
+          triggerSubtle();
           setSuccess(`${typeLabel} measurement logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
           setLastLogType('measurement');
@@ -614,6 +620,7 @@ export default function HealthLog() {
             payload.consistency = data.consistency;
           }
           const response = await axios.post('/api/health', payload);
+          triggerSubtle();
           setSuccess(`Health record logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
           setLastLogType('health');
@@ -773,6 +780,7 @@ export default function HealthLog() {
             </div>
           )}
         </div>
+        <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
       </div>
     );
   }
@@ -1269,6 +1277,7 @@ export default function HealthLog() {
         </form>
       </Form>
       )}
+      <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
     </div>
   );
 }
