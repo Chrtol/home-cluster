@@ -686,3 +686,432 @@ async def send_expiry_alert_task(
     except Exception as exc:
         logger.error(f"Error sending expiry alert: {exc}", exc_info=True)
         raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
+async def send_daily_planner_task(
+    self,
+    user_id: int,
+    target_date_str: str,
+    instance_ids: list,
+    overdue_ids: list
+):
+    """
+    Send daily planner digest notification.
+
+    Args:
+        user_id: User ID
+        target_date_str: ISO date string (YYYY-MM-DD)
+        instance_ids: List of ScheduleInstance IDs for today
+        overdue_ids: List of overdue ScheduleInstance IDs (from yesterday)
+    """
+    from app.scheduler.digest import build_daily_digest_message, build_short_form_message, build_individual_task_message
+    from app.scheduler.frequency_cap import increment_notification_count
+
+    try:
+        async with async_session_maker() as db:
+            user = await db.get(User, user_id)
+            if not user:
+                logger.error(f"User {user_id} not found for daily planner")
+                return
+
+            target_date = py_date.fromisoformat(target_date_str)
+
+            # Get user's notification settings (needed for digest_format)
+            settings_result = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == user_id)
+            )
+            settings = settings_result.scalar_one_or_none()
+
+            if not settings:
+                logger.warning(f"No notification settings for user {user_id}")
+                return
+
+            # Re-fetch instances from database
+            instances = []
+            for instance_id in instance_ids:
+                instance = await db.get(ScheduleInstance, instance_id)
+                if instance and instance.status == InstanceStatus.PENDING:
+                    # Eagerly load schedule and reptile
+                    await db.refresh(instance, ['schedule'])
+                    if instance.schedule:
+                        await db.refresh(instance.schedule, ['reptile'])
+                    instances.append(instance)
+
+            overdue_instances = []
+            for instance_id in overdue_ids:
+                instance = await db.get(ScheduleInstance, instance_id)
+                if instance and instance.status == InstanceStatus.MISSED:
+                    await db.refresh(instance, ['schedule'])
+                    if instance.schedule:
+                        await db.refresh(instance.schedule, ['reptile'])
+                    overdue_instances.append(instance)
+
+            # Skip if all instances were completed since scheduling
+            if not instances and not overdue_instances:
+                logger.info(f"All tasks completed for user {user_id}, skipping daily planner")
+                return
+
+            # Get enabled channels
+            channels_result = await db.execute(
+                select(NotificationChannel).where(
+                    NotificationChannel.notification_settings_id == settings.id,
+                    NotificationChannel.enabled == True
+                )
+            )
+            channels = channels_result.scalars().all()
+
+            if not channels:
+                logger.info(f"No enabled channels for user {user_id}")
+                return
+
+            # Check digest_format setting - branch logic here
+            digest_format = settings.digest_format or "grouped"
+
+            if digest_format == "individual":
+                # INDIVIDUAL FORMAT: Send separate notification per task
+                # Uses build_individual_task_message from digest.py for consistent formatting
+                await _send_individual_task_notifications(
+                    db=db,
+                    user=user,
+                    instances=instances,
+                    overdue_instances=overdue_instances,
+                    channels=channels,
+                    target_date=target_date,
+                    trigger_prefix="daily_planner"
+                )
+            else:
+                # GROUPED FORMAT: Send single digest message
+                await _send_grouped_digest_notification(
+                    db=db,
+                    user=user,
+                    instances=instances,
+                    overdue_instances=overdue_instances,
+                    channels=channels,
+                    target_date=target_date,
+                    trigger_type="daily_planner",
+                    is_weekly=False
+                )
+
+            # Increment frequency counter (1 per reptile mentioned)
+            # Per RESEARCH.md: Grouped digest counts as 1 notification per reptile
+            reptile_ids = set()
+            for instance in instances:
+                if instance.schedule:
+                    reptile_ids.add(instance.schedule.reptile_id)
+            for instance in overdue_instances:
+                if instance.schedule:
+                    reptile_ids.add(instance.schedule.reptile_id)
+
+            for reptile_id in reptile_ids:
+                await increment_notification_count(db, user_id, reptile_id, target_date)
+
+            await db.commit()
+            logger.info(f"Daily planner ({digest_format}) sent to user {user.email} for {target_date}")
+
+    except Exception as exc:
+        logger.error(f"Error sending daily planner: {exc}", exc_info=True)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+
+
+async def _send_individual_task_notifications(
+    db: AsyncSession,
+    user: User,
+    instances: list,
+    overdue_instances: list,
+    channels: list,
+    target_date: py_date,
+    trigger_prefix: str
+):
+    """
+    Send individual notifications per task (when digest_format == "individual").
+
+    IMPORTANT: Uses build_individual_task_message from digest.py as single source of truth
+    for task message formatting. This ensures consistency with grouped digests.
+    """
+    from app.scheduler.digest import build_individual_task_message
+
+    # Combine all instances (pending + overdue)
+    all_instances = instances + overdue_instances
+
+    for instance in all_instances:
+        schedule = instance.schedule
+        reptile = schedule.reptile
+        is_overdue = instance in overdue_instances
+
+        # Use build_individual_task_message from digest.py for consistent formatting
+        task_msg = build_individual_task_message(instance, is_overdue=is_overdue)
+        title = task_msg["title"]
+        message = task_msg["message"]
+
+        # Determine trigger type for template lookup
+        if is_overdue:
+            trigger_type = "overdue_alert"  # Reuse existing overdue template
+        else:
+            trigger_type = "schedule_reminder"  # Reuse existing reminder template
+
+        # Get template for this trigger type
+        template = await get_template_for_trigger(
+            db=db,
+            trigger_type=trigger_type,
+            user_id=user.id
+        )
+
+        # Send to each enabled channel
+        for channel in channels:
+            try:
+                if channel.webhook_type == "in_app":
+                    await create_in_app_notification(
+                        db=db,
+                        user=user,
+                        notification_type=NotificationType.SCHEDULE_REMINDER if not is_overdue else NotificationType.OVERDUE_ALERT,
+                        title=title,
+                        message=message,
+                        link=f"/reptiles/{reptile.id}",
+                        notification_metadata={
+                            "trigger_type": trigger_type,
+                            "schedule_id": schedule.id,
+                            "instance_id": instance.id,
+                            "from_planner": True
+                        }
+                    )
+                else:
+                    await send_webhook_notification(
+                        webhook_url=channel.webhook_url,
+                        webhook_type=channel.webhook_type,
+                        message=message,
+                        title=title,
+                        config=channel.config,
+                        trigger_type=trigger_type,
+                        template=template
+                    )
+
+                logger.debug(f"Sent individual notification for {schedule.name} via {channel.webhook_type}")
+
+            except Exception as channel_error:
+                logger.error(f"Failed to send individual notification to channel {channel.id}: {channel_error}")
+
+
+async def _send_grouped_digest_notification(
+    db: AsyncSession,
+    user: User,
+    instances: list,
+    overdue_instances: list,
+    channels: list,
+    target_date: py_date,
+    trigger_type: str,
+    is_weekly: bool = False
+):
+    """
+    Send single grouped digest notification (when digest_format == "grouped").
+
+    This is the original digest behavior - all tasks in one message.
+    """
+    from app.scheduler.digest import build_daily_digest_message, build_short_form_message
+
+    # Build digest message
+    app_url = None  # TODO: Get from config if needed
+    digest = build_daily_digest_message(
+        instances, overdue_instances, target_date, app_url
+    )
+
+    # Get template
+    template = await get_template_for_trigger(
+        db=db,
+        trigger_type=trigger_type,
+        user_id=user.id
+    )
+
+    # Send to each enabled channel
+    # NOTE: Digest does NOT respect quiet hours (per CONTEXT.md - intentional delivery time)
+    for channel in channels:
+        try:
+            if channel.webhook_type == "in_app":
+                await create_in_app_notification(
+                    db=db,
+                    user=user,
+                    notification_type=NotificationType.SCHEDULE_REMINDER,
+                    title=digest["title"],
+                    message=digest["message"],
+                    link="/dashboard",
+                    notification_metadata={
+                        "trigger_type": trigger_type,
+                        "target_date": target_date.isoformat()
+                    }
+                )
+            elif channel.webhook_type == "pushover":
+                # Use short-form for Pushover
+                short_msg = build_short_form_message(
+                    instances, overdue_instances, target_date, is_weekly=is_weekly
+                )
+                await send_webhook_notification(
+                    webhook_url=None,
+                    webhook_type=channel.webhook_type,
+                    message=short_msg,
+                    title=digest["title"],
+                    config=channel.config,
+                    trigger_type=trigger_type,
+                    template=template
+                )
+            else:
+                # Discord and other webhooks get full message
+                await send_webhook_notification(
+                    webhook_url=channel.webhook_url,
+                    webhook_type=channel.webhook_type,
+                    message=digest["message"],
+                    title=digest["title"],
+                    config=channel.config,
+                    trigger_type=trigger_type,
+                    template=template
+                )
+
+            logger.info(f"Sent {trigger_type} digest via {channel.webhook_type} to user {user.email}")
+
+        except Exception as channel_error:
+            logger.error(f"Failed to send digest to channel {channel.id}: {channel_error}")
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
+async def send_weekly_planner_task(
+    self,
+    user_id: int,
+    start_date_str: str,
+    instances_by_date: dict
+):
+    """
+    Send weekly planner digest notification.
+
+    Args:
+        user_id: User ID
+        start_date_str: ISO date string for start of week (day 1 of 7-day preview)
+        instances_by_date: Dict of {date_iso: [instance_ids]} for the week
+    """
+    from app.scheduler.digest import build_weekly_digest_message, build_individual_task_message
+
+    try:
+        async with async_session_maker() as db:
+            user = await db.get(User, user_id)
+            if not user:
+                logger.error(f"User {user_id} not found for weekly planner")
+                return
+
+            start_date = py_date.fromisoformat(start_date_str)
+
+            # Get settings for digest_format
+            settings_result = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == user_id)
+            )
+            settings = settings_result.scalar_one_or_none()
+
+            if not settings:
+                return
+
+            # Re-fetch and rebuild instances_by_date
+            rebuilt: dict = {}
+            all_instances_flat = []
+            for date_str, instance_ids in instances_by_date.items():
+                d = py_date.fromisoformat(date_str)
+                rebuilt[d] = []
+                for instance_id in instance_ids:
+                    instance = await db.get(ScheduleInstance, instance_id)
+                    if instance and instance.status == InstanceStatus.PENDING:
+                        await db.refresh(instance, ['schedule'])
+                        if instance.schedule:
+                            await db.refresh(instance.schedule, ['reptile'])
+                        rebuilt[d].append(instance)
+                        all_instances_flat.append(instance)
+
+            # Skip if all instances were completed
+            total = sum(len(v) for v in rebuilt.values())
+            if total == 0:
+                logger.info(f"All weekly tasks completed for user {user_id}, skipping")
+                return
+
+            # Get channels
+            channels_result = await db.execute(
+                select(NotificationChannel).where(
+                    NotificationChannel.notification_settings_id == settings.id,
+                    NotificationChannel.enabled == True
+                )
+            )
+            channels = channels_result.scalars().all()
+
+            if not channels:
+                return
+
+            # Check digest_format - branch logic
+            digest_format = settings.digest_format or "grouped"
+
+            if digest_format == "individual":
+                # INDIVIDUAL FORMAT: Send separate notification per task
+                # Uses build_individual_task_message from digest.py for consistent formatting
+                await _send_individual_task_notifications(
+                    db=db,
+                    user=user,
+                    instances=all_instances_flat,
+                    overdue_instances=[],  # Weekly doesn't have overdue concept
+                    channels=channels,
+                    target_date=start_date,
+                    trigger_prefix="weekly_planner"
+                )
+            else:
+                # GROUPED FORMAT: Send single weekly digest message
+                app_url = None
+                digest = build_weekly_digest_message(rebuilt, start_date, app_url)
+
+                template = await get_template_for_trigger(
+                    db=db,
+                    trigger_type="weekly_planner",
+                    user_id=user_id
+                )
+
+                # Send to each channel
+                for channel in channels:
+                    try:
+                        if channel.webhook_type == "in_app":
+                            await create_in_app_notification(
+                                db=db,
+                                user=user,
+                                notification_type=NotificationType.SCHEDULE_REMINDER,
+                                title=digest["title"],
+                                message=digest["message"],
+                                link="/dashboard",
+                                notification_metadata={
+                                    "trigger_type": "weekly_planner",
+                                    "start_date": start_date_str
+                                }
+                            )
+                        elif channel.webhook_type == "pushover":
+                            # Short form for Pushover
+                            msg = f"{total} tasks this week. Open app for details."
+                            await send_webhook_notification(
+                                webhook_url=None,
+                                webhook_type=channel.webhook_type,
+                                message=msg,
+                                title=digest["title"],
+                                config=channel.config,
+                                trigger_type="weekly_planner",
+                                template=template
+                            )
+                        else:
+                            await send_webhook_notification(
+                                webhook_url=channel.webhook_url,
+                                webhook_type=channel.webhook_type,
+                                message=digest["message"],
+                                title=digest["title"],
+                                config=channel.config,
+                                trigger_type="weekly_planner",
+                                template=template
+                            )
+
+                        logger.info(f"Sent weekly planner via {channel.webhook_type} to user {user.email}")
+
+                    except Exception as channel_error:
+                        logger.error(f"Failed to send to channel {channel.id}: {channel_error}")
+
+            await db.commit()
+            logger.info(f"Weekly planner ({digest_format}) sent to user {user.email}")
+
+    except Exception as exc:
+        logger.error(f"Error sending weekly planner: {exc}", exc_info=True)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
