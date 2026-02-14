@@ -53,4 +53,6 @@ celery_app.conf.task_routes = {
     "app.celery_tasks.send_overdue_alert_task": {"queue": "notifications"},
     "app.celery_tasks.send_expiry_alert_task": {"queue": "notifications"},
     "app.celery_tasks.send_follow_up_reminder_task": {"queue": "notifications"},
+    "app.celery_tasks.send_daily_planner_task": {"queue": "notifications"},
+    "app.celery_tasks.send_weekly_planner_task": {"queue": "notifications"},
 }

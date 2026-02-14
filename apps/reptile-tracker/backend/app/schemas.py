@@ -1062,6 +1062,7 @@ class NotificationSettingsBase(BaseModel):
     daily_planner_time: Optional[time] = None
     weekly_planner_enabled: bool = False
     weekly_planner_day: int = 0  # 0=Sunday, 6=Saturday
+    weekly_planner_time: Optional[time] = None  # Independent delivery time for weekly planner
     digest_format: str = "grouped"  # "grouped" or "individual"
     digest_channel_id: Optional[int] = None  # Which channel receives digests (null = all enabled channels)
 
@@ -1086,6 +1087,7 @@ class NotificationSettingsUpdate(BaseModel):
     daily_planner_time: Optional[time] = None
     weekly_planner_enabled: Optional[bool] = None
     weekly_planner_day: Optional[int] = None
+    weekly_planner_time: Optional[time] = None  # Independent delivery time for weekly planner
     digest_format: Optional[str] = None
     digest_channel_id: Optional[int] = None  # Which channel receives digests (null = all enabled channels)
 

@@ -105,9 +105,10 @@ async def update_channel(
 ):
     """Update a notification channel"""
     # Get the channel and verify ownership
+    # Note: Explicit join condition required because NotificationChannel has two FKs to NotificationSettings
     result = await db.execute(
         select(NotificationChannel)
-        .join(NotificationSettings)
+        .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
         .where(
             NotificationChannel.id == channel_id,
             NotificationSettings.user_id == current_user.id
@@ -143,9 +144,10 @@ async def delete_channel(
 ):
     """Delete a notification channel"""
     # Get the channel and verify ownership
+    # Note: Explicit join condition required because NotificationChannel has two FKs to NotificationSettings
     result = await db.execute(
         select(NotificationChannel)
-        .join(NotificationSettings)
+        .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
         .where(
             NotificationChannel.id == channel_id,
             NotificationSettings.user_id == current_user.id

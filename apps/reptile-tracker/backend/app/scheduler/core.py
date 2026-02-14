@@ -945,9 +945,10 @@ async def create_in_app_notification(
     """Create an in-app notification for a user if in-app channel is enabled"""
     try:
         # Check if user has in-app notification channel enabled
+        # Note: Explicit join condition required because NotificationChannel has two FKs to NotificationSettings
         result = await db.execute(
             select(NotificationChannel)
-            .join(NotificationSettings)
+            .join(NotificationSettings, NotificationChannel.notification_settings_id == NotificationSettings.id)
             .where(
                 NotificationSettings.user_id == user.id,
                 NotificationChannel.webhook_type == "in_app",
@@ -1363,8 +1364,8 @@ async def schedule_weekly_planner_jobs():
                 if today_day != configured_day:
                     continue
 
-                # Use same time as daily planner (or default 8am)
-                delivery_time_local = settings.daily_planner_time or py_time(8, 0)
+                # Use weekly_planner_time if set, otherwise fall back to daily_planner_time or default 8am
+                delivery_time_local = settings.weekly_planner_time or settings.daily_planner_time or py_time(8, 0)
 
                 delivery_datetime_local = datetime.combine(
                     today_local,
@@ -1404,13 +1405,17 @@ async def execute_daily_planner_delivery(user_id: int, target_date: py_date):
     Execute daily planner digest delivery for a user.
     Called by APScheduler at user's configured delivery time.
     """
+    logger.info(f"execute_daily_planner_delivery called for user_id={user_id}, target_date={target_date}")
+
     try:
         from app.celery_tasks import send_daily_planner_task
 
         async with async_session_maker() as db:
             # Get pending instances
+            logger.info(f"Fetching pending instances for user {user_id} on {target_date}")
             instances = await get_pending_instances_for_date(db, user_id, target_date)
             overdue_instances = await get_overdue_instances_for_user(db, user_id, target_date)
+            logger.info(f"Found {len(instances)} pending instances, {len(overdue_instances)} overdue instances")
 
             # Skip if no tasks (no empty digests)
             if not instances and not overdue_instances:
@@ -1422,6 +1427,7 @@ async def execute_daily_planner_delivery(user_id: int, target_date: py_date):
             overdue_ids = [i.id for i in overdue_instances]
 
             # Queue to Celery
+            logger.info(f"Queuing Celery task send_daily_planner_task for user {user_id}")
             send_daily_planner_task.delay(
                 user_id=user_id,
                 target_date_str=target_date.isoformat(),
@@ -1482,73 +1488,130 @@ async def schedule_planner_for_user(user_id: int):
     Called when user saves planner settings, so they don't have to wait
     for the midnight cron job to take effect.
 
+    Uses Celery's native eta scheduling instead of APScheduler for reliability.
+    This ensures the task goes directly to Celery's queue with the scheduled time.
+
     Schedules:
     - Daily planner for today (if enabled and delivery time hasn't passed)
     - Weekly planner for today (if enabled and today is the configured day)
     """
-    async with async_session_maker() as db:
-        # Get user and settings
-        result = await db.execute(
-            select(User, NotificationSettings)
-            .join(NotificationSettings, User.id == NotificationSettings.user_id)
-            .where(User.id == user_id)
-        )
-        row = result.first()
-        if not row:
-            logger.warning(f"Cannot schedule planner for user {user_id}: not found or no settings")
-            return
+    logger.info(f"schedule_planner_for_user called for user_id={user_id}")
 
-        user, settings = row
-        user_tz = ZoneInfo(user.timezone) if user.timezone else ZoneInfo("UTC")
-        now_utc = datetime.now(timezone.utc)
-        today_local = datetime.now(user_tz).date()
+    try:
+        from app.celery_tasks import send_daily_planner_task, send_weekly_planner_task
 
-        # Default delivery time
-        delivery_time_local = settings.daily_planner_time or py_time(8, 0)
-
-        delivery_datetime_local = datetime.combine(
-            today_local,
-            delivery_time_local,
-            tzinfo=user_tz
-        )
-        delivery_datetime_utc = delivery_datetime_local.astimezone(timezone.utc)
-
-        # Check if delivery time is still in the future
-        time_in_future = delivery_datetime_utc > now_utc
-
-        # Schedule daily planner if enabled and time hasn't passed
-        if settings.daily_planner_enabled and time_in_future:
-            job_id = f"daily_planner_{user_id}_{today_local.isoformat()}"
-
-            scheduler.add_job(
-                func=execute_daily_planner_delivery,
-                trigger='date',
-                run_date=delivery_datetime_utc,
-                args=[user_id, today_local],
-                id=job_id,
-                replace_existing=True,
-                misfire_grace_time=3600
+        async with async_session_maker() as db:
+            # Get user and settings
+            result = await db.execute(
+                select(User, NotificationSettings)
+                .join(NotificationSettings, User.id == NotificationSettings.user_id)
+                .where(User.id == user_id)
             )
-            logger.info(f"On-demand scheduled daily planner for user {user.email} at {delivery_datetime_utc}")
+            row = result.first()
+            if not row:
+                logger.warning(f"Cannot schedule planner for user {user_id}: not found or no settings")
+                return
 
-        # Schedule weekly planner if enabled, today is the right day, and time hasn't passed
-        if settings.weekly_planner_enabled and time_in_future:
-            configured_day = settings.weekly_planner_day or 0  # 0=Sunday
-            today_day = (today_local.weekday() + 1) % 7  # Convert to Sunday=0
+            user, settings = row
+            logger.info(f"Found user {user.email}, daily_planner_enabled={settings.daily_planner_enabled}, weekly_planner_enabled={settings.weekly_planner_enabled}")
 
-            if today_day == configured_day:
-                job_id = f"weekly_planner_{user_id}_{today_local.isoformat()}"
+            user_tz = ZoneInfo(user.timezone) if user.timezone else ZoneInfo("UTC")
+            now_utc = datetime.now(timezone.utc)
+            today_local = datetime.now(user_tz).date()
 
-                scheduler.add_job(
-                    func=execute_weekly_planner_delivery,
-                    trigger='date',
-                    run_date=delivery_datetime_utc,
-                    args=[user_id, today_local],
-                    id=job_id,
-                    replace_existing=True,
-                    misfire_grace_time=3600
-                )
-                logger.info(f"On-demand scheduled weekly planner for user {user.email} at {delivery_datetime_utc}")
+            # Default delivery time
+            delivery_time_local = settings.daily_planner_time or py_time(8, 0)
+            logger.info(f"User timezone={user_tz}, delivery_time_local={delivery_time_local}, now_utc={now_utc}")
+
+            delivery_datetime_local = datetime.combine(
+                today_local,
+                delivery_time_local,
+                tzinfo=user_tz
+            )
+            delivery_datetime_utc = delivery_datetime_local.astimezone(timezone.utc)
+
+            # Check if delivery time is still in the future
+            time_in_future = delivery_datetime_utc > now_utc
+            logger.info(f"delivery_datetime_utc={delivery_datetime_utc}, time_in_future={time_in_future}")
+
+            # Schedule daily planner if enabled and time hasn't passed
+            if settings.daily_planner_enabled and time_in_future:
+                # Get pending instances for today
+                instances = await get_pending_instances_for_date(db, user_id, today_local)
+                overdue_instances = await get_overdue_instances_for_user(db, user_id, today_local)
+
+                if instances or overdue_instances:
+                    instance_ids = [i.id for i in instances]
+                    overdue_ids = [i.id for i in overdue_instances]
+
+                    # Use Celery's eta parameter to schedule the task
+                    task_id = f"daily_planner_{user_id}_{today_local.isoformat()}"
+                    send_daily_planner_task.apply_async(
+                        kwargs={
+                            'user_id': user_id,
+                            'target_date_str': today_local.isoformat(),
+                            'instance_ids': instance_ids,
+                            'overdue_ids': overdue_ids
+                        },
+                        eta=delivery_datetime_utc,
+                        task_id=task_id
+                    )
+                    logger.info(f"Scheduled daily planner via Celery eta for user {user.email} at {delivery_datetime_utc} with {len(instances)} tasks, {len(overdue_instances)} overdue")
+                else:
+                    logger.info(f"Daily planner not scheduled: no tasks for today")
+            else:
+                logger.info(f"Daily planner not scheduled: enabled={settings.daily_planner_enabled}, time_in_future={time_in_future}")
+
+            # Schedule weekly planner if enabled and today is the right day
+            if settings.weekly_planner_enabled:
+                configured_day = settings.weekly_planner_day or 0  # 0=Sunday
+                today_day = (today_local.weekday() + 1) % 7  # Convert to Sunday=0
+                logger.info(f"Weekly planner check: configured_day={configured_day}, today_day={today_day}")
+
+                if today_day == configured_day:
+                    # Use weekly_planner_time if set, otherwise fall back to daily_planner_time
+                    weekly_time_local = settings.weekly_planner_time or settings.daily_planner_time or py_time(8, 0)
+                    weekly_datetime_local = datetime.combine(
+                        today_local,
+                        weekly_time_local,
+                        tzinfo=user_tz
+                    )
+                    weekly_datetime_utc = weekly_datetime_local.astimezone(timezone.utc)
+                    weekly_time_in_future = weekly_datetime_utc > now_utc
+                    logger.info(f"Weekly planner time: {weekly_time_local}, UTC: {weekly_datetime_utc}, in_future: {weekly_time_in_future}")
+
+                    if weekly_time_in_future:
+                        # Get instances for the week
+                        instances_by_date = await get_weekly_instances(db, user_id, today_local, days=7)
+                        total_tasks = sum(len(v) for v in instances_by_date.values())
+
+                        if total_tasks > 0:
+                            # Convert date keys to strings for JSON serialization
+                            instances_by_date_str = {
+                                d.isoformat(): [i.id for i in instances]
+                                for d, instances in instances_by_date.items()
+                            }
+
+                            task_id = f"weekly_planner_{user_id}_{today_local.isoformat()}"
+                            send_weekly_planner_task.apply_async(
+                                kwargs={
+                                    'user_id': user_id,
+                                    'start_date_str': today_local.isoformat(),
+                                    'instances_by_date': instances_by_date_str
+                                },
+                                eta=weekly_datetime_utc,
+                                task_id=task_id
+                            )
+                            logger.info(f"Scheduled weekly planner via Celery eta for user {user.email} at {weekly_datetime_utc} with {total_tasks} tasks")
+                        else:
+                            logger.info(f"Weekly planner not scheduled: no tasks for the week")
+                    else:
+                        logger.info(f"Weekly planner not scheduled: time already passed")
+                else:
+                    logger.info(f"Weekly planner not scheduled: wrong day (configured={configured_day}, today={today_day})")
+
+    except Exception as e:
+        logger.error(f"Error in schedule_planner_for_user for user {user_id}: {e}", exc_info=True)
 
 
 async def start_scheduler():

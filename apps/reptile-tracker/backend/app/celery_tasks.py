@@ -705,6 +705,8 @@ async def send_daily_planner_task(
         instance_ids: List of ScheduleInstance IDs for today
         overdue_ids: List of overdue ScheduleInstance IDs (from yesterday)
     """
+    logger.info(f"=== CELERY send_daily_planner_task STARTED === user_id={user_id}, date={target_date_str}, instances={len(instance_ids)}, overdue={len(overdue_ids)}")
+
     from app.scheduler.digest import build_daily_digest_message, build_short_form_message, build_individual_task_message
     from app.scheduler.frequency_cap import increment_notification_count
 
@@ -752,14 +754,27 @@ async def send_daily_planner_task(
                 logger.info(f"All tasks completed for user {user_id}, skipping daily planner")
                 return
 
-            # Get enabled channels
-            channels_result = await db.execute(
-                select(NotificationChannel).where(
-                    NotificationChannel.notification_settings_id == settings.id,
-                    NotificationChannel.enabled == True
+            # Get channels for digest delivery
+            # If digest_channel_id is set, use only that channel; otherwise use all enabled channels
+            if settings.digest_channel_id:
+                logger.info(f"Using specific digest channel: {settings.digest_channel_id}")
+                channel = await db.get(NotificationChannel, settings.digest_channel_id)
+                if channel and channel.enabled:
+                    channels = [channel]
+                else:
+                    logger.warning(f"Digest channel {settings.digest_channel_id} not found or disabled")
+                    channels = []
+            else:
+                logger.info(f"Using all enabled channels for digest")
+                channels_result = await db.execute(
+                    select(NotificationChannel).where(
+                        NotificationChannel.notification_settings_id == settings.id,
+                        NotificationChannel.enabled == True
+                    )
                 )
-            )
-            channels = channels_result.scalars().all()
+                channels = channels_result.scalars().all()
+
+            logger.info(f"Found {len(channels)} channels for digest delivery")
 
             if not channels:
                 logger.info(f"No enabled channels for user {user_id}")
@@ -986,6 +1001,8 @@ async def send_weekly_planner_task(
         start_date_str: ISO date string for start of week (day 1 of 7-day preview)
         instances_by_date: Dict of {date_iso: [instance_ids]} for the week
     """
+    logger.info(f"=== CELERY send_weekly_planner_task STARTED === user_id={user_id}, start_date={start_date_str}, days={len(instances_by_date)}")
+
     from app.scheduler.digest import build_weekly_digest_message, build_individual_task_message
 
     try:
@@ -1027,16 +1044,30 @@ async def send_weekly_planner_task(
                 logger.info(f"All weekly tasks completed for user {user_id}, skipping")
                 return
 
-            # Get channels
-            channels_result = await db.execute(
-                select(NotificationChannel).where(
-                    NotificationChannel.notification_settings_id == settings.id,
-                    NotificationChannel.enabled == True
+            # Get channels for digest delivery
+            # If digest_channel_id is set, use only that channel; otherwise use all enabled channels
+            if settings.digest_channel_id:
+                logger.info(f"Using specific digest channel for weekly: {settings.digest_channel_id}")
+                channel = await db.get(NotificationChannel, settings.digest_channel_id)
+                if channel and channel.enabled:
+                    channels = [channel]
+                else:
+                    logger.warning(f"Digest channel {settings.digest_channel_id} not found or disabled for weekly")
+                    channels = []
+            else:
+                logger.info(f"Using all enabled channels for weekly digest")
+                channels_result = await db.execute(
+                    select(NotificationChannel).where(
+                        NotificationChannel.notification_settings_id == settings.id,
+                        NotificationChannel.enabled == True
+                    )
                 )
-            )
-            channels = channels_result.scalars().all()
+                channels = channels_result.scalars().all()
+
+            logger.info(f"Found {len(channels)} channels for weekly digest delivery")
 
             if not channels:
+                logger.info(f"No enabled channels for weekly planner user {user_id}")
                 return
 
             # Check digest_format - branch logic

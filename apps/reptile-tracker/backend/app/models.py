@@ -773,6 +773,7 @@ class NotificationSettings(Base):
     daily_planner_time = Column(Time, nullable=True)  # Default 08:00, stored in user's timezone context
     weekly_planner_enabled = Column(Boolean, default=False, nullable=False)
     weekly_planner_day = Column(Integer, default=0, nullable=False)  # 0=Sunday, 1=Monday, ..., 6=Saturday
+    weekly_planner_time = Column(Time, nullable=True)  # Independent delivery time for weekly planner (null = use daily_planner_time)
     digest_format = Column(String(20), default="grouped", nullable=False)  # "grouped" or "individual"
     digest_channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="SET NULL"), nullable=True)  # Which channel receives digests (null = all enabled channels)
 
@@ -780,7 +781,8 @@ class NotificationSettings(Base):
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    channels = relationship("NotificationChannel", back_populates="settings", cascade="all, delete-orphan")
+    # Note: foreign_keys specified because there are 2 FKs between these tables (notification_settings_id and digest_channel_id)
+    channels = relationship("NotificationChannel", back_populates="settings", cascade="all, delete-orphan", foreign_keys="NotificationChannel.notification_settings_id")
 
 
 class NotificationChannel(Base):
@@ -801,7 +803,8 @@ class NotificationChannel(Base):
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    settings = relationship("NotificationSettings", back_populates="channels")
+    # Note: foreign_keys specified because there are 2 FKs between these tables
+    settings = relationship("NotificationSettings", back_populates="channels", foreign_keys=[notification_settings_id])
 
 
 class TemplateGroup(Base):

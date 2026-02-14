@@ -29,6 +29,7 @@ function NotificationsTab() {
   const [weeklyPlannerEnabled, setWeeklyPlannerEnabled] = useState(false);
   // Default weekly planner day to user's first day of week
   const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(() => getDayNumbers()[0]);
+  const [weeklyPlannerTime, setWeeklyPlannerTime] = useState('08:00'); // Independent time for weekly planner
   const [digestFormat, setDigestFormat] = useState('grouped');
   const [digestChannelId, setDigestChannelId] = useState(null); // null = send to all enabled channels
 
@@ -100,6 +101,8 @@ function NotificationsTab() {
           if (settingsRes.data.weekly_planner_enabled) {
             setWeeklyPlannerDay(settingsRes.data.weekly_planner_day ?? 0);
           }
+          // Load weekly planner time (falls back to daily time if not set)
+          setWeeklyPlannerTime(settingsRes.data.weekly_planner_time || settingsRes.data.daily_planner_time || '08:00');
           // else: keep the locale-aware default from useState initialization
           setDigestFormat(settingsRes.data.digest_format || 'grouped');
           setDigestChannelId(settingsRes.data.digest_channel_id ?? null);
@@ -270,6 +273,7 @@ function NotificationsTab() {
         daily_planner_time: dailyPlannerTime,
         weekly_planner_enabled: weeklyPlannerEnabled,
         weekly_planner_day: weeklyPlannerDay,
+        weekly_planner_time: weeklyPlannerTime,
         digest_format: digestFormat,
         digest_channel_id: digestChannelId,
       });
@@ -871,32 +875,23 @@ function NotificationsTab() {
                   </select>
                 </div>
 
-                {/* Time picker - only show when daily planner is not enabled */}
-                {!dailyPlannerEnabled && (
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">
-                      Delivery Time
-                    </label>
-                    <div className="max-w-[200px]">
-                      <TimePicker
-                        value={dailyPlannerTime}
-                        onChange={setDailyPlannerTime}
-                        step={30}
-                        placeholder="Pick a time"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Time is in your timezone ({getUserTimezone()})
-                    </p>
+                {/* Delivery Time for weekly planner */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Delivery Time
+                  </label>
+                  <div className="max-w-[200px]">
+                    <TimePicker
+                      value={weeklyPlannerTime}
+                      onChange={setWeeklyPlannerTime}
+                      step={30}
+                      placeholder="Pick a time"
+                    />
                   </div>
-                )}
-
-                {/* Note when daily planner IS enabled */}
-                {dailyPlannerEnabled && (
-                  <p className="text-xs text-muted-foreground">
-                    Sent at the same time as daily planner ({dailyPlannerTime})
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Time is in your timezone ({getUserTimezone()})
                   </p>
-                )}
+                </div>
               </div>
             )}
           </div>

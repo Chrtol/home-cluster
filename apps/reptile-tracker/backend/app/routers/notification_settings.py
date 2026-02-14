@@ -1,6 +1,8 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from typing import Optional
 from pydantic import BaseModel
 
@@ -11,6 +13,8 @@ from app.schemas import NotificationSettingsSchema, NotificationSettingsUpdate
 from app.notifications import validate_webhook_url, send_webhook_notification
 from app.notification_utils import ensure_in_app_channel
 from app.scheduler import create_in_app_notification, schedule_planner_for_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/notification-settings", tags=["notification-settings"])
 
@@ -74,15 +78,30 @@ async def create_or_update_notification_settings(
         for key, value in settings_data.model_dump(exclude_unset=True).items():
             setattr(settings, key, value)
     else:
-        # Create new settings
-        settings = NotificationSettings(
-            user_id=current_user.id,
-            **settings_data.model_dump(exclude_unset=True)
-        )
-        db.add(settings)
-        await db.flush()
-        # Ensure in-app channel exists for new settings
-        await ensure_in_app_channel(db, settings.id)
+        # Create new settings - handle race condition where settings were
+        # created by another request (e.g., GET endpoint) between our query and insert
+        try:
+            settings = NotificationSettings(
+                user_id=current_user.id,
+                **settings_data.model_dump(exclude_unset=True)
+            )
+            db.add(settings)
+            await db.flush()
+            # Ensure in-app channel exists for new settings
+            await ensure_in_app_channel(db, settings.id)
+        except IntegrityError:
+            # Settings were created by another request - rollback and re-query
+            await db.rollback()
+            logger.info(f"Race condition detected for user {current_user.id}, re-querying settings")
+            result = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
+            )
+            settings = result.scalars().first()
+            if not settings:
+                raise HTTPException(status_code=500, detail="Failed to create or retrieve notification settings")
+            # Apply updates to the existing settings
+            for key, value in settings_data.model_dump(exclude_unset=True).items():
+                setattr(settings, key, value)
 
     await db.commit()
     await db.refresh(settings)
@@ -90,12 +109,20 @@ async def create_or_update_notification_settings(
     # Check if planner settings were updated - if so, schedule immediately
     planner_fields = {
         'daily_planner_enabled', 'daily_planner_time',
-        'weekly_planner_enabled', 'weekly_planner_day'
+        'weekly_planner_enabled', 'weekly_planner_day', 'weekly_planner_time'
     }
     updated_fields = set(settings_data.model_dump(exclude_unset=True).keys())
-    if planner_fields & updated_fields:
+    planner_updated = planner_fields & updated_fields
+    logger.info(f"Settings update for user {current_user.id}: updated_fields={updated_fields}, planner_updated={planner_updated}")
+
+    if planner_updated:
         # Schedule planner for today if settings allow (time in future, etc.)
-        await schedule_planner_for_user(current_user.id)
+        logger.info(f"Calling schedule_planner_for_user for user {current_user.id}")
+        try:
+            await schedule_planner_for_user(current_user.id)
+            logger.info(f"schedule_planner_for_user completed for user {current_user.id}")
+        except Exception as e:
+            logger.error(f"Error calling schedule_planner_for_user: {e}", exc_info=True)
 
     return settings
 
