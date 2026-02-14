@@ -516,6 +516,15 @@ class Schedule(Base):
     flexible_completion_enabled = Column(Boolean, default=False, nullable=False)  # Allow completing instances within ±N days
     flexible_completion_days = Column(Integer, default=2, nullable=False)  # Number of days before/after scheduled date (default: ±2 days)
 
+    # Smart notification settings (Phase 22)
+    # Follow-up reminder: send second reminder X minutes after main if still not complete
+    follow_up_enabled = Column(Boolean, default=False, nullable=False)
+    follow_up_delay_minutes = Column(Integer, nullable=True)  # e.g., 30 minutes
+
+    # Window expiry alert: notify when window is closing (offset from window start)
+    expiry_alert_enabled = Column(Boolean, default=False, nullable=False)
+    expiry_alert_offset_minutes = Column(Integer, nullable=True)  # From window start, e.g., 45
+
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
 
@@ -753,6 +762,11 @@ class NotificationSettings(Base):
     quiet_hours_start = Column(Time, nullable=True)  # e.g., 22:00 (10 PM)
     quiet_hours_end = Column(Time, nullable=True)  # e.g., 08:00 (8 AM)
 
+    # Frequency cap settings (Phase 22)
+    frequency_cap_enabled = Column(Boolean, default=True, nullable=False)
+    frequency_cap_per_reptile = Column(Integer, default=5, nullable=False)  # Per day
+    frequency_cap_mode = Column(String(20), default="silent", nullable=False)  # "silent" or "summary"
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -870,7 +884,7 @@ class ScheduledNotificationJob(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(String(255), unique=True, nullable=False, index=True)  # APScheduler job ID
-    job_type = Column(String(50), nullable=False, default="notification_reminder")  # notification_reminder or auto_complete
+    job_type = Column(String(50), nullable=False, default="notification_reminder")  # notification_reminder, auto_complete, follow_up_reminder, expiry_alert
     schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="CASCADE"), nullable=False)
