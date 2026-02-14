@@ -5,15 +5,113 @@ import asyncio
 import logging
 from datetime import date as py_date
 from celery import Task
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.celery_app import celery_app
 from app.database import async_session_maker
-from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType
+from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType, ScheduleInstance, InstanceStatus
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 from app.scheduler import create_in_app_notification, is_within_quiet_hours
+from app.scheduler.frequency_cap import is_frequency_cap_reached, increment_notification_count, get_frequency_cap_mode
 from app.constants import FOOD_CATEGORY_DISPLAY, get_schedule_type_emoji
 
 logger = logging.getLogger(__name__)
+
+
+async def send_frequency_cap_summary_notification(
+    db: AsyncSession,
+    user: User,
+    reptile: Reptile,
+    channel: NotificationChannel,
+    date: py_date
+):
+    """
+    Send a summary notification when frequency cap is reached.
+
+    This notifies the user that additional notifications for this reptile
+    are being suppressed for the day.
+
+    Args:
+        db: Database session
+        user: User to notify
+        reptile: Reptile the notifications are for
+        channel: Notification channel to use
+        date: Date for which cap is reached
+    """
+    try:
+        # Get template for frequency_cap_summary trigger
+        template = await get_template_for_trigger(
+            db=db,
+            trigger_type="frequency_cap_summary",
+            user_id=user.id,
+            channel_type=channel.webhook_type
+        )
+
+        # Get current count from tracking
+        from app.models import NotificationFrequencyTracking
+        result = await db.execute(
+            select(NotificationFrequencyTracking).where(
+                and_(
+                    NotificationFrequencyTracking.user_id == user.id,
+                    NotificationFrequencyTracking.reptile_id == reptile.id,
+                    NotificationFrequencyTracking.date == date
+                )
+            )
+        )
+        tracking = result.scalar_one_or_none()
+        notifications_suppressed = tracking.notification_count if tracking else 0
+
+        # Build context
+        context = {
+            "reptile_name": reptile.name,
+            "reptile_id": reptile.id,
+            "date": date.strftime('%Y-%m-%d'),
+            "notifications_suppressed": notifications_suppressed,
+        }
+
+        # Render template or use fallback
+        if template:
+            message = render_template(template.message_template, context)
+            title = render_template(template.title_template, context) if template.title_template else f"Notification Limit Reached - {reptile.name}"
+        else:
+            # Fallback to hardcoded message
+            message = f"Notification limit reached for **{reptile.name}**. Additional reminders for today will be suppressed."
+            title = f"Notification Limit Reached - {reptile.name}"
+
+        # Send webhook notification (Discord, Pushover, etc.)
+        if channel.webhook_type != "in_app":
+            await send_webhook_notification(
+                webhook_url=channel.webhook_url,
+                webhook_type=channel.webhook_type,
+                message=message,
+                title=title,
+                config=channel.config,
+                context=context,
+                trigger_type="frequency_cap_summary",
+                template=template
+            )
+            logger.info(f"Sent frequency cap summary via {channel.webhook_type} for reptile {reptile.id} to user {user.email}")
+
+        # Create in-app notification
+        if channel.webhook_type == "in_app":
+            await create_in_app_notification(
+                db=db,
+                user=user,
+                notification_type=NotificationType.SYSTEM,
+                title=title,
+                message=message,
+                link=f"/reptiles/{reptile.id}",
+                notification_metadata={
+                    "reptile_id": reptile.id,
+                    "reptile_name": reptile.name,
+                    "date": date.isoformat(),
+                    "notifications_suppressed": notifications_suppressed
+                }
+            )
+            logger.info(f"Sent in-app frequency cap summary for reptile {reptile.id} to user {user.email}")
+
+    except Exception as e:
+        logger.error(f"Error sending frequency cap summary notification: {e}", exc_info=True)
 
 
 class AsyncTask(Task):
@@ -49,6 +147,25 @@ async def send_schedule_reminder_task(
     """
     try:
         async with async_session_maker() as db:
+            # Parse date first (needed for completion check)
+            scheduled_date = py_date.fromisoformat(scheduled_date_str)
+
+            # 1. CHECK COMPLETION STATUS FIRST (before any other work)
+            # This ensures we don't send notifications for already completed tasks
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(
+                    and_(
+                        ScheduleInstance.schedule_id == schedule_id,
+                        ScheduleInstance.scheduled_date == scheduled_date
+                    )
+                )
+            )
+            instance = instance_result.scalar_one_or_none()
+
+            if instance and instance.status == InstanceStatus.COMPLETED.value:
+                logger.info(f"Skipping notification for schedule {schedule_id} on {scheduled_date} - already completed")
+                return  # SUPPRESS - task complete
+
             # Fetch all required data
             schedule = await db.get(Schedule, schedule_id)
             reptile = await db.get(Reptile, reptile_id)
@@ -64,8 +181,17 @@ async def send_schedule_reminder_task(
                 logger.info(f"Channel {channel_id} is disabled, skipping notification")
                 return
 
-            # Parse date
-            scheduled_date = py_date.fromisoformat(scheduled_date_str)
+            # 2. CHECK FREQUENCY CAP
+            if await is_frequency_cap_reached(db, user_id, reptile_id, scheduled_date):
+                logger.info(f"Frequency cap reached for reptile {reptile_id} on {scheduled_date}")
+
+                # Check if we should send summary instead
+                mode = await get_frequency_cap_mode(db, user_id)
+                if mode == "summary":
+                    await send_frequency_cap_summary_notification(
+                        db, user, reptile, channel, scheduled_date
+                    )
+                return  # SUPPRESS - cap reached
 
             # Get template for this trigger
             template = await get_template_for_trigger(
@@ -186,6 +312,10 @@ async def send_schedule_reminder_task(
                     }
                 )
                 logger.info(f"Sent in-app reminder for schedule {schedule_id} to user {user.email}")
+
+            # 3. INCREMENT FREQUENCY COUNTER (after successful send)
+            await increment_notification_count(db, user_id, reptile_id, scheduled_date)
+            await db.commit()
 
     except Exception as exc:
         logger.error(f"Error sending schedule reminder: {exc}", exc_info=True)
