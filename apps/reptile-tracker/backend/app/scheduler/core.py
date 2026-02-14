@@ -55,6 +55,8 @@ __all__ = [
     "reschedule_notification_jobs_for_schedule",
     # Callbacks used by jobs.py
     "execute_scheduled_notification",
+    "execute_follow_up_notification",
+    "execute_expiry_alert",
     "should_schedule_occur_on_date",
     # Other public functions used by routers
     "create_in_app_notification",
@@ -257,6 +259,251 @@ async def execute_scheduled_notification(
         logger.error(f"Error executing scheduled notification job {job_id}: {e}", exc_info=True)
 
 
+async def execute_follow_up_notification(
+    schedule_id: int,
+    user_id: int,
+    channel_id: int,
+    scheduled_date: py_date,
+    job_id: str
+):
+    """
+    Execute a follow-up reminder job (called by APScheduler).
+    Queues to Celery for actual delivery.
+
+    Follow-ups are similar to main reminders but:
+    - Use follow_up_reminder trigger type for templates
+    - Do NOT schedule another follow-up (prevents infinite chains)
+    """
+    try:
+        async with async_session_maker() as db:
+            # Get the scheduled job record
+            job_record = await db.execute(
+                select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+            )
+            job_record = job_record.scalars().first()
+
+            if not job_record or job_record.status != "pending":
+                logger.warning(f"Follow-up job {job_id} not found or already processed, skipping")
+                return
+
+            # Get schedule, reptile, user, and channel
+            schedule = await db.get(Schedule, schedule_id)
+            if not schedule or not schedule.enabled or not schedule.notifications_enabled:
+                logger.info(f"Schedule {schedule_id} disabled, marking follow-up job as cancelled")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            reptile = await db.get(Reptile, schedule.reptile_id)
+            user = await db.get(User, user_id)
+            channel = await db.get(NotificationChannel, channel_id)
+
+            if not reptile or not user or not channel or not channel.enabled:
+                logger.warning(f"Missing required entities for follow-up job {job_id}, marking as cancelled")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check if already completed - if so, suppress follow-up
+            completion = await db.execute(
+                select(ScheduleCompletion).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule_id,
+                        ScheduleCompletion.scheduled_date == scheduled_date,
+                        ScheduleCompletion.status == CompletionStatus.COMPLETED_ON_TIME
+                    )
+                )
+            )
+            if completion.scalars().first():
+                logger.info(f"Schedule {schedule_id} already completed for {scheduled_date}, suppressing follow-up")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check quiet hours
+            notif_settings = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == user_id)
+            )
+            notif_settings = notif_settings.scalars().first()
+
+            if notif_settings and is_within_quiet_hours(notif_settings, NotificationType.SCHEDULE_REMINDER, datetime.now(timezone.utc)):
+                logger.info(f"Skipping follow-up job {job_id} - within quiet hours")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check user access
+            from app.permissions import check_reptile_access
+            try:
+                await check_reptile_access(db, user, reptile.id)
+            except HTTPException:
+                logger.warning(f"User {user_id} no longer has access to reptile {reptile.id}")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Queue to Celery
+            try:
+                from app.celery_tasks import send_follow_up_reminder_task
+
+                with get_tracer().start_as_current_span(
+                    "dispatch_follow_up_reminder",
+                    attributes={
+                        "schedule.id": schedule.id,
+                        "schedule.type": schedule.schedule_type,
+                        "reptile.id": reptile.id,
+                        "reptile.name": reptile.name,
+                        "user.id": user.id,
+                        "channel.id": channel.id,
+                    }
+                ):
+                    send_follow_up_reminder_task.delay(
+                        schedule_id=schedule.id,
+                        reptile_id=reptile.id,
+                        scheduled_date_str=scheduled_date.isoformat(),
+                        user_id=user.id,
+                        channel_id=channel.id,
+                        follow_up_number=1
+                    )
+
+                logger.info(
+                    f"Queued follow-up reminder for schedule {schedule.id} ({schedule.schedule_type}) "
+                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                )
+
+                job_record.status = "sent"
+                await db.commit()
+
+            except Exception as celery_error:
+                logger.error(f"Failed to queue follow-up job {job_id} to Celery: {celery_error}")
+                job_record.status = "failed"
+                await db.commit()
+
+    except Exception as e:
+        logger.error(f"Error executing follow-up notification job {job_id}: {e}", exc_info=True)
+
+
+async def execute_expiry_alert(
+    schedule_id: int,
+    user_id: int,
+    channel_id: int,
+    scheduled_date: py_date,
+    job_id: str
+):
+    """
+    Execute an expiry alert job (called by APScheduler).
+    Queues to Celery for actual delivery.
+
+    Expiry alerts are sent when the time window is closing.
+    """
+    try:
+        async with async_session_maker() as db:
+            # Get the scheduled job record
+            job_record = await db.execute(
+                select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+            )
+            job_record = job_record.scalars().first()
+
+            if not job_record or job_record.status != "pending":
+                logger.warning(f"Expiry alert job {job_id} not found or already processed, skipping")
+                return
+
+            # Get schedule, reptile, user, and channel
+            schedule = await db.get(Schedule, schedule_id)
+            if not schedule or not schedule.enabled or not schedule.notifications_enabled:
+                logger.info(f"Schedule {schedule_id} disabled, marking expiry alert job as cancelled")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            reptile = await db.get(Reptile, schedule.reptile_id)
+            user = await db.get(User, user_id)
+            channel = await db.get(NotificationChannel, channel_id)
+
+            if not reptile or not user or not channel or not channel.enabled:
+                logger.warning(f"Missing required entities for expiry alert job {job_id}, marking as cancelled")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check if already completed - if so, suppress expiry alert
+            completion = await db.execute(
+                select(ScheduleCompletion).where(
+                    and_(
+                        ScheduleCompletion.schedule_id == schedule_id,
+                        ScheduleCompletion.scheduled_date == scheduled_date,
+                        ScheduleCompletion.status == CompletionStatus.COMPLETED_ON_TIME
+                    )
+                )
+            )
+            if completion.scalars().first():
+                logger.info(f"Schedule {schedule_id} already completed for {scheduled_date}, suppressing expiry alert")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check quiet hours
+            notif_settings = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == user_id)
+            )
+            notif_settings = notif_settings.scalars().first()
+
+            if notif_settings and is_within_quiet_hours(notif_settings, NotificationType.SCHEDULE_REMINDER, datetime.now(timezone.utc)):
+                logger.info(f"Skipping expiry alert job {job_id} - within quiet hours")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Check user access
+            from app.permissions import check_reptile_access
+            try:
+                await check_reptile_access(db, user, reptile.id)
+            except HTTPException:
+                logger.warning(f"User {user_id} no longer has access to reptile {reptile.id}")
+                job_record.status = "cancelled"
+                await db.commit()
+                return
+
+            # Queue to Celery
+            try:
+                from app.celery_tasks import send_expiry_alert_task
+
+                with get_tracer().start_as_current_span(
+                    "dispatch_expiry_alert",
+                    attributes={
+                        "schedule.id": schedule.id,
+                        "schedule.type": schedule.schedule_type,
+                        "reptile.id": reptile.id,
+                        "reptile.name": reptile.name,
+                        "user.id": user.id,
+                        "channel.id": channel.id,
+                    }
+                ):
+                    send_expiry_alert_task.delay(
+                        schedule_id=schedule.id,
+                        reptile_id=reptile.id,
+                        scheduled_date_str=scheduled_date.isoformat(),
+                        user_id=user.id,
+                        channel_id=channel.id
+                    )
+
+                logger.info(
+                    f"Queued expiry alert for schedule {schedule.id} ({schedule.schedule_type}) "
+                    f"for reptile {reptile.name} to user {user.email} via channel '{channel.name}'"
+                )
+
+                job_record.status = "sent"
+                await db.commit()
+
+            except Exception as celery_error:
+                logger.error(f"Failed to queue expiry alert job {job_id} to Celery: {celery_error}")
+                job_record.status = "failed"
+                await db.commit()
+
+    except Exception as e:
+        logger.error(f"Error executing expiry alert job {job_id}: {e}", exc_info=True)
+
+
 # Wrapper functions that pass global scheduler to extracted job management functions
 # These maintain backward compatibility for existing call sites while using the
 # extracted functions from scheduler.jobs module
@@ -368,6 +615,8 @@ async def rebuild_notification_jobs_from_db():
 
             notification_count = 0
             autocomplete_count = 0
+            follow_up_count = 0
+            expiry_alert_count = 0
 
             for job_record in pending_jobs:
                 try:
@@ -388,6 +637,44 @@ async def rebuild_notification_jobs_from_db():
                         )
                         autocomplete_count += 1
                         logger.debug(f"Rebuilt autocomplete job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
+                    elif job_record.job_type == "follow_up_reminder":
+                        # Rebuild follow-up reminder job
+                        scheduler.add_job(
+                            func=execute_follow_up_notification,
+                            trigger='date',
+                            run_date=job_record.scheduled_time_utc,
+                            args=[
+                                job_record.schedule_id,
+                                job_record.user_id,
+                                job_record.channel_id,
+                                job_record.scheduled_date,
+                                job_record.job_id
+                            ],
+                            id=job_record.job_id,
+                            replace_existing=True,
+                            misfire_grace_time=300  # 5 minutes grace
+                        )
+                        follow_up_count += 1
+                        logger.debug(f"Rebuilt follow-up job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
+                    elif job_record.job_type == "expiry_alert":
+                        # Rebuild expiry alert job
+                        scheduler.add_job(
+                            func=execute_expiry_alert,
+                            trigger='date',
+                            run_date=job_record.scheduled_time_utc,
+                            args=[
+                                job_record.schedule_id,
+                                job_record.user_id,
+                                job_record.channel_id,
+                                job_record.scheduled_date,
+                                job_record.job_id
+                            ],
+                            id=job_record.job_id,
+                            replace_existing=True,
+                            misfire_grace_time=300  # 5 minutes grace
+                        )
+                        expiry_alert_count += 1
+                        logger.debug(f"Rebuilt expiry alert job {job_record.job_id} for {job_record.scheduled_time_utc} UTC")
                     else:
                         # Rebuild notification reminder job (default)
                         scheduler.add_job(
@@ -412,7 +699,7 @@ async def rebuild_notification_jobs_from_db():
                     logger.error(f"Failed to rebuild job {job_record.job_id}: {e}")
                     continue
 
-            logger.info(f"Successfully rebuilt {notification_count} notification jobs and {autocomplete_count} autocomplete jobs")
+            logger.info(f"Successfully rebuilt {notification_count} notification, {follow_up_count} follow-up, {expiry_alert_count} expiry alert, and {autocomplete_count} autocomplete jobs")
 
     except Exception as e:
         logger.error(f"Error rebuilding notification jobs from database: {e}", exc_info=True)
