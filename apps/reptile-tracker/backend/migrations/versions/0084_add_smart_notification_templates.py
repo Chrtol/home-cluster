@@ -1,7 +1,7 @@
 """add smart notification templates for Phase 22
 
-Revision ID: 0083
-Revises: 0082
+Revision ID: 0084
+Revises: 0083
 Create Date: 2026-02-14
 
 Adds default system templates for:
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0083'
-down_revision = '0082'
+revision = '0084'
+down_revision = '0083'
 branch_labels = None
 depends_on = None
 
