@@ -423,6 +423,7 @@ async def daily_notification_maintenance():
     Daily maintenance job to:
     1. Schedule notification jobs for the next 7 days for all enabled schedules
     2. Clean up old completed/failed jobs from the database
+    3. Clean up old frequency tracking records
     """
     logger.info("Starting daily notification maintenance")
 
@@ -468,6 +469,13 @@ async def daily_notification_maintenance():
 
             deleted_count = delete_result.rowcount if hasattr(delete_result, 'rowcount') else 0
             logger.info(f"Cleaned up {deleted_count} old notification job records")
+
+            # 3. Clean up old frequency tracking records (older than 7 days)
+            from app.scheduler.frequency_cap import cleanup_old_frequency_tracking
+            try:
+                await cleanup_old_frequency_tracking(days_to_keep=7)
+            except Exception as e:
+                logger.error(f"Error cleaning up frequency tracking records: {e}")
 
             logger.info("Daily notification maintenance completed successfully")
 
