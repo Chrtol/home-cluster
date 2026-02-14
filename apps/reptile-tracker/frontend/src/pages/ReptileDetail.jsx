@@ -184,7 +184,7 @@ export default function ReptileDetail() {
         // Fetch household status for responsibility UI (non-critical)
         try {
           const responsibilityRes = await axios.get('/api/responsibilities/overview');
-          setIsSingleUserHousehold(responsibilityRes.data.is_single_user_household);
+          setIsSingleUserHousehold(responsibilityRes.data.is_single_user);
         } catch (err) {
           console.error('Failed to fetch responsibility overview:', err);
           // Default to single-user (hide responsibility UI on error)

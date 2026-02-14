@@ -35,7 +35,7 @@ export default function ResponsibilityManager({ reptileId, scheduleId = null }) 
     try {
       // Check if single-user household
       const overviewRes = await axios.get('/api/responsibilities/overview')
-      const isSingle = overviewRes.data.is_single_user_household
+      const isSingle = overviewRes.data.is_single_user
       setIsSingleUser(isSingle)
 
       // If single-user, no need to fetch more data
