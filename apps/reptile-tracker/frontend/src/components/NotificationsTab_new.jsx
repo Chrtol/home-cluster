@@ -30,6 +30,7 @@ function NotificationsTab() {
   // Default weekly planner day to user's first day of week (0=Sunday, 1=Monday)
   const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(getUserFirstDayOfWeek() === 'monday' ? 1 : 0);
   const [digestFormat, setDigestFormat] = useState('grouped');
+  const [digestChannelId, setDigestChannelId] = useState(null); // null = send to all enabled channels
 
   // Time picker state for quiet hours start
   const [startHours, setStartHours] = useState(22);
@@ -96,6 +97,7 @@ function NotificationsTab() {
           setWeeklyPlannerEnabled(settingsRes.data.weekly_planner_enabled || false);
           setWeeklyPlannerDay(settingsRes.data.weekly_planner_day ?? 0);
           setDigestFormat(settingsRes.data.digest_format || 'grouped');
+          setDigestChannelId(settingsRes.data.digest_channel_id ?? null);
         }
       } catch (err) {
         // 404 is okay, means no settings yet
@@ -258,12 +260,13 @@ function NotificationsTab() {
       setError('');
       setSuccess('');
 
-      await axios.patch('/api/notification-settings/me', {
+      await axios.post('/api/notification-settings/me', {
         daily_planner_enabled: dailyPlannerEnabled,
         daily_planner_time: dailyPlannerTime,
         weekly_planner_enabled: weeklyPlannerEnabled,
         weekly_planner_day: weeklyPlannerDay,
         digest_format: digestFormat,
+        digest_channel_id: digestChannelId,
       });
 
       setSuccess('Planner settings saved');
@@ -869,9 +872,32 @@ function NotificationsTab() {
             )}
           </div>
 
-          {/* Digest Format (applies to both) */}
+          {/* Digest Settings (applies to both) */}
           {(dailyPlannerEnabled || weeklyPlannerEnabled) && (
-            <div className="space-y-3 pt-4 border-t border-border">
+            <div className="space-y-4 pt-4 border-t border-border">
+              {/* Channel Selection */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Send To
+                </label>
+                <select
+                  value={digestChannelId ?? ''}
+                  onChange={(e) => setDigestChannelId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="bg-background border border-border rounded-md px-3 py-2 text-sm w-full"
+                >
+                  <option value="">All enabled channels</option>
+                  {channels.filter(ch => ch.enabled).map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      {channel.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {digestChannelId ? 'Digests will be sent only to the selected channel' : 'Digests will be sent to all enabled notification channels'}
+                </p>
+              </div>
+
+              {/* Digest Format */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Digest Format

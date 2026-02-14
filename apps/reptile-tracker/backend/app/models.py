@@ -774,6 +774,7 @@ class NotificationSettings(Base):
     weekly_planner_enabled = Column(Boolean, default=False, nullable=False)
     weekly_planner_day = Column(Integer, default=0, nullable=False)  # 0=Sunday, 1=Monday, ..., 6=Saturday
     digest_format = Column(String(20), default="grouped", nullable=False)  # "grouped" or "individual"
+    digest_channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="SET NULL"), nullable=True)  # Which channel receives digests (null = all enabled channels)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

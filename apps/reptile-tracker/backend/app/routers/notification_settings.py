@@ -15,16 +15,35 @@ from app.scheduler import create_in_app_notification
 router = APIRouter(prefix="/api/notification-settings", tags=["notification-settings"])
 
 
-@router.get("/me", response_model=Optional[NotificationSettingsSchema])
+@router.get("/me", response_model=NotificationSettingsSchema)
 async def get_my_notification_settings(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get current user's notification settings"""
+    """Get current user's notification settings.
+
+    Auto-creates default settings and in-app channel if they don't exist,
+    ensuring every user always has the in-app notification channel available.
+    """
     result = await db.execute(
         select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
     )
     settings = result.scalars().first()
+
+    if not settings:
+        # Create default settings for user
+        settings = NotificationSettings(user_id=current_user.id)
+        db.add(settings)
+        await db.flush()
+        # Create in-app channel for new settings
+        await ensure_in_app_channel(db, settings.id)
+        await db.commit()
+        await db.refresh(settings)
+    else:
+        # Ensure in-app channel exists (for users created before this feature)
+        await ensure_in_app_channel(db, settings.id)
+        await db.commit()
+
     return settings
 
 
