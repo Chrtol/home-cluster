@@ -3,15 +3,15 @@
 ## Current Position
 
 **Phase:** 22 of 25 (Smart Notification System)
-**Plan:** 3 of TBD complete
+**Plan:** 4 of TBD complete
 **Status:** In progress
-**Last activity:** 2026-02-14 - Completed 22-03-PLAN.md (Completion-Aware Execution and Frequency Cap)
+**Last activity:** 2026-02-14 - Completed 22-04-PLAN.md (Follow-Up and Expiry Alert Scheduling)
 
 ### Progress
 ```
 Phase 20: Complete
 Phase 21: Complete (celebration animations)
-Phase 22: In progress (3/TBD complete: 22-01, 22-02, 22-03)
+Phase 22: In progress (4/TBD complete: 22-01, 22-02, 22-03, 22-04)
 ```
 
 ---
@@ -37,6 +37,9 @@ Phase 22: In progress (3/TBD complete: 22-01, 22-02, 22-03)
 | 22-03 | All notification types count against frequency cap | Unified cap enforcement across main, follow-up, expiry | Consistent daily notification limits |
 | 22-03 | FOR UPDATE lock for atomic frequency counter increment | Prevent race conditions | Accurate count tracking with concurrent notifications |
 | 22-03 | 7-day frequency tracking retention | Balance historical visibility with storage | Old records cleaned up automatically in daily maintenance |
+| 22-04 | Follow-up scheduled from main reminder only (no infinite chains) | Prevent notification spam | Follow-up tasks never schedule more follow-ups |
+| 22-04 | Expiry alert offset from window_start (earliest_time) | Per user decision, allows flexible offset placement | Users set offset relative to window start, not end |
+| 22-04 | Fire-time completion check for follow-up and expiry | Suppress if task completed between scheduling and fire | Avoids redundant notifications |
 
 ---
 
@@ -52,15 +55,18 @@ Phase 22: In progress (3/TBD complete: 22-01, 22-02, 22-03)
 - New template variables: window_start, window_end, follow_up_number, notifications_suppressed
 - Completion check at fire time (NOTIF-01)
 - Frequency cap integration in celery tasks
+- Follow-up scheduling from main reminder (22-04)
+- Expiry alert scheduling alongside main reminder (22-04)
 
 **Key files to remember:**
 - `backend/app/models.py` - Schedule with smart notification fields, NotificationFrequencyTracking model
 - `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22 models
 - `backend/migrations/versions/0083_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
 - `backend/app/notifications.py` - Notification service with new trigger types and template variables
-- `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (NEW in 22-03)
-- `backend/app/celery_tasks.py` - Notification execution with completion check and frequency cap
-- `backend/app/scheduler/core.py` - Daily maintenance with frequency tracking cleanup
+- `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (22-03)
+- `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
+- `backend/app/scheduler/core.py` - execute_follow_up_notification, execute_expiry_alert functions (22-04)
+- `backend/app/celery_tasks.py` - send_follow_up_reminder_task, send_expiry_alert_task (22-04)
 - `docs/NOTIFICATION_SYSTEM.md` - Updated documentation for new trigger types
 
 ---
@@ -74,9 +80,9 @@ None currently.
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 22-03 complete (Completion-Aware Execution and Frequency Cap)
-**Resume from:** Next plan in phase 22 (follow-up reminder scheduling, expiry alert scheduling)
-**Resume file:** `.planning/phases/22-smart-notification-system/22-04-PLAN.md` (if exists)
+**Stopped at:** Plan 22-04 complete (Follow-Up and Expiry Alert Scheduling)
+**Resume from:** Next plan in phase 22 (if exists)
+**Resume file:** `.planning/phases/22-smart-notification-system/22-05-PLAN.md` (if exists)
 
 ---
 
@@ -96,15 +102,19 @@ None currently.
 | 22-03 | frequency_cap.py module | Atomic frequency cap checking and increment with FOR UPDATE lock |
 | 22-03 | Completion check at fire time | NOTIF-01 compliant notification suppression |
 | 22-03 | Frequency cap summary notifications | Summary mode sends notification when cap reached |
+| 22-04 | schedule_follow_up_reminder | Schedule follow-up X minutes after main reminder |
+| 22-04 | schedule_expiry_alert | Schedule alert at window_start + offset |
+| 22-04 | execute_follow_up_notification / execute_expiry_alert | Fire-time execution with completion check |
+| 22-04 | send_follow_up_reminder_task / send_expiry_alert_task | Celery delivery with template support |
 
 ---
 
 ## Next Steps
 
-1. Implement follow-up reminder scheduling logic (22-04 - already partially committed)
-2. Implement expiry alert scheduling logic (22-05)
-3. All smart notification features will use the database models and templates created in 22-01 and 22-02
+1. All core smart notification features are now implemented (22-01 through 22-04)
+2. Consider additional plans for testing, documentation, or frontend integration
+3. Phase 22 may be feature-complete pending final review
 
 ---
 
-*Last updated: 2026-02-14T15:04:00Z*
+*Last updated: 2026-02-14T15:06:41Z*
