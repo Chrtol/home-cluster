@@ -317,6 +317,31 @@ async def send_schedule_reminder_task(
             await increment_notification_count(db, user_id, reptile_id, scheduled_date)
             await db.commit()
 
+            # 4. SCHEDULE FOLLOW-UP REMINDER (if enabled)
+            # Only main reminder schedules follow-up, never follow-up itself (prevents infinite chains)
+            if schedule.follow_up_enabled and schedule.follow_up_delay_minutes:
+                try:
+                    from app.scheduler.core import scheduler
+                    from app.scheduler.jobs import schedule_follow_up_reminder
+
+                    if scheduler:
+                        # Open new session for follow-up scheduling
+                        async with async_session_maker() as follow_up_db:
+                            await schedule_follow_up_reminder(
+                                scheduler=scheduler,
+                                db=follow_up_db,
+                                schedule=schedule,
+                                scheduled_date=scheduled_date,
+                                user_id=user_id,
+                                channel_id=channel_id,
+                                delay_minutes=schedule.follow_up_delay_minutes
+                            )
+                            await follow_up_db.commit()
+                        logger.info(f"Scheduled follow-up reminder for schedule {schedule_id} in {schedule.follow_up_delay_minutes} minutes")
+                except Exception as e:
+                    logger.error(f"Failed to schedule follow-up reminder: {e}", exc_info=True)
+                    # Don't fail the main task if follow-up scheduling fails
+
     except Exception as exc:
         logger.error(f"Error sending schedule reminder: {exc}", exc_info=True)
         # Retry with exponential backoff
@@ -352,4 +377,322 @@ async def send_overdue_alert_task(
 
     except Exception as exc:
         logger.error(f"Error sending overdue alert: {exc}", exc_info=True)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
+async def send_follow_up_reminder_task(
+    self,
+    schedule_id: int,
+    reptile_id: int,
+    scheduled_date_str: str,
+    user_id: int,
+    channel_id: int,
+    follow_up_number: int = 1
+):
+    """
+    Celery task to send a follow-up reminder notification.
+
+    Same completion/frequency checks as main reminder.
+    Does NOT schedule another follow-up (prevents infinite chains).
+
+    Args:
+        schedule_id: Schedule ID
+        reptile_id: Reptile ID
+        scheduled_date_str: Date string in ISO format (YYYY-MM-DD)
+        user_id: User ID to send notification to
+        channel_id: Notification channel ID to use
+        follow_up_number: Which follow-up this is (1, 2, etc.)
+    """
+    try:
+        async with async_session_maker() as db:
+            # Parse date first
+            scheduled_date = py_date.fromisoformat(scheduled_date_str)
+
+            # 1. CHECK COMPLETION STATUS FIRST
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(
+                    and_(
+                        ScheduleInstance.schedule_id == schedule_id,
+                        ScheduleInstance.scheduled_date == scheduled_date
+                    )
+                )
+            )
+            instance = instance_result.scalar_one_or_none()
+
+            if instance and instance.status == InstanceStatus.COMPLETED.value:
+                logger.info(f"Suppressing follow-up for schedule {schedule_id} on {scheduled_date} - already completed")
+                return  # SUPPRESS - task complete
+
+            # Fetch all required data
+            schedule = await db.get(Schedule, schedule_id)
+            reptile = await db.get(Reptile, reptile_id)
+            user = await db.get(User, user_id)
+            channel = await db.get(NotificationChannel, channel_id)
+
+            if not all([schedule, reptile, user, channel]):
+                logger.error(f"Missing data for follow-up: schedule={schedule_id}, reptile={reptile_id}, user={user_id}, channel={channel_id}")
+                return
+
+            # Check if channel is still enabled
+            if not channel.enabled:
+                logger.info(f"Channel {channel_id} is disabled, skipping follow-up notification")
+                return
+
+            # 2. CHECK FREQUENCY CAP
+            if await is_frequency_cap_reached(db, user_id, reptile_id, scheduled_date):
+                logger.info(f"Frequency cap reached for follow-up, reptile {reptile_id} on {scheduled_date}")
+                mode = await get_frequency_cap_mode(db, user_id)
+                if mode == "summary":
+                    await send_frequency_cap_summary_notification(
+                        db, user, reptile, channel, scheduled_date
+                    )
+                return  # SUPPRESS - cap reached
+
+            # Get template for follow_up_reminder trigger type
+            template = await get_template_for_trigger(
+                db=db,
+                trigger_type="follow_up_reminder",
+                user_id=user.id,
+                channel_type=channel.webhook_type
+            )
+
+            # Build context for template rendering
+            emoji = get_schedule_type_emoji(schedule.schedule_type)
+            schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
+
+            # Build time window string
+            time_window = ""
+            time_window_display = ""
+            if schedule.time_window_enabled and schedule.earliest_time and schedule.latest_time:
+                time_window_display = f"{schedule.earliest_time.strftime('%H:%M')} - {schedule.latest_time.strftime('%H:%M')}"
+                time_window = f"\nTime window: {time_window_display}"
+
+            # Build schedule URL for links
+            schedule_url = f"/schedules/{schedule.id}"
+
+            # Build context
+            context = {
+                "reptile_name": reptile.name,
+                "schedule_name": schedule_name,
+                "schedule_type": schedule.schedule_type,
+                "emoji": emoji,
+                "time_window": time_window,
+                "time_window_display": time_window_display,
+                "scheduled_date": scheduled_date.strftime('%Y-%m-%d'),
+                "due_date": scheduled_date.strftime('%Y-%m-%d'),
+                "schedule_url": schedule_url,
+                "schedule_id": schedule.id,
+                "follow_up_number": follow_up_number,
+            }
+
+            # Render template or use fallback
+            if template:
+                message = render_template(template.message_template, context)
+                title = render_template(template.title_template, context) if template.title_template else f"Follow-up Reminder - {reptile.name}"
+            else:
+                # Fallback to hardcoded message
+                message = f"{emoji} **Reminder (follow-up #{follow_up_number}):** {schedule_name} for **{reptile.name}** is still pending{time_window}"
+                title = f"Follow-up Reminder - {reptile.name}"
+
+            # Send webhook notification
+            if channel.webhook_type != "in_app":
+                await send_webhook_notification(
+                    webhook_url=channel.webhook_url,
+                    webhook_type=channel.webhook_type,
+                    message=message,
+                    title=title,
+                    config=channel.config,
+                    context=context,
+                    trigger_type="follow_up_reminder",
+                    template=template
+                )
+                logger.info(f"Sent {channel.webhook_type} follow-up #{follow_up_number} for schedule {schedule_id} to user {user.email}")
+
+            # Create in-app notification
+            if channel.webhook_type == "in_app":
+                await create_in_app_notification(
+                    db=db,
+                    user=user,
+                    notification_type=NotificationType.SCHEDULE_REMINDER,
+                    title=title,
+                    message=message,
+                    link=schedule_url,
+                    notification_metadata={
+                        "reptile_id": reptile.id,
+                        "reptile_name": reptile.name,
+                        "schedule_id": schedule.id,
+                        "schedule_name": schedule.name or schedule.schedule_type,
+                        "scheduled_date": scheduled_date.isoformat(),
+                        "follow_up_number": follow_up_number
+                    }
+                )
+                logger.info(f"Sent in-app follow-up #{follow_up_number} for schedule {schedule_id} to user {user.email}")
+
+            # 3. INCREMENT FREQUENCY COUNTER
+            await increment_notification_count(db, user_id, reptile_id, scheduled_date)
+            await db.commit()
+
+            # NOTE: Follow-up does NOT schedule another follow-up (prevents infinite chains)
+
+    except Exception as exc:
+        logger.error(f"Error sending follow-up reminder: {exc}", exc_info=True)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
+async def send_expiry_alert_task(
+    self,
+    schedule_id: int,
+    reptile_id: int,
+    scheduled_date_str: str,
+    user_id: int,
+    channel_id: int
+):
+    """
+    Celery task to send a window expiry alert notification.
+
+    Sent when the time window is approaching its end (window_start + offset).
+    Same completion/frequency checks as main reminder.
+
+    Args:
+        schedule_id: Schedule ID
+        reptile_id: Reptile ID
+        scheduled_date_str: Date string in ISO format (YYYY-MM-DD)
+        user_id: User ID to send notification to
+        channel_id: Notification channel ID to use
+    """
+    try:
+        async with async_session_maker() as db:
+            # Parse date first
+            scheduled_date = py_date.fromisoformat(scheduled_date_str)
+
+            # 1. CHECK COMPLETION STATUS FIRST
+            instance_result = await db.execute(
+                select(ScheduleInstance).where(
+                    and_(
+                        ScheduleInstance.schedule_id == schedule_id,
+                        ScheduleInstance.scheduled_date == scheduled_date
+                    )
+                )
+            )
+            instance = instance_result.scalar_one_or_none()
+
+            if instance and instance.status == InstanceStatus.COMPLETED.value:
+                logger.info(f"Suppressing expiry alert for schedule {schedule_id} on {scheduled_date} - already completed")
+                return  # SUPPRESS - task complete
+
+            # Fetch all required data
+            schedule = await db.get(Schedule, schedule_id)
+            reptile = await db.get(Reptile, reptile_id)
+            user = await db.get(User, user_id)
+            channel = await db.get(NotificationChannel, channel_id)
+
+            if not all([schedule, reptile, user, channel]):
+                logger.error(f"Missing data for expiry alert: schedule={schedule_id}, reptile={reptile_id}, user={user_id}, channel={channel_id}")
+                return
+
+            # Check if channel is still enabled
+            if not channel.enabled:
+                logger.info(f"Channel {channel_id} is disabled, skipping expiry alert notification")
+                return
+
+            # 2. CHECK FREQUENCY CAP
+            if await is_frequency_cap_reached(db, user_id, reptile_id, scheduled_date):
+                logger.info(f"Frequency cap reached for expiry alert, reptile {reptile_id} on {scheduled_date}")
+                mode = await get_frequency_cap_mode(db, user_id)
+                if mode == "summary":
+                    await send_frequency_cap_summary_notification(
+                        db, user, reptile, channel, scheduled_date
+                    )
+                return  # SUPPRESS - cap reached
+
+            # Get template for expiry_alert trigger type
+            template = await get_template_for_trigger(
+                db=db,
+                trigger_type="expiry_alert",
+                user_id=user.id,
+                channel_type=channel.webhook_type
+            )
+
+            # Build context for template rendering
+            emoji = get_schedule_type_emoji(schedule.schedule_type)
+            schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
+
+            # Build time window string
+            time_window_display = ""
+            window_start = ""
+            window_end = ""
+            if schedule.time_window_enabled and schedule.earliest_time and schedule.latest_time:
+                time_window_display = f"{schedule.earliest_time.strftime('%H:%M')} - {schedule.latest_time.strftime('%H:%M')}"
+                window_start = schedule.earliest_time.strftime('%H:%M')
+                window_end = schedule.latest_time.strftime('%H:%M')
+
+            # Build schedule URL for links
+            schedule_url = f"/schedules/{schedule.id}"
+
+            # Build context
+            context = {
+                "reptile_name": reptile.name,
+                "schedule_name": schedule_name,
+                "schedule_type": schedule.schedule_type,
+                "emoji": emoji,
+                "time_window_display": time_window_display,
+                "window_start": window_start,
+                "window_end": window_end,
+                "scheduled_date": scheduled_date.strftime('%Y-%m-%d'),
+                "due_date": scheduled_date.strftime('%Y-%m-%d'),
+                "schedule_url": schedule_url,
+                "schedule_id": schedule.id,
+            }
+
+            # Render template or use fallback
+            if template:
+                message = render_template(template.message_template, context)
+                title = render_template(template.title_template, context) if template.title_template else f"Window Closing - {reptile.name}"
+            else:
+                # Fallback to hardcoded message
+                message = f"{emoji} **Window Closing:** {schedule_name} for **{reptile.name}** must be completed by {window_end}"
+                title = f"Window Closing - {reptile.name}"
+
+            # Send webhook notification
+            if channel.webhook_type != "in_app":
+                await send_webhook_notification(
+                    webhook_url=channel.webhook_url,
+                    webhook_type=channel.webhook_type,
+                    message=message,
+                    title=title,
+                    config=channel.config,
+                    context=context,
+                    trigger_type="expiry_alert",
+                    template=template
+                )
+                logger.info(f"Sent {channel.webhook_type} expiry alert for schedule {schedule_id} to user {user.email}")
+
+            # Create in-app notification
+            if channel.webhook_type == "in_app":
+                await create_in_app_notification(
+                    db=db,
+                    user=user,
+                    notification_type=NotificationType.SCHEDULE_REMINDER,
+                    title=title,
+                    message=message,
+                    link=schedule_url,
+                    notification_metadata={
+                        "reptile_id": reptile.id,
+                        "reptile_name": reptile.name,
+                        "schedule_id": schedule.id,
+                        "schedule_name": schedule.name or schedule.schedule_type,
+                        "scheduled_date": scheduled_date.isoformat(),
+                        "alert_type": "expiry_alert"
+                    }
+                )
+                logger.info(f"Sent in-app expiry alert for schedule {schedule_id} to user {user.email}")
+
+            # 3. INCREMENT FREQUENCY COUNTER
+            await increment_notification_count(db, user_id, reptile_id, scheduled_date)
+            await db.commit()
+
+    except Exception as exc:
+        logger.error(f"Error sending expiry alert: {exc}", exc_info=True)
         raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)

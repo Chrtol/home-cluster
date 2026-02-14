@@ -3,15 +3,15 @@
 ## Current Position
 
 **Phase:** 22 of 25 (Smart Notification System)
-**Plan:** 2 of TBD complete
+**Plan:** 3 of TBD complete
 **Status:** In progress
-**Last activity:** 2026-02-14 - Completed 22-02-PLAN.md (Extend Template System)
+**Last activity:** 2026-02-14 - Completed 22-03-PLAN.md (Completion-Aware Execution and Frequency Cap)
 
 ### Progress
 ```
 Phase 20: Complete
 Phase 21: Complete (celebration animations)
-Phase 22: In progress (2/TBD complete: 22-01, 22-02)
+Phase 22: In progress (3/TBD complete: 22-01, 22-02, 22-03)
 ```
 
 ---
@@ -33,6 +33,10 @@ Phase 22: In progress (2/TBD complete: 22-01, 22-02)
 | 22-01 | Use PostgreSQL table for frequency tracking | Easier queries and cleanup vs Redis | Simpler architecture, consistent with existing data patterns |
 | 22-02 | Separate templates for each trigger type with distinct title patterns | Better UX and clearer notification categorization | Each smart notification type has unique default template |
 | 22-02 | Time formatting respects user locale settings | Consistent with existing localization patterns | window_start/window_end formatted at context build time |
+| 22-03 | Check ScheduleInstance status at fire time | Per NOTIF-01 requirement, suppress notifications for completed tasks | Prevents redundant notifications after task completion |
+| 22-03 | All notification types count against frequency cap | Unified cap enforcement across main, follow-up, expiry | Consistent daily notification limits |
+| 22-03 | FOR UPDATE lock for atomic frequency counter increment | Prevent race conditions | Accurate count tracking with concurrent notifications |
+| 22-03 | 7-day frequency tracking retention | Balance historical visibility with storage | Old records cleaned up automatically in daily maintenance |
 
 ---
 
@@ -46,13 +50,17 @@ Phase 22: In progress (2/TBD complete: 22-01, 22-02)
 - Per-user notification settings with frequency caps
 - New template trigger types: follow_up_reminder, expiry_alert, frequency_cap_summary
 - New template variables: window_start, window_end, follow_up_number, notifications_suppressed
+- Completion check at fire time (NOTIF-01)
+- Frequency cap integration in celery tasks
 
 **Key files to remember:**
 - `backend/app/models.py` - Schedule with smart notification fields, NotificationFrequencyTracking model
 - `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22 models
 - `backend/migrations/versions/0083_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
 - `backend/app/notifications.py` - Notification service with new trigger types and template variables
-- `backend/app/scheduler.py` - APScheduler integration (to be extended)
+- `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (NEW in 22-03)
+- `backend/app/celery_tasks.py` - Notification execution with completion check and frequency cap
+- `backend/app/scheduler/core.py` - Daily maintenance with frequency tracking cleanup
 - `docs/NOTIFICATION_SYSTEM.md` - Updated documentation for new trigger types
 
 ---
@@ -66,9 +74,9 @@ None currently.
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 22-02 complete (Extend Template System)
-**Resume from:** Next plan in phase 22 (follow-up scheduler, frequency cap enforcement)
-**Resume file:** `.planning/phases/22-smart-notification-system/22-03-PLAN.md` (if exists)
+**Stopped at:** Plan 22-03 complete (Completion-Aware Execution and Frequency Cap)
+**Resume from:** Next plan in phase 22 (follow-up reminder scheduling, expiry alert scheduling)
+**Resume file:** `.planning/phases/22-smart-notification-system/22-04-PLAN.md` (if exists)
 
 ---
 
@@ -85,16 +93,18 @@ None currently.
 | 22-01 | Smart notification Schedule fields | Follow-up reminders and expiry alerts per schedule |
 | 22-02 | Smart notification trigger types | follow_up_reminder, expiry_alert, frequency_cap_summary |
 | 22-02 | Smart notification template variables | window_start, window_end, follow_up_number, notifications_suppressed |
+| 22-03 | frequency_cap.py module | Atomic frequency cap checking and increment with FOR UPDATE lock |
+| 22-03 | Completion check at fire time | NOTIF-01 compliant notification suppression |
+| 22-03 | Frequency cap summary notifications | Summary mode sends notification when cap reached |
 
 ---
 
 ## Next Steps
 
-1. Implement follow-up reminder scheduling logic (22-03)
-2. Implement expiry alert scheduling logic (22-04)
-3. Implement frequency cap enforcement (22-05)
-4. All smart notification features will use the database models and templates created in 22-01 and 22-02
+1. Implement follow-up reminder scheduling logic (22-04 - already partially committed)
+2. Implement expiry alert scheduling logic (22-05)
+3. All smart notification features will use the database models and templates created in 22-01 and 22-02
 
 ---
 
-*Last updated: 2026-02-14T14:58:00Z*
+*Last updated: 2026-02-14T15:04:00Z*
