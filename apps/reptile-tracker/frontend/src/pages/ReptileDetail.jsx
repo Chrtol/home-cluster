@@ -816,13 +816,13 @@ export default function ReptileDetail() {
       {/* Birthday festive glow overlay - subtle gradient accent */}
       {isBirthday && (
         <div className="absolute inset-0 -z-10 overflow-hidden rounded-xl pointer-events-none">
-          <div className="absolute -top-20 -left-20 w-40 h-40 bg-fuchsia-500/10 blur-3xl rounded-full" />
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-violet-500/10 blur-3xl rounded-full" />
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-violet-500/10 blur-3xl rounded-full" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-violet-400/10 blur-3xl rounded-full" />
         </div>
       )}
       <div className={cn(
         "flex flex-col sm:flex-row sm:items-start gap-4 mb-6 p-4 rounded-xl transition-all",
-        isBirthday && "bg-gradient-to-r from-fuchsia-500/5 via-transparent to-violet-500/5 ring-1 ring-fuchsia-500/20"
+        isBirthday && "bg-gradient-to-r from-violet-500/5 via-transparent to-violet-400/5 ring-1 ring-violet-500/20"
       )}>
         {/* Avatar - clickable to edit */}
         <div className="flex-shrink-0">
@@ -972,10 +972,7 @@ export default function ReptileDetail() {
         </div>
       )}
 
-      <div className={cn(
-        "bg-card rounded-lg shadow-sm border p-4 mb-4",
-        isBirthday ? "border-fuchsia-500/30 shadow-lg shadow-fuchsia-500/10" : "border-border"
-      )}>
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
         <h2 className="text-lg font-semibold mb-3 text-foreground">Details</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

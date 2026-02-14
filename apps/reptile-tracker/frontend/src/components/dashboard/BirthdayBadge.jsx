@@ -3,6 +3,7 @@ import { differenceInDays, differenceInMonths, startOfDay, format } from 'date-f
 import { Cake } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useCelebrations } from '../../contexts/CelebrationContext';
 
 /**
  * BirthdayBadge - Compact cake icon with birthday countdown
@@ -14,9 +15,11 @@ import { cn } from '@/lib/utils';
  * - 1-12 months: "6m" with actual date in tooltip
  *
  * Colors: Violet/fuchsia gradient (celebratory, works well in dark mode).
+ * When celebrations are disabled, uses muted styling without animations.
  */
 const BirthdayBadge = ({ dateOfBirth }) => {
   const [confettiPieces, setConfettiPieces] = useState([]);
+  const { celebrationsEnabled } = useCelebrations();
 
   if (!dateOfBirth) return null;
 
@@ -37,17 +40,35 @@ const BirthdayBadge = ({ dateOfBirth }) => {
   const monthsUntil = differenceInMonths(nextBirthday, today);
 
   // Color intensity increases as birthday approaches
+  // When celebrations are disabled, use muted styling without animations
   const getColors = (days) => {
+    if (!celebrationsEnabled) {
+      // Muted, non-animated colors when celebrations disabled
+      if (days === 0) return {
+        bg: 'bg-violet-500/30',
+        text: 'text-violet-300',
+      };
+      if (days <= 7) return {
+        bg: 'bg-violet-500/20',
+        text: 'text-violet-400/70'
+      };
+      return {
+        bg: 'bg-slate-500/10',
+        text: 'text-slate-400/60'
+      };
+    }
+
+    // Full celebratory styling when enabled
     if (days === 0) return {
-      bg: 'bg-fuchsia-500',
+      bg: 'bg-violet-500',
       text: 'text-white',
-      glow: 'shadow-lg shadow-fuchsia-500/40',
+      glow: 'shadow-lg shadow-violet-500/40',
       animate: 'animate-pulse'
     };
     if (days <= 3) return {
-      bg: 'bg-fuchsia-500/30',
-      text: 'text-fuchsia-300',
-      glow: 'shadow-sm shadow-fuchsia-500/20'
+      bg: 'bg-violet-500/30',
+      text: 'text-violet-300',
+      glow: 'shadow-sm shadow-violet-500/20'
     };
     if (days <= 7) return {
       bg: 'bg-violet-500/25',
@@ -81,11 +102,11 @@ const BirthdayBadge = ({ dateOfBirth }) => {
     return `${months}m`;
   };
 
-  // Confetti easter egg
+  // Confetti easter egg - only works when celebrations enabled
   const spawnConfetti = useCallback(() => {
-    if (daysUntil !== 0) return;
+    if (daysUntil !== 0 || !celebrationsEnabled) return;
 
-    const colors = ['#f0abfc', '#e879f9', '#d946ef', '#c026d3', '#a855f7', '#fbbf24', '#f472b6'];
+    const colors = ['#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#fbbf24', '#f472b6'];
     const newPieces = Array.from({ length: 30 }, (_, i) => ({
       id: Date.now() + i,
       x: Math.random() * 100 - 50,
@@ -99,7 +120,7 @@ const BirthdayBadge = ({ dateOfBirth }) => {
 
     // Clear confetti after animation
     setTimeout(() => setConfettiPieces([]), 2000);
-  }, [daysUntil]);
+  }, [daysUntil, celebrationsEnabled]);
 
   const colors = getColors(daysUntil);
   const isBirthday = daysUntil === 0;

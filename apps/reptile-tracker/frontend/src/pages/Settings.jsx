@@ -220,7 +220,7 @@ function PreferencesTab() {
                 onClick={toggleCelebrations}
                 className="flex items-center gap-3 px-4 py-3 w-full rounded-lg border-2 border-border bg-card/50 hover:bg-secondary transition-colors"
               >
-                <PartyPopper size={20} className={celebrationsEnabled ? "text-fuchsia-500" : "text-muted-foreground"} />
+                <PartyPopper size={20} className={celebrationsEnabled ? "text-violet-500" : "text-muted-foreground"} />
                 <div className="flex-1 text-left">
                   <div className="font-medium text-foreground">
                     {celebrationsEnabled ? 'Celebrations Enabled' : 'Celebrations Disabled'}
@@ -236,8 +236,8 @@ function PreferencesTab() {
                     </div>
                   )}
                 </div>
-                <div className={`w-10 h-6 rounded-full transition-colors ${celebrationsEnabled ? 'bg-fuchsia-500' : 'bg-muted'}`}>
-                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mt-0.5 ${celebrationsEnabled ? 'translate-x-4.5 ml-0.5' : 'translate-x-0.5'}`} />
+                <div className={`w-10 h-6 rounded-full transition-colors flex items-center ${celebrationsEnabled ? 'bg-violet-500' : 'bg-muted'}`}>
+                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${celebrationsEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                 </div>
               </button>
             </div>

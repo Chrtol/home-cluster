@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCelebrations } from '../../contexts/CelebrationContext';
 import ReptileAvatar from '../ReptileAvatar';
 import TaskChip from './TaskChip';
 import HealthStatusBadge from './HealthStatusBadge';
@@ -40,6 +41,7 @@ const ReptileStatusCard = ({
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const { celebrationsEnabled } = useCelebrations();
 
   // Calculate age from date_of_birth
   const calculateAge = (dateOfBirth) => {
@@ -106,11 +108,12 @@ const ReptileStatusCard = ({
            today.getDate() === birthDate.getDate();
   };
 
-  const isBirthday = isBirthdayToday();
+  // Only show birthday styling when celebrations are enabled
+  const isBirthday = celebrationsEnabled && isBirthdayToday();
 
   // Border styling per user decision
   const getBorderClass = () => {
-    if (isBirthday) return 'border-fuchsia-500/50';
+    if (isBirthday) return 'border-violet-500/50';
     if (taskStatus === 'overdue') return 'border-destructive';
     return 'border-border hover:border-primary/50';
   };
@@ -176,17 +179,6 @@ const ReptileStatusCard = ({
     }
   };
 
-  // Species emoji fallback map
-  const getSpeciesEmoji = (species) => {
-    const lowerSpecies = (species || '').toLowerCase();
-    if (lowerSpecies.includes('dragon')) return '🐉';
-    if (lowerSpecies.includes('gecko')) return '🦎';
-    if (lowerSpecies.includes('snake')) return '🐍';
-    if (lowerSpecies.includes('turtle') || lowerSpecies.includes('tortoise')) return '🐢';
-    if (lowerSpecies.includes('iguana')) return '🦎';
-    return '🦎'; // Default
-  };
-
   // Show compact card or full card
   const showFull = !isCompact || isExpanded;
 
@@ -197,7 +189,7 @@ const ReptileStatusCard = ({
         getBorderClass(),
         isDragging && 'opacity-50',
         isCompact && !isExpanded && 'cursor-pointer',
-        isBirthday && 'shadow-lg shadow-fuchsia-500/30 ring-1 ring-fuchsia-500/40',
+        isBirthday && 'shadow-lg shadow-violet-500/30 ring-1 ring-violet-500/40',
         'group'
       )}
       draggable={!isCompact && onReorder} // Only draggable in full mode
@@ -208,37 +200,26 @@ const ReptileStatusCard = ({
       onClick={handleCardClick}
     >
       <div className="flex gap-3">
-        {/* Avatar with status indicator */}
-        <div className="relative flex-shrink-0">
+        {/* Avatar with status indicator - uses shared ReptileAvatar for birthday hat */}
+        <div className="relative flex-shrink-0" onClick={handleNameClick}>
           <div
-            onClick={handleNameClick}
             className={cn(
-              'rounded-xl overflow-hidden cursor-pointer transition-all',
-              getRingColor() || '', // Use task status ring color for urgent states
-              getRingColor() ? 'ring-2' : '', // Only apply ring-2 if using class-based color
-              'hover:ring-primary hover:ring-2',
-              isCompact && !isExpanded ? 'w-12 h-12' : 'w-16 h-16'
+              'cursor-pointer transition-all rounded-xl',
+              getRingColor() || '',
+              getRingColor() ? 'ring-2' : '',
+              'hover:ring-primary hover:ring-2'
             )}
-            style={!getRingColor() ? {
-              boxShadow: `0 0 0 2px ${customBorderColor}` // Use custom color when not urgent
-            } : undefined}
           >
-            {reptile.avatar_photo_url ? (
-              <img
-                src={reptile.avatar_photo_url}
-                alt={reptile.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-2xl">
-                {getSpeciesEmoji(reptile.species)}
-              </div>
-            )}
+            <ReptileAvatar
+              reptile={reptile}
+              size={isCompact && !isExpanded ? 'md' : 'lg'}
+              className="!rounded-xl"
+            />
           </div>
           {/* Status dot */}
           <span
             className={cn(
-              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card pointer-events-none',
+              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card pointer-events-none z-10',
               statusDotColors[taskStatus]
             )}
           />

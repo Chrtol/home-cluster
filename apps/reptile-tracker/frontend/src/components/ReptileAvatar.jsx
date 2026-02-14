@@ -46,17 +46,18 @@ const ReptileAvatar = ({
     xl: 'w-24 h-24 text-2xl',
   };
 
-  // Party hat size and position based on avatar size
-  // Positioned at top-left, angled toward the left per user decision
-  const hatSizeClasses = {
-    sm: 'w-4 h-4 -top-1 -left-1.5',
-    md: 'w-6 h-6 -top-1.5 -left-2',
-    lg: 'w-8 h-8 -top-2 -left-2.5',
-    xl: 'w-12 h-12 -top-3 -left-3.5',
+  // Party hat size config based on avatar size
+  // Using inline styles for precise positioning at top-left corner
+  const hatConfig = {
+    sm: { width: 20, height: 20, top: -8, left: -10 },
+    md: { width: 28, height: 28, top: -12, left: -12 },
+    lg: { width: 36, height: 36, top: -16, left: -14 },
+    xl: { width: 56, height: 56, top: -26, left: -24 },
   };
 
   const hasAvatar = reptile?.avatar_photo_url && !imageError;
   const sizeClass = sizeClasses[size] || sizeClasses.md;
+  const hat = hatConfig[size] || hatConfig.md;
 
   // Get first letter of reptile name for fallback
   const initial = reptile?.name?.charAt(0)?.toUpperCase() || '?';
@@ -87,10 +88,17 @@ const ReptileAvatar = ({
         ) : null}
       </div>
 
-      {/* Birthday hat overlay - positioned top-left, angled left */}
+      {/* Birthday hat overlay - positioned top-left corner, angled toward top-left */}
       {showBirthdayHat && (
         <PartyHatIcon
-          className={`absolute ${hatSizeClasses[size] || hatSizeClasses.md} -rotate-12 pointer-events-none drop-shadow-md`}
+          className="absolute pointer-events-none drop-shadow-md"
+          style={{
+            width: hat.width,
+            height: hat.height,
+            top: hat.top,
+            left: hat.left,
+            transform: 'rotate(-40deg)',
+          }}
         />
       )}
     </div>
