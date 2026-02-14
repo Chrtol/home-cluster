@@ -9,6 +9,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -899,6 +900,27 @@ class ScheduledNotificationJob(Base):
     user = relationship("User")
     channel = relationship("NotificationChannel")
     instance = relationship("ScheduleInstance", foreign_keys=[instance_id])
+
+
+class NotificationFrequencyTracking(Base):
+    """Tracks notification frequency per reptile per day for frequency cap enforcement"""
+    __tablename__ = "notification_frequency_tracking"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id"), nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)  # Daily partition key
+    notification_count = Column(Integer, default=0, nullable=False)
+    last_notification_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    reptile = relationship("Reptile")
+
+    # Composite index for fast lookups
+    __table_args__ = (
+        Index('ix_freq_tracking_lookup', 'user_id', 'reptile_id', 'date'),
+    )
 
 
 # Household and Invitation models
