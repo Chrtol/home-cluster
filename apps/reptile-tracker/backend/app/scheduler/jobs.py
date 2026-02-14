@@ -199,7 +199,8 @@ async def _schedule_single_notification_job(
     scheduled_date: py_date
 ):
     """
-    Helper function to schedule a single notification job
+    Helper function to schedule a single notification job.
+    Also schedules expiry alert if enabled on the schedule.
 
     Args:
         scheduler: APScheduler instance
@@ -249,6 +250,7 @@ async def _schedule_single_notification_job(
         # Create database record
         job_record = ScheduledNotificationJob(
             job_id=job_id,
+            job_type="notification_reminder",
             schedule_id=schedule.id,
             user_id=user.id,
             channel_id=channel_id,
@@ -272,8 +274,203 @@ async def _schedule_single_notification_job(
 
         logger.debug(f"Scheduled notification job {job_id} for {reminder_time_utc} UTC ({reminder_time_local} local)")
 
+        # Schedule expiry alert if enabled and time window is configured
+        if (schedule.expiry_alert_enabled and
+            schedule.expiry_alert_offset_minutes is not None and
+            schedule.time_window_enabled and
+            schedule.earliest_time):
+            await schedule_expiry_alert(
+                scheduler=scheduler,
+                db=db,
+                schedule=schedule,
+                user=user,
+                channel_id=channel_id,
+                scheduled_date=scheduled_date
+            )
+
     except Exception as e:
         logger.error(f"Error scheduling single job: {e}", exc_info=True)
+
+
+async def schedule_follow_up_reminder(
+    scheduler: AsyncIOScheduler,
+    db: AsyncSession,
+    schedule: Schedule,
+    scheduled_date: py_date,
+    user_id: int,
+    channel_id: int,
+    delay_minutes: int
+):
+    """
+    Schedule a follow-up reminder after delay_minutes from now.
+    Called by Celery task after main reminder fires (not at schedule time).
+
+    Per user decision: Only schedule from main reminder, never from follow-up itself.
+    This prevents infinite chains of follow-up reminders.
+
+    Args:
+        scheduler: APScheduler instance
+        db: Database session
+        schedule: The schedule this follow-up is for
+        scheduled_date: The date this notification is for
+        user_id: User ID to notify
+        channel_id: Notification channel ID to use
+        delay_minutes: How many minutes from now to fire the follow-up
+    """
+    # Late import to avoid circular dependency with core.py
+    from .core import execute_follow_up_notification
+
+    try:
+        now_utc = datetime.now(timezone.utc)
+        follow_up_time_utc = now_utc + timedelta(minutes=delay_minutes)
+
+        # Generate unique job ID for follow-up
+        job_id = f"followup_{schedule.id}_{user_id}_{channel_id}_{scheduled_date.isoformat()}"
+
+        # Check if job already exists
+        existing_result = await db.execute(
+            select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+        )
+        existing_job = existing_result.scalars().first()
+        if existing_job:
+            # If job exists and is not pending, delete it to allow rescheduling
+            if existing_job.status in ["cancelled", "failed", "sent"]:
+                logger.debug(f"Deleting old follow-up job {job_id} (status={existing_job.status})")
+                await db.delete(existing_job)
+                await db.flush()
+            else:
+                # Job already pending, skip
+                logger.debug(f"Follow-up job {job_id} already pending, skipping")
+                return
+
+        # Create database record
+        job_record = ScheduledNotificationJob(
+            job_id=job_id,
+            job_type="follow_up_reminder",
+            schedule_id=schedule.id,
+            user_id=user_id,
+            channel_id=channel_id,
+            scheduled_date=scheduled_date,
+            scheduled_time_utc=follow_up_time_utc,
+            status="pending"
+        )
+        db.add(job_record)
+        await db.flush()
+
+        # Schedule APScheduler job
+        scheduler.add_job(
+            func=execute_follow_up_notification,
+            trigger='date',
+            run_date=follow_up_time_utc,
+            args=[schedule.id, user_id, channel_id, scheduled_date, job_id],
+            id=job_id,
+            replace_existing=True,
+            misfire_grace_time=300  # Allow 5 minutes grace
+        )
+
+        logger.info(f"Scheduled follow-up reminder job {job_id} for {follow_up_time_utc} UTC ({delay_minutes} minutes from now)")
+
+    except Exception as e:
+        logger.error(f"Error scheduling follow-up reminder: {e}", exc_info=True)
+
+
+async def schedule_expiry_alert(
+    scheduler: AsyncIOScheduler,
+    db: AsyncSession,
+    schedule: Schedule,
+    user: User,
+    channel_id: int,
+    scheduled_date: py_date
+):
+    """
+    Schedule expiry alert at window_start (earliest_time) + expiry_alert_offset_minutes.
+    Called during initial notification scheduling (alongside main reminder).
+
+    Per user decision: Offset is from window START (earliest_time), not end.
+    Allow offsets that extend outside window for flexibility.
+
+    Args:
+        scheduler: APScheduler instance
+        db: Database session
+        schedule: The schedule this expiry alert is for
+        user: User to notify
+        channel_id: Notification channel ID to use
+        scheduled_date: The date this notification is for
+    """
+    # Late import to avoid circular dependency with core.py
+    from .core import execute_expiry_alert
+
+    try:
+        # Expiry alert requires time window to be enabled and earliest_time set
+        if not schedule.time_window_enabled or not schedule.earliest_time:
+            logger.debug(f"Schedule {schedule.id} has no time window configured, skipping expiry alert")
+            return
+
+        if not schedule.expiry_alert_offset_minutes:
+            logger.debug(f"Schedule {schedule.id} has no expiry alert offset, skipping expiry alert")
+            return
+
+        # Calculate expiry alert time: earliest_time + offset
+        user_tz = ZoneInfo(user.timezone if user.timezone else "UTC")
+        window_start_local = datetime.combine(scheduled_date, schedule.earliest_time, tzinfo=user_tz)
+        expiry_alert_time_local = window_start_local + timedelta(minutes=schedule.expiry_alert_offset_minutes)
+        expiry_alert_time_utc = expiry_alert_time_local.astimezone(timezone.utc)
+
+        now_utc = datetime.now(timezone.utc)
+
+        # Skip if in the past
+        if expiry_alert_time_utc < now_utc:
+            logger.debug(f"Skipping expiry alert for schedule {schedule.id} on {scheduled_date} - time {expiry_alert_time_utc} is in the past")
+            return
+
+        # Generate unique job ID for expiry alert
+        job_id = f"expiry_{schedule.id}_{user.id}_{channel_id}_{scheduled_date.isoformat()}"
+
+        # Check if job already exists
+        existing_result = await db.execute(
+            select(ScheduledNotificationJob).where(ScheduledNotificationJob.job_id == job_id)
+        )
+        existing_job = existing_result.scalars().first()
+        if existing_job:
+            # If the existing job has a different scheduled time or is cancelled/failed, delete it
+            if existing_job.scheduled_time_utc != expiry_alert_time_utc or existing_job.status in ["cancelled", "failed"]:
+                logger.debug(f"Deleting old expiry alert job {job_id} (status={existing_job.status})")
+                await db.delete(existing_job)
+                await db.flush()
+            else:
+                # Job already exists with same time and is pending/sent
+                logger.debug(f"Expiry alert job {job_id} already exists with same time, skipping")
+                return
+
+        # Create database record
+        job_record = ScheduledNotificationJob(
+            job_id=job_id,
+            job_type="expiry_alert",
+            schedule_id=schedule.id,
+            user_id=user.id,
+            channel_id=channel_id,
+            scheduled_date=scheduled_date,
+            scheduled_time_utc=expiry_alert_time_utc,
+            status="pending"
+        )
+        db.add(job_record)
+        await db.flush()
+
+        # Schedule APScheduler job
+        scheduler.add_job(
+            func=execute_expiry_alert,
+            trigger='date',
+            run_date=expiry_alert_time_utc,
+            args=[schedule.id, user.id, channel_id, scheduled_date, job_id],
+            id=job_id,
+            replace_existing=True,
+            misfire_grace_time=300  # Allow 5 minutes grace
+        )
+
+        logger.debug(f"Scheduled expiry alert job {job_id} for {expiry_alert_time_utc} UTC ({expiry_alert_time_local} local)")
+
+    except Exception as e:
+        logger.error(f"Error scheduling expiry alert: {e}", exc_info=True)
 
 
 async def cancel_notification_jobs_for_schedule(
