@@ -185,6 +185,7 @@ class User(Base):
     name = Column(String, nullable=False)
     timezone = Column(String(100), nullable=False, default="UTC")  # User's timezone (e.g., "Europe/Oslo")
     show_favorites_first = Column(Boolean, default=True)  # Show favorite foods first when logging feedings
+    celebrations_enabled = Column(Boolean, default=True)  # Enable celebration animations (confetti, birthday hats)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

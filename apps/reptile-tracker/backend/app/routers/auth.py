@@ -242,6 +242,10 @@ async def update_me(
                 status_code=400,
                 detail=f"Invalid timezone: {user_update.timezone}"
             )
+    if user_update.show_favorites_first is not None:
+        current_user.show_favorites_first = user_update.show_favorites_first
+    if user_update.celebrations_enabled is not None:
+        current_user.celebrations_enabled = user_update.celebrations_enabled
 
     await db.commit()
     await db.refresh(current_user)

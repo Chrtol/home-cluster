@@ -11,6 +11,7 @@ class UserBase(BaseModel):
     name: str
     timezone: Optional[str] = "UTC"
     show_favorites_first: bool = True
+    celebrations_enabled: bool = True
 
 
 class UserCreate(UserBase):
@@ -21,6 +22,7 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     timezone: Optional[str] = None
     show_favorites_first: Optional[bool] = None
+    celebrations_enabled: Optional[bool] = None
 
 
 class User(UserBase):
