@@ -3,15 +3,15 @@
 ## Current Position
 
 **Phase:** 22 of 25 (Smart Notification System)
-**Plan:** 4 of TBD complete
-**Status:** In progress
-**Last activity:** 2026-02-14 - Completed 22-04-PLAN.md (Follow-Up and Expiry Alert Scheduling)
+**Plan:** 5 of 5 complete
+**Status:** Phase complete
+**Last activity:** 2026-02-14 - Completed 22-05-PLAN.md (Smart Notification UI Configuration)
 
 ### Progress
 ```
 Phase 20: Complete
 Phase 21: Complete (celebration animations)
-Phase 22: In progress (4/TBD complete: 22-01, 22-02, 22-03, 22-04)
+Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
 ```
 
 ---
@@ -40,26 +40,31 @@ Phase 22: In progress (4/TBD complete: 22-01, 22-02, 22-03, 22-04)
 | 22-04 | Follow-up scheduled from main reminder only (no infinite chains) | Prevent notification spam | Follow-up tasks never schedule more follow-ups |
 | 22-04 | Expiry alert offset from window_start (earliest_time) | Per user decision, allows flexible offset placement | Users set offset relative to window start, not end |
 | 22-04 | Fire-time completion check for follow-up and expiry | Suppress if task completed between scheduling and fire | Avoids redundant notifications |
+| 22-05 | Smart Notifications section only visible when notifications enabled | Clean UX, hide complexity when not relevant | Users see options only when they need them |
+| 22-05 | Expiry alert section only visible when time window enabled | Logical dependency - expiry makes no sense without window | Prevents confusion from non-applicable options |
+| 22-05 | Warning for expiry offset exceeding window (non-blocking) | Flexibility for advanced users | Users can configure edge cases intentionally |
 
 ---
 
 ## Active Context
 
-**Current subsystem:** Backend / Notifications / Smart Notification System
+**Current subsystem:** Smart Notification System (complete)
 **Key patterns:**
 - Smart notification fields on Schedule model (follow-up, expiry alert)
 - Frequency tracking via PostgreSQL table with composite index
-- Per-schedule notification customization
-- Per-user notification settings with frequency caps
+- Per-schedule notification customization via ScheduleForm UI
+- Per-user notification settings with frequency caps via Settings UI
 - New template trigger types: follow_up_reminder, expiry_alert, frequency_cap_summary
 - New template variables: window_start, window_end, follow_up_number, notifications_suppressed
 - Completion check at fire time (NOTIF-01)
 - Frequency cap integration in celery tasks
 - Follow-up scheduling from main reminder (22-04)
 - Expiry alert scheduling alongside main reminder (22-04)
+- Collapsible settings sections pattern (22-05)
 
 **Key files to remember:**
 - `backend/app/models.py` - Schedule with smart notification fields, NotificationFrequencyTracking model
+- `backend/app/schemas.py` - Pydantic schemas for smart notification fields (22-05)
 - `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22 models
 - `backend/migrations/versions/0083_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
 - `backend/app/notifications.py` - Notification service with new trigger types and template variables
@@ -67,22 +72,24 @@ Phase 22: In progress (4/TBD complete: 22-01, 22-02, 22-03, 22-04)
 - `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
 - `backend/app/scheduler/core.py` - execute_follow_up_notification, execute_expiry_alert functions (22-04)
 - `backend/app/celery_tasks.py` - send_follow_up_reminder_task, send_expiry_alert_task (22-04)
+- `frontend/src/pages/ScheduleForm.jsx` - Smart Notifications section UI (22-05)
+- `frontend/src/components/NotificationsTab_new.jsx` - Frequency Cap settings UI (22-05)
 - `docs/NOTIFICATION_SYSTEM.md` - Updated documentation for new trigger types
 
 ---
 
 ## Blockers & Concerns
 
-None currently.
+None currently. Phase 22 complete.
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 22-04 complete (Follow-Up and Expiry Alert Scheduling)
-**Resume from:** Next plan in phase 22 (if exists)
-**Resume file:** `.planning/phases/22-smart-notification-system/22-05-PLAN.md` (if exists)
+**Stopped at:** Plan 22-05 complete (Smart Notification UI Configuration)
+**Resume from:** Phase 23 or testing/documentation plans
+**Resume file:** N/A - Phase 22 complete
 
 ---
 
@@ -106,15 +113,37 @@ None currently.
 | 22-04 | schedule_expiry_alert | Schedule alert at window_start + offset |
 | 22-04 | execute_follow_up_notification / execute_expiry_alert | Fire-time execution with completion check |
 | 22-04 | send_follow_up_reminder_task / send_expiry_alert_task | Celery delivery with template support |
+| 22-05 | shadcn-ui/collapsible | Collapsible sections for advanced settings |
+| 22-05 | Collapsible settings sections pattern | Hide complexity until needed |
+
+---
+
+## Phase 22 Completion Summary
+
+**Smart Notification System - Feature Complete**
+
+All original requirements implemented:
+- NOTIF-01: Notification suppressed if schedule instance is complete
+- NOTIF-02: Window expiry alert configurable per schedule
+- NOTIF-03: Expiry threshold configurable (offset from window start)
+- Frequency cap per reptile per day with silent/summary modes
+
+Plans completed:
+- 22-01: Database models and migrations
+- 22-02: Template system with new trigger types
+- 22-03: Frequency cap module and celery integration
+- 22-04: Follow-up and expiry alert scheduling
+- 22-05: UI configuration for all smart notification features
 
 ---
 
 ## Next Steps
 
-1. All core smart notification features are now implemented (22-01 through 22-04)
-2. Consider additional plans for testing, documentation, or frontend integration
-3. Phase 22 may be feature-complete pending final review
+1. Phase 22 Smart Notification System is complete
+2. Ready for Phase 23 or other feature work
+3. Consider integration testing for notification flows
+4. Consider user documentation for new features
 
 ---
 
-*Last updated: 2026-02-14T15:06:41Z*
+*Last updated: 2026-02-14T15:20:00Z*
