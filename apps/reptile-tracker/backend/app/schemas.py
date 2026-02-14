@@ -492,6 +492,12 @@ class ScheduleBase(BaseModel):
     enabled: bool = True
     notes: Optional[str] = None
 
+    # Smart notification settings (Phase 22)
+    follow_up_enabled: bool = False  # Send follow-up reminder if task not completed
+    follow_up_delay_minutes: Optional[int] = None  # Minutes after main reminder (e.g., 30)
+    expiry_alert_enabled: bool = False  # Send alert before time window expires
+    expiry_alert_offset_minutes: Optional[int] = None  # Minutes from window start (e.g., 45)
+
 
 class ScheduleCreate(ScheduleBase):
     reptile_id: int
@@ -544,6 +550,12 @@ class ScheduleUpdate(BaseModel):
 
     enabled: Optional[bool] = None
     notes: Optional[str] = None
+
+    # Smart notification settings (Phase 22)
+    follow_up_enabled: Optional[bool] = None
+    follow_up_delay_minutes: Optional[int] = None
+    expiry_alert_enabled: Optional[bool] = None
+    expiry_alert_offset_minutes: Optional[int] = None
 
 
 class Schedule(ScheduleBase):
@@ -1040,6 +1052,11 @@ class NotificationSettingsBase(BaseModel):
     quiet_hours_start: Optional[time] = None
     quiet_hours_end: Optional[time] = None
 
+    # Frequency cap settings (Phase 22)
+    frequency_cap_enabled: bool = True  # Enable frequency cap per reptile per day
+    frequency_cap_per_reptile: int = 5  # Max notifications per reptile per day (0 = unlimited)
+    frequency_cap_mode: str = "silent"  # "silent" or "summary"
+
 
 class NotificationSettingsUpdate(BaseModel):
     webhook_enabled: Optional[bool] = None
@@ -1050,6 +1067,11 @@ class NotificationSettingsUpdate(BaseModel):
     quiet_hours_enabled: Optional[bool] = None
     quiet_hours_start: Optional[time] = None
     quiet_hours_end: Optional[time] = None
+
+    # Frequency cap settings (Phase 22)
+    frequency_cap_enabled: Optional[bool] = None
+    frequency_cap_per_reptile: Optional[int] = None
+    frequency_cap_mode: Optional[str] = None  # "silent" or "summary"
 
 
 class NotificationSettingsSchema(NotificationSettingsBase):
