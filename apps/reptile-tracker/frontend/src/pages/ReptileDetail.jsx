@@ -188,7 +188,7 @@ export default function ReptileDetail() {
 
     if (window.confirm(`Are you sure you want to ${action} this reptile? ${newActiveState ? 'It will appear in all views again.' : 'It will be hidden from most views.'}`)) {
       try {
-        await axios.put(`/api/reptiles/${id}`, { is_active: newActiveState });
+        await axios.patch(`/api/reptiles/${id}`, { is_active: newActiveState });
         setReptile({ ...reptile, is_active: newActiveState });
       } catch (error) {
         console.error(`Error ${action}ing reptile:`, error);

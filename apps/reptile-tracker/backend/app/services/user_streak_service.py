@@ -27,11 +27,12 @@ from app.models import (
 
 
 # Milestone rewards: streak count -> freeze days earned
+# Running total: 7(start) + 1 + 2 + 4 + 7 = 21 max
 MILESTONE_REWARDS = {
-    7: 1,
-    30: 2,
-    100: 3,
-    365: 5,
+    7: 1,    # total: 8
+    30: 2,   # total: 10
+    100: 4,  # total: 14
+    365: 7,  # total: 21
 }
 
 

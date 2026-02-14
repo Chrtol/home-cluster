@@ -1052,7 +1052,7 @@ function StreakVacationTab() {
 
   const toggleReptileStreak = async (reptileId, enabled) => {
     try {
-      await axios.put(`/api/reptiles/${reptileId}`, { streak_enabled: enabled });
+      await axios.patch(`/api/reptiles/${reptileId}`, { streak_enabled: enabled });
       setReptiles(prev => prev.map(r =>
         r.id === reptileId ? { ...r, streak_enabled: enabled } : r
       ));
@@ -1067,7 +1067,7 @@ function StreakVacationTab() {
     try {
       // Update all reptiles in parallel
       await Promise.all(reptiles.map(r =>
-        axios.put(`/api/reptiles/${r.id}`, { streak_enabled: enabled })
+        axios.patch(`/api/reptiles/${r.id}`, { streak_enabled: enabled })
       ));
       setReptiles(prev => prev.map(r => ({ ...r, streak_enabled: enabled })));
     } catch (err) {
