@@ -3,16 +3,16 @@
 ## Current Position
 
 **Phase:** 23 of 25 (Notification Planner)
-**Plan:** 1 of N in progress
+**Plan:** 2 of N in progress
 **Status:** In progress
-**Last activity:** 2026-02-14 - Completed 23-01-PLAN.md (Planner Digest Schema)
+**Last activity:** 2026-02-14 - Completed 23-02-PLAN.md (Digest Generation & Formatting)
 
 ### Progress
 ```
 Phase 20: Complete
 Phase 21: Complete (celebration animations)
 Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
-Phase 23: In progress (notification planner: 23-01 ✓)
+Phase 23: In progress (notification planner: 23-01 ✓, 23-02 ✓)
 ```
 
 ---
@@ -48,6 +48,10 @@ Phase 23: In progress (notification planner: 23-01 ✓)
 | 23-01 | daily_planner_time is nullable Time type | Defaults to 08:00 in application logic/UI layer | Flexible default time handling |
 | 23-01 | digest_format defaults to "grouped" | Single message with all tasks is default, opt-in for individual | Reduces notification noise by default |
 | 23-01 | Planner fields in NotificationSettings model | Extended existing model vs separate table | Simpler architecture, planner settings are per-user preferences |
+| 23-02 | Weekly digest covers [start_date, start_date + 6] = 7 days total | Send date IS day 1 of the 7-day range (inclusive semantics) | Clear date range definition prevents off-by-one errors |
+| 23-02 | Overdue section only shows yesterday's missed tasks | Per CONTEXT.md, not accumulated backlog | Prevents notification fatigue from old missed tasks |
+| 23-02 | build_task_line is single source of truth for task formatting | Reusable by both grouped and individual digest modes | Ensures consistent formatting across notification modes |
+| 23-02 | Message builders return Dict with title/message keys | Template consumption pattern | Clean interface between digest generation and notification system |
 
 ---
 
@@ -73,10 +77,12 @@ Phase 23: In progress (notification planner: 23-01 ✓)
 **Key files to remember:**
 - `backend/app/models.py` - NotificationSettings with planner digest fields (23-01)
 - `backend/app/schemas.py` - Pydantic schemas for planner settings (23-01)
-- `backend/migrations/versions/0085_add_planner_digest_settings.py` - Alembic migration for Phase 23 (23-01)
+- `backend/app/scheduler/digest.py` - Digest generation module with query and formatting functions (23-02)
+- `backend/migrations/versions/0085_add_planner_digest_settings.py` - Alembic migration for planner schema (23-01)
+- `backend/migrations/versions/0086_add_planner_digest_templates.py` - Alembic migration for planner templates (23-02)
 - `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22 models
 - `backend/migrations/versions/0084_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
-- `backend/app/notifications.py` - Notification service with new trigger types and template variables
+- `backend/app/notifications.py` - Notification service with planner trigger types (23-02) and template variables
 - `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (22-03)
 - `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
 - `backend/app/scheduler/core.py` - execute_follow_up_notification, execute_expiry_alert functions (22-04)
@@ -89,16 +95,16 @@ Phase 23: In progress (notification planner: 23-01 ✓)
 
 ## Blockers & Concerns
 
-None currently. Phase 23-01 complete - database schema and API layer ready for planner digest generation.
+None currently. Phase 23-02 complete - digest generation and formatting ready for scheduler jobs (23-03).
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 23-01 complete (Planner Digest Schema)
-**Resume from:** Phase 23-02 (Planner digest generation and scheduling logic)
-**Resume file:** .planning/phases/23-notification-planner/23-01-SUMMARY.md
+**Stopped at:** Plan 23-02 complete (Digest Generation & Formatting)
+**Resume from:** Phase 23-03 (Scheduler jobs for daily/weekly digests)
+**Resume file:** .planning/phases/23-notification-planner/23-02-SUMMARY.md
 
 ---
 
@@ -126,6 +132,11 @@ None currently. Phase 23-01 complete - database schema and API layer ready for p
 | 22-05 | Collapsible settings sections pattern | Hide complexity until needed |
 | 23-01 | Planner digest schema fields | Daily/weekly planner enabled, time/day, digest format in NotificationSettings |
 | 23-01 | Migration 0085 | Planner digest settings columns with proper defaults |
+| 23-02 | scheduler/digest.py module | Query logic for pending/overdue tasks, message builders for daily/weekly digests |
+| 23-02 | daily_planner and weekly_planner trigger types | New notification trigger types for digest notifications |
+| 23-02 | Migration 0086 | Default templates for daily_planner and weekly_planner |
+| 23-02 | Digest query pattern | get_user_reptile_ids → filter by household membership for multi-user access |
+| 23-02 | Task line formatting pattern | build_task_line as single source of truth for consistent formatting |
 
 ---
 
@@ -154,20 +165,21 @@ Plans completed:
 
 Plans completed:
 - 23-01: Planner digest schema (database and API layer)
+- 23-02: Digest generation and formatting (query logic, message builders)
 
 Next up:
-- 23-02: Planner digest generation and scheduling logic
-- 23-03: Frontend UI for planner settings
+- 23-03: Scheduler jobs (daily/weekly digest execution)
+- 23-04: Frontend UI for planner settings
 
 ---
 
 ## Next Steps
 
-1. Phase 23-01 complete - database schema ready
-2. Next: Build digest generation logic (query upcoming tasks, format messages)
-3. Next: Build scheduler jobs (daily at configured time, weekly on configured day)
+1. Phase 23-02 complete - digest generation and formatting ready
+2. Next: Build scheduler jobs (daily at configured time, weekly on configured day)
+3. Next: Celery tasks for digest delivery (respecting quiet hours, frequency caps)
 4. Next: Frontend UI for configuring planner settings
 
 ---
 
-*Last updated: 2026-02-14T20:07:10Z*
+*Last updated: 2026-02-14T20:19:32Z*
