@@ -768,6 +768,13 @@ class NotificationSettings(Base):
     frequency_cap_per_reptile = Column(Integer, default=5, nullable=False)  # Per day
     frequency_cap_mode = Column(String(20), default="silent", nullable=False)  # "silent" or "summary"
 
+    # Planner digest settings (Phase 23)
+    daily_planner_enabled = Column(Boolean, default=False, nullable=False)
+    daily_planner_time = Column(Time, nullable=True)  # Default 08:00, stored in user's timezone context
+    weekly_planner_enabled = Column(Boolean, default=False, nullable=False)
+    weekly_planner_day = Column(Integer, default=0, nullable=False)  # 0=Sunday, 1=Monday, ..., 6=Saturday
+    digest_format = Column(String(20), default="grouped", nullable=False)  # "grouped" or "individual"
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
