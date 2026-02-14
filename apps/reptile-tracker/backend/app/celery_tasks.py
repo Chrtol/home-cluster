@@ -319,25 +319,15 @@ async def send_schedule_reminder_task(
 
             # 4. SCHEDULE FOLLOW-UP REMINDER (if enabled)
             # Only main reminder schedules follow-up, never follow-up itself (prevents infinite chains)
+            # Use Celery countdown instead of APScheduler since we're in a Celery worker process
             if schedule.follow_up_enabled and schedule.follow_up_delay_minutes:
                 try:
-                    from app.scheduler.core import scheduler
-                    from app.scheduler.jobs import schedule_follow_up_reminder
-
-                    if scheduler:
-                        # Open new session for follow-up scheduling
-                        async with async_session_maker() as follow_up_db:
-                            await schedule_follow_up_reminder(
-                                scheduler=scheduler,
-                                db=follow_up_db,
-                                schedule=schedule,
-                                scheduled_date=scheduled_date,
-                                user_id=user_id,
-                                channel_id=channel_id,
-                                delay_minutes=schedule.follow_up_delay_minutes
-                            )
-                            await follow_up_db.commit()
-                        logger.info(f"Scheduled follow-up reminder for schedule {schedule_id} in {schedule.follow_up_delay_minutes} minutes")
+                    countdown_seconds = schedule.follow_up_delay_minutes * 60
+                    send_follow_up_reminder_task.apply_async(
+                        args=[schedule_id, reptile_id, scheduled_date_str, user_id, channel_id],
+                        countdown=countdown_seconds
+                    )
+                    logger.info(f"Scheduled follow-up reminder for schedule {schedule_id} in {schedule.follow_up_delay_minutes} minutes via Celery countdown")
                 except Exception as e:
                     logger.error(f"Failed to schedule follow-up reminder: {e}", exc_info=True)
                     # Don't fail the main task if follow-up scheduling fails
