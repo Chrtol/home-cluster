@@ -22,6 +22,18 @@ function NotificationsTab() {
   const [frequencyCapPerReptile, setFrequencyCapPerReptile] = useState(5);
   const [frequencyCapMode, setFrequencyCapMode] = useState('silent');
 
+  // Planner digest settings (Phase 23)
+  const [dailyPlannerEnabled, setDailyPlannerEnabled] = useState(false);
+  const [dailyPlannerTime, setDailyPlannerTime] = useState('08:00');
+  const [weeklyPlannerEnabled, setWeeklyPlannerEnabled] = useState(false);
+  const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(0); // 0=Sunday
+  const [digestFormat, setDigestFormat] = useState('grouped');
+
+  // Time picker state for daily planner time
+  const [plannerHours, setPlannerHours] = useState(8);
+  const [plannerMinutes, setPlannerMinutes] = useState(0);
+  const [plannerPeriod, setPlannerPeriod] = useState('AM');
+
   // Time picker state for quiet hours start
   const [startHours, setStartHours] = useState(22);
   const [startMinutes, setStartMinutes] = useState(0);
@@ -80,6 +92,21 @@ function NotificationsTab() {
           setFrequencyCapEnabled(settingsRes.data.frequency_cap_enabled !== undefined ? settingsRes.data.frequency_cap_enabled : true);
           setFrequencyCapPerReptile(settingsRes.data.frequency_cap_per_reptile !== undefined ? settingsRes.data.frequency_cap_per_reptile : 5);
           setFrequencyCapMode(settingsRes.data.frequency_cap_mode || 'silent');
+
+          // Load planner digest settings (Phase 23)
+          setDailyPlannerEnabled(settingsRes.data.daily_planner_enabled || false);
+          setDailyPlannerTime(settingsRes.data.daily_planner_time || '08:00');
+          setWeeklyPlannerEnabled(settingsRes.data.weekly_planner_enabled || false);
+          setWeeklyPlannerDay(settingsRes.data.weekly_planner_day ?? 0);
+          setDigestFormat(settingsRes.data.digest_format || 'grouped');
+
+          // Parse time for time picker
+          if (settingsRes.data.daily_planner_time) {
+            const [h, m] = settingsRes.data.daily_planner_time.split(':').map(Number);
+            setPlannerHours(userTimeFormat === '12h' ? (h % 12 || 12) : h);
+            setPlannerMinutes(m);
+            setPlannerPeriod(h >= 12 ? 'PM' : 'AM');
+          }
         }
       } catch (err) {
         // 404 is okay, means no settings yet
@@ -231,6 +258,38 @@ function NotificationsTab() {
     } catch (err) {
       console.error('Failed to save preferences:', err);
       setError(err.response?.data?.detail || 'Failed to save preferences');
+    } finally {
+      setSavingPreferences(false);
+    }
+  };
+
+  const savePlannerSettings = async () => {
+    try {
+      setSavingPreferences(true);
+      setError('');
+      setSuccess('');
+
+      // Convert time picker to HH:MM format
+      let hours24 = plannerHours;
+      if (userTimeFormat === '12h') {
+        if (plannerPeriod === 'PM' && plannerHours !== 12) hours24 = plannerHours + 12;
+        if (plannerPeriod === 'AM' && plannerHours === 12) hours24 = 0;
+      }
+      const timeStr = `${String(hours24).padStart(2, '0')}:${String(plannerMinutes).padStart(2, '0')}`;
+
+      await axios.patch('/api/notification-settings/me', {
+        daily_planner_enabled: dailyPlannerEnabled,
+        daily_planner_time: timeStr,
+        weekly_planner_enabled: weeklyPlannerEnabled,
+        weekly_planner_day: weeklyPlannerDay,
+        digest_format: digestFormat,
+      });
+
+      setSuccess('Planner settings saved');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to save planner settings:', err);
+      setError('Failed to save planner settings');
     } finally {
       setSavingPreferences(false);
     }
