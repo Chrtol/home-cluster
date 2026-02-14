@@ -3,16 +3,16 @@
 ## Current Position
 
 **Phase:** 23 of 25 (Notification Planner)
-**Plan:** 2 of N in progress
-**Status:** In progress
-**Last activity:** 2026-02-14 - Completed 23-02-PLAN.md (Digest Generation & Formatting)
+**Plan:** 4 of 4 (all complete)
+**Status:** Phase complete
+**Last activity:** 2026-02-14 - Completed 23-03 (Digest Scheduling & Delivery)
 
 ### Progress
 ```
 Phase 20: Complete
 Phase 21: Complete (celebration animations)
 Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
-Phase 23: In progress (notification planner: 23-01 ✓, 23-02 ✓)
+Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04 ✓)
 ```
 
 ---
@@ -52,6 +52,14 @@ Phase 23: In progress (notification planner: 23-01 ✓, 23-02 ✓)
 | 23-02 | Overdue section only shows yesterday's missed tasks | Per CONTEXT.md, not accumulated backlog | Prevents notification fatigue from old missed tasks |
 | 23-02 | build_task_line is single source of truth for task formatting | Reusable by both grouped and individual digest modes | Ensures consistent formatting across notification modes |
 | 23-02 | Message builders return Dict with title/message keys | Template consumption pattern | Clean interface between digest generation and notification system |
+| 23-04 | Auto-create in-app channel on settings GET | Ensures every user has in-app notifications available | No manual channel setup required |
+| 23-04 | digest_channel_id with SET NULL on delete | Graceful fallback to all channels if selected channel deleted | Robust configuration |
+| 23-04 | Weekly planner default day from getDayNumbers()[0] | Dynamic locale-aware default | Respects user's first day of week preference |
+| 23-04 | Weekly planner shows time picker when daily disabled | Independent time configuration | Users can configure weekly-only digests |
+| 23-03 | APScheduler cron jobs at midnight UTC to schedule per-user delivery | Centralized scheduling point + timezone-aware per-user delivery times | Single cron job schedules individual delivery jobs at user's local time |
+| 23-03 | Empty digest suppression in execute_*_planner_delivery functions | Check before queuing to Celery, avoid unnecessary task overhead | Prevents empty digest notifications |
+| 23-03 | Use build_individual_task_message from digest.py for individual format | Single source of truth for task formatting ensures consistency | Grouped and individual modes use same task formatting logic |
+| 23-03 | Digest notifications skip quiet hours check | User explicitly configured delivery time - intentional override | Planner digest delivered at exact configured time regardless of quiet hours |
 
 ---
 
@@ -75,36 +83,38 @@ Phase 23: In progress (notification planner: 23-01 ✓, 23-02 ✓)
 - Completion check at fire time (NOTIF-01)
 
 **Key files to remember:**
-- `backend/app/models.py` - NotificationSettings with planner digest fields (23-01)
-- `backend/app/schemas.py` - Pydantic schemas for planner settings (23-01)
+- `backend/app/models.py` - NotificationSettings with planner digest fields + digest_channel_id (23-01, 23-04)
+- `backend/app/schemas.py` - Pydantic schemas for planner settings (23-01, 23-04)
 - `backend/app/scheduler/digest.py` - Digest generation module with query and formatting functions (23-02)
+- `backend/app/scheduler/core.py` - Digest scheduling cron jobs + execution functions (23-03)
+- `backend/app/celery_tasks.py` - Digest delivery Celery tasks with format branching (23-03)
+- `backend/app/scheduler/__init__.py` - Digest function exports (23-03)
+- `backend/app/routers/notification_settings.py` - Auto-creates settings + in-app channel on GET (23-04)
+- `backend/app/routers/notification_channels.py` - Auto-creates in-app channel on GET (23-04)
 - `backend/migrations/versions/0085_add_planner_digest_settings.py` - Alembic migration for planner schema (23-01)
 - `backend/migrations/versions/0086_add_planner_digest_templates.py` - Alembic migration for planner templates (23-02)
-- `backend/migrations/versions/0083_add_smart_notification_fields.py` - Alembic migration for Phase 22 models
-- `backend/migrations/versions/0084_add_smart_notification_templates.py` - Alembic migration for Phase 22 templates
+- `backend/migrations/versions/0087_add_digest_channel_id.py` - Alembic migration for digest channel (23-04)
 - `backend/app/notifications.py` - Notification service with planner trigger types (23-02) and template variables
 - `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (22-03)
 - `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
-- `backend/app/scheduler/core.py` - execute_follow_up_notification, execute_expiry_alert functions (22-04)
-- `backend/app/celery_tasks.py` - send_follow_up_reminder_task, send_expiry_alert_task (22-04)
 - `frontend/src/pages/ScheduleForm.jsx` - Smart Notifications section UI (22-05)
-- `frontend/src/components/NotificationsTab_new.jsx` - Frequency Cap settings UI (22-05)
+- `frontend/src/components/NotificationsTab_new.jsx` - Planner Digests UI with channel selection (23-04)
 - `docs/NOTIFICATION_SYSTEM.md` - Updated documentation for new trigger types
 
 ---
 
 ## Blockers & Concerns
 
-None currently. Phase 23-02 complete - digest generation and formatting ready for scheduler jobs (23-03).
+None currently. Phase 23 complete - all planner digest functionality implemented end-to-end.
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-14
-**Stopped at:** Plan 23-02 complete (Digest Generation & Formatting)
-**Resume from:** Phase 23-03 (Scheduler jobs for daily/weekly digests)
-**Resume file:** .planning/phases/23-notification-planner/23-02-SUMMARY.md
+**Stopped at:** Plan 23-03 complete (Digest Scheduling & Delivery)
+**Resume from:** Phase 24 (next phase after notification planner)
+**Resume command:** `/gsd:execute-phase 24`
 
 ---
 
@@ -137,6 +147,14 @@ None currently. Phase 23-02 complete - digest generation and formatting ready fo
 | 23-02 | Migration 0086 | Default templates for daily_planner and weekly_planner |
 | 23-02 | Digest query pattern | get_user_reptile_ids → filter by household membership for multi-user access |
 | 23-02 | Task line formatting pattern | build_task_line as single source of truth for consistent formatting |
+| 23-04 | Auto-create in-app channel pattern | ensure_in_app_channel called on GET settings/channels |
+| 23-04 | Migration 0087 | digest_channel_id FK with SET NULL ondelete |
+| 23-04 | Planner Digests UI section | TimePicker, channel selector, locale-aware day defaults |
+| 23-04 | getDayNumbers()[0] for default | Dynamic first-day-of-week default |
+| 23-03 | APScheduler cron jobs for planner scheduling | Midnight UTC cron jobs schedule per-user delivery at timezone-aware times |
+| 23-03 | Celery digest delivery tasks | send_daily_planner_task and send_weekly_planner_task with format branching |
+| 23-03 | Format branching (grouped vs individual) | Single message or per-task notifications based on digest_format setting |
+| 23-03 | build_individual_task_message as single source | Digest.py provides consistent formatting for individual mode |
 
 ---
 
@@ -159,27 +177,31 @@ Plans completed:
 
 ---
 
-## Phase 23 Progress
+## Phase 23 Completion Summary
 
-**Notification Planner - In Progress**
+**Notification Planner - Feature Complete**
+
+All planner digest functionality implemented:
+- Daily planner: timezone-aware delivery at user's configured morning time
+- Weekly planner: delivered on user's configured day
+- Format branching: grouped (single message) vs individual (per-task notifications)
+- Empty digest suppression: only send when there are tasks
+- Frequency cap integration: counts per reptile mentioned
+- Quiet hours bypass: intentional delivery time override
 
 Plans completed:
 - 23-01: Planner digest schema (database and API layer)
 - 23-02: Digest generation and formatting (query logic, message builders)
-
-Next up:
-- 23-03: Scheduler jobs (daily/weekly digest execution)
-- 23-04: Frontend UI for planner settings
+- 23-03: Scheduler jobs (APScheduler cron jobs + Celery delivery tasks)
+- 23-04: Frontend UI for planner settings (Planner Digests section, channel selection, auto-created in-app channel)
 
 ---
 
 ## Next Steps
 
-1. Phase 23-02 complete - digest generation and formatting ready
-2. Next: Build scheduler jobs (daily at configured time, weekly on configured day)
-3. Next: Celery tasks for digest delivery (respecting quiet hours, frequency caps)
-4. Next: Frontend UI for configuring planner settings
+1. Move to Phase 24 (next phase in roadmap)
+2. Test planner digest delivery end-to-end with real users and timezone scenarios
 
 ---
 
-*Last updated: 2026-02-14T20:19:32Z*
+*Last updated: 2026-02-14T21:28:46Z*
