@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Save, Clock, Users, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Save, Clock, Users, User as UserIcon, ChevronDown, AlertTriangle } from "lucide-react";
 import { getUserTimeFormat, getDayNames, getDayNumbers } from "../utils/dateFormatting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import PageHeader from '../components/PageHeader';
 
 function ScheduleForm() {
@@ -80,6 +81,13 @@ function ScheduleForm() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [availableChannels, setAvailableChannels] = useState([]);
   const [selectedChannelIds, setSelectedChannelIds] = useState([]);
+
+  // Smart notification settings (Phase 22)
+  const [smartNotificationsOpen, setSmartNotificationsOpen] = useState(false);
+  const [followUpEnabled, setFollowUpEnabled] = useState(false);
+  const [followUpDelayMinutes, setFollowUpDelayMinutes] = useState(30);
+  const [expiryAlertEnabled, setExpiryAlertEnabled] = useState(false);
+  const [expiryAlertOffsetMinutes, setExpiryAlertOffsetMinutes] = useState(45);
 
   // Time picker state for earliest time
   const [earliestHours, setEarliestHours] = useState(9);
@@ -265,6 +273,16 @@ function ScheduleForm() {
       // Flexible completion window settings
       setFlexibleCompletionEnabled(schedule.flexible_completion_enabled || false);
       setFlexibleCompletionDays(schedule.flexible_completion_days || 2);
+
+      // Smart notification settings (Phase 22)
+      setFollowUpEnabled(schedule.follow_up_enabled || false);
+      setFollowUpDelayMinutes(schedule.follow_up_delay_minutes || 30);
+      setExpiryAlertEnabled(schedule.expiry_alert_enabled || false);
+      setExpiryAlertOffsetMinutes(schedule.expiry_alert_offset_minutes || 45);
+      // Open the section if any smart notifications are enabled
+      if (schedule.follow_up_enabled || schedule.expiry_alert_enabled) {
+        setSmartNotificationsOpen(true);
+      }
     } catch (error) {
       console.error("Error fetching schedule:", error);
       alert("Failed to load schedule data");
@@ -481,6 +499,12 @@ function ScheduleForm() {
       } else {
         scheduleData.reminder_time = null;
       }
+
+      // Smart notification settings (Phase 22)
+      scheduleData.follow_up_enabled = followUpEnabled;
+      scheduleData.follow_up_delay_minutes = followUpEnabled ? parseInt(followUpDelayMinutes) || 30 : null;
+      scheduleData.expiry_alert_enabled = expiryAlertEnabled;
+      scheduleData.expiry_alert_offset_minutes = expiryAlertEnabled ? parseInt(expiryAlertOffsetMinutes) || 45 : null;
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
@@ -1316,6 +1340,134 @@ function ScheduleForm() {
             )}
           </CardContent>
         </Card>
+
+        {/* Smart Notifications - Only show when notifications are enabled */}
+        {notificationsEnabled && (
+          <Card>
+            <Collapsible open={smartNotificationsOpen} onOpenChange={setSmartNotificationsOpen}>
+              <CardHeader className="cursor-pointer" onClick={() => setSmartNotificationsOpen(!smartNotificationsOpen)}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <CardTitle>Smart Notifications</CardTitle>
+                      <CardDescription>Follow-up reminders and expiry alerts</CardDescription>
+                    </div>
+                    <ChevronDown
+                      size={20}
+                      className={`text-muted-foreground transition-transform ${smartNotificationsOpen ? 'rotate-180' : ''}`}
+                    />
+                  </div>
+                </CollapsibleTrigger>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-6 pt-0">
+                  {/* Follow-up Reminder */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="followUpEnabled"
+                        checked={followUpEnabled}
+                        onChange={(e) => setFollowUpEnabled(e.target.checked)}
+                        className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
+                      />
+                      <Label htmlFor="followUpEnabled" className="cursor-pointer">
+                        Follow-up Reminder
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Send a follow-up reminder if the task is not completed after the initial notification.
+                    </p>
+
+                    {followUpEnabled && (
+                      <div className="pl-6 border-l-2 border-primary space-y-2">
+                        <Label htmlFor="followUpDelayMinutes">Minutes after main reminder</Label>
+                        <Input
+                          id="followUpDelayMinutes"
+                          type="number"
+                          value={followUpDelayMinutes}
+                          onChange={(e) => setFollowUpDelayMinutes(e.target.value)}
+                          className="w-32"
+                          min="5"
+                          max="240"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Send follow-up {followUpDelayMinutes} minutes after the initial reminder if task is still pending
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Window Expiry Alert - Only show when time window is enabled */}
+                  {timeWindowEnabled && (
+                    <div className="space-y-3 pt-4 border-t border-border">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="expiryAlertEnabled"
+                          checked={expiryAlertEnabled}
+                          onChange={(e) => setExpiryAlertEnabled(e.target.checked)}
+                          className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
+                        />
+                        <Label htmlFor="expiryAlertEnabled" className="cursor-pointer">
+                          Window Expiry Alert
+                        </Label>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Send an alert before the time window expires if the task is not completed.
+                      </p>
+
+                      {expiryAlertEnabled && (
+                        <div className="pl-6 border-l-2 border-primary space-y-2">
+                          <Label htmlFor="expiryAlertOffsetMinutes">Minutes from window start</Label>
+                          <Input
+                            id="expiryAlertOffsetMinutes"
+                            type="number"
+                            value={expiryAlertOffsetMinutes}
+                            onChange={(e) => setExpiryAlertOffsetMinutes(e.target.value)}
+                            className="w-32"
+                            min="5"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Alert will fire at window start + {expiryAlertOffsetMinutes} minutes
+                          </p>
+
+                          {/* Warning if offset exceeds window duration */}
+                          {earliestTime && latestTime && (() => {
+                            const [earlyH, earlyM] = earliestTime.split(':').map(Number);
+                            const [lateH, lateM] = latestTime.split(':').map(Number);
+                            const windowMinutes = (lateH * 60 + lateM) - (earlyH * 60 + earlyM);
+                            const offsetNum = parseInt(expiryAlertOffsetMinutes) || 0;
+                            if (windowMinutes > 0 && offsetNum > windowMinutes) {
+                              return (
+                                <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded flex items-start gap-2">
+                                  <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                                    The offset ({offsetNum} min) exceeds the window duration ({windowMinutes} min).
+                                    The alert will fire after the window closes.
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!timeWindowEnabled && (
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-sm text-muted-foreground italic">
+                        Enable a time window above to configure window expiry alerts.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        )}
 
         {/* Notes */}
         <Card>
