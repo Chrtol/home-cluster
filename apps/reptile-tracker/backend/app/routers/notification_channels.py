@@ -21,7 +21,11 @@ async def get_my_channels(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all notification channels for the current user"""
+    """Get all notification channels for the current user.
+
+    Auto-creates notification settings and in-app channel if they don't exist,
+    ensuring every user always has the in-app notification channel available.
+    """
     # Get or create notification settings
     result = await db.execute(
         select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
@@ -29,8 +33,17 @@ async def get_my_channels(
     settings = result.scalars().first()
 
     if not settings:
-        # Return empty list if no settings exist
-        return []
+        # Create default settings for user
+        settings = NotificationSettings(user_id=current_user.id)
+        db.add(settings)
+        await db.flush()
+        # Create in-app channel for new settings
+        await ensure_in_app_channel(db, settings.id)
+        await db.commit()
+    else:
+        # Ensure in-app channel exists (for users created before this feature)
+        await ensure_in_app_channel(db, settings.id)
+        await db.commit()
 
     # Get all channels for this settings
     result = await db.execute(

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bell, Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
-import { getUserTimeFormat, getUserFirstDayOfWeek, getDayNames, getDayNumbers, getUserTimezone } from '../utils/dateFormatting';
+import { getUserTimeFormat, getDayNames, getDayNumbers, getUserTimezone } from '../utils/dateFormatting';
 import { TimePicker } from '@/components/ui/time-picker';
 
 function NotificationsTab() {
@@ -27,8 +27,8 @@ function NotificationsTab() {
   const [dailyPlannerEnabled, setDailyPlannerEnabled] = useState(false);
   const [dailyPlannerTime, setDailyPlannerTime] = useState('08:00');
   const [weeklyPlannerEnabled, setWeeklyPlannerEnabled] = useState(false);
-  // Default weekly planner day to user's first day of week (0=Sunday, 1=Monday)
-  const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(getUserFirstDayOfWeek() === 'monday' ? 1 : 0);
+  // Default weekly planner day to user's first day of week
+  const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(() => getDayNumbers()[0]);
   const [digestFormat, setDigestFormat] = useState('grouped');
   const [digestChannelId, setDigestChannelId] = useState(null); // null = send to all enabled channels
 
@@ -95,7 +95,12 @@ function NotificationsTab() {
           setDailyPlannerEnabled(settingsRes.data.daily_planner_enabled || false);
           setDailyPlannerTime(settingsRes.data.daily_planner_time || '08:00');
           setWeeklyPlannerEnabled(settingsRes.data.weekly_planner_enabled || false);
-          setWeeklyPlannerDay(settingsRes.data.weekly_planner_day ?? 0);
+          // Only use stored day if user has explicitly enabled weekly planner before
+          // Otherwise use their locale-preferred first day of week
+          if (settingsRes.data.weekly_planner_enabled) {
+            setWeeklyPlannerDay(settingsRes.data.weekly_planner_day ?? 0);
+          }
+          // else: keep the locale-aware default from useState initialization
           setDigestFormat(settingsRes.data.digest_format || 'grouped');
           setDigestChannelId(settingsRes.data.digest_channel_id ?? null);
         }
@@ -864,10 +869,34 @@ function NotificationsTab() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Sent at the same time as daily planner
-                  </p>
                 </div>
+
+                {/* Time picker - only show when daily planner is not enabled */}
+                {!dailyPlannerEnabled && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Delivery Time
+                    </label>
+                    <div className="max-w-[200px]">
+                      <TimePicker
+                        value={dailyPlannerTime}
+                        onChange={setDailyPlannerTime}
+                        step={30}
+                        placeholder="Pick a time"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Time is in your timezone ({getUserTimezone()})
+                    </p>
+                  </div>
+                )}
+
+                {/* Note when daily planner IS enabled */}
+                {dailyPlannerEnabled && (
+                  <p className="text-xs text-muted-foreground">
+                    Sent at the same time as daily planner ({dailyPlannerTime})
+                  </p>
+                )}
               </div>
             )}
           </div>
