@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell, ChevronUp, ChevronDown } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell, ChevronUp, ChevronDown, PartyPopper } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import NotificationsTab from '../components/NotificationsTab_new';
 import NotificationTemplatesTab from '../components/NotificationTemplatesTab';
 import ProfileManager from '../components/ProfileManager';
+import { useCelebrations } from '../contexts/CelebrationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   getDashboardCardSettings,
@@ -96,6 +97,7 @@ function PreferencesTab() {
   const [darkMode, setDarkMode] = useState(true);
   const [showFavoritesFirst, setShowFavoritesFirst] = useState(true);
   const [success, setSuccess] = useState('');
+  const { celebrationsEnabled, toggleCelebrations, prefersReducedMotion } = useCelebrations();
 
   useEffect(() => {
     // Load settings from localStorage
@@ -208,6 +210,35 @@ function PreferencesTab() {
                     </div>
                   </>
                 )}
+              </button>
+            </div>
+
+            {/* Celebrations Toggle */}
+            <div>
+              <label className="block font-medium mb-2 text-foreground">Celebrations</label>
+              <button
+                onClick={toggleCelebrations}
+                className="flex items-center gap-3 px-4 py-3 w-full rounded-lg border-2 border-border bg-card/50 hover:bg-secondary transition-colors"
+              >
+                <PartyPopper size={20} className={celebrationsEnabled ? "text-fuchsia-500" : "text-muted-foreground"} />
+                <div className="flex-1 text-left">
+                  <div className="font-medium text-foreground">
+                    {celebrationsEnabled ? 'Celebrations Enabled' : 'Celebrations Disabled'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {celebrationsEnabled
+                      ? 'Confetti and birthday hats are shown'
+                      : 'Animations are hidden'}
+                  </div>
+                  {prefersReducedMotion && (
+                    <div className="text-xs text-amber-500 mt-1">
+                      Note: Your system prefers reduced motion
+                    </div>
+                  )}
+                </div>
+                <div className={`w-10 h-6 rounded-full transition-colors ${celebrationsEnabled ? 'bg-fuchsia-500' : 'bg-muted'}`}>
+                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mt-0.5 ${celebrationsEnabled ? 'translate-x-4.5 ml-0.5' : 'translate-x-0.5'}`} />
+                </div>
               </button>
             </div>
 

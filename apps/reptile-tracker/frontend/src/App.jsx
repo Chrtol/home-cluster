@@ -27,6 +27,7 @@ import ScheduleTemplateForm from './pages/ScheduleTemplateForm';
 import SupplementRotations from './pages/SupplementRotations';
 import NotificationHistory from './pages/NotificationHistory';
 import ActivityHistory from './pages/ActivityHistory';
+import { CelebrationProvider } from './contexts/CelebrationContext';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -144,60 +145,62 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback onLogin={handleLogin} />} />
-        <Route path="/accept-invite" element={<AcceptInvite />} />
+    <CelebrationProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback onLogin={handleLogin} />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
 
-        {!isAuthenticated ? (
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        ) : hasHousehold === false ? (
-          // Authenticated but no household - force onboarding
-          <>
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="*" element={<Navigate to="/onboarding" replace />} />
-          </>
-        ) : hasHousehold === true ? (
-          // Authenticated with household - normal app
-          <Route element={<Layout user={user} onLogout={handleLogout} />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/activity" element={<ActivityHistory />} />
-            <Route path="/reptiles" element={<ReptileList />} />
-            <Route path="/reptiles/new" element={<ReptileForm />} />
-            <Route path="/reptiles/:id" element={<ReptileDetail />} />
-            <Route path="/reptiles/:id/edit" element={<ReptileForm />} />
-            <Route path="/feed" element={<FeedingLog />} />
-            <Route path="/feed/:id" element={<FeedingLog />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/schedule-create" element={<ScheduleForm />} />
-            <Route path="/schedule-edit/:id" element={<ScheduleForm />} />
-            <Route path="/schedules/:id" element={<ScheduleDetails />} />
-            <Route path="/schedule-instances/:id" element={<ScheduleInstanceDetail />} />
-            <Route path="/schedule-templates" element={<ScheduleTemplates />} />
-            <Route path="/schedule-templates/new" element={<ScheduleTemplateForm />} />
-            <Route path="/schedule-templates/edit/:id" element={<ScheduleTemplateForm />} />
-            <Route path="/supplement-rotations" element={<SupplementRotations />} />
-            <Route path="/stats" element={<Statistics />} />
-            <Route path="/health-log" element={<HealthLog />} />
-            <Route path="/health-log/:reptileId" element={<HealthLog />} />
-            <Route path="/health-log/:type/:id" element={<HealthLog />} />
-            <Route path="/misting-log" element={<MistingLog />} />
-            <Route path="/misting-log/:reptileId" element={<MistingLog />} />
-            <Route path="/misting/:id" element={<MistingLog />} />
-            <Route path="/measurements" element={<Measurements />} />
-            <Route path="/measurements/:reptileId" element={<Measurements />} />
-            <Route path="/foods" element={<FoodManagement />} />
-            <Route path="/notifications" element={<NotificationHistory />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        ) : (
-          // Still checking household status - show nothing (loading screen already shown above)
-          <Route path="*" element={<div />} />
-        )}
-      </Routes>
-    </Router>
+          {!isAuthenticated ? (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          ) : hasHousehold === false ? (
+            // Authenticated but no household - force onboarding
+            <>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="*" element={<Navigate to="/onboarding" replace />} />
+            </>
+          ) : hasHousehold === true ? (
+            // Authenticated with household - normal app
+            <Route element={<Layout user={user} onLogout={handleLogout} />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/activity" element={<ActivityHistory />} />
+              <Route path="/reptiles" element={<ReptileList />} />
+              <Route path="/reptiles/new" element={<ReptileForm />} />
+              <Route path="/reptiles/:id" element={<ReptileDetail />} />
+              <Route path="/reptiles/:id/edit" element={<ReptileForm />} />
+              <Route path="/feed" element={<FeedingLog />} />
+              <Route path="/feed/:id" element={<FeedingLog />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/schedule-create" element={<ScheduleForm />} />
+              <Route path="/schedule-edit/:id" element={<ScheduleForm />} />
+              <Route path="/schedules/:id" element={<ScheduleDetails />} />
+              <Route path="/schedule-instances/:id" element={<ScheduleInstanceDetail />} />
+              <Route path="/schedule-templates" element={<ScheduleTemplates />} />
+              <Route path="/schedule-templates/new" element={<ScheduleTemplateForm />} />
+              <Route path="/schedule-templates/edit/:id" element={<ScheduleTemplateForm />} />
+              <Route path="/supplement-rotations" element={<SupplementRotations />} />
+              <Route path="/stats" element={<Statistics />} />
+              <Route path="/health-log" element={<HealthLog />} />
+              <Route path="/health-log/:reptileId" element={<HealthLog />} />
+              <Route path="/health-log/:type/:id" element={<HealthLog />} />
+              <Route path="/misting-log" element={<MistingLog />} />
+              <Route path="/misting-log/:reptileId" element={<MistingLog />} />
+              <Route path="/misting/:id" element={<MistingLog />} />
+              <Route path="/measurements" element={<Measurements />} />
+              <Route path="/measurements/:reptileId" element={<Measurements />} />
+              <Route path="/foods" element={<FoodManagement />} />
+              <Route path="/notifications" element={<NotificationHistory />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          ) : (
+            // Still checking household status - show nothing (loading screen already shown above)
+            <Route path="*" element={<div />} />
+          )}
+        </Routes>
+      </Router>
+    </CelebrationProvider>
   )
 }
 
