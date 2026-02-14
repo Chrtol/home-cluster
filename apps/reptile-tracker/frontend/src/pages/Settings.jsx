@@ -1294,7 +1294,7 @@ function StreakVacationTab() {
           <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg mb-6">
             <div>
               <div className="text-sm text-muted-foreground mb-1">Current Streak</div>
-              <div className="text-3xl font-bold text-orange-500">{userStreak.current_streak} days</div>
+              <div className="text-3xl font-bold text-orange-500">{userStreak.current_streak} tasks</div>
             </div>
             <div className="text-right">
               <div className="text-sm text-muted-foreground mb-1">Freeze Days Available</div>

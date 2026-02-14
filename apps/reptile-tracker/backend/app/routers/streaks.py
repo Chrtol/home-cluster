@@ -116,8 +116,9 @@ async def get_streak(
         streak_data = {
             "reptile_id": reptile_id,
             "current_streak": 0,
+            "consecutive_misses": 0,
             "last_completion_date": None,
-            "grace_days_remaining": 1,  # Default grace period
+            "grace_days_remaining": 0,
             "grace_period_days": 1,
             "longest_streak": 0,
         }
@@ -128,6 +129,7 @@ async def get_streak(
     streak_data = {
         "reptile_id": streak.reptile_id,
         "current_streak": streak.current_streak,
+        "consecutive_misses": streak.consecutive_misses,
         "last_completion_date": streak.last_completion_date,
         "grace_days_remaining": streak.grace_days_remaining,
         "grace_period_days": streak.grace_period_days,
@@ -174,6 +176,7 @@ async def get_streaks_batch(
             result[reptile_id] = StreakResponse(
                 reptile_id=s.reptile_id,
                 current_streak=s.current_streak,
+                consecutive_misses=s.consecutive_misses,
                 last_completion_date=s.last_completion_date,
                 grace_days_remaining=s.grace_days_remaining,
                 grace_period_days=s.grace_period_days,
@@ -184,8 +187,9 @@ async def get_streaks_batch(
             result[reptile_id] = StreakResponse(
                 reptile_id=reptile_id,
                 current_streak=0,
+                consecutive_misses=0,
                 last_completion_date=None,
-                grace_days_remaining=1,  # Default grace period
+                grace_days_remaining=0,
                 grace_period_days=1,
                 longest_streak=0,
             )
@@ -224,6 +228,7 @@ async def recalculate_streak(
     return StreakResponse(
         reptile_id=streak.reptile_id,
         current_streak=streak.current_streak,
+        consecutive_misses=streak.consecutive_misses,
         last_completion_date=streak.last_completion_date,
         grace_days_remaining=streak.grace_days_remaining,
         grace_period_days=streak.grace_period_days,

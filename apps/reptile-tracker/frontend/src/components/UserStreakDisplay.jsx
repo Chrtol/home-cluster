@@ -116,11 +116,11 @@ export default function UserStreakDisplay() {
 
   const getMilestoneBadge = (milestone) => {
     switch(milestone) {
-      case 7: return '7-Day Bronze Streak'
-      case 30: return '30-Day Gold Streak'
-      case 100: return '100-Day Platinum Streak'
-      case 365: return '365-Day Diamond Streak'
-      default: return `${milestone}-Day Streak`
+      case 7: return '7 Tasks - Bronze'
+      case 30: return '30 Tasks - Gold'
+      case 100: return '100 Tasks - Platinum'
+      case 365: return '365 Tasks - Diamond'
+      default: return `${milestone} Tasks`
     }
   }
 
@@ -213,7 +213,7 @@ export default function UserStreakDisplay() {
               <div className="flex items-center gap-2">
                 <Flame className="w-6 h-6 text-orange-500" />
                 <div>
-                  <div className="text-2xl font-bold tabular-nums">{streak.current_streak} days</div>
+                  <div className="text-2xl font-bold tabular-nums">{streak.current_streak} tasks</div>
                   <div className="text-xs text-muted-foreground">Current streak</div>
                 </div>
               </div>
@@ -250,7 +250,7 @@ export default function UserStreakDisplay() {
                 <div className="flex-1">
                   <div className="text-xs font-medium">Next milestone</div>
                   <div className="text-xs text-muted-foreground">
-                    {streak.days_to_milestone} days to {streak.next_milestone}-day {getMilestoneName(streak.next_milestone)} milestone
+                    {streak.days_to_milestone} more tasks to {getMilestoneName(streak.next_milestone)} ({streak.next_milestone})
                   </div>
                 </div>
               </div>
@@ -290,7 +290,7 @@ export default function UserStreakDisplay() {
 
             {/* Info note */}
             <div className="text-[10px] text-muted-foreground border-t border-border pt-2">
-              Complete tasks daily to maintain your streak. Freeze days protect your streak during vacations.
+              Complete tasks to grow your streak. Miss 2 in a row to break it. Freeze days protect during vacations.
             </div>
           </div>
         </PopoverContent>

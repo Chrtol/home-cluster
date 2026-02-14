@@ -875,10 +875,10 @@ export default function ReptileDetail() {
 
             {/* Care streak */}
             {streakData && streakData.current_streak > 0 && (
-              <div className="flex items-center gap-1.5" title={`Your longest streak: ${streakData.longest_streak} days`}>
+              <div className="flex items-center gap-1.5" title={`Your longest streak: ${streakData.longest_streak} tasks`}>
                 <Heart className="w-4 h-4 text-rose-500" />
                 <span className="text-muted-foreground">Care Streak:</span>
-                <span className="text-rose-400">{streakData.current_streak} days</span>
+                <span className="text-rose-400">{streakData.current_streak} tasks</span>
               </div>
             )}
           </div>

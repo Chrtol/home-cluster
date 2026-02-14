@@ -26,7 +26,7 @@ from app.models import (
 )
 
 
-# Milestone rewards: streak days -> freeze days earned
+# Milestone rewards: streak count -> freeze days earned
 MILESTONE_REWARDS = {
     7: 1,
     30: 2,

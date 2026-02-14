@@ -1264,12 +1264,14 @@ class Measurement(MeasurementBase):
 
 # Streak schemas
 class StreakResponse(BaseModel):
-    """Streak data for a reptile"""
+    """Streak data for a reptile (task-based)"""
     reptile_id: int
     current_streak: int
+    consecutive_misses: int = 0  # 2 consecutive misses breaks streak
     last_completion_date: Optional[date] = None
-    grace_days_remaining: int
-    grace_period_days: int
+    # Legacy fields (kept for compatibility)
+    grace_days_remaining: int = 0
+    grace_period_days: int = 1
     longest_streak: int
 
     class Config:

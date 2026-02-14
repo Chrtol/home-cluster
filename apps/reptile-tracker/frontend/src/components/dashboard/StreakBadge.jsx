@@ -24,7 +24,8 @@ export default function StreakBadge({ streak }) {
   }
 
   const colors = getColors(streak.current_streak)
-  const isGracePeriod = streak.grace_days_remaining < streak.grace_period_days
+  // Show warning when 1 consecutive miss (one more breaks streak)
+  const isAtRisk = streak.consecutive_misses === 1
 
   const lastCompletionText = streak.last_completion_date
     ? formatDistanceToNow(new Date(streak.last_completion_date), { addSuffix: true })
@@ -39,9 +40,9 @@ export default function StreakBadge({ streak }) {
             "transition-all hover:scale-105 cursor-pointer",
             colors.bg, colors.text,
             colors.glow && `shadow-sm ${colors.glow}`,
-            isGracePeriod && 'opacity-50'
+            isAtRisk && 'opacity-50'
           )}
-          title={`${streak.current_streak} day care streak (click for details)`}
+          title={`${streak.current_streak} task care streak (click for details)`}
         >
           <Flame className="w-3 h-3" />
           <span>{streak.current_streak}</span>
@@ -56,18 +57,18 @@ export default function StreakBadge({ streak }) {
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Current</span>
-              <span className="font-medium">{streak.current_streak} days</span>
+              <span className="font-medium">{streak.current_streak} tasks</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Longest</span>
-              <span className="font-medium">{streak.longest_streak} days</span>
+              <span className="font-medium">{streak.longest_streak} tasks</span>
             </div>
-            {isGracePeriod && (
-              <div className="flex justify-between text-amber-400">
-                <span>Grace left</span>
-                <span>{streak.grace_days_remaining}/{streak.grace_period_days}</span>
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Misses</span>
+              <span className={cn("font-medium", streak.consecutive_misses === 1 && "text-amber-400")}>
+                {streak.consecutive_misses}/2
+              </span>
+            </div>
             <div className="flex justify-between pt-1 border-t border-border">
               <span className="text-muted-foreground">Last done</span>
               <span className="font-medium">{lastCompletionText}</span>

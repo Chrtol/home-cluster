@@ -1039,21 +1039,22 @@ class UserNotification(Base):
 
 
 class ReptileStreak(Base):
-    """Tracks streak state per reptile for gamification"""
+    """Tracks streak state per reptile for gamification (task-based, not day-based)"""
     __tablename__ = "reptile_streaks"
 
     id = Column(Integer, primary_key=True, index=True)
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
 
-    # Current streak state
-    current_streak = Column(Integer, nullable=False, default=0)
+    # Current streak state (task-based)
+    current_streak = Column(Integer, nullable=False, default=0)  # Incremented per completed task
+    consecutive_misses = Column(Integer, nullable=False, default=0)  # Resets on completion, 2 = streak breaks
     last_completion_date = Column(Date, nullable=True)  # Last date with completed schedule
 
-    # Grace period tracking
+    # Legacy grace period fields (kept for compatibility, no longer used in logic)
     grace_days_remaining = Column(Integer, nullable=False, default=0)
-    grace_period_days = Column(Integer, nullable=False, default=1)  # Configurable forgiveness window
+    grace_period_days = Column(Integer, nullable=False, default=1)
 
-    # Historical tracking (for future use)
+    # Historical tracking
     longest_streak = Column(Integer, nullable=False, default=0)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

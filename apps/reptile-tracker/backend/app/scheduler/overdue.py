@@ -20,6 +20,8 @@ from .notifications import send_overdue_alert
 
 # Import user streak service for miss tracking
 from app.services.user_streak_service import increment_user_miss, get_responsible_users, is_schedule_manual
+# Import reptile streak service for miss tracking
+from app.services.streak_service import increment_reptile_miss
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +80,11 @@ async def check_overdue_schedules():
                             completion.status = CompletionStatus.MISSED
                             await db.commit()
 
-                            # Update user streaks for responsible users (only for manual schedules)
+                            # Update reptile streak for this miss (only for manual schedules)
                             if is_schedule_manual(schedule):
+                                await increment_reptile_miss(db, schedule.reptile_id)
+
+                                # Update user streaks for responsible users
                                 responsible_users = await get_responsible_users(db, schedule.id, schedule.reptile_id)
                                 for user_id in responsible_users:
                                     await increment_user_miss(db, user_id, yesterday)
