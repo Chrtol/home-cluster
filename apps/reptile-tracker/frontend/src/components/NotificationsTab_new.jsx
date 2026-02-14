@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bell, Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
-import { getUserTimeFormat } from '../utils/dateFormatting';
+import { getUserTimeFormat, getUserFirstDayOfWeek, getDayNames, getDayNumbers, getUserTimezone } from '../utils/dateFormatting';
+import { TimePicker } from '@/components/ui/time-picker';
 
 function NotificationsTab() {
   const [loading, setLoading] = useState(true);
@@ -26,13 +27,9 @@ function NotificationsTab() {
   const [dailyPlannerEnabled, setDailyPlannerEnabled] = useState(false);
   const [dailyPlannerTime, setDailyPlannerTime] = useState('08:00');
   const [weeklyPlannerEnabled, setWeeklyPlannerEnabled] = useState(false);
-  const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(0); // 0=Sunday
+  // Default weekly planner day to user's first day of week (0=Sunday, 1=Monday)
+  const [weeklyPlannerDay, setWeeklyPlannerDay] = useState(getUserFirstDayOfWeek() === 'monday' ? 1 : 0);
   const [digestFormat, setDigestFormat] = useState('grouped');
-
-  // Time picker state for daily planner time
-  const [plannerHours, setPlannerHours] = useState(8);
-  const [plannerMinutes, setPlannerMinutes] = useState(0);
-  const [plannerPeriod, setPlannerPeriod] = useState('AM');
 
   // Time picker state for quiet hours start
   const [startHours, setStartHours] = useState(22);
@@ -99,14 +96,6 @@ function NotificationsTab() {
           setWeeklyPlannerEnabled(settingsRes.data.weekly_planner_enabled || false);
           setWeeklyPlannerDay(settingsRes.data.weekly_planner_day ?? 0);
           setDigestFormat(settingsRes.data.digest_format || 'grouped');
-
-          // Parse time for time picker
-          if (settingsRes.data.daily_planner_time) {
-            const [h, m] = settingsRes.data.daily_planner_time.split(':').map(Number);
-            setPlannerHours(userTimeFormat === '12h' ? (h % 12 || 12) : h);
-            setPlannerMinutes(m);
-            setPlannerPeriod(h >= 12 ? 'PM' : 'AM');
-          }
         }
       } catch (err) {
         // 404 is okay, means no settings yet
@@ -269,17 +258,9 @@ function NotificationsTab() {
       setError('');
       setSuccess('');
 
-      // Convert time picker to HH:MM format
-      let hours24 = plannerHours;
-      if (userTimeFormat === '12h') {
-        if (plannerPeriod === 'PM' && plannerHours !== 12) hours24 = plannerHours + 12;
-        if (plannerPeriod === 'AM' && plannerHours === 12) hours24 = 0;
-      }
-      const timeStr = `${String(hours24).padStart(2, '0')}:${String(plannerMinutes).padStart(2, '0')}`;
-
       await axios.patch('/api/notification-settings/me', {
         daily_planner_enabled: dailyPlannerEnabled,
-        daily_planner_time: timeStr,
+        daily_planner_time: dailyPlannerTime,
         weekly_planner_enabled: weeklyPlannerEnabled,
         weekly_planner_day: weeklyPlannerDay,
         digest_format: digestFormat,
@@ -828,39 +809,16 @@ function NotificationsTab() {
                   <label className="block text-sm font-medium text-foreground mb-1">
                     Delivery Time
                   </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={plannerHours}
-                      onChange={(e) => setPlannerHours(Number(e.target.value))}
-                      className="bg-background border border-border rounded-md px-2 py-1 text-sm"
-                    >
-                      {(userTimeFormat === '12h' ? [12,1,2,3,4,5,6,7,8,9,10,11] : Array.from({length: 24}, (_, i) => i)).map(h => (
-                        <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
-                      ))}
-                    </select>
-                    <span>:</span>
-                    <select
-                      value={plannerMinutes}
-                      onChange={(e) => setPlannerMinutes(Number(e.target.value))}
-                      className="bg-background border border-border rounded-md px-2 py-1 text-sm"
-                    >
-                      {[0, 30].map(m => (
-                        <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
-                      ))}
-                    </select>
-                    {userTimeFormat === '12h' && (
-                      <select
-                        value={plannerPeriod}
-                        onChange={(e) => setPlannerPeriod(e.target.value)}
-                        className="bg-background border border-border rounded-md px-2 py-1 text-sm"
-                      >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
-                    )}
+                  <div className="max-w-[200px]">
+                    <TimePicker
+                      value={dailyPlannerTime}
+                      onChange={setDailyPlannerTime}
+                      step={30}
+                      placeholder="Pick a time"
+                    />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Time is in your timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                    Time is in your timezone ({getUserTimezone()})
                   </p>
                 </div>
               </div>
@@ -897,13 +855,11 @@ function NotificationsTab() {
                     onChange={(e) => setWeeklyPlannerDay(Number(e.target.value))}
                     className="bg-background border border-border rounded-md px-3 py-2 text-sm w-full"
                   >
-                    <option value={0}>Sunday</option>
-                    <option value={1}>Monday</option>
-                    <option value={2}>Tuesday</option>
-                    <option value={3}>Wednesday</option>
-                    <option value={4}>Thursday</option>
-                    <option value={5}>Friday</option>
-                    <option value={6}>Saturday</option>
+                    {getDayNumbers().map((dayNum) => (
+                      <option key={dayNum} value={dayNum}>
+                        {getDayNames()[getDayNumbers().indexOf(dayNum)]}
+                      </option>
+                    ))}
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
                     Sent at the same time as daily planner
