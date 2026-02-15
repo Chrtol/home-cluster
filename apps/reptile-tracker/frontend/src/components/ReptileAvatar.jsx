@@ -66,7 +66,7 @@ const ReptileAvatar = ({
   const borderColor = reptile?.avatar_border_color || '#10b981'; // Default green
 
   return (
-    <div className="relative inline-block">
+    <div className="relative w-fit">
       <div
         className={`${sizeClass} rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 ${className}`}
         style={{ boxShadow: `0 0 0 2px ${borderColor}` }}
