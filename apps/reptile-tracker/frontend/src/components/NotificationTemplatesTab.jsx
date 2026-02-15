@@ -804,12 +804,14 @@ const NotificationTemplatesTab = () => {
       {/* Template Editor Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4 text-foreground">
               {editingTemplate ? 'Edit Template' : 'Create Template'}
             </h3>
 
-            <div className="space-y-4">
+            <div className="flex gap-6">
+              {/* Left Column - Form */}
+              <div className="flex-1 space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Template Name</label>
                 <input
@@ -1090,6 +1092,65 @@ const NotificationTemplatesTab = () => {
                   </div>
                 </div>
               )}
+              </div>
+
+              {/* Right Column - Live Preview */}
+              <div className="flex-1 border-l border-border pl-6">
+                <h4 className="text-lg font-semibold mb-3 text-foreground">Live Preview</h4>
+                <div className="space-y-4 sticky top-0">
+                  {titleTemplate && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-muted-foreground">
+                        Title Preview:
+                      </label>
+                      <div className="p-3 bg-secondary border border-border rounded-lg">
+                        <p
+                          className="font-semibold text-foreground whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{
+                            __html: renderTemplate(
+                              { trigger_type: triggerType },
+                              titleTemplate
+                            )
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {messageTemplate && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-muted-foreground">
+                        Message Preview:
+                      </label>
+                      <div className="p-3 bg-secondary border border-border rounded-lg">
+                        <p
+                          className="text-foreground whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{
+                            __html: renderTemplate(
+                              { trigger_type: triggerType },
+                              messageTemplate
+                            )
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Available Variables Reference */}
+                  <div className="pt-4 border-t border-border">
+                    <label className="block text-sm font-medium mb-2 text-muted-foreground">
+                      Available Variables:
+                    </label>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {availableVariables[triggerType].map(variable => (
+                        <div key={variable} className="font-mono">
+                          {`{${variable}}`}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
