@@ -373,6 +373,18 @@ const NotificationTemplatesTab = () => {
       };
     }
 
+    if (triggerType === 'weight_gain' || triggerType === 'weight_loss' || triggerType === 'growth_milestone') {
+      return {
+        reptile_name: 'Spyro',
+        weight_change_percent: '8.5',
+        weight_change_grams: '12',
+        baseline_weight: '142',
+        current_weight: triggerType === 'weight_loss' ? '130' : '154',
+        age_category: 'juvenile',
+        milestone_description: 'Doubled weight since acquisition',
+      };
+    }
+
     return baseData;
   };
 
@@ -531,6 +543,9 @@ const NotificationTemplatesTab = () => {
     schedule_reminder: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'food_category', 'supplement_name', 'schedule_url'],
     overdue_alert: ['reptile_name', 'schedule_name', 'schedule_type', 'missed_date', 'food_category', 'supplement_name', 'schedule_url'],
     feeding_logged: ['reptile_name', 'user_name', 'food_list'],
+    weight_gain: ['reptile_name', 'weight_change_percent', 'weight_change_grams', 'baseline_weight', 'current_weight', 'age_category'],
+    weight_loss: ['reptile_name', 'weight_change_percent', 'weight_change_grams', 'baseline_weight', 'current_weight', 'age_category'],
+    growth_milestone: ['reptile_name', 'weight_change_percent', 'weight_change_grams', 'baseline_weight', 'current_weight', 'age_category', 'milestone_description'],
     custom: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'missed_date', 'food_category', 'supplement_name', 'schedule_url']
   };
 

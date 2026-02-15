@@ -1072,6 +1072,9 @@ class NotificationSettingsBase(BaseModel):
     digest_format: str = "grouped"  # "grouped" or "individual"
     digest_channel_id: Optional[int] = None  # Which channel receives digests (null = all enabled channels)
 
+    # Weight alert settings (Phase 24)
+    weight_alert_channel_id: Optional[int] = None  # Which channel receives weight alerts (null = all enabled channels)
+
 
 class NotificationSettingsUpdate(BaseModel):
     webhook_enabled: Optional[bool] = None
@@ -1096,6 +1099,9 @@ class NotificationSettingsUpdate(BaseModel):
     weekly_planner_time: Optional[time] = None  # Independent delivery time for weekly planner
     digest_format: Optional[str] = None
     digest_channel_id: Optional[int] = None  # Which channel receives digests (null = all enabled channels)
+
+    # Weight alert settings (Phase 24)
+    weight_alert_channel_id: Optional[int] = None  # Which channel receives weight alerts (null = all enabled channels)
 
 
 class NotificationSettingsSchema(NotificationSettingsBase):

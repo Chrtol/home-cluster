@@ -782,6 +782,9 @@ class NotificationSettings(Base):
     digest_format = Column(String(20), default="grouped", nullable=False)  # "grouped" or "individual"
     digest_channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="SET NULL"), nullable=True)  # Which channel receives digests (null = all enabled channels)
 
+    # Weight alert settings (Phase 24)
+    weight_alert_channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="SET NULL"), nullable=True)  # Which channel receives weight alerts (null = all enabled channels)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

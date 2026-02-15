@@ -340,9 +340,19 @@ export default function ReptileDetail() {
     adult: { gain: 10, loss: 5 },
   };
 
-  const getAgeAwareDefaults = (dateOfBirth) => {
-    const category = calculateAgeCategory(dateOfBirth);
-    return AGE_AWARE_DEFAULTS[category] || AGE_AWARE_DEFAULTS.adult;
+  // Get age category for threshold defaults - uses reptile's age_category field
+  const getAgeCategory = () => {
+    if (reptile.age_category) {
+      const category = reptile.age_category.toLowerCase();
+      if (category === 'hatchling' || category === 'juvenile') {
+        return category;
+      }
+    }
+    return 'adult';  // adult, gravid, or unset -> adult thresholds
+  };
+
+  const getAgeAwareDefaults = () => {
+    return AGE_AWARE_DEFAULTS[getAgeCategory()] || AGE_AWARE_DEFAULTS.adult;
   };
 
   const handleThresholdChange = async (type, value) => {
@@ -1157,11 +1167,7 @@ export default function ReptileDetail() {
           <div className="space-y-4 pt-2 border-t border-border">
             {/* Age category info */}
             <p className="text-xs text-muted-foreground">
-              {reptile.date_of_birth ? (
-                <>Age category: <span className="font-medium">{calculateAgeCategory(reptile.date_of_birth)}</span> — defaults optimized for this life stage</>
-              ) : (
-                <>No birth date set — using adult defaults</>
-              )}
+              Age category: <span className="font-medium">{getAgeCategory()}</span> — defaults optimized for this life stage
             </p>
 
             {/* Gain threshold */}
@@ -1174,7 +1180,7 @@ export default function ReptileDetail() {
                   type="number"
                   min="1"
                   max="500"
-                  placeholder={getAgeAwareDefaults(reptile.date_of_birth).gain}
+                  placeholder={getAgeAwareDefaults().gain}
                   value={reptile.weight_alert_gain_threshold_percent || ''}
                   onChange={(e) => handleThresholdChange('gain', e.target.value)}
                   className="w-24 px-3 py-2 border border-border rounded-lg bg-card text-foreground"
@@ -1184,9 +1190,8 @@ export default function ReptileDetail() {
               <p className="text-xs text-muted-foreground">
                 {reptile.weight_alert_gain_threshold_percent
                   ? `Custom: ${reptile.weight_alert_gain_threshold_percent}%`
-                  : `Default for ${calculateAgeCategory(reptile.date_of_birth) || 'adult'}: ${getAgeAwareDefaults(reptile.date_of_birth).gain}%`
+                  : `Default for ${getAgeCategory()}: ${getAgeAwareDefaults().gain}%`
                 }
-                {calculateAgeCategory(reptile.date_of_birth) !== 'adult' && ' (celebratory growth milestone!)'}
               </p>
             </div>
 
@@ -1200,7 +1205,7 @@ export default function ReptileDetail() {
                   type="number"
                   min="0"
                   max="100"
-                  placeholder={getAgeAwareDefaults(reptile.date_of_birth).loss}
+                  placeholder={getAgeAwareDefaults().loss}
                   value={reptile.weight_alert_loss_threshold_percent ?? ''}
                   onChange={(e) => handleThresholdChange('loss', e.target.value)}
                   className="w-24 px-3 py-2 border border-border rounded-lg bg-card text-foreground"
@@ -1210,9 +1215,9 @@ export default function ReptileDetail() {
               <p className="text-xs text-muted-foreground">
                 {reptile.weight_alert_loss_threshold_percent !== null && reptile.weight_alert_loss_threshold_percent !== undefined
                   ? `Custom: ${reptile.weight_alert_loss_threshold_percent}%`
-                  : `Default for ${calculateAgeCategory(reptile.date_of_birth) || 'adult'}: ${getAgeAwareDefaults(reptile.date_of_birth).loss}%`
+                  : `Default for ${getAgeCategory()}: ${getAgeAwareDefaults().loss}%`
                 }
-                {getAgeAwareDefaults(reptile.date_of_birth).loss === 0 && ' (any loss triggers alert)'}
+                {getAgeAwareDefaults().loss === 0 && ' (any loss triggers alert)'}
               </p>
             </div>
 

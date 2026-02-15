@@ -885,6 +885,44 @@ async def seed_notification_templates(db: AsyncSession):
             },
             applies_to_description="Rich Discord embed for overdue alerts"
         ),
+
+        # Weight change alert templates (Phase 24)
+        NotificationTemplate(
+            name="Weight Gain Alert",
+            template_type="system",
+            trigger_type="weight_gain",
+            user_id=None,
+            title_template="{reptile_name}: Weight Gain",
+            message_template="**{reptile_name}** has gained weight.\n\n**Change:** {weight_change_percent}% ({weight_change_grams}g)\n**From:** {baseline_weight}g -> {current_weight}g",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            applies_to_description="Alert when reptile gains weight above threshold"
+        ),
+        NotificationTemplate(
+            name="Weight Loss Alert",
+            template_type="system",
+            trigger_type="weight_loss",
+            user_id=None,
+            title_template="{reptile_name}: Weight Loss",
+            message_template="**{reptile_name}** has lost weight.\n\n**Change:** {weight_change_percent}% ({weight_change_grams}g)\n**From:** {baseline_weight}g -> {current_weight}g",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            applies_to_description="Alert when reptile loses weight above threshold"
+        ),
+        NotificationTemplate(
+            name="Growth Milestone",
+            template_type="system",
+            trigger_type="growth_milestone",
+            user_id=None,
+            title_template="{reptile_name}: Growth Milestone!",
+            message_template="Your {age_category} **{reptile_name}** has hit a growth milestone!\n\n**Gained:** {weight_change_percent}% ({weight_change_grams}g)\n**Now weighing:** {current_weight}g\n**Baseline (avg of last 3):** {baseline_weight}g",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            applies_to_description="Celebratory alert for juvenile/hatchling growth"
+        ),
     ]
 
     for template in templates:

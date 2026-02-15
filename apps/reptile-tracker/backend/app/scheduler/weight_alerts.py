@@ -30,31 +30,27 @@ AGE_AWARE_DEFAULTS: Dict[str, Dict[str, int]] = {
 }
 
 
-def get_age_category(date_of_birth: Optional[datetime]) -> str:
+def get_age_category_for_reptile(reptile: Reptile) -> str:
     """
-    Calculate age category from date of birth.
-    Matches frontend calculateAgeCategory function.
+    Get age category for a reptile from the age_category field.
+
+    Maps to threshold categories:
+    - "hatchling", "juvenile" -> use juvenile thresholds
+    - "adult", "gravid", or unset -> use adult thresholds
 
     Returns:
-        "hatchling" (< 6 months), "juvenile" (6-18 months), or "adult" (> 18 months)
+        "hatchling", "juvenile", or "adult"
     """
-    if not date_of_birth:
-        return "adult"  # Default to adult if unknown
-
-    now = datetime.now(timezone.utc)
-    birth_date = date_of_birth if date_of_birth.tzinfo else date_of_birth.replace(tzinfo=timezone.utc)
-    age_in_months = (now - birth_date).days / 30.44
-
-    if age_in_months < 6:
-        return "hatchling"
-    elif age_in_months < 18:
-        return "juvenile"
+    if reptile.age_category:
+        category = reptile.age_category.lower()
+        if category in ["hatchling", "juvenile"]:
+            return category
     return "adult"
 
 
-def get_age_aware_defaults(date_of_birth: Optional[datetime]) -> Dict[str, int]:
-    """Get age-aware default thresholds for a reptile."""
-    age_category = get_age_category(date_of_birth)
+def get_age_aware_defaults_for_reptile(reptile: Reptile) -> Dict[str, int]:
+    """Get age-aware default thresholds for a reptile based on its age_category field."""
+    age_category = get_age_category_for_reptile(reptile)
     return AGE_AWARE_DEFAULTS.get(age_category, AGE_AWARE_DEFAULTS["adult"])
 
 
@@ -75,8 +71,8 @@ def get_threshold_for_direction(reptile: Reptile, direction: str) -> int:
     if direction == "loss" and reptile.weight_alert_loss_threshold_percent is not None:
         return reptile.weight_alert_loss_threshold_percent
 
-    # Fall back to age-aware defaults
-    age_category = get_age_category(reptile.date_of_birth)
+    # Fall back to age-aware defaults (uses reptile's age_category field if set)
+    age_category = get_age_category_for_reptile(reptile)
     return AGE_AWARE_DEFAULTS[age_category][direction]
 
 
@@ -243,15 +239,18 @@ async def check_weight_change_alert(
         logger.warning(f"Reptile {weight_log.reptile_id} not found for weight alert check")
         return None
 
+    logger.info(f"Checking weight alert for reptile '{reptile.name}' (id={reptile.id}), weight_alerts_enabled={reptile.weight_alerts_enabled}")
+
     # Check if alerts enabled for this reptile
     if not reptile.weight_alerts_enabled:
-        logger.debug(f"Weight alerts disabled for reptile {reptile.id}")
+        logger.info(f"SKIP: Weight alerts disabled for reptile {reptile.id}")
         return None
 
     # Get baseline (rolling average of last 3 weights)
     baseline_weight, num_weights_in_baseline = await get_rolling_average_baseline(db, reptile.id, weight_log)
+    logger.info(f"Baseline: {baseline_weight}g (from {num_weights_in_baseline} weights), current: {weight_log.weight_grams}g")
     if baseline_weight is None:
-        logger.info(f"First weight log for reptile {reptile.id}, no baseline for comparison")
+        logger.info(f"SKIP: First weight log for reptile {reptile.id}, no baseline for comparison")
         return None
 
     # Calculate change against rolling average baseline
@@ -259,10 +258,12 @@ async def check_weight_change_alert(
         baseline_weight,
         weight_log.weight_grams
     )
+    logger.info(f"Change: {change['change_percent']}% {change['direction']} ({change['change_grams']}g)")
 
     # Get direction-specific threshold (uses age-aware defaults)
     direction = change["direction"]
     threshold = get_threshold_for_direction(reptile, direction)
+    logger.info(f"Threshold for {direction}: {threshold}% (age_category: {get_age_category_for_reptile(reptile)})")
 
     # Check if change exceeds threshold
     # Special case: threshold 0 means any change triggers alert
@@ -272,8 +273,8 @@ async def check_weight_change_alert(
         should_alert = change["change_percent"] >= threshold
 
     if not should_alert:
-        logger.debug(
-            f"Weight {direction} {change['change_percent']}% below threshold {threshold}% "
+        logger.info(
+            f"SKIP: Weight {direction} {change['change_percent']}% below threshold {threshold}% "
             f"for reptile {reptile.id}"
         )
         return None
@@ -287,7 +288,7 @@ async def check_weight_change_alert(
         return None
 
     # Determine age category and if this is a growth milestone
-    age_category = get_age_category(reptile.date_of_birth)
+    age_category = get_age_category_for_reptile(reptile)
     is_growth_milestone = direction == "gain" and age_category in ["hatchling", "juvenile"]
 
     # Determine trigger type for notification templates

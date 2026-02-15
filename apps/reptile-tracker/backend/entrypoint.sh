@@ -52,7 +52,7 @@ else
         alembic -c ${MIGRATIONS_DIR}/alembic.ini stamp head || true
       else
         echo "No existing app tables detected — creating schema via SQLAlchemy"
-        # Create tables using SQLAlchemy models (much faster than running all migrations)
+        # Create tables using SQLAlchemy models (matches current schema)
         python -c "
 import asyncio
 from app.database import engine, Base
@@ -64,7 +64,7 @@ async def create_tables():
 
 asyncio.run(create_tables())
 " || { echo "Failed to create tables"; exit 1; }
-        # Stamp DB to latest migration since tables now exist
+        # Stamp to HEAD since SQLAlchemy created current schema
         echo "Stamping database to head migration"
         alembic -c ${MIGRATIONS_DIR}/alembic.ini stamp head || true
       fi

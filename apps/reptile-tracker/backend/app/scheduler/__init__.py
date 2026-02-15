@@ -59,8 +59,8 @@ from .weight_alerts import (
     get_rolling_average_baseline,
     update_weight_alert_tracking,
     get_threshold_for_direction,
-    get_age_category,
-    get_age_aware_defaults,
+    get_age_category_for_reptile,
+    get_age_aware_defaults_for_reptile,
     AGE_AWARE_DEFAULTS,
 )
 
@@ -98,7 +98,7 @@ __all__ = [
     "get_rolling_average_baseline",
     "update_weight_alert_tracking",
     "get_threshold_for_direction",
-    "get_age_category",
-    "get_age_aware_defaults",
+    "get_age_category_for_reptile",
+    "get_age_aware_defaults_for_reptile",
     "AGE_AWARE_DEFAULTS",
 ]

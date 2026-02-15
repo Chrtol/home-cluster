@@ -210,3 +210,45 @@ async def get_accessible_reptile_ids(
     """Get list of reptile IDs the user has access to"""
     user_reptiles = await get_user_reptiles(db, user, min_access_level)
     return [r["reptile"].id for r in user_reptiles]
+
+
+async def get_reptile_users(
+    db: AsyncSession,
+    reptile: Reptile,
+    min_access_level: AccessLevel = AccessLevel.VIEWER,
+) -> list[User]:
+    """Get all users who have access to a reptile (via direct access or household membership)"""
+
+    level_hierarchy = {
+        AccessLevel.VIEWER: 1,
+        AccessLevel.CARETAKER: 2,
+        AccessLevel.MANAGER: 3,
+        AccessLevel.ADMIN: 4,
+        AccessLevel.OWNER: 5,
+    }
+
+    users_dict = {}
+
+    # Get users with direct access
+    direct_result = await db.execute(
+        select(User, reptile_access.c.access_level)
+        .join(reptile_access, User.id == reptile_access.c.user_id)
+        .where(reptile_access.c.reptile_id == reptile.id)
+    )
+    for user, access_level in direct_result.all():
+        if level_hierarchy[access_level] >= level_hierarchy[min_access_level]:
+            users_dict[user.id] = user
+
+    # Get users via household membership (if reptile is in a household)
+    if reptile.household_id:
+        household_result = await db.execute(
+            select(User, household_members.c.access_level)
+            .join(household_members, User.id == household_members.c.user_id)
+            .where(household_members.c.household_id == reptile.household_id)
+        )
+        for user, access_level in household_result.all():
+            if user.id not in users_dict:
+                if level_hierarchy[access_level] >= level_hierarchy[min_access_level]:
+                    users_dict[user.id] = user
+
+    return list(users_dict.values())

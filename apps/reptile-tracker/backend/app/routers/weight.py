@@ -118,9 +118,13 @@ async def create_weight_log(
 
     # Check for significant weight change and trigger alert if needed
     # This is done AFTER commit to ensure weight log is persisted
+    import logging
+    logger = logging.getLogger(__name__)
     try:
+        logger.info(f"=== WEIGHT ALERT CHECK === reptile_id={log.reptile_id}, weight={new_log.weight_grams}g")
         alert_context = await check_weight_change_alert(db, new_log)
         if alert_context:
+            logger.info(f"Alert triggered! Context: {alert_context}")
             # Queue Celery task for async delivery
             from app.celery_tasks import send_weight_change_alert_task
             send_weight_change_alert_task.delay(
@@ -128,10 +132,11 @@ async def create_weight_log(
                 weight_log_id=new_log.id,
                 alert_context=alert_context
             )
+            logger.info(f"Celery task queued for weight alert")
+        else:
+            logger.info(f"No alert triggered (check suppressed or below threshold)")
     except Exception as e:
         # Don't fail the weight log creation if alert check fails
-        import logging
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to check weight change alert: {e}", exc_info=True)
 
     return new_log

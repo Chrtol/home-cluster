@@ -1041,7 +1041,7 @@ async def send_weight_change_alert_task(
                 "trigger_type": trigger_type,
             }
 
-            # Send to each user's enabled channels
+            # Send to each user's configured weight alert channel
             for user in users:
                 try:
                     # Get user's notification settings
@@ -1051,16 +1051,28 @@ async def send_weight_change_alert_task(
                     settings = settings_result.scalar_one_or_none()
 
                     if not settings:
+                        logger.debug(f"No notification settings for user {user.id}")
                         continue
 
-                    # Get enabled channels
-                    channels_result = await db.execute(
-                        select(NotificationChannel).where(
-                            NotificationChannel.notification_settings_id == settings.id,
-                            NotificationChannel.enabled == True
+                    # Get channels for weight alert delivery
+                    # If weight_alert_channel_id is set, use only that channel; otherwise use all enabled channels
+                    if settings.weight_alert_channel_id:
+                        logger.info(f"Using specific weight alert channel: {settings.weight_alert_channel_id}")
+                        channel = await db.get(NotificationChannel, settings.weight_alert_channel_id)
+                        if channel and channel.enabled:
+                            channels = [channel]
+                        else:
+                            logger.warning(f"Weight alert channel {settings.weight_alert_channel_id} not found or disabled")
+                            channels = []
+                    else:
+                        logger.info(f"Using all enabled channels for weight alerts")
+                        channels_result = await db.execute(
+                            select(NotificationChannel).where(
+                                NotificationChannel.notification_settings_id == settings.id,
+                                NotificationChannel.enabled == True
+                            )
                         )
-                    )
-                    channels = channels_result.scalars().all()
+                        channels = channels_result.scalars().all()
 
                     for channel in channels:
                         try:
