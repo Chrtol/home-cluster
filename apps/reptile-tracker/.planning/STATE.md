@@ -1,13 +1,13 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-15T19:57:32Z
+**Last Updated:** 2026-02-15T20:08:16Z
 
 ## Current Position
 
 **Phase:** 24.5 of 25 (Unified Notifications Page)
-**Plan:** 01 of ~3
+**Plan:** 02 of ~3
 **Status:** In progress
-**Last activity:** 2026-02-15 - Completed 24.5-01-PLAN.md (Notifications Page Shell)
+**Last activity:** 2026-02-15 - Completed 24.5-02-PLAN.md (Populate Notifications Page Tabs)
 
 **Progress:** Phase 24.5 - Unified Notifications Page
 ```
@@ -17,8 +17,8 @@
 24-UAT: ███████████ COMPLETE (7/7 pass, 1 fix applied)
 
 24.5-01: ███████████ COMPLETE (Notifications Page Shell)
-24.5-02: ░░░░░░░░░░░ NEXT (Global Settings Tab Migration)
-24.5-03: ░░░░░░░░░░░ PLANNED (Populate Remaining Tabs)
+24.5-02: ███████████ COMPLETE (Populate Tabs)
+24.5-03: ░░░░░░░░░░░ NEXT (Cleanup / Deprecate Old Tabs)
 
 25:   ░░░░░░░░░░░ PLANNED (Weight Alert Customization) - blocked by 24.5
 ```
@@ -27,13 +27,18 @@
 - ✅ Core notification system with templates
 - ✅ Weight change alert detection and delivery
 - ✅ User-facing alert settings UI
-- 🔄 Phase 24.5: Unified notifications page (in progress - 1/3 complete)
+- 🔄 Phase 24.5: Unified notifications page (in progress - 2/3 complete)
 - ⏳ Phase 25: Configurable frequency caps (blocked by 24.5)
 
 ## Recent Decisions
 
 | Phase  | Decision | Rationale | Impact |
 |--------|----------|-----------|--------|
+| 24.5-02 | Inline editing for reptile alerts using Radix Collapsible | Clean UX with expand-one-at-a-time pattern | Users edit settings inline without modal overhead |
+| 24.5-02 | Age-aware defaults for weight alerts | Hatchlings grow faster than adults | Hatchlings get 25% gain threshold, adults get 10% |
+| 24.5-02 | URL param pre-selection for reptile alerts | Enable deep linking from other pages | /notifications?tab=reptiles&reptile=1 opens specific reptile |
+| 24.5-02 | TemplatesTab wraps existing NotificationTemplatesTab | Reuse existing component, avoid duplication | Clean integration without code duplication |
+| 24.5-02 | Grouped schedule display by reptile | Users think in terms of "which reptile" not "which schedule" | More intuitive UX with type filter option |
 | 24.5-01 | Default to 'global' tab when no query param | User decision from requirements | Clean default entry point to notifications page |
 | 24.5-01 | Move NotificationHistory to /notification-history | Free up /notifications for unified page | Maintains existing notification history functionality |
 | 24.5-01 | URL-controlled tab navigation | Enable deep linking and browser back button support | Better UX, shareable links to specific tabs |
@@ -70,15 +75,12 @@
 
 The following features from vision were intentionally deferred and need separate plans:
 
-1. **Separate thresholds for gain vs loss**
-   - Current: Single threshold for both directions
-   - Desired: Different thresholds (e.g., 5% loss / 15% gain)
-   - Complexity: Requires schema changes + UI redesign
+1. ~~**Separate thresholds for gain vs loss**~~ ✅ DONE in 24.5-02
+   - ✅ ReptileAlertsTab now has separate gain/loss threshold inputs
 
-2. **Age-aware defaults (baby/juvenile vs adult)**
-   - Current: Species-based defaults only
-   - Desired: Different defaults based on age
-   - Complexity: Requires age tracking system
+2. ~~**Age-aware defaults (baby/juvenile vs adult)**~~ ✅ DONE in 24.5-02
+   - ✅ Age category calculated from birth_date (hatchling < 6mo, juvenile < 18mo, adult)
+   - ✅ Recommended defaults shown based on age category
 
 3. **Growth milestone alerts for juveniles**
    - Current: Only threshold-based alerts
@@ -90,17 +92,17 @@ The following features from vision were intentionally deferred and need separate
    - Desired: Compare to rolling average
    - Complexity: Requires detection logic + DB query changes
 
-**Note:** These are enhancement opportunities, not bugs. Core system is production-ready.
+**Note:** Items 1 and 2 completed in 24.5-02. Items 3 and 4 remain as enhancement opportunities.
 
 ## Session Continuity
 
-**Last session:** 2026-02-15T19:57:32Z
-**Stopped at:** Completed 24.5-01 (Notifications Page Shell)
-**Resume file:** `.planning/phases/24.5-unified-notifications-page/24.5-01-SUMMARY.md`
+**Last session:** 2026-02-15T20:08:16Z
+**Stopped at:** Completed 24.5-02 (Populate Notifications Page Tabs)
+**Resume file:** `.planning/phases/24.5-unified-notifications-page/24.5-02-SUMMARY.md`
 
 **Next session planning:**
-- Phase 24.5-02: Migrate global notification settings from Settings page to Notifications page Global Settings tab
-- Phase 24.5-03: Populate remaining tabs (Channels, Templates, Reptile Alerts, Schedule Notifications)
+- Phase 24.5-03 (optional): Clean up old notification tabs in Settings page if needed
+- Phase 25: Weight Alert Customization (separate gain/loss thresholds in backend) - UNBLOCKED
 
 ## Key Files Reference
 
@@ -125,6 +127,13 @@ The following features from vision were intentionally deferred and need separate
 - `frontend/src/pages/Notifications.jsx` - Unified notifications page with 5 tabs
 - `frontend/src/App.jsx` - Route configuration (/notifications, /notification-history)
 - `frontend/src/components/Layout.jsx` - Sidebar navigation with Bell icon
+
+**Frontend (Tab Components):**
+- `frontend/src/components/notifications/ChannelsTab.jsx` - Channel CRUD with test notification
+- `frontend/src/components/notifications/GlobalSettingsTab.jsx` - Global preferences and planner digests
+- `frontend/src/components/notifications/ReptileAlertsTab.jsx` - Per-reptile weight alert config
+- `frontend/src/components/notifications/ScheduleNotificationsTab.jsx` - Per-schedule notification toggles
+- `frontend/src/components/notifications/TemplatesTab.jsx` - Template editor wrapper
 
 ## Accumulated Context
 
@@ -164,6 +173,23 @@ User logs weight
 - Deep linking to specific tabs
 - Radix UI Tabs with controlled mode
 
+**Pattern:** Self-contained tab components
+- Each tab component fetches its own data
+- No prop drilling from parent Notifications page
+- Clean separation of concerns
+
+**Pattern:** Inline editing with Radix Collapsible
+- Expand-one-at-a-time pattern for clean UX
+- Used in ReptileAlertsTab and ScheduleNotificationsTab
+- Consistent chevron icons (ChevronDown/ChevronRight)
+
+**Pattern:** Age-aware defaults
+- Calculate age category from birth_date: hatchling < 6mo, juvenile < 18mo, adult
+- Different recommended thresholds per age category
+- Hatchlings: 25% gain / 10% loss
+- Juveniles: 15% gain / 8% loss
+- Adults: 10% gain / 5% loss
+
 ---
 
-**Project Status:** Phase 24 complete (UAT passed). Phase 24.5 (Unified Notifications Page) in progress - Plan 01 complete (page shell). Next: Plan 02 (migrate global settings). Phase 25 (Weight Alert Customization) blocked by 24.5.
+**Project Status:** Phase 24 complete (UAT passed). Phase 24.5 (Unified Notifications Page) in progress - Plan 02 complete (all tabs functional). Next: Optional cleanup. Phase 25 (Weight Alert Customization) unblocked.
