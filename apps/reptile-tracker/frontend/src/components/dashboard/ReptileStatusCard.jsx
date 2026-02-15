@@ -79,17 +79,6 @@ const ReptileStatusCard = ({
 
   const taskStatus = getTaskStatus();
 
-  // Get custom border color or fall back to default
-  const customBorderColor = reptile.avatar_border_color || '#10b981'; // Default green
-
-  // Status ring colors - use custom color for normal states, task status colors for urgent states
-  const getRingColor = () => {
-    if (taskStatus === 'overdue') return 'ring-destructive';
-    if (taskStatus === 'due') return 'ring-amber-500';
-    // For done or none, use custom border color
-    return null; // Will use inline style instead
-  };
-
   // Status dot colors
   const statusDotColors = {
     done: 'bg-primary',
@@ -202,21 +191,11 @@ const ReptileStatusCard = ({
       <div className="flex gap-3">
         {/* Avatar with status indicator - uses shared ReptileAvatar for birthday hat */}
         <div className="relative flex-shrink-0" onClick={handleNameClick}>
-          <div
-            className={cn(
-              'cursor-pointer transition-all rounded-xl',
-              getRingColor() || '',
-              getRingColor() ? 'ring-2' : '',
-              'hover:ring-primary hover:ring-2'
-            )}
-          >
-            <ReptileAvatar
-              reptile={reptile}
-              size={isCompact && !isExpanded ? 'md' : 'lg'}
-              className="!rounded-xl"
-              showBorder={!getRingColor()}
-            />
-          </div>
+          <ReptileAvatar
+            reptile={reptile}
+            size={isCompact && !isExpanded ? 'md' : 'lg'}
+            className="!rounded-xl"
+          />
           {/* Status dot */}
           <span
             className={cn(
