@@ -9,6 +9,7 @@ from app.models import User, WeightLog, AccessLevel, Reptile, reptile_access, In
 from app.permissions import check_reptile_access
 from app.schemas import WeightLog as WeightLogSchema, WeightLogCreate, WeightLogWithReptile, WeightLogUpdate
 from app.schedule_matcher import assign_weighing_to_schedule
+from app.scheduler.weight_alerts import check_weight_change_alert
 
 router = APIRouter()
 
@@ -114,6 +115,25 @@ async def create_weight_log(
 
     await db.commit()
     await db.refresh(new_log)
+
+    # Check for significant weight change and trigger alert if needed
+    # This is done AFTER commit to ensure weight log is persisted
+    try:
+        alert_context = await check_weight_change_alert(db, new_log)
+        if alert_context:
+            # Queue Celery task for async delivery
+            from app.celery_tasks import send_weight_change_alert_task
+            send_weight_change_alert_task.delay(
+                reptile_id=log.reptile_id,
+                weight_log_id=new_log.id,
+                alert_context=alert_context
+            )
+    except Exception as e:
+        # Don't fail the weight log creation if alert check fails
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to check weight change alert: {e}", exc_info=True)
+
     return new_log
 
 @router.patch("/{log_id}", response_model=WeightLogSchema)
