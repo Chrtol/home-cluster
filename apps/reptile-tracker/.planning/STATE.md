@@ -1,15 +1,15 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-15T20:08:16Z
+**Last Updated:** 2026-02-15T21:30:00Z
 
 ## Current Position
 
-**Phase:** 24.5 of 25 (Unified Notifications Page)
-**Plan:** 02 of ~3
-**Status:** In progress
-**Last activity:** 2026-02-15 - Completed 24.5-02-PLAN.md (Populate Notifications Page Tabs)
+**Phase:** 25 of 25 (Weight Alert Customization)
+**Plan:** Ready to start
+**Status:** Ready
+**Last activity:** 2026-02-15 - Completed Phase 24.5 (Unified Notifications Page) - UAT passed
 
-**Progress:** Phase 24.5 - Unified Notifications Page
+**Progress:** Phase 24.5 - COMPLETE
 ```
 24-01: ███████████ COMPLETE (Detection Logic)
 24-02: ███████████ COMPLETE (Delivery Integration)
@@ -18,22 +18,25 @@
 
 24.5-01: ███████████ COMPLETE (Notifications Page Shell)
 24.5-02: ███████████ COMPLETE (Populate Tabs)
-24.5-03: ░░░░░░░░░░░ NEXT (Cleanup / Deprecate Old Tabs)
+24.5-03: ███████████ COMPLETE (Polish & Bug Fixes)
+24.5-UAT: ███████████ COMPLETE (UAT passed)
 
-25:   ░░░░░░░░░░░ PLANNED (Weight Alert Customization) - blocked by 24.5
+25:   ░░░░░░░░░░░ READY (Weight Alert Customization)
 ```
 
 **Overall System Progress:**
 - ✅ Core notification system with templates
 - ✅ Weight change alert detection and delivery
 - ✅ User-facing alert settings UI
-- 🔄 Phase 24.5: Unified notifications page (in progress - 2/3 complete)
-- ⏳ Phase 25: Configurable frequency caps (blocked by 24.5)
+- ✅ Phase 24.5: Unified notifications page (COMPLETE)
+- ⏳ Phase 25: Configurable frequency caps (ready to start)
 
 ## Recent Decisions
 
 | Phase  | Decision | Rationale | Impact |
 |--------|----------|-----------|--------|
+| 24.5-03 | Use TimePicker component for all time inputs | Consistent UX with logging pages, better quick-pick UI | All time inputs use same popover-based picker |
+| 24.5-03 | Respect user time format preference in schedule display | Users expect consistent 12h/24h formatting | Time windows display in user's preferred format |
 | 24.5-02 | Inline editing for reptile alerts using Radix Collapsible | Clean UX with expand-one-at-a-time pattern | Users edit settings inline without modal overhead |
 | 24.5-02 | Age-aware defaults for weight alerts | Hatchlings grow faster than adults | Hatchlings get 25% gain threshold, adults get 10% |
 | 24.5-02 | URL param pre-selection for reptile alerts | Enable deep linking from other pages | /notifications?tab=reptiles&reptile=1 opens specific reptile |
@@ -96,13 +99,12 @@ The following features from vision were intentionally deferred and need separate
 
 ## Session Continuity
 
-**Last session:** 2026-02-15T20:08:16Z
-**Stopped at:** Completed 24.5-02 (Populate Notifications Page Tabs)
-**Resume file:** `.planning/phases/24.5-unified-notifications-page/24.5-02-SUMMARY.md`
+**Last session:** 2026-02-15T21:30:00Z
+**Stopped at:** Completed Phase 24.5 (UAT passed)
+**Resume file:** N/A - Phase complete
 
 **Next session planning:**
-- Phase 24.5-03 (optional): Clean up old notification tabs in Settings page if needed
-- Phase 25: Weight Alert Customization (separate gain/loss thresholds in backend) - UNBLOCKED
+- Phase 25: Weight Alert Customization (ready to start)
 
 ## Key Files Reference
 
@@ -192,4 +194,4 @@ User logs weight
 
 ---
 
-**Project Status:** Phase 24 complete (UAT passed). Phase 24.5 (Unified Notifications Page) in progress - Plan 02 complete (all tabs functional). Next: Optional cleanup. Phase 25 (Weight Alert Customization) unblocked.
+**Project Status:** Phase 24 and 24.5 complete (UAT passed). Phase 25 (Weight Alert Customization) ready to start.
