@@ -190,7 +190,8 @@ const ReptileStatusCard = ({
     >
       <div className="flex gap-3">
         {/* Avatar with status indicator - uses shared ReptileAvatar for birthday hat */}
-        <div className="relative flex-shrink-0" onClick={handleNameClick}>
+        {/* self-start prevents stretching to match info section height, keeping dot aligned to avatar */}
+        <div className="relative flex-shrink-0 self-start" onClick={handleNameClick}>
           <ReptileAvatar
             reptile={reptile}
             size={isCompact && !isExpanded ? 'md' : 'lg'}
@@ -199,7 +200,7 @@ const ReptileStatusCard = ({
           {/* Status dot */}
           <span
             className={cn(
-              'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card pointer-events-none z-10',
+              'absolute -bottom-2 -right-1 w-4 h-4 rounded-full border-2 border-card pointer-events-none z-10',
               statusDotColors[taskStatus]
             )}
           />
@@ -230,8 +231,8 @@ const ReptileStatusCard = ({
             <>
               <p className="text-xs text-muted-foreground mb-2">{reptile.species}</p>
 
-              {/* Quick stats row */}
-              <div className="flex items-center gap-3 text-xs">
+              {/* Quick stats row - min-h-6 ensures consistent height with/without NextFeedingIndicator */}
+              <div className="flex items-center gap-3 text-xs min-h-6">
                 <div className="flex items-center gap-1">
                   <span className={lastFed ? 'text-primary' : 'text-muted-foreground'}>🍽️</span>
                   <span className="text-muted-foreground">{getLastFedDisplay()}</span>
