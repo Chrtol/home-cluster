@@ -36,13 +36,28 @@ async def get_my_notification_settings(
 
     if not settings:
         # Create default settings for user
-        settings = NotificationSettings(user_id=current_user.id)
-        db.add(settings)
-        await db.flush()
-        # Create in-app channel for new settings
-        await ensure_in_app_channel(db, settings.id)
-        await db.commit()
-        await db.refresh(settings)
+        # Handle race condition where settings were created by another request
+        try:
+            settings = NotificationSettings(user_id=current_user.id)
+            db.add(settings)
+            await db.flush()
+            # Create in-app channel for new settings
+            await ensure_in_app_channel(db, settings.id)
+            await db.commit()
+            await db.refresh(settings)
+        except IntegrityError:
+            # Settings were created by another request - rollback and re-query
+            await db.rollback()
+            logger.info(f"Race condition detected for user {current_user.id}, re-querying settings")
+            result = await db.execute(
+                select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
+            )
+            settings = result.scalars().first()
+            if not settings:
+                raise HTTPException(status_code=500, detail="Failed to create or retrieve notification settings")
+            # Ensure in-app channel exists
+            await ensure_in_app_channel(db, settings.id)
+            await db.commit()
     else:
         # Ensure in-app channel exists (for users created before this feature)
         await ensure_in_app_channel(db, settings.id)
