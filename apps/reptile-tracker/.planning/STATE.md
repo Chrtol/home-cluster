@@ -3,9 +3,9 @@
 ## Current Position
 
 **Phase:** 24 of 25 (Weight Change Alerts)
-**Plan:** 1.5 of 4
+**Plan:** 2 of 4 complete
 **Status:** In progress
-**Last activity:** 2026-02-15 - Completed 24-01.5 (template system bug fixes and UX improvements)
+**Last activity:** 2026-02-15 - Completed 24-02 (weight alert delivery integration)
 
 ### Progress
 ```
@@ -13,7 +13,7 @@ Phase 20: Complete
 Phase 21: Complete (celebration animations)
 Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
 Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04 ✓)
-Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02, 24-03, 24-04)
+Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02 ✓, 24-03, 24-04)
 ```
 
 ---
@@ -65,6 +65,9 @@ Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02, 24-0
 | 24-01 | 7-day frequency cap per reptile | Weekly cap prevents notification spam while allowing timely alerts | Max 1 weight alert per reptile per 7 days |
 | 24-01 | Baseline is most recent previous weight log | Simple and accurate comparison for detecting recent changes | First weight log never triggers alert (no baseline to compare) |
 | 24-01 | Division by zero handling in calculate_weight_change | Prevents crashes if baseline weight is 0 | Treats 0 baseline as 100% change if current weight > 0 |
+| 24-02 | Queue alerts via Celery for async delivery | Decouples weight logging from notification delivery, prevents blocking | Non-blocking weight log creation |
+| 24-02 | Daily sweep job at 4 AM UTC | Safety net for missed alerts, runs after instance maintenance (3 AM) | Catches edge cases where on-creation trigger failed |
+| 24-02 | Gold/amber color for Discord embeds | Health-related alerts use warm warning colors (not critical red) | Visually distinct from schedule reminders (blue) and overdue alerts (red) |
 
 ---
 
@@ -108,8 +111,11 @@ Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02, 24-0
 - `backend/migrations/versions/0087_add_digest_channel_id.py` - Alembic migration for digest channel (23-04)
 - `backend/migrations/versions/0088_add_weekly_planner_time.py` - Alembic migration for weekly planner time (23-03 fix)
 - `backend/migrations/versions/0089_add_weight_alert_fields.py` - Alembic migration for weight alert fields (24-01)
+- `backend/migrations/versions/0090_add_weight_change_alert_template.py` - Alembic migration for weight_change_alert template (24-02)
 - `backend/app/scheduler/weight_alerts.py` - Weight change detection and frequency cap tracking (24-01)
-- `backend/app/notifications.py` - Notification service with planner trigger types (23-02) and template variables
+- `backend/app/celery_tasks.py` - Weight alert Celery task with template rendering (24-02)
+- `backend/app/routers/weight.py` - Weight log POST endpoint with alert check integration (24-02)
+- `backend/app/notifications.py` - Notification service with weight_change_alert trigger type (24-02) and template variables
 - `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (22-03)
 - `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
 - `frontend/src/pages/ScheduleForm.jsx` - Smart Notifications section UI (22-05)
@@ -120,16 +126,16 @@ Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02, 24-0
 
 ## Blockers & Concerns
 
-None currently. Phase 24 plan 01 complete - data layer and detection logic ready for notification integration.
+None currently. Phase 24 plan 02 complete - notification delivery and templates integrated.
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-15
-**Stopped at:** Phase 24 plan 01.5 complete - template system bug fixes and UX improvements
-**Resume from:** Phase 24 plan 02 (notification template and delivery)
-**Resume command:** `/gsd:execute-plan 24-02`
+**Stopped at:** Phase 24 plan 02 complete - weight alert delivery integration
+**Resume from:** Phase 24 plan 03 (testing and refinement)
+**Resume command:** `/gsd:execute-plan 24-03`
 
 ---
 
@@ -174,6 +180,11 @@ None currently. Phase 24 plan 01 complete - data layer and detection logic ready
 | 24-01 | Migration 0089 | Weight alert fields on Reptile model and WeightAlertTracking table |
 | 24-01 | weight_alerts.py module | Weight change detection with species-specific thresholds and baseline comparison |
 | 24-01 | Species threshold defaults | Crested Gecko: 5%, Ball Python: 15%, Leopard Gecko: 8%, Bearded Dragon/Corn Snake: 10-12% |
+| 24-02 | send_weight_change_alert_task Celery task | Async notification delivery via template system |
+| 24-02 | Migration 0090 | Default weight_change_alert template |
+| 24-02 | POST weight log alert check | Triggers check_weight_change_alert on creation, queues Celery task |
+| 24-02 | daily_weight_alert_sweep job | 4 AM UTC safety net for missed alerts |
+| 24-02 | weight_change_alert Discord color | Gold/amber (15844367) for health-related alerts |
 
 ---
 
@@ -229,18 +240,23 @@ Plans completed:
 - Added live preview panel to template editor modal
 - Implemented Escape key handler for modal dismissal
 
-**Plan 24-02:** Next - Notification template and delivery
-**Plan 24-03:** Pending - Weight log endpoint integration
+**Plan 24-02:** Complete - Notification template and delivery
+- send_weight_change_alert_task Celery task with template rendering
+- POST weight log endpoint integration with alert check
+- Default weight_change_alert template via migration 0090
+- Daily sweep job at 4 AM UTC for safety net
+
+**Plan 24-03:** Next - Testing and refinement
 **Plan 24-04:** Pending - Frontend UI configuration
 
 ---
 
 ## Next Steps
 
-1. Execute plan 24-02 (notification template and delivery system)
-2. Test weight alert detection with mock data
-3. Integrate with weight log creation endpoint
+1. Execute plan 24-03 (testing and refinement)
+2. Test end-to-end weight alert flow (creation → detection → notification)
+3. Verify template rendering and multi-channel delivery
 
 ---
 
-*Last updated: 2026-02-15T14:10:53Z*
+*Last updated: 2026-02-15T14:18:29Z*
