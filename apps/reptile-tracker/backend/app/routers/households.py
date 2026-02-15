@@ -36,6 +36,42 @@ async def get_my_households(db: AsyncSession = Depends(get_db), user=Depends(get
     return households
 
 
+@router.get("/current/members")
+async def get_current_household_members(db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+    """Get all members of the user's current (first) household"""
+    # Get user's first household
+    household_result = await db.execute(
+        select(models.household_members.c.household_id)
+        .where(models.household_members.c.user_id == user.id)
+        .limit(1)
+    )
+    household_row = household_result.first()
+    if not household_row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not in any household")
+
+    household_id = household_row[0]
+
+    # Get all members with user info
+    result = await db.execute(
+        select(models.User, models.household_members.c.access_level, models.household_members.c.joined_at)
+        .join(models.household_members, models.User.id == models.household_members.c.user_id)
+        .where(models.household_members.c.household_id == household_id)
+    )
+    members = result.all()
+
+    return [
+        {
+            "id": member[0].id,
+            "user_id": member[0].id,
+            "name": member[0].name,
+            "email": member[0].email,
+            "access_level": member[1].value if hasattr(member[1], 'value') else str(member[1]),
+            "joined_at": member[2]
+        }
+        for member in members
+    ]
+
+
 @router.get("/{household_id}/members")
 async def get_household_members(household_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     """Get all members of a household"""
