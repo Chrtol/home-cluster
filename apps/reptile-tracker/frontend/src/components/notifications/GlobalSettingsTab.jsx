@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getUserTimeFormat, getDayNames, getDayNumbers, getUserTimezone } from '../utils/dateFormatting';
+import { getUserTimeFormat, getDayNames, getDayNumbers, getUserTimezone } from '../../utils/dateFormatting';
 import { TimePicker } from '@/components/ui/time-picker';
 
 function GlobalSettingsTab() {
