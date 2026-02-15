@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, List, Plus, Calendar, BarChart3, LogOut, Menu, X, Settings, Utensils, Activity, ChevronDown, Droplets, BookTemplate, RefreshCw, ChevronLeft, ChevronRight, Bell } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from './NotificationBell'
@@ -32,6 +32,7 @@ const getPageTitle = (pathname) => {
   if (pathname === '/schedule-templates') return 'Schedule Templates'
   if (pathname === '/supplement-rotations') return 'Supplement Rotations'
   if (pathname === '/notifications') return 'Notifications'
+  if (pathname === '/notification-history') return 'Notification History'
   if (pathname === '/settings') return 'Settings'
   if (pathname === '/household') return 'Household'
   return null
@@ -119,6 +120,7 @@ export default function Layout({ user, onLogout }) {
     { path: '/reptiles', icon: List, label: 'Reptiles', showOnMobile: true },
     { path: '/foods', icon: Utensils, label: 'Foods', showOnMobile: false },
     { path: '/stats', icon: BarChart3, label: 'Statistics', showOnMobile: true },
+    { path: '/notifications', icon: Bell, label: 'Notifications', showOnMobile: true },
   ]
 
   const schedulesItems = [

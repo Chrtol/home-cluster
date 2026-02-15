@@ -26,6 +26,7 @@ import ScheduleTemplates from './pages/ScheduleTemplates';
 import ScheduleTemplateForm from './pages/ScheduleTemplateForm';
 import SupplementRotations from './pages/SupplementRotations';
 import NotificationHistory from './pages/NotificationHistory';
+import Notifications from './pages/Notifications';
 import ActivityHistory from './pages/ActivityHistory';
 import { CelebrationProvider } from './contexts/CelebrationContext';
 
@@ -191,7 +192,8 @@ function App() {
               <Route path="/measurements" element={<Measurements />} />
               <Route path="/measurements/:reptileId" element={<Measurements />} />
               <Route path="/foods" element={<FoodManagement />} />
-              <Route path="/notifications" element={<NotificationHistory />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/notification-history" element={<NotificationHistory />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           ) : (
