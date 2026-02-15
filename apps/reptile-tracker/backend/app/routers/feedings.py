@@ -262,22 +262,14 @@ async def create_feeding(
 
         if completion:
             from app.services.user_streak_service import get_completion_attribution
-            # Use sync version of get_completion_attribution by passing sync db
-            # Note: The service expects sync Session, but we have AsyncSession
-            # We'll need to use the sync connection within the async context
-            from sqlalchemy.orm import Session as SyncSession
-            sync_db = SyncSession(bind=db.get_bind())
-            try:
-                attribution_data = get_completion_attribution(
-                    sync_db,
-                    schedule_id=completion.schedule_id,
-                    reptile_id=feeding.reptile_id,
-                    completed_by_user_id=current_user.id
-                )
-                if attribution_data:
-                    attribution = attribution_data
-            finally:
-                sync_db.close()
+            attribution_data = await get_completion_attribution(
+                db,
+                schedule_id=completion.schedule_id,
+                reptile_id=feeding.reptile_id,
+                completed_by_user_id=current_user.id
+            )
+            if attribution_data:
+                attribution = attribution_data
 
     # Process requirement-based schedules (weekly quota tracking)
     # Determine food category from the feeding

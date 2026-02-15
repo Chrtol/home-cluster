@@ -90,19 +90,14 @@ async def create_misting_log(
 
         if completion:
             from app.services.user_streak_service import get_completion_attribution
-            from sqlalchemy.orm import Session as SyncSession
-            sync_db = SyncSession(bind=db.get_bind())
-            try:
-                attribution_data = get_completion_attribution(
-                    sync_db,
-                    schedule_id=completion.schedule_id,
-                    reptile_id=log.reptile_id,
-                    completed_by_user_id=current_user.id
-                )
-                if attribution_data:
-                    attribution = attribution_data
-            finally:
-                sync_db.close()
+            attribution_data = await get_completion_attribution(
+                db,
+                schedule_id=completion.schedule_id,
+                reptile_id=log.reptile_id,
+                completed_by_user_id=current_user.id
+            )
+            if attribution_data:
+                attribution = attribution_data
 
     # Return as dict with attribution
     return {

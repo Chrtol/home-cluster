@@ -113,6 +113,27 @@ async def create_weight_log(
     # Try to assign to a matching schedule
     await assign_weighing_to_schedule(db, new_log)
 
+    # Calculate attribution if weight log was assigned to a schedule
+    attribution = None
+    if new_log.schedule_completion_id:
+        from app.models import ScheduleCompletion as ScheduleCompletionModel
+        from sqlalchemy import select as sa_select
+        completion_result = await db.execute(
+            sa_select(ScheduleCompletionModel).where(ScheduleCompletionModel.id == new_log.schedule_completion_id)
+        )
+        completion = completion_result.scalar_one_or_none()
+
+        if completion:
+            from app.services.user_streak_service import get_completion_attribution
+            attribution_data = await get_completion_attribution(
+                db,
+                schedule_id=completion.schedule_id,
+                reptile_id=log.reptile_id,
+                completed_by_user_id=current_user.id
+            )
+            if attribution_data:
+                attribution = attribution_data
+
     await db.commit()
     await db.refresh(new_log)
 
@@ -139,7 +160,18 @@ async def create_weight_log(
         # Don't fail the weight log creation if alert check fails
         logger.error(f"Failed to check weight change alert: {e}", exc_info=True)
 
-    return new_log
+    # Return with attribution
+    return {
+        "id": new_log.id,
+        "reptile_id": new_log.reptile_id,
+        "weight_grams": new_log.weight_grams,
+        "measured_at": new_log.measured_at,
+        "notes": new_log.notes,
+        "schedule_completion_id": new_log.schedule_completion_id,
+        "logged_by_user_id": new_log.logged_by_user_id,
+        "logged_by": new_log.logged_by,
+        "attribution": attribution,
+    }
 
 @router.patch("/{log_id}", response_model=WeightLogSchema)
 async def update_weight_log(

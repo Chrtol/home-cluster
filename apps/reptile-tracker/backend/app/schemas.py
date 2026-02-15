@@ -291,6 +291,7 @@ class WeightLog(WeightLogBase):
     schedule_completion_id: Optional[int] = None
     logged_by_user_id: Optional[int] = None
     logged_by: Optional[UserSimple] = None
+    attribution: Optional["CompletionAttributionResponse"] = None
 
     class Config:
         from_attributes = True
