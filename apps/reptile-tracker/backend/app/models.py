@@ -527,9 +527,10 @@ class Schedule(Base):
     follow_up_enabled = Column(Boolean, default=False, nullable=False)
     follow_up_delay_minutes = Column(Integer, nullable=True)  # e.g., 30 minutes
 
-    # Window expiry alert: notify when window is closing (offset from window start)
+    # Window expiry alert: notify when window is closing
     expiry_alert_enabled = Column(Boolean, default=False, nullable=False)
-    expiry_alert_offset_minutes = Column(Integer, nullable=True)  # From window start, e.g., 45
+    expiry_alert_offset_minutes = Column(Integer, nullable=True)  # DEPRECATED: use expiry_alert_time instead
+    expiry_alert_time = Column(Time, nullable=True)  # Specific time to send expiry alert (e.g., 19:00)
 
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
@@ -784,6 +785,8 @@ class NotificationSettings(Base):
 
     # Weight alert settings (Phase 24)
     weight_alert_channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="SET NULL"), nullable=True)  # Which channel receives weight alerts (null = all enabled channels)
+    weight_alert_cooldown_enabled = Column(Boolean, default=True, nullable=False)  # Enable cooldown between alerts
+    weight_alert_cooldown_days = Column(Integer, default=7, nullable=False)  # Days between alerts (global setting)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

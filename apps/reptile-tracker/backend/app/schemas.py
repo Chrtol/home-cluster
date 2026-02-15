@@ -503,7 +503,8 @@ class ScheduleBase(BaseModel):
     follow_up_enabled: bool = False  # Send follow-up reminder if task not completed
     follow_up_delay_minutes: Optional[int] = None  # Minutes after main reminder (e.g., 30)
     expiry_alert_enabled: bool = False  # Send alert before time window expires
-    expiry_alert_offset_minutes: Optional[int] = None  # Minutes from window start (e.g., 45)
+    expiry_alert_offset_minutes: Optional[int] = None  # DEPRECATED: use expiry_alert_time instead
+    expiry_alert_time: Optional[time] = None  # Specific time to send expiry alert (e.g., 19:00)
 
 
 class ScheduleCreate(ScheduleBase):
@@ -562,7 +563,8 @@ class ScheduleUpdate(BaseModel):
     follow_up_enabled: Optional[bool] = None
     follow_up_delay_minutes: Optional[int] = None
     expiry_alert_enabled: Optional[bool] = None
-    expiry_alert_offset_minutes: Optional[int] = None
+    expiry_alert_offset_minutes: Optional[int] = None  # DEPRECATED
+    expiry_alert_time: Optional[time] = None  # Specific time to send expiry alert
 
 
 class Schedule(ScheduleBase):
@@ -1075,6 +1077,8 @@ class NotificationSettingsBase(BaseModel):
 
     # Weight alert settings (Phase 24)
     weight_alert_channel_id: Optional[int] = None  # Which channel receives weight alerts (null = all enabled channels)
+    weight_alert_cooldown_enabled: bool = True  # Enable cooldown between alerts (global setting)
+    weight_alert_cooldown_days: int = 7  # Days between alerts (global setting)
 
 
 class NotificationSettingsUpdate(BaseModel):
@@ -1103,6 +1107,8 @@ class NotificationSettingsUpdate(BaseModel):
 
     # Weight alert settings (Phase 24)
     weight_alert_channel_id: Optional[int] = None  # Which channel receives weight alerts (null = all enabled channels)
+    weight_alert_cooldown_enabled: Optional[bool] = None  # Enable cooldown between alerts (global setting)
+    weight_alert_cooldown_days: Optional[int] = None  # Days between alerts (global setting)
 
 
 class NotificationSettingsSchema(NotificationSettingsBase):

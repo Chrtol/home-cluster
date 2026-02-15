@@ -274,11 +274,13 @@ async def _schedule_single_notification_job(
 
         logger.debug(f"Scheduled notification job {job_id} for {reminder_time_utc} UTC ({reminder_time_local} local)")
 
-        # Schedule expiry alert if enabled and time window is configured
-        if (schedule.expiry_alert_enabled and
-            schedule.expiry_alert_offset_minutes is not None and
-            schedule.time_window_enabled and
-            schedule.earliest_time):
+        # Schedule expiry alert if enabled and time is configured
+        # Supports: 1) explicit expiry_alert_time, or 2) legacy offset from time window
+        has_expiry_time = schedule.expiry_alert_time is not None
+        has_legacy_offset = (schedule.expiry_alert_offset_minutes is not None and
+                             schedule.time_window_enabled and
+                             schedule.earliest_time)
+        if schedule.expiry_alert_enabled and (has_expiry_time or has_legacy_offset):
             await schedule_expiry_alert(
                 scheduler=scheduler,
                 db=db,
@@ -383,11 +385,11 @@ async def schedule_expiry_alert(
     scheduled_date: py_date
 ):
     """
-    Schedule expiry alert at window_start (earliest_time) + expiry_alert_offset_minutes.
+    Schedule expiry alert at a specific time (expiry_alert_time).
     Called during initial notification scheduling (alongside main reminder).
 
-    Per user decision: Offset is from window START (earliest_time), not end.
-    Allow offsets that extend outside window for flexibility.
+    Uses expiry_alert_time if set, otherwise falls back to legacy
+    expiry_alert_offset_minutes for backward compatibility.
 
     Args:
         scheduler: APScheduler instance
@@ -401,19 +403,20 @@ async def schedule_expiry_alert(
     from .core import execute_expiry_alert
 
     try:
-        # Expiry alert requires time window to be enabled and earliest_time set
-        if not schedule.time_window_enabled or not schedule.earliest_time:
-            logger.debug(f"Schedule {schedule.id} has no time window configured, skipping expiry alert")
-            return
-
-        if not schedule.expiry_alert_offset_minutes:
-            logger.debug(f"Schedule {schedule.id} has no expiry alert offset, skipping expiry alert")
-            return
-
-        # Calculate expiry alert time: earliest_time + offset
         user_tz = ZoneInfo(user.timezone if user.timezone else "UTC")
-        window_start_local = datetime.combine(scheduled_date, schedule.earliest_time, tzinfo=user_tz)
-        expiry_alert_time_local = window_start_local + timedelta(minutes=schedule.expiry_alert_offset_minutes)
+
+        # Determine expiry alert time: prefer explicit time, fall back to offset
+        if schedule.expiry_alert_time:
+            # New approach: use specific time
+            expiry_alert_time_local = datetime.combine(scheduled_date, schedule.expiry_alert_time, tzinfo=user_tz)
+        elif schedule.expiry_alert_offset_minutes and schedule.time_window_enabled and schedule.earliest_time:
+            # Legacy approach: calculate from window start + offset
+            window_start_local = datetime.combine(scheduled_date, schedule.earliest_time, tzinfo=user_tz)
+            expiry_alert_time_local = window_start_local + timedelta(minutes=schedule.expiry_alert_offset_minutes)
+        else:
+            logger.debug(f"Schedule {schedule.id} has no expiry alert time configured, skipping expiry alert")
+            return
+
         expiry_alert_time_utc = expiry_alert_time_local.astimezone(timezone.utc)
 
         now_utc = datetime.now(timezone.utc)

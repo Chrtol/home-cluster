@@ -87,7 +87,7 @@ function ScheduleForm() {
   const [followUpEnabled, setFollowUpEnabled] = useState(false);
   const [followUpDelayMinutes, setFollowUpDelayMinutes] = useState(30);
   const [expiryAlertEnabled, setExpiryAlertEnabled] = useState(false);
-  const [expiryAlertOffsetMinutes, setExpiryAlertOffsetMinutes] = useState(45);
+  const [expiryAlertTime, setExpiryAlertTime] = useState('');
 
   // Time picker state for earliest time
   const [earliestHours, setEarliestHours] = useState(9);
@@ -278,7 +278,7 @@ function ScheduleForm() {
       setFollowUpEnabled(schedule.follow_up_enabled || false);
       setFollowUpDelayMinutes(schedule.follow_up_delay_minutes || 30);
       setExpiryAlertEnabled(schedule.expiry_alert_enabled || false);
-      setExpiryAlertOffsetMinutes(schedule.expiry_alert_offset_minutes || 45);
+      setExpiryAlertTime(schedule.expiry_alert_time || '');
       // Open the section if any smart notifications are enabled
       if (schedule.follow_up_enabled || schedule.expiry_alert_enabled) {
         setSmartNotificationsOpen(true);
@@ -504,7 +504,7 @@ function ScheduleForm() {
       scheduleData.follow_up_enabled = followUpEnabled;
       scheduleData.follow_up_delay_minutes = followUpEnabled ? parseInt(followUpDelayMinutes) || 30 : null;
       scheduleData.expiry_alert_enabled = expiryAlertEnabled;
-      scheduleData.expiry_alert_offset_minutes = expiryAlertEnabled ? parseInt(expiryAlertOffsetMinutes) || 45 : null;
+      scheduleData.expiry_alert_time = expiryAlertEnabled ? expiryAlertTime : null;
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
@@ -1419,38 +1419,17 @@ function ScheduleForm() {
 
                       {expiryAlertEnabled && (
                         <div className="pl-6 border-l-2 border-primary space-y-2">
-                          <Label htmlFor="expiryAlertOffsetMinutes">Minutes from window start</Label>
+                          <Label htmlFor="expiryAlertTime">Alert Time</Label>
                           <Input
-                            id="expiryAlertOffsetMinutes"
-                            type="number"
-                            value={expiryAlertOffsetMinutes}
-                            onChange={(e) => setExpiryAlertOffsetMinutes(e.target.value)}
+                            id="expiryAlertTime"
+                            type="time"
+                            value={expiryAlertTime}
+                            onChange={(e) => setExpiryAlertTime(e.target.value)}
                             className="w-32"
-                            min="5"
                           />
                           <p className="text-xs text-muted-foreground">
-                            Alert will fire at window start + {expiryAlertOffsetMinutes} minutes
+                            Set the specific time to receive the expiry alert
                           </p>
-
-                          {/* Warning if offset exceeds window duration */}
-                          {earliestTime && latestTime && (() => {
-                            const [earlyH, earlyM] = earliestTime.split(':').map(Number);
-                            const [lateH, lateM] = latestTime.split(':').map(Number);
-                            const windowMinutes = (lateH * 60 + lateM) - (earlyH * 60 + earlyM);
-                            const offsetNum = parseInt(expiryAlertOffsetMinutes) || 0;
-                            if (windowMinutes > 0 && offsetNum > windowMinutes) {
-                              return (
-                                <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded flex items-start gap-2">
-                                  <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                  <p className="text-xs text-amber-800 dark:text-amber-200">
-                                    The offset ({offsetNum} min) exceeds the window duration ({windowMinutes} min).
-                                    The alert will fire after the window closes.
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
                         </div>
                       )}
                     </div>

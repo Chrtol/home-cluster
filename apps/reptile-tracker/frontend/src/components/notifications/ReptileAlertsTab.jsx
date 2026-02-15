@@ -317,7 +317,7 @@ function ReptileAlertsTab() {
             • Thresholds are age-aware: hatchlings have higher gain thresholds since they grow rapidly, adults have lower thresholds
           </p>
           <p>
-            • Alerts have a 7-day cooldown to prevent notification spam during normal growth periods
+            • Cooldown period prevents notification spam — configure this in Global Settings
           </p>
           <p>
             • You can customize thresholds per reptile to account for individual growth patterns or health conditions

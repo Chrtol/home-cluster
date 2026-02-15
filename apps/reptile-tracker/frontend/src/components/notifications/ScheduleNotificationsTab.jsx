@@ -84,7 +84,7 @@ function ScheduleNotificationsTab() {
         follow_up_enabled: schedule.follow_up_enabled ?? false,
         follow_up_delay_minutes: schedule.follow_up_delay_minutes || 30,
         expiry_alert_enabled: schedule.expiry_alert_enabled ?? false,
-        expiry_alert_offset_minutes: schedule.expiry_alert_offset_minutes || 45,
+        expiry_alert_time: schedule.expiry_alert_time || '',
       });
     }
   };
@@ -121,7 +121,7 @@ function ScheduleNotificationsTab() {
         follow_up_enabled: editingData.follow_up_enabled,
         follow_up_delay_minutes: editingData.follow_up_enabled ? parseInt(editingData.follow_up_delay_minutes) : null,
         expiry_alert_enabled: editingData.expiry_alert_enabled,
-        expiry_alert_offset_minutes: editingData.expiry_alert_enabled ? parseInt(editingData.expiry_alert_offset_minutes) : null,
+        expiry_alert_time: editingData.expiry_alert_enabled ? editingData.expiry_alert_time : null,
       };
 
       const res = await axios.patch(`/api/schedules/${scheduleId}`, updates);
@@ -501,17 +501,15 @@ function ScheduleNotificationsTab() {
                                             <div className="ml-7">
                                               <div className="flex items-center gap-2">
                                                 <input
-                                                  type="number"
-                                                  value={editingData.expiry_alert_offset_minutes || 45}
+                                                  type="time"
+                                                  value={editingData.expiry_alert_time || ''}
                                                   onChange={(e) => setEditingData(prev => ({
                                                     ...prev,
-                                                    expiry_alert_offset_minutes: e.target.value
+                                                    expiry_alert_time: e.target.value
                                                   }))}
-                                                  min="5"
-                                                  max="480"
-                                                  className="input-field w-20"
+                                                  className="input-field w-32"
                                                 />
-                                                <span className="text-sm text-muted-foreground">minutes after window opens</span>
+                                                <span className="text-sm text-muted-foreground">alert time</span>
                                               </div>
                                             </div>
                                           )}

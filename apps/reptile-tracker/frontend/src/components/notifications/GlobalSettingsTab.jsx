@@ -22,6 +22,10 @@ function GlobalSettingsTab() {
   const [frequencyCapPerReptile, setFrequencyCapPerReptile] = useState(5);
   const [frequencyCapMode, setFrequencyCapMode] = useState('silent');
 
+  // Weight alert cooldown settings (Phase 24)
+  const [weightAlertCooldownEnabled, setWeightAlertCooldownEnabled] = useState(true);
+  const [weightAlertCooldownDays, setWeightAlertCooldownDays] = useState(7);
+
   // Planner digest settings (Phase 23)
   const [dailyPlannerEnabled, setDailyPlannerEnabled] = useState(false);
   const [dailyPlannerTime, setDailyPlannerTime] = useState('08:00');
@@ -67,6 +71,10 @@ function GlobalSettingsTab() {
           setFrequencyCapEnabled(settingsRes.data.frequency_cap_enabled !== undefined ? settingsRes.data.frequency_cap_enabled : true);
           setFrequencyCapPerReptile(settingsRes.data.frequency_cap_per_reptile !== undefined ? settingsRes.data.frequency_cap_per_reptile : 5);
           setFrequencyCapMode(settingsRes.data.frequency_cap_mode || 'silent');
+
+          // Load weight alert cooldown settings (Phase 24)
+          setWeightAlertCooldownEnabled(settingsRes.data.weight_alert_cooldown_enabled !== undefined ? settingsRes.data.weight_alert_cooldown_enabled : true);
+          setWeightAlertCooldownDays(settingsRes.data.weight_alert_cooldown_days !== undefined ? settingsRes.data.weight_alert_cooldown_days : 7);
 
           // Load planner digest settings (Phase 23)
           setDailyPlannerEnabled(settingsRes.data.daily_planner_enabled || false);
@@ -225,7 +233,10 @@ function GlobalSettingsTab() {
         // Frequency cap settings (Phase 22)
         frequency_cap_enabled: frequencyCapEnabled,
         frequency_cap_per_reptile: parseInt(frequencyCapPerReptile) || 5,
-        frequency_cap_mode: frequencyCapMode
+        frequency_cap_mode: frequencyCapMode,
+        // Weight alert cooldown settings (Phase 24)
+        weight_alert_cooldown_enabled: weightAlertCooldownEnabled,
+        weight_alert_cooldown_days: parseInt(weightAlertCooldownDays) || 7
       });
 
       setSuccess('Notification preferences saved!');
@@ -522,6 +533,60 @@ function GlobalSettingsTab() {
                     </div>
                   </label>
                 </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handleSavePreferences}
+            disabled={savingPreferences}
+            className="btn-primary mt-2"
+          >
+            {savingPreferences ? 'Saving...' : 'Save Preferences'}
+          </button>
+        </div>
+      </div>
+
+      {/* Weight Alert Cooldown - Phase 24 */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Weight Alert Cooldown</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Prevent notification spam by limiting how often weight alerts are sent for each reptile.
+        </p>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={weightAlertCooldownEnabled}
+              onChange={(e) => setWeightAlertCooldownEnabled(e.target.checked)}
+              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-foreground">Enable Cooldown</div>
+              <div className="text-sm text-muted-foreground">
+                After a weight alert is sent, wait before sending another for the same reptile
+              </div>
+            </div>
+          </label>
+
+          {weightAlertCooldownEnabled && (
+            <div className="ml-7 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Cooldown Period (days)
+                </label>
+                <input
+                  type="number"
+                  value={weightAlertCooldownDays}
+                  onChange={(e) => setWeightAlertCooldownDays(e.target.value)}
+                  min="1"
+                  max="90"
+                  className="input-field w-24"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Minimum days between weight alerts for the same reptile (1-90)
+                </p>
               </div>
             </div>
           )}

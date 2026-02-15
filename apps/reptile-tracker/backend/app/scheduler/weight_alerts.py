@@ -5,7 +5,7 @@ Key concepts:
 - Alerts fire when weight change exceeds threshold percentage
 - Separate thresholds for gain vs loss
 - Age-aware defaults (juveniles vs adults)
-- Weekly frequency cap (max 1 alert per reptile per 7 days)
+- Configurable cooldown period (default 7 days, can be disabled per reptile)
 - Baseline = most recent previous weight log
 - First weight log skips alert (no baseline to compare)
 - Only triggers on creation, not updates
@@ -16,7 +16,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Reptile, WeightLog, WeightAlertTracking, User
+from app.models import Reptile, WeightLog, WeightAlertTracking, User, NotificationSettings, reptile_access, AccessLevel
 
 logger = logging.getLogger(__name__)
 
@@ -126,14 +126,26 @@ async def get_baseline_weight(
 
 async def is_weight_alert_cap_reached(
     db: AsyncSession,
-    reptile_id: int
+    reptile_id: int,
+    cooldown_enabled: bool = True,
+    cooldown_days: int = 7
 ) -> bool:
     """
-    Check if weight alert was sent within last 7 days.
+    Check if weight alert was sent within the cooldown period.
 
-    Weekly cap prevents notification spam while allowing
+    Configurable cooldown prevents notification spam while allowing
     timely alerts for significant changes.
+
+    Args:
+        db: Database session
+        reptile_id: ID of the reptile
+        cooldown_enabled: Whether cooldown is enabled (default True)
+        cooldown_days: Number of days for cooldown period (default 7)
     """
+    # If cooldown is disabled, never cap
+    if not cooldown_enabled:
+        return False
+
     result = await db.execute(
         select(WeightAlertTracking.last_alert_at)
         .where(WeightAlertTracking.reptile_id == reptile_id)
@@ -143,8 +155,8 @@ async def is_weight_alert_cap_reached(
     if not last_alert:
         return False
 
-    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
-    return last_alert > week_ago
+    cooldown_cutoff = datetime.now(timezone.utc) - timedelta(days=cooldown_days)
+    return last_alert > cooldown_cutoff
 
 
 async def update_weight_alert_tracking(
@@ -279,11 +291,35 @@ async def check_weight_change_alert(
         )
         return None
 
-    # Check frequency cap
-    if await is_weight_alert_cap_reached(db, reptile.id):
+    # Check frequency cap (using global cooldown settings from user's NotificationSettings)
+    # Get an owner of this reptile to check their global settings
+    owner_result = await db.execute(
+        select(User.id)
+        .select_from(reptile_access)
+        .join(User, User.id == reptile_access.c.user_id)
+        .where(reptile_access.c.reptile_id == reptile.id)
+        .where(reptile_access.c.access_level == AccessLevel.OWNER)
+        .limit(1)
+    )
+    owner_id = owner_result.scalar_one_or_none()
+
+    # Get notification settings for cooldown configuration
+    cooldown_enabled = True
+    cooldown_days = 7
+    if owner_id:
+        settings_result = await db.execute(
+            select(NotificationSettings)
+            .where(NotificationSettings.user_id == owner_id)
+        )
+        settings = settings_result.scalar_one_or_none()
+        if settings:
+            cooldown_enabled = settings.weight_alert_cooldown_enabled if hasattr(settings, 'weight_alert_cooldown_enabled') else True
+            cooldown_days = settings.weight_alert_cooldown_days if hasattr(settings, 'weight_alert_cooldown_days') else 7
+
+    if await is_weight_alert_cap_reached(db, reptile.id, cooldown_enabled, cooldown_days):
         logger.info(
-            f"Weight alert frequency cap reached for reptile {reptile.id} "
-            f"(alert sent within 7 days)"
+            f"Weight alert cooldown active for reptile {reptile.id} "
+            f"(alert sent within {cooldown_days} days)"
         )
         return None
 
