@@ -214,6 +214,7 @@ const ReptileStatusCard = ({
               reptile={reptile}
               size={isCompact && !isExpanded ? 'md' : 'lg'}
               className="!rounded-xl"
+              showBorder={!getRingColor()}
             />
           </div>
           {/* Status dot */}

@@ -15,6 +15,7 @@ import PartyHatIcon from './PartyHatIcon';
  * - className: Additional CSS classes
  * - showFallbackIcon: Whether to show icon when no avatar (default true)
  * - dateOfBirth: Pass date_of_birth for birthday detection (optional, falls back to reptile.date_of_birth)
+ * - showBorder: Whether to show the custom border color (default true, set false when parent applies task-status ring)
  */
 const ReptileAvatar = ({
   reptile,
@@ -22,6 +23,7 @@ const ReptileAvatar = ({
   className = '',
   showFallbackIcon = true,
   dateOfBirth = null,
+  showBorder = true,
 }) => {
   const [imageError, setImageError] = useState(false);
   const { celebrationsEnabled } = useCelebrations();
@@ -69,9 +71,7 @@ const ReptileAvatar = ({
     <div className="relative inline-block">
       <div
         className={`${sizeClass} rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 ${className}`}
-        style={{
-          boxShadow: `0 0 0 2px ${borderColor}`
-        }}
+        style={showBorder ? { boxShadow: `0 0 0 2px ${borderColor}` } : undefined}
         title={reptile?.name}
       >
         {hasAvatar ? (
