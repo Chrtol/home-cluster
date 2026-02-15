@@ -588,7 +588,6 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
               );
             })}
           </div>
-        </div>
       </div>
     </div>
   );
