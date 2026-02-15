@@ -1,6 +1,11 @@
 import { useSearchParams } from 'react-router-dom';
 import { Bell, FileText, Settings as SettingsIcon, AlertTriangle, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ChannelsTab from '../components/notifications/ChannelsTab';
+import TemplatesTab from '../components/notifications/TemplatesTab';
+import GlobalSettingsTab from '../components/notifications/GlobalSettingsTab';
+import ReptileAlertsTab from '../components/notifications/ReptileAlertsTab';
+import ScheduleNotificationsTab from '../components/notifications/ScheduleNotificationsTab';
 
 export default function Notifications() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,23 +47,23 @@ export default function Notifications() {
         </TabsList>
 
         <TabsContent value="channels">
-          <div className="text-muted-foreground">Channels tab - coming in Plan 02</div>
+          <ChannelsTab />
         </TabsContent>
 
         <TabsContent value="templates">
-          <div className="text-muted-foreground">Templates tab - coming in Plan 02</div>
+          <TemplatesTab />
         </TabsContent>
 
         <TabsContent value="global">
-          <div className="text-muted-foreground">Global Settings tab - coming in Plan 02</div>
+          <GlobalSettingsTab />
         </TabsContent>
 
         <TabsContent value="reptiles">
-          <div className="text-muted-foreground">Reptile Alerts tab - coming in Plan 02</div>
+          <ReptileAlertsTab />
         </TabsContent>
 
         <TabsContent value="schedules">
-          <div className="text-muted-foreground">Schedule Notifications tab - coming in Plan 02</div>
+          <ScheduleNotificationsTab />
         </TabsContent>
       </Tabs>
     </div>
