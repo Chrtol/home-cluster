@@ -54,7 +54,9 @@ export default function ResponsibilityManager({ reptileId, scheduleId = null }) 
 
       // Fetch current assignments
       const assignmentsRes = await axios.get(`/api/responsibilities/reptiles/${reptileId}`)
-      setAssignments(assignmentsRes.data.user_ids || [])
+      // API returns { assignments: [{ user_id, assigned_at, ... }], ... }
+      const userIds = (assignmentsRes.data.assignments || []).map(a => a.user_id)
+      setAssignments(userIds)
     } catch (err) {
       console.error('Failed to fetch responsibility data:', err)
     } finally {
