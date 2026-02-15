@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Flame } from 'lucide-react';
+import { Edit2, Trash2, Eye, EyeOff, Heart, Calendar, Ruler, Sun, FileText, Droplet, Scale, Activity, Upload as UploadIcon, Users, Flame, AlertTriangle } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateFormatting';
 import FeedingRotationManager from '../components/FeedingRotationManager';
 import ReptileAvatar from '../components/ReptileAvatar';
@@ -322,17 +322,6 @@ export default function ReptileDetail() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleWeightAlertToggle = async (enabled) => {
-    try {
-      await axios.patch(`/api/reptiles/${id}`, { weight_alerts_enabled: enabled });
-      setReptile({ ...reptile, weight_alerts_enabled: enabled });
-      showToast(enabled ? 'Weight alerts enabled' : 'Weight alerts disabled');
-    } catch (error) {
-      console.error('Failed to update weight alert setting:', error);
-      showToast('Failed to update setting');
-    }
-  };
-
   // Age-aware default thresholds (matches backend AGE_AWARE_DEFAULTS)
   const AGE_AWARE_DEFAULTS = {
     hatchling: { gain: 25, loss: 0 },
@@ -353,27 +342,6 @@ export default function ReptileDetail() {
 
   const getAgeAwareDefaults = () => {
     return AGE_AWARE_DEFAULTS[getAgeCategory()] || AGE_AWARE_DEFAULTS.adult;
-  };
-
-  const handleThresholdChange = async (type, value) => {
-    const threshold = value === '' ? null : parseInt(value, 10);
-    const fieldName = type === 'gain' ? 'weight_alert_gain_threshold_percent' : 'weight_alert_loss_threshold_percent';
-
-    // Validate range (loss can be 0 for "any loss"; gain up to 500% for babies)
-    const minVal = type === 'gain' ? 1 : 0;
-    const maxVal = type === 'gain' ? 500 : 100;
-    if (threshold !== null && (threshold < minVal || threshold > maxVal)) {
-      return;
-    }
-
-    try {
-      await axios.patch(`/api/reptiles/${id}`, { [fieldName]: threshold });
-      setReptile({ ...reptile, [fieldName]: threshold });
-      // No toast for threshold to avoid spam during typing
-    } catch (error) {
-      console.error(`Failed to update ${type} threshold:`, error);
-      showToast(`Failed to update ${type} threshold`);
-    }
   };
 
   const handleUpdateDefaultFood = async (field, foodId) => {
@@ -1136,96 +1104,51 @@ export default function ReptileDetail() {
         )}
       </div>
 
-      {/* Weight Alert Settings */}
-      <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
-        <h2 className="text-lg font-semibold mb-3 text-foreground flex items-center gap-2">
-          <Scale className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          Weight Change Alerts
-        </h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Get notified when weight changes exceed your threshold
-        </p>
+      {/* Weight Alert Settings - Read Only */}
+      <div className="bg-card/80 border border-border rounded-xl p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <AlertTriangle size={18} className="text-amber-500" />
+            Weight Alerts
+          </h3>
+          <Link
+            to={`/notifications?tab=reptiles&reptile=${reptile.id}`}
+            className="text-sm text-primary hover:underline flex items-center gap-1"
+          >
+            <Edit2 size={14} />
+            Edit
+          </Link>
+        </div>
 
-        {/* Enable/disable toggle */}
-        <label className="flex items-start gap-3 p-4 rounded-lg border-2 border-border bg-card/50 cursor-pointer hover:bg-secondary transition-colors mb-4">
-          <input
-            type="checkbox"
-            checked={reptile.weight_alerts_enabled || false}
-            onChange={(e) => handleWeightAlertToggle(e.target.checked)}
-            className="w-4 h-4 rounded mt-0.5"
-          />
-          <div className="flex-1">
-            <div className="font-medium text-foreground">Enable Weight Alerts</div>
-            <div className="text-sm text-muted-foreground">
-              Receive notifications for significant weight changes
-            </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Status</span>
+            <span className={reptile.weight_alerts_enabled ? 'text-green-500' : 'text-muted-foreground'}>
+              {reptile.weight_alerts_enabled ? 'Enabled' : 'Disabled'}
+            </span>
           </div>
-        </label>
 
-        {/* Threshold configuration - only show when enabled */}
-        {reptile.weight_alerts_enabled && (
-          <div className="space-y-4 pt-2 border-t border-border">
-            {/* Age category info */}
-            <p className="text-xs text-muted-foreground">
-              Age category: <span className="font-medium">{getAgeCategory()}</span> — defaults optimized for this life stage
-            </p>
-
-            {/* Gain threshold */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-foreground">
-                Weight Gain Threshold
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min="1"
-                  max="500"
-                  placeholder={getAgeAwareDefaults().gain}
-                  value={reptile.weight_alert_gain_threshold_percent || ''}
-                  onChange={(e) => handleThresholdChange('gain', e.target.value)}
-                  className="w-24 px-3 py-2 border border-border rounded-lg bg-card text-foreground"
-                />
-                <span className="text-sm text-muted-foreground">% increase</span>
+          {reptile.weight_alerts_enabled && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Gain threshold</span>
+                <span className="text-foreground">
+                  {reptile.weight_alert_gain_threshold_percent
+                    ? `${reptile.weight_alert_gain_threshold_percent}%`
+                    : `${getAgeAwareDefaults().gain}% (default)`}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {reptile.weight_alert_gain_threshold_percent
-                  ? `Custom: ${reptile.weight_alert_gain_threshold_percent}%`
-                  : `Default for ${getAgeCategory()}: ${getAgeAwareDefaults().gain}%`
-                }
-              </p>
-            </div>
-
-            {/* Loss threshold */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-foreground">
-                Weight Loss Threshold
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder={getAgeAwareDefaults().loss}
-                  value={reptile.weight_alert_loss_threshold_percent ?? ''}
-                  onChange={(e) => handleThresholdChange('loss', e.target.value)}
-                  className="w-24 px-3 py-2 border border-border rounded-lg bg-card text-foreground"
-                />
-                <span className="text-sm text-muted-foreground">% decrease</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Loss threshold</span>
+                <span className="text-foreground">
+                  {reptile.weight_alert_loss_threshold_percent !== null && reptile.weight_alert_loss_threshold_percent !== undefined
+                    ? `${reptile.weight_alert_loss_threshold_percent}%`
+                    : `${getAgeAwareDefaults().loss}% (default)`}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {reptile.weight_alert_loss_threshold_percent !== null && reptile.weight_alert_loss_threshold_percent !== undefined
-                  ? `Custom: ${reptile.weight_alert_loss_threshold_percent}%`
-                  : `Default for ${getAgeCategory()}: ${getAgeAwareDefaults().loss}%`
-                }
-                {getAgeAwareDefaults().loss === 0 && ' (any loss triggers alert)'}
-              </p>
-            </div>
-
-            <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-              Alerts use a rolling average of the last 3 weights as baseline. Limited to once per week.
-            </p>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="border-b border-border mb-4 overflow-x-auto">
