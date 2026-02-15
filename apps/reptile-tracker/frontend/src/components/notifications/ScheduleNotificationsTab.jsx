@@ -20,18 +20,28 @@ function ScheduleNotificationsTab() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [reptilesRes, schedulesRes] = await Promise.all([
-        axios.get('/api/reptiles'),
-        axios.get('/api/schedules') // All schedules
-      ]);
 
-      setReptiles(reptilesRes.data);
-      setSchedules(schedulesRes.data);
+      // First fetch all reptiles
+      const reptilesRes = await axios.get('/api/reptiles');
+      const reptilesList = reptilesRes.data;
+      setReptiles(reptilesList);
+
+      // Then fetch schedules for each reptile in parallel
+      // API is GET /api/schedules/reptile/{reptile_id}
+      const schedulePromises = reptilesList.map(reptile =>
+        axios.get(`/api/schedules/reptile/${reptile.id}`)
+          .then(res => res.data)
+          .catch(() => []) // Handle case where reptile has no schedules
+      );
+
+      const schedulesByReptile = await Promise.all(schedulePromises);
+      const allSchedules = schedulesByReptile.flat();
+      setSchedules(allSchedules);
 
       // Expand first reptile by default (if it has schedules)
-      if (reptilesRes.data.length > 0) {
-        const firstReptileWithSchedules = reptilesRes.data.find(r =>
-          schedulesRes.data.some(s => s.reptile_id === r.id)
+      if (reptilesList.length > 0) {
+        const firstReptileWithSchedules = reptilesList.find(r =>
+          allSchedules.some(s => s.reptile_id === r.id)
         );
         if (firstReptileWithSchedules) {
           setExpandedReptiles(new Set([firstReptileWithSchedules.id]));
