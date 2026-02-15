@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, Bell, ChevronUp, ChevronDown, PartyPopper } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, ChevronUp, ChevronDown, PartyPopper } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
-import NotificationsTab from '../components/NotificationsTab_new';
-import NotificationTemplatesTab from '../components/NotificationTemplatesTab';
 import ProfileManager from '../components/ProfileManager';
 import { useCelebrations } from '../contexts/CelebrationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,14 +49,6 @@ export default function Settings() {
             <Shield size={18} />
             Streak & Vacation
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell size={18} />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <SettingsIcon size={18} />
-            Templates
-          </TabsTrigger>
           <TabsTrigger value="household" className="flex items-center gap-2">
             <Users size={18} />
             Household
@@ -73,12 +63,6 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="display">
           <DisplayTab />
-        </TabsContent>
-        <TabsContent value="notifications">
-          <NotificationsTab />
-        </TabsContent>
-        <TabsContent value="templates">
-          <NotificationTemplatesTab />
         </TabsContent>
         <TabsContent value="household">
           <HouseholdSection />
