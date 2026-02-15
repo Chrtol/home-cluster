@@ -312,9 +312,6 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
     }
   };
 
-  // All done state
-  const allDone = schedules.length > 0 && completedSchedules.length === schedules.length;
-
   if (loading) {
     return (
       <div className="bg-card rounded-xl border border-border p-3">
@@ -420,22 +417,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
         </div>
       </div>
 
-      {/* All done state */}
-      {allDone && (
-        <div className="p-4 text-center">
-          <div className="inline-flex items-center gap-2 text-primary mb-2">
-            <CheckCircle className="w-5 h-5" />
-            <span className="text-sm font-semibold">All done for {getDateLabel().toLowerCase()}!</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Great job taking care of your reptiles 🎉
-          </p>
-        </div>
-      )}
-
       {/* Timeline content */}
-      {!allDone && (
-        <div className={inSidebar ? "overflow-y-auto" : "max-h-96 overflow-y-auto"}>
+      <div className={inSidebar ? "overflow-y-auto" : "max-h-96 overflow-y-auto"}>
           {/* Completed tasks section */}
           {showCompletedSection && completedSchedules.length > 0 && (
             <div className="border-b border-border">
@@ -606,7 +589,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
             })}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

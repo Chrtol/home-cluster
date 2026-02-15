@@ -1,6 +1,7 @@
 import { isToday, isTomorrow, format } from 'date-fns';
 import { Utensils } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getUserTimeFormat } from '@/utils/dateFormatting';
 
 /**
  * NextFeedingIndicator - Shows next scheduled feeding time
@@ -68,9 +69,18 @@ const NextFeedingIndicator = ({ scheduleInstances, reptileId, isHidden }) => {
     // Time part - use earliest_time or time_range_start
     const timeStr = instance.earliest_time || instance.time_range_start;
     if (timeStr) {
-      const [hours] = timeStr.split(':').map(Number);
-      const timeDate = new Date(2000, 0, 1, hours, 0);
-      return `${dateStr} ${format(timeDate, 'ha').toLowerCase()}`;
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const userTimeFormat = getUserTimeFormat();
+
+      if (userTimeFormat === '24h') {
+        // 24-hour format: "08:00" or "14:00"
+        const formattedTime = `${hours.toString().padStart(2, '0')}:${(minutes || 0).toString().padStart(2, '0')}`;
+        return `${dateStr} ${formattedTime}`;
+      } else {
+        // 12-hour format: "8am" or "2pm"
+        const timeDate = new Date(2000, 0, 1, hours, minutes || 0);
+        return `${dateStr} ${format(timeDate, 'ha').toLowerCase()}`;
+      }
     }
 
     return dateStr;
