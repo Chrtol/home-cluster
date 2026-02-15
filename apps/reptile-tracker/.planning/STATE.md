@@ -2,10 +2,10 @@
 
 ## Current Position
 
-**Phase:** 23 of 25 (Notification Planner)
-**Plan:** 4 of 4 (all complete)
-**Status:** Phase complete
-**Last activity:** 2026-02-15 - Phase 23 UAT passed (all 11 tests)
+**Phase:** 24 of 25 (Weight Change Alerts)
+**Plan:** 1 of 4
+**Status:** In progress
+**Last activity:** 2026-02-15 - Completed 24-01-PLAN.md (data layer and detection logic)
 
 ### Progress
 ```
@@ -13,6 +13,7 @@ Phase 20: Complete
 Phase 21: Complete (celebration animations)
 Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
 Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04 ✓)
+Phase 24: In progress (weight change alerts: 24-01 ✓, 24-02, 24-03, 24-04)
 ```
 
 ---
@@ -60,13 +61,24 @@ Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04
 | 23-03 | Empty digest suppression in execute_*_planner_delivery functions | Check before queuing to Celery, avoid unnecessary task overhead | Prevents empty digest notifications |
 | 23-03 | Use build_individual_task_message from digest.py for individual format | Single source of truth for task formatting ensures consistency | Grouped and individual modes use same task formatting logic |
 | 23-03 | Digest notifications skip quiet hours check | User explicitly configured delivery time - intentional override | Planner digest delivered at exact configured time regardless of quiet hours |
+| 24-01 | Species-specific default thresholds | Different species have different normal weight variation ranges | Crested Gecko: 5%, Ball Python: 15%, Leopard Gecko: 8%, Bearded Dragon: 10%, Corn Snake: 12%, Default: 10% |
+| 24-01 | 7-day frequency cap per reptile | Weekly cap prevents notification spam while allowing timely alerts | Max 1 weight alert per reptile per 7 days |
+| 24-01 | Baseline is most recent previous weight log | Simple and accurate comparison for detecting recent changes | First weight log never triggers alert (no baseline to compare) |
+| 24-01 | Division by zero handling in calculate_weight_change | Prevents crashes if baseline weight is 0 | Treats 0 baseline as 100% change if current weight > 0 |
 
 ---
 
 ## Active Context
 
-**Current subsystem:** Notification Planner (in progress)
+**Current subsystem:** Weight Change Alerts (in progress)
 **Key patterns:**
+- Weight alert fields on Reptile model (weight_alerts_enabled, weight_alert_threshold_percent)
+- WeightAlertTracking model for 7-day frequency cap
+- Species-specific threshold defaults with custom override capability
+- Baseline comparison (most recent previous weight log)
+- Detection logic in scheduler/weight_alerts.py module
+
+**Previous subsystem:** Notification Planner (complete)
 - Planner digest settings stored in NotificationSettings model
 - weekly_planner_day uses Integer 0-6 (Sunday=0, Saturday=6)
 - daily_planner_time stored as Time type (user's timezone context)
@@ -83,17 +95,20 @@ Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04
 - Completion check at fire time (NOTIF-01)
 
 **Key files to remember:**
-- `backend/app/models.py` - NotificationSettings with planner digest fields + digest_channel_id (23-01, 23-04)
-- `backend/app/schemas.py` - Pydantic schemas for planner settings (23-01, 23-04)
+- `backend/app/models.py` - Reptile with weight alert fields, WeightAlertTracking model (24-01), NotificationSettings with planner digest fields + digest_channel_id (23-01, 23-04)
+- `backend/app/schemas.py` - Pydantic schemas for weight alerts (24-01), planner settings (23-01, 23-04)
 - `backend/app/scheduler/digest.py` - Digest generation module with query and formatting functions (23-02)
 - `backend/app/scheduler/core.py` - Digest scheduling cron jobs + execution functions (23-03)
 - `backend/app/celery_tasks.py` - Digest delivery Celery tasks with format branching (23-03)
-- `backend/app/scheduler/__init__.py` - Digest function exports (23-03)
+- `backend/app/scheduler/__init__.py` - Weight alert function exports (24-01), Digest function exports (23-03)
 - `backend/app/routers/notification_settings.py` - Auto-creates settings + in-app channel on GET (23-04)
 - `backend/app/routers/notification_channels.py` - Auto-creates in-app channel on GET (23-04)
 - `backend/migrations/versions/0085_add_planner_digest_settings.py` - Alembic migration for planner schema (23-01)
 - `backend/migrations/versions/0086_add_planner_digest_templates.py` - Alembic migration for planner templates (23-02)
 - `backend/migrations/versions/0087_add_digest_channel_id.py` - Alembic migration for digest channel (23-04)
+- `backend/migrations/versions/0088_add_weekly_planner_time.py` - Alembic migration for weekly planner time (23-03 fix)
+- `backend/migrations/versions/0089_add_weight_alert_fields.py` - Alembic migration for weight alert fields (24-01)
+- `backend/app/scheduler/weight_alerts.py` - Weight change detection and frequency cap tracking (24-01)
 - `backend/app/notifications.py` - Notification service with planner trigger types (23-02) and template variables
 - `backend/app/scheduler/frequency_cap.py` - Frequency cap tracking functions (22-03)
 - `backend/app/scheduler/jobs.py` - schedule_follow_up_reminder, schedule_expiry_alert functions (22-04)
@@ -105,16 +120,16 @@ Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04
 
 ## Blockers & Concerns
 
-None currently. Phase 23 complete - all planner digest functionality implemented end-to-end.
+None currently. Phase 24 plan 01 complete - data layer and detection logic ready for notification integration.
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-15
-**Stopped at:** Phase 23 UAT complete - all planner delivery issues fixed
-**Resume from:** Phase 24 (Weight Change Alerts)
-**Resume command:** `/gsd:execute-phase 24`
+**Stopped at:** Phase 24 plan 01 complete - data layer and detection logic implemented
+**Resume from:** Phase 24 plan 02 (notification template and delivery)
+**Resume command:** `/gsd:execute-plan 24-02`
 
 ---
 
@@ -155,6 +170,10 @@ None currently. Phase 23 complete - all planner digest functionality implemented
 | 23-03 | Celery digest delivery tasks | send_daily_planner_task and send_weekly_planner_task with format branching |
 | 23-03 | Format branching (grouped vs individual) | Single message or per-task notifications based on digest_format setting |
 | 23-03 | build_individual_task_message as single source | Digest.py provides consistent formatting for individual mode |
+| 24-01 | WeightAlertTracking model | Tracks last weight alert timestamp per reptile for 7-day frequency cap |
+| 24-01 | Migration 0089 | Weight alert fields on Reptile model and WeightAlertTracking table |
+| 24-01 | weight_alerts.py module | Weight change detection with species-specific thresholds and baseline comparison |
+| 24-01 | Species threshold defaults | Crested Gecko: 5%, Ball Python: 15%, Leopard Gecko: 8%, Bearded Dragon/Corn Snake: 10-12% |
 
 ---
 
@@ -197,11 +216,26 @@ Plans completed:
 
 ---
 
-## Next Steps
+## Phase 24 Progress
 
-1. Move to Phase 24 (next phase in roadmap)
-2. Test planner digest delivery end-to-end with real users and timezone scenarios
+**Plan 24-01:** Complete - Data layer and detection logic
+- WeightAlertTracking model for frequency cap
+- Reptile model fields (weight_alerts_enabled, weight_alert_threshold_percent)
+- Detection algorithm with species-specific thresholds
+- Baseline comparison logic
+
+**Plan 24-02:** Next - Notification template and delivery
+**Plan 24-03:** Pending - Weight log endpoint integration
+**Plan 24-04:** Pending - Frontend UI configuration
 
 ---
 
-*Last updated: 2026-02-15T12:00:00Z*
+## Next Steps
+
+1. Execute plan 24-02 (notification template and delivery system)
+2. Test weight alert detection with mock data
+3. Integrate with weight log creation endpoint
+
+---
+
+*Last updated: 2026-02-15T14:18:00Z*
