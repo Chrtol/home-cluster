@@ -294,6 +294,56 @@ export default function ReptileDetail() {
     }
   };
 
+  // Species-specific default thresholds (matches backend)
+  const SPECIES_THRESHOLD_DEFAULTS = {
+    'crested gecko': 5,
+    'ball python': 15,
+    'leopard gecko': 8,
+    'bearded dragon': 10,
+    'corn snake': 12,
+  };
+  const DEFAULT_THRESHOLD = 10;
+
+  const getSpeciesDefaultThreshold = (species) => {
+    if (!species) return DEFAULT_THRESHOLD;
+    const speciesLower = species.toLowerCase();
+    for (const [key, value] of Object.entries(SPECIES_THRESHOLD_DEFAULTS)) {
+      if (speciesLower.includes(key)) {
+        return value;
+      }
+    }
+    return DEFAULT_THRESHOLD;
+  };
+
+  const handleWeightAlertToggle = async (enabled) => {
+    try {
+      await axios.patch(`/api/reptiles/${id}`, { weight_alerts_enabled: enabled });
+      setReptile(prev => ({ ...prev, weight_alerts_enabled: enabled }));
+      alert(enabled ? 'Weight alerts enabled' : 'Weight alerts disabled');
+    } catch (error) {
+      console.error('Failed to update weight alert setting:', error);
+      alert('Failed to update setting. You may not have permission.');
+    }
+  };
+
+  const handleThresholdChange = async (value) => {
+    const threshold = value === '' ? null : parseInt(value, 10);
+
+    // Validate range
+    if (threshold !== null && (threshold < 1 || threshold > 50)) {
+      return;
+    }
+
+    try {
+      await axios.patch(`/api/reptiles/${id}`, { weight_alert_threshold_percent: threshold });
+      setReptile(prev => ({ ...prev, weight_alert_threshold_percent: threshold }));
+      // No toast for threshold to avoid spam during typing
+    } catch (error) {
+      console.error('Failed to update threshold:', error);
+      alert('Failed to update threshold. You may not have permission.');
+    }
+  };
+
   const handleUpdateDefaultFood = async (field, foodId) => {
     try {
       await axios.patch(`/api/reptiles/${id}`, {
@@ -1050,6 +1100,65 @@ export default function ReptileDetail() {
                 {reptile.notes}
               </p>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Weight Alert Settings */}
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
+        <h2 className="text-lg font-semibold mb-3 text-foreground flex items-center gap-2">
+          <Scale className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          Weight Change Alerts
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Get notified when weight changes exceed your threshold
+        </p>
+
+        {/* Enable/disable toggle */}
+        <label className="flex items-start gap-3 p-4 rounded-lg border-2 border-border bg-card/50 cursor-pointer hover:bg-secondary transition-colors mb-4">
+          <input
+            type="checkbox"
+            checked={reptile.weight_alerts_enabled || false}
+            onChange={(e) => handleWeightAlertToggle(e.target.checked)}
+            className="w-4 h-4 rounded mt-0.5"
+          />
+          <div className="flex-1">
+            <div className="font-medium text-foreground">Enable Weight Alerts</div>
+            <div className="text-sm text-muted-foreground">
+              Receive notifications for significant weight changes
+            </div>
+          </div>
+        </label>
+
+        {/* Threshold configuration - only show when enabled */}
+        {reptile.weight_alerts_enabled && (
+          <div className="space-y-3 pt-2 border-t border-border">
+            <label className="block text-sm font-medium text-foreground">
+              Alert Threshold
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                max="50"
+                placeholder={getSpeciesDefaultThreshold(reptile.species)}
+                value={reptile.weight_alert_threshold_percent || ''}
+                onChange={(e) => handleThresholdChange(e.target.value)}
+                className="w-24 px-3 py-2 border border-border rounded-lg bg-card text-foreground"
+              />
+              <span className="text-sm text-muted-foreground">
+                % change
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {reptile.weight_alert_threshold_percent
+                ? `Custom threshold: ${reptile.weight_alert_threshold_percent}%`
+                : `Using species default: ${getSpeciesDefaultThreshold(reptile.species)}%`
+              }
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Alerts are limited to once per week per reptile
+            </p>
           </div>
         )}
       </div>
