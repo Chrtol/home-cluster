@@ -51,6 +51,15 @@ from .digest import (
     build_individual_task_message,
 )
 
+# Re-export weight alert functions from weight_alerts.py (Phase 24 - Weight Change Alerts)
+from .weight_alerts import (
+    check_weight_change_alert,
+    is_weight_alert_cap_reached,
+    get_baseline_weight,
+    update_weight_alert_tracking,
+    get_threshold_for_reptile,
+)
+
 __all__ = [
     "scheduler",
     "start_scheduler",
@@ -78,4 +87,10 @@ __all__ = [
     "build_weekly_digest_message",
     "build_task_line",
     "build_individual_task_message",
+    # Weight alert functions (Phase 24)
+    "check_weight_change_alert",
+    "is_weight_alert_cap_reached",
+    "get_baseline_weight",
+    "update_weight_alert_tracking",
+    "get_threshold_for_reptile",
 ]
