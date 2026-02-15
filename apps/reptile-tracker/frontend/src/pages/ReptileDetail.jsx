@@ -126,6 +126,7 @@ export default function ReptileDetail() {
   const [activeTab, setActiveTab] = useState('feedings');
   const [loading, setLoading] = useState(true);
   const [isSingleUserHousehold, setIsSingleUserHousehold] = useState(true);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Photo states
   const [photos, setPhotos] = useState([]);
@@ -315,32 +316,38 @@ export default function ReptileDetail() {
     return DEFAULT_THRESHOLD;
   };
 
+  // Toast helper
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
   const handleWeightAlertToggle = async (enabled) => {
     try {
-      await axios.patch(`/api/reptiles/${id}`, { weight_alerts_enabled: enabled });
-      setReptile(prev => ({ ...prev, weight_alerts_enabled: enabled }));
-      alert(enabled ? 'Weight alerts enabled' : 'Weight alerts disabled');
+      const response = await axios.patch(`/api/reptiles/${id}`, { weight_alerts_enabled: enabled });
+      setReptile(response.data);
+      showToast(enabled ? 'Weight alerts enabled' : 'Weight alerts disabled');
     } catch (error) {
       console.error('Failed to update weight alert setting:', error);
-      alert('Failed to update setting. You may not have permission.');
+      showToast('Failed to update setting');
     }
   };
 
   const handleThresholdChange = async (value) => {
     const threshold = value === '' ? null : parseInt(value, 10);
 
-    // Validate range
-    if (threshold !== null && (threshold < 1 || threshold > 50)) {
+    // Validate range (allow up to 500% for babies that can grow rapidly)
+    if (threshold !== null && (threshold < 1 || threshold > 500)) {
       return;
     }
 
     try {
-      await axios.patch(`/api/reptiles/${id}`, { weight_alert_threshold_percent: threshold });
-      setReptile(prev => ({ ...prev, weight_alert_threshold_percent: threshold }));
+      const response = await axios.patch(`/api/reptiles/${id}`, { weight_alert_threshold_percent: threshold });
+      setReptile(response.data);
       // No toast for threshold to avoid spam during typing
     } catch (error) {
       console.error('Failed to update threshold:', error);
-      alert('Failed to update threshold. You may not have permission.');
+      showToast('Failed to update threshold');
     }
   };
 
@@ -1140,7 +1147,7 @@ export default function ReptileDetail() {
               <input
                 type="number"
                 min="1"
-                max="50"
+                max="500"
                 placeholder={getSpeciesDefaultThreshold(reptile.species)}
                 value={reptile.weight_alert_threshold_percent || ''}
                 onChange={(e) => handleThresholdChange(e.target.value)}
@@ -1238,6 +1245,13 @@ export default function ReptileDetail() {
           initialZoom={reptile.avatar_crop_zoom}
           initialBorderColor={reptile.avatar_border_color}
         />
+      )}
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 z-50 bg-card border border-border rounded-lg shadow-lg p-4 animate-in slide-in-from-right fade-in duration-200">
+          <span className="text-sm text-foreground">{toastMessage}</span>
+        </div>
       )}
     </div>
   );
