@@ -66,7 +66,8 @@ class ReptileBase(BaseModel):
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
     avatar_border_color: Optional[str] = None  # Hex color code for avatar border
     weight_alerts_enabled: bool = False  # Weight change alert enabled for this reptile
-    weight_alert_threshold_percent: Optional[int] = None  # null = use species default
+    weight_alert_gain_threshold_percent: Optional[int] = None  # null = use age-aware default
+    weight_alert_loss_threshold_percent: Optional[int] = None  # null = use age-aware default
 
 
 class ReptileCreate(ReptileBase):
@@ -94,7 +95,8 @@ class ReptileUpdate(BaseModel):
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
     avatar_border_color: Optional[str] = None  # Hex color code for avatar border
     weight_alerts_enabled: Optional[bool] = None
-    weight_alert_threshold_percent: Optional[int] = None
+    weight_alert_gain_threshold_percent: Optional[int] = None
+    weight_alert_loss_threshold_percent: Optional[int] = None
 
 
 class Reptile(ReptileBase):

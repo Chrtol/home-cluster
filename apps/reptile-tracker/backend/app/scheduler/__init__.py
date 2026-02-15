@@ -56,8 +56,12 @@ from .weight_alerts import (
     check_weight_change_alert,
     is_weight_alert_cap_reached,
     get_baseline_weight,
+    get_rolling_average_baseline,
     update_weight_alert_tracking,
-    get_threshold_for_reptile,
+    get_threshold_for_direction,
+    get_age_category,
+    get_age_aware_defaults,
+    AGE_AWARE_DEFAULTS,
 )
 
 __all__ = [
@@ -91,6 +95,10 @@ __all__ = [
     "check_weight_change_alert",
     "is_weight_alert_cap_reached",
     "get_baseline_weight",
+    "get_rolling_average_baseline",
     "update_weight_alert_tracking",
-    "get_threshold_for_reptile",
+    "get_threshold_for_direction",
+    "get_age_category",
+    "get_age_aware_defaults",
+    "AGE_AWARE_DEFAULTS",
 ]

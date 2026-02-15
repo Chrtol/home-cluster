@@ -256,9 +256,10 @@ class Reptile(Base):
     # Avatar border color (hex color code)
     avatar_border_color = Column(String(7), nullable=True)  # e.g., "#FF5733"
 
-    # Weight change alert settings (Phase 24)
+    # Weight change alert settings (Phase 24) - separate gain/loss thresholds
     weight_alerts_enabled = Column(Boolean, default=False, nullable=False)
-    weight_alert_threshold_percent = Column(Integer, nullable=True)  # null = use species default (10%)
+    weight_alert_gain_threshold_percent = Column(Integer, nullable=True)  # null = use age-aware default
+    weight_alert_loss_threshold_percent = Column(Integer, nullable=True)  # null = use age-aware default
 
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")

@@ -1021,6 +1021,11 @@ async def send_weight_change_alert_task(
                 logger.warning(f"No users with access to reptile {reptile_id}")
                 return
 
+            # Get trigger type from detection logic (weight_gain, weight_loss, or growth_milestone)
+            trigger_type = alert_context.get("trigger_type", "weight_change_alert")
+            age_category = alert_context.get("age_category", "adult")
+            is_growth_milestone = alert_context.get("is_growth_milestone", False)
+
             # Build notification context
             context = {
                 "reptile_id": reptile.id,
@@ -1030,8 +1035,10 @@ async def send_weight_change_alert_task(
                 "weight_change_grams": alert_context["weight_change_grams"],
                 "weight_change_percent": alert_context["weight_change_percent"],
                 "change_direction": alert_context["change_direction"],
-                "time_span_days": alert_context["time_span_days"],
                 "threshold_percent": alert_context["threshold_percent"],
+                "age_category": age_category,
+                "is_growth_milestone": is_growth_milestone,
+                "trigger_type": trigger_type,
             }
 
             # Send to each user's enabled channels
@@ -1057,10 +1064,10 @@ async def send_weight_change_alert_task(
 
                     for channel in channels:
                         try:
-                            # Get template for weight_change_alert trigger
+                            # Get template for specific trigger type (weight_gain, weight_loss, growth_milestone)
                             template = await get_template_for_trigger(
                                 db=db,
-                                trigger_type="weight_change_alert",
+                                trigger_type=trigger_type,
                                 user_id=user.id,
                                 channel_type=channel.webhook_type
                             )
@@ -1070,17 +1077,31 @@ async def send_weight_change_alert_task(
                                 message = render_template(template.message_template, context)
                                 title = render_template(template.title_template, context) if template.title_template else f"Weight Alert - {reptile.name}"
                             else:
-                                # Fallback message
-                                direction_emoji = "📈" if context["change_direction"] == "gain" else "📉"
-                                message = (
-                                    f"{direction_emoji} **{reptile.name}** has experienced a significant weight change.\n\n"
-                                    f"**Change:** {context['weight_change_percent']}% {context['change_direction']} "
-                                    f"({context['weight_change_grams']:.1f}g)\n"
-                                    f"**Baseline:** {context['baseline_weight']:.1f}g\n"
-                                    f"**Current:** {context['current_weight']:.1f}g\n"
-                                    f"**Time span:** {context['time_span_days']} days"
-                                )
-                                title = f"Weight Alert - {reptile.name}"
+                                # Fallback messages based on trigger type
+                                change_percent = context['weight_change_percent']
+                                if trigger_type == "growth_milestone":
+                                    title = f"🎉 {reptile.name}: Growth Milestone!"
+                                    message = (
+                                        f"🎉 Your {age_category} **{reptile.name}** has hit a growth milestone!\n\n"
+                                        f"**Gained:** {change_percent}% ({context['weight_change_grams']:.1f}g)\n"
+                                        f"**Now weighing:** {context['current_weight']:.1f}g\n"
+                                        f"**Baseline (avg):** {context['baseline_weight']:.1f}g\n\n"
+                                        f"Look how much they've grown! 🦎"
+                                    )
+                                elif trigger_type == "weight_gain":
+                                    title = f"{reptile.name}: Weight Gain"
+                                    message = (
+                                        f"📈 **{reptile.name}** has gained weight.\n\n"
+                                        f"**Change:** {change_percent}% ({context['weight_change_grams']:.1f}g)\n"
+                                        f"**From:** {context['baseline_weight']:.1f}g → {context['current_weight']:.1f}g"
+                                    )
+                                else:  # weight_loss
+                                    title = f"{reptile.name}: Weight Loss"
+                                    message = (
+                                        f"📉 **{reptile.name}** has lost weight.\n\n"
+                                        f"**Change:** {change_percent}% ({context['weight_change_grams']:.1f}g)\n"
+                                        f"**From:** {context['baseline_weight']:.1f}g → {context['current_weight']:.1f}g"
+                                    )
 
                             # Send via webhook or in-app
                             if channel.webhook_type == "in_app":
@@ -1094,7 +1115,7 @@ async def send_weight_change_alert_task(
                                     notification_metadata={
                                         "reptile_id": reptile.id,
                                         "weight_log_id": weight_log_id,
-                                        "alert_type": "weight_change_alert",
+                                        "alert_type": trigger_type,
                                         **context
                                     }
                                 )
@@ -1106,7 +1127,7 @@ async def send_weight_change_alert_task(
                                     title=title,
                                     config=channel.config,
                                     context=context,
-                                    trigger_type="weight_change_alert",
+                                    trigger_type=trigger_type,
                                     template=template
                                 )
 
