@@ -63,6 +63,24 @@ const NotificationTemplatesTab = () => {
     fetchGroups();
   }, []);
 
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showPreview) {
+          setShowPreview(false);
+        } else if (showGroupModal) {
+          setShowGroupModal(false);
+        } else if (showModal) {
+          setShowModal(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, showGroupModal, showPreview]);
+
   const fetchTemplates = async () => {
     try {
       setLoading(true);
