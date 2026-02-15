@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TimePicker } from '@/components/ui/time-picker';
 import PageHeader from '../components/PageHeader';
 
 function ScheduleForm() {
@@ -1420,13 +1421,14 @@ function ScheduleForm() {
                       {expiryAlertEnabled && (
                         <div className="pl-6 border-l-2 border-primary space-y-2">
                           <Label htmlFor="expiryAlertTime">Alert Time</Label>
-                          <Input
-                            id="expiryAlertTime"
-                            type="time"
-                            value={expiryAlertTime}
-                            onChange={(e) => setExpiryAlertTime(e.target.value)}
-                            className="w-32"
-                          />
+                          <div className="w-40">
+                            <TimePicker
+                              value={expiryAlertTime}
+                              onChange={(time) => setExpiryAlertTime(time)}
+                              placeholder="Pick a time"
+                              step={15}
+                            />
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             Set the specific time to receive the expiry alert
                           </p>

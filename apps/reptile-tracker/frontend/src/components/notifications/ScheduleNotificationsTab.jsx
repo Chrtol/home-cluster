@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Pencil, Trash2, ExternalLink, Bell, BellOff, Clock, AlertTriangle } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
+import { TimePicker } from '@/components/ui/time-picker';
+import { getUserTimeFormat } from '@/utils/dateFormatting';
 
 function ScheduleNotificationsTab() {
   const navigate = useNavigate();
@@ -210,28 +212,32 @@ function ScheduleNotificationsTab() {
 
   const getScheduleFrequencyText = (schedule) => {
     if (schedule.schedule_mode === 'interval') {
-      if (schedule.min_interval_days === schedule.max_interval_days) {
-        return `Every ${schedule.min_interval_days} days`;
+      if (schedule.min_days_between === schedule.max_days_between) {
+        return `Every ${schedule.min_days_between} days`;
       }
-      return `Every ${schedule.min_interval_days}-${schedule.max_interval_days} days`;
+      return `Every ${schedule.min_days_between}-${schedule.max_days_between} days`;
     }
     if (schedule.schedule_rule === 'days_of_week' && schedule.days_of_week) {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const activeDays = schedule.days_of_week.map(d => days[d]).join(', ');
       return activeDays || 'Weekly';
     }
-    if (schedule.schedule_rule === 'every_x_days' && schedule.every_x_days) {
-      return `Every ${schedule.every_x_days} days`;
+    if (schedule.schedule_rule === 'every_x_days' && schedule.frequency_days) {
+      return `Every ${schedule.frequency_days} days`;
     }
     return schedule.schedule_mode || 'Custom';
   };
 
   const getTimeWindowText = (schedule) => {
     if (!schedule.time_window_enabled) return null;
+    const userTimeFormat = getUserTimeFormat();
     const formatTime = (time) => {
       if (!time) return '';
       const [h, m] = time.split(':');
       const hour = parseInt(h);
+      if (userTimeFormat === '24h') {
+        return `${h}:${m}`;
+      }
       const ampm = hour >= 12 ? 'PM' : 'AM';
       const hour12 = hour % 12 || 12;
       return `${hour12}:${m} ${ampm}`;
@@ -431,15 +437,17 @@ function ScheduleNotificationsTab() {
                                           <Clock size={14} />
                                           Reminder Time
                                         </label>
-                                        <input
-                                          type="time"
-                                          value={editingData.reminder_time || ''}
-                                          onChange={(e) => setEditingData(prev => ({
-                                            ...prev,
-                                            reminder_time: e.target.value
-                                          }))}
-                                          className="input-field w-32"
-                                        />
+                                        <div className="w-40">
+                                          <TimePicker
+                                            value={editingData.reminder_time || ''}
+                                            onChange={(time) => setEditingData(prev => ({
+                                              ...prev,
+                                              reminder_time: time
+                                            }))}
+                                            placeholder="Pick a time"
+                                            step={15}
+                                          />
+                                        </div>
                                         <p className="text-xs text-muted-foreground mt-1">
                                           When to send the reminder (leave empty to use global settings)
                                         </p>
@@ -500,15 +508,17 @@ function ScheduleNotificationsTab() {
                                           {editingData.expiry_alert_enabled && (
                                             <div className="ml-7">
                                               <div className="flex items-center gap-2">
-                                                <input
-                                                  type="time"
-                                                  value={editingData.expiry_alert_time || ''}
-                                                  onChange={(e) => setEditingData(prev => ({
-                                                    ...prev,
-                                                    expiry_alert_time: e.target.value
-                                                  }))}
-                                                  className="input-field w-32"
-                                                />
+                                                <div className="w-40">
+                                                  <TimePicker
+                                                    value={editingData.expiry_alert_time || ''}
+                                                    onChange={(time) => setEditingData(prev => ({
+                                                      ...prev,
+                                                      expiry_alert_time: time
+                                                    }))}
+                                                    placeholder="Pick a time"
+                                                    step={15}
+                                                  />
+                                                </div>
                                                 <span className="text-sm text-muted-foreground">alert time</span>
                                               </div>
                                             </div>
