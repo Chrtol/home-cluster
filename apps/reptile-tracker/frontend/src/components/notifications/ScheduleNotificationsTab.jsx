@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Pencil, Trash2, ExternalLink, Bell, BellOff, Clock, AlertTriangle } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 
 function ScheduleNotificationsTab() {
+  const navigate = useNavigate();
   const [reptiles, setReptiles] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [expandedReptiles, setExpandedReptiles] = useState(new Set());
   const [savingScheduleId, setSavingScheduleId] = useState(null);
+  const [expandedSchedule, setExpandedSchedule] = useState(null);
+  const [editingData, setEditingData] = useState({});
+  const [deletingScheduleId, setDeletingScheduleId] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -27,18 +32,17 @@ function ScheduleNotificationsTab() {
       setReptiles(reptilesList);
 
       // Then fetch schedules for each reptile in parallel
-      // API is GET /api/schedules/reptile/{reptile_id}
       const schedulePromises = reptilesList.map(reptile =>
         axios.get(`/api/schedules/reptile/${reptile.id}`)
           .then(res => res.data)
-          .catch(() => []) // Handle case where reptile has no schedules
+          .catch(() => [])
       );
 
       const schedulesByReptile = await Promise.all(schedulePromises);
       const allSchedules = schedulesByReptile.flat();
       setSchedules(allSchedules);
 
-      // Expand first reptile by default (if it has schedules)
+      // Expand first reptile by default
       if (reptilesList.length > 0) {
         const firstReptileWithSchedules = reptilesList.find(r =>
           allSchedules.some(s => s.reptile_id === r.id)
@@ -67,17 +71,36 @@ function ScheduleNotificationsTab() {
     });
   };
 
-  const handleToggleNotification = async (schedule) => {
+  const toggleScheduleExpand = (scheduleId) => {
+    if (expandedSchedule === scheduleId) {
+      setExpandedSchedule(null);
+      setEditingData({});
+    } else {
+      const schedule = schedules.find(s => s.id === scheduleId);
+      setExpandedSchedule(scheduleId);
+      setEditingData({
+        notifications_enabled: schedule.notifications_enabled ?? true,
+        reminder_time: schedule.reminder_time || '',
+        follow_up_enabled: schedule.follow_up_enabled ?? false,
+        follow_up_delay_minutes: schedule.follow_up_delay_minutes || 30,
+        expiry_alert_enabled: schedule.expiry_alert_enabled ?? false,
+        expiry_alert_offset_minutes: schedule.expiry_alert_offset_minutes || 45,
+      });
+    }
+  };
+
+  const handleQuickToggle = async (schedule, e) => {
+    e.stopPropagation();
     setSavingScheduleId(schedule.id);
     setError('');
 
     try {
       const res = await axios.patch(`/api/schedules/${schedule.id}`, {
-        notification_enabled: !schedule.notification_enabled
+        notifications_enabled: !schedule.notifications_enabled
       });
-
-      // Update schedules list
       setSchedules(schedules.map(s => s.id === schedule.id ? res.data : s));
+      setSuccess(`Notifications ${res.data.notifications_enabled ? 'enabled' : 'disabled'} for ${schedule.name || 'schedule'}`);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Failed to toggle notification:', err);
       setError(err.response?.data?.detail || 'Failed to update notification setting');
@@ -86,14 +109,63 @@ function ScheduleNotificationsTab() {
     }
   };
 
+  const handleSaveSettings = async (scheduleId) => {
+    setSavingScheduleId(scheduleId);
+    setError('');
+
+    try {
+      const schedule = schedules.find(s => s.id === scheduleId);
+      const updates = {
+        notifications_enabled: editingData.notifications_enabled,
+        reminder_time: editingData.reminder_time || null,
+        follow_up_enabled: editingData.follow_up_enabled,
+        follow_up_delay_minutes: editingData.follow_up_enabled ? parseInt(editingData.follow_up_delay_minutes) : null,
+        expiry_alert_enabled: editingData.expiry_alert_enabled,
+        expiry_alert_offset_minutes: editingData.expiry_alert_enabled ? parseInt(editingData.expiry_alert_offset_minutes) : null,
+      };
+
+      const res = await axios.patch(`/api/schedules/${scheduleId}`, updates);
+      setSchedules(schedules.map(s => s.id === scheduleId ? res.data : s));
+      setExpandedSchedule(null);
+      setEditingData({});
+      setSuccess(`Notification settings saved for ${schedule?.name || 'schedule'}`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      setError(err.response?.data?.detail || 'Failed to save notification settings');
+    } finally {
+      setSavingScheduleId(null);
+    }
+  };
+
+  const handleDelete = async (scheduleId, e) => {
+    e.stopPropagation();
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!confirm(`Delete schedule "${schedule?.name || 'this schedule'}"? This cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingScheduleId(scheduleId);
+    setError('');
+
+    try {
+      await axios.delete(`/api/schedules/${scheduleId}`);
+      setSchedules(schedules.filter(s => s.id !== scheduleId));
+      setSuccess(`Schedule "${schedule?.name || ''}" deleted`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to delete schedule:', err);
+      setError(err.response?.data?.detail || 'Failed to delete schedule');
+    } finally {
+      setDeletingScheduleId(null);
+    }
+  };
+
   const getFilteredSchedules = () => {
     let filtered = schedules;
-
-    // Filter by type
     if (typeFilter !== 'all') {
       filtered = filtered.filter(s => s.schedule_type === typeFilter);
     }
-
     return filtered;
   };
 
@@ -136,6 +208,40 @@ function ScheduleNotificationsTab() {
     return labelMap[type] || type;
   };
 
+  const getScheduleFrequencyText = (schedule) => {
+    if (schedule.schedule_mode === 'interval') {
+      if (schedule.min_interval_days === schedule.max_interval_days) {
+        return `Every ${schedule.min_interval_days} days`;
+      }
+      return `Every ${schedule.min_interval_days}-${schedule.max_interval_days} days`;
+    }
+    if (schedule.schedule_rule === 'days_of_week' && schedule.days_of_week) {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const activeDays = schedule.days_of_week.map(d => days[d]).join(', ');
+      return activeDays || 'Weekly';
+    }
+    if (schedule.schedule_rule === 'every_x_days' && schedule.every_x_days) {
+      return `Every ${schedule.every_x_days} days`;
+    }
+    return schedule.schedule_mode || 'Custom';
+  };
+
+  const getTimeWindowText = (schedule) => {
+    if (!schedule.time_window_enabled) return null;
+    const formatTime = (time) => {
+      if (!time) return '';
+      const [h, m] = time.split(':');
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${m} ${ampm}`;
+    };
+    if (schedule.earliest_time && schedule.latest_time) {
+      return `${formatTime(schedule.earliest_time)} - ${formatTime(schedule.latest_time)}`;
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -155,10 +261,16 @@ function ScheduleNotificationsTab() {
         </div>
       )}
 
+      {success && (
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-green-800 dark:text-green-200 text-sm">{success}</p>
+        </div>
+      )}
+
       <div className="card">
         <h2 className="text-xl font-bold mb-4 text-foreground">Schedule Notifications</h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Enable or disable notifications for specific schedules. You can also configure reminder times by editing each schedule.
+          Configure notifications for each schedule. Click a schedule to expand notification settings.
         </p>
 
         {/* Type Filter */}
@@ -194,7 +306,7 @@ function ScheduleNotificationsTab() {
           <div className="space-y-3">
             {Object.entries(groupedSchedules).map(([reptileId, { reptile, schedules: reptileSchedules }]) => {
               const isExpanded = expandedReptiles.has(parseInt(reptileId));
-              const enabledCount = reptileSchedules.filter(s => s.notification_enabled).length;
+              const enabledCount = reptileSchedules.filter(s => s.notifications_enabled).length;
 
               return (
                 <Collapsible.Root
@@ -212,7 +324,7 @@ function ScheduleNotificationsTab() {
                             <div className="font-semibold text-foreground">{reptile.name}</div>
                             <div className="text-sm text-muted-foreground">
                               {reptileSchedules.length} {reptileSchedules.length === 1 ? 'schedule' : 'schedules'}
-                              {enabledCount > 0 && ` • ${enabledCount} with notifications enabled`}
+                              {enabledCount > 0 && ` • ${enabledCount} with notifications`}
                             </div>
                           </div>
                         </div>
@@ -222,50 +334,223 @@ function ScheduleNotificationsTab() {
                     {/* Schedules List */}
                     <Collapsible.Content className="bg-card border-t border-border">
                       <div className="p-4 space-y-3">
-                        {reptileSchedules.map((schedule) => (
-                          <div
-                            key={schedule.id}
-                            className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-border"
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl">{getScheduleTypeEmoji(schedule.schedule_type)}</span>
-                                <div>
-                                  <div className="font-medium text-foreground">{schedule.name}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {getScheduleTypeLabel(schedule.schedule_type)}
-                                    {schedule.notification_minutes_before && (
-                                      <> • Reminder: {schedule.notification_minutes_before} min before</>
-                                    )}
+                        {reptileSchedules.map((schedule) => {
+                          const isScheduleExpanded = expandedSchedule === schedule.id;
+                          const timeWindow = getTimeWindowText(schedule);
+
+                          return (
+                            <div
+                              key={schedule.id}
+                              className="border border-border rounded-lg overflow-hidden"
+                            >
+                              {/* Schedule Header */}
+                              <div
+                                onClick={() => toggleScheduleExpand(schedule.id)}
+                                className="flex items-center justify-between p-3 bg-secondary hover:bg-secondary/80 cursor-pointer transition-colors"
+                              >
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <span className="text-xl flex-shrink-0">{getScheduleTypeEmoji(schedule.schedule_type)}</span>
+                                  <div className="min-w-0">
+                                    <div className="font-medium text-foreground truncate">{schedule.name || getScheduleTypeLabel(schedule.schedule_type)}</div>
+                                    <div className="text-sm text-muted-foreground flex flex-wrap gap-x-2">
+                                      <span>{getScheduleFrequencyText(schedule)}</span>
+                                      {timeWindow && <span>• {timeWindow}</span>}
+                                    </div>
                                   </div>
                                 </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {/* Quick notification toggle */}
+                                  <button
+                                    onClick={(e) => handleQuickToggle(schedule, e)}
+                                    disabled={savingScheduleId === schedule.id}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      schedule.notifications_enabled
+                                        ? 'text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                        : 'text-muted-foreground hover:bg-muted'
+                                    }`}
+                                    title={schedule.notifications_enabled ? 'Notifications On' : 'Notifications Off'}
+                                  >
+                                    {schedule.notifications_enabled ? <Bell size={18} /> : <BellOff size={18} />}
+                                  </button>
+
+                                  {/* Edit button - go to full schedule editor */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/schedule-edit/${schedule.id}`);
+                                    }}
+                                    className="p-2 rounded-lg text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                                    title="Edit Schedule"
+                                  >
+                                    <Pencil size={18} />
+                                  </button>
+
+                                  {/* Delete button */}
+                                  <button
+                                    onClick={(e) => handleDelete(schedule.id, e)}
+                                    disabled={deletingScheduleId === schedule.id}
+                                    className="p-2 rounded-lg text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                                    title="Delete Schedule"
+                                  >
+                                    <Trash2 size={18} />
+                                  </button>
+
+                                  {/* Expand indicator */}
+                                  {isScheduleExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="flex items-center gap-3">
-                              {/* Notification Toggle */}
-                              <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  className="sr-only peer"
-                                  checked={schedule.notification_enabled || false}
-                                  onChange={() => handleToggleNotification(schedule)}
-                                  disabled={savingScheduleId === schedule.id}
-                                />
-                                <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-muted after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary disabled:opacity-50"></div>
-                              </label>
+                              {/* Expanded Notification Settings */}
+                              {isScheduleExpanded && (
+                                <div className="p-4 bg-card border-t border-border space-y-4">
+                                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                                    <Bell size={16} />
+                                    Notification Settings
+                                  </h4>
 
-                              {/* Edit Link */}
-                              <Link
-                                to={`/schedule-edit/${schedule.id}`}
-                                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 text-sm"
-                              >
-                                Edit
-                                <ExternalLink size={14} />
-                              </Link>
+                                  {/* Enable Notifications */}
+                                  <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={editingData.notifications_enabled || false}
+                                      onChange={(e) => setEditingData(prev => ({
+                                        ...prev,
+                                        notifications_enabled: e.target.checked
+                                      }))}
+                                      className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                                    />
+                                    <span className="text-foreground">Enable notifications for this schedule</span>
+                                  </label>
+
+                                  {editingData.notifications_enabled && (
+                                    <div className="space-y-4 ml-7 pt-2 border-t border-border">
+                                      {/* Reminder Time */}
+                                      <div>
+                                        <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                                          <Clock size={14} />
+                                          Reminder Time
+                                        </label>
+                                        <input
+                                          type="time"
+                                          value={editingData.reminder_time || ''}
+                                          onChange={(e) => setEditingData(prev => ({
+                                            ...prev,
+                                            reminder_time: e.target.value
+                                          }))}
+                                          className="input-field w-32"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          When to send the reminder (leave empty to use global settings)
+                                        </p>
+                                      </div>
+
+                                      {/* Follow-up Reminder */}
+                                      <div className="space-y-2">
+                                        <label className="flex items-center gap-3 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={editingData.follow_up_enabled || false}
+                                            onChange={(e) => setEditingData(prev => ({
+                                              ...prev,
+                                              follow_up_enabled: e.target.checked
+                                            }))}
+                                            className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                                          />
+                                          <span className="text-foreground">Send follow-up reminder if not completed</span>
+                                        </label>
+                                        {editingData.follow_up_enabled && (
+                                          <div className="ml-7">
+                                            <div className="flex items-center gap-2">
+                                              <input
+                                                type="number"
+                                                value={editingData.follow_up_delay_minutes || 30}
+                                                onChange={(e) => setEditingData(prev => ({
+                                                  ...prev,
+                                                  follow_up_delay_minutes: e.target.value
+                                                }))}
+                                                min="5"
+                                                max="480"
+                                                className="input-field w-20"
+                                              />
+                                              <span className="text-sm text-muted-foreground">minutes after first reminder</span>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Window Expiry Alert */}
+                                      {schedule.time_window_enabled && (
+                                        <div className="space-y-2">
+                                          <label className="flex items-center gap-3 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={editingData.expiry_alert_enabled || false}
+                                              onChange={(e) => setEditingData(prev => ({
+                                                ...prev,
+                                                expiry_alert_enabled: e.target.checked
+                                              }))}
+                                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                                            />
+                                            <span className="text-foreground flex items-center gap-2">
+                                              <AlertTriangle size={14} className="text-amber-500" />
+                                              Alert when time window is closing
+                                            </span>
+                                          </label>
+                                          {editingData.expiry_alert_enabled && (
+                                            <div className="ml-7">
+                                              <div className="flex items-center gap-2">
+                                                <input
+                                                  type="number"
+                                                  value={editingData.expiry_alert_offset_minutes || 45}
+                                                  onChange={(e) => setEditingData(prev => ({
+                                                    ...prev,
+                                                    expiry_alert_offset_minutes: e.target.value
+                                                  }))}
+                                                  min="5"
+                                                  max="480"
+                                                  className="input-field w-20"
+                                                />
+                                                <span className="text-sm text-muted-foreground">minutes after window opens</span>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Save/Cancel Buttons */}
+                                  <div className="flex gap-3 pt-2">
+                                    <button
+                                      onClick={() => handleSaveSettings(schedule.id)}
+                                      disabled={savingScheduleId === schedule.id}
+                                      className="btn-primary"
+                                    >
+                                      {savingScheduleId === schedule.id ? 'Saving...' : 'Save Settings'}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setExpandedSchedule(null);
+                                        setEditingData({});
+                                      }}
+                                      className="btn-secondary"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <Link
+                                      to={`/schedule-edit/${schedule.id}`}
+                                      className="btn-secondary flex items-center gap-2"
+                                    >
+                                      <ExternalLink size={14} />
+                                      Full Schedule Editor
+                                    </Link>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </Collapsible.Content>
                   </div>
@@ -281,16 +566,16 @@ function ScheduleNotificationsTab() {
         <h3 className="font-bold text-foreground mb-3">About Schedule Notifications</h3>
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>
-            • Toggle notifications on/off for individual schedules using the switches above
+            • Click the bell icon to quickly toggle notifications on/off
           </p>
           <p>
-            • To configure reminder times (e.g., "notify 30 minutes before"), click "Edit" to go to the schedule editor
+            • Click a schedule row to expand and edit notification settings
           </p>
           <p>
-            • Schedule reminders respect your global notification preferences (quiet hours, frequency caps, etc.)
+            • Follow-up reminders send a second notification if the task isn't completed
           </p>
           <p>
-            • Overdue alerts are sent separately and can be enabled/disabled in Global Settings
+            • Window expiry alerts notify you when a time window is about to close
           </p>
         </div>
       </div>

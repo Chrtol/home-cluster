@@ -12,6 +12,7 @@ function ReptileAlertsTab() {
   const [reptiles, setReptiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [expandedReptile, setExpandedReptile] = useState(null); // Only one expanded at a time
   const [savingId, setSavingId] = useState(null);
 
@@ -90,8 +91,10 @@ function ReptileAlertsTab() {
   const handleSave = async (reptileId) => {
     setSavingId(reptileId);
     setError('');
+    setSuccess('');
 
     try {
+      const reptile = reptiles.find(r => r.id === reptileId);
       const updates = {
         weight_alerts_enabled: formData.weight_alerts_enabled,
         weight_alert_gain_threshold_percent: parseFloat(formData.weight_alert_gain_threshold_percent) || null,
@@ -102,6 +105,10 @@ function ReptileAlertsTab() {
       setReptiles(reptiles.map(r => r.id === reptileId ? res.data : r));
       setExpandedReptile(null);
       setFormData({});
+      setSuccess(`Weight alert settings saved for ${reptile?.name || 'reptile'}`);
+
+      // Clear success after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Failed to save:', err);
       setError(err.response?.data?.detail || 'Failed to save weight alert settings');
@@ -143,6 +150,12 @@ function ReptileAlertsTab() {
       {error && (
         <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-green-800 dark:text-green-200 text-sm">{success}</p>
         </div>
       )}
 

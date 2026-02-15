@@ -322,28 +322,6 @@ export default function ReptileDetail() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  // Age-aware default thresholds (matches backend AGE_AWARE_DEFAULTS)
-  const AGE_AWARE_DEFAULTS = {
-    hatchling: { gain: 25, loss: 0 },
-    juvenile: { gain: 25, loss: 0 },
-    adult: { gain: 10, loss: 5 },
-  };
-
-  // Get age category for threshold defaults - uses reptile's age_category field
-  const getAgeCategory = () => {
-    if (reptile.age_category) {
-      const category = reptile.age_category.toLowerCase();
-      if (category === 'hatchling' || category === 'juvenile') {
-        return category;
-      }
-    }
-    return 'adult';  // adult, gravid, or unset -> adult thresholds
-  };
-
-  const getAgeAwareDefaults = () => {
-    return AGE_AWARE_DEFAULTS[getAgeCategory()] || AGE_AWARE_DEFAULTS.adult;
-  };
-
   const handleUpdateDefaultFood = async (field, foodId) => {
     try {
       await axios.patch(`/api/reptiles/${id}`, {
@@ -1088,6 +1066,21 @@ export default function ReptileDetail() {
               </div>
             </div>
           )}
+
+          {/* Weight Alerts */}
+          <Link
+            to={`/notifications?tab=reptiles&reptile=${reptile.id}`}
+            className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg hover:bg-secondary/80 transition-colors"
+          >
+            <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Weight Alerts</p>
+              <p className={`text-sm font-medium ${reptile.weight_alerts_enabled ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {reptile.weight_alerts_enabled ? 'On' : 'Off'}
+              </p>
+            </div>
+            <Edit2 size={14} className="text-muted-foreground mt-1" />
+          </Link>
         </div>
 
         {/* Notes - Full Width */}
@@ -1102,53 +1095,6 @@ export default function ReptileDetail() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Weight Alert Settings - Read Only */}
-      <div className="bg-card/80 border border-border rounded-xl p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <AlertTriangle size={18} className="text-amber-500" />
-            Weight Alerts
-          </h3>
-          <Link
-            to={`/notifications?tab=reptiles&reptile=${reptile.id}`}
-            className="text-sm text-primary hover:underline flex items-center gap-1"
-          >
-            <Edit2 size={14} />
-            Edit
-          </Link>
-        </div>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Status</span>
-            <span className={reptile.weight_alerts_enabled ? 'text-green-500' : 'text-muted-foreground'}>
-              {reptile.weight_alerts_enabled ? 'Enabled' : 'Disabled'}
-            </span>
-          </div>
-
-          {reptile.weight_alerts_enabled && (
-            <>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Gain threshold</span>
-                <span className="text-foreground">
-                  {reptile.weight_alert_gain_threshold_percent
-                    ? `${reptile.weight_alert_gain_threshold_percent}%`
-                    : `${getAgeAwareDefaults().gain}% (default)`}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Loss threshold</span>
-                <span className="text-foreground">
-                  {reptile.weight_alert_loss_threshold_percent !== null && reptile.weight_alert_loss_threshold_percent !== undefined
-                    ? `${reptile.weight_alert_loss_threshold_percent}%`
-                    : `${getAgeAwareDefaults().loss}% (default)`}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
       </div>
 
       <div className="border-b border-border mb-4 overflow-x-auto">
