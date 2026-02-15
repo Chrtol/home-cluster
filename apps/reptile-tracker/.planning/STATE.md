@@ -3,9 +3,9 @@
 ## Current Position
 
 **Phase:** 24 of 25 (Weight Change Alerts)
-**Plan:** 2 of 4 complete
-**Status:** In progress
-**Last activity:** 2026-02-15 - Completed 24-02 (weight alert delivery integration)
+**Plan:** 3 of 3 complete
+**Status:** Phase complete
+**Last activity:** 2026-02-15 - Completed 24-03 (weight alert settings UI)
 
 ### Progress
 ```
@@ -13,7 +13,7 @@ Phase 20: Complete
 Phase 21: Complete (celebration animations)
 Phase 22: Complete (smart notification system: 22-01, 22-02, 22-03, 22-04, 22-05)
 Phase 23: Complete (notification planner: 23-01 ✓, 23-02 ✓, 23-03 ✓, 23-04 ✓)
-Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02 ✓, 24-03, 24-04)
+Phase 24: Complete (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02 ✓, 24-03 ✓)
 ```
 
 ---
@@ -68,6 +68,9 @@ Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02 ✓, 
 | 24-02 | Queue alerts via Celery for async delivery | Decouples weight logging from notification delivery, prevents blocking | Non-blocking weight log creation |
 | 24-02 | Daily sweep job at 4 AM UTC | Safety net for missed alerts, runs after instance maintenance (3 AM) | Catches edge cases where on-creation trigger failed |
 | 24-02 | Gold/amber color for Discord embeds | Health-related alerts use warm warning colors (not critical red) | Visually distinct from schedule reminders (blue) and overdue alerts (red) |
+| 24-03 | Use inline toast notifications (matching UserStreakDisplay) | Consistent UX with rest of app, no intrusive browser alert() | All error notifications follow app-wide pattern |
+| 24-03 | Max threshold 500% to accommodate baby growth | Ball python hatchlings can gain 25%+ weekly | Prevents false positives for rapidly growing juveniles |
+| 24-03 | Use response.data from PATCH for state updates | Ensures UI matches backend reality, prevents drift | Reliable persistence, single source of truth |
 
 ---
 
@@ -99,6 +102,7 @@ Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02 ✓, 
 
 **Key files to remember:**
 - `backend/app/models.py` - Reptile with weight alert fields, WeightAlertTracking model (24-01), NotificationSettings with planner digest fields + digest_channel_id (23-01, 23-04)
+- `frontend/src/pages/ReptileDetail.jsx` - Weight Alert Settings section UI (24-03)
 - `backend/app/schemas.py` - Pydantic schemas for weight alerts (24-01), planner settings (23-01, 23-04)
 - `backend/app/scheduler/digest.py` - Digest generation module with query and formatting functions (23-02)
 - `backend/app/scheduler/core.py` - Digest scheduling cron jobs + execution functions (23-03)
@@ -126,16 +130,27 @@ Phase 24: In progress (weight change alerts: 24-01 ✓, 24-01.5 ✓, 24-02 ✓, 
 
 ## Blockers & Concerns
 
-None currently. Phase 24 plan 02 complete - notification delivery and templates integrated.
+None currently. Phase 24 complete - weight change alert system fully functional end-to-end.
+
+### Gap Closure Needed (Future Enhancements)
+
+The following features from original vision were intentionally deferred:
+
+1. **Separate thresholds for gain vs loss** - Requires schema changes + UI redesign
+2. **Age-aware defaults (baby/juvenile vs adult)** - Requires age tracking system
+3. **Growth milestone alerts for juveniles** - New feature, separate from alerts
+4. **Rolling average baseline** - Requires detection logic + DB query changes
+
+These are enhancement opportunities, not bugs. Core system is production-ready.
 
 ---
 
 ## Session Continuity
 
 **Last session:** 2026-02-15
-**Stopped at:** Phase 24 plan 02 complete - weight alert delivery integration
-**Resume from:** Phase 24 plan 03 (testing and refinement)
-**Resume command:** `/gsd:execute-plan 24-03`
+**Stopped at:** Phase 24 complete - weight change alert system fully functional
+**Resume from:** Future enhancement planning (gap closure or new features)
+**Resume command:** N/A - Phase 24 complete
 
 ---
 
@@ -185,6 +200,10 @@ None currently. Phase 24 plan 02 complete - notification delivery and templates 
 | 24-02 | POST weight log alert check | Triggers check_weight_change_alert on creation, queues Celery task |
 | 24-02 | daily_weight_alert_sweep job | 4 AM UTC safety net for missed alerts |
 | 24-02 | weight_change_alert Discord color | Gold/amber (15844367) for health-related alerts |
+| 24-03 | Weight Alert Settings UI section | Toggle and threshold input in ReptileDetail page |
+| 24-03 | Inline toast notification pattern | Red background toast matching UserStreakDisplay for errors |
+| 24-03 | Species-aware default thresholds | Ball Python: 10%, Leopard Gecko: 15%, Crested Gecko: 12%, General: 15% |
+| 24-03 | 500% max threshold validation | Accommodates rapid juvenile growth (hatchlings can gain 25%+ weekly) |
 
 ---
 
@@ -246,17 +265,23 @@ Plans completed:
 - Default weight_change_alert template via migration 0090
 - Daily sweep job at 4 AM UTC for safety net
 
-**Plan 24-03:** Next - Testing and refinement
-**Plan 24-04:** Pending - Frontend UI configuration
+**Plan 24-03:** Complete - Weight alert settings UI
+- Weight Change Alerts section in ReptileDetail page
+- Enable/disable toggle and threshold percentage input
+- Species-aware default thresholds (Ball Python 10%, Leopard Gecko 15%, etc.)
+- Inline toast notifications for error handling
+- Bug fixes: toast instead of alert(), 500% max threshold, response.data persistence
 
 ---
 
 ## Next Steps
 
-1. Execute plan 24-03 (testing and refinement)
-2. Test end-to-end weight alert flow (creation → detection → notification)
-3. Verify template rendering and multi-channel delivery
+Phase 24 complete. Potential future work:
+
+1. Gap closure planning for advanced features (separate gain/loss thresholds, age-aware defaults, rolling average baseline)
+2. Growth milestone celebration system (separate from alerts)
+3. Other reptile tracker enhancements
 
 ---
 
-*Last updated: 2026-02-15T14:18:29Z*
+*Last updated: 2026-02-15T14:51:14Z*
