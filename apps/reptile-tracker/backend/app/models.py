@@ -256,6 +256,10 @@ class Reptile(Base):
     # Avatar border color (hex color code)
     avatar_border_color = Column(String(7), nullable=True)  # e.g., "#FF5733"
 
+    # Weight change alert settings (Phase 24)
+    weight_alerts_enabled = Column(Boolean, default=False, nullable=False)
+    weight_alert_threshold_percent = Column(Integer, nullable=True)  # null = use species default (10%)
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
@@ -932,6 +936,23 @@ class NotificationFrequencyTracking(Base):
     __table_args__ = (
         Index('ix_freq_tracking_lookup', 'user_id', 'reptile_id', 'date'),
     )
+
+
+class WeightAlertTracking(Base):
+    """Tracks last weight alert timestamp per reptile for weekly frequency cap."""
+    __tablename__ = "weight_alert_tracking"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    last_alert_at = Column(DateTime(timezone=True), nullable=True)
+    last_alert_weight_log_id = Column(Integer, ForeignKey("weight_logs.id", ondelete="SET NULL"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    reptile = relationship("Reptile", backref="weight_alert_tracking")
+    last_alert_weight_log = relationship("WeightLog")
 
 
 # Household and Invitation models

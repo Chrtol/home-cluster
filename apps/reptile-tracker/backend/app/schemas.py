@@ -65,6 +65,8 @@ class ReptileBase(BaseModel):
     default_prepared_id: Optional[int] = None  # Default prepared food for auto-selection
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
     avatar_border_color: Optional[str] = None  # Hex color code for avatar border
+    weight_alerts_enabled: bool = False  # Weight change alert enabled for this reptile
+    weight_alert_threshold_percent: Optional[int] = None  # null = use species default
 
 
 class ReptileCreate(ReptileBase):
@@ -91,6 +93,8 @@ class ReptileUpdate(BaseModel):
     default_prepared_id: Optional[int] = None
     avatar_photo_id: Optional[str] = None  # UUID of photo to use as avatar
     avatar_border_color: Optional[str] = None  # Hex color code for avatar border
+    weight_alerts_enabled: Optional[bool] = None
+    weight_alert_threshold_percent: Optional[int] = None
 
 
 class Reptile(ReptileBase):
