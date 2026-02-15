@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 #   - daily_planner: Daily digest of tasks for the day
 #   - weekly_planner: Weekly digest of tasks for the next 7 days
 #
+# Weight change alerts (Phase 24):
+#   - weight_change_alert: Sent when reptile weight change exceeds threshold
+#
 # =============================================================================
 # Template Variables (SafeDict pattern - missing keys return empty string)
 # =============================================================================
@@ -401,6 +404,8 @@ def _create_discord_embed(
         "follow_up_reminder": 16750899,    # Orange (follow-up urgency)
         "expiry_alert": 16711680,          # Bright red (window closing)
         "frequency_cap_summary": 10181046, # Purple (summary/informational)
+        # Weight change alerts (Phase 24)
+        "weight_change_alert": 15844367,  # Gold/amber (health-related)
     }
 
     # Use template color if available, otherwise fallback to defaults

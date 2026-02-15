@@ -78,6 +78,8 @@ __all__ = [
     "schedule_weekly_planner_jobs",
     "execute_daily_planner_delivery",
     "execute_weekly_planner_delivery",
+    # Weight alert sweep (Phase 24)
+    "daily_weight_alert_sweep",
 ]
 
 
@@ -1481,6 +1483,53 @@ async def execute_weekly_planner_delivery(user_id: int, start_date: py_date):
         logger.error(f"Error executing weekly planner delivery for user {user_id}: {e}", exc_info=True)
 
 
+async def daily_weight_alert_sweep():
+    """
+    Daily job to check for weight changes that might have been missed.
+    Safety net for edge cases where on-creation trigger failed.
+    Runs at 4 AM UTC.
+    """
+    logger.info("Running daily weight alert sweep")
+
+    try:
+        from app.models import WeightLog
+        from app.scheduler.weight_alerts import check_weight_change_alert
+
+        async with async_session_maker() as db:
+            # Find all weight logs from last 24 hours
+            yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+
+            result = await db.execute(
+                select(WeightLog)
+                .where(WeightLog.measured_at >= yesterday)
+                .order_by(WeightLog.measured_at.desc())
+            )
+
+            weight_logs = result.scalars().all()
+            logger.info(f"Found {len(weight_logs)} weight logs in last 24 hours to check")
+
+            alerts_triggered = 0
+            for log in weight_logs:
+                try:
+                    alert_context = await check_weight_change_alert(db, log, is_sweep=True)
+                    if alert_context:
+                        # Queue Celery task
+                        from app.celery_tasks import send_weight_change_alert_task
+                        send_weight_change_alert_task.delay(
+                            reptile_id=log.reptile_id,
+                            weight_log_id=log.id,
+                            alert_context=alert_context
+                        )
+                        alerts_triggered += 1
+                except Exception as e:
+                    logger.error(f"Error checking weight alert for log {log.id}: {e}")
+
+            logger.info(f"Daily weight alert sweep complete: {alerts_triggered} alerts triggered")
+
+    except Exception as e:
+        logger.error(f"Error in daily weight alert sweep: {e}", exc_info=True)
+
+
 async def schedule_planner_for_user(user_id: int):
     """
     Schedule planner digest delivery for a specific user on-demand.
@@ -1681,6 +1730,17 @@ async def start_scheduler():
         minute=0,
         id="daily_instance_maintenance",
         name="Daily schedule instance maintenance",
+        replace_existing=True
+    )
+
+    # Daily weight alert sweep (runs at 4 AM UTC)
+    scheduler.add_job(
+        daily_weight_alert_sweep,
+        trigger="cron",
+        hour=4,
+        minute=0,
+        id="daily_weight_alert_sweep",
+        name="Daily weight alert sweep (safety net)",
         replace_existing=True
     )
 
