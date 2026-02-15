@@ -9,7 +9,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.celery_app import celery_app
 from app.database import async_session_maker
-from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType, ScheduleInstance, InstanceStatus
+from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType, ScheduleInstance, InstanceStatus, WeightLog
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
 from app.scheduler import create_in_app_notification, is_within_quiet_hours
 from app.scheduler.frequency_cap import is_frequency_cap_reached, increment_notification_count, get_frequency_cap_mode
@@ -984,6 +984,150 @@ async def _send_grouped_digest_notification(
 
         except Exception as channel_error:
             logger.error(f"Failed to send digest to channel {channel.id}: {channel_error}")
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
+async def send_weight_change_alert_task(
+    self,
+    reptile_id: int,
+    weight_log_id: int,
+    alert_context: dict
+):
+    """
+    Celery task to send weight change alert notification.
+
+    Args:
+        reptile_id: Reptile ID
+        weight_log_id: The weight log that triggered the alert
+        alert_context: Dict with baseline_weight, current_weight, change_percent, etc.
+    """
+    logger.info(f"=== CELERY send_weight_change_alert_task STARTED === reptile_id={reptile_id}, weight_log_id={weight_log_id}")
+
+    try:
+        async with async_session_maker() as db:
+            # Load entities
+            reptile = await db.get(Reptile, reptile_id)
+            weight_log = await db.get(WeightLog, weight_log_id)
+
+            if not reptile or not weight_log:
+                logger.error(f"Missing data for weight alert: reptile={reptile_id}, weight_log={weight_log_id}")
+                return
+
+            # Get users who have access to this reptile (via household)
+            from app.permissions import get_reptile_users
+            users = await get_reptile_users(db, reptile)
+
+            if not users:
+                logger.warning(f"No users with access to reptile {reptile_id}")
+                return
+
+            # Build notification context
+            context = {
+                "reptile_id": reptile.id,
+                "reptile_name": reptile.name,
+                "baseline_weight": alert_context["baseline_weight"],
+                "current_weight": alert_context["current_weight"],
+                "weight_change_grams": alert_context["weight_change_grams"],
+                "weight_change_percent": alert_context["weight_change_percent"],
+                "change_direction": alert_context["change_direction"],
+                "time_span_days": alert_context["time_span_days"],
+                "threshold_percent": alert_context["threshold_percent"],
+            }
+
+            # Send to each user's enabled channels
+            for user in users:
+                try:
+                    # Get user's notification settings
+                    settings_result = await db.execute(
+                        select(NotificationSettings).where(NotificationSettings.user_id == user.id)
+                    )
+                    settings = settings_result.scalar_one_or_none()
+
+                    if not settings:
+                        continue
+
+                    # Get enabled channels
+                    channels_result = await db.execute(
+                        select(NotificationChannel).where(
+                            NotificationChannel.notification_settings_id == settings.id,
+                            NotificationChannel.enabled == True
+                        )
+                    )
+                    channels = channels_result.scalars().all()
+
+                    for channel in channels:
+                        try:
+                            # Get template for weight_change_alert trigger
+                            template = await get_template_for_trigger(
+                                db=db,
+                                trigger_type="weight_change_alert",
+                                user_id=user.id,
+                                channel_type=channel.webhook_type
+                            )
+
+                            # Render template or use fallback
+                            if template:
+                                message = render_template(template.message_template, context)
+                                title = render_template(template.title_template, context) if template.title_template else f"Weight Alert - {reptile.name}"
+                            else:
+                                # Fallback message
+                                direction_emoji = "📈" if context["change_direction"] == "gain" else "📉"
+                                message = (
+                                    f"{direction_emoji} **{reptile.name}** has experienced a significant weight change.\n\n"
+                                    f"**Change:** {context['weight_change_percent']}% {context['change_direction']} "
+                                    f"({context['weight_change_grams']:.1f}g)\n"
+                                    f"**Baseline:** {context['baseline_weight']:.1f}g\n"
+                                    f"**Current:** {context['current_weight']:.1f}g\n"
+                                    f"**Time span:** {context['time_span_days']} days"
+                                )
+                                title = f"Weight Alert - {reptile.name}"
+
+                            # Send via webhook or in-app
+                            if channel.webhook_type == "in_app":
+                                await create_in_app_notification(
+                                    db=db,
+                                    user=user,
+                                    notification_type=NotificationType.HEALTH_EVENT,
+                                    title=title,
+                                    message=message,
+                                    link=f"/reptiles/{reptile.id}",
+                                    notification_metadata={
+                                        "reptile_id": reptile.id,
+                                        "weight_log_id": weight_log_id,
+                                        "alert_type": "weight_change_alert",
+                                        **context
+                                    }
+                                )
+                            else:
+                                await send_webhook_notification(
+                                    webhook_url=channel.webhook_url,
+                                    webhook_type=channel.webhook_type,
+                                    message=message,
+                                    title=title,
+                                    config=channel.config,
+                                    context=context,
+                                    trigger_type="weight_change_alert",
+                                    template=template
+                                )
+
+                            logger.info(f"Sent weight alert via {channel.webhook_type} for reptile {reptile.name} to user {user.email}")
+
+                        except Exception as channel_error:
+                            logger.error(f"Failed to send weight alert to channel {channel.id}: {channel_error}")
+
+                except Exception as user_error:
+                    logger.error(f"Failed to send weight alert to user {user.id}: {user_error}")
+
+            # Update tracking record (marks alert as sent, starts 7-day cooldown)
+            from app.scheduler.weight_alerts import update_weight_alert_tracking
+            await update_weight_alert_tracking(db, reptile_id, weight_log_id)
+            await db.commit()
+
+            logger.info(f"Weight change alert sent for reptile {reptile.name}")
+
+    except Exception as exc:
+        logger.error(f"Error sending weight change alert: {exc}", exc_info=True)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
 
 
 @celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
