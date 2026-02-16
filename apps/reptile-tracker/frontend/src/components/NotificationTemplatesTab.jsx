@@ -423,8 +423,18 @@ const NotificationTemplatesTab = () => {
         day_name: 'Thursday',
         task_count: '5',
         overdue_count: '1',
-        tasks_by_reptile: '[Grouped task list]',
-        overdue_tasks: '[Overdue task list]',
+        tasks_by_reptile: `**Spyro**
+  - 🍽️ Morning Feeding (08:00 - 10:00)
+  - 💧 Misting (12:00 - 14:00)
+
+**Luna**
+  - 🍽️ Evening Feeding (18:00 - 20:00)
+  - ⚖️ Weekly Weigh-in (any time)
+
+**Rex**
+  - 🍽️ Feeding (10:00 - 12:00)`,
+        overdue_tasks: `**Overdue:**
+  - ⚠️ Luna: Health Check (was due Dec 2)`,
         app_link: 'https://reptile-tracker.example.com'
       };
     }
@@ -434,9 +444,21 @@ const NotificationTemplatesTab = () => {
         week_start: '2025-12-01',
         week_end: '2025-12-07',
         total_tasks: '15',
-        tasks_by_day: '[Tasks grouped by day]',
+        tasks_by_day: `**Monday (Dec 1)**
+  - 🍽️ Spyro: Morning Feeding
+  - 💧 Luna: Misting
+
+**Tuesday (Dec 2)**
+  - 🍽️ Rex: Feeding
+  - ⚖️ Spyro: Weekly Weigh-in
+
+**Wednesday (Dec 3)**
+  - 🍽️ Spyro: Morning Feeding
+  - 🍽️ Luna: Evening Feeding`,
         overdue_count: '2',
-        overdue_tasks: '[Overdue task list]',
+        overdue_tasks: `**Overdue:**
+  - ⚠️ Luna: Health Check (was due Nov 28)
+  - ⚠️ Rex: Supplement (was due Nov 30)`,
         app_link: 'https://reptile-tracker.example.com'
       };
     }
