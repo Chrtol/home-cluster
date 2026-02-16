@@ -152,6 +152,10 @@ function ChannelsTab() {
         }
 
         payload.webhook_url = null; // Pushover doesn't use webhook URLs
+      } else if (channelType === 'in_app') {
+        // In-app notifications don't use webhook URLs
+        payload.webhook_url = null;
+        payload.config = null;
       } else {
         // Discord and Generic require webhook URL
         if (!channelUrl.trim()) {
