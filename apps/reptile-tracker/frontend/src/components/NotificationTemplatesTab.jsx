@@ -24,7 +24,8 @@ const NotificationTemplatesTab = () => {
   // Form state
   const [templateName, setTemplateName] = useState('');
   const [triggerType, setTriggerType] = useState('schedule_reminder');
-  const [messageTemplate, setMessageTemplate] = useState('');
+  const [messageTemplateShort, setMessageTemplateShort] = useState('');
+  const [messageTemplateLong, setMessageTemplateLong] = useState('');
   const [titleTemplate, setTitleTemplate] = useState('');
   const [channelType, setChannelType] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -211,7 +212,8 @@ const NotificationTemplatesTab = () => {
     setEditingTemplate(null);
     setTemplateName('');
     setTriggerType('schedule_reminder');
-    setMessageTemplate('');
+    setMessageTemplateShort('');
+    setMessageTemplateLong('');
     setTitleTemplate('');
     setChannelType('');
     setIsActive(true);
@@ -240,7 +242,9 @@ const NotificationTemplatesTab = () => {
     setEditingTemplate(template);
     setTemplateName(template.name);
     setTriggerType(template.trigger_type);
-    setMessageTemplate(template.message_template);
+    // Load both format variants with fallback to legacy message_template
+    setMessageTemplateShort(template.message_template_short || template.message_template || '');
+    setMessageTemplateLong(template.message_template_long || template.message_template || '');
     setTitleTemplate(template.title_template || '');
     setChannelType(template.channel_type || '');
     setIsActive(template.is_active);
@@ -277,7 +281,10 @@ const NotificationTemplatesTab = () => {
       const payload = {
         name: templateName.trim(),
         trigger_type: triggerType,
-        message_template: messageTemplate.trim(),
+        message_template_short: messageTemplateShort.trim(),
+        message_template_long: messageTemplateLong.trim(),
+        // Keep message_template for backward compatibility (use short as default)
+        message_template: messageTemplateShort.trim(),
         title_template: titleTemplate.trim() || null,
         channel_type: channelType.trim() || null,
         is_active: isActive,
@@ -540,20 +547,20 @@ const NotificationTemplatesTab = () => {
     const textarea = messageTemplateRef.current;
     if (!textarea) {
       // Fallback if ref is not available
-      setMessageTemplate(prev => prev + `{${variable}}`);
+      setMessageTemplateShort(prev => prev + `{${variable}}`);
       return;
     }
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = messageTemplate;
+    const text = messageTemplateShort;
     const before = text.substring(0, start);
     const after = text.substring(end);
     const variableText = `{${variable}}`;
 
     // Insert variable at cursor position
     const newText = before + variableText + after;
-    setMessageTemplate(newText);
+    setMessageTemplateShort(newText);
 
     // Set cursor position after the inserted variable
     setTimeout(() => {
@@ -1049,29 +1056,55 @@ const NotificationTemplatesTab = () => {
                 />
               </div>
 
+              {/* Short Format Template */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Message Template</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">
+                  Short Format Message
+                </label>
                 <textarea
                   ref={messageTemplateRef}
-                  value={messageTemplate}
-                  onChange={(e) => setMessageTemplate(e.target.value)}
+                  value={messageTemplateShort}
+                  onChange={(e) => setMessageTemplateShort(e.target.value)}
+                  className="w-full p-2 border border-border rounded bg-card text-foreground"
+                  rows={3}
+                  placeholder="{emoji} {schedule_name}: {reptile_name}"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Compact message for channels set to "Short" format
+                </p>
+              </div>
+
+              {/* Long Format Template */}
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">
+                  Long Format Message
+                </label>
+                <textarea
+                  value={messageTemplateLong}
+                  onChange={(e) => setMessageTemplateLong(e.target.value)}
                   className="w-full p-2 border border-border rounded bg-card text-foreground"
                   rows={4}
-                  placeholder="{emoji} Reminder: {schedule_name} for {reptile_name}"
+                  placeholder="{emoji} Reminder: {schedule_name} for {reptile_name}{time_window}{notes}"
                 />
-                <div className="mt-2">
-                  <p className="text-xs text-muted-foreground mb-1">Available variables:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {availableVariables[triggerType].map(variable => (
-                      <button
-                        key={variable}
-                        onClick={() => insertVariable(variable)}
-                        className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700"
-                      >
-                        {variable}
-                      </button>
-                    ))}
-                  </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Detailed message for channels set to "Long" format
+                </p>
+              </div>
+
+              {/* Variable insertion buttons - shared for both */}
+              <div className="mt-2">
+                <p className="text-xs text-muted-foreground mb-1">Click to insert variable at cursor (in short format field):</p>
+                <div className="flex flex-wrap gap-1">
+                  {(availableVariables[triggerType] || []).map(variable => (
+                    <button
+                      key={variable}
+                      type="button"
+                      onClick={() => insertVariable(variable)}
+                      className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40 text-green-800 dark:text-green-200 rounded border border-green-300 dark:border-green-700"
+                    >
+                      {variable}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1180,18 +1213,39 @@ const NotificationTemplatesTab = () => {
                     </div>
                   )}
 
-                  {messageTemplate && (
+                  {messageTemplateShort && (
                     <div>
                       <label className="block text-sm font-medium mb-2 text-muted-foreground">
-                        Message Preview:
+                        Short Format Preview:
                       </label>
                       <div className="p-3 bg-secondary border border-border rounded-lg">
                         <p
                           className="text-foreground whitespace-pre-wrap"
+                          // Note: Content is sanitized - only app-controlled sample data is rendered
                           dangerouslySetInnerHTML={{
                             __html: renderTemplate(
                               { trigger_type: triggerType },
-                              messageTemplate
+                              messageTemplateShort
+                            )
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {messageTemplateLong && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-muted-foreground">
+                        Long Format Preview:
+                      </label>
+                      <div className="p-3 bg-secondary border border-border rounded-lg">
+                        <p
+                          className="text-foreground whitespace-pre-wrap"
+                          // Note: Content is sanitized - only app-controlled sample data is rendered
+                          dangerouslySetInnerHTML={{
+                            __html: renderTemplate(
+                              { trigger_type: triggerType },
+                              messageTemplateLong
                             )
                           }}
                         />
@@ -1226,7 +1280,7 @@ const NotificationTemplatesTab = () => {
               <button
                 onClick={handleSaveTemplate}
                 className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!templateName.trim() || !messageTemplate.trim()}
+                disabled={!templateName.trim() || (!messageTemplateShort.trim() && !messageTemplateLong.trim())}
               >
                 Save Template
               </button>
