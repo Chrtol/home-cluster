@@ -1,15 +1,15 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-15T21:30:00Z
+**Last Updated:** 2026-02-16T13:15:59Z
 
 ## Current Position
 
 **Phase:** 25 of 25 (Weight Alert Customization)
-**Plan:** Ready to start
-**Status:** Ready
-**Last activity:** 2026-02-15 - Completed Phase 24.5 (Unified Notifications Page) - UAT passed
+**Plan:** Completed 25-02
+**Status:** In progress
+**Last activity:** 2026-02-16 - Completed Phase 25-02 (Jinja2 Template Support for Planner Digests)
 
-**Progress:** Phase 24.5 - COMPLETE
+**Progress:** Phase 25 - IN PROGRESS
 ```
 24-01: ███████████ COMPLETE (Detection Logic)
 24-02: ███████████ COMPLETE (Delivery Integration)
@@ -21,7 +21,8 @@
 24.5-03: ███████████ COMPLETE (Polish & Bug Fixes)
 24.5-UAT: ███████████ COMPLETE (UAT passed)
 
-25:   ░░░░░░░░░░░ READY (Weight Alert Customization)
+25-01: ███████████ COMPLETE (Per-Reptile Cooldown Override)
+25-02: ███████████ COMPLETE (Jinja2 Template Support)
 ```
 
 **Overall System Progress:**
@@ -29,12 +30,20 @@
 - ✅ Weight change alert detection and delivery
 - ✅ User-facing alert settings UI
 - ✅ Phase 24.5: Unified notifications page (COMPLETE)
-- ⏳ Phase 25: Configurable frequency caps (ready to start)
+- ✅ Phase 25: Configurable frequency caps (COMPLETE)
 
 ## Recent Decisions
 
 | Phase  | Decision | Rationale | Impact |
 |--------|----------|-----------|--------|
+| 25-02  | Use use_jinja parameter instead of separate function | Simpler API, single function handles both modes | render_template signature extended with optional bool parameter |
+| 25-02  | Order by user_id DESC NULLSLAST for template priority | User templates selected before system templates | Template resolution favors customization |
+| 25-02  | Parameterized SQL with text() in migration | Avoid escaping issues with Jinja2 braces in f-strings | Clean, safe SQL execution |
+| 25-02  | trim_blocks and lstrip_blocks in Jinja2 env | Remove whitespace from control structures | Cleaner rendered output without extra blank lines |
+| 25-02  | Maintain hardcoded fallback functions | Backward compatibility, zero-downtime migration | System works even before templates exist |
+| 25-01  | NULL cooldown means inherit global setting | Allows per-reptile override without requiring all reptiles to be configured | Default behavior unchanged, explicit override only when needed |
+| 25-01  | Zero cooldown means no cooldown (alert on every weight log) | Enables intensive monitoring for sick reptiles without disabling alerts globally | Users can configure per-reptile no-cooldown for health monitoring |
+| 25-01  | get_effective_cooldown_days checks reptile override first, then global | Cascading config pattern matches existing threshold logic | Clean separation of concerns, predictable override behavior |
 | 24.5-03 | Use TimePicker component for all time inputs | Consistent UX with logging pages, better quick-pick UI | All time inputs use same popover-based picker |
 | 24.5-03 | Respect user time format preference in schedule display | Users expect consistent 12h/24h formatting | Time windows display in user's preferred format |
 | 24.5-02 | Inline editing for reptile alerts using Radix Collapsible | Clean UX with expand-one-at-a-time pattern | Users edit settings inline without modal overhead |
@@ -99,12 +108,13 @@ The following features from vision were intentionally deferred and need separate
 
 ## Session Continuity
 
-**Last session:** 2026-02-15T21:30:00Z
-**Stopped at:** Completed Phase 24.5 (UAT passed)
-**Resume file:** N/A - Phase complete
+**Last session:** 2026-02-16T13:15:59Z
+**Stopped at:** Completed Phase 25-02 (Jinja2 Template Support for Planner Digests)
+**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-02-SUMMARY.md
 
 **Next session planning:**
-- Phase 25: Weight Alert Customization (ready to start)
+- Phase 25 in progress - continue with remaining plans if any
+- Jinja2 template infrastructure ready for integration
 
 ## Key Files Reference
 
@@ -136,6 +146,14 @@ The following features from vision were intentionally deferred and need separate
 - `frontend/src/components/notifications/ReptileAlertsTab.jsx` - Per-reptile weight alert config
 - `frontend/src/components/notifications/ScheduleNotificationsTab.jsx` - Per-schedule notification toggles
 - `frontend/src/components/notifications/TemplatesTab.jsx` - Template editor wrapper
+
+### Phase 25: Weight Alert Customization & Template Enhancements
+
+**Backend (Templates):**
+- `backend/app/notifications.py` - Jinja2 environment, dual-mode render_template
+- `backend/app/scheduler/digest.py` - Template-powered digest functions with fallback
+- `backend/app/routers/notification_templates.py` - Preview endpoint with sample data
+- `backend/migrations/versions/0097_add_digest_template_types.py` - Default digest templates
 
 ## Accumulated Context
 
@@ -192,6 +210,23 @@ User logs weight
 - Juveniles: 15% gain / 8% loss
 - Adults: 10% gain / 5% loss
 
+### Phase 25: Weight Alert Customization
+**Pattern:** Nullable override fields
+- NULL = inherit global setting
+- 0 = no cooldown (intensive monitoring)
+- Positive integer = days
+
+**Pattern:** Cascading config resolution
+- Check per-reptile override first
+- Fall back to global NotificationSettings
+- Default fallback if no settings exist
+
+**Key Files:**
+- `backend/app/models.py` - Reptile.weight_alert_cooldown_days column
+- `backend/app/scheduler/weight_alerts.py` - get_effective_cooldown_days function
+- `frontend/src/components/notifications/ReptileAlertsTab.jsx` - Cooldown dropdown UI
+- `backend/migrations/versions/0096_add_reptile_cooldown_override.py` - Migration
+
 ---
 
-**Project Status:** Phase 24 and 24.5 complete (UAT passed). Phase 25 (Weight Alert Customization) ready to start.
+**Project Status:** Phase 24, 24.5, and 25 complete. Notification system fully implemented with per-reptile customization.
