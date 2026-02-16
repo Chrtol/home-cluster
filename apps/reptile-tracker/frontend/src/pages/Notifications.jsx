@@ -24,6 +24,10 @@ export default function Notifications() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full justify-start mb-6 overflow-x-auto">
+          <TabsTrigger value="global" className="flex items-center gap-2">
+            <SettingsIcon size={18} />
+            Global Settings
+          </TabsTrigger>
           <TabsTrigger value="channels" className="flex items-center gap-2">
             <Bell size={18} />
             Channels
@@ -31,10 +35,6 @@ export default function Notifications() {
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText size={18} />
             Templates
-          </TabsTrigger>
-          <TabsTrigger value="global" className="flex items-center gap-2">
-            <SettingsIcon size={18} />
-            Global Settings
           </TabsTrigger>
           <TabsTrigger value="reptiles" className="flex items-center gap-2">
             <AlertTriangle size={18} />
@@ -46,16 +46,16 @@ export default function Notifications() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="global">
+          <GlobalSettingsTab />
+        </TabsContent>
+
         <TabsContent value="channels">
           <ChannelsTab />
         </TabsContent>
 
         <TabsContent value="templates">
           <TemplatesTab />
-        </TabsContent>
-
-        <TabsContent value="global">
-          <GlobalSettingsTab />
         </TabsContent>
 
         <TabsContent value="reptiles">
