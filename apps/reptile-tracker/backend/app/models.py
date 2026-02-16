@@ -532,9 +532,10 @@ class Schedule(Base):
     follow_up_delay_minutes = Column(Integer, nullable=True)  # e.g., 30 minutes
 
     # Window expiry alert: notify when window is closing
-    expiry_alert_enabled = Column(Boolean, default=False, nullable=False)
-    expiry_alert_offset_minutes = Column(Integer, nullable=True)  # DEPRECATED: use expiry_alert_time instead
-    expiry_alert_time = Column(Time, nullable=True)  # Specific time to send expiry alert (e.g., 19:00)
+    # REMOVED in Phase 25 (consolidated into follow_up):
+    # expiry_alert_enabled = Column(Boolean, default=False, nullable=False)
+    # expiry_alert_offset_minutes = Column(Integer, nullable=True)
+    # expiry_alert_time = Column(Time, nullable=True)
 
     enabled = Column(Boolean, default=True, nullable=False)
     notes = Column(Text, nullable=True)
@@ -919,7 +920,7 @@ class ScheduledNotificationJob(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(String(255), unique=True, nullable=False, index=True)  # APScheduler job ID
-    job_type = Column(String(50), nullable=False, default="notification_reminder")  # notification_reminder, auto_complete, follow_up_reminder, expiry_alert
+    job_type = Column(String(50), nullable=False, default="notification_reminder")  # notification_reminder, auto_complete, follow_up_reminder
     schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     channel_id = Column(Integer, ForeignKey("notification_channels.id", ondelete="CASCADE"), nullable=False)

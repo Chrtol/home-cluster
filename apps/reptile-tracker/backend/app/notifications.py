@@ -358,6 +358,36 @@ class SafeDict(dict):
         return ""
 
 
+def get_template_message(template: NotificationTemplate, channel) -> str:
+    """
+    Select appropriate template variant based on channel format preference.
+
+    Args:
+        template: NotificationTemplate with short/long variants
+        channel: NotificationChannel with notification_format setting
+
+    Returns:
+        Template string (short or long variant)
+    """
+    from app.models import NotificationChannel
+
+    # Handle channel being None or dict (for backward compatibility)
+    channel_format = "short"
+    if isinstance(channel, NotificationChannel):
+        channel_format = channel.notification_format
+    elif isinstance(channel, dict):
+        channel_format = channel.get("notification_format", "short")
+
+    # Select template variant based on format preference
+    if channel_format == "long" and template.message_template_long:
+        return template.message_template_long
+    elif template.message_template_short:
+        return template.message_template_short
+    else:
+        # Legacy fallback for old templates
+        return template.message_template or ""
+
+
 def render_template(template_string: str, context: Dict[str, Any], use_jinja: bool = False) -> str:
     """
     Render template with context variables.

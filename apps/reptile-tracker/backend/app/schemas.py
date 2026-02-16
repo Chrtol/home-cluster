@@ -504,9 +504,10 @@ class ScheduleBase(BaseModel):
     # Smart notification settings (Phase 22)
     follow_up_enabled: bool = False  # Send follow-up reminder if task not completed
     follow_up_delay_minutes: Optional[int] = None  # Minutes after main reminder (e.g., 30)
-    expiry_alert_enabled: bool = False  # Send alert before time window expires
-    expiry_alert_offset_minutes: Optional[int] = None  # DEPRECATED: use expiry_alert_time instead
-    expiry_alert_time: Optional[time] = None  # Specific time to send expiry alert (e.g., 19:00)
+    # REMOVED in Phase 25 (consolidated into follow_up)
+    # expiry_alert_enabled: bool = False
+    # expiry_alert_offset_minutes: Optional[int] = None
+    # expiry_alert_time: Optional[time] = None
 
 
 class ScheduleCreate(ScheduleBase):
@@ -564,9 +565,10 @@ class ScheduleUpdate(BaseModel):
     # Smart notification settings (Phase 22)
     follow_up_enabled: Optional[bool] = None
     follow_up_delay_minutes: Optional[int] = None
-    expiry_alert_enabled: Optional[bool] = None
-    expiry_alert_offset_minutes: Optional[int] = None  # DEPRECATED
-    expiry_alert_time: Optional[time] = None  # Specific time to send expiry alert
+    # REMOVED in Phase 25 (consolidated into follow_up)
+    # expiry_alert_enabled: Optional[bool] = None
+    # expiry_alert_offset_minutes: Optional[int] = None
+    # expiry_alert_time: Optional[time] = None
 
 
 class Schedule(ScheduleBase):
