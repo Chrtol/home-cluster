@@ -322,7 +322,7 @@ async def validate_template_context(
 
 
 def generate_sample_digest_context(trigger_type: str) -> dict:
-    """Generate realistic sample data for digest template preview."""
+    """Generate realistic sample data for digest template preview with multiple reptiles."""
     sample_tasks = [
         {
             'reptile_name': 'Luna',
@@ -336,46 +336,177 @@ def generate_sample_digest_context(trigger_type: str) -> dict:
             'schedule_name': 'Misting',
             'schedule_type': 'misting',
             'time_window': '14:00-16:00',
-            'emoji': '\U0001F4A7'  # droplet
+            'emoji': '\U0001F4A8'  # dash symbol (misting)
         },
         {
-            'reptile_name': 'Rex',
+            'reptile_name': 'Draco',
             'schedule_name': 'Weight Check',
             'schedule_type': 'weighing',
-            'time_window': '',
+            'time_window': 'Any time',
             'emoji': '\u2696\uFE0F'  # balance scale
+        },
+        {
+            'reptile_name': 'Draco',
+            'schedule_name': 'Supplements',
+            'schedule_type': 'health',
+            'time_window': '',
+            'emoji': '\U0001F48A'  # pill
+        },
+        {
+            'reptile_name': 'Smaug',
+            'schedule_name': 'Evening Feeding',
+            'schedule_type': 'feeding',
+            'time_window': '18:00-20:00',
+            'emoji': '\U0001F37D\uFE0F'
         }
     ]
 
     tasks_by_reptile = {
         'Luna': sample_tasks[:2],
-        'Rex': sample_tasks[2:]
+        'Draco': sample_tasks[2:4],
+        'Smaug': sample_tasks[4:]
     }
+
+    overdue_tasks = [
+        {
+            'reptile_name': 'Luna',
+            'schedule_name': 'Feeding (yesterday)',
+            'schedule_type': 'feeding',
+            'time_window': '',
+            'emoji': '\U0001F37D\uFE0F'
+        }
+    ]
 
     context = {
         'tasks_by_reptile': tasks_by_reptile,
         'all_tasks': sample_tasks,
-        'overdue_tasks': [],
-        'date': 'Monday, February 16',
+        'overdue_tasks': overdue_tasks,
+        'date': 'Monday, February 17',
         'task_count': len(sample_tasks),
-        'overdue_count': 0,
+        'overdue_count': len(overdue_tasks),
         'app_url': 'https://example.com/dashboard'
     }
 
     if trigger_type == 'weekly_planner':
-        context['start_date'] = 'February 16'
-        context['end_date'] = 'February 22'
+        context['start_date'] = 'February 17'
+        context['end_date'] = 'February 23'
         context['days'] = [
-            {'date': 'Monday, February 16', 'tasks': sample_tasks[:2]},
-            {'date': 'Tuesday, February 17', 'tasks': [sample_tasks[2]]},
-            {'date': 'Wednesday, February 18', 'tasks': []},
-            {'date': 'Thursday, February 19', 'tasks': [sample_tasks[0]]},
-            {'date': 'Friday, February 20', 'tasks': []},
-            {'date': 'Saturday, February 21', 'tasks': [sample_tasks[1]]},
-            {'date': 'Sunday, February 22', 'tasks': []}
+            {'date': 'Monday, February 17', 'tasks': sample_tasks[:3]},
+            {'date': 'Tuesday, February 18', 'tasks': [sample_tasks[3]]},
+            {'date': 'Wednesday, February 19', 'tasks': []},
+            {'date': 'Thursday, February 20', 'tasks': sample_tasks[0:2]},
+            {'date': 'Friday, February 21', 'tasks': [sample_tasks[4]]},
+            {'date': 'Saturday, February 22', 'tasks': []},
+            {'date': 'Sunday, February 23', 'tasks': [sample_tasks[2]]}
         ]
 
     return context
+
+
+def build_digest_preview_message(
+    template: NotificationTemplate,
+    sample_context: dict,
+    trigger_type: str
+) -> str:
+    """Build preview digest exactly as digest.py would, respecting format options."""
+    from app.notifications import render_template
+
+    # Read format options (default to True for backward compat)
+    group_by_reptile = template.group_by_reptile if template.group_by_reptile is not None else True
+    show_time_windows = template.show_time_windows if template.show_time_windows is not None else True
+    include_overdue = template.include_overdue if template.include_overdue is not None else True
+    include_app_link = template.include_app_link if template.include_app_link is not None else True
+
+    message_parts = []
+    message_template = template.message_template_short or template.message_template
+
+    if trigger_type == "daily_planner":
+        # Daily digest preview
+        if group_by_reptile:
+            for reptile_name, tasks in sample_context['tasks_by_reptile'].items():
+                message_parts.append(f"**{reptile_name}**")
+                for task in tasks:
+                    line = build_task_line_preview(message_template, task, show_time_windows)
+                    message_parts.append(f"  {line}")
+                message_parts.append("")
+        else:
+            for task in sample_context['all_tasks']:
+                line = build_task_line_preview(message_template, task, show_time_windows)
+                message_parts.append(line)
+
+        if not sample_context['all_tasks']:
+            message_parts.append("*No tasks scheduled for today*")
+
+        # Overdue section
+        if include_overdue and sample_context.get('overdue_tasks'):
+            if sample_context['all_tasks']:
+                message_parts.append("")
+            message_parts.append("**Overdue:**")
+            for task in sample_context['overdue_tasks']:
+                line = build_task_line_preview(message_template, task, show_time_windows)
+                message_parts.append(f"  {line}")
+
+        # App link
+        if include_app_link:
+            message_parts.append("")
+            message_parts.append(f"[View in app]({sample_context['app_url']})")
+
+    elif trigger_type == "weekly_planner":
+        # Weekly digest preview
+        has_tasks = False
+        for day in sample_context.get('days', []):
+            if day['tasks']:
+                has_tasks = True
+                message_parts.append(f"**{day['date']}**")
+
+                if group_by_reptile:
+                    # Group tasks by reptile within day
+                    tasks_by_reptile = {}
+                    for task in day['tasks']:
+                        reptile_name = task['reptile_name']
+                        if reptile_name not in tasks_by_reptile:
+                            tasks_by_reptile[reptile_name] = []
+                        tasks_by_reptile[reptile_name].append(task)
+
+                    for reptile_name, tasks in tasks_by_reptile.items():
+                        message_parts.append(f"  **{reptile_name}**")
+                        for task in tasks:
+                            line = build_task_line_preview(message_template, task, show_time_windows)
+                            message_parts.append(f"    {line}")
+                else:
+                    for task in day['tasks']:
+                        line = build_task_line_preview(message_template, task, show_time_windows)
+                        message_parts.append(f"  {line}")
+
+                message_parts.append("")  # Blank line between days
+
+        if not has_tasks:
+            message_parts.append("*No tasks scheduled for the next week*")
+
+        # App link
+        if include_app_link:
+            if has_tasks:
+                message_parts.append("")
+            message_parts.append(f"[View in app]({sample_context['app_url']})")
+
+    return "\n".join(message_parts)
+
+
+def build_task_line_preview(message_template: str, task: dict, show_time_windows: bool) -> str:
+    """Build a single task line for preview using template format."""
+    from app.notifications import render_template
+
+    # Add time_window_display field for optional time window
+    if show_time_windows and task.get('time_window'):
+        task['time_window_display'] = f" ({task['time_window']})"
+    else:
+        task['time_window_display'] = ""
+
+    if not message_template:
+        # Fallback format if no template
+        return f"{task.get('emoji', '')} {task['reptile_name']}: {task['schedule_name']}{task['time_window_display']}"
+
+    return render_template(message_template, task, use_jinja=False)
 
 
 @router.post("/preview")
@@ -394,23 +525,24 @@ async def preview_template(
     from app.notifications import render_template
 
     # Get template (either from ID or from provided strings)
+    template_obj = None
     if template_id:
         result = await db.execute(
             select(NotificationTemplate).where(
                 NotificationTemplate.id == template_id
             )
         )
-        template = result.scalars().first()
-        if not template:
+        template_obj = result.scalars().first()
+        if not template_obj:
             raise HTTPException(status_code=404, detail="Template not found")
 
         # Check access
-        if template.user_id is not None and template.user_id != current_user.id:
+        if template_obj.user_id is not None and template_obj.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied")
 
-        message_template = template.message_template
-        title_template = template.title_template
-        trigger_type = template.trigger_type
+        message_template = template_obj.message_template
+        title_template = template_obj.title_template
+        trigger_type = template_obj.trigger_type
 
     if not message_template or not trigger_type:
         raise HTTPException(
@@ -420,10 +552,38 @@ async def preview_template(
 
     # Generate sample context based on trigger type
     if trigger_type in ["daily_planner", "weekly_planner"]:
-        # Use Jinja2 for digest templates
+        # Build full digest using code-based iteration (respecting format options)
         context = generate_sample_digest_context(trigger_type)
-        rendered_message = render_template(message_template, context, use_jinja=True)
-        rendered_title = render_template(title_template or "", context, use_jinja=True) if title_template else None
+
+        if template_obj:
+            # Use template object with format options
+            rendered_message = build_digest_preview_message(template_obj, context, trigger_type)
+        else:
+            # Draft template (no format options available)
+            # Create temporary template object with defaults
+            temp_template = NotificationTemplate(
+                message_template=message_template,
+                message_template_short=message_template,
+                title_template=title_template,
+                group_by_reptile=True,
+                show_time_windows=True,
+                include_overdue=True,
+                include_app_link=True
+            )
+            rendered_message = build_digest_preview_message(temp_template, context, trigger_type)
+
+        # Render title
+        if trigger_type == "daily_planner":
+            rendered_title = f"Daily Planner - {context['date']}"
+            if title_template:
+                rendered_title = render_template(title_template, {"date": context['date']}, use_jinja=False)
+        else:  # weekly_planner
+            rendered_title = f"Weekly Planner - {context['start_date']} to {context['end_date']}"
+            if title_template:
+                rendered_title = render_template(title_template, {
+                    "start_date": context['start_date'],
+                    "end_date": context['end_date']
+                }, use_jinja=False)
     else:
         # Use format_map for other templates (existing behavior)
         # Generate sample context for regular templates
