@@ -271,6 +271,29 @@ def build_digest_context(
     }
 
 
+def render_task_line_from_template(
+    template: NotificationTemplate,
+    instance: ScheduleInstance,
+    show_time_windows: bool
+) -> str:
+    """Render a single task line using the template format."""
+    task_dict = build_task_dict(instance)
+
+    # Add time_window_display field for optional time window
+    if show_time_windows and task_dict.get('time_window'):
+        task_dict['time_window_display'] = f" ({task_dict['time_window']})"
+    else:
+        task_dict['time_window_display'] = ""
+
+    # Use short template variant (or fallback to message_template)
+    task_template = template.message_template_short or template.message_template
+    if not task_template:
+        # Final fallback if no template defined
+        return build_task_line(instance, include_reptile=True)
+
+    return render_template(task_template, task_dict, use_jinja=False)
+
+
 async def build_daily_digest_message_with_template(
     db: AsyncSession,
     user_id: int,
@@ -279,15 +302,63 @@ async def build_daily_digest_message_with_template(
     target_date: py_date,
     app_url: Optional[str] = None
 ) -> Dict[str, str]:
-    """Build daily digest using user's template (Jinja2) or fallback to hardcoded."""
+    """Build daily digest using user's template with code-based iteration, or fallback to hardcoded."""
     template = await get_digest_template(db, user_id, "daily_planner")
 
     if template:
-        context = build_digest_context(instances, overdue_instances, target_date, app_url)
-        message = render_template(template.message_template, context, use_jinja=True)
-        title = template.title_template or f"Daily Planner - {context['date']}"
+        # Read format options (default to True for backward compat)
+        group_by_reptile = template.group_by_reptile if template.group_by_reptile is not None else True
+        show_time_windows = template.show_time_windows if template.show_time_windows is not None else True
+        include_overdue = template.include_overdue if template.include_overdue is not None else True
+        include_app_link = template.include_app_link if template.include_app_link is not None else True
+
+        message_parts = []
+
+        if group_by_reptile:
+            # Group tasks by reptile
+            tasks_by_reptile = {}
+            for instance in instances:
+                reptile_name = instance.schedule.reptile.name
+                if reptile_name not in tasks_by_reptile:
+                    tasks_by_reptile[reptile_name] = []
+                tasks_by_reptile[reptile_name].append(instance)
+
+            for reptile_name, reptile_tasks in tasks_by_reptile.items():
+                message_parts.append(f"**{reptile_name}**")
+                for instance in reptile_tasks:
+                    line = render_task_line_from_template(template, instance, show_time_windows)
+                    message_parts.append(f"  {line}")
+                message_parts.append("")
+        else:
+            # Flat list
+            for instance in instances:
+                line = render_task_line_from_template(template, instance, show_time_windows)
+                message_parts.append(line)
+
+        if not instances:
+            message_parts.append("*No tasks scheduled for today*")
+
+        # Overdue section
+        if include_overdue and overdue_instances:
+            message_parts.append("")
+            message_parts.append("**Overdue:**")
+            for instance in overdue_instances:
+                line = render_task_line_from_template(template, instance, show_time_windows)
+                message_parts.append(f"  {line}")
+
+        # App link
+        if include_app_link and app_url:
+            message_parts.append("")
+            message_parts.append(f"[View in app]({app_url})")
+
+        message = "\n".join(message_parts)
+
+        # Render title
+        date_str = target_date.strftime('%A, %B %d')
+        title = f"Daily Planner - {date_str}"
         if template.title_template:
-            title = render_template(template.title_template, context, use_jinja=True)
+            title = render_template(template.title_template, {"date": date_str}, use_jinja=False)
+
         return {"title": title, "message": message}
 
     # Fallback to existing hardcoded format
@@ -301,32 +372,74 @@ async def build_weekly_digest_message_with_template(
     start_date: py_date,
     app_url: Optional[str] = None
 ) -> Dict[str, str]:
-    """Build weekly digest using user's template (Jinja2) or fallback to hardcoded."""
+    """Build weekly digest using user's template with code-based iteration, or fallback to hardcoded."""
     template = await get_digest_template(db, user_id, "weekly_planner")
 
     if template:
-        # Flatten instances for context
-        all_instances = []
-        for instances in instances_by_date.values():
-            all_instances.extend(instances)
+        # Read format options (default to True for backward compat)
+        group_by_reptile = template.group_by_reptile if template.group_by_reptile is not None else True
+        show_time_windows = template.show_time_windows if template.show_time_windows is not None else True
+        include_overdue = template.include_overdue if template.include_overdue is not None else True
+        include_app_link = template.include_app_link if template.include_app_link is not None else True
 
-        context = build_digest_context(all_instances, [], start_date, app_url)
-        # Add weekly-specific context
-        context['start_date'] = start_date.strftime('%B %d')
-        context['end_date'] = (start_date + timedelta(days=6)).strftime('%B %d')
-        context['days'] = []
+        message_parts = []
+        has_tasks = False
+
+        # Iterate through all 7 days
         for i in range(7):
             day = start_date + timedelta(days=i)
             day_instances = instances_by_date.get(day, [])
-            context['days'].append({
-                'date': day.strftime('%A, %B %d'),
-                'tasks': [build_task_dict(inst) for inst in day_instances]
-            })
 
-        message = render_template(template.message_template, context, use_jinja=True)
-        title = template.title_template or f"Weekly Planner - {context['start_date']} to {context['end_date']}"
+            if day_instances:
+                has_tasks = True
+                # Day header
+                day_header = day.strftime('%A, %B %d')
+                message_parts.append(f"**{day_header}**")
+
+                if group_by_reptile:
+                    # Group tasks by reptile within this day
+                    tasks_by_reptile = {}
+                    for instance in day_instances:
+                        reptile_name = instance.schedule.reptile.name
+                        if reptile_name not in tasks_by_reptile:
+                            tasks_by_reptile[reptile_name] = []
+                        tasks_by_reptile[reptile_name].append(instance)
+
+                    for reptile_name, reptile_tasks in tasks_by_reptile.items():
+                        message_parts.append(f"  **{reptile_name}**")
+                        for instance in reptile_tasks:
+                            line = render_task_line_from_template(template, instance, show_time_windows)
+                            message_parts.append(f"    {line}")
+                else:
+                    # Flat list for this day
+                    for instance in day_instances:
+                        line = render_task_line_from_template(template, instance, show_time_windows)
+                        message_parts.append(f"  {line}")
+
+                message_parts.append("")  # Blank line between days
+
+        if not has_tasks:
+            message_parts.append("*No tasks scheduled for the next week*")
+
+        # App link
+        if include_app_link and app_url:
+            if has_tasks:
+                message_parts.append("")
+            message_parts.append(f"[View in app]({app_url})")
+
+        message = "\n".join(message_parts)
+
+        # Render title
+        start_str = start_date.strftime('%B %d')
+        end_date = start_date + timedelta(days=6)
+        end_str = end_date.strftime('%B %d')
+        title = f"Weekly Planner - {start_str} to {end_str}"
         if template.title_template:
-            title = render_template(template.title_template, context, use_jinja=True)
+            title = render_template(template.title_template, {
+                "start_date": start_str,
+                "end_date": end_str
+            }, use_jinja=False)
+
         return {"title": title, "message": message}
 
     # Fallback to existing hardcoded format
