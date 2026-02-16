@@ -16,11 +16,18 @@ depends_on = None
 
 
 def upgrade():
-    # Add template format variant columns
-    op.add_column('notification_templates',
-        sa.Column('message_template_short', sa.Text(), nullable=True))
-    op.add_column('notification_templates',
-        sa.Column('message_template_long', sa.Text(), nullable=True))
+    # Add template format variant columns (idempotent - skip if exists)
+    try:
+        op.add_column('notification_templates',
+            sa.Column('message_template_short', sa.Text(), nullable=True))
+    except Exception:
+        pass  # Column already exists
+
+    try:
+        op.add_column('notification_templates',
+            sa.Column('message_template_long', sa.Text(), nullable=True))
+    except Exception:
+        pass  # Column already exists
 
     # Migrate existing message_template to message_template_short
     op.execute("""
@@ -30,10 +37,13 @@ def upgrade():
           AND message_template_short IS NULL
     """)
 
-    # Add channel format preference
-    op.add_column('notification_channels',
-        sa.Column('notification_format', sa.String(10),
-            nullable=False, server_default='short'))
+    # Add channel format preference (idempotent)
+    try:
+        op.add_column('notification_channels',
+            sa.Column('notification_format', sa.String(10),
+                nullable=False, server_default='short'))
+    except Exception:
+        pass  # Column already exists
 
 
 def downgrade():

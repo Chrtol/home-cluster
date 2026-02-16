@@ -25,27 +25,40 @@ depends_on = None
 def upgrade():
     # Migrate expiry_alert to follow_up for schedules that have expiry but not follow-up
     # Calculate delay as time between reminder_time and expiry_alert_time
-    op.execute("""
-        UPDATE schedules
-        SET
-            follow_up_enabled = TRUE,
-            follow_up_delay_minutes = CASE
-                WHEN reminder_time IS NOT NULL AND expiry_alert_time IS NOT NULL THEN
-                    EXTRACT(EPOCH FROM (expiry_alert_time::time - reminder_time::time)) / 60
-                WHEN expiry_alert_offset_minutes IS NOT NULL THEN
-                    expiry_alert_offset_minutes
-                ELSE
-                    30
-            END
-        WHERE
-            expiry_alert_enabled = TRUE
-            AND (follow_up_enabled = FALSE OR follow_up_enabled IS NULL)
-    """)
+    # Only run if expiry_alert_enabled column exists
+    try:
+        op.execute("""
+            UPDATE schedules
+            SET
+                follow_up_enabled = TRUE,
+                follow_up_delay_minutes = CASE
+                    WHEN reminder_time IS NOT NULL AND expiry_alert_time IS NOT NULL THEN
+                        EXTRACT(EPOCH FROM (expiry_alert_time::time - reminder_time::time)) / 60
+                    WHEN expiry_alert_offset_minutes IS NOT NULL THEN
+                        expiry_alert_offset_minutes
+                    ELSE
+                        30
+                END
+            WHERE
+                expiry_alert_enabled = TRUE
+                AND (follow_up_enabled = FALSE OR follow_up_enabled IS NULL)
+        """)
+    except Exception:
+        pass  # Columns don't exist, skip migration
 
-    # Drop expiry_alert columns (no longer needed)
-    op.drop_column('schedules', 'expiry_alert_enabled')
-    op.drop_column('schedules', 'expiry_alert_offset_minutes')
-    op.drop_column('schedules', 'expiry_alert_time')
+    # Drop expiry_alert columns (no longer needed) - idempotent
+    try:
+        op.drop_column('schedules', 'expiry_alert_enabled')
+    except Exception:
+        pass
+    try:
+        op.drop_column('schedules', 'expiry_alert_offset_minutes')
+    except Exception:
+        pass
+    try:
+        op.drop_column('schedules', 'expiry_alert_time')
+    except Exception:
+        pass
 
 
 def downgrade():

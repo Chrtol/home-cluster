@@ -12,12 +12,24 @@ depends_on = None
 
 
 def upgrade():
-    # Add format option columns for digest templates
+    # Add format option columns for digest templates (idempotent)
     # These control how the digest message is built by the system
-    op.add_column('notification_templates', sa.Column('group_by_reptile', sa.Boolean(), nullable=True))
-    op.add_column('notification_templates', sa.Column('show_time_windows', sa.Boolean(), nullable=True))
-    op.add_column('notification_templates', sa.Column('include_overdue', sa.Boolean(), nullable=True))
-    op.add_column('notification_templates', sa.Column('include_app_link', sa.Boolean(), nullable=True))
+    try:
+        op.add_column('notification_templates', sa.Column('group_by_reptile', sa.Boolean(), nullable=True))
+    except Exception:
+        pass
+    try:
+        op.add_column('notification_templates', sa.Column('show_time_windows', sa.Boolean(), nullable=True))
+    except Exception:
+        pass
+    try:
+        op.add_column('notification_templates', sa.Column('include_overdue', sa.Boolean(), nullable=True))
+    except Exception:
+        pass
+    try:
+        op.add_column('notification_templates', sa.Column('include_app_link', sa.Boolean(), nullable=True))
+    except Exception:
+        pass
 
 
 def downgrade():
