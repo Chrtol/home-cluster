@@ -18,6 +18,7 @@ function ChannelsTab() {
   const [channelUrl, setChannelUrl] = useState('');
   const [channelEnabled, setChannelEnabled] = useState(true);
   const [householdWide, setHouseholdWide] = useState(false);
+  const [notificationFormat, setNotificationFormat] = useState('short');
   const [testingChannel, setTestingChannel] = useState(false);
 
   // Modal-specific messages (for test notifications)
@@ -58,6 +59,7 @@ function ChannelsTab() {
     setChannelUrl('');
     setChannelEnabled(true);
     setHouseholdWide(false);
+    setNotificationFormat('short');
     setPushoverApiKey('');
     setPushoverUserKey('');
     setPushoverDevices('');
@@ -77,6 +79,7 @@ function ChannelsTab() {
     setChannelUrl(channel.webhook_url || '');
     setChannelEnabled(channel.enabled);
     setHouseholdWide(channel.household_wide || false);
+    setNotificationFormat(channel.notification_format || 'short');
 
     // Load Pushover config if exists
     if (channel.webhook_type === 'pushover' && channel.config) {
@@ -117,7 +120,8 @@ function ChannelsTab() {
         name: channelName.trim(),
         webhook_type: channelType,
         enabled: channelEnabled,
-        household_wide: householdWide
+        household_wide: householdWide,
+        notification_format: notificationFormat
       };
 
       if (channelType === 'pushover') {
@@ -604,6 +608,24 @@ function ChannelsTab() {
                   </label>
                 </div>
               )}
+
+              {/* Notification Format */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Notification Format
+                </label>
+                <select
+                  value={notificationFormat}
+                  onChange={(e) => setNotificationFormat(e.target.value)}
+                  className="w-full px-3 py-2 bg-background border border-input rounded-md"
+                >
+                  <option value="short">Short (compact, single line)</option>
+                  <option value="long">Long (detailed, multi-line)</option>
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Controls which template variant is used when sending notifications to this channel.
+                </p>
+              </div>
 
               {/* Test Button */}
               <div className="pt-2 border-t border-border">

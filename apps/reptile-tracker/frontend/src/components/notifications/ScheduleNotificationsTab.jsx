@@ -5,6 +5,45 @@ import { ChevronDown, ChevronRight, Pencil, Trash2, ExternalLink, Bell, BellOff,
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { TimePicker } from '@/components/ui/time-picker';
 import { getUserTimeFormat } from '@/utils/dateFormatting';
+import { add, format } from 'date-fns';
+
+function FollowUpPreview({ reminderTime, followUpDelayMinutes, latestTime }) {
+  if (!reminderTime || !followUpDelayMinutes) return null;
+
+  // Parse reminder time (HH:MM)
+  const [hours, minutes] = reminderTime.split(':').map(Number);
+  const reminderDate = new Date();
+  reminderDate.setHours(hours, minutes, 0, 0);
+
+  // Calculate follow-up time
+  const followUpDate = add(reminderDate, { minutes: parseInt(followUpDelayMinutes) });
+  const followUpTime = format(followUpDate, 'HH:mm');
+
+  // Check if past window close
+  let warning = null;
+  if (latestTime) {
+    const [lh, lm] = latestTime.split(':').map(Number);
+    const latestMinutes = lh * 60 + lm;
+    const followUpMinutes = followUpDate.getHours() * 60 + followUpDate.getMinutes();
+
+    if (followUpMinutes > latestMinutes) {
+      warning = (
+        <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-xs text-amber-800 dark:text-amber-200">
+          Follow-up time is after window close. Alert will still be sent.
+        </div>
+      );
+    }
+  }
+
+  return (
+    <>
+      <p className="text-sm text-muted-foreground mt-1">
+        Follow-up will fire at {followUpTime}
+      </p>
+      {warning}
+    </>
+  );
+}
 
 function ScheduleNotificationsTab() {
   const navigate = useNavigate();
@@ -85,8 +124,6 @@ function ScheduleNotificationsTab() {
         reminder_time: schedule.reminder_time || '',
         follow_up_enabled: schedule.follow_up_enabled ?? false,
         follow_up_delay_minutes: schedule.follow_up_delay_minutes || 30,
-        expiry_alert_enabled: schedule.expiry_alert_enabled ?? false,
-        expiry_alert_time: schedule.expiry_alert_time || '',
       });
     }
   };
@@ -122,8 +159,6 @@ function ScheduleNotificationsTab() {
         reminder_time: editingData.reminder_time || null,
         follow_up_enabled: editingData.follow_up_enabled,
         follow_up_delay_minutes: editingData.follow_up_enabled ? parseInt(editingData.follow_up_delay_minutes) : null,
-        expiry_alert_enabled: editingData.expiry_alert_enabled,
-        expiry_alert_time: editingData.expiry_alert_enabled ? editingData.expiry_alert_time : null,
       };
 
       const res = await axios.patch(`/api/schedules/${scheduleId}`, updates);
@@ -483,48 +518,14 @@ function ScheduleNotificationsTab() {
                                               />
                                               <span className="text-sm text-muted-foreground">minutes after first reminder</span>
                                             </div>
+                                            <FollowUpPreview
+                                              reminderTime={editingData.reminder_time || schedule.reminder_time}
+                                              followUpDelayMinutes={editingData.follow_up_delay_minutes}
+                                              latestTime={schedule.latest_time}
+                                            />
                                           </div>
                                         )}
                                       </div>
-
-                                      {/* Window Expiry Alert */}
-                                      {schedule.time_window_enabled && (
-                                        <div className="space-y-2">
-                                          <label className="flex items-center gap-3 cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              checked={editingData.expiry_alert_enabled || false}
-                                              onChange={(e) => setEditingData(prev => ({
-                                                ...prev,
-                                                expiry_alert_enabled: e.target.checked
-                                              }))}
-                                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                                            />
-                                            <span className="text-foreground flex items-center gap-2">
-                                              <AlertTriangle size={14} className="text-amber-500" />
-                                              Alert when time window is closing
-                                            </span>
-                                          </label>
-                                          {editingData.expiry_alert_enabled && (
-                                            <div className="ml-7">
-                                              <div className="flex items-center gap-2">
-                                                <div className="w-40">
-                                                  <TimePicker
-                                                    value={editingData.expiry_alert_time || ''}
-                                                    onChange={(time) => setEditingData(prev => ({
-                                                      ...prev,
-                                                      expiry_alert_time: time
-                                                    }))}
-                                                    placeholder="Pick a time"
-                                                    step={15}
-                                                  />
-                                                </div>
-                                                <span className="text-sm text-muted-foreground">alert time</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
                                     </div>
                                   )}
 
