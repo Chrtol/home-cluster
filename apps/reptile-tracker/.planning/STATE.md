@@ -1,29 +1,21 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-16T13:25:29Z
+**Last Updated:** 2026-02-16T14:03:29Z
 
 ## Current Position
 
 **Phase:** 25 of 25 (Weight Alert Customization)
-**Plan:** Completed 25-03 (All plans complete)
-**Status:** Phase complete
-**Last activity:** 2026-02-16 - Completed Phase 25-03 (Template Format Variants and Expiry Consolidation)
+**Plan:** 5 of 5 plans complete (25-05 just completed)
+**Status:** GAP_CLOSURE_IN_PROGRESS - 25-05 complete, 25-04 remaining
+**Last activity:** 2026-02-16 - Completed 25-05 (Wire get_template_message)
 
-**Progress:** Phase 25 - COMPLETE
+**Progress:** Phase 25 - GAP CLOSURE IN PROGRESS
 ```
-24-01: ███████████ COMPLETE (Detection Logic)
-24-02: ███████████ COMPLETE (Delivery Integration)
-24-03: ███████████ COMPLETE (Settings UI)
-24-UAT: ███████████ COMPLETE (7/7 pass, 1 fix applied)
-
-24.5-01: ███████████ COMPLETE (Notifications Page Shell)
-24.5-02: ███████████ COMPLETE (Populate Tabs)
-24.5-03: ███████████ COMPLETE (Polish & Bug Fixes)
-24.5-UAT: ███████████ COMPLETE (UAT passed)
-
 25-01: ███████████ COMPLETE (Per-Reptile Cooldown Override)
-25-02: ███████████ COMPLETE (Jinja2 Template Support)
-25-03: ███████████ COMPLETE (Template Format Variants)
+25-02: ███████████ COMPLETE (Jinja2 Template Support) ⚠️ DESIGN GAP
+25-03: ███████████ COMPLETE (Template Format Variants) ⚠️ WIRING GAP
+25-04: ░░░░░░░░░░░ PLANNED (Gap closure: Remove Jinja2 loops)
+25-05: ███████████ COMPLETE (Gap closure: Wire get_template_message) ✅ GAP CLOSED
 ```
 
 **Overall System Progress:**
@@ -31,12 +23,32 @@
 - ✅ Weight change alert detection and delivery
 - ✅ User-facing alert settings UI
 - ✅ Phase 24.5: Unified notifications page (COMPLETE)
-- ✅ Phase 25: Customization and template enhancements (COMPLETE)
+- ⚠️ Phase 25: Plans complete, 1 gap remaining (25-04)
+
+## Gaps Requiring Closure (Pre-Push)
+
+**Gap 1: Jinja2 loops exposed in templates (DESIGN)** - OPEN
+- Problem: Digest templates use `{% for task in all_tasks %}` - users shouldn't see loop syntax
+- Fix: Remove Jinja2 templates, use simple task line format `{emoji} **{reptile_name}:** {schedule_name}`, keep iteration in code
+- Files: migration 0097, digest.py, preview endpoint, possibly remove Jinja2 dep
+- Plan: 25-04
+- Status: PLANNED - ready for execution
+
+**Gap 2: Template variant selection not wired (INTEGRATION)** - ✅ CLOSED
+- Problem: `get_template_message(template, channel)` exists but never called in delivery code
+- Fix: Replace `template.message_template` with `get_template_message(template, channel)` in celery_tasks.py and scheduler/notifications.py
+- Plan: 25-05
+- Status: COMPLETE - Closed 2026-02-16
+- Commits: 07becbf9b, 92f2e5b13
+
+**Next:** Execute plan 25-04 to close remaining gap
 
 ## Recent Decisions
 
 | Phase  | Decision | Rationale | Impact |
 |--------|----------|-----------|--------|
+| 25-05  | Pass full channel object instead of individual components | Cleaner API, enables channel-specific logic beyond format preference | send_schedule_reminder and send_overdue_alert now accept channel object, extract components internally |
+| 25-05  | Digest task lines explicitly use short variant | Digests need concise task lines regardless of channel format | digest.py uses message_template_short directly, doesn't use get_template_message |
 | 25-03  | Template variants (short/long) instead of separate templates | Single template with two variants simpler to manage | Users edit one template, system selects variant based on channel preference |
 | 25-03  | Channel-level format preference (not per-template) | Format is a property of the delivery channel, not the content | Each channel has format setting, same template renders differently per channel |
 | 25-03  | Consolidate expiry_alert into follow_up | Four alert types (reminder, follow-up, expiry, overdue) was confusing | Simplified to three concepts (reminder, follow-up nudge, overdue) |
@@ -113,14 +125,13 @@ The following features from vision were intentionally deferred and need separate
 
 ## Session Continuity
 
-**Last session:** 2026-02-16T13:25:29Z
-**Stopped at:** Completed Phase 25-03 (Template Format Variants and Expiry Consolidation)
-**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-03-SUMMARY.md
+**Last session:** 2026-02-16T14:03:29Z
+**Stopped at:** Completed Phase 25-05 (Wire get_template_message)
+**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-05-SUMMARY.md
 
 **Next session planning:**
-- Phase 25 complete - all plans executed
-- Template format variants and expiry consolidation live
-- System ready for production use
+- Execute plan 25-04 to close remaining gap (Jinja2 loops in digest templates)
+- After 25-04: Phase 25 complete, ready for production deployment
 
 ## Key Files Reference
 
