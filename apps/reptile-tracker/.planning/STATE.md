@@ -1,47 +1,42 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-16T14:03:29Z
+**Last Updated:** 2026-02-16T15:10:00Z
 
 ## Current Position
 
-**Phase:** 25 of 25 (Weight Alert Customization)
-**Plan:** 5 of 5 plans complete (25-05 just completed)
-**Status:** GAP_CLOSURE_IN_PROGRESS - 25-05 complete, 25-04 remaining
-**Last activity:** 2026-02-16 - Completed 25-05 (Wire get_template_message)
+**Phase:** 25 of 25 (Weight Alert Customization) - COMPLETE
+**Plan:** 5 of 5 plans complete
+**Status:** MILESTONE COMPLETE - v1.3 Engagement & Awareness shipped
+**Last activity:** 2026-02-16 - Completed Phase 25 with gap closure (plans 25-04, 25-05)
 
-**Progress:** Phase 25 - GAP CLOSURE IN PROGRESS
+**Progress:** Phase 25 - COMPLETE ✓
 ```
 25-01: ███████████ COMPLETE (Per-Reptile Cooldown Override)
-25-02: ███████████ COMPLETE (Jinja2 Template Support) ⚠️ DESIGN GAP
-25-03: ███████████ COMPLETE (Template Format Variants) ⚠️ WIRING GAP
-25-04: ░░░░░░░░░░░ PLANNED (Gap closure: Remove Jinja2 loops)
-25-05: ███████████ COMPLETE (Gap closure: Wire get_template_message) ✅ GAP CLOSED
+25-02: ███████████ COMPLETE (Jinja2 Template Support)
+25-03: ███████████ COMPLETE (Template Format Variants)
+25-04: ███████████ COMPLETE (Gap closure: Remove Jinja2 loops) ✅
+25-05: ███████████ COMPLETE (Gap closure: Wire get_template_message) ✅
 ```
 
 **Overall System Progress:**
 - ✅ Core notification system with templates
 - ✅ Weight change alert detection and delivery
 - ✅ User-facing alert settings UI
-- ✅ Phase 24.5: Unified notifications page (COMPLETE)
-- ⚠️ Phase 25: Plans complete, 1 gap remaining (25-04)
+- ✅ Phase 24.5: Unified notifications page
+- ✅ Phase 25: Notification customization & gap closure
+- ✅ **v1.3 MILESTONE COMPLETE**
 
-## Gaps Requiring Closure (Pre-Push)
+## Gaps Closed
 
-**Gap 1: Jinja2 loops exposed in templates (DESIGN)** - OPEN
-- Problem: Digest templates use `{% for task in all_tasks %}` - users shouldn't see loop syntax
-- Fix: Remove Jinja2 templates, use simple task line format `{emoji} **{reptile_name}:** {schedule_name}`, keep iteration in code
-- Files: migration 0097, digest.py, preview endpoint, possibly remove Jinja2 dep
+**Gap 1: Jinja2 loops exposed in templates (DESIGN)** - ✅ CLOSED
+- Fix: Replaced Jinja2 templates with simple task line format, added format option toggles
 - Plan: 25-04
-- Status: PLANNED - ready for execution
+- Commits: f49e92922, 16758ed14, cea8946b1, 5eb0b156a
 
 **Gap 2: Template variant selection not wired (INTEGRATION)** - ✅ CLOSED
-- Problem: `get_template_message(template, channel)` exists but never called in delivery code
-- Fix: Replace `template.message_template` with `get_template_message(template, channel)` in celery_tasks.py and scheduler/notifications.py
+- Fix: Wired get_template_message into all 8 notification delivery locations
 - Plan: 25-05
-- Status: COMPLETE - Closed 2026-02-16
 - Commits: 07becbf9b, 92f2e5b13
-
-**Next:** Execute plan 25-04 to close remaining gap
 
 ## Recent Decisions
 
