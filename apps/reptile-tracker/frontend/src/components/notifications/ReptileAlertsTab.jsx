@@ -77,6 +77,7 @@ function ReptileAlertsTab() {
         weight_alerts_enabled: reptile.weight_alerts_enabled || false,
         weight_alert_gain_threshold_percent: reptile.weight_alert_gain_threshold_percent ?? defaults.gain,
         weight_alert_loss_threshold_percent: reptile.weight_alert_loss_threshold_percent ?? defaults.loss,
+        weight_alert_cooldown_days: reptile.weight_alert_cooldown_days ?? null, // null = inherit
       });
     }
   };
@@ -99,6 +100,7 @@ function ReptileAlertsTab() {
         weight_alerts_enabled: formData.weight_alerts_enabled,
         weight_alert_gain_threshold_percent: parseFloat(formData.weight_alert_gain_threshold_percent) || null,
         weight_alert_loss_threshold_percent: parseFloat(formData.weight_alert_loss_threshold_percent) || null,
+        weight_alert_cooldown_days: formData.weight_alert_cooldown_days,
       };
 
       const res = await axios.patch(`/api/reptiles/${reptileId}`, updates);
@@ -262,6 +264,35 @@ function ReptileAlertsTab() {
                             <p className="text-xs text-muted-foreground mt-1">
                               Alert when weight decreases by this percentage (0-100%)
                             </p>
+                          </div>
+
+                          {/* Cooldown Period */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Cooldown Period
+                            </label>
+                            <select
+                              value={formData.weight_alert_cooldown_days === null ? 'inherit' : formData.weight_alert_cooldown_days}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                handleFormChange('weight_alert_cooldown_days', val === 'inherit' ? null : parseInt(val));
+                              }}
+                              className="w-full px-3 py-2 bg-background border border-input rounded-md"
+                            >
+                              <option value="inherit">Inherit global setting (7 days)</option>
+                              <option value="0">No cooldown</option>
+                              <option value="1">1 day</option>
+                              <option value="3">3 days</option>
+                              <option value="7">7 days</option>
+                              <option value="14">14 days</option>
+                              <option value="30">30 days</option>
+                            </select>
+
+                            {formData.weight_alert_cooldown_days === 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Alert will trigger on every weight log. Useful for monitoring sick reptiles.
+                              </p>
+                            )}
                           </div>
 
                           {/* Save Button */}
