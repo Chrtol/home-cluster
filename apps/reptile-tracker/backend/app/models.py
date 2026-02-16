@@ -814,6 +814,9 @@ class NotificationChannel(Base):
     household_wide = Column(Boolean, default=False, nullable=False)  # If true, available to all household members
     is_system = Column(Boolean, default=False, nullable=True)  # If true, channel cannot be deleted (nullable for backward compatibility)
 
+    # Phase 25: Format preference (affects which template variant is used)
+    notification_format = Column(String(10), default="short", nullable=False)  # "short" or "long"
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -860,8 +863,13 @@ class NotificationTemplate(Base):
     trigger_type = Column(String, nullable=False)  # schedule_reminder, overdue_alert, feeding_logged, custom
 
     # Templates with variables like {reptile_name}, {schedule_type}, etc.
-    message_template = Column(Text, nullable=False)
+    # DEPRECATED: Use message_template_short instead (kept for backward compatibility)
+    message_template = Column(Text, nullable=True)
     title_template = Column(String, nullable=True)
+
+    # Phase 25: Format variants
+    message_template_short = Column(Text, nullable=True)  # Compact format (required after migration)
+    message_template_long = Column(Text, nullable=True)   # Detailed format (optional)
 
     # Optional: Limit to specific channel type (discord, pushover, generic) or NULL for all
     channel_type = Column(String, nullable=True)

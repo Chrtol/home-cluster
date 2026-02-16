@@ -1132,6 +1132,7 @@ class NotificationChannelBase(BaseModel):
     enabled: bool = True
     household_wide: bool = False  # If true, available to all household members
     is_system: Optional[bool] = False  # If true, channel cannot be deleted (optional for backward compatibility)
+    notification_format: str = "short"  # "short" or "long"
 
 
 class NotificationChannelCreate(BaseModel):
@@ -1150,6 +1151,7 @@ class NotificationChannelUpdate(BaseModel):
     config: Optional[dict] = None
     enabled: Optional[bool] = None
     household_wide: Optional[bool] = None
+    notification_format: Optional[str] = None
 
 
 class NotificationChannel(NotificationChannelBase):
@@ -1209,11 +1211,15 @@ class TemplateGroup(TemplateGroupBase):
 class NotificationTemplateBase(BaseModel):
     name: str
     trigger_type: str  # schedule_reminder, overdue_alert, feeding_logged, custom
-    message_template: str
+    message_template: Optional[str] = None  # DEPRECATED: use message_template_short
     title_template: Optional[str] = None
     channel_type: Optional[str] = None  # discord, pushover, generic, or null for all
     discord_config: Optional[dict] = None  # Discord-specific embed configuration
     is_active: bool = True
+
+    # Phase 25: Format variants
+    message_template_short: Optional[str] = None
+    message_template_long: Optional[str] = None
 
     # Matching criteria (all optional - None means applies to all)
     reptile_id: Optional[int] = None
@@ -1237,7 +1243,9 @@ class NotificationTemplateCreate(NotificationTemplateBase):
 
 class NotificationTemplateUpdate(BaseModel):
     name: Optional[str] = None
-    message_template: Optional[str] = None
+    message_template: Optional[str] = None  # DEPRECATED
+    message_template_short: Optional[str] = None
+    message_template_long: Optional[str] = None
     title_template: Optional[str] = None
     channel_type: Optional[str] = None
     discord_config: Optional[dict] = None
