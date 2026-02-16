@@ -15,19 +15,25 @@ branch_labels = None
 depends_on = None
 
 
+def column_exists(table, column):
+    """Check if a column exists in a table"""
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_name = :table AND column_name = :column"
+    ), {"table": table, "column": column})
+    return result.fetchone() is not None
+
+
 def upgrade():
-    # Add template format variant columns (idempotent - skip if exists)
-    try:
+    # Add template format variant columns (idempotent - check before adding)
+    if not column_exists('notification_templates', 'message_template_short'):
         op.add_column('notification_templates',
             sa.Column('message_template_short', sa.Text(), nullable=True))
-    except Exception:
-        pass  # Column already exists
 
-    try:
+    if not column_exists('notification_templates', 'message_template_long'):
         op.add_column('notification_templates',
             sa.Column('message_template_long', sa.Text(), nullable=True))
-    except Exception:
-        pass  # Column already exists
 
     # Migrate existing message_template to message_template_short
     op.execute("""
@@ -38,12 +44,10 @@ def upgrade():
     """)
 
     # Add channel format preference (idempotent)
-    try:
+    if not column_exists('notification_channels', 'notification_format'):
         op.add_column('notification_channels',
             sa.Column('notification_format', sa.String(10),
                 nullable=False, server_default='short'))
-    except Exception:
-        pass  # Column already exists
 
 
 def downgrade():

@@ -15,10 +15,22 @@ branch_labels = None
 depends_on = None
 
 
+def column_exists(table, column):
+    """Check if a column exists in a table"""
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_name = :table AND column_name = :column"
+    ), {"table": table, "column": column})
+    return result.fetchone() is not None
+
+
 def upgrade():
-    op.add_column('reptiles',
-        sa.Column('weight_alert_cooldown_days', sa.Integer(), nullable=True))
+    if not column_exists('reptiles', 'weight_alert_cooldown_days'):
+        op.add_column('reptiles',
+            sa.Column('weight_alert_cooldown_days', sa.Integer(), nullable=True))
 
 
 def downgrade():
-    op.drop_column('reptiles', 'weight_alert_cooldown_days')
+    if column_exists('reptiles', 'weight_alert_cooldown_days'):
+        op.drop_column('reptiles', 'weight_alert_cooldown_days')

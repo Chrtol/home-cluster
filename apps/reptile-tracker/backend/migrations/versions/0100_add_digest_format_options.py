@@ -11,25 +11,34 @@ branch_labels = None
 depends_on = None
 
 
+def column_exists(table, column):
+    """Check if a column exists in a table"""
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_name = :table AND column_name = :column"
+    ), {"table": table, "column": column})
+    return result.fetchone() is not None
+
+
 def upgrade():
     # Add format option columns for digest templates (idempotent)
     # These control how the digest message is built by the system
-    try:
-        op.add_column('notification_templates', sa.Column('group_by_reptile', sa.Boolean(), nullable=True))
-    except Exception:
-        pass
-    try:
-        op.add_column('notification_templates', sa.Column('show_time_windows', sa.Boolean(), nullable=True))
-    except Exception:
-        pass
-    try:
-        op.add_column('notification_templates', sa.Column('include_overdue', sa.Boolean(), nullable=True))
-    except Exception:
-        pass
-    try:
-        op.add_column('notification_templates', sa.Column('include_app_link', sa.Boolean(), nullable=True))
-    except Exception:
-        pass
+    if not column_exists('notification_templates', 'group_by_reptile'):
+        op.add_column('notification_templates',
+            sa.Column('group_by_reptile', sa.Boolean(), nullable=True))
+
+    if not column_exists('notification_templates', 'show_time_windows'):
+        op.add_column('notification_templates',
+            sa.Column('show_time_windows', sa.Boolean(), nullable=True))
+
+    if not column_exists('notification_templates', 'include_overdue'):
+        op.add_column('notification_templates',
+            sa.Column('include_overdue', sa.Boolean(), nullable=True))
+
+    if not column_exists('notification_templates', 'include_app_link'):
+        op.add_column('notification_templates',
+            sa.Column('include_app_link', sa.Boolean(), nullable=True))
 
 
 def downgrade():

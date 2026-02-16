@@ -22,11 +22,20 @@ branch_labels = None
 depends_on = None
 
 
+def column_exists(table, column):
+    """Check if a column exists in a table"""
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_name = :table AND column_name = :column"
+    ), {"table": table, "column": column})
+    return result.fetchone() is not None
+
+
 def upgrade():
     # Migrate expiry_alert to follow_up for schedules that have expiry but not follow-up
-    # Calculate delay as time between reminder_time and expiry_alert_time
     # Only run if expiry_alert_enabled column exists
-    try:
+    if column_exists('schedules', 'expiry_alert_enabled'):
         op.execute("""
             UPDATE schedules
             SET
@@ -43,22 +52,11 @@ def upgrade():
                 expiry_alert_enabled = TRUE
                 AND (follow_up_enabled = FALSE OR follow_up_enabled IS NULL)
         """)
-    except Exception:
-        pass  # Columns don't exist, skip migration
 
-    # Drop expiry_alert columns (no longer needed) - idempotent
-    try:
+        # Drop expiry_alert columns (no longer needed)
         op.drop_column('schedules', 'expiry_alert_enabled')
-    except Exception:
-        pass
-    try:
         op.drop_column('schedules', 'expiry_alert_offset_minutes')
-    except Exception:
-        pass
-    try:
         op.drop_column('schedules', 'expiry_alert_time')
-    except Exception:
-        pass
 
 
 def downgrade():

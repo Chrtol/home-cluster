@@ -5,11 +5,12 @@ Migration 0097 attempted to fix but used ON CONFLICT DO NOTHING.
 This migration updates the existing templates with the correct format.
 
 Revision ID: 0101
-Revises: 0095
+Revises: 0100
 Create Date: 2026-02-16
 """
 from alembic import op
 from sqlalchemy.sql import text
+import sqlalchemy as sa
 from datetime import datetime, timezone
 
 revision = '0101'
@@ -18,43 +19,46 @@ branch_labels = None
 depends_on = None
 
 
+def column_exists(table, column):
+    """Check if a column exists in a table"""
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_name = :table AND column_name = :column"
+    ), {"table": table, "column": column})
+    return result.fetchone() is not None
+
+
 def upgrade():
-    import sqlalchemy as sa
     conn = op.get_bind()
 
     # Step 1: Add template format variant columns if they don't exist
     # These columns were added in migration 0098, but we need them here too
-    try:
-        op.add_column('notification_templates', sa.Column('message_template_short', sa.Text(), nullable=True))
-    except Exception:
-        pass  # Column already exists
+    if not column_exists('notification_templates', 'message_template_short'):
+        op.add_column('notification_templates',
+            sa.Column('message_template_short', sa.Text(), nullable=True))
 
-    try:
-        op.add_column('notification_templates', sa.Column('message_template_long', sa.Text(), nullable=True))
-    except Exception:
-        pass  # Column already exists
+    if not column_exists('notification_templates', 'message_template_long'):
+        op.add_column('notification_templates',
+            sa.Column('message_template_long', sa.Text(), nullable=True))
 
     # Step 2: Add digest format columns if they don't exist
     # These columns were added in migration 0100, but we need them here too
-    try:
-        op.add_column('notification_templates', sa.Column('group_by_reptile', sa.Boolean(), nullable=True))
-    except Exception:
-        pass  # Column already exists
+    if not column_exists('notification_templates', 'group_by_reptile'):
+        op.add_column('notification_templates',
+            sa.Column('group_by_reptile', sa.Boolean(), nullable=True))
 
-    try:
-        op.add_column('notification_templates', sa.Column('show_time_windows', sa.Boolean(), nullable=True))
-    except Exception:
-        pass  # Column already exists
+    if not column_exists('notification_templates', 'show_time_windows'):
+        op.add_column('notification_templates',
+            sa.Column('show_time_windows', sa.Boolean(), nullable=True))
 
-    try:
-        op.add_column('notification_templates', sa.Column('include_overdue', sa.Boolean(), nullable=True))
-    except Exception:
-        pass  # Column already exists
+    if not column_exists('notification_templates', 'include_overdue'):
+        op.add_column('notification_templates',
+            sa.Column('include_overdue', sa.Boolean(), nullable=True))
 
-    try:
-        op.add_column('notification_templates', sa.Column('include_app_link', sa.Boolean(), nullable=True))
-    except Exception:
-        pass  # Column already exists
+    if not column_exists('notification_templates', 'include_app_link'):
+        op.add_column('notification_templates',
+            sa.Column('include_app_link', sa.Boolean(), nullable=True))
 
     # Step 3: Task line format used by digest.py
     # System handles iteration, grouping, and sections - this is the per-task line format
@@ -116,34 +120,21 @@ def downgrade():
           AND user_id IS NULL
     """))
 
-    # Drop columns (only if this migration added them)
-    # Note: This is safe because we catch the exception if columns don't exist
-    try:
+    # Drop columns (only if they exist - these might have been added by earlier migrations)
+    if column_exists('notification_templates', 'include_app_link'):
         op.drop_column('notification_templates', 'include_app_link')
-    except Exception:
-        pass
 
-    try:
+    if column_exists('notification_templates', 'include_overdue'):
         op.drop_column('notification_templates', 'include_overdue')
-    except Exception:
-        pass
 
-    try:
+    if column_exists('notification_templates', 'show_time_windows'):
         op.drop_column('notification_templates', 'show_time_windows')
-    except Exception:
-        pass
 
-    try:
+    if column_exists('notification_templates', 'group_by_reptile'):
         op.drop_column('notification_templates', 'group_by_reptile')
-    except Exception:
-        pass
 
-    try:
+    if column_exists('notification_templates', 'message_template_long'):
         op.drop_column('notification_templates', 'message_template_long')
-    except Exception:
-        pass
 
-    try:
+    if column_exists('notification_templates', 'message_template_short'):
         op.drop_column('notification_templates', 'message_template_short')
-    except Exception:
-        pass
