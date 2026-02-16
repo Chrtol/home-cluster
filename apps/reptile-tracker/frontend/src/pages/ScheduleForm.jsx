@@ -87,8 +87,6 @@ function ScheduleForm() {
   const [smartNotificationsOpen, setSmartNotificationsOpen] = useState(false);
   const [followUpEnabled, setFollowUpEnabled] = useState(false);
   const [followUpDelayMinutes, setFollowUpDelayMinutes] = useState(30);
-  const [expiryAlertEnabled, setExpiryAlertEnabled] = useState(false);
-  const [expiryAlertTime, setExpiryAlertTime] = useState('');
 
   // Time picker state for earliest time
   const [earliestHours, setEarliestHours] = useState(9);
@@ -278,10 +276,8 @@ function ScheduleForm() {
       // Smart notification settings (Phase 22)
       setFollowUpEnabled(schedule.follow_up_enabled || false);
       setFollowUpDelayMinutes(schedule.follow_up_delay_minutes || 30);
-      setExpiryAlertEnabled(schedule.expiry_alert_enabled || false);
-      setExpiryAlertTime(schedule.expiry_alert_time || '');
       // Open the section if any smart notifications are enabled
-      if (schedule.follow_up_enabled || schedule.expiry_alert_enabled) {
+      if (schedule.follow_up_enabled) {
         setSmartNotificationsOpen(true);
       }
     } catch (error) {
@@ -504,8 +500,6 @@ function ScheduleForm() {
       // Smart notification settings (Phase 22)
       scheduleData.follow_up_enabled = followUpEnabled;
       scheduleData.follow_up_delay_minutes = followUpEnabled ? parseInt(followUpDelayMinutes) || 30 : null;
-      scheduleData.expiry_alert_enabled = expiryAlertEnabled;
-      scheduleData.expiry_alert_time = expiryAlertEnabled ? expiryAlertTime : null;
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
@@ -1351,7 +1345,7 @@ function ScheduleForm() {
                   <div className="flex items-center justify-between w-full">
                     <div>
                       <CardTitle>Smart Notifications</CardTitle>
-                      <CardDescription>Follow-up reminders and expiry alerts</CardDescription>
+                      <CardDescription>Follow-up reminders for uncompleted tasks</CardDescription>
                     </div>
                     <ChevronDown
                       size={20}
@@ -1398,52 +1392,6 @@ function ScheduleForm() {
                       </div>
                     )}
                   </div>
-
-                  {/* Window Expiry Alert - Only show when time window is enabled */}
-                  {timeWindowEnabled && (
-                    <div className="space-y-3 pt-4 border-t border-border">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="expiryAlertEnabled"
-                          checked={expiryAlertEnabled}
-                          onChange={(e) => setExpiryAlertEnabled(e.target.checked)}
-                          className="w-4 h-4 text-primary rounded border-border focus:ring-primary focus:ring-2"
-                        />
-                        <Label htmlFor="expiryAlertEnabled" className="cursor-pointer">
-                          Window Expiry Alert
-                        </Label>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Send an alert before the time window expires if the task is not completed.
-                      </p>
-
-                      {expiryAlertEnabled && (
-                        <div className="pl-6 border-l-2 border-primary space-y-2">
-                          <Label htmlFor="expiryAlertTime">Alert Time</Label>
-                          <div className="w-40">
-                            <TimePicker
-                              value={expiryAlertTime}
-                              onChange={(time) => setExpiryAlertTime(time)}
-                              placeholder="Pick a time"
-                              step={15}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Set the specific time to receive the expiry alert
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {!timeWindowEnabled && (
-                    <div className="pt-4 border-t border-border">
-                      <p className="text-sm text-muted-foreground italic">
-                        Enable a time window above to configure window expiry alerts.
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
