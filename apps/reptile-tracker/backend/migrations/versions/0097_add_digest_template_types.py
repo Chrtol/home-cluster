@@ -16,41 +16,12 @@ depends_on = None
 def upgrade():
     conn = op.get_bind()
 
-    daily_template = """{% if task_count > 0 %}
-{% for task in all_tasks -%}
-{{ task.emoji }} **{{ task.reptile_name }}:** {{ task.schedule_name }}{% if task.time_window %} ({{ task.time_window }}){% endif %}
-{% endfor %}
-{% else %}
-*No tasks scheduled for today*
-{% endif %}
-{% if overdue_count > 0 %}
+    # Simple per-task line format (no loops)
+    # System handles iteration, grouping, and sections based on format options
+    daily_template = "{emoji} {reptile_name}: {schedule_name}{time_window_display}"
 
-**Overdue:**
-{% for task in overdue_tasks -%}
-  {{ task.emoji }} {{ task.reptile_name }}: {{ task.schedule_name }}
-{% endfor %}
-{% endif %}
-{% if app_url %}
-
-[View in app]({{ app_url }})
-{% endif %}"""
-
-    weekly_template = """{% if task_count > 0 %}
-{% for day in days %}
-{% if day.tasks %}
-**{{ day.date }}**
-{% for task in day.tasks -%}
-  {{ task.emoji }} {{ task.reptile_name }}: {{ task.schedule_name }}{% if task.time_window %} ({{ task.time_window }}){% endif %}
-{% endfor %}
-
-{% endif %}
-{% endfor %}
-{% else %}
-*No tasks scheduled for the next week*
-{% endif %}
-{% if app_url %}
-[View in app]({{ app_url }})
-{% endif %}"""
+    # Weekly uses same format - system handles day grouping
+    weekly_template = "{emoji} {reptile_name}: {schedule_name}{time_window_display}"
 
     now = datetime.now(timezone.utc).isoformat()
 
@@ -58,8 +29,8 @@ def upgrade():
         INSERT INTO notification_templates (
             user_id, name, template_type, trigger_type, message_template, title_template, created_at, updated_at
         ) VALUES
-        (NULL, 'Daily Planner Default', 'system', 'daily_planner', :daily_msg, 'Daily Planner - {{ date }}', :now, :now),
-        (NULL, 'Weekly Planner Default', 'system', 'weekly_planner', :weekly_msg, 'Weekly Planner - {{ start_date }} to {{ end_date }}', :now, :now)
+        (NULL, 'Daily Planner Default', 'system', 'daily_planner', :daily_msg, 'Daily Planner - {date}', :now, :now),
+        (NULL, 'Weekly Planner Default', 'system', 'weekly_planner', :weekly_msg, 'Weekly Planner - {start_date} to {end_date}', :now, :now)
         ON CONFLICT DO NOTHING
     """), {
         'daily_msg': daily_template,
