@@ -61,6 +61,7 @@ from .weight_alerts import (
     get_threshold_for_direction,
     get_age_category_for_reptile,
     get_age_aware_defaults_for_reptile,
+    get_effective_cooldown_days,
     AGE_AWARE_DEFAULTS,
 )
 
@@ -100,5 +101,6 @@ __all__ = [
     "get_threshold_for_direction",
     "get_age_category_for_reptile",
     "get_age_aware_defaults_for_reptile",
+    "get_effective_cooldown_days",
     "AGE_AWARE_DEFAULTS",
 ]

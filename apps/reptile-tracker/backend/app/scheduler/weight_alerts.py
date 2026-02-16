@@ -124,11 +124,53 @@ async def get_baseline_weight(
     return baseline
 
 
+async def get_notification_settings_for_user(db: AsyncSession, user_id: int) -> Optional[NotificationSettings]:
+    """Get notification settings for user."""
+    result = await db.execute(
+        select(NotificationSettings).where(NotificationSettings.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_effective_cooldown_days(
+    db: AsyncSession,
+    reptile: Reptile,
+    user_id: int
+) -> Optional[int]:
+    """
+    Get effective cooldown days for reptile (per-reptile override or global setting).
+
+    Returns:
+        None if no cooldown (alerts can fire every time)
+        Integer for cooldown days
+
+    Logic:
+        - If reptile.weight_alert_cooldown_days is not None:
+            - If 0: return None (no cooldown)
+            - If positive: return that value
+        - Else: fall back to global NotificationSettings
+            - If weight_alert_cooldown_enabled is False: return None
+            - Else: return weight_alert_cooldown_days
+    """
+    # Check reptile-specific override first
+    if reptile.weight_alert_cooldown_days is not None:
+        if reptile.weight_alert_cooldown_days == 0:
+            return None  # No cooldown
+        return reptile.weight_alert_cooldown_days
+
+    # Fall back to global setting
+    settings = await get_notification_settings_for_user(db, user_id)
+    if settings and not settings.weight_alert_cooldown_enabled:
+        return None  # Global cooldown disabled
+    if settings:
+        return settings.weight_alert_cooldown_days
+    return 7  # Default fallback
+
+
 async def is_weight_alert_cap_reached(
     db: AsyncSession,
     reptile_id: int,
-    cooldown_enabled: bool = True,
-    cooldown_days: int = 7
+    cooldown_days: Optional[int]
 ) -> bool:
     """
     Check if weight alert was sent within the cooldown period.
@@ -139,11 +181,10 @@ async def is_weight_alert_cap_reached(
     Args:
         db: Database session
         reptile_id: ID of the reptile
-        cooldown_enabled: Whether cooldown is enabled (default True)
-        cooldown_days: Number of days for cooldown period (default 7)
+        cooldown_days: Number of days for cooldown period (None = no cooldown)
     """
-    # If cooldown is disabled, never cap
-    if not cooldown_enabled:
+    # If cooldown_days is None, no cooldown (never cap)
+    if cooldown_days is None:
         return False
 
     result = await db.execute(
@@ -291,7 +332,7 @@ async def check_weight_change_alert(
         )
         return None
 
-    # Check frequency cap (using global cooldown settings from user's NotificationSettings)
+    # Check frequency cap (using per-reptile override or global cooldown settings)
     # Get an owner of this reptile to check their global settings
     owner_result = await db.execute(
         select(User.id)
@@ -303,23 +344,14 @@ async def check_weight_change_alert(
     )
     owner_id = owner_result.scalar_one_or_none()
 
-    # Get notification settings for cooldown configuration
-    cooldown_enabled = True
-    cooldown_days = 7
-    if owner_id:
-        settings_result = await db.execute(
-            select(NotificationSettings)
-            .where(NotificationSettings.user_id == owner_id)
-        )
-        settings = settings_result.scalar_one_or_none()
-        if settings:
-            cooldown_enabled = settings.weight_alert_cooldown_enabled if hasattr(settings, 'weight_alert_cooldown_enabled') else True
-            cooldown_days = settings.weight_alert_cooldown_days if hasattr(settings, 'weight_alert_cooldown_days') else 7
+    # Get effective cooldown days (per-reptile override or global setting)
+    cooldown_days = await get_effective_cooldown_days(db, reptile, owner_id) if owner_id else 7
 
-    if await is_weight_alert_cap_reached(db, reptile.id, cooldown_enabled, cooldown_days):
+    if await is_weight_alert_cap_reached(db, reptile.id, cooldown_days):
+        cooldown_msg = "no cooldown" if cooldown_days is None else f"{cooldown_days} days"
         logger.info(
             f"Weight alert cooldown active for reptile {reptile.id} "
-            f"(alert sent within {cooldown_days} days)"
+            f"(alert sent within {cooldown_msg})"
         )
         return None
 
