@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.celery_app import celery_app
 from app.database import async_session_maker
 from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType, ScheduleInstance, InstanceStatus, WeightLog
-from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
+from app.notifications import send_webhook_notification, get_template_for_trigger, render_template, get_template_message
 from app.scheduler import create_in_app_notification, is_within_quiet_hours
 from app.scheduler.frequency_cap import is_frequency_cap_reached, increment_notification_count, get_frequency_cap_mode
 from app.constants import FOOD_CATEGORY_DISPLAY, get_schedule_type_emoji
@@ -71,7 +71,7 @@ async def send_frequency_cap_summary_notification(
 
         # Render template or use fallback
         if template:
-            message = render_template(template.message_template, context)
+            message = render_template(get_template_message(template, channel), context)
             title = render_template(template.title_template, context) if template.title_template else f"Notification Limit Reached - {reptile.name}"
         else:
             # Fallback to hardcoded message
@@ -273,7 +273,7 @@ async def send_schedule_reminder_task(
 
             # Render template or use fallback
             if template:
-                message = render_template(template.message_template, context)
+                message = render_template(get_template_message(template, channel), context)
                 title = render_template(template.title_template, context) if template.title_template else f"Schedule Reminder - {reptile.name}"
             else:
                 # Fallback to hardcoded message
@@ -478,7 +478,7 @@ async def send_follow_up_reminder_task(
 
             # Render template or use fallback
             if template:
-                message = render_template(template.message_template, context)
+                message = render_template(get_template_message(template, channel), context)
                 title = render_template(template.title_template, context) if template.title_template else f"Follow-up Reminder - {reptile.name}"
             else:
                 # Fallback to hardcoded message
@@ -638,7 +638,7 @@ async def send_expiry_alert_task(
 
             # Render template or use fallback
             if template:
-                message = render_template(template.message_template, context)
+                message = render_template(get_template_message(template, channel), context)
                 title = render_template(template.title_template, context) if template.title_template else f"Window Closing - {reptile.name}"
             else:
                 # Fallback to hardcoded message
@@ -1086,7 +1086,7 @@ async def send_weight_change_alert_task(
 
                             # Render template or use fallback
                             if template:
-                                message = render_template(template.message_template, context)
+                                message = render_template(get_template_message(template, channel), context)
                                 title = render_template(template.title_template, context) if template.title_template else f"Weight Alert - {reptile.name}"
                             else:
                                 # Fallback messages based on trigger type
