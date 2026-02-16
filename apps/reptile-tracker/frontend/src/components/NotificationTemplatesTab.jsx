@@ -385,6 +385,30 @@ const NotificationTemplatesTab = () => {
       };
     }
 
+    if (triggerType === 'daily_planner') {
+      return {
+        date: '2025-12-04',
+        day_name: 'Thursday',
+        task_count: '5',
+        overdue_count: '1',
+        tasks_by_reptile: '[Grouped task list]',
+        overdue_tasks: '[Overdue task list]',
+        app_link: 'https://reptile-tracker.example.com'
+      };
+    }
+
+    if (triggerType === 'weekly_planner') {
+      return {
+        week_start: '2025-12-01',
+        week_end: '2025-12-07',
+        total_tasks: '15',
+        tasks_by_day: '[Tasks grouped by day]',
+        overdue_count: '2',
+        overdue_tasks: '[Overdue task list]',
+        app_link: 'https://reptile-tracker.example.com'
+      };
+    }
+
     return baseData;
   };
 
@@ -546,6 +570,8 @@ const NotificationTemplatesTab = () => {
     weight_gain: ['reptile_name', 'weight_change_percent', 'weight_change_grams', 'baseline_weight', 'current_weight', 'age_category'],
     weight_loss: ['reptile_name', 'weight_change_percent', 'weight_change_grams', 'baseline_weight', 'current_weight', 'age_category'],
     growth_milestone: ['reptile_name', 'weight_change_percent', 'weight_change_grams', 'baseline_weight', 'current_weight', 'age_category', 'milestone_description'],
+    daily_planner: ['date', 'day_name', 'task_count', 'overdue_count', 'tasks_by_reptile', 'overdue_tasks', 'app_link'],
+    weekly_planner: ['week_start', 'week_end', 'total_tasks', 'tasks_by_day', 'overdue_count', 'overdue_tasks', 'app_link'],
     custom: ['reptile_name', 'schedule_name', 'schedule_type', 'emoji', 'time_window', 'time_window_display', 'notes', 'scheduled_date', 'due_date', 'missed_date', 'food_category', 'supplement_name', 'schedule_url']
   };
 
@@ -866,6 +892,10 @@ const NotificationTemplatesTab = () => {
                   <option value="schedule_reminder">Schedule Reminder</option>
                   <option value="overdue_alert">Overdue Alert</option>
                   <option value="feeding_logged">Feeding Logged</option>
+                  <option value="weight_gain">Weight Gain Alert</option>
+                  <option value="weight_loss">Weight Loss Alert</option>
+                  <option value="daily_planner">Daily Planner Digest</option>
+                  <option value="weekly_planner">Weekly Planner Digest</option>
                   <option value="custom">Custom</option>
                 </select>
               </div>
