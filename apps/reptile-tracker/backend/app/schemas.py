@@ -1223,6 +1223,12 @@ class NotificationTemplateBase(BaseModel):
     message_template_short: Optional[str] = None
     message_template_long: Optional[str] = None
 
+    # Phase 25: Digest format options (only used for daily_planner/weekly_planner)
+    group_by_reptile: Optional[bool] = None      # Group tasks under reptile headers
+    show_time_windows: Optional[bool] = None     # Append (HH:MM-HH:MM) to task lines
+    include_overdue: Optional[bool] = None       # Show "Overdue:" section
+    include_app_link: Optional[bool] = None      # Show "View in app" link
+
     # Matching criteria (all optional - None means applies to all)
     reptile_id: Optional[int] = None
     schedule_id: Optional[int] = None

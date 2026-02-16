@@ -872,6 +872,12 @@ class NotificationTemplate(Base):
     message_template_short = Column(Text, nullable=True)  # Compact format (required after migration)
     message_template_long = Column(Text, nullable=True)   # Detailed format (optional)
 
+    # Phase 25: Digest format options (only used for daily_planner/weekly_planner)
+    group_by_reptile = Column(Boolean, nullable=True)      # Group tasks under reptile headers
+    show_time_windows = Column(Boolean, nullable=True)     # Append (HH:MM-HH:MM) to task lines
+    include_overdue = Column(Boolean, nullable=True)       # Show "Overdue:" section
+    include_app_link = Column(Boolean, nullable=True)      # Show "View in app" link
+
     # Optional: Limit to specific channel type (discord, pushover, generic) or NULL for all
     channel_type = Column(String, nullable=True)
 
