@@ -68,6 +68,7 @@ class ReptileBase(BaseModel):
     weight_alerts_enabled: bool = False  # Weight change alert enabled for this reptile
     weight_alert_gain_threshold_percent: Optional[int] = None  # null = use age-aware default
     weight_alert_loss_threshold_percent: Optional[int] = None  # null = use age-aware default
+    weight_alert_cooldown_days: Optional[int] = None  # null = inherit global, 0 = no cooldown, positive = days
 
 
 class ReptileCreate(ReptileBase):
@@ -97,6 +98,7 @@ class ReptileUpdate(BaseModel):
     weight_alerts_enabled: Optional[bool] = None
     weight_alert_gain_threshold_percent: Optional[int] = None
     weight_alert_loss_threshold_percent: Optional[int] = None
+    weight_alert_cooldown_days: Optional[int] = None
 
 
 class Reptile(ReptileBase):

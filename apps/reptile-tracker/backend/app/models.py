@@ -261,6 +261,10 @@ class Reptile(Base):
     weight_alert_gain_threshold_percent = Column(Integer, nullable=True)  # null = use age-aware default
     weight_alert_loss_threshold_percent = Column(Integer, nullable=True)  # null = use age-aware default
 
+    # Per-reptile cooldown override (Phase 25)
+    # NULL = inherit global setting, 0 = no cooldown, positive = days
+    weight_alert_cooldown_days = Column(Integer, nullable=True)
+
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
     feedings = relationship("Feeding", back_populates="reptile", cascade="all, delete-orphan")
