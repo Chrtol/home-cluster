@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any, List
 from urllib.parse import urlparse
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from jinja2 import Environment, BaseLoader, TemplateError
 from app.config import settings
 from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
 
@@ -15,6 +16,14 @@ from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
 # - I-1: Using timezone-aware datetime
 
 logger = logging.getLogger(__name__)
+
+# Jinja2 environment for digest templates (supports loops/conditionals)
+jinja_env = Environment(
+    loader=BaseLoader(),
+    autoescape=False,  # We control the content
+    trim_blocks=True,
+    lstrip_blocks=True
+)
 
 # =============================================================================
 # Supported Trigger Types
@@ -349,27 +358,38 @@ class SafeDict(dict):
         return ""
 
 
-def render_template(template_string: str, context: Dict[str, Any]) -> str:
+def render_template(template_string: str, context: Dict[str, Any], use_jinja: bool = False) -> str:
     """
-    Render a template string with context variables.
+    Render template with context variables.
 
     Args:
-        template_string: Template with {variable} placeholders
+        template_string: Template with {variable} or {{ variable }} syntax
         context: Dictionary of variables to substitute
+        use_jinja: If True, use Jinja2 (for digests). If False, use format_map (for simple templates)
 
     Returns:
         Rendered string with variables substituted
     """
-    try:
-        # Use SafeDict to handle missing keys gracefully (returns empty string)
-        safe_context = SafeDict({
-            k: v if v is not None else ""
-            for k, v in context.items()
-        })
-        return template_string.format_map(safe_context)
-    except Exception as e:
-        logger.error(f"Error rendering template: {e}")
-        return template_string
+    if use_jinja:
+        # Jinja2 for digest templates (supports loops, conditionals)
+        try:
+            template = jinja_env.from_string(template_string)
+            return template.render(context)
+        except TemplateError as e:
+            logger.error(f"Jinja2 template error: {e}")
+            return f"[Template Error: {e}]"
+    else:
+        # Original format_map for simple templates
+        try:
+            # Use SafeDict to handle missing keys gracefully (returns empty string)
+            safe_context = SafeDict({
+                k: v if v is not None else ""
+                for k, v in context.items()
+            })
+            return template_string.format_map(safe_context)
+        except Exception as e:
+            logger.error(f"Error rendering template: {e}")
+            return template_string
 
 
 def _create_discord_embed(
