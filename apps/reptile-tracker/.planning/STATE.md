@@ -1,47 +1,93 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-16T15:10:00Z
+**Last Updated:** 2026-02-16T18:14:19Z
 
 ## Current Position
 
 **Phase:** 25 of 25 (Weight Alert Customization) - COMPLETE
-**Plan:** 5 of 5 plans complete
+**Plan:** 8 of 8 plans complete
 **Status:** MILESTONE COMPLETE - v1.3 Engagement & Awareness shipped
-**Last activity:** 2026-02-16 - Completed Phase 25 with gap closure (plans 25-04, 25-05)
+**Last activity:** 2026-02-16 - Completed 25-08 (UAT gap closure: 5 remaining issues)
 
-**Progress:** Phase 25 - COMPLETE ✓
+**Progress:** Phase 25 - COMPLETE
 ```
 25-01: ███████████ COMPLETE (Per-Reptile Cooldown Override)
 25-02: ███████████ COMPLETE (Jinja2 Template Support)
 25-03: ███████████ COMPLETE (Template Format Variants)
-25-04: ███████████ COMPLETE (Gap closure: Remove Jinja2 loops) ✅
-25-05: ███████████ COMPLETE (Gap closure: Wire get_template_message) ✅
+25-04: ███████████ COMPLETE (Gap closure: Remove Jinja2 loops)
+25-05: ███████████ COMPLETE (Gap closure: Wire get_template_message)
+25-06: ███████████ COMPLETE (Gap closure: In-app channel fix, expiry UI removal)
+25-07: ███████████ COMPLETE (Gap closure: Digest template UI + format variants)
+25-08: ███████████ COMPLETE (Gap closure: Final 5 UAT issues)
 ```
 
 **Overall System Progress:**
-- ✅ Core notification system with templates
-- ✅ Weight change alert detection and delivery
-- ✅ User-facing alert settings UI
-- ✅ Phase 24.5: Unified notifications page
-- ✅ Phase 25: Notification customization & gap closure
-- ✅ **v1.3 MILESTONE COMPLETE**
+- Core notification system with templates
+- Weight change alert detection and delivery
+- User-facing alert settings UI
+- Phase 24.5: Unified notifications page
+- Phase 25: Notification customization & gap closure
+- **v1.3 MILESTONE COMPLETE**
 
 ## Gaps Closed
 
-**Gap 1: Jinja2 loops exposed in templates (DESIGN)** - ✅ CLOSED
+**Gap 1: Jinja2 loops exposed in templates (DESIGN)** - CLOSED
 - Fix: Replaced Jinja2 templates with simple task line format, added format option toggles
 - Plan: 25-04
 - Commits: f49e92922, 16758ed14, cea8946b1, 5eb0b156a
 
-**Gap 2: Template variant selection not wired (INTEGRATION)** - ✅ CLOSED
+**Gap 2: Template variant selection not wired (INTEGRATION)** - CLOSED
 - Fix: Wired get_template_message into all 8 notification delivery locations
 - Plan: 25-05
 - Commits: 07becbf9b, 92f2e5b13
+
+**Gap 3: In-app channel webhook URL validation (BUG)** - CLOSED
+- Fix: Added explicit in_app branch in handleSaveChannel
+- Plan: 25-06
+- Commits: 5b2380c29
+
+**Gap 4: Deprecated expiry alert UI in ScheduleForm (CLEANUP)** - CLOSED
+- Fix: Removed all expiryAlert state, loading, submission, and UI from ScheduleForm
+- Plan: 25-06
+- Commits: 96499ad0f
+
+**Gap 5: In-app channel format dropdown error (UAT)** - CLOSED
+- Fix: Hide format dropdown for in_app channels, default to 'short'
+- Plan: 25-08
+- Commits: 2184cfef0
+
+**Gap 6: Missing digest format options UI (UAT)** - CLOSED
+- Fix: Add 4 format option checkboxes with save/load logic
+- Plan: 25-08
+- Commits: 077f45770
+
+**Gap 7: Placeholder preview data (UAT)** - CLOSED
+- Fix: Replace placeholder strings with realistic formatted reptile/task samples
+- Plan: 25-08
+- Commits: b503285f4
+
+**Gap 8: Missing system digest templates (UAT)** - CLOSED
+- Fix: Migration 0101 updates templates with proper content and format options
+- Plan: 25-08
+- Commits: dc3e59f63
+
+**Gap 9: Template format clarity UX (UAT)** - CLOSED
+- Fix: Add section headers and explanatory text for format layering
+- Plan: 25-08
+- Commits: 5353fcfeb
 
 ## Recent Decisions
 
 | Phase  | Decision | Rationale | Impact |
 |--------|----------|-----------|--------|
+| 25-08  | In-app channels default to 'short' format | In-app notifications use app's own UI with consistent styling, format selection not applicable | Format dropdown hidden for in_app, no validation error |
+| 25-08  | Digest format options default to true for null | Backward compatibility with current digest behavior | Existing templates load with all options enabled |
+| 25-08  | Migration 0101 adds columns idempotently | Flexible deployment without strict migration ordering | try/except pattern allows running on various schema versions |
+| 25-08  | Preview uses formatted multi-line samples | Make preview meaningful and realistic for users | Users see actual formatted output instead of placeholder strings |
+| 25-07  | Variable buttons insert into short format field only | Short format is primary/default, prevents confusion about which field receives insertion | Clear UI with hint text explaining behavior |
+| 25-07  | Load message_template as fallback for variants | Backward compatibility for existing templates | Legacy templates load their content into both short and long fields |
+| 25-06  | Mirror handleTestNotification pattern for in_app | Consistency between test and save handlers | handleSaveChannel now matches handleTestNotification for in_app handling |
+| 25-06  | Complete removal of expiryAlert references | Clean codebase, functionality was consolidated in migration 0099 | ScheduleForm no longer has any expiry alert code |
 | 25-05  | Pass full channel object instead of individual components | Cleaner API, enables channel-specific logic beyond format preference | send_schedule_reminder and send_overdue_alert now accept channel object, extract components internally |
 | 25-05  | Digest task lines explicitly use short variant | Digests need concise task lines regardless of channel format | digest.py uses message_template_short directly, doesn't use get_template_message |
 | 25-03  | Template variants (short/long) instead of separate templates | Single template with two variants simpler to manage | Users edit one template, system selects variant based on channel preference |
@@ -78,7 +124,7 @@
 ## Architecture Patterns Established
 
 ### Phase 24: Weight Change Alerts
-**Pattern:** Detection → Delivery → UI
+**Pattern:** Detection -> Delivery -> UI
 - Detection logic in `app.scheduler.weight_alerts` (24-01)
 - Async delivery via Celery tasks (24-02)
 - User-facing controls in ReptileDetail page (24-03)
@@ -99,12 +145,12 @@
 
 The following features from vision were intentionally deferred and need separate plans:
 
-1. ~~**Separate thresholds for gain vs loss**~~ ✅ DONE in 24.5-02
-   - ✅ ReptileAlertsTab now has separate gain/loss threshold inputs
+1. ~~**Separate thresholds for gain vs loss**~~ DONE in 24.5-02
+   - ReptileAlertsTab now has separate gain/loss threshold inputs
 
-2. ~~**Age-aware defaults (baby/juvenile vs adult)**~~ ✅ DONE in 24.5-02
-   - ✅ Age category calculated from birth_date (hatchling < 6mo, juvenile < 18mo, adult)
-   - ✅ Recommended defaults shown based on age category
+2. ~~**Age-aware defaults (baby/juvenile vs adult)**~~ DONE in 24.5-02
+   - Age category calculated from birth_date (hatchling < 6mo, juvenile < 18mo, adult)
+   - Recommended defaults shown based on age category
 
 3. **Growth milestone alerts for juveniles**
    - Current: Only threshold-based alerts
@@ -120,13 +166,15 @@ The following features from vision were intentionally deferred and need separate
 
 ## Session Continuity
 
-**Last session:** 2026-02-16T14:03:29Z
-**Stopped at:** Completed Phase 25-05 (Wire get_template_message)
-**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-05-SUMMARY.md
+**Last session:** 2026-02-16T18:14:19Z
+**Stopped at:** Completed Phase 25-08 (UAT gap closure - final 5 issues)
+**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-08-SUMMARY.md
 
 **Next session planning:**
-- Execute plan 25-04 to close remaining gap (Jinja2 loops in digest templates)
-- After 25-04: Phase 25 complete, ready for production deployment
+- Phase 25 (Weight Alert Customization) fully complete
+- All 9 gaps closed (4 from earlier plans, 5 from UAT)
+- Ready for UAT re-verification (tests 2, 9, 10, 11, 12)
+- Ready for v1.3 production deployment after UAT sign-off
 
 ## Key Files Reference
 
@@ -179,8 +227,9 @@ The following features from vision were intentionally deferred and need separate
 - `backend/migrations/versions/0099_consolidate_expiry_to_followup.py` - Consolidate expiry_alert into follow_up
 
 **Frontend (Format Variants UI):**
-- `frontend/src/components/notifications/ChannelsTab.jsx` - Notification format dropdown
+- `frontend/src/components/notifications/ChannelsTab.jsx` - Notification format dropdown, in_app handling
 - `frontend/src/components/notifications/ScheduleNotificationsTab.jsx` - FollowUpPreview component
+- `frontend/src/pages/ScheduleForm.jsx` - Clean Smart Notifications (follow-up only)
 
 ## Accumulated Context
 
@@ -193,14 +242,14 @@ The following features from vision were intentionally deferred and need separate
 ### Weight Alert System Flow
 ```
 User logs weight
-  → POST /api/weight
-  → check_weight_change_alert() (compare to baseline)
-  → If threshold exceeded + cap not reached:
-    → Queue send_weight_change_alert_task.delay()
-    → Celery worker picks up task
-    → Render template
-    → Send to enabled channels
-    → Update tracking (start 7-day cooldown)
+  -> POST /api/weight
+  -> check_weight_change_alert() (compare to baseline)
+  -> If threshold exceeded + cap not reached:
+    -> Queue send_weight_change_alert_task.delay()
+    -> Celery worker picks up task
+    -> Render template
+    -> Send to enabled channels
+    -> Update tracking (start 7-day cooldown)
 ```
 
 ### Species-Aware Defaults
@@ -261,10 +310,15 @@ User logs weight
 - Inline warning when configuration issues detected
 
 **Pattern:** Alert sequence simplification (25-03)
-- Before: Main reminder → Follow-up → Expiry alert → Overdue (4 concepts)
-- After: Main reminder → Follow-up nudge → Overdue (3 concepts)
+- Before: Main reminder -> Follow-up -> Expiry alert -> Overdue (4 concepts)
+- After: Main reminder -> Follow-up nudge -> Overdue (3 concepts)
 - Expiry alert functionality merged into follow_up
+
+**Pattern:** Channel type branching (25-06)
+- Explicit else-if branches for each channel type in handlers
+- pushover -> in_app -> webhook-based (discord, generic)
+- Consistent pattern between test and save handlers
 
 ---
 
-**Project Status:** Phase 24, 24.5, and 25 complete. Notification system fully implemented with per-reptile customization, template format variants, and simplified alert sequence.
+**Project Status:** Phase 24, 24.5, and 25 complete. Notification system fully implemented with per-reptile customization, template format variants, digest template UI, and simplified alert sequence.
