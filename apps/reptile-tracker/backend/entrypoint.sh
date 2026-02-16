@@ -43,30 +43,48 @@ else
 
     if [ "$has_alembic" = "t" ]; then
       echo "alembic_version table found — running migrations"
-      alembic -c ${MIGRATIONS_DIR}/alembic.ini upgrade head || true
+      alembic -c ${MIGRATIONS_DIR}/alembic.ini upgrade head
     else
       # Check if core app table exists (users)
       has_users=$(psql "$CONN" -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='users');" || echo "f")
       if [ "$has_users" = "t" ]; then
         echo "Found existing app tables but no alembic_version — stamping DB to head"
-        alembic -c ${MIGRATIONS_DIR}/alembic.ini stamp head || true
+        alembic -c ${MIGRATIONS_DIR}/alembic.ini stamp head
       else
-        echo "No existing app tables detected — creating schema via SQLAlchemy"
-        # Create tables using SQLAlchemy models (matches current schema)
+        echo "No existing app tables detected — creating schema via SQLAlchemy and seeding"
+        # Create ALL tables using SQLAlchemy models (represents current schema state)
+        # IMPORTANT: Must import app.models to register all model classes with Base.metadata
         python -c "
 import asyncio
 from app.database import engine, Base
+import app.models  # Register all models with Base.metadata
 
 async def create_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print('Tables created successfully')
+    print('Tables created:', len(Base.metadata.tables), 'tables')
 
 asyncio.run(create_tables())
-" || { echo "Failed to create tables"; exit 1; }
-        # Stamp to HEAD since SQLAlchemy created current schema
-        echo "Stamping database to head migration"
-        alembic -c ${MIGRATIONS_DIR}/alembic.ini stamp head || true
+"
+        # Stamp to HEAD since create_all() creates current schema (migrations would try to recreate tables)
+        echo "Stamping database to HEAD"
+        alembic -c ${MIGRATIONS_DIR}/alembic.ini stamp head
+
+        # Run seeding to populate system data (foods, supplements, templates)
+        # This replaces the data migrations that we skipped by stamping to HEAD
+        echo "Running database seeding"
+        python -c "
+import asyncio
+from app.database import async_session_maker
+from app.seed_data import seed_database
+
+async def seed():
+    async with async_session_maker() as db:
+        await seed_database(db)
+    print('Database seeded successfully')
+
+asyncio.run(seed())
+"
       fi
     fi
   else

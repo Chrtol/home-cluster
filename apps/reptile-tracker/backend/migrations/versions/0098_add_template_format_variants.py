@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0098_add_template_format_variants'
-down_revision = '0097_add_digest_template_types'
+revision = '0098'
+down_revision = '0097'
 branch_labels = None
 depends_on = None
 

@@ -761,17 +761,7 @@ async def seed_supplements(db: AsyncSession):
 
 
 async def seed_notification_templates(db: AsyncSession):
-    """Seed default system notification templates"""
-
-    # Check if system templates already exist
-    result = await db.execute(
-        select(NotificationTemplate).where(
-            NotificationTemplate.template_type == "system",
-            NotificationTemplate.user_id.is_(None)
-        ).limit(1)
-    )
-    if result.scalar_one_or_none():
-        return  # Already seeded
+    """Seed default system notification templates (idempotent - checks each by trigger_type)"""
 
     templates = [
         # Schedule reminder templates
@@ -923,13 +913,59 @@ async def seed_notification_templates(db: AsyncSession):
             is_active=True,
             applies_to_description="Celebratory alert for juvenile/hatchling growth"
         ),
+
+        # Digest planner templates (Phase 25)
+        NotificationTemplate(
+            name="Daily Planner Default",
+            template_type="system",
+            trigger_type="daily_planner",
+            user_id=None,
+            title_template="Daily Planner - {date}",
+            message_template="{emoji} {reptile_name}: {schedule_name}{time_window_display}",
+            message_template_short="{emoji} {reptile_name}: {schedule_name}{time_window_display}",
+            message_template_long="{emoji} {reptile_name}: {schedule_name}{time_window_display}",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            group_by_reptile=True,
+            show_time_windows=True,
+            include_overdue=True,
+            include_app_link=True,
+            applies_to_description="Daily digest of scheduled tasks"
+        ),
+        NotificationTemplate(
+            name="Weekly Planner Default",
+            template_type="system",
+            trigger_type="weekly_planner",
+            user_id=None,
+            title_template="Weekly Planner - {week_start} to {week_end}",
+            message_template="{emoji} {reptile_name}: {schedule_name}{time_window_display}",
+            message_template_short="{emoji} {reptile_name}: {schedule_name}{time_window_display}",
+            message_template_long="{emoji} {reptile_name}: {schedule_name}{time_window_display}",
+            channel_type=None,
+            priority=100,
+            is_active=True,
+            group_by_reptile=True,
+            show_time_windows=True,
+            include_overdue=True,
+            include_app_link=True,
+            applies_to_description="Weekly digest of scheduled tasks"
+        ),
     ]
 
+    added_count = 0
     for template in templates:
-        db.add(template)
+        # Check if template with same name already exists
+        result = await db.execute(
+            select(NotificationTemplate).where(NotificationTemplate.name == template.name)
+        )
+        if not result.scalar_one_or_none():
+            db.add(template)
+            added_count += 1
 
     await db.commit()
-    print("System notification templates seeded successfully!")
+    if added_count > 0:
+        print(f"System notification templates seeded: {added_count} new templates added")
 
 
 async def seed_database(db: AsyncSession):

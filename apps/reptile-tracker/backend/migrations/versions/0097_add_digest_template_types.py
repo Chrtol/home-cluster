@@ -7,8 +7,8 @@ import sqlalchemy as sa
 from datetime import datetime, timezone
 from sqlalchemy.sql import text
 
-revision = '0097_add_digest_template_types'
-down_revision = '0096_add_reptile_cooldown_override'
+revision = '0097'
+down_revision = '0096'
 branch_labels = None
 depends_on = None
 

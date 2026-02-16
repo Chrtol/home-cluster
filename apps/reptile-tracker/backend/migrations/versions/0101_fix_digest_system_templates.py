@@ -13,7 +13,7 @@ from sqlalchemy.sql import text
 from datetime import datetime, timezone
 
 revision = '0101'
-down_revision = '0095'
+down_revision = '0100'
 branch_labels = None
 depends_on = None
 

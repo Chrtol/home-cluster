@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0096_add_reptile_cooldown_override'
-down_revision = '0095_add_expiry_alert_time'
+revision = '0096'
+down_revision = '0095'
 branch_labels = None
 depends_on = None
 

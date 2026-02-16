@@ -16,8 +16,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0099_consolidate_expiry_to_followup'
-down_revision = '0098_add_template_format_variants'
+revision = '0099'
+down_revision = '0098'
 branch_labels = None
 depends_on = None
 

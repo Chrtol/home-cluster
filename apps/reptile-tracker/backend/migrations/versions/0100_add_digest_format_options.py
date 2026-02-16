@@ -5,8 +5,8 @@ Revision ID: 0100_add_digest_format_options
 from alembic import op
 import sqlalchemy as sa
 
-revision = '0100_add_digest_format_options'
-down_revision = '0099_consolidate_expiry_to_followup'
+revision = '0100'
+down_revision = '0099'
 branch_labels = None
 depends_on = None
 
