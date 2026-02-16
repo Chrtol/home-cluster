@@ -1103,6 +1103,14 @@ const NotificationTemplatesTab = () => {
                 />
               </div>
 
+              {/* Message Format Variants Section */}
+              <div className="border-t border-border pt-4 mt-4">
+                <h4 className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Message Content</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Each channel has a format preference (Short or Long). The matching variant below will be used when sending notifications to that channel.
+                </p>
+              </div>
+
               {/* Short Format Template */}
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">
@@ -1235,12 +1243,12 @@ const NotificationTemplatesTab = () => {
               {/* Discord Configuration */}
               {(channelType === 'discord' || channelType === '') && (
                 <div className="border-t border-border pt-4 mt-4">
-                  <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Discord Embed Settings (Optional)</h4>
+                  <h4 className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Discord Styling (Optional)</h4>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Customize how this template appears in Discord. The message template will be used as the embed description.
+                    Additional styling for Discord channels. The Short or Long message (based on channel preference) is used as the embed description. These settings add visual polish on top.
                   </p>
 
-                  <div className="space-y-3">
+                  <div className="pl-3 border-l-2 border-border space-y-3">
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Embed Color</label>
                       <div className="flex gap-2 items-center">
@@ -1327,7 +1335,7 @@ const NotificationTemplatesTab = () => {
                   {messageTemplateShort && (
                     <div>
                       <label className="block text-sm font-medium mb-2 text-muted-foreground">
-                        Short Format Preview:
+                        Short Format Preview <span className="text-xs font-normal">(used when channel format = Short)</span>:
                       </label>
                       <div className="p-3 bg-secondary border border-border rounded-lg">
                         <p
@@ -1347,7 +1355,7 @@ const NotificationTemplatesTab = () => {
                   {messageTemplateLong && (
                     <div>
                       <label className="block text-sm font-medium mb-2 text-muted-foreground">
-                        Long Format Preview:
+                        Long Format Preview <span className="text-xs font-normal">(used when channel format = Long)</span>:
                       </label>
                       <div className="p-3 bg-secondary border border-border rounded-lg">
                         <p
