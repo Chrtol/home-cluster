@@ -254,7 +254,11 @@ function ScheduleNotificationsTab() {
     }
     if (schedule.schedule_rule === 'days_of_week' && schedule.days_of_week) {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const activeDays = schedule.days_of_week.map(d => days[d]).join(', ');
+      // Handle both array and JSON string formats
+      const daysArray = Array.isArray(schedule.days_of_week)
+        ? schedule.days_of_week
+        : (typeof schedule.days_of_week === 'string' ? JSON.parse(schedule.days_of_week) : []);
+      const activeDays = daysArray.map(d => days[d]).join(', ');
       return activeDays || 'Weekly';
     }
     if (schedule.schedule_rule === 'every_x_days' && schedule.frequency_days) {
