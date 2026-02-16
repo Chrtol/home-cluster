@@ -15,15 +15,16 @@ Date range semantics for weekly digest:
 import logging
 from datetime import date as py_date, datetime, timedelta
 from typing import List, Dict, Optional, Any
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
     Schedule, ScheduleInstance, InstanceStatus, Reptile, User,
-    NotificationSettings, household_members
+    NotificationSettings, NotificationTemplate, household_members
 )
 from app.constants import get_schedule_type_emoji
+from app.notifications import render_template
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +183,154 @@ def format_time_window(schedule: Schedule) -> str:
         end = schedule.latest_time.strftime('%H:%M')
         return f"{start}-{end}"
     return start
+
+
+async def get_digest_template(
+    db: AsyncSession,
+    user_id: int,
+    trigger_type: str  # "daily_planner" or "weekly_planner"
+) -> Optional[NotificationTemplate]:
+    """Get user's custom template or system default for digest type."""
+    # Prefer user template, fall back to system template
+    result = await db.execute(
+        select(NotificationTemplate)
+        .where(
+            NotificationTemplate.trigger_type == trigger_type,
+            or_(
+                NotificationTemplate.user_id == user_id,
+                NotificationTemplate.user_id.is_(None)  # System template
+            )
+        )
+        .order_by(NotificationTemplate.user_id.desc().nullslast())  # User templates first
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+def build_task_dict(instance: ScheduleInstance) -> dict:
+    """Build task dict from instance for template context."""
+    schedule = instance.schedule
+    reptile = schedule.reptile
+    return {
+        'reptile_name': reptile.name,
+        'schedule_name': schedule.name or schedule.schedule_type.replace('_', ' ').title(),
+        'schedule_type': schedule.schedule_type,
+        'time_window': format_time_window(schedule),
+        'emoji': get_schedule_type_emoji(schedule.schedule_type)
+    }
+
+
+def build_digest_context(
+    instances: List[ScheduleInstance],
+    overdue_instances: List[ScheduleInstance],
+    target_date: py_date,
+    app_url: Optional[str] = None
+) -> dict:
+    """Build context dict for digest template rendering."""
+    tasks_by_reptile = {}
+    all_tasks = []
+
+    for instance in instances:
+        schedule = instance.schedule
+        reptile = schedule.reptile
+        reptile_name = reptile.name
+
+        task = {
+            'reptile_name': reptile_name,
+            'schedule_name': schedule.name or schedule.schedule_type.replace('_', ' ').title(),
+            'schedule_type': schedule.schedule_type,
+            'time_window': format_time_window(schedule),
+            'emoji': get_schedule_type_emoji(schedule.schedule_type)
+        }
+
+        if reptile_name not in tasks_by_reptile:
+            tasks_by_reptile[reptile_name] = []
+        tasks_by_reptile[reptile_name].append(task)
+        all_tasks.append(task)
+
+    overdue_tasks = []
+    for instance in overdue_instances:
+        schedule = instance.schedule
+        reptile = schedule.reptile
+        overdue_tasks.append({
+            'reptile_name': reptile.name,
+            'schedule_name': schedule.name or schedule.schedule_type.replace('_', ' ').title(),
+            'schedule_type': schedule.schedule_type,
+            'time_window': format_time_window(schedule),
+            'emoji': get_schedule_type_emoji(schedule.schedule_type)
+        })
+
+    return {
+        'tasks_by_reptile': tasks_by_reptile,
+        'all_tasks': all_tasks,
+        'overdue_tasks': overdue_tasks,
+        'date': target_date.strftime('%A, %B %d'),
+        'task_count': len(all_tasks),
+        'overdue_count': len(overdue_tasks),
+        'app_url': app_url or ''
+    }
+
+
+async def build_daily_digest_message_with_template(
+    db: AsyncSession,
+    user_id: int,
+    instances: List[ScheduleInstance],
+    overdue_instances: List[ScheduleInstance],
+    target_date: py_date,
+    app_url: Optional[str] = None
+) -> Dict[str, str]:
+    """Build daily digest using user's template (Jinja2) or fallback to hardcoded."""
+    template = await get_digest_template(db, user_id, "daily_planner")
+
+    if template:
+        context = build_digest_context(instances, overdue_instances, target_date, app_url)
+        message = render_template(template.message_template, context, use_jinja=True)
+        title = template.title_template or f"Daily Planner - {context['date']}"
+        if template.title_template:
+            title = render_template(template.title_template, context, use_jinja=True)
+        return {"title": title, "message": message}
+
+    # Fallback to existing hardcoded format
+    return build_daily_digest_message(instances, overdue_instances, target_date, app_url)
+
+
+async def build_weekly_digest_message_with_template(
+    db: AsyncSession,
+    user_id: int,
+    instances_by_date: Dict[py_date, List[ScheduleInstance]],
+    start_date: py_date,
+    app_url: Optional[str] = None
+) -> Dict[str, str]:
+    """Build weekly digest using user's template (Jinja2) or fallback to hardcoded."""
+    template = await get_digest_template(db, user_id, "weekly_planner")
+
+    if template:
+        # Flatten instances for context
+        all_instances = []
+        for instances in instances_by_date.values():
+            all_instances.extend(instances)
+
+        context = build_digest_context(all_instances, [], start_date, app_url)
+        # Add weekly-specific context
+        context['start_date'] = start_date.strftime('%B %d')
+        context['end_date'] = (start_date + timedelta(days=6)).strftime('%B %d')
+        context['days'] = []
+        for i in range(7):
+            day = start_date + timedelta(days=i)
+            day_instances = instances_by_date.get(day, [])
+            context['days'].append({
+                'date': day.strftime('%A, %B %d'),
+                'tasks': [build_task_dict(inst) for inst in day_instances]
+            })
+
+        message = render_template(template.message_template, context, use_jinja=True)
+        title = template.title_template or f"Weekly Planner - {context['start_date']} to {context['end_date']}"
+        if template.title_template:
+            title = render_template(template.title_template, context, use_jinja=True)
+        return {"title": title, "message": message}
+
+    # Fallback to existing hardcoded format
+    return build_weekly_digest_message(instances_by_date, start_date, app_url)
 
 
 def build_task_line(instance: ScheduleInstance, include_reptile: bool = True) -> str:
