@@ -1,15 +1,15 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-16T13:15:59Z
+**Last Updated:** 2026-02-16T13:25:29Z
 
 ## Current Position
 
 **Phase:** 25 of 25 (Weight Alert Customization)
-**Plan:** Completed 25-02
-**Status:** In progress
-**Last activity:** 2026-02-16 - Completed Phase 25-02 (Jinja2 Template Support for Planner Digests)
+**Plan:** Completed 25-03 (All plans complete)
+**Status:** Phase complete
+**Last activity:** 2026-02-16 - Completed Phase 25-03 (Template Format Variants and Expiry Consolidation)
 
-**Progress:** Phase 25 - IN PROGRESS
+**Progress:** Phase 25 - COMPLETE
 ```
 24-01: ███████████ COMPLETE (Detection Logic)
 24-02: ███████████ COMPLETE (Delivery Integration)
@@ -23,6 +23,7 @@
 
 25-01: ███████████ COMPLETE (Per-Reptile Cooldown Override)
 25-02: ███████████ COMPLETE (Jinja2 Template Support)
+25-03: ███████████ COMPLETE (Template Format Variants)
 ```
 
 **Overall System Progress:**
@@ -30,12 +31,16 @@
 - ✅ Weight change alert detection and delivery
 - ✅ User-facing alert settings UI
 - ✅ Phase 24.5: Unified notifications page (COMPLETE)
-- ✅ Phase 25: Configurable frequency caps (COMPLETE)
+- ✅ Phase 25: Customization and template enhancements (COMPLETE)
 
 ## Recent Decisions
 
 | Phase  | Decision | Rationale | Impact |
 |--------|----------|-----------|--------|
+| 25-03  | Template variants (short/long) instead of separate templates | Single template with two variants simpler to manage | Users edit one template, system selects variant based on channel preference |
+| 25-03  | Channel-level format preference (not per-template) | Format is a property of the delivery channel, not the content | Each channel has format setting, same template renders differently per channel |
+| 25-03  | Consolidate expiry_alert into follow_up | Four alert types (reminder, follow-up, expiry, overdue) was confusing | Simplified to three concepts (reminder, follow-up nudge, overdue) |
+| 25-03  | Show calculated follow-up time with warning | Users need to see when follow-up will actually fire | Preview helps users understand timing, warning prevents misconfiguration |
 | 25-02  | Use use_jinja parameter instead of separate function | Simpler API, single function handles both modes | render_template signature extended with optional bool parameter |
 | 25-02  | Order by user_id DESC NULLSLAST for template priority | User templates selected before system templates | Template resolution favors customization |
 | 25-02  | Parameterized SQL with text() in migration | Avoid escaping issues with Jinja2 braces in f-strings | Clean, safe SQL execution |
@@ -108,13 +113,14 @@ The following features from vision were intentionally deferred and need separate
 
 ## Session Continuity
 
-**Last session:** 2026-02-16T13:15:59Z
-**Stopped at:** Completed Phase 25-02 (Jinja2 Template Support for Planner Digests)
-**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-02-SUMMARY.md
+**Last session:** 2026-02-16T13:25:29Z
+**Stopped at:** Completed Phase 25-03 (Template Format Variants and Expiry Consolidation)
+**Resume file:** /home/chrto/Homelab/github/chrtol/home-cluster/apps/reptile-tracker/.planning/phases/25-weight-alert-customization/25-03-SUMMARY.md
 
 **Next session planning:**
-- Phase 25 in progress - continue with remaining plans if any
-- Jinja2 template infrastructure ready for integration
+- Phase 25 complete - all plans executed
+- Template format variants and expiry consolidation live
+- System ready for production use
 
 ## Key Files Reference
 
@@ -149,11 +155,26 @@ The following features from vision were intentionally deferred and need separate
 
 ### Phase 25: Weight Alert Customization & Template Enhancements
 
-**Backend (Templates):**
-- `backend/app/notifications.py` - Jinja2 environment, dual-mode render_template
+**Backend (Per-Reptile Cooldown):**
+- `backend/app/models.py` - Reptile.weight_alert_cooldown_days column
+- `backend/app/scheduler/weight_alerts.py` - get_effective_cooldown_days function
+- `frontend/src/components/notifications/ReptileAlertsTab.jsx` - Cooldown dropdown UI
+- `backend/migrations/versions/0096_add_reptile_cooldown_override.py` - Migration
+
+**Backend (Jinja2 Templates):**
+- `backend/app/notifications.py` - Jinja2 environment, dual-mode render_template, get_template_message
 - `backend/app/scheduler/digest.py` - Template-powered digest functions with fallback
 - `backend/app/routers/notification_templates.py` - Preview endpoint with sample data
 - `backend/migrations/versions/0097_add_digest_template_types.py` - Default digest templates
+
+**Backend (Template Format Variants):**
+- `backend/app/models.py` - NotificationTemplate.message_template_short/long, NotificationChannel.notification_format
+- `backend/migrations/versions/0098_add_template_format_variants.py` - Template variant columns
+- `backend/migrations/versions/0099_consolidate_expiry_to_followup.py` - Consolidate expiry_alert into follow_up
+
+**Frontend (Format Variants UI):**
+- `frontend/src/components/notifications/ChannelsTab.jsx` - Notification format dropdown
+- `frontend/src/components/notifications/ScheduleNotificationsTab.jsx` - FollowUpPreview component
 
 ## Accumulated Context
 
@@ -210,23 +231,34 @@ User logs weight
 - Juveniles: 15% gain / 8% loss
 - Adults: 10% gain / 5% loss
 
-### Phase 25: Weight Alert Customization
-**Pattern:** Nullable override fields
+### Phase 25: Weight Alert Customization & Template Enhancements
+
+**Pattern:** Nullable override fields (25-01)
 - NULL = inherit global setting
 - 0 = no cooldown (intensive monitoring)
 - Positive integer = days
 
-**Pattern:** Cascading config resolution
+**Pattern:** Cascading config resolution (25-01)
 - Check per-reptile override first
 - Fall back to global NotificationSettings
 - Default fallback if no settings exist
 
-**Key Files:**
-- `backend/app/models.py` - Reptile.weight_alert_cooldown_days column
-- `backend/app/scheduler/weight_alerts.py` - get_effective_cooldown_days function
-- `frontend/src/components/notifications/ReptileAlertsTab.jsx` - Cooldown dropdown UI
-- `backend/migrations/versions/0096_add_reptile_cooldown_override.py` - Migration
+**Pattern:** Template format variants (25-03)
+- Single template with short and long variants
+- Channel-level format preference (not per-template)
+- get_template_message() selects variant based on channel.notification_format
+- Legacy fallback for backward compatibility
+
+**Pattern:** Calculated UI preview (25-03)
+- FollowUpPreview component calculates follow-up fire time
+- Shows real-time preview as user changes settings
+- Inline warning when configuration issues detected
+
+**Pattern:** Alert sequence simplification (25-03)
+- Before: Main reminder → Follow-up → Expiry alert → Overdue (4 concepts)
+- After: Main reminder → Follow-up nudge → Overdue (3 concepts)
+- Expiry alert functionality merged into follow_up
 
 ---
 
-**Project Status:** Phase 24, 24.5, and 25 complete. Notification system fully implemented with per-reptile customization.
+**Project Status:** Phase 24, 24.5, and 25 complete. Notification system fully implemented with per-reptile customization, template format variants, and simplified alert sequence.
