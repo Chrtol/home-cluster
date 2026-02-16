@@ -1,6 +1,6 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-16
+**Last Updated:** 2026-02-17
 
 ## Project Reference
 
@@ -23,6 +23,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
 **Next:** v1.4 Schedule Type Alignment & UX Polish (Phases 26-28)
+**Future:** v1.5 Notification Template UI Improvements (Phases 29-31)
 
 ## Architecture Summary
 
@@ -76,10 +77,19 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2026-02-16
-**Action:** Archived v1.2 and v1.3 milestones
-**Next step:** Run `/gsd:new-milestone` to define v1.4 requirements
+**Last session:** 2026-02-17
+**Action:** Added v1.5 milestone with phases 29-31
+**Next step:** Complete v1.4 planning, then plan v1.5 phases
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- v1.5 milestone added: Notification Template UI Improvements (Phases 29-31)
+- Phase 29 added: Creation Wizard
+- Phase 30 added: Grouped Template List View
+- Phase 31 added: Improved Template Editor
 
 ---
 
-**Project Status:** v1.3 complete. Ready for `/gsd:new-milestone` to start v1.4 planning.
+**Project Status:** v1.4 ready for planning. v1.5 milestone defined (Phases 29-31).
