@@ -18,7 +18,7 @@ from app.models import (
     Schedule, Reptile, User, NotificationSettings, NotificationType,
     FeedingRotation, Supplement
 )
-from app.notifications import send_webhook_notification, get_template_for_trigger, render_template
+from app.notifications import send_webhook_notification, get_template_for_trigger, render_template, get_template_message
 from app.constants import FOOD_CATEGORY_DISPLAY, get_schedule_type_emoji
 
 # Note: is_within_quiet_hours and create_in_app_notification are imported inside
@@ -33,13 +33,16 @@ async def send_schedule_reminder(
     schedule: Schedule,
     scheduled_date: py_date,
     user: User,
-    webhook_url: str,
-    webhook_type: str,
-    config: dict = None
+    channel: 'NotificationChannel'
 ):
     """Send a schedule reminder notification"""
     # Late import to avoid circular dependency with core.py
     from .core import create_in_app_notification
+
+    # Extract webhook components from channel
+    webhook_url = channel.webhook_url
+    webhook_type = channel.webhook_type
+    config = channel.config
 
     # Build context for template matching and rendering
     emoji = get_schedule_type_emoji(schedule.schedule_type)
@@ -141,7 +144,7 @@ async def send_schedule_reminder(
 
     # Render template or use fallback
     if template:
-        message = render_template(template.message_template, context)
+        message = render_template(get_template_message(template, channel), context)
         title = render_template(template.title_template, context) if template.title_template else f"Schedule Reminder - {reptile.name}"
     else:
         # Fallback to hardcoded message
@@ -183,9 +186,7 @@ async def send_overdue_alert(
     schedule: Schedule,
     missed_date: py_date,
     user: User,
-    webhook_url: str,
-    webhook_type: str,
-    config: dict = None
+    channel: 'NotificationChannel'
 ) -> bool:
     """
     Send an overdue schedule alert
@@ -195,6 +196,11 @@ async def send_overdue_alert(
     """
     # Late import to avoid circular dependency with core.py
     from .core import create_in_app_notification
+
+    # Extract webhook components from channel
+    webhook_url = channel.webhook_url
+    webhook_type = channel.webhook_type
+    config = channel.config
 
     schedule_name = schedule.name or f"{schedule.schedule_type.title()}"
 
@@ -277,7 +283,7 @@ async def send_overdue_alert(
 
     # Render template or use fallback
     if template:
-        message = render_template(template.message_template, context)
+        message = render_template(get_template_message(template, channel), context)
         title = render_template(template.title_template, context) if template.title_template else f"Overdue Schedule - {reptile.name}"
     else:
         # Fallback to hardcoded message
@@ -403,7 +409,7 @@ async def send_interval_warning_notification(
             # Render template or use fallback based on warning_type
             if template:
                 # User has a custom template - use it with interval warning context
-                message = render_template(template.message_template, context)
+                message = render_template(get_template_message(template, channel), context)
                 title = render_template(template.title_template, context) if template.title_template else f"Schedule Reminder - {reptile.name}"
             else:
                 # Fallback to hardcoded messages if no template exists

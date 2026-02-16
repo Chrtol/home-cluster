@@ -145,9 +145,7 @@ async def check_overdue_schedules():
                                 schedule=schedule,
                                 missed_date=yesterday,
                                 user=user,
-                                webhook_url=channel.webhook_url,
-                                webhook_type=channel.webhook_type,
-                                config=channel.config
+                                channel=channel
                             )
 
                             if success:

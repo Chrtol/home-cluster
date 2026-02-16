@@ -267,9 +267,7 @@ async def execute_scheduled_notification(
                     schedule=schedule,
                     scheduled_date=scheduled_date,
                     user=user,
-                    webhook_url=channel.webhook_url,
-                    webhook_type=channel.webhook_type,
-                    config=channel.config
+                    channel=channel
                 )
 
     except Exception as e:
