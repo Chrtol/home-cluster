@@ -49,6 +49,12 @@ const NotificationTemplatesTab = () => {
   const [groupDefaultPriority, setGroupDefaultPriority] = useState(0);
   const [groupIgnoreQuietHours, setGroupIgnoreQuietHours] = useState(false);
 
+  // Digest format options
+  const [groupByReptile, setGroupByReptile] = useState(true);
+  const [showTimeWindows, setShowTimeWindows] = useState(true);
+  const [includeOverdue, setIncludeOverdue] = useState(true);
+  const [includeAppLink, setIncludeAppLink] = useState(true);
+
   // Discord config state
   const [discordColor, setDiscordColor] = useState('#2E5BFF'); // Default blue
   const [discordIncludeFields, setDiscordIncludeFields] = useState(['scheduled_date', 'schedule_type', 'notes']);
@@ -229,6 +235,11 @@ const NotificationTemplatesTab = () => {
     setDiscordColor('#2E5BFF');
     setDiscordIncludeFields(['scheduled_date', 'schedule_type', 'notes']);
     setDiscordFooterText('Reptile Tracker');
+    // Reset digest format options
+    setGroupByReptile(true);
+    setShowTimeWindows(true);
+    setIncludeOverdue(true);
+    setIncludeAppLink(true);
     setShowModal(true);
   };
 
@@ -257,6 +268,12 @@ const NotificationTemplatesTab = () => {
     setPriority(template.priority || 100);
     setAppliesToDescription(template.applies_to_description || '');
     setGroupId(template.group_id ? String(template.group_id) : '');
+
+    // Load digest format options (use true as default for null values)
+    setGroupByReptile(template.group_by_reptile !== false);
+    setShowTimeWindows(template.show_time_windows !== false);
+    setIncludeOverdue(template.include_overdue !== false);
+    setIncludeAppLink(template.include_app_link !== false);
 
     // Load Discord config if present
     if (template.discord_config) {
@@ -297,6 +314,14 @@ const NotificationTemplatesTab = () => {
         applies_to_description: appliesToDescription.trim() || null,
         group_id: groupId ? parseInt(groupId) : null
       };
+
+      // Add digest format options for digest templates
+      if (triggerType === 'daily_planner' || triggerType === 'weekly_planner') {
+        payload.group_by_reptile = groupByReptile;
+        payload.show_time_windows = showTimeWindows;
+        payload.include_overdue = includeOverdue;
+        payload.include_app_link = includeAppLink;
+      }
 
       // Add Discord config if channel type is discord or all channels
       if (channelType === 'discord' || channelType === '') {
@@ -1120,6 +1145,70 @@ const NotificationTemplatesTab = () => {
                   Active
                 </label>
               </div>
+
+              {/* Digest Format Options - only for digest templates */}
+              {(triggerType === 'daily_planner' || triggerType === 'weekly_planner') && (
+                <div className="border-t border-border pt-4 mt-4">
+                  <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-gray-200">Digest Format Options</h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Control how the digest message is formatted. These options determine the structure of the generated message.
+                  </p>
+
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={groupByReptile}
+                        onChange={(e) => setGroupByReptile(e.target.checked)}
+                        className="h-4 w-4 rounded"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">Group by Reptile</span>
+                        <p className="text-xs text-muted-foreground">Group tasks under reptile name headers</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={showTimeWindows}
+                        onChange={(e) => setShowTimeWindows(e.target.checked)}
+                        className="h-4 w-4 rounded"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">Show Time Windows</span>
+                        <p className="text-xs text-muted-foreground">Include time window (HH:MM - HH:MM) for each task</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={includeOverdue}
+                        onChange={(e) => setIncludeOverdue(e.target.checked)}
+                        className="h-4 w-4 rounded"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">Include Overdue Section</span>
+                        <p className="text-xs text-muted-foreground">Show a separate section for overdue tasks</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={includeAppLink}
+                        onChange={(e) => setIncludeAppLink(e.target.checked)}
+                        className="h-4 w-4 rounded"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">Include App Link</span>
+                        <p className="text-xs text-muted-foreground">Add a "View in app" link at the end</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {/* Discord Configuration */}
               {(channelType === 'discord' || channelType === '') && (

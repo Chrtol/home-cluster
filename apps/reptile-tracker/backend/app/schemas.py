@@ -1270,6 +1270,12 @@ class NotificationTemplateUpdate(BaseModel):
     # Optional grouping for organization
     group_id: Optional[int] = None
 
+    # Digest format options (only used for daily_planner/weekly_planner)
+    group_by_reptile: Optional[bool] = None
+    show_time_windows: Optional[bool] = None
+    include_overdue: Optional[bool] = None
+    include_app_link: Optional[bool] = None
+
 
 class NotificationTemplate(NotificationTemplateBase):
     id: int
