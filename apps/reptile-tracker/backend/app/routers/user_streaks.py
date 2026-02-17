@@ -12,7 +12,7 @@ from sqlalchemy import select, and_, or_
 
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import User, UserStreak, UserStreakFreeze, ScheduleInstance, Schedule, Reptile, household_members
+from app.models import User, UserStreak, UserStreakFreeze, ScheduleCompletion, CompletionStatus, Schedule, Reptile, household_members
 from app.schemas import (
     UserStreakResponse,
     FreezeScheduleRequest,
@@ -286,9 +286,11 @@ async def get_recent_misses(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Get recent missed schedule instances for current user.
+    Get recent missed schedule completions for current user.
 
     Returns recent missed tasks (up to 20) for reptiles in user's households.
+    Queries ScheduleCompletion (not ScheduleInstance) since the overdue
+    scheduler marks completions as MISSED.
     """
     # Get user's household IDs
     household_result = await db.execute(
@@ -300,25 +302,26 @@ async def get_recent_misses(
     if not household_ids:
         return []
 
-    # Query missed instances for reptiles in user's households
+    # Query missed completions for reptiles in user's households
+    # Note: ScheduleCompletion.status tracks missed status, not ScheduleInstance.status
     result = await db.execute(
         select(
-            ScheduleInstance.id,
-            ScheduleInstance.scheduled_date,
+            ScheduleCompletion.id,
+            ScheduleCompletion.scheduled_date,
             Schedule.schedule_type,
             Reptile.name.label('reptile_name'),
             Reptile.id.label('reptile_id'),
             Schedule.name.label('schedule_name')
         )
-        .join(Schedule, ScheduleInstance.schedule_id == Schedule.id)
+        .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
         .join(Reptile, Schedule.reptile_id == Reptile.id)
         .where(
             and_(
-                ScheduleInstance.status == 'missed',
+                ScheduleCompletion.status == CompletionStatus.MISSED,
                 Reptile.household_id.in_(household_ids)
             )
         )
-        .order_by(ScheduleInstance.scheduled_date.desc())
+        .order_by(ScheduleCompletion.scheduled_date.desc())
         .limit(20)
     )
 
