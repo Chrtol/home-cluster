@@ -38,7 +38,7 @@ async def list_all_health_records(
         # Get all reptiles user has access to
         from app.permissions import get_user_reptiles
         user_reptiles = await get_user_reptiles(db, current_user)
-        reptile_ids = [r.id for r in user_reptiles]
+        reptile_ids = [r["reptile"].id for r in user_reptiles]
         query = query.where(HealthRecord.reptile_id.in_(reptile_ids))
 
     # Filter by record_type if specified
