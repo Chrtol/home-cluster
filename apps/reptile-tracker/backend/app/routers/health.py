@@ -1,7 +1,8 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from datetime import datetime, timezone
 from app.auth import get_current_user
 from app.database import get_db
@@ -11,6 +12,44 @@ from app.schemas import HealthRecord as HealthRecordSchema, HealthRecordCreate, 
 from app.services.health_status_service import validate_health_record_state, derive_health_status, batch_derive_health_statuses
 
 router = APIRouter()
+
+
+@router.get("", response_model=List[HealthRecordSchema])
+async def list_all_health_records(
+    reptile_id: Optional[int] = Query(None),
+    record_type: Optional[str] = Query(None),
+    limit: int = Query(100, le=1000),
+    offset: int = Query(0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List health records with optional filters (for dashboard Recent Activity)"""
+    query = (
+        select(HealthRecord)
+        .options(selectinload(HealthRecord.reptile))
+        .order_by(HealthRecord.date.desc())
+    )
+
+    # Filter by reptile if specified
+    if reptile_id:
+        await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
+        query = query.where(HealthRecord.reptile_id == reptile_id)
+    else:
+        # Get all reptiles user has access to
+        from app.permissions import get_user_reptiles
+        user_reptiles = await get_user_reptiles(db, current_user)
+        reptile_ids = [r.id for r in user_reptiles]
+        query = query.where(HealthRecord.reptile_id.in_(reptile_ids))
+
+    # Filter by record_type if specified
+    if record_type:
+        query = query.where(HealthRecord.record_type == record_type)
+
+    # Apply pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 @router.get("/reptile/{reptile_id}", response_model=List[HealthRecordSchema])
