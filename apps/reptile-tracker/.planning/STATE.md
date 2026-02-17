@@ -7,14 +7,14 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** Planning next milestone (v1.4)
+**Current focus:** v1.4 Schedule Type Alignment & UX Polish
 
 ## Current Position
 
-**Phase:** Ready for v1.4 planning
-**Plan:** Not started
-**Status:** Ready to plan
-**Last activity:** 2026-02-16 — v1.2 and v1.3 milestones archived
+**Phase:** 26 - Health Schedule Type
+**Plan:** Ready to execute (5 plans created)
+**Status:** Planning complete
+**Last activity:** 2026-02-17 — Phase 26 plans created
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -22,24 +22,23 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** v1.4 Schedule Type Alignment & UX Polish (Phases 26-28)
-**Future:** v1.5 Notification Template UI Improvements (Phases 29-31)
+**Next:** Execute Phase 26 plans
 
-## Architecture Summary
+### Architecture Summary
 
-### Notification System
+#### Notification System
 - **Template-based:** All notifications use Jinja2 templates with fallback messages
 - **Format variants:** Short/long templates with channel-level format preference
 - **Multi-channel:** In-app, Discord, Pushover
 - **Async delivery:** Celery tasks for decoupled processing
 - **Frequency caps:** Prevent alert fatigue (5/reptile/day, 7-day weight alert cooldown)
 
-### Gamification System
+#### Gamification System
 - **User streaks:** Duolingo-style with freeze capability
 - **Reptile streaks:** Per-reptile with grace period forgiveness
 - **Celebrations:** Confetti on completion and milestones (respects prefers-reduced-motion)
 
-### Health Tracking
+#### Health Tracking
 - **Status derivation:** From health_records (not stored redundantly)
 - **Unified logging:** Single Health Log page for all health events
 - **Batch queries:** LEFT JOIN pattern for dashboard efficiency
@@ -78,39 +77,27 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-17
-**Action:** Clarified Phase 26 assumptions via `/gsd:list-phase-assumptions`
-**Next step:** Plan Phase 26 with clarified scope
+**Action:** Completed quick task 001 (streak miss details modal and completion tooltips)
+**Next step:** `/gsd:execute-phase 26` or continue with quick tasks
 
-## Accumulated Context
+## Phase 26 Plan Summary
 
-### Roadmap Evolution
+**Goal:** Replace "weighing" schedule type with "health" schedule type that supports sub-types aligned with the health logging system.
 
-- v1.5 milestone added: Notification Template UI Improvements (Phases 29-31)
-- Phase 29 added: Creation Wizard
-- Phase 30 added: Grouped Template List View
-- Phase 31 added: Improved Template Editor
+**Plans:**
+- **26-01 (Wave 1):** Add bathing as health record type (backend + HealthLog.jsx)
+- **26-02 (Wave 2):** Database migration (schedule_type change, health_subtype/measurement_type columns)
+- **26-03 (Wave 2):** Schedule form UI (health sub-type selector with conditional measurement selector)
+- **26-04 (Wave 3):** Completion flow (pre-fill navigation, shedding check modal)
+- **26-05 (Wave 4):** Human verification checkpoint (all 10 success criteria)
 
-### Phase 26 Assumptions Clarified (2026-02-17)
-
-**Key discoveries from codebase analysis:**
-- Health log types: `weight`, `health` (record_type subtypes), `shedding`, `brumation`, `measurement`
-- Current schedule `health_category` values don't align with log types
-- "Food Category" exists on feeding schedules (not "prey selector")
-
-**Scope clarifications from user:**
-- Bathing needs to be added as a health record type first, then becomes schedulable
-- Measurement subtype needs sub-selector for measurement_type (including custom)
-- Shedding Check prompts yes/no → can start shedding event → always marks done
-- Brumation Check is a reminder to review/update status
-- Health Record subtype uses existing record_types (medication, observation, etc.)
-- Completion flow follows same pattern as feeding (navigate to log page with pre-fill)
-
-**ROADMAP.md updated with:**
-- Detailed health schedule subtypes table
-- Shedding check completion flow specification
-- Revised success criteria (10 items)
-- Updated plan breakdown (5 plans)
+**Key Changes:**
+- Schedule types become: feeding, misting, health (was weighing), supplement
+- Health schedules have 6 sub-types: weight, measurement, shedding_check, brumation_check, health_record, bathing
+- Measurement sub-type has secondary selector for measurement_type
+- Shedding Check shows yes/no modal on completion
+- All completion flows navigate to Health Log with pre-filled values
 
 ---
 
-**Project Status:** Phase 26 assumptions clarified and documented. Ready for `/gsd:plan-phase 26`.
+**Project Status:** Phase 26 planning complete. Ready for `/gsd:execute-phase 26`.
