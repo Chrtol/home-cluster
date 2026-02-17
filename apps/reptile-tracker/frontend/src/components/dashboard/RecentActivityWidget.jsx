@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Scale, Activity } from 'lucide-react';
+import { Utensils, Scale, Activity, HeartPulse } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 import EmptyState from '../EmptyState';
 
@@ -42,9 +42,10 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       setLoading(true);
       setError(null);
 
-      const [feedingsRes, weighingsRes, reptilesRes] = await Promise.all([
+      const [feedingsRes, weighingsRes, healthRes, reptilesRes] = await Promise.all([
         axios.get('/api/feedings', { params: { limit: itemCount * 2 } }),
         axios.get('/api/weight/dashboard'),
+        axios.get('/api/health', { params: { limit: itemCount * 2 } }),
         axios.get('/api/reptiles')
       ]);
 
@@ -123,7 +124,42 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         };
       });
 
-      const combined = [...feedings, ...weighings];
+      const healthData = Array.isArray(healthRes.data) ? healthRes.data : [];
+      const healthRecords = healthData.map(h => {
+        const reptileFromMap = reptilesMap[h.reptile_id];
+
+        // Build summary based on record_type
+        const recordTypeLabels = {
+          'observation': 'Observation',
+          'vet_visit': 'Vet Visit',
+          'medication': 'Medication',
+          'shedding': 'Shedding',
+          'bowel_movement': 'Bowel Movement',
+          'bathing': 'Bathing'
+        };
+        const summary = h.title || recordTypeLabels[h.record_type] || 'Health Record';
+
+        return {
+          type: 'health',
+          icon: HeartPulse,
+          iconColor: 'text-rose-500',
+          reptile_id: h.reptile_id,
+          reptile_name: reptileFromMap?.name || h.reptile?.name || 'Unknown',
+          reptile: reptileFromMap || {
+            id: h.reptile_id,
+            name: h.reptile?.name,
+            avatar_photo_url: h.reptile?.avatar_photo_url,
+            avatar_border_color: h.reptile?.avatar_border_color
+          },
+          timestamp: h.date || h.created_at,
+          summary: summary,
+          prominentValue: null,
+          detailLink: `/reptiles/${h.reptile_id}#health`,
+          notes: h.description
+        };
+      });
+
+      const combined = [...feedings, ...weighings, ...healthRecords];
       combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       setActivities(combined.slice(0, itemCount));
@@ -164,7 +200,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         <EmptyState
           icon={Activity}
           title="No recent activity"
-          message="Start tracking feedings and weighings to see them here"
+          message="Start tracking feedings, weighings, and health records to see them here"
           compact={true}
         />
       </div>
