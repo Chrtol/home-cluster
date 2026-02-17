@@ -348,13 +348,14 @@ async def get_completion_attribution(
 
 
 # Event-driven user streak updates
-# Note: Event listener uses sync connection (not async) since it runs in after_insert
-@event.listens_for(ScheduleCompletion, 'after_insert')
-def on_schedule_completion_created(mapper, connection, target):
-    """
-    Trigger user streak update when a ScheduleCompletion is created.
+# Note: Event listeners use sync connection (not async) since they run in after_insert/after_update
 
-    Runs in same transaction as completion insert for consistency.
+
+def _process_completion_for_streak(connection, target):
+    """
+    Core logic for updating user streaks on completion.
+
+    Called by both after_insert and after_update event listeners.
     Only triggers for manual schedules (auto-complete excluded).
     Credits all responsible users.
     """
@@ -478,3 +479,40 @@ def on_schedule_completion_created(mapper, connection, target):
                     """),
                     {"user_id": user_id, "freeze_days": freeze_days}
                 )
+
+
+@event.listens_for(ScheduleCompletion, 'after_insert')
+def on_schedule_completion_created(mapper, connection, target):
+    """
+    Trigger user streak update when a new ScheduleCompletion is created.
+
+    Handles completions that are created directly as completed (rare case).
+    """
+    _process_completion_for_streak(connection, target)
+
+
+@event.listens_for(ScheduleCompletion, 'after_update')
+def on_schedule_completion_updated(mapper, connection, target):
+    """
+    Trigger user streak update when a ScheduleCompletion is updated.
+
+    This handles the common case where a PENDING completion is updated to COMPLETED.
+    Only triggers when status changes to a completed state.
+    """
+    from sqlalchemy.orm.attributes import get_history
+    from app.models import CompletionStatus
+
+    # Check if status was changed
+    status_history = get_history(target, 'status')
+
+    # Only process if status was actually changed (has deleted values = old values)
+    if not status_history.deleted:
+        return
+
+    old_status = status_history.deleted[0]
+    new_status = target.status
+
+    # Only trigger if transitioning TO a completed status FROM a non-completed status
+    completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
+    if old_status not in completed_statuses and new_status in completed_statuses:
+        _process_completion_for_streak(connection, target)
