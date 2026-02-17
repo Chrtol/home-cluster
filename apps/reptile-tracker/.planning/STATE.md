@@ -14,7 +14,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 **Phase:** 26 - Health Schedule Type
 **Plan:** Ready to execute (5 plans created)
 **Status:** Planning complete
-**Last activity:** 2026-02-17 — Phase 26 plans created
+**Last activity:** 2026-02-17 — Completed quick task 001: Add streak miss details modal and completed task tooltips
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -73,6 +73,12 @@ For future milestones:
 - Growth milestone alerts for juveniles
 - Rolling average baseline for weight comparison
 - Format preview in template editor (side-by-side short/long)
+
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Add streak miss details modal and completed task tooltips | 2026-02-17 | 23f2c77e0 | [001-add-streak-miss-details-modal-and-comple](./quick/001-add-streak-miss-details-modal-and-comple/) |
 
 ## Session Continuity
 
