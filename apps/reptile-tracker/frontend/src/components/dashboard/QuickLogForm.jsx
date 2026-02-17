@@ -4,6 +4,7 @@ import axios from 'axios';
 import { X, ExternalLink, Plus, Minus } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatting';
 import { TimePicker } from '../ui/time-picker';
+import SheddingCheckModal from '../SheddingCheckModal';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -30,6 +31,9 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
 
   // Time selection state
   const [fedAt, setFedAt] = useState(new Date());
+
+  // Shedding check modal state
+  const [showSheddingModal, setShowSheddingModal] = useState(false);
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -180,6 +184,13 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   };
 
   const handleOpenFull = () => {
+    // Check if this is a shedding_check schedule
+    const healthSubtype = task?.health_subtype;
+    if (healthSubtype === 'shedding_check') {
+      setShowSheddingModal(true);
+      return;
+    }
+
     navigate(getFullFormPath());
   };
 
@@ -187,6 +198,13 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     e.preventDefault();
 
     if (!task) return;
+
+    // Check if this is a shedding_check schedule - show modal instead
+    const healthSubtype = task?.health_subtype;
+    if (healthSubtype === 'shedding_check') {
+      setShowSheddingModal(true);
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -447,6 +465,20 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
           </div>
         </form>
       </div>
+
+      {/* Shedding Check Modal */}
+      {showSheddingModal && (
+        <SheddingCheckModal
+          task={task}
+          onClose={() => setShowSheddingModal(false)}
+          onComplete={async () => {
+            // Mark task as done by calling onSubmit
+            if (onSubmit) {
+              await onSubmit();
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
