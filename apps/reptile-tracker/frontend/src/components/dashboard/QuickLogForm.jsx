@@ -142,7 +142,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     } else if (scheduleType === 'misting') {
       const queryParam = instanceId ? `instance_id=${instanceId}` : (reptileId ? `reptile_id=${reptileId}` : '');
       return `/misting-log${queryParam ? `?${queryParam}` : ''}`;
-    } else if (scheduleType === 'health' || scheduleType === 'weighing') {
+    } else if (scheduleType === 'health') {
       // Build params based on health_subtype
       const params = new URLSearchParams();
       if (instanceId) params.set('instance_id', instanceId);
@@ -242,15 +242,39 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
           misted_at: fedAt.toISOString(),
           notes: notes.trim() || null
         };
-      } else if (scheduleType === 'health' || scheduleType === 'weighing') {
-        endpoint = '/api/health';
-        payload = {
-          reptile_id: reptileId,
-          record_type: scheduleType === 'weighing' ? 'weight_check' : 'observation',
-          title: scheduleType === 'weighing' ? 'Weight Check' : 'Health Observation',
-          description: notes.trim() || null,
-          date: fedAt.toISOString()
-        };
+      } else if (scheduleType === 'health') {
+        const healthSubtype = task?.health_subtype;
+
+        // Route based on health_subtype
+        if (healthSubtype === 'weight') {
+          // Weight logs need weight_grams - redirect to full form
+          // (Quick log can't capture weight value without UI changes)
+          navigate(getFullFormPath());
+          return;
+        } else if (healthSubtype === 'measurement') {
+          // Measurements need value - redirect to full form
+          navigate(getFullFormPath());
+          return;
+        } else if (healthSubtype === 'bathing') {
+          endpoint = '/api/health';
+          payload = {
+            reptile_id: reptileId,
+            record_type: 'bathing',
+            title: 'Bathing',
+            description: notes.trim() || null,
+            date: fedAt.toISOString()
+          };
+        } else {
+          // Default to observation for health_record and unknown subtypes
+          endpoint = '/api/health';
+          payload = {
+            reptile_id: reptileId,
+            record_type: 'observation',
+            title: 'Health Observation',
+            description: notes.trim() || null,
+            date: fedAt.toISOString()
+          };
+        }
       } else {
         // Unsupported task type - show error
         throw new Error(`Unsupported task type: ${scheduleType}. Please use the full form.`);
