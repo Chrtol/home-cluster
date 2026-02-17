@@ -350,6 +350,117 @@ async def get_completion_attribution(
     }
 
 
+async def recalculate_all_user_streaks(db: AsyncSession) -> int:
+    """
+    Recalculate streaks for all users on startup.
+
+    Returns the number of users whose streaks were updated.
+    """
+    from sqlalchemy import func
+    from app.models import Reptile, household_members, CompletionStatus
+
+    # Get all users with streak records
+    result = await db.execute(select(UserStreak))
+    all_streaks = result.scalars().all()
+
+    updated_count = 0
+
+    for user_streak in all_streaks:
+        user_id = user_streak.user_id
+
+        # Build responsibility filter for this user
+        has_schedule_resp = select(ScheduleResponsibility.id).where(
+            and_(
+                ScheduleResponsibility.schedule_id == Schedule.id,
+                ScheduleResponsibility.user_id == user_id
+            )
+        ).exists()
+
+        any_schedule_resp_exists = select(ScheduleResponsibility.id).where(
+            ScheduleResponsibility.schedule_id == Schedule.id
+        ).exists()
+
+        has_reptile_resp = select(ReptileResponsibility.id).where(
+            and_(
+                ReptileResponsibility.reptile_id == Reptile.id,
+                ReptileResponsibility.user_id == user_id
+            )
+        ).exists()
+
+        any_reptile_resp_exists = select(ReptileResponsibility.id).where(
+            ReptileResponsibility.reptile_id == Reptile.id
+        ).exists()
+
+        is_household_member = select(household_members.c.user_id).where(
+            and_(
+                household_members.c.household_id == Reptile.household_id,
+                household_members.c.user_id == user_id
+            )
+        ).exists()
+
+        responsibility_filter = or_(
+            has_schedule_resp,
+            and_(~any_schedule_resp_exists, has_reptile_resp),
+            and_(~any_schedule_resp_exists, ~any_reptile_resp_exists, is_household_member)
+        )
+
+        # Count completions (manual schedules only)
+        completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
+        result = await db.execute(
+            select(func.count(ScheduleCompletion.id))
+            .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
+            .join(Reptile, Schedule.reptile_id == Reptile.id)
+            .where(
+                and_(
+                    ScheduleCompletion.status.in_(completed_statuses),
+                    Schedule.auto_complete_enabled == False,
+                    responsibility_filter
+                )
+            )
+        )
+        total_completions = result.scalar() or 0
+
+        # Get recent completions to calculate consecutive misses
+        result = await db.execute(
+            select(ScheduleCompletion.status)
+            .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
+            .join(Reptile, Schedule.reptile_id == Reptile.id)
+            .where(
+                and_(
+                    Schedule.auto_complete_enabled == False,
+                    responsibility_filter
+                )
+            )
+            .order_by(ScheduleCompletion.scheduled_date.desc())
+            .limit(10)
+        )
+        recent = result.all()
+
+        consecutive_misses = 0
+        for row in recent:
+            if row.status == CompletionStatus.MISSED:
+                consecutive_misses += 1
+            else:
+                break
+
+        # Update if values changed
+        if user_streak.current_streak != total_completions or user_streak.consecutive_misses != consecutive_misses:
+            logger.info(
+                f"Recalculating streak for user {user_id}: "
+                f"streak {user_streak.current_streak} -> {total_completions}, "
+                f"misses {user_streak.consecutive_misses} -> {consecutive_misses}"
+            )
+            user_streak.current_streak = total_completions
+            user_streak.consecutive_misses = consecutive_misses
+            user_streak.longest_streak = max(user_streak.longest_streak, total_completions)
+            updated_count += 1
+
+    if updated_count > 0:
+        await db.commit()
+
+    return updated_count
+
+
 # Event-driven user streak updates
 # Note: Event listeners use sync connection (not async) since they run in after_insert/after_update
 

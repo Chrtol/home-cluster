@@ -117,6 +117,15 @@ async def lifespan(app: FastAPI):
         else:
             logger.info("No interval schedules needed initial instances")
 
+    # Recalculate all user streaks on startup to ensure accuracy
+    async with async_session_maker() as session:
+        from app.services.user_streak_service import recalculate_all_user_streaks
+        updated_count = await recalculate_all_user_streaks(session)
+        if updated_count > 0:
+            logger.info(f"Recalculated streaks for {updated_count} users")
+        else:
+            logger.info("No user streaks needed recalculation")
+
     # Start notification scheduler
     await start_scheduler()
     logger.info("Notification scheduler startup complete")

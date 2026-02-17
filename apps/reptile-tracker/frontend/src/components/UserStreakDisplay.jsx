@@ -85,6 +85,15 @@ export default function UserStreakDisplay() {
     }
   }
 
+  const handleRecalculate = async () => {
+    try {
+      const response = await axios.post('/api/user-streaks/me/recalculate')
+      setStreak(response.data)
+    } catch (err) {
+      console.error('Failed to recalculate streak:', err)
+    }
+  }
+
   const handleMissesClick = async () => {
     setShowMissesDetail(true)
     setLoadingMisses(true)
