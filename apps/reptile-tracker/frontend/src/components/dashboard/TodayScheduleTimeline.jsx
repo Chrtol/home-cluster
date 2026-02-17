@@ -480,6 +480,26 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                           </div>
                           <span className="text-primary">✓</span>
                         </div>
+
+                        {/* Completion tooltip */}
+                        {hoveredTask?.id === schedule.id && (
+                          <div className="absolute left-0 top-full mt-1 z-10 bg-popover border border-border rounded-lg p-2 shadow-lg text-xs w-64">
+                            {schedule.completed_at && (
+                              <div className="mb-1">
+                                <span className="text-muted-foreground">Completed at:</span>{' '}
+                                <span className="text-foreground">{formatTime(schedule.completed_at)}</span>
+                              </div>
+                            )}
+                            {schedule.supplements && schedule.supplements.length > 0 && (
+                              <div>
+                                <span className="text-muted-foreground">Supplements:</span>{' '}
+                                <span className="text-foreground">
+                                  {schedule.supplements.map(s => typeof s === 'string' ? s : s.name).join(', ')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
