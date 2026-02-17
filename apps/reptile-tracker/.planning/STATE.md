@@ -78,8 +78,8 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-17
-**Action:** Added v1.5 milestone with phases 29-31
-**Next step:** Complete v1.4 planning, then plan v1.5 phases
+**Action:** Clarified Phase 26 assumptions via `/gsd:list-phase-assumptions`
+**Next step:** Plan Phase 26 with clarified scope
 
 ## Accumulated Context
 
@@ -90,6 +90,27 @@ For future milestones:
 - Phase 30 added: Grouped Template List View
 - Phase 31 added: Improved Template Editor
 
+### Phase 26 Assumptions Clarified (2026-02-17)
+
+**Key discoveries from codebase analysis:**
+- Health log types: `weight`, `health` (record_type subtypes), `shedding`, `brumation`, `measurement`
+- Current schedule `health_category` values don't align with log types
+- "Food Category" exists on feeding schedules (not "prey selector")
+
+**Scope clarifications from user:**
+- Bathing needs to be added as a health record type first, then becomes schedulable
+- Measurement subtype needs sub-selector for measurement_type (including custom)
+- Shedding Check prompts yes/no → can start shedding event → always marks done
+- Brumation Check is a reminder to review/update status
+- Health Record subtype uses existing record_types (medication, observation, etc.)
+- Completion flow follows same pattern as feeding (navigate to log page with pre-fill)
+
+**ROADMAP.md updated with:**
+- Detailed health schedule subtypes table
+- Shedding check completion flow specification
+- Revised success criteria (10 items)
+- Updated plan breakdown (5 plans)
+
 ---
 
-**Project Status:** v1.4 ready for planning. v1.5 milestone defined (Phases 29-31).
+**Project Status:** Phase 26 assumptions clarified and documented. Ready for `/gsd:plan-phase 26`.
