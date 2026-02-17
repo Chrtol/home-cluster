@@ -307,7 +307,7 @@ class WeightLogWithReptile(WeightLog):
 
 # Health record schemas
 class HealthRecordBase(BaseModel):
-    record_type: str  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
+    record_type: str = Field(..., pattern="^(vet_visit|medication|observation|shedding|bowel_movement|bathing)$")  # Valid health record types
     title: str
     description: Optional[str] = None
     event_type: Optional[str] = None  # start, complete, end, observation

@@ -391,7 +391,7 @@ class HealthRecord(Base):
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False)
     logged_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
-    record_type = Column(String, nullable=False)  # "vet_visit", "medication", "observation", "shedding", "bowel_movement"
+    record_type = Column(String, nullable=False)  # "vet_visit", "medication", "observation", "shedding", "bowel_movement", "bathing"
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     event_type = Column(String(20), nullable=True)  # start, complete, end, observation (nullable for backward compatibility)
