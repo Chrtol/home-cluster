@@ -226,7 +226,6 @@ function ScheduleNotificationsTab() {
   const getScheduleTypeEmoji = (type) => {
     const emojiMap = {
       'feeding': '🍽️',
-      'weighing': '⚖️',
       'misting': '💧',
       'health': '🏥',
       'supplement': '💊'
@@ -237,9 +236,8 @@ function ScheduleNotificationsTab() {
   const getScheduleTypeLabel = (type) => {
     const labelMap = {
       'feeding': 'Feeding',
-      'weighing': 'Weighing',
       'misting': 'Misting',
-      'health': 'Health Check',
+      'health': 'Health',
       'supplement': 'Supplement'
     };
     return labelMap[type] || type;
@@ -330,9 +328,8 @@ function ScheduleNotificationsTab() {
           >
             <option value="all">All Types</option>
             <option value="feeding">Feedings</option>
-            <option value="weighing">Weighings</option>
             <option value="misting">Misting</option>
-            <option value="health">Health Checks</option>
+            <option value="health">Health</option>
             <option value="supplement">Supplements</option>
           </select>
         </div>

@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 26 - Health Schedule Type (5 of 5 plans complete)
-**Plan:** 26-07 complete, ready for 26-08
+**Phase:** 26 - Health Schedule Type (6 of 7 plans complete)
+**Plan:** 26-06 complete, ready for 26-07
 **Status:** In progress
-**Last activity:** 2026-02-17 — Completed 26-07-PLAN.md (Recent Activity and schedule matching for health schedules)
-**Progress:** █████ (100% - 5/5 plans complete)
+**Last activity:** 2026-02-17 — Completed 26-06-PLAN.md (Health schedule type field propagation)
+**Progress:** ██████░ (86% - 6/7 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -84,21 +84,23 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-17
-**Action:** Completed 26-07-PLAN.md (Recent Activity and schedule matching for health schedules)
-**Stopped at:** Phase 26 Plan 07 complete
-**Resume file:** `.planning/phases/26-health-schedule-type/26-08-PLAN.md`
-**Next step:** Execute Plan 26-08 (Gap closure verification)
+**Action:** Completed 26-06-PLAN.md (Health schedule type field propagation)
+**Stopped at:** Phase 26 Plan 06 complete
+**Resume file:** `.planning/phases/26-health-schedule-type/26-07-PLAN.md`
+**Next step:** Execute Plan 26-07 (Recent Activity and schedule matching for health schedules)
 
 ## Phase 26 Plan Summary
 
 **Goal:** Replace "weighing" schedule type with "health" schedule type that supports sub-types aligned with the health logging system.
 
 **Plans:**
-- **26-01 (Wave 1):** Add bathing as health record type (backend + HealthLog.jsx)
-- **26-02 (Wave 2):** Database migration (schedule_type change, health_subtype/measurement_type columns)
-- **26-03 (Wave 2):** Schedule form UI (health sub-type selector with conditional measurement selector)
-- **26-04 (Wave 3):** Completion flow (pre-fill navigation, shedding check modal)
-- **26-05 (Wave 4):** Human verification checkpoint (all 10 success criteria)
+- **26-01 (Wave 1):** Add bathing as health record type (backend + HealthLog.jsx) ✓
+- **26-02 (Wave 2):** Database migration (schedule_type change, health_subtype/measurement_type columns) ✓
+- **26-03 (Wave 2):** Schedule form UI (health sub-type selector with conditional measurement selector) ✓
+- **26-04 (Wave 3):** Completion flow (pre-fill navigation, shedding check modal) ✓
+- **26-05 (Wave 4):** Human verification checkpoint (all 10 success criteria) ✓
+- **26-06 (Wave 5):** Gap closure - field propagation (health_subtype/measurement_type through event pipeline) ✓
+- **26-07 (Wave 5):** Gap closure - Recent Activity and schedule matching for health schedules
 
 **Key Changes:**
 - Schedule types become: feeding, misting, health (was weighing), supplement
@@ -111,9 +113,12 @@ For future milestones:
 
 | Decision | Plan | Rationale | Impact |
 |----------|------|-----------|--------|
+| Map health_subtype fields through all event transformation pipelines | 26-06 | Enables TaskChip and QuickLogForm to display and route based on specific health schedule subtypes | Dashboard shows "Weight Check", "Shedding Check", etc. instead of generic "Health" |
+| Weight and measurement schedules redirect to full form from quick-log | 26-06 | These schedules require specific value inputs (weight_grams, measurement value) that quick-log form doesn't provide | Ensures data integrity for weight and measurement logging |
+| Display measurement_type in TaskChip for measurement schedules | 26-06 | Provides clarity about which measurement is due (SVL, Total Length, etc.) | Users can see exact measurement type in task chip label |
 | Added MEASUREMENT to CompletionType enum | 26-07 | Required to support measurement logs completing health schedules | Enables measurement schedule completion functionality |
 | Used health_subtype filtering in schedule matcher | 26-07 | Enables precise matching of weight logs to weight health schedules and measurement logs to measurement health schedules | Schedule matcher now supports health schedule type alignment |
 
 ---
 
-**Project Status:** Phase 26 execution in progress. Plans 26-01 through 26-07 complete.
+**Project Status:** Phase 26 execution in progress. Plans 26-01 through 26-06 complete.

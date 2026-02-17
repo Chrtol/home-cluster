@@ -19,6 +19,7 @@ from app.models import (
     MistingLog,
     WeightLog,
     Measurement,
+    HealthRecord,
     CompletionStatus,
     CompletionType,
     InstanceStatus,
@@ -624,4 +625,52 @@ async def assign_measurement_to_schedule(
         activity=measurement,
         config=config,
         health_subtype="measurement"
+    )
+
+
+async def assign_health_record_to_schedule(
+    db: AsyncSession, health_record: HealthRecord
+) -> Optional[ScheduleCompletion]:
+    """
+    Automatically assign a health record to a matching health schedule.
+
+    Supports bathing, shedding_check, brumation_check, and health_record types.
+    Each record_type maps to a corresponding health_subtype on the schedule.
+
+    Args:
+        db: Database session
+        health_record: The health record object to assign
+
+    Returns:
+        ScheduleCompletion object if assigned, None otherwise
+    """
+    # Map health record types to schedule health subtypes and completion types
+    record_type_mapping = {
+        'bathing': ('bathing', CompletionType.BATHING),
+        'shedding': ('shedding_check', CompletionType.SHEDDING_CHECK),
+        'brumation': ('brumation_check', CompletionType.BRUMATION_CHECK),
+        'observation': ('health_record', CompletionType.HEALTH_RECORD),
+        'vet_visit': ('health_record', CompletionType.HEALTH_RECORD),
+        'medication': ('health_record', CompletionType.HEALTH_RECORD),
+        'bowel_movement': ('health_record', CompletionType.HEALTH_RECORD),
+    }
+
+    mapping = record_type_mapping.get(health_record.record_type)
+    if not mapping:
+        # Unknown record type, can't match to schedule
+        return None
+
+    health_subtype, completion_type = mapping
+
+    config = ActivityConfig(
+        activity_type="health",
+        completion_type=completion_type,
+        timestamp_attr="date",  # HealthRecord uses 'date' field
+        needs_food_category=False
+    )
+    return await _assign_activity_to_schedule(
+        db=db,
+        activity=health_record,
+        config=config,
+        health_subtype=health_subtype
     )

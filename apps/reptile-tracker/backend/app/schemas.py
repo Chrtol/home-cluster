@@ -466,6 +466,7 @@ class ScheduleBase(BaseModel):
     health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
     health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
     measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
+    custom_measurement_label: Optional[str] = None  # For custom measurement type: describes what should be measured
     frequency_days: Optional[int] = None  # For every_x_days
     days_of_week: Optional[str] = None  # For days_of_week (comma-separated: '1,3,5')
     day_of_month: Optional[int] = None  # For monthly (1-31)
@@ -528,6 +529,7 @@ class ScheduleUpdate(BaseModel):
     health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
     health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
     measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
+    custom_measurement_label: Optional[str] = None  # For custom measurement type: describes what should be measured
     frequency_days: Optional[int] = None
     days_of_week: Optional[str] = None
     day_of_month: Optional[int] = None
@@ -939,6 +941,7 @@ class ScheduleTemplateBase(BaseModel):
     health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
     health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
     measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
+    custom_measurement_label: Optional[str] = None  # For custom measurement type: describes what should be measured
 
     # Rule parameters
     frequency_days: Optional[int] = None
@@ -978,6 +981,7 @@ class ScheduleTemplateUpdate(BaseModel):
     health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
     health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
     measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
+    custom_measurement_label: Optional[str] = None  # For custom measurement type: describes what should be measured
     frequency_days: Optional[int] = None
     days_of_week: Optional[str] = None
     day_of_month: Optional[int] = None

@@ -23,7 +23,7 @@ const templateSchema = z.object({
   description: z.string().optional(),
   species: z.string().optional(),
   age_category: z.string().optional(),
-  schedule_type: z.enum(['feeding', 'misting', 'weighing', 'supplement']),
+  schedule_type: z.enum(['feeding', 'misting', 'health', 'supplement']),
   schedule_rule: z.enum(['days_of_week', 'every_x_days', 'monthly']),
   food_category: z.string().optional(),
   time_slot: z.string().optional(),
@@ -336,7 +336,7 @@ function ScheduleTemplateForm() {
                       <SelectContent>
                         <SelectItem value="feeding">Feeding</SelectItem>
                         <SelectItem value="misting">Misting</SelectItem>
-                        <SelectItem value="weighing">Weighing</SelectItem>
+                        <SelectItem value="health">Health</SelectItem>
                         <SelectItem value="supplement">Supplement</SelectItem>
                       </SelectContent>
                     </Select>
@@ -486,7 +486,7 @@ function ScheduleTemplateForm() {
               />
             )}
 
-            {scheduleType === 'weighing' && (
+            {scheduleType === 'health' && (
               <FormField
                 control={form.control}
                 name="health_category"

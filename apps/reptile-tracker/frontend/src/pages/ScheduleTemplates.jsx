@@ -930,7 +930,7 @@ function ScheduleTemplates() {
     const colors = {
       feeding: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
       misting: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-      weighing: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+      health: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
       supplement: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
       supplement_rotation: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
     };
@@ -941,7 +941,7 @@ function ScheduleTemplates() {
     const displayNames = {
       feeding: 'feeding',
       misting: 'misting',
-      weighing: 'weighing',
+      health: 'health',
       supplement: 'supplement',
       supplement_rotation: 'supplement rotation',
     };
@@ -1053,7 +1053,7 @@ function ScheduleTemplates() {
                 <option value="">All Types</option>
                 <option value="feeding">Feeding</option>
                 <option value="misting">Misting</option>
-                <option value="weighing">Weighing</option>
+                <option value="health">Health</option>
                 <option value="supplement">Supplement</option>
               </select>
             </div>
@@ -1157,7 +1157,7 @@ function ScheduleTemplates() {
                           template.schedule_type === 'feeding' ? 'bg-orange-500' :
                           template.schedule_type === 'supplement' || template.schedule_type === 'supplement_rotation' ? 'bg-green-500' :
                           template.schedule_type === 'misting' ? 'bg-blue-500' :
-                          template.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
+                          template.schedule_type === 'health' ? 'bg-purple-500' : 'bg-gray-500'
                         }`}></span>
                         <span className="truncate">{template.name.split(' - ').slice(1).join(' - ')}</span>
                       </div>
@@ -1709,7 +1709,7 @@ function ScheduleTemplates() {
                                     schedule.schedule_type === 'feeding' ? 'bg-orange-500' :
                                     schedule.schedule_type === 'supplement' || schedule.schedule_type === 'supplement_rotation' ? 'bg-green-500' :
                                     schedule.schedule_type === 'misting' ? 'bg-blue-500' :
-                                    schedule.schedule_type === 'weighing' ? 'bg-purple-500' : 'bg-gray-500'
+                                    schedule.schedule_type === 'health' ? 'bg-purple-500' : 'bg-gray-500'
                                   }`}></div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
@@ -2945,7 +2945,7 @@ function ScheduleTemplates() {
                               <option value="supplement">Supplement</option>
                               <option value="feeding">Feeding</option>
                               <option value="misting">Misting</option>
-                              <option value="weighing">Health</option>
+                              <option value="health">Health</option>
                             </select>
                           </div>
 

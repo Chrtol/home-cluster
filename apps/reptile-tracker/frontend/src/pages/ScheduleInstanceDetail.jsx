@@ -76,10 +76,8 @@ export default function ScheduleInstanceDetail() {
         return { Icon: Utensils, color: 'text-primary-600 dark:text-primary-400', bgColor: 'bg-primary-100 dark:bg-primary-900/30' };
       case 'misting':
         return { Icon: Droplets, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30' };
-      case 'weighing':
-        return { Icon: Scale, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30' };
       case 'health':
-        return { Icon: Activity, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' };
+        return { Icon: Scale, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30' };
       default:
         return { Icon: Calendar, color: 'text-muted-foreground', bgColor: 'bg-secondary' };
     }
@@ -160,9 +158,6 @@ export default function ScheduleInstanceDetail() {
       case 'misting':
         navigate(`/misting-log/${reptileId}?instance_id=${id}`);
         break;
-      case 'weighing':
-        navigate(`/health-log/${reptileId}?instance_id=${id}&log_type=weight`);
-        break;
       case 'health':
         navigate(`/health-log/${reptileId}?instance_id=${id}`);
         break;
@@ -177,8 +172,6 @@ export default function ScheduleInstanceDetail() {
         return 'Log Feeding';
       case 'misting':
         return 'Log Misting';
-      case 'weighing':
-        return 'Record Weight';
       case 'health':
         return 'Log Health Check';
       default:

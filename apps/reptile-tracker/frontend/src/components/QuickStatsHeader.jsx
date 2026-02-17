@@ -106,7 +106,6 @@ export default function QuickStatsHeader() {
       case 'misting':
         return <Droplets className="w-3 h-3" />
       case 'health':
-      case 'weighing':
         return <Heart className="w-3 h-3" />
       default:
         return <Clock className="w-3 h-3" />

@@ -84,6 +84,10 @@ class CompletionType(str, PyEnum):
     MISTING = "misting"
     WEIGHING = "weighing"
     MEASUREMENT = "measurement"
+    BATHING = "bathing"
+    SHEDDING_CHECK = "shedding_check"
+    BRUMATION_CHECK = "brumation_check"
+    HEALTH_RECORD = "health_record"
     MANUAL = "manual"  # Manually marked as complete
 
 
@@ -404,9 +408,13 @@ class HealthRecord(Base):
     date = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    # Link to schedule completion (if this health record fulfilled a schedule)
+    schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
+
     # Relationships
     reptile = relationship("Reptile", back_populates="health_records")
     logged_by = relationship("User", foreign_keys=[logged_by_user_id])
+    schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
 class MistingLog(Base):

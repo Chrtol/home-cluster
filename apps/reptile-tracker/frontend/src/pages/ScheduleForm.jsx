@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { toast } from "sonner";
 import { ArrowLeft, Save, Clock, Users, User as UserIcon, ChevronDown, AlertTriangle } from "lucide-react";
 import { getUserTimeFormat, getDayNames, getDayNumbers } from "../utils/dateFormatting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -46,6 +47,7 @@ function ScheduleForm() {
   const [healthCategory, setHealthCategory] = useState("");
   const [healthSubtype, setHealthSubtype] = useState("");
   const [measurementType, setMeasurementType] = useState("");
+  const [customMeasurementLabel, setCustomMeasurementLabel] = useState("");
   const [frequencyDays, setFrequencyDays] = useState("");
   const [daysOfWeek, setDaysOfWeek] = useState([]);
   const [dayOfMonth, setDayOfMonth] = useState("");
@@ -133,8 +135,16 @@ function ScheduleForm() {
     if (scheduleType !== "health") {
       setHealthSubtype("");
       setMeasurementType("");
+      setCustomMeasurementLabel("");
     }
   }, [scheduleType]);
+
+  // Reset custom measurement label when switching away from custom measurement type
+  useEffect(() => {
+    if (measurementType !== "custom") {
+      setCustomMeasurementLabel("");
+    }
+  }, [measurementType]);
 
   // Update earliestTime string when time picker values change
   useEffect(() => {
@@ -200,6 +210,7 @@ function ScheduleForm() {
       setHealthCategory(schedule.health_category || "");
       setHealthSubtype(schedule.health_subtype || "");
       setMeasurementType(schedule.measurement_type || "");
+      setCustomMeasurementLabel(schedule.custom_measurement_label || "");
 
       // Load interval mode fields
       setQuotaPeriod(schedule.quota_period || "week");
@@ -294,7 +305,7 @@ function ScheduleForm() {
       }
     } catch (error) {
       console.error("Error fetching schedule:", error);
-      alert("Failed to load schedule data");
+      toast.error("Failed to load schedule data");
       navigate("/calendar");
     } finally {
       setLoading(false);
@@ -469,6 +480,9 @@ function ScheduleForm() {
         scheduleData.health_subtype = healthSubtype;
         if (healthSubtype === "measurement") {
           scheduleData.measurement_type = measurementType;
+          if (measurementType === "custom" && customMeasurementLabel) {
+            scheduleData.custom_measurement_label = customMeasurementLabel;
+          }
         }
         if (healthSubtype === "health_record" && healthCategory) {
           scheduleData.health_category = healthCategory;
@@ -521,13 +535,15 @@ function ScheduleForm() {
 
       if (isEditing) {
         await axios.patch(`/api/schedules/${id}`, scheduleData);
+        toast.success('Schedule updated successfully!');
       } else {
         await axios.post("/api/schedules", scheduleData);
+        toast.success('Schedule created successfully!');
       }
       navigate("/calendar");
     } catch (error) {
       console.error(`Error ${isEditing ? 'updating' : 'creating'} schedule:`, error);
-      alert(`Error ${isEditing ? 'updating' : 'creating'} schedule. Please check your inputs.`);
+      toast.error(`Error ${isEditing ? 'updating' : 'creating'} schedule. Please check your inputs.`);
     } finally {
       setLoading(false);
     }
@@ -744,6 +760,23 @@ function ScheduleForm() {
                       <SelectItem value="custom">Custom Measurement</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {/* Custom measurement label - shown when measurement type is custom */}
+              {healthSubtype === "measurement" && measurementType === "custom" && (
+                <div className="space-y-2">
+                  <Label htmlFor="customMeasurementLabel">Custom Measurement Name *</Label>
+                  <Input
+                    id="customMeasurementLabel"
+                    value={customMeasurementLabel}
+                    onChange={(e) => setCustomMeasurementLabel(e.target.value)}
+                    placeholder="e.g., Head Width, Tail Length, Body Girth"
+                    required
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Describe what measurement should be taken (will pre-fill when completing this schedule)
+                  </p>
                 </div>
               )}
 

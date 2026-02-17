@@ -1012,7 +1012,6 @@ const NotificationTemplatesTab = () => {
                       <option value="">All Schedule Types</option>
                       <option value="feeding">Feeding</option>
                       <option value="misting">Misting</option>
-                      <option value="weighing">Weighing</option>
                       <option value="health">Health</option>
                       <option value="supplement">Supplement</option>
                     </select>

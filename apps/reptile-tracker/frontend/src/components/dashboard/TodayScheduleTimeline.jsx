@@ -518,6 +518,21 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                         {/* Completion tooltip */}
                         {hoveredTask?.id === schedule.id && (
                           <div className="absolute left-0 top-full mt-1 z-10 bg-popover border border-border rounded-lg p-2 shadow-lg text-xs w-64">
+                            {/* Always show reptile name and task type */}
+                            <div className="mb-1 font-medium text-foreground">
+                              {schedule.reptile_name}
+                            </div>
+                            <div className="mb-1">
+                              <span className="text-muted-foreground">Task:</span>{' '}
+                              <span className="text-foreground">{displayType}</span>
+                            </div>
+                            {/* Show food category for feeding tasks */}
+                            {scheduleType === 'feeding' && schedule.food_category && (
+                              <div className="mb-1">
+                                <span className="text-muted-foreground">Food:</span>{' '}
+                                <span className="text-foreground capitalize">{schedule.food_category}</span>
+                              </div>
+                            )}
                             {schedule.completed_at && (
                               <div className="mb-1">
                                 <span className="text-muted-foreground">Completed at:</span>{' '}
@@ -613,6 +628,21 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                           {/* Hover tooltip */}
                           {hoveredTask?.id === schedule.id && (
                             <div className="absolute left-0 top-full mt-1 z-10 bg-popover border border-border rounded-lg p-2 shadow-lg text-xs w-64">
+                              {/* Always show reptile name and task type */}
+                              <div className="mb-1 font-medium text-foreground">
+                                {schedule.reptile_name}
+                              </div>
+                              <div className="mb-1">
+                                <span className="text-muted-foreground">Task:</span>{' '}
+                                <span className="text-foreground">{displayType}</span>
+                              </div>
+                              {/* Show food category for feeding tasks */}
+                              {scheduleType === 'feeding' && schedule.food_category && (
+                                <div className="mb-1">
+                                  <span className="text-muted-foreground">Food:</span>{' '}
+                                  <span className="text-foreground capitalize">{schedule.food_category}</span>
+                                </div>
+                              )}
                               {schedule.notes && (
                                 <div className="mb-1">
                                   <span className="text-muted-foreground">Notes:</span>{' '}

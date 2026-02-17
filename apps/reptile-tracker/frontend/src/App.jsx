@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import axios from 'axios';
+import { Toaster } from 'sonner';
 
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -147,6 +148,19 @@ function App() {
 
   return (
     <CelebrationProvider>
+      <Toaster
+        position="top-center"
+        theme="dark"
+        toastOptions={{
+          classNames: {
+            toast: '!bg-card !border-border !text-foreground !text-base',
+            title: '!text-foreground !text-base !font-medium',
+            description: '!text-muted-foreground !text-sm',
+            success: '!bg-gradient-to-r !from-primary-600 !to-primary-700 !border-primary-700 !text-white !text-base [&>svg]:!text-white',
+            error: '!bg-destructive !border-destructive !text-white !text-base [&>svg]:!text-white',
+          },
+        }}
+      />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />

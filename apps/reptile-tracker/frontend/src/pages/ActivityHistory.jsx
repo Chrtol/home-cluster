@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler } from 'lucide-react';
+import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler, HeartPulse, ChevronLeft } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
@@ -24,9 +24,101 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 25;
+
+// Category color schemes - subtle, muted tones matching app theme
+const categoryColors = {
+  feeding: {
+    bg: 'bg-emerald-500/15 dark:bg-emerald-500/20',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    border: 'border-emerald-500/30 dark:border-emerald-500/40',
+    activeBg: 'bg-emerald-600 hover:bg-emerald-600/90',
+    icon: Utensils
+  },
+  misting: {
+    bg: 'bg-sky-500/15 dark:bg-sky-500/20',
+    text: 'text-sky-700 dark:text-sky-400',
+    border: 'border-sky-500/30 dark:border-sky-500/40',
+    activeBg: 'bg-sky-600 hover:bg-sky-600/90',
+    icon: Droplets
+  },
+  health: {
+    bg: 'bg-rose-500/15 dark:bg-rose-500/20',
+    text: 'text-rose-700 dark:text-rose-400',
+    border: 'border-rose-500/30 dark:border-rose-500/40',
+    activeBg: 'bg-rose-600 hover:bg-rose-600/90',
+    icon: HeartPulse
+  }
+};
+
+// Subcategory labels for health
+const healthSubcategoryLabels = {
+  'bathing': 'Bathing',
+  'shedding': 'Shedding',
+  'observation': 'Observation',
+  'vet_visit': 'Vet Visit',
+  'medication': 'Medication',
+  'bowel_movement': 'Bowel',
+  'weight': 'Weight',
+  'measurement': 'Measurement',
+  'brumation': 'Brumation'
+};
+
+// Subcategory labels for feeding (food categories)
+const feedingSubcategoryLabels = {
+  'insect': 'Insects',
+  'worms': 'Worms',
+  'vegetable': 'Veggies',
+  'fruit': 'Fruit',
+  'prepared': 'Prepared',
+  'frozen_animal': 'Frozen',
+  'live_rodent': 'Live',
+  'fish_seafood': 'Fish',
+  'eggs': 'Eggs',
+  'other': 'Other'
+};
+
+// Category badge component
+const CategoryBadge = ({ category, subcategory }) => {
+  const colors = categoryColors[category];
+  if (!colors) return null;
+
+  const label = subcategory
+    ? (category === 'health' ? healthSubcategoryLabels[subcategory] : feedingSubcategoryLabels[subcategory]) || subcategory
+    : category.charAt(0).toUpperCase() + category.slice(1);
+
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded font-medium ${colors.bg} ${colors.text} border ${colors.border}`}
+    >
+      {label}
+    </span>
+  );
+};
+
+// Filter button component for hierarchical filtering
+const FilterButton = ({ category, subcategory = null, count, isActive, onClick, colors }) => {
+  const Icon = colors?.icon;
+  const label = subcategory
+    ? (category === 'health' ? healthSubcategoryLabels[subcategory] : feedingSubcategoryLabels[subcategory]) || subcategory
+    : category.charAt(0).toUpperCase() + category.slice(1);
+
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full font-medium transition-colors ${
+        isActive
+          ? `${colors.activeBg} text-white`
+          : `${colors.bg} ${colors.text} border ${colors.border} hover:opacity-80`
+      }`}
+    >
+      {!subcategory && Icon && <Icon size={12} />}
+      {label}
+      {count > 0 && <span className="opacity-70">({count})</span>}
+    </button>
+  );
+};
 
 const ActivityHistory = () => {
   const [activities, setActivities] = useState([]);
@@ -34,12 +126,11 @@ const ActivityHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter state
-  const [filters, setFilters] = useState({
-    types: new Set(['feeding', 'misting', 'health', 'weight', 'shedding', 'brumation', 'measurement']),
-    reptileId: null,
-    dateRange: 'all', // '7d', '30d', '90d', 'all'
-  });
+  // Hierarchical filter state: null = all, 'feeding'/'misting'/'health' = category, 'health:bathing' = subcategory
+  const [activeFilter, setActiveFilter] = useState(null);
+  // Additional filters
+  const [reptileFilter, setReptileFilter] = useState(null);
+  const [dateRange, setDateRange] = useState('all');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,9 +161,10 @@ const ActivityHistory = () => {
       });
 
       // Fetch all data types in parallel
-      const [feedingsRes, weighingsRes] = await Promise.all([
+      const [feedingsRes, weighingsRes, mistingsRes] = await Promise.all([
         axios.get('/api/feedings'),
-        axios.get('/api/weight/dashboard')
+        axios.get('/api/weight/dashboard'),
+        axios.get('/api/misting')
       ]);
 
       // Fetch health records and measurements per reptile
@@ -100,11 +192,15 @@ const ActivityHistory = () => {
           : '';
         const summary = foodNames || 'Food items';
         const supplementText = supplementNames ? ` + ${supplementNames}` : '';
+        // Get primary food category from first food item
+        const primaryCategory = foodItems[0]?.category || 'other';
 
         return {
           type: 'feeding',
+          category: 'feeding',
+          subcategory: primaryCategory,
           icon: Utensils,
-          iconColor: 'text-primary',
+          iconColor: 'text-emerald-600',
           reptile_id: f.reptile_id,
           reptile_name: f.reptile?.name || reptilesMap[f.reptile_id]?.name || 'Unknown',
           reptile: reptilesMap[f.reptile_id] || (f.reptile ? {
@@ -126,8 +222,10 @@ const ActivityHistory = () => {
         const reptileFromMap = reptilesMap[w.reptile_id];
         return {
           type: 'weight',
+          category: 'health',
+          subcategory: 'weight',
           icon: Scale,
-          iconColor: 'text-blue-500',
+          iconColor: 'text-rose-600',
           reptile_id: w.reptile_id,
           reptile_name: reptileFromMap?.name || w.reptile_name || 'Unknown',
           reptile: reptileFromMap || {
@@ -144,32 +242,40 @@ const ActivityHistory = () => {
         };
       });
 
-      // Process health records (shedding, brumation, observations)
+      // Process health records (shedding, brumation, observations, bathing, etc.)
       const healthRecords = healthAndMeasurements.flatMap(({ reptileId, health }) => {
         const reptileFromMap = reptilesMap[reptileId];
         return health.map(h => {
           // Determine type and summary based on record_type and event_type
           let type = 'health';
-          let icon = ActivityIcon;
-          let iconColor = 'text-gray-500';
+          let icon = HeartPulse;
+          let iconColor = 'text-rose-600';
           let summary = h.title || 'Health record';
+          let subcategory = h.record_type || 'observation';
 
           if (h.record_type === 'shedding') {
             type = 'shedding';
             icon = Heart;
-            iconColor = 'text-amber-500';
+            iconColor = 'text-rose-600';
             const subtype = h.event_type === 'start' ? 'Started' : 'Complete';
             summary = `Shedding ${subtype}`;
+            subcategory = 'shedding';
           } else if (h.record_type === 'brumation') {
             type = 'brumation';
             icon = Snowflake;
-            iconColor = 'text-purple-500';
+            iconColor = 'text-rose-600';
             const subtype = h.event_type === 'start' ? 'Started' : 'Ended';
             summary = `Brumation ${subtype}`;
+            subcategory = 'brumation';
+          } else if (h.record_type === 'bathing') {
+            summary = 'Bathing';
+            subcategory = 'bathing';
           }
 
           return {
             type,
+            category: 'health',
+            subcategory,
             icon,
             iconColor,
             reptile_id: reptileId,
@@ -215,8 +321,10 @@ const ActivityHistory = () => {
 
           return {
             type: 'measurement',
+            category: 'health',
+            subcategory: 'measurement',
             icon: Ruler,
-            iconColor: 'text-green-500',
+            iconColor: 'text-rose-600',
             reptile_id: reptileId,
             reptile_name: reptileFromMap?.name || 'Unknown',
             reptile: reptileFromMap,
@@ -229,8 +337,33 @@ const ActivityHistory = () => {
         });
       });
 
+      // Process mistings
+      const mistings = (mistingsRes.data || []).map(m => {
+        const reptileFromMap = reptilesMap[m.reptile_id];
+        return {
+          type: 'misting',
+          category: 'misting',
+          subcategory: null,
+          icon: Droplets,
+          iconColor: 'text-blue-600',
+          reptile_id: m.reptile_id,
+          reptile_name: reptileFromMap?.name || m.reptile?.name || 'Unknown',
+          reptile: reptileFromMap || {
+            id: m.reptile_id,
+            name: m.reptile?.name,
+            avatar_photo_url: null,
+            avatar_border_color: null
+          },
+          timestamp: m.misted_at,
+          summary: 'Misted',
+          prominentValue: null,
+          detailLink: `/misting/${m.id}`,
+          notes: m.notes
+        };
+      });
+
       // Combine and sort
-      const combined = [...feedings, ...weighings, ...healthRecords, ...measurements];
+      const combined = [...feedings, ...mistings, ...weighings, ...healthRecords, ...measurements];
       combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       setActivities(combined);
@@ -242,35 +375,54 @@ const ActivityHistory = () => {
     }
   };
 
-  // Toggle activity type filter
-  const toggleTypeFilter = (type) => {
-    const newTypes = new Set(filters.types);
-    if (newTypes.has(type)) {
-      newTypes.delete(type);
-    } else {
-      newTypes.add(type);
-    }
-    setFilters({ ...filters, types: newTypes });
-    setCurrentPage(1); // Reset to first page
+  // Get unique subcategories present in activities for a category
+  const getAvailableSubcategories = (category) => {
+    const subcats = new Set();
+    activities.forEach(a => {
+      if (a.category === category && a.subcategory) {
+        subcats.add(a.subcategory);
+      }
+    });
+    return Array.from(subcats);
   };
 
-  // Filter activities
+  // Get current filter level and parent category
+  const currentCategory = activeFilter?.includes(':') ? activeFilter.split(':')[0] : activeFilter;
+  const isSubcategoryFilter = activeFilter?.includes(':');
+
+  // Count activities by category
+  const categoryCounts = useMemo(() => ({
+    feeding: activities.filter(a => a.category === 'feeding').length,
+    misting: activities.filter(a => a.category === 'misting').length,
+    health: activities.filter(a => a.category === 'health').length
+  }), [activities]);
+
+  // Filter activities based on hierarchical filter
   const getFilteredActivities = () => {
     let filtered = [...activities];
 
-    // Filter by type
-    filtered = filtered.filter(a => filters.types.has(a.type));
+    // Apply hierarchical category/subcategory filter
+    if (activeFilter) {
+      if (activeFilter.includes(':')) {
+        // Subcategory filter
+        const [cat, subcat] = activeFilter.split(':');
+        filtered = filtered.filter(a => a.category === cat && a.subcategory === subcat);
+      } else {
+        // Category filter
+        filtered = filtered.filter(a => a.category === activeFilter);
+      }
+    }
 
     // Filter by reptile
-    if (filters.reptileId) {
-      filtered = filtered.filter(a => a.reptile_id === parseInt(filters.reptileId));
+    if (reptileFilter) {
+      filtered = filtered.filter(a => a.reptile_id === parseInt(reptileFilter));
     }
 
     // Filter by date range
-    if (filters.dateRange !== 'all') {
+    if (dateRange !== 'all') {
       const now = new Date();
       const daysMap = { '7d': 7, '30d': 30, '90d': 90 };
-      const days = daysMap[filters.dateRange];
+      const days = daysMap[dateRange];
       if (days) {
         const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
         filtered = filtered.filter(a => new Date(a.timestamp) >= cutoff);
@@ -342,89 +494,88 @@ const ActivityHistory = () => {
 
       {/* Filters Section */}
       <div className="bg-card rounded-lg border border-border p-4 mb-6">
-        {/* Activity Type Filters */}
+        {/* Hierarchical Activity Type Filters */}
         <div className="mb-4">
           <label className="text-sm font-medium text-foreground mb-2 block">
             Activity Types
           </label>
           <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={filters.types.has('feeding') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('feeding') && 'bg-primary hover:bg-primary/80'
-              )}
-              onClick={() => toggleTypeFilter('feeding')}
-            >
-              <Utensils className="w-3 h-3 mr-1" />
-              Feeding
-            </Badge>
-            <Badge
-              variant={filters.types.has('misting') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('misting') && 'bg-primary hover:bg-primary/80'
-              )}
-              onClick={() => toggleTypeFilter('misting')}
-            >
-              <Droplets className="w-3 h-3 mr-1" />
-              Misting
-            </Badge>
-            <Badge
-              variant={filters.types.has('health') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('health') && 'bg-primary hover:bg-primary/80'
-              )}
-              onClick={() => toggleTypeFilter('health')}
-            >
-              <ActivityIcon className="w-3 h-3 mr-1" />
-              Health
-            </Badge>
-            <Badge
-              variant={filters.types.has('weight') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('weight') && 'bg-primary hover:bg-primary/80'
-              )}
-              onClick={() => toggleTypeFilter('weight')}
-            >
-              <Scale className="w-3 h-3 mr-1" />
-              Weight
-            </Badge>
-            <Badge
-              variant={filters.types.has('shedding') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('shedding') && 'bg-amber-600 hover:bg-amber-600/80'
-              )}
-              onClick={() => toggleTypeFilter('shedding')}
-            >
-              <Heart className="w-3 h-3 mr-1" />
-              Shedding
-            </Badge>
-            <Badge
-              variant={filters.types.has('brumation') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('brumation') && 'bg-purple-600 hover:bg-purple-600/80'
-              )}
-              onClick={() => toggleTypeFilter('brumation')}
-            >
-              <Snowflake className="w-3 h-3 mr-1" />
-              Brumation
-            </Badge>
-            <Badge
-              variant={filters.types.has('measurement') ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer transition-colors',
-                filters.types.has('measurement') && 'bg-green-600 hover:bg-green-600/80'
-              )}
-              onClick={() => toggleTypeFilter('measurement')}
-            >
-              <Ruler className="w-3 h-3 mr-1" />
-              Measurements
-            </Badge>
+            {/* Back button when in category or subcategory view */}
+            {currentCategory && (
+              <button
+                onClick={() => {
+                  setActiveFilter(isSubcategoryFilter ? currentCategory : null);
+                  setCurrentPage(1);
+                }}
+                className="inline-flex items-center gap-0.5 px-2 py-1 text-xs rounded-full font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              >
+                <ChevronLeft size={12} />
+                {isSubcategoryFilter ? currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1) : 'All'}
+              </button>
+            )}
+
+            {/* Show subcategories if a category is selected AND has subcategories, otherwise show top-level */}
+            {currentCategory && !isSubcategoryFilter && getAvailableSubcategories(currentCategory).length > 0 ? (
+              // Subcategory filters for the selected category
+              getAvailableSubcategories(currentCategory).map(subcat => {
+                const count = activities.filter(a => a.category === currentCategory && a.subcategory === subcat).length;
+                const filterKey = `${currentCategory}:${subcat}`;
+                return (
+                  <FilterButton
+                    key={filterKey}
+                    category={currentCategory}
+                    subcategory={subcat}
+                    count={count}
+                    isActive={activeFilter === filterKey}
+                    onClick={() => {
+                      setActiveFilter(activeFilter === filterKey ? currentCategory : filterKey);
+                      setCurrentPage(1);
+                    }}
+                    colors={categoryColors[currentCategory]}
+                  />
+                );
+              })
+            ) : !currentCategory || getAvailableSubcategories(currentCategory).length === 0 ? (
+              // Top-level category filters (also shown when selected category has no subcategories)
+              <>
+                {categoryCounts.feeding > 0 && (
+                  <FilterButton
+                    category="feeding"
+                    count={categoryCounts.feeding}
+                    isActive={activeFilter === 'feeding'}
+                    onClick={() => {
+                      setActiveFilter(activeFilter === 'feeding' ? null : 'feeding');
+                      setCurrentPage(1);
+                    }}
+                    colors={categoryColors.feeding}
+                  />
+                )}
+                {categoryCounts.misting > 0 && (
+                  <FilterButton
+                    category="misting"
+                    count={categoryCounts.misting}
+                    isActive={activeFilter === 'misting'}
+                    onClick={() => {
+                      setActiveFilter(activeFilter === 'misting' ? null : 'misting');
+                      setCurrentPage(1);
+                    }}
+                    colors={categoryColors.misting}
+                  />
+                )}
+                {categoryCounts.health > 0 && (
+                  <FilterButton
+                    category="health"
+                    count={categoryCounts.health}
+                    isActive={activeFilter === 'health'}
+                    onClick={() => {
+                      setActiveFilter(activeFilter === 'health' ? null : 'health');
+                      setCurrentPage(1);
+                    }}
+                    colors={categoryColors.health}
+                  />
+                )}
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -436,9 +587,9 @@ const ActivityHistory = () => {
               Reptile
             </label>
             <Select
-              value={filters.reptileId || 'all'}
+              value={reptileFilter || 'all'}
               onValueChange={(value) => {
-                setFilters({ ...filters, reptileId: value === 'all' ? null : value });
+                setReptileFilter(value === 'all' ? null : value);
                 setCurrentPage(1);
               }}
             >
@@ -463,13 +614,10 @@ const ActivityHistory = () => {
             </label>
             <div className="flex flex-wrap gap-2">
               <Badge
-                variant={filters.dateRange === '7d' ? 'default' : 'outline'}
-                className={cn(
-                  'cursor-pointer transition-colors',
-                  filters.dateRange === '7d' && 'bg-primary hover:bg-primary/80'
-                )}
+                variant={dateRange === '7d' ? 'default' : 'outline'}
+                className="cursor-pointer transition-colors"
                 onClick={() => {
-                  setFilters({ ...filters, dateRange: '7d' });
+                  setDateRange('7d');
                   setCurrentPage(1);
                 }}
               >
@@ -477,13 +625,10 @@ const ActivityHistory = () => {
                 7 days
               </Badge>
               <Badge
-                variant={filters.dateRange === '30d' ? 'default' : 'outline'}
-                className={cn(
-                  'cursor-pointer transition-colors',
-                  filters.dateRange === '30d' && 'bg-primary hover:bg-primary/80'
-                )}
+                variant={dateRange === '30d' ? 'default' : 'outline'}
+                className="cursor-pointer transition-colors"
                 onClick={() => {
-                  setFilters({ ...filters, dateRange: '30d' });
+                  setDateRange('30d');
                   setCurrentPage(1);
                 }}
               >
@@ -491,13 +636,10 @@ const ActivityHistory = () => {
                 30 days
               </Badge>
               <Badge
-                variant={filters.dateRange === '90d' ? 'default' : 'outline'}
-                className={cn(
-                  'cursor-pointer transition-colors',
-                  filters.dateRange === '90d' && 'bg-primary hover:bg-primary/80'
-                )}
+                variant={dateRange === '90d' ? 'default' : 'outline'}
+                className="cursor-pointer transition-colors"
                 onClick={() => {
-                  setFilters({ ...filters, dateRange: '90d' });
+                  setDateRange('90d');
                   setCurrentPage(1);
                 }}
               >
@@ -505,13 +647,10 @@ const ActivityHistory = () => {
                 90 days
               </Badge>
               <Badge
-                variant={filters.dateRange === 'all' ? 'default' : 'outline'}
-                className={cn(
-                  'cursor-pointer transition-colors',
-                  filters.dateRange === 'all' && 'bg-primary hover:bg-primary/80'
-                )}
+                variant={dateRange === 'all' ? 'default' : 'outline'}
+                className="cursor-pointer transition-colors"
                 onClick={() => {
-                  setFilters({ ...filters, dateRange: 'all' });
+                  setDateRange('all');
                   setCurrentPage(1);
                 }}
               >
@@ -552,6 +691,7 @@ const ActivityHistory = () => {
                       <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                         {activity.reptile_name}
                       </span>
+                      <CategoryBadge category={activity.category} subcategory={activity.subcategory} />
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                       </span>
@@ -587,10 +727,7 @@ const ActivityHistory = () => {
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      className={cn(
-                        'cursor-pointer',
-                        currentPage === 1 && 'pointer-events-none opacity-50'
-                      )}
+                      className={`cursor-pointer ${currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}
                     />
                   </PaginationItem>
 
@@ -613,10 +750,7 @@ const ActivityHistory = () => {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      className={cn(
-                        'cursor-pointer',
-                        currentPage === totalPages && 'pointer-events-none opacity-50'
-                      )}
+                      className={`cursor-pointer ${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}`}
                     />
                   </PaginationItem>
                 </PaginationContent>

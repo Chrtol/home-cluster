@@ -211,8 +211,7 @@ function ScheduleDetails() {
       'feeding': 'Feeding',
       'supplement': 'Supplement',
       'misting': 'Misting',
-      'weighing': 'Weighing',
-      'health': 'Health Check'
+      'health': 'Health'
     };
     return typeMap[type] || type;
   };
@@ -236,9 +235,6 @@ function ScheduleDetails() {
       case 'misting':
         navigate(`/misting-log/${reptile.id}?schedule_id=${schedule.id}`);
         break;
-      case 'weighing':
-        navigate(`/health-log/${reptile.id}?schedule_id=${schedule.id}&log_type=weight`);
-        break;
       case 'health':
         navigate(`/health-log/${reptile.id}?schedule_id=${schedule.id}`);
         break;
@@ -257,10 +253,8 @@ function ScheduleDetails() {
         return 'Log Feeding';
       case 'misting':
         return 'Log Misting';
-      case 'weighing':
-        return 'Record Weight';
       case 'health':
-        return 'Log Health Check';
+        return 'Log Health';
       case 'supplement':
         return 'Log Supplement';
       default:

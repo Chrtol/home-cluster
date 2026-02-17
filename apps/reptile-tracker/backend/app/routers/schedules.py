@@ -181,6 +181,7 @@ async def create_schedule(
         else:
             # For fixed/dependent schedules, use normal instance generation
             await generate_instances_for_schedule(db, new_schedule)
+            await db.commit()  # Commit the instances
     except Exception as e:
         # Log error but don't fail the schedule creation
         import logging

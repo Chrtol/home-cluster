@@ -150,6 +150,12 @@ async def create_health_record(
         logged_by_user_id=current_user.id
     )
     db.add(new_record)
+    await db.flush()  # Get ID before schedule matching
+
+    # Try to match to a health schedule (bathing, shedding_check, etc.)
+    from app.schedule_matcher import assign_health_record_to_schedule
+    await assign_health_record_to_schedule(db, new_record)
+
     await db.commit()
     await db.refresh(new_record)
     return new_record
