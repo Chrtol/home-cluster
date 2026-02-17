@@ -1141,6 +1141,7 @@ export default function HealthLog() {
                       <SelectContent>
                         <SelectItem value="observation">General Observation</SelectItem>
                         <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
+                        <SelectItem value="bathing">Bathing</SelectItem>
                         <SelectItem value="vet_visit">Vet Visit</SelectItem>
                         <SelectItem value="medication">Medication</SelectItem>
                       </SelectContent>
