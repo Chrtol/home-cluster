@@ -1445,10 +1445,11 @@ class FreezeResponse(BaseModel):
 
 
 class MissedTaskResponse(BaseModel):
-    """Recent missed schedule instance"""
+    """Recent missed schedule completion"""
     id: int
     scheduled_date: date
     schedule_type: str
+    schedule_id: int
     reptile_name: str
     reptile_id: int
     schedule_name: Optional[str] = None

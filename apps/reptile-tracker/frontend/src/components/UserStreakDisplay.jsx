@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
 import confetti from 'canvas-confetti'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -389,9 +390,10 @@ export default function UserStreakDisplay() {
                       </div>
                     ) : (
                       missedTasks.map((task) => (
-                        <div
+                        <Link
                           key={task.id}
-                          className="p-2 rounded-lg border border-border bg-secondary/20"
+                          to={`/schedules/${task.schedule_id}`}
+                          className="block p-2 rounded-lg border border-border bg-secondary/20 hover:bg-secondary/40 transition-colors"
                         >
                           <div className="text-sm font-medium text-foreground">
                             {task.reptile_name}
@@ -403,7 +405,7 @@ export default function UserStreakDisplay() {
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {formatDate(task.scheduled_date)}
                           </div>
-                        </div>
+                        </Link>
                       ))
                     )}
                   </div>

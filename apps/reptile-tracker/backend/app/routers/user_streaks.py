@@ -8,11 +8,11 @@ from datetime import date, datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, exists
 
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import User, UserStreak, UserStreakFreeze, ScheduleCompletion, CompletionStatus, Schedule, Reptile, household_members
+from app.models import User, UserStreak, UserStreakFreeze, ScheduleCompletion, CompletionStatus, Schedule, Reptile, household_members, ScheduleResponsibility, ReptileResponsibility
 from app.schemas import (
     UserStreakResponse,
     FreezeScheduleRequest,
@@ -288,27 +288,77 @@ async def get_recent_misses(
     """
     Get recent missed schedule completions for current user.
 
-    Returns recent missed tasks (up to 20) for reptiles in user's households.
-    Queries ScheduleCompletion (not ScheduleInstance) since the overdue
-    scheduler marks completions as MISSED.
+    Returns recent missed tasks (up to 20) that the user was responsible for.
+    Filters by responsibility using the same logic as streak calculation:
+    1. ScheduleResponsibility (specific schedule override)
+    2. ReptileResponsibility (reptile-level assignment)
+    3. Household membership (default if no assignments)
     """
-    # Get user's household IDs
-    household_result = await db.execute(
-        select(household_members.c.household_id)
-        .where(household_members.c.user_id == current_user.id)
+    user_id = current_user.id
+
+    # Build responsibility filter subqueries
+    # User has ScheduleResponsibility for this schedule
+    has_schedule_resp = exists(
+        select(ScheduleResponsibility.id)
+        .where(
+            and_(
+                ScheduleResponsibility.schedule_id == Schedule.id,
+                ScheduleResponsibility.user_id == user_id
+            )
+        )
     )
-    household_ids = [row[0] for row in household_result.all()]
 
-    if not household_ids:
-        return []
+    # Any ScheduleResponsibility exists for this schedule (used to check if we should fall back)
+    any_schedule_resp_exists = exists(
+        select(ScheduleResponsibility.id)
+        .where(ScheduleResponsibility.schedule_id == Schedule.id)
+    )
 
-    # Query missed completions for reptiles in user's households
-    # Note: ScheduleCompletion.status tracks missed status, not ScheduleInstance.status
+    # User has ReptileResponsibility for this reptile
+    has_reptile_resp = exists(
+        select(ReptileResponsibility.id)
+        .where(
+            and_(
+                ReptileResponsibility.reptile_id == Reptile.id,
+                ReptileResponsibility.user_id == user_id
+            )
+        )
+    )
+
+    # Any ReptileResponsibility exists for this reptile
+    any_reptile_resp_exists = exists(
+        select(ReptileResponsibility.id)
+        .where(ReptileResponsibility.reptile_id == Reptile.id)
+    )
+
+    # User is a household member of this reptile's household
+    is_household_member = exists(
+        select(household_members.c.user_id)
+        .where(
+            and_(
+                household_members.c.household_id == Reptile.household_id,
+                household_members.c.user_id == user_id
+            )
+        )
+    )
+
+    # Responsibility filter: user is responsible if:
+    # 1. Has ScheduleResponsibility for this schedule, OR
+    # 2. No ScheduleResponsibility exists AND has ReptileResponsibility, OR
+    # 3. No ScheduleResponsibility AND no ReptileResponsibility AND is household member
+    responsibility_filter = or_(
+        has_schedule_resp,
+        and_(~any_schedule_resp_exists, has_reptile_resp),
+        and_(~any_schedule_resp_exists, ~any_reptile_resp_exists, is_household_member)
+    )
+
+    # Query missed completions filtered by responsibility
     result = await db.execute(
         select(
             ScheduleCompletion.id,
             ScheduleCompletion.scheduled_date,
             Schedule.schedule_type,
+            Schedule.id.label('schedule_id'),
             Reptile.name.label('reptile_name'),
             Reptile.id.label('reptile_id'),
             Schedule.name.label('schedule_name')
@@ -318,7 +368,7 @@ async def get_recent_misses(
         .where(
             and_(
                 ScheduleCompletion.status == CompletionStatus.MISSED,
-                Reptile.household_id.in_(household_ids)
+                responsibility_filter
             )
         )
         .order_by(ScheduleCompletion.scheduled_date.desc())
@@ -332,6 +382,7 @@ async def get_recent_misses(
             id=row.id,
             scheduled_date=row.scheduled_date,
             schedule_type=row.schedule_type,
+            schedule_id=row.schedule_id,
             reptile_name=row.reptile_name,
             reptile_id=row.reptile_id,
             schedule_name=row.schedule_name
