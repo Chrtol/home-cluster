@@ -44,6 +44,8 @@ function ScheduleForm() {
   const [foodCategory, setFoodCategory] = useState("__none__");
   const [timeSlot, setTimeSlot] = useState("__none__");
   const [healthCategory, setHealthCategory] = useState("");
+  const [healthSubtype, setHealthSubtype] = useState("");
+  const [measurementType, setMeasurementType] = useState("");
   const [frequencyDays, setFrequencyDays] = useState("");
   const [daysOfWeek, setDaysOfWeek] = useState([]);
   const [dayOfMonth, setDayOfMonth] = useState("");
@@ -126,6 +128,14 @@ function ScheduleForm() {
     }
   }, [reptileId]);
 
+  // Reset health-specific fields when switching away from health type
+  useEffect(() => {
+    if (scheduleType !== "health") {
+      setHealthSubtype("");
+      setMeasurementType("");
+    }
+  }, [scheduleType]);
+
   // Update earliestTime string when time picker values change
   useEffect(() => {
     let hour24 = earliestHours;
@@ -188,6 +198,8 @@ function ScheduleForm() {
       setFoodCategory(schedule.food_category || "__none__");
       setTimeSlot(schedule.time_slot || "__none__");
       setHealthCategory(schedule.health_category || "");
+      setHealthSubtype(schedule.health_subtype || "");
+      setMeasurementType(schedule.measurement_type || "");
 
       // Load interval mode fields
       setQuotaPeriod(schedule.quota_period || "week");
@@ -571,7 +583,7 @@ function ScheduleForm() {
                 <SelectContent>
                   <SelectItem value="feeding">Feeding</SelectItem>
                   <SelectItem value="misting">Misting</SelectItem>
-                  <SelectItem value="weighing">Health</SelectItem>
+                  <SelectItem value="health">Health</SelectItem>
                   <SelectItem value="supplement">Supplement</SelectItem>
                 </SelectContent>
               </Select>
