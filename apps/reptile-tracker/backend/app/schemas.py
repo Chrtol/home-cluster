@@ -1444,6 +1444,19 @@ class FreezeResponse(BaseModel):
         from_attributes = True
 
 
+class MissedTaskResponse(BaseModel):
+    """Recent missed schedule instance"""
+    id: int
+    scheduled_date: date
+    schedule_type: str
+    reptile_name: str
+    reptile_id: int
+    schedule_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CompletionAttributionResponse(BaseModel):
     """Attribution data for cross-user completions"""
     credited_to_user_id: int

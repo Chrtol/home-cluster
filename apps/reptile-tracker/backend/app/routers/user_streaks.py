@@ -12,11 +12,12 @@ from sqlalchemy import select, and_, or_
 
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import User, UserStreak, UserStreakFreeze
+from app.models import User, UserStreak, UserStreakFreeze, ScheduleInstance, Schedule, Reptile, HouseholdMember
 from app.schemas import (
     UserStreakResponse,
     FreezeScheduleRequest,
     FreezeResponse,
+    MissedTaskResponse,
 )
 from app.services.user_streak_service import get_user_streak
 
@@ -277,3 +278,60 @@ async def get_freeze_history(
     freezes = result.scalars().all()
 
     return freezes
+
+
+@router.get("/me/misses", response_model=List[MissedTaskResponse])
+async def get_recent_misses(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get recent missed schedule instances for current user.
+
+    Returns recent missed tasks (up to 20) for reptiles in user's households.
+    """
+    # Get user's household IDs
+    household_result = await db.execute(
+        select(HouseholdMember.household_id)
+        .where(HouseholdMember.user_id == current_user.id)
+    )
+    household_ids = [row[0] for row in household_result.all()]
+
+    if not household_ids:
+        return []
+
+    # Query missed instances for reptiles in user's households
+    result = await db.execute(
+        select(
+            ScheduleInstance.id,
+            ScheduleInstance.scheduled_date,
+            Schedule.schedule_type,
+            Reptile.name.label('reptile_name'),
+            Reptile.id.label('reptile_id'),
+            Schedule.name.label('schedule_name')
+        )
+        .join(Schedule, ScheduleInstance.schedule_id == Schedule.id)
+        .join(Reptile, Schedule.reptile_id == Reptile.id)
+        .where(
+            and_(
+                ScheduleInstance.status == 'missed',
+                Reptile.household_id.in_(household_ids)
+            )
+        )
+        .order_by(ScheduleInstance.scheduled_date.desc())
+        .limit(20)
+    )
+
+    # Map results to response schema
+    missed_tasks = []
+    for row in result.all():
+        missed_tasks.append(MissedTaskResponse(
+            id=row.id,
+            scheduled_date=row.scheduled_date,
+            schedule_type=row.schedule_type,
+            reptile_name=row.reptile_name,
+            reptile_id=row.reptile_id,
+            schedule_name=row.schedule_name
+        ))
+
+    return missed_tasks
