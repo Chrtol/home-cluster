@@ -314,6 +314,37 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
     }
   };
 
+  // Build display name for schedule type (shows health_subtype for health schedules)
+  const getDisplayType = (schedule) => {
+    const scheduleType = schedule.schedule_type || schedule.type;
+    let displayType = scheduleType ? scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1) : 'Task';
+
+    if (scheduleType === 'health' && schedule.health_subtype) {
+      const subtypeLabels = {
+        'weight': 'Weight Check',
+        'measurement': 'Measurement',
+        'shedding_check': 'Shedding Check',
+        'brumation_check': 'Brumation Check',
+        'health_record': 'Health Record',
+        'bathing': 'Bathing'
+      };
+      displayType = subtypeLabels[schedule.health_subtype] || 'Health';
+      if (schedule.health_subtype === 'measurement' && schedule.measurement_type) {
+        const measurementLabels = {
+          'svl': 'SVL',
+          'total_length': 'Total Length',
+          'shell_length': 'Shell Length',
+          'humidity': 'Humidity',
+          'temperature': 'Temperature',
+          'custom': 'Custom'
+        };
+        const mtLabel = measurementLabels[schedule.measurement_type] || schedule.measurement_type.toUpperCase();
+        displayType = `${displayType} (${mtLabel})`;
+      }
+    }
+    return displayType;
+  };
+
   if (loading) {
     return (
       <div className="bg-card rounded-xl border border-border p-3">
@@ -441,6 +472,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                   {completedSchedules.map(schedule => {
                     const status = getTaskStatus(schedule);
                     const scheduleType = schedule.schedule_type || schedule.type;
+                    const displayType = getDisplayType(schedule);
 
                     return (
                       <div
@@ -474,7 +506,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                           />
                           <div className="flex-1 min-w-0">
                             <div className="text-xs text-foreground truncate">
-                              {schedule.reptile_name} - {scheduleType}
+                              {schedule.reptile_name} - {displayType}
                               {scheduleType === 'feeding' && schedule.food_category && (
                                 <span className="text-muted-foreground"> ({schedule.food_category})</span>
                               )}
@@ -530,6 +562,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                     {slotSchedules.map(schedule => {
                       const status = getTaskStatus(schedule);
                       const scheduleType = schedule.schedule_type || schedule.type;
+                      const displayType = getDisplayType(schedule);
 
                       return (
                         <div
@@ -563,7 +596,7 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                             />
                             <div className="flex-1 min-w-0">
                               <div className="text-xs text-foreground truncate">
-                                {schedule.reptile_name} - {scheduleType}
+                                {schedule.reptile_name} - {displayType}
                                 {scheduleType === 'feeding' && schedule.food_category && (
                                   <span className="text-muted-foreground"> ({schedule.food_category})</span>
                                 )}
