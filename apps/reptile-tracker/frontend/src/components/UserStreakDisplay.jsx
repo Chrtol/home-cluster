@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import confetti from 'canvas-confetti'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Flame, Snowflake, Trophy, Calendar, AlertCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Flame, Snowflake, Trophy, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
@@ -23,7 +22,7 @@ export default function UserStreakDisplay() {
   const [error, setError] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  const [missesModalOpen, setMissesModalOpen] = useState(false)
+  const [showMissesDetail, setShowMissesDetail] = useState(false)
   const [missedTasks, setMissedTasks] = useState([])
   const [loadingMisses, setLoadingMisses] = useState(false)
 
@@ -86,7 +85,7 @@ export default function UserStreakDisplay() {
   }
 
   const handleMissesClick = async () => {
-    setMissesModalOpen(true)
+    setShowMissesDetail(true)
     setLoadingMisses(true)
     try {
       const response = await axios.get('/api/user-streaks/me/misses')
@@ -96,6 +95,17 @@ export default function UserStreakDisplay() {
       setMissedTasks([])
     } finally {
       setLoadingMisses(false)
+    }
+  }
+
+  const handleBackToMain = () => {
+    setShowMissesDetail(false)
+  }
+
+  // Reset detail view when popover closes
+  const handlePopoverOpenChange = (open) => {
+    if (!open) {
+      setShowMissesDetail(false)
     }
   }
 
@@ -202,7 +212,7 @@ export default function UserStreakDisplay() {
 
   return (
     <>
-      <Popover>
+      <Popover onOpenChange={handlePopoverOpenChange}>
         <PopoverTrigger asChild>
           <button className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-secondary/50 transition-colors">
             <div className="relative">
@@ -241,143 +251,168 @@ export default function UserStreakDisplay() {
             </span>
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-80" align="start">
-          <div className="space-y-4">
-            {/* Header with streak count and milestone badge */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Flame className="w-6 h-6 text-orange-500" />
-                <div>
-                  <div className="text-2xl font-bold tabular-nums">{streak.current_streak} tasks</div>
-                  <div className="text-xs text-muted-foreground">Current streak</div>
-                </div>
-              </div>
-              {currentMilestone && (
-                <Badge variant={getMilestoneVariant(streak.current_streak)}>
-                  <Trophy className="w-3 h-3 mr-1" />
-                  {currentMilestone}
-                </Badge>
+        <PopoverContent className="w-80 overflow-hidden" align="start">
+          <div className="relative">
+            <AnimatePresence mode="wait" initial={false}>
+              {!showMissesDetail ? (
+                <motion.div
+                  key="main"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-4"
+                >
+                  {/* Header with streak count and milestone badge */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-6 h-6 text-orange-500" />
+                      <div>
+                        <div className="text-2xl font-bold tabular-nums">{streak.current_streak} tasks</div>
+                        <div className="text-xs text-muted-foreground">Current streak</div>
+                      </div>
+                    </div>
+                    {currentMilestone && (
+                      <Badge variant={getMilestoneVariant(streak.current_streak)}>
+                        <Trophy className="w-3 h-3 mr-1" />
+                        {currentMilestone}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Consecutive misses warning - clickable to see details */}
+                  <button
+                    onClick={handleMissesClick}
+                    className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer w-full text-left"
+                  >
+                    <AlertCircle className={cn(
+                      "w-4 h-4",
+                      streak.consecutive_misses === 0 ? "text-green-500" :
+                      streak.consecutive_misses === 1 ? "text-amber-500" :
+                      "text-destructive"
+                    )} />
+                    <div className="flex-1">
+                      <div className="text-xs font-medium">
+                        {streak.consecutive_misses}/2 misses
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {getConsecutiveMissesMessage(streak.consecutive_misses)}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+
+                  {/* Next milestone */}
+                  {streak.next_milestone && (
+                    <div className="flex items-start gap-2">
+                      <Trophy className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="text-xs font-medium">Next milestone</div>
+                        <div className="text-xs text-muted-foreground">
+                          {streak.days_to_milestone} more tasks to {getMilestoneName(streak.next_milestone)} ({streak.next_milestone})
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Freeze status */}
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Snowflake className="w-4 h-4 mt-0.5 text-blue-400" />
+                      <div className="flex-1">
+                        <div className="text-xs font-medium">Freeze status</div>
+                        <div className="text-xs text-muted-foreground">
+                          {streak.is_frozen_today
+                            ? 'Frozen today - streak protected'
+                            : 'Not frozen'
+                          }
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {streak.available_freeze_days} freeze days available
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Emergency freeze toggle */}
+                    <button
+                      onClick={handleManualFreeze}
+                      disabled={streak.available_freeze_days === 0 && !streak.is_frozen_today}
+                      className={cn(
+                        "w-full px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                        "border border-border hover:bg-secondary/50",
+                        "disabled:opacity-50 disabled:cursor-not-allowed"
+                      )}
+                    >
+                      {streak.is_frozen_today ? 'Unfreeze (end vacation)' : 'Emergency freeze (1 day)'}
+                    </button>
+                  </div>
+
+                  {/* Info note */}
+                  <div className="text-[10px] text-muted-foreground border-t border-border pt-2">
+                    Complete tasks to grow your streak. Miss 2 in a row to break it. Freeze days protect during vacations.
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="misses"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 20, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-3"
+                >
+                  {/* Header with back button */}
+                  <button
+                    onClick={handleBackToMain}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </button>
+
+                  <div>
+                    <h3 className="text-sm font-semibold">Recent Missed Tasks</h3>
+                    <p className="text-xs text-muted-foreground">Tasks not completed on time</p>
+                  </div>
+
+                  {/* Missed tasks list */}
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {loadingMisses ? (
+                      <div className="flex items-center justify-center py-6">
+                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : missedTasks.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Trophy className="w-10 h-10 mx-auto mb-2 text-amber-500" />
+                        <p className="text-xs font-medium">No recent misses!</p>
+                        <p className="text-xs">Keep up the great work</p>
+                      </div>
+                    ) : (
+                      missedTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="p-2 rounded-lg border border-border bg-secondary/20"
+                        >
+                          <div className="text-sm font-medium text-foreground">
+                            {task.reptile_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {task.schedule_type}
+                            {task.schedule_name && ` - ${task.schedule_name}`}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {formatDate(task.scheduled_date)}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
               )}
-            </div>
-
-            {/* Consecutive misses warning */}
-            <button
-              onClick={handleMissesClick}
-              className="flex items-start gap-2 p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer w-full text-left"
-            >
-              <AlertCircle className={cn(
-                "w-4 h-4 mt-0.5",
-                streak.consecutive_misses === 0 ? "text-green-500" :
-                streak.consecutive_misses === 1 ? "text-amber-500" :
-                "text-destructive"
-              )} />
-              <div className="flex-1">
-                <div className="text-xs font-medium">
-                  {streak.consecutive_misses}/2 misses
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {getConsecutiveMissesMessage(streak.consecutive_misses)}
-                </div>
-              </div>
-            </button>
-
-            {/* Next milestone */}
-            {streak.next_milestone && (
-              <div className="flex items-start gap-2">
-                <Trophy className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                <div className="flex-1">
-                  <div className="text-xs font-medium">Next milestone</div>
-                  <div className="text-xs text-muted-foreground">
-                    {streak.days_to_milestone} more tasks to {getMilestoneName(streak.next_milestone)} ({streak.next_milestone})
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Freeze status */}
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <Snowflake className="w-4 h-4 mt-0.5 text-blue-400" />
-                <div className="flex-1">
-                  <div className="text-xs font-medium">Freeze status</div>
-                  <div className="text-xs text-muted-foreground">
-                    {streak.is_frozen_today
-                      ? 'Frozen today - streak protected'
-                      : 'Not frozen'
-                    }
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {streak.available_freeze_days} freeze days available
-                  </div>
-                </div>
-              </div>
-
-              {/* Emergency freeze toggle */}
-              <button
-                onClick={handleManualFreeze}
-                disabled={streak.available_freeze_days === 0 && !streak.is_frozen_today}
-                className={cn(
-                  "w-full px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                  "border border-border hover:bg-secondary/50",
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
-                )}
-              >
-                {streak.is_frozen_today ? 'Unfreeze (end vacation)' : 'Emergency freeze (1 day)'}
-              </button>
-            </div>
-
-            {/* Info note */}
-            <div className="text-[10px] text-muted-foreground border-t border-border pt-2">
-              Complete tasks to grow your streak. Miss 2 in a row to break it. Freeze days protect during vacations.
-            </div>
+            </AnimatePresence>
           </div>
         </PopoverContent>
       </Popover>
-
-      {/* Missed tasks modal */}
-      <Dialog open={missesModalOpen} onOpenChange={setMissesModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Recent Missed Tasks</DialogTitle>
-            <DialogDescription>Tasks that weren't completed on time</DialogDescription>
-          </DialogHeader>
-
-          <div className="max-h-96 overflow-y-auto">
-            {loadingMisses ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : missedTasks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Trophy className="w-12 h-12 mx-auto mb-2 text-amber-500" />
-                <p className="text-sm font-medium">No recent misses - keep up the great work!</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {missedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-border bg-secondary/20"
-                  >
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-foreground">
-                        {task.reptile_name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {task.schedule_type}
-                        {task.schedule_name && ` - ${task.schedule_name}`}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {formatDate(task.scheduled_date)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Attribution toast */}
       {showToast && (
