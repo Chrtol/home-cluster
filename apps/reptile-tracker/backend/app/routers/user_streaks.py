@@ -12,7 +12,7 @@ from sqlalchemy import select, and_, or_
 
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import User, UserStreak, UserStreakFreeze, ScheduleInstance, Schedule, Reptile, HouseholdMember
+from app.models import User, UserStreak, UserStreakFreeze, ScheduleInstance, Schedule, Reptile, household_members
 from app.schemas import (
     UserStreakResponse,
     FreezeScheduleRequest,
@@ -292,8 +292,8 @@ async def get_recent_misses(
     """
     # Get user's household IDs
     household_result = await db.execute(
-        select(HouseholdMember.household_id)
-        .where(HouseholdMember.user_id == current_user.id)
+        select(household_members.c.household_id)
+        .where(household_members.c.user_id == current_user.id)
     )
     household_ids = [row[0] for row in household_result.all()]
 
