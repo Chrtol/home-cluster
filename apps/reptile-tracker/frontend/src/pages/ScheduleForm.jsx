@@ -689,29 +689,75 @@ function ScheduleForm() {
           </Card>
         )}
 
-        {scheduleType === "weighing" && (
+        {scheduleType === "health" && (
           <Card>
             <CardHeader>
-              <CardTitle>Health Activity Type</CardTitle>
+              <CardTitle>Health Schedule Type</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="healthCategory">Health Activity Type</Label>
-                <Select value={healthCategory} onValueChange={setHealthCategory}>
-                  <SelectTrigger id="healthCategory">
-                    <SelectValue />
+                <Label htmlFor="healthSubtype">Health Type *</Label>
+                <Select value={healthSubtype} onValueChange={setHealthSubtype} required>
+                  <SelectTrigger id="healthSubtype">
+                    <SelectValue placeholder="Select health type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="weight_check">Weight Check</SelectItem>
-                    <SelectItem value="bathing">Bathing</SelectItem>
+                    <SelectItem value="weight">Weight Check</SelectItem>
+                    <SelectItem value="measurement">Measurement</SelectItem>
                     <SelectItem value="shedding_check">Shedding Check</SelectItem>
-                    <SelectItem value="health_inspection">Health Inspection</SelectItem>
+                    <SelectItem value="brumation_check">Brumation Check</SelectItem>
+                    <SelectItem value="health_record">Health Record</SelectItem>
+                    <SelectItem value="bathing">Bathing</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
-                  Specify what type of health activity this schedule is for
+                  {healthSubtype === 'weight' && "Scheduled weight check - navigates to weight logging"}
+                  {healthSubtype === 'measurement' && "Scheduled measurement - SVL, length, or custom measurement"}
+                  {healthSubtype === 'shedding_check' && "Shedding check - asks if reptile is showing shed signs"}
+                  {healthSubtype === 'brumation_check' && "Reminder to review/update brumation status"}
+                  {healthSubtype === 'health_record' && "General health record - medication, vet visit, observation"}
+                  {healthSubtype === 'bathing' && "Scheduled bath time"}
+                  {!healthSubtype && "Select the type of health task to schedule"}
                 </p>
               </div>
+
+              {/* Secondary selector for measurement type */}
+              {healthSubtype === "measurement" && (
+                <div className="space-y-2">
+                  <Label htmlFor="measurementType">Measurement Type</Label>
+                  <Select value={measurementType} onValueChange={setMeasurementType}>
+                    <SelectTrigger id="measurementType">
+                      <SelectValue placeholder="Select measurement type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SVL">SVL (Snout-Vent Length)</SelectItem>
+                      <SelectItem value="total_length">Total Length</SelectItem>
+                      <SelectItem value="shell_length">Shell Length</SelectItem>
+                      <SelectItem value="humidity">Humidity</SelectItem>
+                      <SelectItem value="temp">Temperature</SelectItem>
+                      <SelectItem value="custom">Custom Measurement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Secondary selector for health record type */}
+              {healthSubtype === "health_record" && (
+                <div className="space-y-2">
+                  <Label htmlFor="healthCategory">Record Type</Label>
+                  <Select value={healthCategory} onValueChange={setHealthCategory}>
+                    <SelectTrigger id="healthCategory">
+                      <SelectValue placeholder="Select record type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="medication">Medication</SelectItem>
+                      <SelectItem value="observation">Observation</SelectItem>
+                      <SelectItem value="vet_visit">Vet Visit</SelectItem>
+                      <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
