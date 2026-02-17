@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import confetti from 'canvas-confetti'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Flame, Snowflake, Trophy, Calendar, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -22,6 +23,9 @@ export default function UserStreakDisplay() {
   const [error, setError] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [missesModalOpen, setMissesModalOpen] = useState(false)
+  const [missedTasks, setMissedTasks] = useState([])
+  const [loadingMisses, setLoadingMisses] = useState(false)
 
   const fetchStreak = async () => {
     try {
@@ -79,6 +83,37 @@ export default function UserStreakDisplay() {
     } catch (err) {
       console.error('Failed to toggle freeze:', err)
     }
+  }
+
+  const handleMissesClick = async () => {
+    setMissesModalOpen(true)
+    setLoadingMisses(true)
+    try {
+      const response = await axios.get('/api/user-streaks/me/misses')
+      setMissedTasks(response.data)
+    } catch (err) {
+      console.error('Failed to fetch missed tasks:', err)
+      setMissedTasks([])
+    } finally {
+      setLoadingMisses(false)
+    }
+  }
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    // Compare dates (ignore time)
+    const isToday = date.toDateString() === today.toDateString()
+    const isYesterday = date.toDateString() === yesterday.toDateString()
+
+    if (isToday) return 'Today'
+    if (isYesterday) return 'Yesterday'
+
+    // Format as "Mon, Jan 15"
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
   const getMilestoneVariant = (currentStreak) => {
@@ -226,7 +261,10 @@ export default function UserStreakDisplay() {
             </div>
 
             {/* Consecutive misses warning */}
-            <div className="flex items-start gap-2 p-2 rounded-lg bg-secondary/50">
+            <button
+              onClick={handleMissesClick}
+              className="flex items-start gap-2 p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer w-full text-left"
+            >
               <AlertCircle className={cn(
                 "w-4 h-4 mt-0.5",
                 streak.consecutive_misses === 0 ? "text-green-500" :
@@ -241,7 +279,7 @@ export default function UserStreakDisplay() {
                   {getConsecutiveMissesMessage(streak.consecutive_misses)}
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* Next milestone */}
             {streak.next_milestone && (
@@ -295,6 +333,51 @@ export default function UserStreakDisplay() {
           </div>
         </PopoverContent>
       </Popover>
+
+      {/* Missed tasks modal */}
+      <Dialog open={missesModalOpen} onOpenChange={setMissesModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Recent Missed Tasks</DialogTitle>
+            <DialogDescription>Tasks that weren't completed on time</DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-96 overflow-y-auto">
+            {loadingMisses ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : missedTasks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Trophy className="w-12 h-12 mx-auto mb-2 text-amber-500" />
+                <p className="text-sm font-medium">No recent misses - keep up the great work!</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {missedTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-3 p-3 rounded-lg border border-border bg-secondary/20"
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-foreground">
+                        {task.reptile_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {task.schedule_type}
+                        {task.schedule_name && ` - ${task.schedule_name}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {formatDate(task.scheduled_date)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Attribution toast */}
       {showToast && (
