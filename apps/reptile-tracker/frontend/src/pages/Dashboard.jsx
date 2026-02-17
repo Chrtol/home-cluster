@@ -308,6 +308,8 @@ export default function Dashboard() {
               food_category: instance.schedule.food_category,
               time_slot: instance.schedule.time_slot,
               health_category: instance.schedule.health_category,
+              health_subtype: instance.schedule.health_subtype,
+              measurement_type: instance.schedule.measurement_type,
               time_window_enabled: instance.schedule.time_window_enabled,
               earliest_time: instance.schedule.earliest_time,
               latest_time: instance.schedule.latest_time,
@@ -648,7 +650,7 @@ export default function Dashboard() {
         return { Icon: Utensils, color: 'orange' };
       case 'misting':
         return { Icon: Droplets, color: 'blue' };
-      case 'weighing':
+      case 'health':
         return { Icon: Scale, color: 'purple' };
       default:
         return { Icon: Calendar, color: 'gray' };

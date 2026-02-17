@@ -105,6 +105,8 @@ const ReptileStatusCards = ({
             reptile_name: reptile.name,
             // Include schedule data for QuickLogForm
             food_category: i.schedule?.food_category,
+            health_subtype: i.schedule?.health_subtype,
+            measurement_type: i.schedule?.measurement_type,
             supplements: i.supplements || i.schedule?.supplements,
             // Include reptile for QuickLogForm
             reptile: reptile

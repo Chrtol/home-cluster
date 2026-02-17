@@ -161,6 +161,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
         type: instance.schedule?.schedule_type,
         // Include food_category for QuickLogForm filtering
         food_category: instance.schedule?.food_category,
+        health_subtype: instance.schedule?.health_subtype,
+        measurement_type: instance.schedule?.measurement_type,
         // Include reptile_id for QuickLogForm API calls
         reptile_id: instance.schedule?.reptile_id,
         // Include reptile object for ReptileAvatar

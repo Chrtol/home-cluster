@@ -69,11 +69,11 @@ function Calendar() {
         setVisibleCategories(new Set(parsed));
       } else {
         // Default to all categories visible
-        setVisibleCategories(new Set(['feeding', 'misting', 'weighing', 'supplement']));
+        setVisibleCategories(new Set(['feeding', 'misting', 'health', 'supplement']));
       }
     } else {
       // Default to all categories visible
-      setVisibleCategories(new Set(['feeding', 'misting', 'weighing', 'supplement']));
+      setVisibleCategories(new Set(['feeding', 'misting', 'health', 'supplement']));
     }
 
     // Detect mobile and restrict view options
@@ -217,6 +217,8 @@ function Calendar() {
             food_category: instance.schedule.food_category,
             time_slot: instance.schedule.time_slot,
             health_category: instance.schedule.health_category,
+            health_subtype: instance.schedule.health_subtype,
+            measurement_type: instance.schedule.measurement_type,
             time_window_enabled: instance.schedule.time_window_enabled,
             earliest_time: instance.schedule.earliest_time,
             latest_time: instance.schedule.latest_time,
@@ -480,7 +482,7 @@ function Calendar() {
   };
 
   const toggleAllCategories = () => {
-    const allCategories = ['feeding', 'misting', 'weighing', 'supplement'];
+    const allCategories = ['feeding', 'misting', 'health', 'supplement'];
     if (visibleCategories.size === allCategories.length) {
       // If all are visible, hide all
       setVisibleCategories(new Set());
@@ -498,7 +500,7 @@ function Calendar() {
         return { Icon: Utensils, color: "primary" };
       case "misting":
         return { Icon: Droplets, color: "blue" };
-      case "weighing":
+      case "health":
         return { Icon: Scale, color: "purple" };
       default:
         return { Icon: CalendarIcon, color: "gray" };
@@ -584,7 +586,7 @@ function Calendar() {
           return "bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700";
         case "misting":
           return "bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700";
-        case "weighing":
+        case "health":
           return "bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700";
         case "supplement":
           return "bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 border border-green-300 dark:border-green-700";
@@ -598,7 +600,7 @@ function Calendar() {
           return "bg-primary-900/20 text-primary-300 dark:bg-primary-900/30 dark:text-primary-300 border border-primary-700 dark:border-primary-700";
         case "misting":
           return "bg-blue-900/20 text-blue-300 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-700 dark:border-blue-700";
-        case "weighing":
+        case "health":
           return "bg-purple-900/20 text-purple-300 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-700 dark:border-purple-700";
         case "supplement":
           return "bg-green-900/20 text-green-300 dark:bg-green-900/30 dark:text-green-300 border border-green-700 dark:border-green-700";
@@ -616,7 +618,7 @@ function Calendar() {
           return "bg-green-500 dark:bg-green-600 border border-green-600 dark:border-green-500";
         case "misting":
           return "bg-blue-500 dark:bg-blue-600 border border-blue-600 dark:border-blue-500";
-        case "weighing":
+        case "health":
           return "bg-purple-500 dark:bg-purple-600 border border-purple-600 dark:border-purple-500";
         case "supplement":
           return "bg-emerald-500 dark:bg-emerald-600 border border-emerald-600 dark:border-emerald-500";
@@ -630,7 +632,7 @@ function Calendar() {
           return "bg-green-200 dark:bg-green-800 border border-green-400 dark:border-green-700";
         case "misting":
           return "bg-blue-200 dark:bg-blue-800 border border-blue-400 dark:border-blue-700";
-        case "weighing":
+        case "health":
           return "bg-purple-200 dark:bg-purple-800 border border-purple-400 dark:border-purple-700";
         case "supplement":
           return "bg-emerald-200 dark:bg-emerald-800 border border-emerald-400 dark:border-emerald-700";
@@ -667,9 +669,9 @@ function Calendar() {
               Misting
             </Badge>
             <Badge
-              variant={visibleCategories.has('weighing') ? "default" : "outline"}
+              variant={visibleCategories.has('health') ? "default" : "outline"}
               className="cursor-pointer hover:bg-primary/90"
-              onClick={() => toggleCategoryFilter('weighing')}
+              onClick={() => toggleCategoryFilter('health')}
             >
               Health
             </Badge>
