@@ -132,15 +132,47 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     const reptileId = task.reptile_id || task.reptile?.id;
     const instanceId = task.instance_id || task.id;
 
-    // Build query params - prefer instance_id, fall back to reptile_id
-    const queryParam = instanceId ? `instance_id=${instanceId}` : (reptileId ? `reptile_id=${reptileId}` : '');
-
     if (scheduleType === 'feeding') {
+      const queryParam = instanceId ? `instance_id=${instanceId}` : (reptileId ? `reptile_id=${reptileId}` : '');
       return `/feed${queryParam ? `?${queryParam}` : ''}`;
     } else if (scheduleType === 'misting') {
+      const queryParam = instanceId ? `instance_id=${instanceId}` : (reptileId ? `reptile_id=${reptileId}` : '');
       return `/misting-log${queryParam ? `?${queryParam}` : ''}`;
     } else if (scheduleType === 'health' || scheduleType === 'weighing') {
-      return `/health-log${queryParam ? `?${queryParam}` : ''}`;
+      // Build params based on health_subtype
+      const params = new URLSearchParams();
+      if (instanceId) params.set('instance_id', instanceId);
+      else if (reptileId) params.set('reptile_id', reptileId);
+
+      // Pre-fill based on health_subtype
+      const healthSubtype = task?.health_subtype;
+      if (healthSubtype) {
+        // Map health_subtype to log_type
+        const logTypeMap = {
+          'weight': 'weight',
+          'measurement': 'measurement',
+          'shedding_check': 'shedding',
+          'brumation_check': 'brumation',
+          'health_record': 'health',
+          'bathing': 'health'
+        };
+        params.set('log_type', logTypeMap[healthSubtype] || 'health');
+
+        // Add measurement_type for measurement schedules
+        if (healthSubtype === 'measurement' && task?.measurement_type) {
+          params.set('measurement_type', task.measurement_type);
+        }
+
+        // Add record_type for health_record and bathing
+        if (healthSubtype === 'health_record' && task?.health_category) {
+          params.set('record_type', task.health_category);
+        }
+        if (healthSubtype === 'bathing') {
+          params.set('record_type', 'bathing');
+        }
+      }
+
+      return `/health-log?${params.toString()}`;
     }
 
     // Default to reptile page if no specific form
