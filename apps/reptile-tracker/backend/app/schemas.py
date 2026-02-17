@@ -458,12 +458,14 @@ class PhotoUploadResponse(BaseModel):
 # Schedule schemas
 class ScheduleBase(BaseModel):
     name: Optional[str] = None  # User-friendly name
-    schedule_type: str  # "feeding", "misting", "weighing", "supplement"
+    schedule_type: str  # "feeding", "misting", "health", "supplement"
     schedule_mode: str = "fixed"  # "fixed", "interval", or "dependent"
     schedule_rule: Optional[str] = None  # "every_x_days", "days_of_week", "monthly", "dependent" (not used for interval mode)
     food_category: Optional[str] = None  # For feeding: "insects", "salad", "mixed"
     time_slot: Optional[str] = None  # For misting: "morning", "midday", "afternoon", "evening", "night"
-    health_category: Optional[str] = None  # For weighing/health: "weight_check", "bathing", "shedding_check"
+    health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
+    health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
+    measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
     frequency_days: Optional[int] = None  # For every_x_days
     days_of_week: Optional[str] = None  # For days_of_week (comma-separated: '1,3,5')
     day_of_month: Optional[int] = None  # For monthly (1-31)
@@ -523,7 +525,9 @@ class ScheduleUpdate(BaseModel):
     schedule_rule: Optional[str] = None
     food_category: Optional[str] = None
     time_slot: Optional[str] = None
-    health_category: Optional[str] = None
+    health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
+    health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
+    measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
     frequency_days: Optional[int] = None
     days_of_week: Optional[str] = None
     day_of_month: Optional[int] = None
@@ -928,11 +932,13 @@ class ScheduleTemplateBase(BaseModel):
     uvb_lighting: Optional[bool] = None  # null = doesn't matter, True = requires UVB, False = no UVB needed
 
     # Schedule configuration
-    schedule_type: str  # "feeding", "misting", "weighing", "supplement"
+    schedule_type: str  # "feeding", "misting", "health", "supplement"
     schedule_rule: str  # "every_x_days", "days_of_week", "monthly"
     food_category: Optional[str] = None
     time_slot: Optional[str] = None
-    health_category: Optional[str] = None
+    health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
+    health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
+    measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
 
     # Rule parameters
     frequency_days: Optional[int] = None
@@ -969,7 +975,9 @@ class ScheduleTemplateUpdate(BaseModel):
     schedule_rule: Optional[str] = None
     food_category: Optional[str] = None
     time_slot: Optional[str] = None
-    health_category: Optional[str] = None
+    health_category: Optional[str] = None  # DEPRECATED: Use health_subtype instead
+    health_subtype: Optional[str] = None  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
+    measurement_type: Optional[str] = None  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
     frequency_days: Optional[int] = None
     days_of_week: Optional[str] = None
     day_of_month: Optional[int] = None
