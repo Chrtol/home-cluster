@@ -20,6 +20,9 @@ from app.schemas import (
     MissedTaskResponse,
 )
 from app.services.user_streak_service import get_user_streak
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -389,3 +392,144 @@ async def get_recent_misses(
         ))
 
     return missed_tasks
+
+
+@router.post("/me/recalculate", response_model=UserStreakResponse)
+async def recalculate_streak(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Recalculate user streak from recent completion history.
+
+    This endpoint recalculates the user's streak based on actual completion data.
+    Useful for fixing streak data after bug fixes or data inconsistencies.
+
+    Logic:
+    - Counts all completed tasks (COMPLETED_ON_TIME or COMPLETED_LATE) from manual schedules
+      that the user was responsible for
+    - Resets consecutive_misses based on recent miss/completion pattern
+    """
+    user_id = current_user.id
+
+    # Get or create user streak
+    result = await db.execute(
+        select(UserStreak).where(UserStreak.user_id == user_id)
+    )
+    user_streak = result.scalar_one_or_none()
+
+    if not user_streak:
+        user_streak = UserStreak(user_id=user_id)
+        db.add(user_streak)
+        await db.flush()
+
+    # Build responsibility filter subqueries (same logic as misses endpoint)
+    has_schedule_resp = exists(
+        select(ScheduleResponsibility.id)
+        .where(
+            and_(
+                ScheduleResponsibility.schedule_id == Schedule.id,
+                ScheduleResponsibility.user_id == user_id
+            )
+        )
+    )
+
+    any_schedule_resp_exists = exists(
+        select(ScheduleResponsibility.id)
+        .where(ScheduleResponsibility.schedule_id == Schedule.id)
+    )
+
+    has_reptile_resp = exists(
+        select(ReptileResponsibility.id)
+        .where(
+            and_(
+                ReptileResponsibility.reptile_id == Reptile.id,
+                ReptileResponsibility.user_id == user_id
+            )
+        )
+    )
+
+    any_reptile_resp_exists = exists(
+        select(ReptileResponsibility.id)
+        .where(ReptileResponsibility.reptile_id == Reptile.id)
+    )
+
+    is_household_member = exists(
+        select(household_members.c.user_id)
+        .where(
+            and_(
+                household_members.c.household_id == Reptile.household_id,
+                household_members.c.user_id == user_id
+            )
+        )
+    )
+
+    responsibility_filter = or_(
+        has_schedule_resp,
+        and_(~any_schedule_resp_exists, has_reptile_resp),
+        and_(~any_schedule_resp_exists, ~any_reptile_resp_exists, is_household_member)
+    )
+
+    # Count total completions the user was responsible for (manual schedules only)
+    from sqlalchemy import func
+
+    completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
+    result = await db.execute(
+        select(func.count(ScheduleCompletion.id))
+        .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
+        .join(Reptile, Schedule.reptile_id == Reptile.id)
+        .where(
+            and_(
+                ScheduleCompletion.status.in_(completed_statuses),
+                Schedule.auto_complete_enabled == False,  # Manual schedules only
+                responsibility_filter
+            )
+        )
+    )
+    total_completions = result.scalar() or 0
+
+    # Get recent completions and misses to calculate consecutive misses
+    # Query recent schedule completions (last 10) ordered by date descending
+    result = await db.execute(
+        select(ScheduleCompletion.status, ScheduleCompletion.scheduled_date)
+        .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
+        .join(Reptile, Schedule.reptile_id == Reptile.id)
+        .where(
+            and_(
+                Schedule.auto_complete_enabled == False,  # Manual schedules only
+                responsibility_filter
+            )
+        )
+        .order_by(ScheduleCompletion.scheduled_date.desc())
+        .limit(10)
+    )
+    recent_completions = result.all()
+
+    # Calculate consecutive misses from recent history
+    # Count consecutive MISSED statuses from most recent
+    consecutive_misses = 0
+    for row in recent_completions:
+        if row.status == CompletionStatus.MISSED:
+            consecutive_misses += 1
+        else:
+            # Stop counting when we hit a non-missed status
+            break
+
+    old_streak = user_streak.current_streak
+    old_misses = user_streak.consecutive_misses
+
+    # Update streak
+    user_streak.current_streak = total_completions
+    user_streak.consecutive_misses = consecutive_misses
+    user_streak.longest_streak = max(user_streak.longest_streak, total_completions)
+
+    await db.commit()
+
+    logger.info(
+        f"Recalculated streak for user {user_id}: "
+        f"streak {old_streak} -> {total_completions}, "
+        f"misses {old_misses} -> {consecutive_misses}"
+    )
+
+    # Return updated streak data
+    return await get_my_streak(current_user, db)

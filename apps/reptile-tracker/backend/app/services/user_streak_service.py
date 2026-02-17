@@ -9,11 +9,14 @@ Tracks user-level engagement across all assigned reptiles.
 - Supports shared responsibility and freeze/vacation mode
 """
 
+import logging
 from datetime import date, datetime, timezone as tz
 from typing import List, Dict, Optional
-from sqlalchemy import select, and_, or_, text
+from sqlalchemy import select, and_, or_, text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import event
+
+logger = logging.getLogger(__name__)
 
 from app.models import (
     UserStreak,
@@ -361,8 +364,11 @@ def _process_completion_for_streak(connection, target):
     """
     from app.models import CompletionStatus
 
+    logger.info(f"_process_completion_for_streak called for completion {target.id}, status={target.status}")
+
     # Only process actual completions
     if target.status not in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+        logger.debug(f"Completion {target.id}: status {target.status} is not a completed status, skipping")
         return
 
     # Get schedule to check if manual
@@ -373,7 +379,10 @@ def _process_completion_for_streak(connection, target):
     schedule_row = schedule_result.fetchone()
 
     if not schedule_row or schedule_row[0]:  # auto_complete_enabled = True
+        logger.debug(f"Completion {target.id}: schedule {target.schedule_id} is auto-complete, skipping streak update")
         return  # Skip auto-complete schedules
+
+    logger.info(f"Completion {target.id}: processing streak update for manual schedule {target.schedule_id}")
 
     # Get responsible users
     # Check schedule-level responsibility first
@@ -404,7 +413,10 @@ def _process_completion_for_streak(connection, target):
         schedule_users = [row[0] for row in household_users_result.fetchall()]
 
     if not schedule_users:
+        logger.warning(f"Completion {target.id}: no responsible users found, skipping streak update")
         return  # No responsible users found
+
+    logger.info(f"Completion {target.id}: found responsible users: {schedule_users}")
 
     # Build user lookup dict
     users_result = connection.execute(
@@ -426,8 +438,16 @@ def _process_completion_for_streak(connection, target):
 
         if streak_row:
             # Each completion: increment streak, reset consecutive_misses
+            old_streak = streak_row[1]
+            old_misses = streak_row[3]
             new_streak = streak_row[1] + 1
             new_longest = max(streak_row[2], new_streak)
+
+            logger.info(
+                f"Completion {target.id}: updating streak for user {user_id} "
+                f"(old: streak={old_streak}, misses={old_misses}) -> "
+                f"(new: streak={new_streak}, misses=0)"
+            )
 
             connection.execute(
                 text("""
@@ -449,6 +469,7 @@ def _process_completion_for_streak(connection, target):
             # Check milestone and award freeze days
             if new_streak in MILESTONE_REWARDS:
                 freeze_days = MILESTONE_REWARDS[new_streak]
+                logger.info(f"User {user_id} reached milestone {new_streak}! Awarding {freeze_days} freeze days")
                 connection.execute(
                     text("""
                         UPDATE user_streaks SET
@@ -459,6 +480,7 @@ def _process_completion_for_streak(connection, target):
                 )
         else:
             # Insert new - first completion ever
+            logger.info(f"Completion {target.id}: creating new streak record for user {user_id} (streak=1, misses=0)")
             connection.execute(
                 text("""
                     INSERT INTO user_streaks
@@ -491,6 +513,29 @@ def on_schedule_completion_created(mapper, connection, target):
     _process_completion_for_streak(connection, target)
 
 
+@event.listens_for(ScheduleCompletion, 'before_update')
+def on_schedule_completion_before_update(mapper, connection, target):
+    """
+    Capture old status before update for use in after_update listener.
+
+    The after_update listener cannot reliably access attribute history,
+    so we capture the old status here and store it on the target.
+    """
+    from app.models import CompletionStatus
+
+    # Use inspect to get attribute history before the flush
+    state = inspect(target)
+    hist = state.attrs.status.history
+
+    if hist.deleted:
+        # Status is being changed, store the old value
+        target._pre_update_status = hist.deleted[0]
+        logger.debug(f"ScheduleCompletion {target.id}: status changing from {hist.deleted[0]} to {target.status}")
+    else:
+        # No change to status
+        target._pre_update_status = None
+
+
 @event.listens_for(ScheduleCompletion, 'after_update')
 def on_schedule_completion_updated(mapper, connection, target):
     """
@@ -499,20 +544,22 @@ def on_schedule_completion_updated(mapper, connection, target):
     This handles the common case where a PENDING completion is updated to COMPLETED.
     Only triggers when status changes to a completed state.
     """
-    from sqlalchemy.orm.attributes import get_history
     from app.models import CompletionStatus
 
-    # Check if status was changed
-    status_history = get_history(target, 'status')
+    # Get the old status captured by before_update listener
+    old_status = getattr(target, '_pre_update_status', None)
 
-    # Only process if status was actually changed (has deleted values = old values)
-    if not status_history.deleted:
+    if old_status is None:
+        logger.debug(f"ScheduleCompletion {target.id}: no status change detected, skipping streak update")
         return
 
-    old_status = status_history.deleted[0]
     new_status = target.status
+    logger.info(f"ScheduleCompletion {target.id}: status changed from {old_status} to {new_status}")
 
     # Only trigger if transitioning TO a completed status FROM a non-completed status
     completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
     if old_status not in completed_statuses and new_status in completed_statuses:
+        logger.info(f"ScheduleCompletion {target.id}: triggering streak update for completion transition")
         _process_completion_for_streak(connection, target)
+    else:
+        logger.debug(f"ScheduleCompletion {target.id}: not a completion transition, skipping streak update")
