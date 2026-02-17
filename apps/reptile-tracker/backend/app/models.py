@@ -83,6 +83,7 @@ class CompletionType(str, PyEnum):
     FEEDING = "feeding"
     MISTING = "misting"
     WEIGHING = "weighing"
+    MEASUREMENT = "measurement"
     MANUAL = "manual"  # Manually marked as complete
 
 
@@ -485,6 +486,7 @@ class Schedule(Base):
     health_category = Column(String, nullable=True)  # DEPRECATED: Use health_subtype instead
     health_subtype = Column(String(50), nullable=True)  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
     measurement_type = Column(String(50), nullable=True)  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
+    custom_measurement_label = Column(String(100), nullable=True)  # For custom measurement type: describes what should be measured
 
     # For every_x_days
     frequency_days = Column(Integer, nullable=True)
@@ -1052,6 +1054,7 @@ class ScheduleTemplate(Base):
     health_category = Column(String, nullable=True)  # DEPRECATED: Use health_subtype instead
     health_subtype = Column(String(50), nullable=True)  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
     measurement_type = Column(String(50), nullable=True)  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
+    custom_measurement_label = Column(String(100), nullable=True)  # For custom measurement type: describes what should be measured
 
     # Rule parameters
     frequency_days = Column(Integer, nullable=True)

@@ -18,6 +18,7 @@ from app.models import (
     Feeding,
     MistingLog,
     WeightLog,
+    Measurement,
     CompletionStatus,
     CompletionType,
     InstanceStatus,
@@ -113,6 +114,7 @@ async def find_matching_schedule(
     food_category: Optional[str] = None,
     food_id: Optional[int] = None,
     has_supplements: bool = False,
+    health_subtype: Optional[str] = None,
 ) -> Optional[Tuple[Schedule, int, bool]]:
     """
     Find the best matching schedule for an activity.
@@ -138,6 +140,13 @@ async def find_matching_schedule(
         )
     )
     matching_schedules = result.scalars().all()
+
+    # Filter by health_subtype if specified (for health schedules)
+    if health_subtype:
+        matching_schedules = [
+            s for s in matching_schedules
+            if getattr(s, 'health_subtype', None) == health_subtype
+        ]
 
     if not matching_schedules:
         return None
@@ -312,6 +321,7 @@ async def _assign_activity_to_schedule(
     config: ActivityConfig,
     food_category: Optional[str] = None,
     has_supplements: bool = False,
+    health_subtype: Optional[str] = None,
 ) -> Optional[ScheduleCompletion]:
     """
     Generic function to assign any activity type to a matching schedule.
@@ -340,6 +350,7 @@ async def _assign_activity_to_schedule(
         activity_type=config.activity_type,
         food_category=food_category if config.needs_food_category else None,
         has_supplements=has_supplements if config.needs_food_category else False,
+        health_subtype=health_subtype,
     )
 
     if not match:
@@ -564,7 +575,7 @@ async def assign_weighing_to_schedule(
     db: AsyncSession, weight_log: WeightLog
 ) -> Optional[ScheduleCompletion]:
     """
-    Automatically assign a weight log to a matching schedule.
+    Automatically assign a weight log to a matching health schedule.
 
     Args:
         db: Database session
@@ -574,8 +585,9 @@ async def assign_weighing_to_schedule(
         ScheduleCompletion object if assigned, None otherwise
     """
     # Delegate to generic function
+    # Note: activity_type is "health" but we need to match health_subtype="weight"
     config = ActivityConfig(
-        activity_type="weighing",
+        activity_type="health",  # Changed from "weighing" to "health"
         completion_type=CompletionType.WEIGHING,
         timestamp_attr="measured_at",
         needs_food_category=False
@@ -583,5 +595,33 @@ async def assign_weighing_to_schedule(
     return await _assign_activity_to_schedule(
         db=db,
         activity=weight_log,
-        config=config
+        config=config,
+        health_subtype="weight"  # New parameter to filter by health_subtype
+    )
+
+
+async def assign_measurement_to_schedule(
+    db: AsyncSession, measurement: Measurement
+) -> Optional[ScheduleCompletion]:
+    """
+    Automatically assign a measurement to a matching health schedule.
+
+    Args:
+        db: Database session
+        measurement: The measurement object to assign
+
+    Returns:
+        ScheduleCompletion object if assigned, None otherwise
+    """
+    config = ActivityConfig(
+        activity_type="health",
+        completion_type=CompletionType.MEASUREMENT,
+        timestamp_attr="measured_at",
+        needs_food_category=False
+    )
+    return await _assign_activity_to_schedule(
+        db=db,
+        activity=measurement,
+        config=config,
+        health_subtype="measurement"
     )
