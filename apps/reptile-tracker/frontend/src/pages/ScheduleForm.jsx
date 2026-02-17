@@ -465,8 +465,14 @@ function ScheduleForm() {
       if (scheduleType === "misting" && timeSlot && timeSlot !== "__none__") {
         scheduleData.time_slot = timeSlot;
       }
-      if (scheduleType === "weighing" && healthCategory) {
-        scheduleData.health_category = healthCategory;
+      if (scheduleType === "health") {
+        scheduleData.health_subtype = healthSubtype;
+        if (healthSubtype === "measurement") {
+          scheduleData.measurement_type = measurementType;
+        }
+        if (healthSubtype === "health_record" && healthCategory) {
+          scheduleData.health_category = healthCategory;
+        }
       }
 
       // Add rule-specific fields
