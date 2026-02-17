@@ -224,6 +224,8 @@ export default function HealthLog() {
           const instanceId = searchParams.get('instance_id');
           const scheduleId = searchParams.get('schedule_id');
           const logTypeParam = searchParams.get('log_type');
+          const measurementTypeParam = searchParams.get('measurement_type');
+          const recordTypeParam = searchParams.get('record_type');
 
           if (instanceId) {
             try {
@@ -294,9 +296,17 @@ export default function HealthLog() {
             }
           }
 
-          // Set log type from URL param if provided
-          if (logTypeParam) {
+          // Pre-fill from URL params (these override schedule-based pre-fills)
+          if (logTypeParam && ['weight', 'health', 'shedding', 'brumation', 'measurement'].includes(logTypeParam)) {
             form.setValue('log_type', logTypeParam);
+          }
+
+          if (measurementTypeParam) {
+            form.setValue('measurement_type', measurementTypeParam);
+          }
+
+          if (recordTypeParam) {
+            form.setValue('record_type', recordTypeParam);
           }
         }
       } catch (err) {
