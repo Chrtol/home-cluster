@@ -475,14 +475,16 @@ class Schedule(Base):
     reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
 
     name = Column(String, nullable=True)  # User-friendly name for the schedule
-    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
+    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "health", "supplement"
     schedule_mode = Column(Enum(ScheduleMode, values_callable=lambda x: [e.value for e in x], name='schedule_mode'), nullable=False, default=ScheduleMode.FIXED)  # "fixed" or "requirement"
     schedule_rule = Column(String, nullable=True)  # "every_x_days", "days_of_week", "monthly", "dependent" (nullable for interval mode)
 
     # Additional details
     food_category = Column(String, nullable=True)  # For feeding schedules: "insects", "salad", "mixed", etc.
     time_slot = Column(String, nullable=True)  # For misting schedules: "morning", "midday", "afternoon", "evening", "night"
-    health_category = Column(String, nullable=True)  # For weighing schedules: "weight_check", "bathing", "shedding_check", etc.
+    health_category = Column(String, nullable=True)  # DEPRECATED: Use health_subtype instead
+    health_subtype = Column(String(50), nullable=True)  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
+    measurement_type = Column(String(50), nullable=True)  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
 
     # For every_x_days
     frequency_days = Column(Integer, nullable=True)
@@ -1043,11 +1045,13 @@ class ScheduleTemplate(Base):
     source_url = Column(String, nullable=True)  # Link to original care guide
 
     # Schedule configuration (similar to Schedule model)
-    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "weighing", "supplement"
+    schedule_type = Column(String, nullable=False)  # "feeding", "misting", "health", "supplement"
     schedule_rule = Column(String, nullable=False)  # "every_x_days", "days_of_week", "monthly"
     food_category = Column(String, nullable=True)
     time_slot = Column(String, nullable=True)
-    health_category = Column(String, nullable=True)
+    health_category = Column(String, nullable=True)  # DEPRECATED: Use health_subtype instead
+    health_subtype = Column(String(50), nullable=True)  # For health schedules: weight, measurement, shedding_check, brumation_check, health_record, bathing
+    measurement_type = Column(String(50), nullable=True)  # For measurement subtype: SVL, total_length, humidity, temp, shell_length, custom
 
     # Rule parameters
     frequency_days = Column(Integer, nullable=True)
