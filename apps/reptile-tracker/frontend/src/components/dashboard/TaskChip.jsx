@@ -46,7 +46,6 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
       case 'misting':
         return Droplet;
       case 'health':
-      case 'weighing':
         return HeartPulse;
       default:
         return null;
@@ -55,10 +54,40 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
 
   // Format display text
   const getDisplayText = () => {
-    // Get task name from schedule data or fall back to capitalized schedule_type
     const scheduleType = task.schedule_type || task.type;
-    const taskName = task.task_name || task.name ||
-      (scheduleType ? scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1) : 'Task');
+
+    // For health schedules, prefer to show the subtype
+    let taskName = task.task_name || task.name;
+    if (!taskName) {
+      if (scheduleType === 'health' && task.health_subtype) {
+        // Map health_subtype to human-readable label
+        const subtypeLabels = {
+          'weight': 'Weight Check',
+          'measurement': 'Measurement',
+          'shedding_check': 'Shedding Check',
+          'brumation_check': 'Brumation Check',
+          'health_record': 'Health Record',
+          'bathing': 'Bathing'
+        };
+        taskName = subtypeLabels[task.health_subtype] || 'Health';
+
+        // For measurement, append the measurement_type if available
+        if (task.health_subtype === 'measurement' && task.measurement_type) {
+          const measurementLabels = {
+            'svl': 'SVL',
+            'total_length': 'Total Length',
+            'shell_length': 'Shell Length',
+            'humidity': 'Humidity',
+            'temperature': 'Temperature',
+            'custom': 'Custom'
+          };
+          const mtLabel = measurementLabels[task.measurement_type] || task.measurement_type.toUpperCase();
+          taskName = `${taskName} (${mtLabel})`;
+        }
+      } else {
+        taskName = scheduleType ? scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1) : 'Task';
+      }
+    }
 
     if (status === 'done') {
       return `\u2713 ${taskName}`;
@@ -107,7 +136,7 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        aria-label={`Quick log ${task.task_name || task.name || task.schedule_type || 'task'}`}
+        aria-label={`Quick log ${getDisplayText()}`}
       >
         {TaskIcon && <TaskIcon className="w-3 h-3" />}
         <span>{getDisplayText()}</span>
