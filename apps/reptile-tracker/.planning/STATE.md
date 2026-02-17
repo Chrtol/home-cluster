@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 26 - Health Schedule Type (4 of 5 plans complete)
-**Plan:** 26-04 complete, ready for 26-05
+**Phase:** 26 - Health Schedule Type (5 of 5 plans complete)
+**Plan:** 26-07 complete, ready for 26-08
 **Status:** In progress
-**Last activity:** 2026-02-17 — Completed 26-04-PLAN.md (Health schedule completion flow with pre-fill and shedding check modal)
-**Progress:** ████░ (80% - 4/5 plans complete)
+**Last activity:** 2026-02-17 — Completed 26-07-PLAN.md (Recent Activity and schedule matching for health schedules)
+**Progress:** █████ (100% - 5/5 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -84,10 +84,10 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-17
-**Action:** Completed 26-04-PLAN.md (Health schedule completion flow with pre-fill and shedding check modal)
-**Stopped at:** Phase 26 Plan 04 complete
-**Resume file:** `.planning/phases/26-health-schedule-type/26-05-PLAN.md`
-**Next step:** Execute Plan 26-05 (Human verification checkpoint)
+**Action:** Completed 26-07-PLAN.md (Recent Activity and schedule matching for health schedules)
+**Stopped at:** Phase 26 Plan 07 complete
+**Resume file:** `.planning/phases/26-health-schedule-type/26-08-PLAN.md`
+**Next step:** Execute Plan 26-08 (Gap closure verification)
 
 ## Phase 26 Plan Summary
 
@@ -107,6 +107,13 @@ For future milestones:
 - Shedding Check shows yes/no modal on completion
 - All completion flows navigate to Health Log with pre-filled values
 
+## Phase 26 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| Added MEASUREMENT to CompletionType enum | 26-07 | Required to support measurement logs completing health schedules | Enables measurement schedule completion functionality |
+| Used health_subtype filtering in schedule matcher | 26-07 | Enables precise matching of weight logs to weight health schedules and measurement logs to measurement health schedules | Schedule matcher now supports health schedule type alignment |
+
 ---
 
-**Project Status:** Phase 26 planning complete. Ready for `/gsd:execute-phase 26`.
+**Project Status:** Phase 26 execution in progress. Plans 26-01 through 26-07 complete.
