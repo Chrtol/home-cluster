@@ -17,6 +17,10 @@ import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 import Header from '../components/Header';
 import EditModeControls from '../components/dashboard/EditModeControls';
 import WidgetGallery from '../components/dashboard/WidgetGallery';
+import { useModalState } from '@/hooks/useModalState';
+import { ViewLogModal } from '@/components/modals/ViewLogModal';
+import { ViewScheduleModal } from '@/components/modals/ViewScheduleModal';
+import { CreateLogModal } from '@/components/modals/CreateLogModal';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -42,6 +46,14 @@ export default function Dashboard() {
   const [dragOverWidget, setDragOverWidget] = useState(null); // Widget being dragged over
   const [mainZoneDropActive, setMainZoneDropActive] = useState(false); // Drop zone active for main area
   const [sidebarSettings, setSidebarSettings] = useState({ sidebarEnabled: true, sidebarPosition: 'left' }); // Sidebar settings
+
+  // Modal state management (Phase 27)
+  const { isOpen: viewLogOpen, modalId: viewLogId, open: openViewLog, close: closeViewLog } = useModalState('viewLog');
+  const { isOpen: viewScheduleOpen, modalId: viewScheduleId, open: openViewSchedule, close: closeViewSchedule } = useModalState('viewSchedule');
+  const { isOpen: createOpen, modalId: createType, open: openCreate, close: closeCreate } = useModalState('create');
+  const [selectedLogType, setSelectedLogType] = useState(null); // Log type for view modal
+  const [selectedReptileId, setSelectedReptileId] = useState(null); // Reptile ID for create modal
+  const [prefillData, setPrefillData] = useState(null); // Prefill data for create modal
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -1065,6 +1077,27 @@ export default function Dashboard() {
     setQuickLogTask(null);
   };
 
+  // Dashboard refresh function for modals
+  const refreshDashboard = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  // Modal callback handlers (Phase 27)
+  const handleViewActivity = (id, logType) => {
+    setSelectedLogType(logType);
+    openViewLog(id.toString());
+  };
+
+  const handleViewSchedule = (id) => {
+    openViewSchedule(id.toString());
+  };
+
+  const handleCreateLog = (logType, reptileId, prefill) => {
+    setSelectedReptileId(reptileId);
+    setPrefillData(prefill);
+    openCreate(logType);
+  };
+
   // Edit mode handlers
   const handleToggleEditMode = () => {
     setIsEditMode(prev => {
@@ -2042,6 +2075,7 @@ export default function Dashboard() {
             <RecentActivityWidget
               config={card?.config || { itemCount: 5 }}
               size={card?.size || 'small'}
+              onViewActivity={handleViewActivity}
             />
           );
         }
@@ -2428,6 +2462,45 @@ export default function Dashboard() {
           onAddWidget={handleAddWidget}
           onClose={() => setShowWidgetGallery(false)}
           sidebarEnabled={sidebarSettings.sidebarEnabled && !isMobileScreen()}
+        />
+
+        {/* View Log Modal (Phase 27) */}
+        <ViewLogModal
+          logId={viewLogId}
+          logType={selectedLogType}
+          open={viewLogOpen}
+          onOpenChange={(open) => !open && closeViewLog()}
+          onEdit={() => {}} // In-place edit handled internally
+          onDelete={() => {
+            closeViewLog();
+            refreshDashboard();
+          }}
+        />
+
+        {/* View Schedule Modal (Phase 27) */}
+        <ViewScheduleModal
+          scheduleId={viewScheduleId}
+          open={viewScheduleOpen}
+          onOpenChange={(open) => !open && closeViewSchedule()}
+          onEdit={() => navigate(`/schedule/${viewScheduleId}/edit`)}
+          onDelete={() => {
+            closeViewSchedule();
+            refreshDashboard();
+          }}
+        />
+
+        {/* Create Log Modal (Phase 27) */}
+        <CreateLogModal
+          logType={createType}
+          reptileId={selectedReptileId}
+          prefill={prefillData}
+          open={createOpen}
+          onOpenChange={(open) => !open && closeCreate()}
+          onSuccess={() => {
+            closeCreate();
+            refreshDashboard();
+          }}
+          onCancel={closeCreate}
         />
       </div>
     </div>
