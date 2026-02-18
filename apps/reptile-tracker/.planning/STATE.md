@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 27 - Read-Only Views & UX Polish (4 of 9 plans complete)
-**Plan:** 27-01, 27-02, 27-03, 27-05 complete, ready for 27-04 or 27-06
+**Phase:** 27 - Read-Only Views & UX Polish (5 of 9 plans complete)
+**Plan:** 27-01, 27-02, 27-03, 27-04, 27-05 complete, ready for 27-06
 **Status:** In progress
-**Last activity:** 2026-02-18 — Completed 27-05-PLAN.md (Schedule view modal)
-**Progress:** ████░░░░░ (44% - 4/9 plans complete)
+**Last activity:** 2026-02-18 — Completed 27-04-PLAN.md (In-place edit/delete modals)
+**Progress:** █████░░░░ (56% - 5/9 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 26 plans
+**Next:** Execute Phase 27 Plan 06
 
 ### Architecture Summary
 
@@ -63,9 +63,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ### Modals (Phase 27)
 - `frontend/src/components/ui/sheet.jsx` - Directional slide-in modal component
+- `frontend/src/components/ui/alert-dialog.jsx` - Confirmation dialog component
 - `frontend/src/hooks/useModalState.js` - URL-driven modal state management
-- `frontend/src/components/modals/ViewLogModal.jsx` - Right-slide view modal container
+- `frontend/src/components/modals/ViewLogModal.jsx` - Right-slide view modal with in-place edit
 - `frontend/src/components/modals/LogViewContent.jsx` - Sectioned content layout (What/When/Notes)
+- `frontend/src/components/modals/EditLogContent.jsx` - Edit form content for in-place editing
 - `frontend/src/components/modals/CollapsibleNotes.jsx` - Collapsible text component
 - `frontend/src/components/modals/CreateLogModal.jsx` - Left-slide create modal for all log types
 - `frontend/src/components/modals/ViewScheduleModal.jsx` - Right-slide schedule view modal
@@ -84,6 +86,7 @@ For future milestones:
 - Growth milestone alerts for juveniles
 - Rolling average baseline for weight comparison
 - Format preview in template editor (side-by-side short/long)
+- Full undo for deleted logs (requires re-creation API)
 
 ## Quick Tasks Completed
 
@@ -95,10 +98,10 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-18
-**Action:** Completed 27-05-PLAN.md (Schedule view modal)
-**Stopped at:** Phase 27 Plan 05 complete
-**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-04-PLAN.md` or `27-06-PLAN.md`
-**Next step:** Execute Plan 27-04 (Create/edit modals for health logs) or Plan 27-06 (if exists)
+**Action:** Completed 27-04-PLAN.md (In-place edit/delete modals)
+**Stopped at:** Phase 27 Plan 04 complete
+**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-06-PLAN.md`
+**Next step:** Execute Plan 27-06 (Schedule create/edit modals)
 
 ## Phase 26 Plan Summary
 
@@ -138,7 +141,7 @@ For future milestones:
 - **27-01 (Wave 1):** Sheet component & modal state hook - COMPLETE
 - **27-02 (Wave 2):** View modal components (ViewLogModal, LogViewContent, CollapsibleNotes) - COMPLETE
 - **27-03 (Wave 2):** CreateLogModal component - COMPLETE
-- **27-04:** Create/edit modals for health logs
+- **27-04 (Wave 3):** In-place edit/delete for ViewLogModal - COMPLETE
 - **27-05 (Wave 3):** Schedule view modals - COMPLETE
 - **27-06:** Schedule create/edit modals
 - **27-07:** Activity history refactor
@@ -149,6 +152,7 @@ For future milestones:
 - Sheet component: side="right" for view modals, side="left" for create/edit
 - useModalState hook for URL-driven state with deep linking support
 - Spring physics animation (damping=30, stiffness=300)
+- Mode state pattern for in-place view/edit transformation
 
 ## Phase 27 Decisions
 
@@ -159,9 +163,11 @@ For future milestones:
 | Sheet defaults to side="right" | 27-01 | View modals slide from right per user constraints | Consistent directional pattern |
 | Simple feeding in CreateLogModal | 27-03 | Complex feedings with food items need full page | Users directed to FeedingLog page for detailed logs |
 | Schema-per-log-type validation | 27-03 | Keeps validation tight to each form variant | Clean separation of concerns |
+| AlertDialog for delete confirmation | 27-04 | Matches modal pattern, better UX than native confirm() | Consistent styling with rest of UI |
+| In-place edit via mode state | 27-04 | Avoids modal close/reopen flicker per user decision | Seamless view-to-edit transformation |
 | Edit navigates to ScheduleForm page | 27-05 | Schedule forms are complex with many conditional fields | In-place schedule editing deferred to future enhancement |
 | BEHAVIOR section conditional render | 27-05 | Only shows when at least one setting is enabled | Cleaner view for simple schedules |
 
 ---
 
-**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-05 complete.
+**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-04, 27-05 complete.
