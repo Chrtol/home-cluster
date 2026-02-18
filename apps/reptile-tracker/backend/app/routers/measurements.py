@@ -65,9 +65,15 @@ async def list_measurements(
     db: AsyncSession = Depends(get_db),
 ):
     """List all measurements for a reptile, optionally filtered by type"""
+    from sqlalchemy.orm import selectinload
+
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
 
-    query = select(Measurement).where(Measurement.reptile_id == reptile_id)
+    query = (
+        select(Measurement)
+        .options(selectinload(Measurement.reptile), selectinload(Measurement.logged_by))
+        .where(Measurement.reptile_id == reptile_id)
+    )
 
     if measurement_type:
         query = query.where(Measurement.measurement_type == measurement_type)
@@ -85,8 +91,12 @@ async def get_measurement(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific measurement"""
+    from sqlalchemy.orm import selectinload
+
     result = await db.execute(
-        select(Measurement).where(Measurement.id == measurement_id)
+        select(Measurement)
+        .options(selectinload(Measurement.reptile), selectinload(Measurement.logged_by))
+        .where(Measurement.id == measurement_id)
     )
     measurement = result.scalar_one_or_none()
     if not measurement:

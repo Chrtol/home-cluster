@@ -25,7 +25,7 @@ async def list_all_misting_logs(
     """List misting logs with optional filters (for dashboard Recent Activity)"""
     query = (
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile))
+        .options(selectinload(MistingLog.reptile), selectinload(MistingLog.logged_by))
         .order_by(MistingLog.misted_at.desc())
     )
 
@@ -60,7 +60,7 @@ async def list_misting_logs(
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
     result = await db.execute(
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile))
+        .options(selectinload(MistingLog.reptile), selectinload(MistingLog.logged_by))
         .where(MistingLog.reptile_id == reptile_id)
         .order_by(MistingLog.misted_at.desc())
     )
@@ -78,7 +78,7 @@ async def get_misting_log(
 
     result = await db.execute(
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile))
+        .options(selectinload(MistingLog.reptile), selectinload(MistingLog.logged_by))
         .where(MistingLog.id == log_id)
     )
     log = result.scalar_one_or_none()

@@ -26,7 +26,7 @@ async def list_all_health_records(
     """List health records with optional filters (for dashboard Recent Activity)"""
     query = (
         select(HealthRecord)
-        .options(selectinload(HealthRecord.reptile))
+        .options(selectinload(HealthRecord.reptile), selectinload(HealthRecord.logged_by))
         .order_by(HealthRecord.date.desc())
     )
 
@@ -62,6 +62,7 @@ async def list_health_records(
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
     result = await db.execute(
         select(HealthRecord)
+        .options(selectinload(HealthRecord.reptile), selectinload(HealthRecord.logged_by))
         .where(HealthRecord.reptile_id == reptile_id)
         .order_by(HealthRecord.date.desc())
     )
@@ -79,7 +80,7 @@ async def get_health_record(
 
     result = await db.execute(
         select(HealthRecord)
-        .options(selectinload(HealthRecord.reptile))
+        .options(selectinload(HealthRecord.reptile), selectinload(HealthRecord.logged_by))
         .where(HealthRecord.id == record_id)
     )
     record = result.scalar_one_or_none()
