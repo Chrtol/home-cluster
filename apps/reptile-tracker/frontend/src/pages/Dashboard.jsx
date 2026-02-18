@@ -1327,6 +1327,8 @@ export default function Dashboard() {
               size={card?.size || 'small'}
               onQuickLog={handleQuickLog}
               inSidebar={card?.zone === 'sidebar'}
+              onViewSchedule={handleViewSchedule}
+              onCreateLog={handleCreateLog}
             />
           );
         }

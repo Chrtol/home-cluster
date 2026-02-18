@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { formatTime, toLocalISODate, formatDate } from '../../utils/dateFormatting';
-import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, Calendar } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, Calendar, Eye } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 import EmptyState from '../EmptyState';
 
@@ -19,8 +19,10 @@ import EmptyState from '../EmptyState';
  * - size: Widget size ('small', 'medium', 'large')
  * - onQuickLog: Handler to open quick-log form (from Dashboard)
  * - inSidebar: boolean - Whether this widget is in the sidebar zone (no max-height constraint)
+ * - onViewSchedule: (scheduleId) => void - callback to open schedule view modal
+ * - onCreateLog: (logType, reptileId, prefill) => void - callback to open create log modal
  */
-const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSidebar = false }) => {
+const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSidebar = false, onViewSchedule, onCreateLog }) => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -316,6 +318,47 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
     }
   };
 
+  // Handler to open create log modal with prefill from schedule
+  const handleCreateLogFromSchedule = (schedule) => {
+    if (!onCreateLog) return;
+
+    const scheduleType = schedule.schedule_type || schedule.type;
+
+    // Map schedule type to log type
+    let logType = scheduleType;
+    if (scheduleType === 'health') {
+      // For health schedules, the logType depends on the subtype
+      const subtype = schedule.health_subtype;
+      if (subtype === 'weight') {
+        logType = 'weight';
+      } else if (subtype === 'measurement') {
+        logType = 'measurement';
+      } else {
+        // bathing, shedding_check, brumation_check, health_record -> health
+        logType = 'health';
+      }
+    }
+
+    // Build prefill object from schedule settings
+    const prefill = {
+      health_subtype: schedule.health_subtype,
+      measurement_type: schedule.measurement_type,
+      food_category: schedule.food_category,
+      supplements: schedule.supplements,
+      notes: schedule.notes
+    };
+
+    onCreateLog(logType, schedule.reptile_id, prefill);
+  };
+
+  // Handler to open schedule view modal
+  const handleViewScheduleClick = (schedule, e) => {
+    e?.stopPropagation();
+    if (onViewSchedule && schedule.schedule_id) {
+      onViewSchedule(schedule.schedule_id);
+    }
+  };
+
   // Build display name for schedule type (shows health_subtype for health schedules)
   const getDisplayType = (schedule) => {
     const scheduleType = schedule.schedule_type || schedule.type;
@@ -514,6 +557,16 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                               )}
                             </div>
                           </div>
+                          {/* View schedule icon */}
+                          {onViewSchedule && schedule.schedule_id && (
+                            <button
+                              onClick={(e) => handleViewScheduleClick(schedule, e)}
+                              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                              title="View schedule"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </button>
+                          )}
                           <span className="text-primary">✓</span>
                         </div>
 
@@ -619,6 +672,16 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                                 )}
                               </div>
                             </div>
+                            {/* View schedule icon */}
+                            {onViewSchedule && schedule.schedule_id && (
+                              <button
+                                onClick={(e) => handleViewScheduleClick(schedule, e)}
+                                className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                                title="View schedule"
+                              >
+                                <Eye className="w-3 h-3" />
+                              </button>
+                            )}
                             <button
                               onClick={() => handleLogClick(schedule)}
                               className="ml-auto text-xs px-1.5 py-0.5 rounded bg-primary hover:bg-primary/90 text-primary-foreground"
