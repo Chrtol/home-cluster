@@ -159,6 +159,8 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
         latest_time: instance.schedule?.latest_time,
         schedule_type: instance.schedule?.schedule_type,
         type: instance.schedule?.schedule_type,
+        // Include schedule name for tooltip display
+        name: instance.schedule?.name,
         // Include food_category for QuickLogForm filtering
         food_category: instance.schedule?.food_category,
         health_subtype: instance.schedule?.health_subtype,
@@ -518,13 +520,13 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                         {/* Completion tooltip */}
                         {hoveredTask?.id === schedule.id && (
                           <div className="absolute left-0 top-full mt-1 z-10 bg-popover border border-border rounded-lg p-2 shadow-lg text-xs w-64">
-                            {/* Always show reptile name and task type */}
-                            <div className="mb-1 font-medium text-foreground">
-                              {schedule.reptile_name}
+                            {/* Schedule name as title, fallback to task type */}
+                            <div className="mb-1.5 font-semibold text-foreground">
+                              {schedule.name || displayType}
                             </div>
-                            <div className="mb-1">
-                              <span className="text-muted-foreground">Task:</span>{' '}
-                              <span className="text-foreground">{displayType}</span>
+                            {/* Reptile and task type on same line */}
+                            <div className="mb-1 text-muted-foreground">
+                              {schedule.reptile_name} · {displayType}
                             </div>
                             {/* Show food category for feeding tasks */}
                             {scheduleType === 'feeding' && schedule.food_category && (
@@ -628,13 +630,13 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                           {/* Hover tooltip */}
                           {hoveredTask?.id === schedule.id && (
                             <div className="absolute left-0 top-full mt-1 z-10 bg-popover border border-border rounded-lg p-2 shadow-lg text-xs w-64">
-                              {/* Always show reptile name and task type */}
-                              <div className="mb-1 font-medium text-foreground">
-                                {schedule.reptile_name}
+                              {/* Schedule name as title, fallback to task type */}
+                              <div className="mb-1.5 font-semibold text-foreground">
+                                {schedule.name || displayType}
                               </div>
-                              <div className="mb-1">
-                                <span className="text-muted-foreground">Task:</span>{' '}
-                                <span className="text-foreground">{displayType}</span>
+                              {/* Reptile and task type on same line */}
+                              <div className="mb-1 text-muted-foreground">
+                                {schedule.reptile_name} · {displayType}
                               </div>
                               {/* Show food category for feeding tasks */}
                               {scheduleType === 'feeding' && schedule.food_category && (

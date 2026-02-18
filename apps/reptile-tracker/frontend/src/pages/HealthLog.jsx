@@ -21,7 +21,7 @@ import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
 // Validation schema with conditional logic
 const healthLogSchema = z.object({
   reptile_id: z.number().min(1, "Please select a reptile"),
-  log_type: z.enum(['weight', 'health', 'shedding', 'brumation', 'measurement']),
+  log_type: z.enum(['weight', 'health', 'shedding', 'brumation', 'bathing', 'measurement']),
   log_date: z.string().min(1, "Date is required"),
   log_time: z.string().regex(/^\d{2}:\d{2}$/, "Time is required (HH:MM format)"),
   // Weight-specific fields
@@ -243,11 +243,8 @@ export default function HealthLog() {
                 form.setValue('log_date', instance.scheduled_date);
               }
 
-              // Pre-fill time from schedule
-              if (schedule?.reminder_time || (schedule?.time_window_enabled && schedule?.earliest_time)) {
-                const timeStr = schedule.reminder_time || schedule.earliest_time;
-                form.setValue('log_time', timeStr);
-              }
+              // Keep current time as default (user feedback: don't pre-fill from schedule window)
+              // The form already defaults to current time in its initial values
 
               // Pre-fill log type if specified in URL or from schedule
               if (logTypeParam) {
@@ -269,11 +266,8 @@ export default function HealthLog() {
                 form.setValue('reptile_id', schedule.reptile_id);
               }
 
-              // Pre-fill time from schedule
-              if (schedule.reminder_time || (schedule.time_window_enabled && schedule.earliest_time)) {
-                const timeStr = schedule.reminder_time || schedule.earliest_time;
-                form.setValue('log_time', timeStr);
-              }
+              // Keep current time as default (user feedback: don't pre-fill from schedule window)
+              // The form already defaults to current time in its initial values
 
               // Pre-fill log type if specified in URL or from schedule
               if (logTypeParam) {
@@ -396,10 +390,12 @@ export default function HealthLog() {
       const minute = measuredAtDate.getMinutes();
       form.setValue('log_time', `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     } else if (logType === 'health') {
-      // Check if this is a shedding or brumation record
+      // Check if this is a shedding, brumation, or bathing record
       if ((log.record_type === 'shedding' || log.record_type === 'brumation') && log.event_type) {
         form.setValue('log_type', log.record_type);
         form.setValue('event_subtype', log.event_type);
+      } else if (log.record_type === 'bathing') {
+        form.setValue('log_type', 'bathing');
       } else {
         form.setValue('record_type', log.record_type);
         form.setValue('title', log.title);
@@ -530,6 +526,16 @@ export default function HealthLog() {
           };
           await axios.patch(`/api/health/${id}`, payload);
           setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event updated successfully!`);
+        } else if (data.log_type === 'bathing') {
+          // Bathing event
+          const payload = {
+            record_type: 'bathing',
+            title: 'Bathing',
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
+          };
+          await axios.patch(`/api/health/${id}`, payload);
+          setSuccess('Bathing record updated successfully!');
         } else {
           const payload = {
             record_type: data.record_type,
@@ -600,6 +606,27 @@ export default function HealthLog() {
           setLastCreatedId(response.data.id);
           setLastLogType('health');
           setShowSuccessActions(true);
+        } else if (data.log_type === 'bathing') {
+          // Bathing event - simple, no event_type needed
+          const payload = {
+            reptile_id: data.reptile_id,
+            record_type: 'bathing',
+            title: 'Bathing',
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
+          };
+          const response = await axios.post('/api/health', payload);
+
+          // Dispatch attribution event if completing for another user
+          if (response.data.attribution) {
+            notifyStreakAttribution(response.data.attribution);
+          }
+
+          triggerSubtle();
+          setSuccess(`Bathing logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
+          setLastCreatedId(response.data.id);
+          setLastLogType('health');
+          setShowSuccessActions(true);
         } else if (data.log_type === 'measurement') {
           const response = await axios.post('/api/measurements', {
             reptile_id: data.reptile_id,
@@ -651,6 +678,7 @@ export default function HealthLog() {
     const viewTitle = logType === 'weight' ? 'Weight' :
                      logType === 'shedding' ? 'Shedding Event' :
                      logType === 'brumation' ? 'Brumation Event' :
+                     logType === 'bathing' ? 'Bathing' :
                      logType === 'measurement' ? 'Measurement' : 'Health';
 
     return (
@@ -746,6 +774,15 @@ export default function HealthLog() {
                 </p>
               </div>
             </>
+          ) : logType === 'bathing' ? (
+            <>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Date</p>
+                <p className="text-lg font-medium text-foreground">
+                  {formatDateTime(existingLog.date)}
+                </p>
+              </div>
+            </>
           ) : (
             <>
               <div>
@@ -803,6 +840,7 @@ export default function HealthLog() {
           `Edit ${logType === 'weight' ? 'Weight' :
                  logType === 'shedding' ? 'Shedding Event' :
                  logType === 'brumation' ? 'Brumation Event' :
+                 logType === 'bathing' ? 'Bathing' :
                  logType === 'measurement' ? 'Measurement' : 'Health'} Log` :
           'Log Health'}
       />
@@ -918,6 +956,14 @@ export default function HealthLog() {
                     variant={field.value === 'brumation' ? 'default' : 'outline'}
                   >
                     Brumation
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => field.onChange('bathing')}
+                    disabled={mode === 'edit'}
+                    variant={field.value === 'bathing' ? 'default' : 'outline'}
+                  >
+                    Bathing
                   </Button>
                   <Button
                     type="button"
@@ -1151,7 +1197,6 @@ export default function HealthLog() {
                       <SelectContent>
                         <SelectItem value="observation">General Observation</SelectItem>
                         <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
-                        <SelectItem value="bathing">Bathing</SelectItem>
                         <SelectItem value="vet_visit">Vet Visit</SelectItem>
                         <SelectItem value="medication">Medication</SelectItem>
                       </SelectContent>

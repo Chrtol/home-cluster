@@ -4,7 +4,6 @@ import axios from 'axios';
 import { X, ExternalLink, Plus, Minus } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatting';
 import { TimePicker } from '../ui/time-picker';
-import SheddingCheckModal from '../SheddingCheckModal';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -32,8 +31,11 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   // Time selection state
   const [fedAt, setFedAt] = useState(new Date());
 
-  // Shedding check modal state
-  const [showSheddingModal, setShowSheddingModal] = useState(false);
+  // Weight input state (for weight_check health schedules)
+  const [weightGrams, setWeightGrams] = useState('');
+
+  // Shedding check state (for shedding_check health schedules)
+  const [isShedding, setIsShedding] = useState(null); // null = not selected, true = yes, false = no
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -184,13 +186,6 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   };
 
   const handleOpenFull = () => {
-    // Check if this is a shedding_check schedule
-    const healthSubtype = task?.health_subtype;
-    if (healthSubtype === 'shedding_check') {
-      setShowSheddingModal(true);
-      return;
-    }
-
     navigate(getFullFormPath());
   };
 
@@ -199,10 +194,12 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
 
     if (!task) return;
 
-    // Check if this is a shedding_check schedule - show modal instead
+    const scheduleType = task.schedule_type || task.type;
     const healthSubtype = task?.health_subtype;
-    if (healthSubtype === 'shedding_check') {
-      setShowSheddingModal(true);
+
+    // Validate shedding_check selection
+    if (scheduleType === 'health' && healthSubtype === 'shedding_check' && isShedding === null) {
+      setError('Please select whether reptile is showing signs of shedding');
       return;
     }
 
@@ -247,10 +244,41 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
 
         // Route based on health_subtype
         if (healthSubtype === 'weight') {
-          // Weight logs need weight_grams - redirect to full form
-          // (Quick log can't capture weight value without UI changes)
-          navigate(getFullFormPath());
-          return;
+          // Weight logs with weight input
+          if (!weightGrams || parseFloat(weightGrams) <= 0) {
+            setError('Please enter a weight value');
+            setSubmitting(false);
+            return;
+          }
+          endpoint = '/api/weight';
+          payload = {
+            reptile_id: reptileId,
+            weight_grams: parseFloat(weightGrams),
+            weighed_at: fedAt.toISOString(),
+            notes: notes.trim() || null
+          };
+        } else if (healthSubtype === 'shedding_check') {
+          // Shedding check - create shedding event if yes, otherwise just mark complete
+          if (isShedding) {
+            // Create shedding start event
+            endpoint = '/api/health';
+            payload = {
+              reptile_id: reptileId,
+              record_type: 'shedding',
+              event_type: 'start',
+              title: 'Started Shedding',
+              description: notes.trim() || null,
+              date: fedAt.toISOString()
+            };
+          } else {
+            // No shedding - just mark the task complete without creating a record
+            // onSubmit will handle marking the schedule instance complete
+            if (onSubmit) {
+              await onSubmit();
+            }
+            onClose();
+            return;
+          }
         } else if (healthSubtype === 'measurement') {
           // Measurements need value - redirect to full form
           navigate(getFullFormPath());
@@ -413,6 +441,25 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             </div>
           )}
 
+          {/* Weight input for weight_check health schedules */}
+          {scheduleType === 'health' && task?.health_subtype === 'weight' && (
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Weight (grams)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={weightGrams}
+                onChange={(e) => setWeightGrams(e.target.value)}
+                placeholder="Enter weight in grams"
+                className="w-full px-2 py-1.5 bg-muted border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                autoFocus
+              />
+            </div>
+          )}
+
           {/* Time picker */}
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
@@ -451,10 +498,36 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             />
           </div>
 
-          {/* Error message */}
-          {error && (
-            <div className="text-xs text-destructive bg-destructive/10 rounded p-2">
-              {error}
+          {/* Shedding check - Yes/No selection */}
+          {scheduleType === 'health' && task?.health_subtype === 'shedding_check' && (
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-2">
+                Is {reptileName} showing signs of shedding?
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsShedding(true)}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded border transition-colors ${
+                    isShedding === true
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-muted text-foreground border-border hover:bg-muted/80'
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsShedding(false)}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded border transition-colors ${
+                    isShedding === false
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted text-foreground border-border hover:bg-muted/80'
+                  }`}
+                >
+                  No
+                </button>
+              </div>
             </div>
           )}
 
@@ -487,22 +560,16 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
               </button>
             </div>
           </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="text-xs text-destructive bg-destructive/10 rounded p-2">
+              {error}
+            </div>
+          )}
         </form>
       </div>
 
-      {/* Shedding Check Modal */}
-      {showSheddingModal && (
-        <SheddingCheckModal
-          task={task}
-          onClose={() => setShowSheddingModal(false)}
-          onComplete={async () => {
-            // Mark task as done by calling onSubmit
-            if (onSubmit) {
-              await onSubmit();
-            }
-          }}
-        />
-      )}
     </div>
   );
 };
