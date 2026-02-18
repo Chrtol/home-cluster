@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 27 - Read-Only Views & UX Polish (5 of 9 plans complete)
-**Plan:** 27-01, 27-02, 27-03, 27-04, 27-05 complete, ready for 27-06
+**Phase:** 27 - Read-Only Views & UX Polish (7 of 9 plans complete)
+**Plan:** 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a complete, ready for 27-07b
 **Status:** In progress
-**Last activity:** 2026-02-18 — Completed 27-04-PLAN.md (In-place edit/delete modals)
-**Progress:** █████░░░░ (56% - 5/9 plans complete)
+**Last activity:** 2026-02-18 — Completed 27-07a-PLAN.md (Dashboard modal integration)
+**Progress:** ███████░░ (78% - 7/9 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 27 Plan 06
+**Next:** Execute Phase 27 Plan 07b (Schedule widget modal integration)
 
 ### Architecture Summary
 
@@ -98,10 +98,10 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-18
-**Action:** Completed 27-04-PLAN.md (In-place edit/delete modals)
-**Stopped at:** Phase 27 Plan 04 complete
-**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-06-PLAN.md`
-**Next step:** Execute Plan 27-06 (Schedule create/edit modals)
+**Action:** Completed 27-07a-PLAN.md (Dashboard modal integration)
+**Stopped at:** Phase 27 Plan 07a complete
+**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-07b-PLAN.md`
+**Next step:** Execute Plan 27-07b (Schedule widget modal integration)
 
 ## Phase 26 Plan Summary
 
@@ -143,10 +143,10 @@ For future milestones:
 - **27-03 (Wave 2):** CreateLogModal component - COMPLETE
 - **27-04 (Wave 3):** In-place edit/delete for ViewLogModal - COMPLETE
 - **27-05 (Wave 3):** Schedule view modals - COMPLETE
-- **27-06:** Schedule create/edit modals
-- **27-07:** Activity history refactor
+- **27-06 (Wave 4):** Activity History modal integration - COMPLETE
+- **27-07a (Wave 4):** Dashboard modal integration (log views) - COMPLETE
+- **27-07b:** Dashboard modal integration (schedule views, create)
 - **27-08:** Visual polish (dense spacing, hover states)
-- **27-09:** Final integration
 
 **Key Patterns Established:**
 - Sheet component: side="right" for view modals, side="left" for create/edit
@@ -167,7 +167,10 @@ For future milestones:
 | In-place edit via mode state | 27-04 | Avoids modal close/reopen flicker per user decision | Seamless view-to-edit transformation |
 | Edit navigates to ScheduleForm page | 27-05 | Schedule forms are complex with many conditional fields | In-place schedule editing deferred to future enhancement |
 | BEHAVIOR section conditional render | 27-05 | Only shows when at least one setting is enabled | Cleaner view for simple schedules |
+| type:id URL format for activity modals | 27-06 | Encodes both log type and ID in single param to restore modal state on deep link | Enables proper modal restoration from shared URLs |
+| Modal callbacks via props | 27-07a | Simpler pattern than context for widget-to-modal communication | Dashboard widgets call parent callbacks to open modals |
+| Link fallback in RecentActivityWidget | 27-07a | Maintains backwards compatibility when no callback provided | Widget can be used with or without modal integration |
 
 ---
 
-**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-04, 27-05 complete.
+**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a complete.
