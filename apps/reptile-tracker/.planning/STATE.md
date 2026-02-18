@@ -70,8 +70,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - `frontend/src/components/modals/EditLogContent.jsx` - Edit form content for in-place editing
 - `frontend/src/components/modals/CollapsibleNotes.jsx` - Collapsible text component
 - `frontend/src/components/modals/CreateLogModal.jsx` - Left-slide create modal for all log types
-- `frontend/src/components/modals/ViewScheduleModal.jsx` - Right-slide schedule view modal
-- `frontend/src/components/modals/ScheduleViewContent.jsx` - Schedule details sectioned layout
+- `frontend/src/components/modals/ViewScheduleModal.jsx` - Right-slide schedule definition view
+- `frontend/src/components/modals/ScheduleViewContent.jsx` - Schedule definition sectioned layout
+- `frontend/src/components/modals/ViewInstanceModal.jsx` - Right-slide instance view (for dashboard)
+- `frontend/src/components/modals/InstanceViewContent.jsx` - Instance details sectioned layout
+- `frontend/src/contexts/CreateLogModalContext.jsx` - Global context for CreateLogModal registration
 
 ## Known Tech Debt
 
@@ -98,10 +101,29 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-19
-**Action:** Bug fixes for CreateLogModal (feature parity, dark mode), ViewScheduleModal layout improvement
-**Stopped at:** Phase 27 Plan 08 pending
+**Action:** Added ViewInstanceModal for dashboard, fixed CreateLogModal supplement pre-fill
+**Stopped at:** UAT pending for uncommitted changes (22 files)
+**Uncommitted:** `feat(reptile-tracker): dashboard modals now show instance data instead of schedule definitions`
+
+### UAT Checklist for Current Changes
+
+1. **ViewInstanceModal (from dashboard calendar/timeline)**
+   - [ ] Click task in TodayScheduleTimeline → opens ViewInstanceModal (not ViewScheduleModal)
+   - [ ] Modal shows: scheduled date, status badge, pre-calculated supplements
+   - [ ] "Track" button opens CreateLogModal with supplements pre-filled
+   - [ ] "Skip" button marks instance as skipped
+   - [ ] "View Schedule" button opens ViewScheduleModal for the parent schedule
+
+2. **CreateLogModal supplement pre-fill**
+   - [ ] Opening from schedule instance → supplements already selected (blue banner, no Apply button)
+   - [ ] Opening from Track button (no schedule) → shows green suggestion banner with Apply button
+
+3. **ViewScheduleModal layout**
+   - [ ] Two-column header: "SCHEDULE TYPE" on left, "REPTILE" on right
+   - [ ] Reptile header text left-aligned with avatar below it
+
 **Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-08-PLAN.md`
-**Next step:** Execute Plan 27-08 (Visual polish - dense spacing, hover states)
+**Next step:** After UAT, commit changes then execute Plan 27-08 (Visual polish)
 
 ## Phase 26 Plan Summary
 
@@ -174,6 +196,9 @@ For future milestones:
 | TaskChip uses onViewSchedule for completed tasks | 27-07b | Keeps completed task clicks in modal context instead of navigating | Dashboard stays open when viewing completed task schedules |
 | Schedule-to-log-type mapping in handleCreateLogFromSchedule | 27-07b | Maps health schedule subtypes (weight, measurement) to appropriate log types | Correct prefill data passed to CreateLogModal |
 | Reptile avatar/name in ScheduleTypeSection header row | 27-08 | Schedule type badge and reptile identity on same row saves vertical space | More compact layout with all key info visible at once |
+| ViewInstanceModal for dashboard items | 27-08 | Dashboard calendar/timeline shows schedule instances, not schedule definitions | Separate modals: ViewInstanceModal (instance data) vs ViewScheduleModal (schedule rules) |
+| onViewInstance replaces onViewSchedule in dashboard | 27-08 | Widgets pass instance ID to open instance modal, not schedule ID | TaskChip, TodayScheduleTimeline, ReptileStatusCards all updated |
+| Supplement pre-fill extracts IDs from objects | 27-08 | Schedule instances pass `[{id, name}]` but form expects `[id]` | CreateLogModal now handles both formats |
 
 ---
 
