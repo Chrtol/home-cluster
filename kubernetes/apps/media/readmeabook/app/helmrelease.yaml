@@ -80,10 +80,19 @@ spec:
                 subPath: config
               - path: /app/cache
                 subPath: cache
-      nfs-nas-data:
+      nfs-nas-torrents:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        path: /mnt/truenas/cf-nas/data/torrents
         globalMounts:
-          - path: /data
+          - path: /downloads
+            subPath: audiobooks
+            readOnly: false
+      nfs-nas-media:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data/media
+        globalMounts:
+          - path: /media
+            subPath: audiobooks
             readOnly: false
