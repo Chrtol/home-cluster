@@ -140,6 +140,13 @@ export default function Dashboard() {
           weekEnd = addDays(weekStart, 6);
         }
 
+        // Always extend weekEnd to include at least 7 days from today for NextFeedingIndicator
+        // This ensures "next feeding" badge shows upcoming feedings even when today's are completed
+        const minEndDate = addDays(new Date(), 7);
+        if (weekEnd < minEndDate) {
+          weekEnd = minEndDate;
+        }
+
         const toLocalISODate = (date) => {
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, '0');

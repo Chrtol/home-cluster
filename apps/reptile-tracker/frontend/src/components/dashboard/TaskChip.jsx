@@ -166,7 +166,7 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
     <>
       <span
         className={cn(
-          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs cursor-pointer',
+          'inline-flex items-center gap-1 px-1.5 py-1 rounded text-xs cursor-pointer leading-snug',
           'transition-opacity hover:opacity-80',
           statusStyles[status],
           className
@@ -177,7 +177,7 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
         tabIndex={0}
         aria-label={`Quick log ${getDisplayText()}`}
       >
-        {TaskIcon && <TaskIcon className="w-3 h-3" />}
+        {TaskIcon && <TaskIcon className="w-3 h-3 flex-shrink-0" />}
         <span>{getDisplayText()}</span>
       </span>
       <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
