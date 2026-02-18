@@ -18,7 +18,7 @@ spec:
     - --proactor_threads=2
     - --cluster_mode=emulated
     - --lock_on_hashtags
-    - --lua_allow_undeclared_auto_correct=true
+    - --default_lua_flags=allow-undeclared-keys
   resources:
     requests:
       cpu: 50m
