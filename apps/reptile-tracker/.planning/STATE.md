@@ -80,11 +80,12 @@ For future milestones:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Add streak miss details modal and completed task tooltips | 2026-02-17 | 23f2c77e0 | [001-add-streak-miss-details-modal-and-comple](./quick/001-add-streak-miss-details-modal-and-comple/) |
+| 002 | Fix streak calculation bug - streaks not resetting after misses | 2026-02-18 | 77029e5c4 | [002-fix-streak-calculation-bug-streaks-not-r](./quick/002-fix-streak-calculation-bug-streaks-not-r/) |
 
 ## Session Continuity
 
-**Last session:** 2026-02-17
-**Action:** Completed 26-06-PLAN.md (Health schedule type field propagation)
+**Last session:** 2026-02-18
+**Action:** Completed quick-002-PLAN.md (Fix streak calculation bug)
 **Stopped at:** Phase 26 Plan 06 complete
 **Resume file:** `.planning/phases/26-health-schedule-type/26-07-PLAN.md`
 **Next step:** Execute Plan 26-07 (Recent Activity and schedule matching for health schedules)
