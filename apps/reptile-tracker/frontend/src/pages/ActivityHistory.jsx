@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler, HeartPulse, ChevronLeft } from 'lucide-react';
+import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler, HeartPulse, ChevronLeft, ChevronRight } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 import ReptileAvatar from '../components/ReptileAvatar';
 import { Badge } from '@/components/ui/badge';
+import { useModalState } from '@/hooks/useModalState';
+import { ViewLogModal } from '@/components/modals/ViewLogModal';
 import {
   Select,
   SelectContent,
@@ -137,9 +138,38 @@ const ActivityHistory = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Modal state for viewing activity details
+  const { isOpen: viewOpen, modalId, open: openView, close: closeView } = useModalState('view');
+  const [selectedLogType, setSelectedLogType] = useState(null);
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Sync URL state with modal on deep link (when URL has ?view=type:id)
+  useEffect(() => {
+    if (viewOpen && modalId && !selectedLogType) {
+      // Parse modalId format: "type:id" (e.g., "feeding:123")
+      const [type] = modalId.split(':');
+      if (type) {
+        setSelectedLogType(type);
+      }
+    }
+  }, [viewOpen, modalId, selectedLogType]);
+
+  // Handle activity click - open modal
+  const handleActivityClick = (activity) => {
+    setSelectedLogType(activity.logType);
+    // Store as "type:id" so deep linking can restore logType
+    openView(`${activity.logType}:${activity.id}`);
+  };
+
+  // Parse modalId to get actual ID (strip type prefix)
+  const getModalLogId = () => {
+    if (!modalId) return null;
+    const parts = modalId.split(':');
+    return parts.length > 1 ? parts[1] : modalId;
+  };
 
   const fetchData = async () => {
     try {
@@ -198,7 +228,9 @@ const ActivityHistory = () => {
         const primaryCategory = foodItems[0]?.category || 'other';
 
         return {
+          id: f.id,
           type: 'feeding',
+          logType: 'feeding', // For modal
           category: 'feeding',
           subcategory: primaryCategory,
           icon: Utensils,
@@ -223,7 +255,9 @@ const ActivityHistory = () => {
       const weighings = (weighingsRes.data || []).map(w => {
         const reptileFromMap = reptilesMap[w.reptile_id];
         return {
+          id: w.id,
           type: 'weight',
+          logType: 'weight', // For modal
           category: 'health',
           subcategory: 'weight',
           icon: Scale,
@@ -275,7 +309,9 @@ const ActivityHistory = () => {
           }
 
           return {
+            id: h.id,
             type,
+            logType: 'health', // For modal
             category: 'health',
             subcategory,
             icon,
@@ -322,7 +358,9 @@ const ActivityHistory = () => {
           }
 
           return {
+            id: m.id,
             type: 'measurement',
+            logType: 'measurement', // For modal
             category: 'health',
             subcategory: 'measurement',
             icon: Ruler,
@@ -343,7 +381,9 @@ const ActivityHistory = () => {
       const mistings = (mistingsRes.data || []).map(m => {
         const reptileFromMap = reptilesMap[m.reptile_id];
         return {
+          id: m.id,
           type: 'misting',
+          logType: 'misting', // For modal
           category: 'misting',
           subcategory: null,
           icon: Droplets,
@@ -678,10 +718,18 @@ const ActivityHistory = () => {
               const Icon = activity.icon;
 
               return (
-                <Link
+                <div
                   key={`${activity.type}-${activity.timestamp}-${index}`}
-                  to={activity.detailLink}
-                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors group"
+                  onClick={() => handleActivityClick(activity)}
+                  className="flex items-center gap-3 p-4 hover:bg-muted/70 transition-colors group cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleActivityClick(activity);
+                    }
+                  }}
                 >
                   <ReptileAvatar
                     reptile={activity.reptile}
@@ -711,12 +759,15 @@ const ActivityHistory = () => {
                     )}
                   </div>
 
-                  {activity.prominentValue && (
-                    <span className="flex-shrink-0 text-lg font-semibold text-primary tabular-nums">
-                      {activity.prominentValue}
-                    </span>
-                  )}
-                </Link>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {activity.prominentValue && (
+                      <span className="text-lg font-semibold text-primary tabular-nums">
+                        {activity.prominentValue}
+                      </span>
+                    )}
+                    <ChevronRight size={16} className="text-muted-foreground/50" />
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -765,6 +816,27 @@ const ActivityHistory = () => {
           )}
         </>
       )}
+
+      {/* View Log Modal */}
+      <ViewLogModal
+        logId={getModalLogId()}
+        logType={selectedLogType}
+        open={viewOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeView();
+            setSelectedLogType(null);
+          }
+        }}
+        onEdit={() => {
+          // Edit handled in-place by ViewLogModal
+        }}
+        onDelete={() => {
+          closeView();
+          setSelectedLogType(null);
+          fetchData(); // Refresh list after delete
+        }}
+      />
     </div>
   );
 };
