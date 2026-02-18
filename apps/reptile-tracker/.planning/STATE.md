@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 27 - Read-Only Views & UX Polish (3 of 9 plans complete)
-**Plan:** 27-01, 27-02, 27-03 complete, ready for 27-04
+**Phase:** 27 - Read-Only Views & UX Polish (4 of 9 plans complete)
+**Plan:** 27-01, 27-02, 27-03, 27-05 complete, ready for 27-04 or 27-06
 **Status:** In progress
-**Last activity:** 2026-02-18 — Completed 27-02-PLAN.md (View modal components) and 27-03-PLAN.md (CreateLogModal)
-**Progress:** ███░░░░░░ (33% - 3/9 plans complete)
+**Last activity:** 2026-02-18 — Completed 27-05-PLAN.md (Schedule view modal)
+**Progress:** ████░░░░░ (44% - 4/9 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -68,6 +68,8 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - `frontend/src/components/modals/LogViewContent.jsx` - Sectioned content layout (What/When/Notes)
 - `frontend/src/components/modals/CollapsibleNotes.jsx` - Collapsible text component
 - `frontend/src/components/modals/CreateLogModal.jsx` - Left-slide create modal for all log types
+- `frontend/src/components/modals/ViewScheduleModal.jsx` - Right-slide schedule view modal
+- `frontend/src/components/modals/ScheduleViewContent.jsx` - Schedule details sectioned layout
 
 ## Known Tech Debt
 
@@ -93,10 +95,10 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-18
-**Action:** Completed 27-03-PLAN.md (CreateLogModal component)
-**Stopped at:** Phase 27 Plan 03 complete
-**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-04-PLAN.md`
-**Next step:** Execute Plan 27-04 (Create/edit modals for health logs)
+**Action:** Completed 27-05-PLAN.md (Schedule view modal)
+**Stopped at:** Phase 27 Plan 05 complete
+**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-04-PLAN.md` or `27-06-PLAN.md`
+**Next step:** Execute Plan 27-04 (Create/edit modals for health logs) or Plan 27-06 (if exists)
 
 ## Phase 26 Plan Summary
 
@@ -137,11 +139,11 @@ For future milestones:
 - **27-02 (Wave 2):** View modal components (ViewLogModal, LogViewContent, CollapsibleNotes) - COMPLETE
 - **27-03 (Wave 2):** CreateLogModal component - COMPLETE
 - **27-04:** Create/edit modals for health logs
-- **27-05:** Create/edit modals for feeding/misting logs
-- **27-06:** Schedule view modals
-- **27-07:** Schedule create/edit modals
-- **27-08:** Activity history refactor
-- **27-09:** Visual polish (dense spacing, hover states)
+- **27-05 (Wave 3):** Schedule view modals - COMPLETE
+- **27-06:** Schedule create/edit modals
+- **27-07:** Activity history refactor
+- **27-08:** Visual polish (dense spacing, hover states)
+- **27-09:** Final integration
 
 **Key Patterns Established:**
 - Sheet component: side="right" for view modals, side="left" for create/edit
@@ -157,7 +159,9 @@ For future milestones:
 | Sheet defaults to side="right" | 27-01 | View modals slide from right per user constraints | Consistent directional pattern |
 | Simple feeding in CreateLogModal | 27-03 | Complex feedings with food items need full page | Users directed to FeedingLog page for detailed logs |
 | Schema-per-log-type validation | 27-03 | Keeps validation tight to each form variant | Clean separation of concerns |
+| Edit navigates to ScheduleForm page | 27-05 | Schedule forms are complex with many conditional fields | In-place schedule editing deferred to future enhancement |
+| BEHAVIOR section conditional render | 27-05 | Only shows when at least one setting is enabled | Cleaner view for simple schedules |
 
 ---
 
-**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03 complete.
+**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-05 complete.
