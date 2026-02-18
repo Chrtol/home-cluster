@@ -24,6 +24,8 @@ import NextFeedingIndicator from './NextFeedingIndicator';
  * - isCompact: Boolean for compact mode display
  * - onReorder: Drag handlers for reordering { onDragStart, onDragOver, onDrop }
  * - onQuickLog: Handler for task chip clicks (passed to TaskChip)
+ * - onViewSchedule: (scheduleId) => void - callback to open schedule view modal
+ * - onCreateLog: (logType, reptileId, prefill) => void - callback to open create log modal
  * - index: Position for drag-drop
  */
 const ReptileStatusCard = ({
@@ -34,6 +36,8 @@ const ReptileStatusCard = ({
   isCompact = false,
   onReorder = null,
   onQuickLog,
+  onViewSchedule,
+  onCreateLog,
   index = 0,
   healthStatus = null,     // Health status for this reptile
   scheduleInstances = [],  // Schedule instances for next feeding
@@ -271,6 +275,7 @@ const ReptileStatusCard = ({
                   key={task.id || idx}
                   task={task}
                   onQuickLog={onQuickLog}
+                  onViewSchedule={onViewSchedule}
                 />
               ))}
               {todayTasks.length > 3 && (

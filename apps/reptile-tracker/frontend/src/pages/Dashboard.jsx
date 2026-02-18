@@ -1342,6 +1342,8 @@ export default function Dashboard() {
               onQuickLog={handleQuickLog}
               healthStatusData={healthStatusData}
               scheduleInstances={weeklyEvents}
+              onViewSchedule={handleViewSchedule}
+              onCreateLog={handleCreateLog}
             />
           );
         }
