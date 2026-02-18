@@ -1,6 +1,6 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-17
+**Last Updated:** 2026-02-18
 
 ## Project Reference
 
@@ -14,7 +14,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 **Phase:** 26 - Health Schedule Type (6 of 7 plans complete)
 **Plan:** 26-06 complete, ready for 26-07
 **Status:** In progress
-**Last activity:** 2026-02-17 — Completed 26-06-PLAN.md (Health schedule type field propagation)
+**Last activity:** 2026-02-18 — Completed quick task 002: Fix streak calculation bug
 **Progress:** ██████░ (86% - 6/7 plans complete)
 
 **Completed Milestones:**
