@@ -357,7 +357,7 @@ class WeightLog(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="weight_logs")
-    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id], lazy="selectin")
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
@@ -385,7 +385,7 @@ class Measurement(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="measurements")
-    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id], lazy="selectin")
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
@@ -413,7 +413,7 @@ class HealthRecord(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="health_records")
-    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id], lazy="selectin")
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
@@ -434,7 +434,7 @@ class MistingLog(Base):
 
     # Relationships
     reptile = relationship("Reptile", back_populates="misting_logs")
-    logged_by = relationship("User", foreign_keys=[logged_by_user_id])
+    logged_by = relationship("User", foreign_keys=[logged_by_user_id], lazy="selectin")
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
 
 
