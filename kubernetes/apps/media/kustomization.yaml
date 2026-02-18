@@ -35,3 +35,4 @@ resources:
   - ./qui/ks.yaml
   - ./tracearr/ks.yaml
   - ./shelfmark/ks.yaml
+  - ./readmeabook/ks.yaml
