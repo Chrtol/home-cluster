@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 26 - Health Schedule Type (6 of 7 plans complete)
-**Plan:** 26-06 complete, ready for 26-07
+**Phase:** 27 - Read-Only Views & UX Polish (3 of 9 plans complete)
+**Plan:** 27-01, 27-02, 27-03 complete, ready for 27-04
 **Status:** In progress
-**Last activity:** 2026-02-18 — Completed quick task 002: Fix streak calculation bug
-**Progress:** ██████░ (86% - 6/7 plans complete)
+**Last activity:** 2026-02-18 — Completed 27-02-PLAN.md (View modal components) and 27-03-PLAN.md (CreateLogModal)
+**Progress:** ███░░░░░░ (33% - 3/9 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -61,6 +61,14 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - `backend/app/services/health_service.py` - Status derivation
 - `frontend/src/pages/HealthLog.jsx` - Unified logging page
 
+### Modals (Phase 27)
+- `frontend/src/components/ui/sheet.jsx` - Directional slide-in modal component
+- `frontend/src/hooks/useModalState.js` - URL-driven modal state management
+- `frontend/src/components/modals/ViewLogModal.jsx` - Right-slide view modal container
+- `frontend/src/components/modals/LogViewContent.jsx` - Sectioned content layout (What/When/Notes)
+- `frontend/src/components/modals/CollapsibleNotes.jsx` - Collapsible text component
+- `frontend/src/components/modals/CreateLogModal.jsx` - Left-slide create modal for all log types
+
 ## Known Tech Debt
 
 From v1.3:
@@ -85,10 +93,10 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-18
-**Action:** Completed quick-002-PLAN.md (Fix streak calculation bug)
-**Stopped at:** Phase 26 Plan 06 complete
-**Resume file:** `.planning/phases/26-health-schedule-type/26-07-PLAN.md`
-**Next step:** Execute Plan 26-07 (Recent Activity and schedule matching for health schedules)
+**Action:** Completed 27-03-PLAN.md (CreateLogModal component)
+**Stopped at:** Phase 27 Plan 03 complete
+**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-04-PLAN.md`
+**Next step:** Execute Plan 27-04 (Create/edit modals for health logs)
 
 ## Phase 26 Plan Summary
 
@@ -120,6 +128,36 @@ For future milestones:
 | Added MEASUREMENT to CompletionType enum | 26-07 | Required to support measurement logs completing health schedules | Enables measurement schedule completion functionality |
 | Used health_subtype filtering in schedule matcher | 26-07 | Enables precise matching of weight logs to weight health schedules and measurement logs to measurement health schedules | Schedule matcher now supports health schedule type alignment |
 
+## Phase 27 Plan Summary
+
+**Goal:** Replace full-page views with directional slide-in modals and polish UI density.
+
+**Plans:**
+- **27-01 (Wave 1):** Sheet component & modal state hook - COMPLETE
+- **27-02 (Wave 2):** View modal components (ViewLogModal, LogViewContent, CollapsibleNotes) - COMPLETE
+- **27-03 (Wave 2):** CreateLogModal component - COMPLETE
+- **27-04:** Create/edit modals for health logs
+- **27-05:** Create/edit modals for feeding/misting logs
+- **27-06:** Schedule view modals
+- **27-07:** Schedule create/edit modals
+- **27-08:** Activity history refactor
+- **27-09:** Visual polish (dense spacing, hover states)
+
+**Key Patterns Established:**
+- Sheet component: side="right" for view modals, side="left" for create/edit
+- useModalState hook for URL-driven state with deep linking support
+- Spring physics animation (damping=30, stiffness=300)
+
+## Phase 27 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| Spring animation with damping=30, stiffness=300 | 27-01 | Natural feel per research, avoids CSS transition jankiness | Smooth 60fps animations on mobile/desktop |
+| useModalState uses replace:false | 27-01 | Enables browser back/forward to close/reopen modals | Better UX for deep linking and navigation |
+| Sheet defaults to side="right" | 27-01 | View modals slide from right per user constraints | Consistent directional pattern |
+| Simple feeding in CreateLogModal | 27-03 | Complex feedings with food items need full page | Users directed to FeedingLog page for detailed logs |
+| Schema-per-log-type validation | 27-03 | Keeps validation tight to each form variant | Clean separation of concerns |
+
 ---
 
-**Project Status:** Phase 26 execution in progress. Plans 26-01 through 26-06 complete.
+**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03 complete.
