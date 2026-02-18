@@ -470,26 +470,7 @@ async def recalculate_streak(
         and_(~any_schedule_resp_exists, ~any_reptile_resp_exists, is_household_member)
     )
 
-    # Count total completions the user was responsible for (manual schedules only)
-    from sqlalchemy import func
-
-    completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
-    result = await db.execute(
-        select(func.count(ScheduleCompletion.id))
-        .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
-        .join(Reptile, Schedule.reptile_id == Reptile.id)
-        .where(
-            and_(
-                ScheduleCompletion.status.in_(completed_statuses),
-                Schedule.auto_complete_enabled == False,  # Manual schedules only
-                responsibility_filter
-            )
-        )
-    )
-    total_completions = result.scalar() or 0
-
-    # Get recent completions and misses to calculate consecutive misses
-    # Query recent schedule completions (last 10) ordered by date descending
+    # Query ALL completions chronologically (oldest first) to simulate streak evolution
     result = await db.execute(
         select(ScheduleCompletion.status, ScheduleCompletion.scheduled_date)
         .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
@@ -500,34 +481,41 @@ async def recalculate_streak(
                 responsibility_filter
             )
         )
-        .order_by(ScheduleCompletion.scheduled_date.desc())
-        .limit(10)
+        .order_by(ScheduleCompletion.scheduled_date.asc())  # ASC for chronological processing
     )
-    recent_completions = result.all()
+    completions = result.all()
 
-    # Calculate consecutive misses from recent history
-    # Count consecutive MISSED statuses from most recent
+    # Simulate streak evolution chronologically
+    # Missing 2 tasks in a row resets streak to 0
+    streak = 0
     consecutive_misses = 0
-    for row in recent_completions:
+
+    for row in completions:
         if row.status == CompletionStatus.MISSED:
             consecutive_misses += 1
-        else:
-            # Stop counting when we hit a non-missed status
-            break
+            if consecutive_misses >= 2:
+                # Break point - reset streak to 0
+                streak = 0
+                consecutive_misses = 0
+        elif row.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+            # Completion - increment streak and reset miss counter
+            streak += 1
+            consecutive_misses = 0
+        # PENDING status: ignore (shouldn't affect streak calculation)
 
     old_streak = user_streak.current_streak
     old_misses = user_streak.consecutive_misses
 
-    # Update streak
-    user_streak.current_streak = total_completions
+    # Update streak with calculated values
+    user_streak.current_streak = streak
     user_streak.consecutive_misses = consecutive_misses
-    user_streak.longest_streak = max(user_streak.longest_streak, total_completions)
+    user_streak.longest_streak = max(user_streak.longest_streak, streak)
 
     await db.commit()
 
     logger.info(
         f"Recalculated streak for user {user_id}: "
-        f"streak {old_streak} -> {total_completions}, "
+        f"streak {old_streak} -> {streak}, "
         f"misses {old_misses} -> {consecutive_misses}"
     )
 
