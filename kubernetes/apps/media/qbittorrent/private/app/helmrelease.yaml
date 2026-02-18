@@ -78,7 +78,7 @@ spec:
                     - "(ip rule del table 51820; ip -6 rule del table 51820) || true"
             securityContext:
               runAsUser: 0  # Gluetun must run as root
-              runAsGroup: 0 
+              runAsGroup: 0
               runAsNonRoot: false  #  Override pod-level setting
               capabilities: { add: ["NET_ADMIN"] }
               allowPrivilegeEscalation: true
@@ -216,13 +216,14 @@ spec:
         path: /mnt/truenas/cf-nas/data/torrents
         globalMounts:
           - path: /data/torrents
+            readOnly: false
       media-library:
         type: nfs
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/data/media
         globalMounts:
           - path: /data/media
-            readOnly: true
+            readOnly: false
       tmp:
         type: emptyDir
       gluetun-auth:
