@@ -404,23 +404,7 @@ async def recalculate_all_user_streaks(db: AsyncSession) -> int:
             and_(~any_schedule_resp_exists, ~any_reptile_resp_exists, is_household_member)
         )
 
-        # Count completions (manual schedules only)
-        completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
-        result = await db.execute(
-            select(func.count(ScheduleCompletion.id))
-            .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
-            .join(Reptile, Schedule.reptile_id == Reptile.id)
-            .where(
-                and_(
-                    ScheduleCompletion.status.in_(completed_statuses),
-                    Schedule.auto_complete_enabled == False,
-                    responsibility_filter
-                )
-            )
-        )
-        total_completions = result.scalar() or 0
-
-        # Get recent completions to calculate consecutive misses
+        # Query ALL completions chronologically (oldest first) to simulate streak evolution
         result = await db.execute(
             select(ScheduleCompletion.status)
             .join(Schedule, ScheduleCompletion.schedule_id == Schedule.id)
@@ -431,28 +415,38 @@ async def recalculate_all_user_streaks(db: AsyncSession) -> int:
                     responsibility_filter
                 )
             )
-            .order_by(ScheduleCompletion.scheduled_date.desc())
-            .limit(10)
+            .order_by(ScheduleCompletion.scheduled_date.asc())  # ASC for chronological processing
         )
-        recent = result.all()
+        completions = result.all()
 
+        # Simulate streak evolution chronologically
+        # Missing 2 tasks in a row resets streak to 0
+        streak = 0
         consecutive_misses = 0
-        for row in recent:
+
+        for row in completions:
             if row.status == CompletionStatus.MISSED:
                 consecutive_misses += 1
-            else:
-                break
+                if consecutive_misses >= 2:
+                    # Break point - reset streak to 0
+                    streak = 0
+                    consecutive_misses = 0
+            elif row.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+                # Completion - increment streak and reset miss counter
+                streak += 1
+                consecutive_misses = 0
+            # PENDING status: ignore (shouldn't affect streak calculation)
 
         # Update if values changed
-        if user_streak.current_streak != total_completions or user_streak.consecutive_misses != consecutive_misses:
+        if user_streak.current_streak != streak or user_streak.consecutive_misses != consecutive_misses:
             logger.info(
                 f"Recalculating streak for user {user_id}: "
-                f"streak {user_streak.current_streak} -> {total_completions}, "
+                f"streak {user_streak.current_streak} -> {streak}, "
                 f"misses {user_streak.consecutive_misses} -> {consecutive_misses}"
             )
-            user_streak.current_streak = total_completions
+            user_streak.current_streak = streak
             user_streak.consecutive_misses = consecutive_misses
-            user_streak.longest_streak = max(user_streak.longest_streak, total_completions)
+            user_streak.longest_streak = max(user_streak.longest_streak, streak)
             updated_count += 1
 
     if updated_count > 0:
