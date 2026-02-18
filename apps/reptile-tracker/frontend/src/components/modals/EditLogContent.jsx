@@ -229,7 +229,7 @@ export function EditLogContent({
           if (data.record_type === 'bowel_movement') {
             payload.consistency = data.consistency;
           }
-          response = await axios.put(endpoint, payload);
+          response = await axios.patch(endpoint, payload);
           break;
 
         case 'weight':
@@ -380,6 +380,11 @@ export function EditLogContent({
                         <SelectContent>
                           <SelectItem value="observation">General Observation</SelectItem>
                           <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
+                          <SelectItem value="shedding">Shedding</SelectItem>
+                          <SelectItem value="shedding_check">Shedding Check</SelectItem>
+                          <SelectItem value="brumation">Brumation</SelectItem>
+                          <SelectItem value="brumation_check">Brumation Check</SelectItem>
+                          <SelectItem value="bathing">Bathing</SelectItem>
                           <SelectItem value="vet_visit">Vet Visit</SelectItem>
                           <SelectItem value="medication">Medication</SelectItem>
                         </SelectContent>

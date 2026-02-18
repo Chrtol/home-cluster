@@ -721,7 +721,7 @@ const ActivityHistory = () => {
                 <div
                   key={`${activity.type}-${activity.timestamp}-${index}`}
                   onClick={() => handleActivityClick(activity)}
-                  className="flex items-center gap-3 p-4 hover:bg-muted/70 transition-colors group cursor-pointer"
+                  className="flex items-center gap-2 py-2.5 px-3 hover:bg-muted/70 transition-colors group cursor-pointer"
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -737,7 +737,7 @@ const ActivityHistory = () => {
                   />
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                         {activity.reptile_name}
                       </span>

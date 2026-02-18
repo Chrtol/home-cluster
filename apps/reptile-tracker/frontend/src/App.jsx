@@ -30,6 +30,7 @@ import NotificationHistory from './pages/NotificationHistory';
 import Notifications from './pages/Notifications';
 import ActivityHistory from './pages/ActivityHistory';
 import { CelebrationProvider } from './contexts/CelebrationContext';
+import { CreateLogModalProvider } from './contexts/CreateLogModalContext';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -177,7 +178,7 @@ function App() {
             </>
           ) : hasHousehold === true ? (
             // Authenticated with household - normal app
-            <Route element={<Layout user={user} onLogout={handleLogout} />}>
+            <Route element={<CreateLogModalProvider><Layout user={user} onLogout={handleLogout} /></CreateLogModalProvider>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/activity" element={<ActivityHistory />} />
               <Route path="/reptiles" element={<ReptileList />} />

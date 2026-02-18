@@ -13,7 +13,7 @@ export function CollapsibleNotes({ notes, maxLength = 150 }) {
 
   // If no notes or notes are short enough, render plain text
   if (!notes || notes.length <= maxLength) {
-    return <span className="text-sm text-foreground whitespace-pre-wrap">{notes}</span>;
+    return <span className="text-sm text-foreground whitespace-pre-wrap break-words">{notes}</span>;
   }
 
   const truncatedText = notes.slice(0, maxLength).trim() + '...';
@@ -21,10 +21,10 @@ export function CollapsibleNotes({ notes, maxLength = 150 }) {
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       {!isOpen && (
-        <span className="text-sm text-foreground whitespace-pre-wrap">{truncatedText}</span>
+        <span className="text-sm text-foreground whitespace-pre-wrap break-words">{truncatedText}</span>
       )}
       <CollapsibleContent>
-        <span className="text-sm text-foreground whitespace-pre-wrap">{notes}</span>
+        <span className="text-sm text-foreground whitespace-pre-wrap break-words">{notes}</span>
       </CollapsibleContent>
       <CollapsibleTrigger asChild>
         <button

@@ -13,8 +13,8 @@ export function ScheduleViewContent({ schedule, reptile }) {
 
   return (
     <div className="space-y-6 p-6 overflow-y-auto flex-1">
-      {/* SCHEDULE TYPE Section */}
-      <ScheduleTypeSection schedule={schedule} />
+      {/* SCHEDULE TYPE Section - includes reptile on same row */}
+      <ScheduleTypeSection schedule={schedule} reptile={reptile} />
 
       {/* TIMING Section */}
       <TimingSection schedule={schedule} />
@@ -22,8 +22,8 @@ export function ScheduleViewContent({ schedule, reptile }) {
       {/* BEHAVIOR Section */}
       <BehaviorSection schedule={schedule} />
 
-      {/* REPTILE Section */}
-      {reptile && <ReptileSection schedule={schedule} reptile={reptile} />}
+      {/* DETAILS Section - metadata only */}
+      <DetailsSection schedule={schedule} />
 
       {/* NOTES Section - only if notes exist */}
       {schedule.notes && (
@@ -59,9 +59,9 @@ function Field({ label, children, prominent = false }) {
 }
 
 /**
- * SCHEDULE TYPE Section - displays type and type-specific details
+ * SCHEDULE TYPE Section - displays type badge and reptile on same row, plus type-specific details
  */
-function ScheduleTypeSection({ schedule }) {
+function ScheduleTypeSection({ schedule, reptile }) {
   const getScheduleTypeBadge = (type) => {
     const typeConfig = {
       feeding: { label: 'Feeding', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
@@ -127,14 +127,28 @@ function ScheduleTypeSection({ schedule }) {
 
   return (
     <section>
-      <SectionHeader>Schedule Type</SectionHeader>
-      <div className="space-y-3">
-        {/* Type Badge */}
+      {/* Two-column layout: Schedule Type (left) + Reptile (right) */}
+      <div className="flex items-start justify-between">
+        {/* Left column: Schedule Type */}
         <div>
+          <SectionHeader>Schedule Type</SectionHeader>
           <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${typeBadge.color}`}>
             {typeBadge.label}
           </span>
         </div>
+        {/* Right column: Reptile (content left-aligned within right-positioned column) */}
+        {reptile && (
+          <div>
+            <SectionHeader>Reptile</SectionHeader>
+            <ReptileNameWithAvatar
+              reptile={reptile}
+              size="sm"
+              showSpecies={true}
+            />
+          </div>
+        )}
+      </div>
+      <div className="space-y-3 mt-3">
 
         {/* Feeding-specific: Food Category */}
         {schedule.schedule_type === 'feeding' && schedule.food_category && (
@@ -388,22 +402,13 @@ function BehaviorSection({ schedule }) {
 }
 
 /**
- * REPTILE Section - displays reptile info and schedule metadata
+ * DETAILS Section - displays schedule metadata (created, modified, status)
  */
-function ReptileSection({ schedule, reptile }) {
+function DetailsSection({ schedule }) {
   return (
     <section>
-      <SectionHeader>Reptile</SectionHeader>
+      <SectionHeader>Details</SectionHeader>
       <div className="space-y-3">
-        {/* Reptile with avatar */}
-        <div className="py-1">
-          <ReptileNameWithAvatar
-            reptile={reptile}
-            size="md"
-            showSpecies={true}
-          />
-        </div>
-
         {/* Created date */}
         {schedule.created_at && (
           <Field label="Created">

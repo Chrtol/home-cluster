@@ -17,7 +17,7 @@ import ReptileStatusCard from './ReptileStatusCard';
  * - onQuickLog: Handler for task chip clicks (passed to cards)
  * - healthStatusData: { reptile_id: health_status } - batch health status data from Dashboard
  * - scheduleInstances: All schedule instances for next feeding calculation
- * - onViewSchedule: (scheduleId) => void - callback to open schedule view modal
+ * - onViewInstance: (instanceId) => void - callback to open instance view modal
  * - onCreateLog: (logType, reptileId, prefill) => void - callback to open create log modal
  */
 const ReptileStatusCards = ({
@@ -26,7 +26,7 @@ const ReptileStatusCards = ({
   onQuickLog,
   healthStatusData = {},     // { reptile_id: health_status }
   scheduleInstances = [],    // All schedule instances for next feeding
-  onViewSchedule,            // Modal callback for viewing schedules
+  onViewInstance,            // Modal callback for viewing instances
   onCreateLog,               // Modal callback for creating logs
 }) => {
   const [reptiles, setReptiles] = useState([]);
@@ -261,7 +261,7 @@ const ReptileStatusCards = ({
               onDrop: handleDrop
             }}
             onQuickLog={onQuickLog}
-            onViewSchedule={onViewSchedule}
+            onViewInstance={onViewInstance}
             onCreateLog={onCreateLog}
             index={index}
             healthStatus={healthStatusData[reptile.id] || null}

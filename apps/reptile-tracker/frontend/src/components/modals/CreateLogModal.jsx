@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Bug, Leaf, Utensils, Plus, X, Heart } from 'lucide-react';
 
 import {
   Sheet,
@@ -20,91 +20,174 @@ import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 
-// Base validation schemas for each log type
-const feedingBaseSchema = z.object({
+// ============================================================================
+// VALIDATION SCHEMAS
+// ============================================================================
+
+const feedingSchema = z.object({
   reptile_id: z.number().min(1, 'Please select a reptile'),
   fed_date: z.string().min(1, 'Date is required'),
   fed_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
   notes: z.string().optional(),
+  include_insects: z.boolean(),
+  include_salad: z.boolean(),
+  include_prepared: z.boolean(),
+  insect_items: z.array(z.object({
+    id: z.number(),
+    food_id: z.string(),
+    quantity: z.number().min(1),
+    supplement_ids: z.array(z.number())
+  })),
+  salad_components: z.array(z.number()),
+  salad_supplements: z.array(z.number()),
+  prepared_items: z.array(z.object({
+    id: z.number(),
+    food_id: z.string(),
+    quantity: z.number().min(1),
+    supplement_ids: z.array(z.number())
+  })),
+  global_supplements: z.array(z.number())
+}).refine(data => data.include_insects || data.include_salad || data.include_prepared, {
+  message: 'Please select at least one feeding type',
+  path: ['include_insects']
+}).refine(data => !data.include_insects || data.insect_items.length > 0, {
+  message: 'Please add at least one insect item or uncheck Insects',
+  path: ['insect_items']
+}).refine(data => !data.include_salad || data.salad_components.length > 0, {
+  message: 'Please select at least one salad component or uncheck Salad',
+  path: ['salad_components']
+}).refine(data => !data.include_prepared || data.prepared_items.length > 0, {
+  message: 'Please add at least one prepared food item or uncheck Other Food',
+  path: ['prepared_items']
 });
 
-const mistingBaseSchema = z.object({
+const mistingSchema = z.object({
   reptile_id: z.number().min(1, 'Please select a reptile'),
   misted_at_date: z.string().min(1, 'Date is required'),
   misted_at_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
   notes: z.string().optional(),
 });
 
-const healthBaseSchema = z.object({
+const healthSchema = z.object({
   reptile_id: z.number().min(1, 'Please select a reptile'),
   log_date: z.string().min(1, 'Date is required'),
   log_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
-  record_type: z.string().min(1, 'Please select a record type'),
-  title: z.string().min(1, 'Title is required'),
+  health_log_type: z.enum(['weight', 'health', 'shedding', 'brumation', 'bathing', 'measurement']),
+  // Weight fields
+  weight_grams: z.string().optional(),
+  // Health record fields
+  record_type: z.string().optional(),
+  title: z.string().optional(),
   consistency: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const weightBaseSchema = z.object({
-  reptile_id: z.number().min(1, 'Please select a reptile'),
-  measured_date: z.string().min(1, 'Date is required'),
-  measured_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
-  weight_grams: z.string().min(1, 'Weight is required').refine(val => parseFloat(val) > 0, 'Weight must be greater than 0'),
-  notes: z.string().optional(),
-});
-
-const measurementBaseSchema = z.object({
-  reptile_id: z.number().min(1, 'Please select a reptile'),
-  measured_date: z.string().min(1, 'Date is required'),
-  measured_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
-  measurement_type: z.string().min(1, 'Please select a measurement type'),
-  measurement_value: z.string().min(1, 'Value is required').refine(val => parseFloat(val) > 0, 'Value must be greater than 0'),
-  measurement_unit: z.string().min(1, 'Please select a unit'),
+  // Shedding/Brumation fields
+  event_subtype: z.string().optional(),
+  // Measurement fields
+  measurement_type: z.string().optional(),
+  measurement_value: z.string().optional(),
+  measurement_unit: z.string().optional(),
   custom_label: z.string().optional(),
   notes: z.string().optional(),
-}).refine(data => {
-  if (data.measurement_type === 'custom') {
+}).refine((data) => {
+  if (data.health_log_type === 'weight') {
+    return data.weight_grams && parseFloat(data.weight_grams) > 0;
+  }
+  return true;
+}, {
+  message: "Weight is required",
+  path: ['weight_grams'],
+}).refine((data) => {
+  if (data.health_log_type === 'health') {
+    return data.record_type && data.title && data.title.length > 0;
+  }
+  return true;
+}, {
+  message: "Record type and title are required",
+  path: ['title'],
+}).refine((data) => {
+  if (data.health_log_type === 'shedding' || data.health_log_type === 'brumation') {
+    return data.event_subtype && data.event_subtype.length > 0;
+  }
+  return true;
+}, {
+  message: "Please select an option",
+  path: ['event_subtype'],
+}).refine((data) => {
+  if (data.health_log_type === 'measurement') {
+    return data.measurement_type && data.measurement_value && data.measurement_unit;
+  }
+  return true;
+}, {
+  message: "Measurement type, value, and unit are required",
+  path: ['measurement_type'],
+}).refine((data) => {
+  if (data.health_log_type === 'measurement' && data.measurement_type === 'custom') {
     return data.custom_label && data.custom_label.length > 0;
   }
   return true;
 }, {
-  message: 'Custom label is required for custom measurements',
+  message: "Custom label is required for custom measurements",
   path: ['custom_label'],
 });
 
 // Schema map by log type
 const schemas = {
-  feeding: feedingBaseSchema,
-  misting: mistingBaseSchema,
-  health: healthBaseSchema,
-  weight: weightBaseSchema,
-  measurement: measurementBaseSchema,
+  feeding: feedingSchema,
+  misting: mistingSchema,
+  health: healthSchema,
+  weight: healthSchema,
+  measurement: healthSchema,
 };
 
-// Get current date and time in local format
+// ============================================================================
+// HELPERS
+// ============================================================================
+
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 
-// Title format for display
 const LOG_TYPE_TITLES = {
   feeding: 'Log Feeding',
   misting: 'Log Misting',
-  health: 'Log Health Record',
+  health: 'Log Health',
   weight: 'Log Weight',
   measurement: 'Log Measurement',
 };
 
+// Build ISO datetime with timezone offset
+const buildDateTimeISO = (date, time) => {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+  const localDate = new Date(year, month - 1, day, hour, minute, 0);
+
+  const tzOffset = -localDate.getTimezoneOffset();
+  const offsetHours = Math.floor(Math.abs(tzOffset) / 60);
+  const offsetMinutes = Math.abs(tzOffset) % 60;
+  const offsetSign = tzOffset >= 0 ? '+' : '-';
+  const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+
+  return `${date}T${time}:00${offsetString}`;
+};
+
+// Generate auto-title for shedding/brumation
+const getAutoTitle = (logType, subtype) => {
+  if (logType === 'shedding') {
+    if (subtype === 'start') return 'Started shedding';
+    if (subtype === 'complete') return 'Shed complete';
+    if (subtype === 'check_no') return 'Shedding Check: No';
+  }
+  if (logType === 'brumation') {
+    return subtype === 'start' ? 'Started brumation' : 'Ended brumation';
+  }
+  return '';
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 /**
  * CreateLogModal - Left-slide modal for creating new log entries
- *
- * @param {string} logType - The type of log: "feeding" | "misting" | "health" | "weight" | "measurement"
- * @param {number} reptileId - Pre-selected reptile ID (optional)
- * @param {number} scheduleId - Schedule ID for attribution (optional)
- * @param {boolean} open - Controlled open state
- * @param {function} onOpenChange - Callback for open state changes
- * @param {function} onSuccess - Callback on successful create, receives the new log data
- * @param {function} onCancel - Callback on cancel
- * @param {object} prefill - Pre-fill values from schedule (health_subtype, measurement_type, etc.)
+ * Full-featured modal matching the original log pages
  */
 export function CreateLogModal({
   logType = 'feeding',
@@ -114,70 +197,103 @@ export function CreateLogModal({
   onOpenChange,
   onSuccess,
   onCancel,
-  prefill = {},
+  prefill,
 }) {
+  const safePrefill = prefill ?? {};
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [reptiles, setReptiles] = useState([]);
+  const [foods, setFoods] = useState([]);
+  const [supplements, setSupplements] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Get the appropriate schema for this log type
-  const schema = schemas[logType] || feedingBaseSchema;
+  // Health status for shedding/brumation state validation
+  const [healthStatus, setHealthStatus] = useState(null);
+  const [healthStatusLoading, setHealthStatusLoading] = useState(false);
 
-  // Build default values based on log type
+  // Supplement rotation suggestions
+  const [suggestedSupplements, setSuggestedSupplements] = useState([]);
+  const [showSuggestion, setShowSuggestion] = useState(false);
+  const [supplementsPreFilled, setSupplementsPreFilled] = useState(false);
+  const [originalPreFilledSupplements, setOriginalPreFilledSupplements] = useState([]);
+
+  // Determine effective log type for schema selection
+  const effectiveLogType = (logType === 'weight' || logType === 'measurement') ? 'health' : logType;
+  const schema = schemas[effectiveLogType] || feedingSchema;
+
+  // ============================================================================
+  // FORM INITIALIZATION
+  // ============================================================================
+
   const getDefaultValues = () => {
-    const now = {
-      date: getCurrentDate(),
-      time: getCurrentTime(),
-    };
+    const now = { date: getCurrentDate(), time: getCurrentTime() };
+    const baseReptileId = reptileId || 0;
 
-    const baseDefaults = {
-      reptile_id: reptileId || 0,
-      notes: prefill.notes || '',
-    };
-
-    switch (logType) {
-      case 'feeding':
-        return {
-          ...baseDefaults,
-          fed_date: prefill.date || now.date,
-          fed_time: prefill.time || now.time,
-        };
-      case 'misting':
-        return {
-          ...baseDefaults,
-          misted_at_date: prefill.date || now.date,
-          misted_at_time: prefill.time || now.time,
-        };
-      case 'health':
-        return {
-          ...baseDefaults,
-          log_date: prefill.date || now.date,
-          log_time: prefill.time || now.time,
-          record_type: prefill.record_type || prefill.health_subtype || 'observation',
-          title: prefill.title || '',
-          consistency: prefill.consistency || 'normal',
-        };
-      case 'weight':
-        return {
-          ...baseDefaults,
-          measured_date: prefill.date || now.date,
-          measured_time: prefill.time || now.time,
-          weight_grams: prefill.weight_grams || '',
-        };
-      case 'measurement':
-        return {
-          ...baseDefaults,
-          measured_date: prefill.date || now.date,
-          measured_time: prefill.time || now.time,
-          measurement_type: prefill.measurement_type || '',
-          measurement_value: prefill.measurement_value || '',
-          measurement_unit: prefill.measurement_unit || '',
-          custom_label: prefill.custom_label || '',
-        };
-      default:
-        return baseDefaults;
+    if (effectiveLogType === 'feeding') {
+      // Extract supplement IDs from objects if needed (schedule instances pass objects)
+      let supplementIds = [];
+      if (safePrefill.supplements && Array.isArray(safePrefill.supplements)) {
+        supplementIds = safePrefill.supplements.map(s => typeof s === 'object' ? s.id : s);
+      }
+      return {
+        reptile_id: baseReptileId,
+        fed_date: safePrefill.date || now.date,
+        fed_time: safePrefill.time || now.time,
+        notes: safePrefill.notes || '',
+        include_insects: true,
+        include_salad: false,
+        include_prepared: false,
+        insect_items: [],
+        salad_components: [],
+        salad_supplements: [],
+        prepared_items: [],
+        global_supplements: supplementIds,
+      };
     }
+
+    if (effectiveLogType === 'misting') {
+      return {
+        reptile_id: baseReptileId,
+        misted_at_date: safePrefill.date || now.date,
+        misted_at_time: safePrefill.time || now.time,
+        notes: safePrefill.notes || '',
+      };
+    }
+
+    // Health (includes weight, measurement, shedding, brumation, bathing)
+    let healthLogType = 'weight';
+    if (logType === 'weight') healthLogType = 'weight';
+    else if (logType === 'measurement') healthLogType = 'measurement';
+    else if (safePrefill.record_type === 'shedding_check' || safePrefill.health_subtype === 'shedding_check') healthLogType = 'shedding';
+    else if (safePrefill.record_type === 'brumation_check' || safePrefill.health_subtype === 'brumation_check') healthLogType = 'brumation';
+    else if (safePrefill.record_type === 'bathing' || safePrefill.health_subtype === 'bathing') healthLogType = 'bathing';
+    else if (safePrefill.record_type || safePrefill.health_subtype) {
+      // Map health_record subtype to health log type
+      const subtype = safePrefill.health_subtype || safePrefill.record_type;
+      if (['weight'].includes(subtype)) healthLogType = 'weight';
+      else if (['measurement'].includes(subtype)) healthLogType = 'measurement';
+      else if (['shedding_check'].includes(subtype)) healthLogType = 'shedding';
+      else if (['brumation_check'].includes(subtype)) healthLogType = 'brumation';
+      else if (['bathing'].includes(subtype)) healthLogType = 'bathing';
+      else healthLogType = 'health';
+    }
+
+    return {
+      reptile_id: baseReptileId,
+      log_date: safePrefill.date || now.date,
+      log_time: safePrefill.time || now.time,
+      health_log_type: healthLogType,
+      weight_grams: safePrefill.weight_grams || '',
+      record_type: safePrefill.record_type || 'observation',
+      title: safePrefill.title || '',
+      consistency: safePrefill.consistency || 'normal',
+      event_subtype: '',
+      measurement_type: safePrefill.measurement_type || '',
+      measurement_value: safePrefill.measurement_value || '',
+      measurement_unit: safePrefill.measurement_unit || '',
+      custom_label: safePrefill.custom_label || '',
+      notes: safePrefill.notes || '',
+    };
   };
 
   const form = useForm({
@@ -186,48 +302,208 @@ export function CreateLogModal({
     mode: 'onBlur',
   });
 
-  // Fetch reptiles on mount
+  // Field arrays for feeding
+  const { fields: insectFields, append: appendInsect, remove: removeInsect } = useFieldArray({
+    control: form.control,
+    name: 'insect_items'
+  });
+
+  const { fields: preparedFields, append: appendPrepared, remove: removePrepared } = useFieldArray({
+    control: form.control,
+    name: 'prepared_items'
+  });
+
+  // Watch values
+  const watchReptileId = useWatch({ control: form.control, name: 'reptile_id' });
+  const watchIncludeInsects = useWatch({ control: form.control, name: 'include_insects' });
+  const watchIncludeSalad = useWatch({ control: form.control, name: 'include_salad' });
+  const watchIncludePrepared = useWatch({ control: form.control, name: 'include_prepared' });
+  const healthLogType = useWatch({ control: form.control, name: 'health_log_type' });
+  const measurementType = useWatch({ control: form.control, name: 'measurement_type' });
+  const recordType = useWatch({ control: form.control, name: 'record_type' });
+  const watchFedDate = useWatch({ control: form.control, name: 'fed_date' });
+
+  // ============================================================================
+  // DATA FETCHING
+  // ============================================================================
+
+  // Fetch initial data when modal opens
   useEffect(() => {
     if (!open) return;
 
-    const fetchReptiles = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('/api/reptiles');
-        setReptiles(response.data);
+        const requests = [axios.get('/api/reptiles')];
 
-        // Set default reptile if provided or use first available
+        if (effectiveLogType === 'feeding') {
+          requests.push(axios.get('/api/foods'));
+          requests.push(axios.get('/api/supplements'));
+        }
+
+        const responses = await Promise.all(requests);
+        setReptiles(responses[0].data);
+
+        if (effectiveLogType === 'feeding') {
+          setFoods(responses[1].data);
+          setSupplements(responses[2].data);
+        }
+
+        // Set default reptile
         const currentReptileId = form.getValues('reptile_id');
         if (!currentReptileId || currentReptileId === 0) {
           if (reptileId) {
             form.setValue('reptile_id', reptileId);
-          } else if (response.data.length > 0) {
-            form.setValue('reptile_id', response.data[0].id);
+          } else if (responses[0].data.length > 0) {
+            form.setValue('reptile_id', responses[0].data[0].id);
           }
         }
       } catch (err) {
-        console.error('Failed to fetch reptiles:', err);
-        setError('Failed to load reptiles');
+        console.error('Failed to fetch data:', err);
+        setError('Failed to load data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReptiles();
-  }, [open, reptileId]);
+    fetchData();
+  }, [open, effectiveLogType, reptileId]);
+
+  // Refetch foods when reptile changes (for reptile-specific favorites)
+  useEffect(() => {
+    if (!open || effectiveLogType !== 'feeding' || !watchReptileId) return;
+
+    const refetchFoods = async () => {
+      try {
+        const response = await axios.get(`/api/foods?reptile_id=${watchReptileId}`);
+        setFoods(response.data);
+      } catch (err) {
+        console.error('Failed to refetch foods:', err);
+      }
+    };
+    refetchFoods();
+  }, [watchReptileId, open, effectiveLogType]);
+
+  // Fetch health status for shedding/brumation validation
+  useEffect(() => {
+    if (!open || effectiveLogType !== 'health' || !watchReptileId || watchReptileId === 0) {
+      setHealthStatus(null);
+      return;
+    }
+
+    const fetchHealthStatus = async () => {
+      setHealthStatusLoading(true);
+      try {
+        const response = await axios.get(`/api/health/status/${watchReptileId}`);
+        setHealthStatus(response.data);
+      } catch (err) {
+        console.error('Failed to fetch health status:', err);
+        setHealthStatus(null);
+      } finally {
+        setHealthStatusLoading(false);
+      }
+    };
+
+    fetchHealthStatus();
+  }, [watchReptileId, open, effectiveLogType]);
 
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
       form.reset(getDefaultValues());
       setError('');
+      setHealthStatus(null);
+      setSuggestedSupplements([]);
+      setShowSuggestion(false);
+
+      // Check for pre-filled supplements from prefill prop
+      if (effectiveLogType === 'feeding' && safePrefill.supplements && safePrefill.supplements.length > 0) {
+        // Extract IDs from objects if needed (schedule instances pass objects)
+        const supplementIds = safePrefill.supplements.map(s => typeof s === 'object' ? s.id : s);
+        setSupplementsPreFilled(true);
+        setOriginalPreFilledSupplements(supplementIds);
+      } else {
+        setSupplementsPreFilled(false);
+        setOriginalPreFilledSupplements([]);
+      }
     }
   }, [open, logType, reptileId, prefill]);
 
-  // Auto-set default unit for measurement type
-  const measurementType = form.watch('measurement_type');
+  // Fetch supplement suggestions from rotation rules
   useEffect(() => {
-    if (logType === 'measurement' && measurementType && !form.getValues('measurement_unit')) {
+    if (!open || effectiveLogType !== 'feeding' || !watchReptileId || supplementsPreFilled) {
+      return;
+    }
+
+    const fetchSuggestion = async () => {
+      try {
+        // Determine food category based on what's enabled
+        let foodCategory = null;
+        if (watchIncludeInsects && !watchIncludeSalad && !watchIncludePrepared) {
+          foodCategory = 'insects';
+        } else if (watchIncludeSalad && !watchIncludeInsects && !watchIncludePrepared) {
+          foodCategory = 'salad';
+        } else if (watchIncludeInsects || watchIncludeSalad || watchIncludePrepared) {
+          foodCategory = 'mixed';
+        }
+
+        if (foodCategory) {
+          const response = await axios.get(
+            `/api/feeding-rotations/reptile/${watchReptileId}/calculate`,
+            { params: { food_category: foodCategory, feeding_date: watchFedDate } }
+          );
+
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            const suggestionsWithSupplements = response.data
+              .map(rotation => {
+                const supplement = supplements.find(s => s.id === rotation.supplement_id);
+                return supplement ? { ...rotation, supplement } : null;
+              })
+              .filter(Boolean);
+
+            if (suggestionsWithSupplements.length > 0) {
+              setSuggestedSupplements(suggestionsWithSupplements);
+              setShowSuggestion(true);
+            } else {
+              setSuggestedSupplements([]);
+              setShowSuggestion(false);
+            }
+          } else {
+            setSuggestedSupplements([]);
+            setShowSuggestion(false);
+          }
+        }
+      } catch (error) {
+        console.debug('No rotation suggestion:', error);
+        setSuggestedSupplements([]);
+        setShowSuggestion(false);
+      }
+    };
+
+    fetchSuggestion();
+  }, [open, effectiveLogType, watchReptileId, watchIncludeInsects, watchIncludeSalad, watchIncludePrepared, supplements, watchFedDate, supplementsPreFilled]);
+
+  // Apply all suggested supplements
+  const applyAllSuggestedSupplements = () => {
+    const currentSupplements = form.getValues('global_supplements') || [];
+    const newSupplementIds = suggestedSupplements
+      .map(s => s.supplement_id)
+      .filter(id => !currentSupplements.includes(id));
+
+    if (newSupplementIds.length > 0) {
+      form.setValue('global_supplements', [...currentSupplements, ...newSupplementIds]);
+    }
+    setShowSuggestion(false);
+  };
+
+  // Dismiss suggestion
+  const dismissSuggestion = () => {
+    setShowSuggestion(false);
+  };
+
+  // Auto-set default unit for measurement type
+  useEffect(() => {
+    if (effectiveLogType === 'health' && healthLogType === 'measurement' && measurementType && !form.getValues('measurement_unit')) {
       const unitDefaults = {
         svl: 'cm',
         total_length: 'cm',
@@ -240,7 +516,106 @@ export function CreateLogModal({
         form.setValue('measurement_unit', defaultUnit);
       }
     }
-  }, [measurementType, logType]);
+  }, [measurementType, healthLogType, effectiveLogType]);
+
+  // Auto-select valid shedding/brumation option when only one is available
+  useEffect(() => {
+    if (effectiveLogType !== 'health' || !healthStatus) return;
+
+    if (healthLogType === 'shedding') {
+      const canStart = !healthStatus.is_shedding;
+      const canComplete = healthStatus.is_shedding;
+      if (canComplete && !canStart) {
+        form.setValue('event_subtype', 'complete');
+      } else if (canStart && !canComplete) {
+        form.setValue('event_subtype', 'start');
+      }
+    }
+
+    if (healthLogType === 'brumation') {
+      const canStart = !healthStatus.is_brumating;
+      const canEnd = healthStatus.is_brumating;
+      if (canEnd && !canStart) {
+        form.setValue('event_subtype', 'end');
+      } else if (canStart && !canEnd) {
+        form.setValue('event_subtype', 'start');
+      }
+    }
+  }, [healthLogType, healthStatus, effectiveLogType]);
+
+  // ============================================================================
+  // FEEDING HELPERS
+  // ============================================================================
+
+  // Sort foods by favorites
+  const sortByFavorites = (foodList) => {
+    return [...foodList].sort((a, b) => {
+      const aReptileFav = a.is_reptile_favorite || false;
+      const bReptileFav = b.is_reptile_favorite || false;
+      if (aReptileFav !== bReptileFav) return bReptileFav ? 1 : -1;
+      if (a.is_favorite !== b.is_favorite) return b.is_favorite ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  const insectFoods = sortByFavorites(foods.filter(f => f.category === 'insect' || f.category === 'worms'));
+  const saladFoods = sortByFavorites(foods.filter(f => f.category === 'vegetable' || f.category === 'fruit'));
+  const preparedFoods = sortByFavorites(
+    foods.filter(f =>
+      (f.category === 'prepared' || f.category === 'frozen_animal' || f.category === 'live_rodent' ||
+       f.category === 'fish_seafood' || f.category === 'eggs' || f.category === 'other') &&
+      f.name !== 'Salad'
+    )
+  );
+
+  // Toggle reptile favorite
+  const toggleReptileFavorite = async (foodId) => {
+    if (!watchReptileId) return;
+
+    const food = foods.find(f => f.id === parseInt(foodId));
+    if (!food) return;
+
+    const isCurrentlyFavorite = food.is_reptile_favorite || false;
+
+    try {
+      if (isCurrentlyFavorite) {
+        await axios.delete(`/api/reptiles/${watchReptileId}/favorite-foods/${foodId}`);
+      } else {
+        await axios.post(`/api/reptiles/${watchReptileId}/favorite-foods/${foodId}`);
+      }
+
+      setFoods(foods.map(f =>
+        f.id === parseInt(foodId) ? { ...f, is_reptile_favorite: !isCurrentlyFavorite } : f
+      ));
+    } catch (err) {
+      console.error('Failed to toggle reptile favorite:', err);
+    }
+  };
+
+  // ============================================================================
+  // HEALTH HELPERS
+  // ============================================================================
+
+  const canStartShedding = !healthStatus?.is_shedding;
+  const canCompleteShedding = healthStatus?.is_shedding;
+  const canStartBrumation = !healthStatus?.is_brumating;
+  const canEndBrumation = healthStatus?.is_brumating;
+
+  const formatCurrentStatus = () => {
+    if (!healthStatus) return null;
+    const parts = [];
+    if (healthStatus.is_shedding) {
+      parts.push(healthStatus.days_shedding ? `Shedding for ${healthStatus.days_shedding} days` : 'Shedding');
+    }
+    if (healthStatus.is_brumating) {
+      parts.push(healthStatus.days_brumating ? `Brumating for ${healthStatus.days_brumating} days` : 'Brumating');
+    }
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+
+  // ============================================================================
+  // FORM SUBMISSION
+  // ============================================================================
 
   const handleSubmit = async (data) => {
     setError('');
@@ -248,91 +623,152 @@ export function CreateLogModal({
 
     try {
       let response;
-      let payload;
 
-      // Build datetime string with timezone offset
-      const buildDateTimeISO = (date, time) => {
-        const [year, month, day] = date.split('-').map(Number);
-        const [hour, minute] = time.split(':').map(Number);
-        const localDate = new Date(year, month - 1, day, hour, minute, 0);
+      if (effectiveLogType === 'feeding') {
+        const fedAtISO = buildDateTimeISO(data.fed_date, data.fed_time);
 
-        const tzOffset = -localDate.getTimezoneOffset();
-        const offsetHours = Math.floor(Math.abs(tzOffset) / 60);
-        const offsetMinutes = Math.abs(tzOffset) % 60;
-        const offsetSign = tzOffset >= 0 ? '+' : '-';
-        const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+        let payload = {
+          reptile_id: data.reptile_id,
+          fed_at: fedAtISO,
+          notes: data.notes || '',
+          is_salad: data.include_salad,
+          foods: [],
+          supplements: data.global_supplements,
+          salad_components: []
+        };
 
-        return `${date}T${time}:00${offsetString}`;
-      };
+        // Add insect foods
+        if (data.include_insects) {
+          payload.foods.push(...data.insect_items.map(item => ({
+            food_id: parseInt(item.food_id),
+            quantity: item.quantity,
+            supplement_ids: item.supplement_ids || []
+          })));
+        }
 
-      switch (logType) {
-        case 'feeding':
-          // Simple feeding log (no food items - just timestamp)
-          // Note: For complex feedings with food items, users should use the full FeedingLog page
-          payload = {
-            reptile_id: data.reptile_id,
-            fed_at: buildDateTimeISO(data.fed_date, data.fed_time),
-            notes: data.notes || '',
-            is_salad: false,
-            foods: [],
-            supplements: [],
-            salad_components: [],
-          };
-          response = await axios.post('/api/feedings', payload);
-          break;
+        // Add prepared foods
+        if (data.include_prepared) {
+          payload.foods.push(...data.prepared_items.map(item => ({
+            food_id: parseInt(item.food_id),
+            quantity: item.quantity,
+            supplement_ids: item.supplement_ids || []
+          })));
+        }
 
-        case 'misting':
-          payload = {
-            reptile_id: data.reptile_id,
-            misted_at: new Date(`${data.misted_at_date}T${data.misted_at_time}`).toISOString(),
-            notes: data.notes || null,
-          };
-          response = await axios.post('/api/misting', payload);
-          break;
-
-        case 'health':
-          payload = {
-            reptile_id: data.reptile_id,
-            record_type: data.record_type,
-            title: data.title,
-            description: data.notes || null,
-            date: new Date(`${data.log_date}T${data.log_time}`).toISOString(),
-          };
-          if (data.record_type === 'bowel_movement') {
-            payload.consistency = data.consistency;
+        // Add salad
+        if (data.include_salad) {
+          const saladFood = foods.find(f => f.name === 'Salad');
+          if (!saladFood) {
+            setError("Salad food item not found. Please create it in Food Management.");
+            setSubmitting(false);
+            return;
           }
-          response = await axios.post('/api/health', payload);
-          break;
+          payload.foods.push({
+            food_id: saladFood.id,
+            quantity: 1,
+            supplement_ids: data.salad_supplements || []
+          });
+          payload.salad_components = data.salad_components;
+        }
 
-        case 'weight':
-          payload = {
+        response = await axios.post('/api/feedings', payload);
+      } else if (effectiveLogType === 'misting') {
+        const payload = {
+          reptile_id: data.reptile_id,
+          misted_at: new Date(`${data.misted_at_date}T${data.misted_at_time}`).toISOString(),
+          notes: data.notes || null,
+        };
+        response = await axios.post('/api/misting', payload);
+      } else if (effectiveLogType === 'health') {
+        const dateTimeString = `${data.log_date}T${data.log_time}`;
+
+        if (data.health_log_type === 'weight') {
+          response = await axios.post('/api/weight', {
             reptile_id: data.reptile_id,
             weight_grams: parseFloat(data.weight_grams),
-            measured_at: new Date(`${data.measured_date}T${data.measured_time}`).toISOString(),
+            measured_at: new Date(dateTimeString).toISOString(),
             notes: data.notes || null,
-          };
-          response = await axios.post('/api/weight', payload);
-          break;
-
-        case 'measurement':
-          payload = {
+          });
+        } else if (data.health_log_type === 'measurement') {
+          response = await axios.post('/api/measurements', {
             reptile_id: data.reptile_id,
             measurement_type: data.measurement_type,
             value: parseFloat(data.measurement_value),
             unit: data.measurement_unit,
             custom_label: data.measurement_type === 'custom' ? data.custom_label : null,
-            measured_at: new Date(`${data.measured_date}T${data.measured_time}`).toISOString(),
+            measured_at: new Date(dateTimeString).toISOString(),
             notes: data.notes || null,
+          });
+        } else if (data.health_log_type === 'shedding') {
+          if (data.event_subtype === 'check_no') {
+            response = await axios.post('/api/health', {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding_check',
+              title: 'Shedding Check: No',
+              description: data.notes || null,
+              date: new Date(dateTimeString).toISOString(),
+            });
+          } else if (data.event_subtype === 'start') {
+            // Create shedding check: Yes AND shedding start
+            await axios.post('/api/health', {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding_check',
+              title: 'Shedding Check: Yes',
+              description: data.notes || null,
+              date: new Date(dateTimeString).toISOString(),
+            });
+            response = await axios.post('/api/health', {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding',
+              event_type: 'start',
+              title: 'Started shedding',
+              description: 'Triggered from shedding check',
+              date: new Date(dateTimeString).toISOString(),
+            });
+          } else {
+            response = await axios.post('/api/health', {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding',
+              event_type: data.event_subtype,
+              title: getAutoTitle('shedding', data.event_subtype),
+              description: data.notes || null,
+              date: new Date(dateTimeString).toISOString(),
+            });
+          }
+        } else if (data.health_log_type === 'brumation') {
+          response = await axios.post('/api/health', {
+            reptile_id: data.reptile_id,
+            record_type: 'brumation',
+            event_type: data.event_subtype,
+            title: getAutoTitle('brumation', data.event_subtype),
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
+          });
+        } else if (data.health_log_type === 'bathing') {
+          response = await axios.post('/api/health', {
+            reptile_id: data.reptile_id,
+            record_type: 'bathing',
+            title: 'Bathing',
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
+          });
+        } else {
+          // General health record
+          const payload = {
+            reptile_id: data.reptile_id,
+            record_type: data.record_type,
+            title: data.title,
+            description: data.notes || null,
+            date: new Date(dateTimeString).toISOString(),
           };
-          response = await axios.post('/api/measurements', payload);
-          break;
-
-        default:
-          throw new Error(`Unknown log type: ${logType}`);
+          if (data.record_type === 'bowel_movement') {
+            payload.consistency = data.consistency;
+          }
+          response = await axios.post('/api/health', payload);
+        }
       }
 
-      // Call success callback with created data
-      onSuccess?.(response.data);
+      onSuccess?.(response?.data);
       onOpenChange?.(false);
     } catch (err) {
       console.error('Failed to create log:', err);
@@ -347,23 +783,25 @@ export function CreateLogModal({
     onOpenChange?.(false);
   };
 
-  const recordType = form.watch('record_type');
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="left" className="flex flex-col p-0 overflow-hidden sm:max-w-lg">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
           <SheetTitle>{LOG_TYPE_TITLES[logType] || 'Log Activity'}</SheetTitle>
         </SheetHeader>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex-1 flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
-              <div className="flex-1 space-y-4 py-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 space-y-4 p-6 overflow-y-auto">
                 {error && (
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                     <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
@@ -400,361 +838,59 @@ export function CreateLogModal({
                   )}
                 />
 
-                {/* Log Type Specific Fields */}
-                {logType === 'feeding' && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="fed_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                              <DatePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="fed_time"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Time</FormLabel>
-                            <FormControl>
-                              <TimePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      For detailed feeding logs with food items and supplements, use the full feeding log page.
-                    </p>
-                  </>
+                {/* FEEDING FORM */}
+                {effectiveLogType === 'feeding' && (
+                  <FeedingForm
+                    form={form}
+                    insectFields={insectFields}
+                    appendInsect={appendInsect}
+                    removeInsect={removeInsect}
+                    preparedFields={preparedFields}
+                    appendPrepared={appendPrepared}
+                    removePrepared={removePrepared}
+                    watchIncludeInsects={watchIncludeInsects}
+                    watchIncludeSalad={watchIncludeSalad}
+                    watchIncludePrepared={watchIncludePrepared}
+                    watchReptileId={watchReptileId}
+                    insectFoods={insectFoods}
+                    saladFoods={saladFoods}
+                    preparedFoods={preparedFoods}
+                    supplements={supplements}
+                    toggleReptileFavorite={toggleReptileFavorite}
+                    foods={foods}
+                    suggestedSupplements={suggestedSupplements}
+                    showSuggestion={showSuggestion}
+                    supplementsPreFilled={supplementsPreFilled}
+                    originalPreFilledSupplements={originalPreFilledSupplements}
+                    applyAllSuggestedSupplements={applyAllSuggestedSupplements}
+                    dismissSuggestion={dismissSuggestion}
+                  />
                 )}
 
-                {logType === 'misting' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="misted_at_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date</FormLabel>
-                          <FormControl>
-                            <DatePicker value={field.value} onChange={field.onChange} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="misted_at_time"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time</FormLabel>
-                          <FormControl>
-                            <TimePicker value={field.value} onChange={field.onChange} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                {/* MISTING FORM */}
+                {effectiveLogType === 'misting' && (
+                  <MistingForm form={form} />
                 )}
 
-                {logType === 'health' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="record_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Record Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select record type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="observation">General Observation</SelectItem>
-                              <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
-                              <SelectItem value="vet_visit">Vet Visit</SelectItem>
-                              <SelectItem value="medication">Medication</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={
-                                recordType === 'bowel_movement'
-                                  ? 'e.g., Morning bowel movement'
-                                  : 'Brief description'
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {recordType === 'bowel_movement' && (
-                      <FormField
-                        control={form.control}
-                        name="consistency"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Consistency</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select consistency" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="normal">Normal</SelectItem>
-                                <SelectItem value="soft">Soft</SelectItem>
-                                <SelectItem value="hard">Hard</SelectItem>
-                                <SelectItem value="watery">Watery</SelectItem>
-                                <SelectItem value="mucus">Mucus Present</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="log_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                              <DatePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="log_time"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Time</FormLabel>
-                            <FormControl>
-                              <TimePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </>
+                {/* HEALTH FORM */}
+                {effectiveLogType === 'health' && (
+                  <HealthForm
+                    form={form}
+                    healthLogType={healthLogType}
+                    recordType={recordType}
+                    measurementType={measurementType}
+                    healthStatus={healthStatus}
+                    healthStatusLoading={healthStatusLoading}
+                    canStartShedding={canStartShedding}
+                    canCompleteShedding={canCompleteShedding}
+                    canStartBrumation={canStartBrumation}
+                    canEndBrumation={canEndBrumation}
+                    formatCurrentStatus={formatCurrentStatus}
+                  />
                 )}
-
-                {logType === 'weight' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="weight_grams"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Weight (grams)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              step="0.1"
-                              placeholder="e.g., 125.5"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="measured_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                              <DatePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="measured_time"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Time</FormLabel>
-                            <FormControl>
-                              <TimePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {logType === 'measurement' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="measurement_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Measurement Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select measurement type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="svl">Snout-Vent Length (SVL)</SelectItem>
-                              <SelectItem value="total_length">Total Length</SelectItem>
-                              <SelectItem value="humidity">Humidity</SelectItem>
-                              <SelectItem value="temperature">Temperature</SelectItem>
-                              <SelectItem value="shell_length">Shell Length (Turtles)</SelectItem>
-                              <SelectItem value="custom">Custom Measurement</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {measurementType === 'custom' && (
-                      <FormField
-                        control={form.control}
-                        name="custom_label"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Custom Measurement Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="e.g., Tail width, Horn length" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="measurement_value"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Value</FormLabel>
-                            <FormControl>
-                              <Input type="number" step="0.01" {...field} placeholder="0.0" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="measurement_unit"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Unit</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select unit" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="cm">Centimeters (cm)</SelectItem>
-                                <SelectItem value="mm">Millimeters (mm)</SelectItem>
-                                <SelectItem value="in">Inches (in)</SelectItem>
-                                <SelectItem value="%">Percent (%)</SelectItem>
-                                <SelectItem value="C">Celsius (C)</SelectItem>
-                                <SelectItem value="F">Fahrenheit (F)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="measured_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                              <DatePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="measured_time"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Time</FormLabel>
-                            <FormControl>
-                              <TimePicker value={field.value} onChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* Notes (common to all log types) */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes (optional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          rows={3}
-                          placeholder="Any additional notes..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
-              <SheetFooter className="border-t pt-4">
+              <SheetFooter className="px-6 py-4 border-t border-border">
                 <div className="flex gap-3 w-full">
                   <Button
                     type="button"
@@ -772,7 +908,7 @@ export function CreateLogModal({
                   >
                     {submitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Saving...
                       </>
                     ) : (
@@ -786,6 +922,967 @@ export function CreateLogModal({
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+// ============================================================================
+// FEEDING FORM COMPONENT
+// ============================================================================
+
+function FeedingForm({
+  form,
+  insectFields,
+  appendInsect,
+  removeInsect,
+  preparedFields,
+  appendPrepared,
+  removePrepared,
+  watchIncludeInsects,
+  watchIncludeSalad,
+  watchIncludePrepared,
+  watchReptileId,
+  insectFoods,
+  saladFoods,
+  preparedFoods,
+  supplements,
+  toggleReptileFavorite,
+  foods,
+  suggestedSupplements,
+  showSuggestion,
+  supplementsPreFilled,
+  originalPreFilledSupplements,
+  applyAllSuggestedSupplements,
+  dismissSuggestion,
+}) {
+  return (
+    <>
+      {/* Food Type Selection */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Feeding Type</label>
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            type="button"
+            variant={watchIncludeInsects ? "default" : "outline"}
+            className="h-auto p-3"
+            onClick={() => {
+              const newValue = !watchIncludeInsects;
+              form.setValue('include_insects', newValue);
+              if (newValue && insectFields.length === 0 && insectFoods.length > 0) {
+                appendInsect({
+                  id: Date.now(),
+                  food_id: insectFoods[0].id.toString(),
+                  quantity: 1,
+                  supplement_ids: []
+                });
+              }
+            }}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <Bug size={18} />
+              <span className="text-xs">Insects</span>
+            </div>
+          </Button>
+
+          <Button
+            type="button"
+            variant={watchIncludeSalad ? "default" : "outline"}
+            className="h-auto p-3"
+            onClick={() => form.setValue('include_salad', !watchIncludeSalad)}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <Leaf size={18} />
+              <span className="text-xs">Salad</span>
+            </div>
+          </Button>
+
+          <Button
+            type="button"
+            variant={watchIncludePrepared ? "default" : "outline"}
+            className="h-auto p-3"
+            onClick={() => {
+              const newValue = !watchIncludePrepared;
+              form.setValue('include_prepared', newValue);
+              if (newValue && preparedFields.length === 0 && preparedFoods.length > 0) {
+                appendPrepared({
+                  id: Date.now(),
+                  food_id: preparedFoods[0].id.toString(),
+                  quantity: 1,
+                  supplement_ids: []
+                });
+              }
+            }}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <Utensils size={18} />
+              <span className="text-xs">Other</span>
+            </div>
+          </Button>
+        </div>
+        {form.formState.errors.include_insects && (
+          <p className="text-sm font-medium text-destructive">{form.formState.errors.include_insects.message}</p>
+        )}
+      </div>
+
+      {/* Insects Section */}
+      {watchIncludeInsects && (
+        <div className="space-y-2 p-3 bg-card/50 rounded-lg">
+          <div className="flex justify-between items-center">
+            <h4 className="font-medium text-sm">Insects/Worms</h4>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => appendInsect({
+                id: Date.now(),
+                food_id: insectFoods.length > 0 ? insectFoods[0].id.toString() : '',
+                quantity: 1,
+                supplement_ids: []
+              })}
+            >
+              <Plus size={14} className="mr-1" /> Add
+            </Button>
+          </div>
+
+          {insectFields.map((field, index) => (
+            <FoodItemRow
+              key={field.id}
+              form={form}
+              index={index}
+              fieldArrayName="insect_items"
+              foodList={insectFoods}
+              supplements={supplements}
+              onRemove={() => removeInsect(index)}
+              canRemove={insectFields.length > 1}
+              watchReptileId={watchReptileId}
+              toggleReptileFavorite={toggleReptileFavorite}
+              foods={foods}
+            />
+          ))}
+          {form.formState.errors.insect_items && (
+            <p className="text-sm font-medium text-destructive">{form.formState.errors.insect_items.message}</p>
+          )}
+        </div>
+      )}
+
+      {/* Salad Section */}
+      {watchIncludeSalad && (
+        <div className="space-y-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <h4 className="font-medium text-sm">Salad Components</h4>
+          <div className="grid grid-cols-2 gap-1.5">
+            {saladFoods.map(food => {
+              const saladComponents = form.watch('salad_components') || [];
+              const isChecked = saladComponents.includes(food.id);
+              return (
+                <label key={food.id} className="flex items-center gap-2 p-1.5 border border-border rounded cursor-pointer hover:bg-white dark:hover:bg-gray-700 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const current = form.watch('salad_components') || [];
+                      const updated = isChecked
+                        ? current.filter(id => id !== food.id)
+                        : [...current, food.id];
+                      form.setValue('salad_components', updated);
+                    }}
+                    className="rounded"
+                  />
+                  <span className="flex items-center gap-1 truncate">
+                    {food.is_reptile_favorite && <Heart size={10} className="fill-red-500 text-red-500 flex-shrink-0" />}
+                    {food.name}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {form.formState.errors.salad_components && (
+            <p className="text-sm font-medium text-destructive">{form.formState.errors.salad_components.message}</p>
+          )}
+
+          {/* Salad Supplements */}
+          {supplements.length > 0 && (
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-1.5">Salad Supplements:</p>
+              <div className="flex flex-wrap gap-1">
+                {supplements.map(sup => {
+                  const saladSupplements = form.watch('salad_supplements') || [];
+                  const isChecked = saladSupplements.includes(sup.id);
+                  return (
+                    <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer py-0.5 px-1.5 rounded hover:bg-secondary">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          const current = form.watch('salad_supplements') || [];
+                          const updated = isChecked ? current.filter(id => id !== sup.id) : [...current, sup.id];
+                          form.setValue('salad_supplements', updated);
+                        }}
+                        className="rounded w-3 h-3"
+                      />
+                      <span>{sup.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Prepared Food Section */}
+      {watchIncludePrepared && (
+        <div className="space-y-2 p-3 bg-card/50 rounded-lg">
+          <div className="flex justify-between items-center">
+            <h4 className="font-medium text-sm">Other Food</h4>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => appendPrepared({
+                id: Date.now(),
+                food_id: preparedFoods.length > 0 ? preparedFoods[0].id.toString() : '',
+                quantity: 1,
+                supplement_ids: []
+              })}
+            >
+              <Plus size={14} className="mr-1" /> Add
+            </Button>
+          </div>
+
+          {preparedFields.map((field, index) => (
+            <FoodItemRow
+              key={field.id}
+              form={form}
+              index={index}
+              fieldArrayName="prepared_items"
+              foodList={preparedFoods}
+              supplements={supplements}
+              onRemove={() => removePrepared(index)}
+              canRemove={preparedFields.length > 1}
+              watchReptileId={watchReptileId}
+              toggleReptileFavorite={toggleReptileFavorite}
+              foods={foods}
+            />
+          ))}
+          {form.formState.errors.prepared_items && (
+            <p className="text-sm font-medium text-destructive">{form.formState.errors.prepared_items.message}</p>
+          )}
+        </div>
+      )}
+
+      {/* Supplement Suggestions or Pre-filled Banner */}
+      {supplementsPreFilled && originalPreFilledSupplements.length > 0 ? (
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-lg">
+          <div className="flex items-start gap-2">
+            <span className="text-base">ℹ️</span>
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-300 text-sm">
+                Supplements Pre-filled from Schedule
+              </h4>
+              <p className="text-xs text-blue-800 dark:text-blue-300 mt-1">
+                Added based on your schedule's rotation rules:
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {originalPreFilledSupplements.map((suppId) => {
+                  const supp = supplements.find(s => s.id === suppId);
+                  return supp ? (
+                    <span key={suppId} className="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded text-xs font-medium">
+                      {supp.name}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : showSuggestion && suggestedSupplements.length > 0 ? (
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 flex-1">
+              <span className="text-base">💡</span>
+              <div className="flex-1">
+                <h4 className="font-semibold text-green-900 dark:text-green-300 text-sm">
+                  Supplement {suggestedSupplements.length > 1 ? 'Suggestions' : 'Suggestion'}
+                </h4>
+                <p className="text-xs text-green-800 dark:text-green-300 mt-1">
+                  Based on rotation rules:
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {suggestedSupplements.map((suggestion, idx) => (
+                    <div key={idx} className="flex items-center gap-1">
+                      <span className="px-2 py-1 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 rounded text-xs font-medium">
+                        {suggestion.supplement.name}
+                      </span>
+                      <span className="text-xs text-green-700 dark:text-green-400">
+                        (Every {suggestion.every_n_feedings})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-1 flex-shrink-0">
+              <Button
+                type="button"
+                size="sm"
+                onClick={applyAllSuggestedSupplements}
+                className="bg-green-600 text-white hover:bg-green-700 text-xs px-2 py-1 h-auto"
+              >
+                Apply
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={dismissSuggestion}
+                className="text-green-700 dark:text-green-300 px-1 py-1 h-auto"
+              >
+                ✕
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Global Supplements */}
+      {supplements.length > 0 && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">Global Supplements</label>
+          <p className="text-xs text-muted-foreground">Applied to all food items</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {supplements.map(sup => {
+              const globalSupplements = form.watch('global_supplements') || [];
+              const isChecked = globalSupplements.includes(sup.id);
+              return (
+                <label key={sup.id} className="flex items-center gap-2 p-2 border border-border rounded cursor-pointer hover:bg-secondary text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const current = form.watch('global_supplements') || [];
+                      const updated = isChecked ? current.filter(id => id !== sup.id) : [...current, sup.id];
+                      form.setValue('global_supplements', updated);
+                    }}
+                    className="rounded"
+                  />
+                  <span>{sup.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Date and Time */}
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          control={form.control}
+          name="fed_date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <DatePicker value={field.value} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="fed_time"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Time</FormLabel>
+              <FormControl>
+                <TimePicker value={field.value} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {/* Notes */}
+      <FormField
+        control={form.control}
+        name="notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Notes (optional)</FormLabel>
+            <FormControl>
+              <Textarea {...field} rows={2} placeholder="Any observations..." />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  );
+}
+
+// ============================================================================
+// FOOD ITEM ROW COMPONENT
+// ============================================================================
+
+function FoodItemRow({
+  form,
+  index,
+  fieldArrayName,
+  foodList,
+  supplements,
+  onRemove,
+  canRemove,
+  watchReptileId,
+  toggleReptileFavorite,
+  foods,
+}) {
+  const selectedFoodId = form.watch(`${fieldArrayName}.${index}.food_id`);
+  const selectedFood = foods.find(f => f.id === parseInt(selectedFoodId));
+  const isReptileFavorite = selectedFood?.is_reptile_favorite || false;
+
+  return (
+    <div className="space-y-2 bg-card p-2 rounded">
+      <div className="flex items-center gap-2">
+        <FormField
+          control={form.control}
+          name={`${fieldArrayName}.${index}.food_id`}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger className="flex-1 h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {foodList.map(food => {
+                  const prefix = food.is_reptile_favorite ? '❤️ ' : (food.is_favorite ? '⭐ ' : '');
+                  return (
+                    <SelectItem key={food.id} value={food.id.toString()}>
+                      {prefix}{food.name}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          )}
+        />
+
+        {watchReptileId && (
+          <button
+            type="button"
+            onClick={() => toggleReptileFavorite(selectedFoodId)}
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
+            title={isReptileFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart size={16} className={isReptileFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'} />
+          </button>
+        )}
+
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              const currentQty = form.watch(`${fieldArrayName}.${index}.quantity`);
+              form.setValue(`${fieldArrayName}.${index}.quantity`, Math.max(1, currentQty - 1));
+            }}
+          >
+            -
+          </Button>
+          <FormField
+            control={form.control}
+            name={`${fieldArrayName}.${index}.quantity`}
+            render={({ field }) => (
+              <input
+                type="number"
+                value={field.value}
+                onChange={(e) => field.onChange(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-12 h-8 text-center border border-border rounded text-sm bg-background text-foreground"
+                min="1"
+              />
+            )}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              const currentQty = form.watch(`${fieldArrayName}.${index}.quantity`);
+              form.setValue(`${fieldArrayName}.${index}.quantity`, currentQty + 1);
+            }}
+          >
+            +
+          </Button>
+        </div>
+
+        {canRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onRemove}
+            className="h-8 w-8 text-red-600"
+          >
+            <X size={16} />
+          </Button>
+        )}
+      </div>
+
+      {/* Per-item supplements */}
+      {supplements.length > 0 && (
+        <div className="pl-2 border-l-2 border-border">
+          <p className="text-xs text-muted-foreground mb-1">Supplements:</p>
+          <div className="flex flex-wrap gap-1">
+            {supplements.map(sup => {
+              const supplementIds = form.watch(`${fieldArrayName}.${index}.supplement_ids`) || [];
+              const isChecked = supplementIds.includes(sup.id);
+              return (
+                <label key={sup.id} className="flex items-center gap-1 text-xs cursor-pointer py-0.5 px-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const current = form.watch(`${fieldArrayName}.${index}.supplement_ids`) || [];
+                      const updated = isChecked ? current.filter(id => id !== sup.id) : [...current, sup.id];
+                      form.setValue(`${fieldArrayName}.${index}.supplement_ids`, updated);
+                    }}
+                    className="rounded w-3 h-3"
+                  />
+                  <span>{sup.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// MISTING FORM COMPONENT
+// ============================================================================
+
+function MistingForm({ form }) {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          control={form.control}
+          name="misted_at_date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <DatePicker value={field.value} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="misted_at_time"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Time</FormLabel>
+              <FormControl>
+                <TimePicker value={field.value} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Notes (optional)</FormLabel>
+            <FormControl>
+              <Textarea {...field} rows={2} placeholder="Any observations..." />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  );
+}
+
+// ============================================================================
+// HEALTH FORM COMPONENT
+// ============================================================================
+
+function HealthForm({
+  form,
+  healthLogType,
+  recordType,
+  measurementType,
+  healthStatus,
+  healthStatusLoading,
+  canStartShedding,
+  canCompleteShedding,
+  canStartBrumation,
+  canEndBrumation,
+  formatCurrentStatus,
+}) {
+  return (
+    <>
+      {/* Log Type Selector */}
+      <FormField
+        control={form.control}
+        name="health_log_type"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Log Type</FormLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { value: 'weight', label: 'Weight' },
+                { value: 'health', label: 'Health' },
+                { value: 'shedding', label: 'Shedding' },
+                { value: 'brumation', label: 'Brumation' },
+                { value: 'bathing', label: 'Bathing' },
+                { value: 'measurement', label: 'Measurement' },
+              ].map(opt => (
+                <Button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => field.onChange(opt.value)}
+                  variant={field.value === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Weight Form */}
+      {healthLogType === 'weight' && (
+        <FormField
+          control={form.control}
+          name="weight_grams"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Weight (grams)</FormLabel>
+              <FormControl>
+                <Input {...field} type="number" step="0.1" placeholder="e.g., 125.5" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+
+      {/* Health Record Form */}
+      {healthLogType === 'health' && (
+        <>
+          <FormField
+            control={form.control}
+            name="record_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Record Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select record type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="observation">General Observation</SelectItem>
+                    <SelectItem value="bowel_movement">Bowel Movement</SelectItem>
+                    <SelectItem value="vet_visit">Vet Visit</SelectItem>
+                    <SelectItem value="medication">Medication</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Brief description" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {recordType === 'bowel_movement' && (
+            <FormField
+              control={form.control}
+              name="consistency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Consistency</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select consistency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="soft">Soft</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
+                      <SelectItem value="watery">Watery</SelectItem>
+                      <SelectItem value="mucus">Mucus Present</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </>
+      )}
+
+      {/* Shedding Form */}
+      {healthLogType === 'shedding' && (
+        <FormField
+          control={form.control}
+          name="event_subtype"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Is this reptile shedding?</FormLabel>
+              {formatCurrentStatus() && (
+                <div className="mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-900 dark:text-blue-100">
+                  Current status: {formatCurrentStatus()}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={() => field.onChange('start')}
+                  disabled={!canStartShedding}
+                  variant={field.value === 'start' ? 'default' : 'outline'}
+                  size="sm"
+                  className={!canStartShedding ? 'opacity-50' : ''}
+                >
+                  Yes, showing signs
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => field.onChange('check_no')}
+                  variant={field.value === 'check_no' ? 'default' : 'outline'}
+                  size="sm"
+                >
+                  No, not shedding
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => field.onChange('complete')}
+                  disabled={!canCompleteShedding}
+                  variant={field.value === 'complete' ? 'default' : 'outline'}
+                  size="sm"
+                  className={!canCompleteShedding ? 'opacity-50' : ''}
+                >
+                  Shed Complete
+                </Button>
+              </div>
+              {healthStatusLoading && (
+                <p className="text-sm text-muted-foreground">Loading status...</p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+
+      {/* Brumation Form */}
+      {healthLogType === 'brumation' && (
+        <FormField
+          control={form.control}
+          name="event_subtype"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Brumation Event</FormLabel>
+              {formatCurrentStatus() && (
+                <div className="mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-900 dark:text-blue-100">
+                  Current status: {formatCurrentStatus()}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={() => field.onChange('start')}
+                  disabled={!canStartBrumation}
+                  variant={field.value === 'start' ? 'default' : 'outline'}
+                  size="sm"
+                  className={!canStartBrumation ? 'opacity-50' : ''}
+                >
+                  Started Brumating
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => field.onChange('end')}
+                  disabled={!canEndBrumation}
+                  variant={field.value === 'end' ? 'default' : 'outline'}
+                  size="sm"
+                  className={!canEndBrumation ? 'opacity-50' : ''}
+                >
+                  Ended Brumation
+                </Button>
+              </div>
+              {healthStatusLoading && (
+                <p className="text-sm text-muted-foreground">Loading status...</p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+
+      {/* Bathing - no extra fields needed, just date/time/notes */}
+      {healthLogType === 'bathing' && (
+        <p className="text-sm text-muted-foreground">
+          Record a bathing session for this reptile.
+        </p>
+      )}
+
+      {/* Measurement Form */}
+      {healthLogType === 'measurement' && (
+        <>
+          <FormField
+            control={form.control}
+            name="measurement_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Measurement Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select measurement type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="svl">Snout-Vent Length (SVL)</SelectItem>
+                    <SelectItem value="total_length">Total Length</SelectItem>
+                    <SelectItem value="humidity">Humidity</SelectItem>
+                    <SelectItem value="temperature">Temperature</SelectItem>
+                    <SelectItem value="shell_length">Shell Length (Turtles)</SelectItem>
+                    <SelectItem value="custom">Custom Measurement</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {measurementType === 'custom' && (
+            <FormField
+              control={form.control}
+              name="custom_label"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Custom Measurement Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g., Tail width" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="measurement_value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Value</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} placeholder="0.0" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="measurement_unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cm">cm</SelectItem>
+                      <SelectItem value="mm">mm</SelectItem>
+                      <SelectItem value="in">in</SelectItem>
+                      <SelectItem value="%">%</SelectItem>
+                      <SelectItem value="C">°C</SelectItem>
+                      <SelectItem value="F">°F</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Date and Time */}
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          control={form.control}
+          name="log_date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <DatePicker value={field.value} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="log_time"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Time</FormLabel>
+              <FormControl>
+                <TimePicker value={field.value} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {/* Notes */}
+      <FormField
+        control={form.control}
+        name="notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Notes (optional)</FormLabel>
+            <FormControl>
+              <Textarea {...field} rows={2} placeholder="Any observations..." />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { X, ExternalLink, Plus, Minus } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatting';
 import { TimePicker } from '../ui/time-picker';
+import { useCreateLogModal } from '@/contexts/CreateLogModalContext';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -19,6 +20,7 @@ import { TimePicker } from '../ui/time-picker';
  */
 const QuickLogForm = ({ task, onClose, onSubmit }) => {
   const navigate = useNavigate();
+  const { openCreateLog } = useCreateLogModal();
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -223,7 +225,34 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   };
 
   const handleOpenFull = () => {
-    navigate(getFullFormPath());
+    // Try to open modal first, fall back to navigation
+    const scheduleType = task?.schedule_type || task?.type;
+    const reptileId = task?.reptile_id || task?.reptile?.id;
+    const healthSubtype = task?.health_subtype;
+
+    // Map schedule type to log type
+    let logType = scheduleType;
+    if (scheduleType === 'health') {
+      if (healthSubtype === 'weight') logType = 'weight';
+      else if (healthSubtype === 'measurement') logType = 'measurement';
+      else logType = 'health';
+    }
+
+    // Build prefill from task data
+    const prefill = {
+      health_subtype: healthSubtype,
+      measurement_type: task?.measurement_type,
+      food_category: task?.food_category,
+      notes: task?.notes || notes,
+    };
+
+    // Try opening modal, if not available navigate to page
+    const opened = openCreateLog(logType, reptileId, prefill);
+    if (opened) {
+      onClose?.(); // Close quick log form
+    } else {
+      navigate(getFullFormPath());
+    }
   };
 
   const handleSubmit = async (e) => {

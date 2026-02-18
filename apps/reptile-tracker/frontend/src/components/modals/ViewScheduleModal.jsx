@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Edit2, Trash2, Loader2, ClipboardList } from 'lucide-react';
+import { useCreateLogModal } from '@/contexts/CreateLogModalContext';
 import {
   Sheet,
   SheetContent,
@@ -43,6 +44,9 @@ export function ViewScheduleModal({
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Access the CreateLogModal context
+  const { openCreateLog, isRegistered } = useCreateLogModal();
 
   // Fetch schedule data when modal opens or scheduleId changes
   useEffect(() => {
@@ -136,6 +140,62 @@ export function ViewScheduleModal({
     }
   };
 
+  // Handle "Log Now" - map schedule to log type and prefill
+  const handleLogNow = () => {
+    if (!schedule) return;
+
+    // Map schedule_type to log type
+    let logType = schedule.schedule_type;
+    const prefill = {};
+
+    // For health schedules, map health_subtype to the specific log type
+    if (schedule.schedule_type === 'health') {
+      switch (schedule.health_subtype) {
+        case 'weight':
+          logType = 'weight';
+          break;
+        case 'measurement':
+          logType = 'measurement';
+          // Prefill measurement type from schedule
+          if (schedule.measurement_type) {
+            prefill.measurement_type = schedule.measurement_type;
+          }
+          if (schedule.custom_measurement_label) {
+            prefill.custom_label = schedule.custom_measurement_label;
+          }
+          break;
+        case 'shedding_check':
+        case 'brumation_check':
+        case 'bathing':
+        case 'health_record':
+        default:
+          logType = 'health';
+          // Prefill record type from health_subtype
+          if (schedule.health_subtype) {
+            prefill.record_type = schedule.health_subtype;
+          }
+          break;
+      }
+    }
+
+    // Add schedule notes as prefill notes
+    if (schedule.notes) {
+      prefill.notes = schedule.notes;
+    }
+
+    // Close the view modal first to avoid URL param race condition
+    // (both openCreateLog and onOpenChange modify URL search params via useModalState)
+    onOpenChange(false);
+
+    // Open the CreateLogModal after URL state settles
+    setTimeout(() => {
+      const opened = openCreateLog(logType, schedule.reptile_id, prefill);
+      if (!opened) {
+        toast.info('Navigate to Dashboard to log this schedule');
+      }
+    }, 0);
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -191,12 +251,21 @@ export function ViewScheduleModal({
             <ScheduleViewContent schedule={schedule} reptile={reptile} />
           )}
 
-          {/* Footer with close button */}
-          <SheetFooter className="px-6 py-4 border-t border-border">
+          {/* Footer with Log Now and Close buttons */}
+          <SheetFooter className="px-6 py-4 border-t border-border flex-row gap-2">
+            {!loading && !error && schedule && isRegistered && (
+              <Button
+                onClick={handleLogNow}
+                className="flex-1 sm:flex-none"
+              >
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Log Now
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:flex-none"
             >
               Close
             </Button>

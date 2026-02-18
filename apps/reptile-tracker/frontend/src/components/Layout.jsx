@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from './NotificationBell'
 import QuickStatsHeader from './QuickStatsHeader'
 import { cn } from '@/lib/utils'
+import { useCreateLogModal } from '@/contexts/CreateLogModalContext'
 
 // Page transition variants
 const pageVariants = {
@@ -41,6 +42,7 @@ const getPageTitle = (pathname) => {
 export default function Layout({ user, onLogout }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { openCreateLog } = useCreateLogModal()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [trackMenuOpen, setTrackMenuOpen] = useState(false)
   const [schedulesMenuOpen, setSchedulesMenuOpen] = useState(false)
@@ -80,21 +82,35 @@ export default function Layout({ user, onLogout }) {
         setTrackMenuOpen(prev => !prev)
       }
 
-      // When Track menu is open, F/M/H navigate directly
+      // When Track menu is open, F/M/H open modal (Dashboard) or navigate (other pages)
       if (trackMenuOpen) {
         const key = e.key.toLowerCase()
+        const isDashboard = location.pathname === '/'
+
         if (key === 'f') {
           e.preventDefault()
           setTrackMenuOpen(false)
-          navigate('/feed')
+          if (isDashboard && openCreateLog) {
+            openCreateLog('feeding')
+          } else {
+            navigate('/feed')
+          }
         } else if (key === 'm') {
           e.preventDefault()
           setTrackMenuOpen(false)
-          navigate('/misting-log')
+          if (isDashboard && openCreateLog) {
+            openCreateLog('misting')
+          } else {
+            navigate('/misting-log')
+          }
         } else if (key === 'h') {
           e.preventDefault()
           setTrackMenuOpen(false)
-          navigate('/health-log')
+          if (isDashboard && openCreateLog) {
+            openCreateLog('health')
+          } else {
+            navigate('/health-log')
+          }
         }
       }
 
@@ -108,7 +124,7 @@ export default function Layout({ user, onLogout }) {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [trackMenuOpen])
+  }, [trackMenuOpen, location.pathname, openCreateLog, navigate])
 
   const handleLogout = () => {
     onLogout()
@@ -154,9 +170,16 @@ export default function Layout({ user, onLogout }) {
     const [internalIsOpen, setInternalIsOpen] = useState(false)
     const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
     const setIsOpen = externalSetIsOpen || setInternalIsOpen
+    const { openCreateLog } = useCreateLogModal()
+    const isDashboard = location.pathname === '/'
 
-    const handleOptionClick = (path) => {
-      navigate(path)
+    const handleOptionClick = (path, logType) => {
+      // On Dashboard, open modal instead of navigating
+      if (isDashboard && openCreateLog && logType) {
+        openCreateLog(logType)
+      } else {
+        navigate(path)
+      }
       setIsOpen(false)
       if (onClose) onClose()
     }
@@ -175,7 +198,7 @@ export default function Layout({ user, onLogout }) {
           {isOpen && (
             <div className="absolute top-0 left-full ml-2 bg-card rounded-lg shadow-xl border border-border overflow-hidden z-50 w-64">
               <button
-                onClick={() => handleOptionClick('/feed')}
+                onClick={() => handleOptionClick('/feed', 'feeding')}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/20 transition-colors border-b border-border"
               >
                 <Utensils size={20} className="text-primary" />
@@ -186,7 +209,7 @@ export default function Layout({ user, onLogout }) {
                 <span className="text-xs text-muted-foreground opacity-60">F</span>
               </button>
               <button
-                onClick={() => handleOptionClick('/health-log')}
+                onClick={() => handleOptionClick('/health-log', 'health')}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-900/20 transition-colors border-b border-border"
               >
                 <Activity size={20} className="text-green-400" />
@@ -197,7 +220,7 @@ export default function Layout({ user, onLogout }) {
                 <span className="text-xs text-muted-foreground opacity-60">H</span>
               </button>
               <button
-                onClick={() => handleOptionClick('/misting-log')}
+                onClick={() => handleOptionClick('/misting-log', 'misting')}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 transition-colors"
               >
                 <Droplets size={20} className="text-blue-400" />
@@ -227,7 +250,7 @@ export default function Layout({ user, onLogout }) {
         {isOpen && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-lg shadow-xl border border-border overflow-hidden z-50">
             <button
-              onClick={() => handleOptionClick('/feed')}
+              onClick={() => handleOptionClick('/feed', 'feeding')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/20 transition-colors border-b border-border"
             >
               <Utensils size={20} className="text-primary" />
@@ -238,7 +261,7 @@ export default function Layout({ user, onLogout }) {
               <span className="text-xs text-muted-foreground opacity-60 hidden xl:inline">F</span>
             </button>
             <button
-              onClick={() => handleOptionClick('/health-log')}
+              onClick={() => handleOptionClick('/health-log', 'health')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-900/20 transition-colors border-b border-border"
             >
               <Activity size={20} className="text-green-400" />
@@ -249,7 +272,7 @@ export default function Layout({ user, onLogout }) {
               <span className="text-xs text-muted-foreground opacity-60 hidden xl:inline">H</span>
             </button>
             <button
-              onClick={() => handleOptionClick('/misting-log')}
+              onClick={() => handleOptionClick('/misting-log', 'misting')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 transition-colors"
             >
               <Droplets size={20} className="text-blue-400" />

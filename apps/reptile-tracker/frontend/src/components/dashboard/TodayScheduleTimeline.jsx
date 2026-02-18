@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { formatTime, toLocalISODate, formatDate } from '../../utils/dateFormatting';
-import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, Calendar, Eye } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, Calendar } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 import EmptyState from '../EmptyState';
 
@@ -19,10 +19,10 @@ import EmptyState from '../EmptyState';
  * - size: Widget size ('small', 'medium', 'large')
  * - onQuickLog: Handler to open quick-log form (from Dashboard)
  * - inSidebar: boolean - Whether this widget is in the sidebar zone (no max-height constraint)
- * - onViewSchedule: (scheduleId) => void - callback to open schedule view modal
+ * - onViewInstance: (instanceId) => void - callback to open instance view modal
  * - onCreateLog: (logType, reptileId, prefill) => void - callback to open create log modal
  */
-const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSidebar = false, onViewSchedule, onCreateLog }) => {
+const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSidebar = false, onViewInstance, onCreateLog }) => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -351,11 +351,12 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
     onCreateLog(logType, schedule.reptile_id, prefill);
   };
 
-  // Handler to open schedule view modal
-  const handleViewScheduleClick = (schedule, e) => {
+  // Handler to open instance view modal
+  const handleViewInstanceClick = (schedule, e) => {
     e?.stopPropagation();
-    if (onViewSchedule && schedule.schedule_id) {
-      onViewSchedule(schedule.schedule_id);
+    // schedule.id is the instance ID (mapped from instance.id in fetchSchedules)
+    if (onViewInstance && schedule.id) {
+      onViewInstance(schedule.id);
     }
   };
 
@@ -549,7 +550,10 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                             className="w-4 h-4"
                             showFallbackIcon={false}
                           />
-                          <div className="flex-1 min-w-0">
+                          <div
+                            className={`flex-1 min-w-0 ${onViewInstance && schedule.id ? 'cursor-pointer hover:text-primary' : ''}`}
+                            onClick={(e) => onViewInstance && schedule.id && handleViewInstanceClick(schedule, e)}
+                          >
                             <div className="text-xs text-foreground truncate">
                               {schedule.reptile_name} - {displayType}
                               {scheduleType === 'feeding' && schedule.food_category && (
@@ -557,16 +561,6 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                               )}
                             </div>
                           </div>
-                          {/* View schedule icon */}
-                          {onViewSchedule && schedule.schedule_id && (
-                            <button
-                              onClick={(e) => handleViewScheduleClick(schedule, e)}
-                              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                              title="View schedule"
-                            >
-                              <Eye className="w-3 h-3" />
-                            </button>
-                          )}
                           <span className="text-primary">✓</span>
                         </div>
 
@@ -664,7 +658,10 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                               className="w-4 h-4"
                               showFallbackIcon={false}
                             />
-                            <div className="flex-1 min-w-0">
+                            <div
+                              className={`flex-1 min-w-0 ${onViewInstance && schedule.id ? 'cursor-pointer hover:text-primary' : ''}`}
+                              onClick={(e) => onViewInstance && schedule.id && handleViewInstanceClick(schedule, e)}
+                            >
                               <div className="text-xs text-foreground truncate">
                                 {schedule.reptile_name} - {displayType}
                                 {scheduleType === 'feeding' && schedule.food_category && (
@@ -672,16 +669,6 @@ const TodayScheduleTimeline = ({ config = {}, size = 'small', onQuickLog, inSide
                                 )}
                               </div>
                             </div>
-                            {/* View schedule icon */}
-                            {onViewSchedule && schedule.schedule_id && (
-                              <button
-                                onClick={(e) => handleViewScheduleClick(schedule, e)}
-                                className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                                title="View schedule"
-                              >
-                                <Eye className="w-3 h-3" />
-                              </button>
-                            )}
                             <button
                               onClick={() => handleLogClick(schedule)}
                               className="ml-auto text-xs px-1.5 py-0.5 rounded bg-primary hover:bg-primary/90 text-primary-foreground"

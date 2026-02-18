@@ -11,12 +11,12 @@ import ConfettiDismissOverlay from '../ConfettiDismissOverlay';
  * Click triggers quick-log form for pending tasks, or navigates to view mode for completed tasks.
  *
  * Props:
- * - task: Task object with status, name, time, completion_type, completion_id, schedule_id
+ * - task: Task object with status, name, time, completion_type, completion_id, id (instance_id)
  * - onQuickLog: Handler for task chip clicks (task => void)
- * - onViewSchedule: (scheduleId) => void - callback to open schedule view modal (optional)
+ * - onViewInstance: (instanceId) => void - callback to open instance view modal (optional)
  * - className: Additional CSS classes
  */
-const TaskChip = ({ task, onQuickLog, onViewSchedule, className = '' }) => {
+const TaskChip = ({ task, onQuickLog, onViewInstance, className = '' }) => {
   const navigate = useNavigate();
   const { triggerSubtle, isActive, dismiss } = useConfetti();
 
@@ -141,10 +141,10 @@ const TaskChip = ({ task, onQuickLog, onViewSchedule, className = '' }) => {
   };
 
   const handleClick = () => {
-    // For completed tasks, use onViewSchedule callback if available
-    // This opens the schedule view modal instead of navigating
-    if (status === 'done' && onViewSchedule && task.schedule_id) {
-      onViewSchedule(task.schedule_id);
+    // For completed tasks, use onViewInstance callback if available
+    // This opens the instance view modal instead of navigating
+    if (status === 'done' && onViewInstance && task.id) {
+      onViewInstance(task.id);
       return;
     }
 

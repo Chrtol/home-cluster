@@ -5,7 +5,14 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Sheet = DialogPrimitive.Root
+// Sheet context to pass open state to children
+const SheetContext = React.createContext({ open: false })
+
+const Sheet = ({ open, ...props }) => (
+  <SheetContext.Provider value={{ open }}>
+    <DialogPrimitive.Root open={open} {...props} />
+  </SheetContext.Provider>
+)
 
 const SheetTrigger = DialogPrimitive.Trigger
 
@@ -48,44 +55,48 @@ const SheetContent = React.forwardRef(({
   side = "right",
   ...props
 }, ref) => {
+  const { open } = React.useContext(SheetContext)
   const variants = slideVariants[side]
 
   return (
     <AnimatePresence mode="wait">
-      <SheetPortal forceMount>
-        <DialogPrimitive.Overlay asChild>
-          <SheetOverlay />
-        </DialogPrimitive.Overlay>
-        <DialogPrimitive.Content
-          ref={ref}
-          asChild
-          {...props}
-        >
-          <motion.div
-            initial={variants.initial}
-            animate={variants.animate}
-            exit={variants.exit}
-            transition={{
-              type: "spring",
-              damping: 30,
-              stiffness: 300
-            }}
-            className={cn(
-              "fixed z-50 h-full bg-background shadow-lg flex flex-col",
-              "w-full sm:max-w-[480px]",
-              side === "right" && "inset-y-0 right-0",
-              side === "left" && "inset-y-0 left-0",
-              className
-            )}
+      {open && (
+        <SheetPortal forceMount>
+          <DialogPrimitive.Overlay asChild forceMount>
+            <SheetOverlay />
+          </DialogPrimitive.Overlay>
+          <DialogPrimitive.Content
+            ref={ref}
+            asChild
+            forceMount
+            {...props}
           >
-            {children}
-            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          </motion.div>
-        </DialogPrimitive.Content>
-      </SheetPortal>
+            <motion.div
+              initial={variants.initial}
+              animate={variants.animate}
+              exit={variants.exit}
+              transition={{
+                type: "spring",
+                damping: 30,
+                stiffness: 300
+              }}
+              className={cn(
+                "fixed z-50 h-full bg-background shadow-lg flex flex-col",
+                "w-full sm:max-w-[480px]",
+                side === "right" && "inset-y-0 right-0",
+                side === "left" && "inset-y-0 left-0",
+                className
+              )}
+            >
+              {children}
+              <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </DialogPrimitive.Close>
+            </motion.div>
+          </DialogPrimitive.Content>
+        </SheetPortal>
+      )}
     </AnimatePresence>
   )
 })

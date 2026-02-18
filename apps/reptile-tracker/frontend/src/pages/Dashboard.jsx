@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, differenceInDays, format, startOfWeek, addDays } from 'date-fns';
@@ -20,7 +20,9 @@ import WidgetGallery from '../components/dashboard/WidgetGallery';
 import { useModalState } from '@/hooks/useModalState';
 import { ViewLogModal } from '@/components/modals/ViewLogModal';
 import { ViewScheduleModal } from '@/components/modals/ViewScheduleModal';
+import { ViewInstanceModal } from '@/components/modals/ViewInstanceModal';
 import { CreateLogModal } from '@/components/modals/CreateLogModal';
+import { useCreateLogModalRegistration } from '@/contexts/CreateLogModalContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -49,9 +51,13 @@ export default function Dashboard() {
 
   // Modal state management (Phase 27)
   const { isOpen: viewLogOpen, modalId: viewLogId, open: openViewLog, close: closeViewLog } = useModalState('viewLog');
+  const { isOpen: viewInstanceOpen, modalId: viewInstanceId, open: openViewInstance, close: closeViewInstance } = useModalState('viewInstance');
   const { isOpen: viewScheduleOpen, modalId: viewScheduleId, open: openViewSchedule, close: closeViewSchedule } = useModalState('viewSchedule');
   const { isOpen: createOpen, modalId: createType, open: openCreate, close: closeCreate } = useModalState('create');
   const [selectedLogType, setSelectedLogType] = useState(null); // Log type for view modal
+
+  // Register CreateLogModal opener with global context (allows Track button to open modal)
+  const { registerOpener, unregisterOpener } = useCreateLogModalRegistration();
   const [selectedReptileId, setSelectedReptileId] = useState(null); // Reptile ID for create modal
   const [prefillData, setPrefillData] = useState(null); // Prefill data for create modal
 
@@ -74,6 +80,19 @@ export default function Dashboard() {
 
   // Current date for calendar navigation (defaults to today)
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
+
+  // Handler to open CreateLogModal - memoized for stable reference in context registration
+  const handleCreateLog = useCallback((logType, reptileId, prefill) => {
+    setSelectedReptileId(reptileId);
+    setPrefillData(prefill);
+    openCreate(logType);
+  }, [openCreate]);
+
+  // Register the CreateLogModal opener with global context
+  useEffect(() => {
+    registerOpener(handleCreateLog);
+    return () => unregisterOpener();
+  }, [registerOpener, unregisterOpener, handleCreateLog]);
 
   // Load display settings on mount and apply correct profile for screen size
   useEffect(() => {
@@ -1088,14 +1107,14 @@ export default function Dashboard() {
     openViewLog(id.toString());
   };
 
-  const handleViewSchedule = (id) => {
-    openViewSchedule(id.toString());
+  // View a schedule instance (from dashboard calendar/timeline)
+  const handleViewInstance = (instanceId) => {
+    openViewInstance(instanceId.toString());
   };
 
-  const handleCreateLog = (logType, reptileId, prefill) => {
-    setSelectedReptileId(reptileId);
-    setPrefillData(prefill);
-    openCreate(logType);
+  // View a schedule definition (from instance modal "View Schedule" button)
+  const handleViewSchedule = (scheduleId) => {
+    openViewSchedule(scheduleId.toString());
   };
 
   // Edit mode handlers
@@ -1327,7 +1346,7 @@ export default function Dashboard() {
               size={card?.size || 'small'}
               onQuickLog={handleQuickLog}
               inSidebar={card?.zone === 'sidebar'}
-              onViewSchedule={handleViewSchedule}
+              onViewInstance={handleViewInstance}
               onCreateLog={handleCreateLog}
             />
           );
@@ -1342,7 +1361,7 @@ export default function Dashboard() {
               onQuickLog={handleQuickLog}
               healthStatusData={healthStatusData}
               scheduleInstances={weeklyEvents}
-              onViewSchedule={handleViewSchedule}
+              onViewInstance={handleViewInstance}
               onCreateLog={handleCreateLog}
             />
           );
@@ -2481,7 +2500,16 @@ export default function Dashboard() {
           }}
         />
 
-        {/* View Schedule Modal (Phase 27) */}
+        {/* View Instance Modal (Phase 27 - for dashboard calendar/timeline items) */}
+        <ViewInstanceModal
+          instanceId={viewInstanceId}
+          open={viewInstanceOpen}
+          onOpenChange={(open) => !open && closeViewInstance()}
+          onViewSchedule={handleViewSchedule}
+          onRefresh={refreshDashboard}
+        />
+
+        {/* View Schedule Modal (Phase 27 - for viewing schedule definitions) */}
         <ViewScheduleModal
           scheduleId={viewScheduleId}
           open={viewScheduleOpen}

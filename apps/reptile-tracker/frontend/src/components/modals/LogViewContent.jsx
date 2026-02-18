@@ -1,5 +1,6 @@
 import { formatDateTime } from '@/utils/dateFormatting';
 import { CollapsibleNotes } from './CollapsibleNotes';
+import ReptileAvatar from '@/components/ReptileAvatar';
 
 /**
  * LogViewContent - Sectioned content layout for viewing log entries
@@ -10,8 +11,25 @@ import { CollapsibleNotes } from './CollapsibleNotes';
 export function LogViewContent({ log, logType }) {
   if (!log) return null;
 
+  // Get reptile info from log
+  const reptile = log.reptile;
+  const reptileName = reptile?.name || log.reptile_name;
+
   return (
     <div className="space-y-6 p-6 overflow-y-auto flex-1">
+      {/* Reptile Info Header */}
+      {reptileName && (
+        <div className="flex items-center gap-3 pb-4 border-b border-border">
+          <ReptileAvatar reptile={reptile} size="md" />
+          <div>
+            <div className="text-base font-semibold text-foreground">{reptileName}</div>
+            {reptile?.species && (
+              <div className="text-sm text-muted-foreground">{reptile.species}</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* WHAT Section */}
       <WhatSection log={log} logType={logType} />
 

@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 27 - Read-Only Views & UX Polish (7 of 9 plans complete)
-**Plan:** 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a complete, ready for 27-07b
+**Phase:** 27 - Read-Only Views & UX Polish (8 of 9 plans complete)
+**Plan:** 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a, 27-07b complete, ready for 27-08
 **Status:** In progress
-**Last activity:** 2026-02-18 — Completed 27-07a-PLAN.md (Dashboard modal integration)
-**Progress:** ███████░░ (78% - 7/9 plans complete)
+**Last activity:** 2026-02-18 — Completed 27-07b-PLAN.md (Schedule widget modal integration)
+**Progress:** ████████░ (89% - 8/9 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 27 Plan 07b (Schedule widget modal integration)
+**Next:** Execute Phase 27 Plan 08 (Visual polish - dense spacing, hover states)
 
 ### Architecture Summary
 
@@ -97,11 +97,11 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2026-02-18
-**Action:** Completed 27-07a-PLAN.md (Dashboard modal integration)
-**Stopped at:** Phase 27 Plan 07a complete
-**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-07b-PLAN.md`
-**Next step:** Execute Plan 27-07b (Schedule widget modal integration)
+**Last session:** 2026-02-19
+**Action:** Bug fixes for CreateLogModal (feature parity, dark mode), ViewScheduleModal layout improvement
+**Stopped at:** Phase 27 Plan 08 pending
+**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-08-PLAN.md`
+**Next step:** Execute Plan 27-08 (Visual polish - dense spacing, hover states)
 
 ## Phase 26 Plan Summary
 
@@ -145,8 +145,8 @@ For future milestones:
 - **27-05 (Wave 3):** Schedule view modals - COMPLETE
 - **27-06 (Wave 4):** Activity History modal integration - COMPLETE
 - **27-07a (Wave 4):** Dashboard modal integration (log views) - COMPLETE
-- **27-07b:** Dashboard modal integration (schedule views, create)
-- **27-08:** Visual polish (dense spacing, hover states)
+- **27-07b (Wave 5):** Dashboard modal integration (schedule views, create) - COMPLETE
+- **27-08 (Wave 6):** Visual polish (dense spacing, hover states)
 
 **Key Patterns Established:**
 - Sheet component: side="right" for view modals, side="left" for create/edit
@@ -170,7 +170,11 @@ For future milestones:
 | type:id URL format for activity modals | 27-06 | Encodes both log type and ID in single param to restore modal state on deep link | Enables proper modal restoration from shared URLs |
 | Modal callbacks via props | 27-07a | Simpler pattern than context for widget-to-modal communication | Dashboard widgets call parent callbacks to open modals |
 | Link fallback in RecentActivityWidget | 27-07a | Maintains backwards compatibility when no callback provided | Widget can be used with or without modal integration |
+| Eye icon for schedule view button | 27-07b | Provides visual affordance for viewing schedule details | Users can click eye icon in timeline to open schedule modal |
+| TaskChip uses onViewSchedule for completed tasks | 27-07b | Keeps completed task clicks in modal context instead of navigating | Dashboard stays open when viewing completed task schedules |
+| Schedule-to-log-type mapping in handleCreateLogFromSchedule | 27-07b | Maps health schedule subtypes (weight, measurement) to appropriate log types | Correct prefill data passed to CreateLogModal |
+| Reptile avatar/name in ScheduleTypeSection header row | 27-08 | Schedule type badge and reptile identity on same row saves vertical space | More compact layout with all key info visible at once |
 
 ---
 
-**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a complete.
+**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a, 27-07b complete.

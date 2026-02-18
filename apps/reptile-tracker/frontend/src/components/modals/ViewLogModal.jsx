@@ -107,7 +107,7 @@ export function ViewLogModal({
       weight: 'Weight',
       measurement: 'Measurement',
     };
-    return names[type] || type;
+    return names[type] || type || 'Log';
   };
 
   // Handle edit button click - transform in place (don't close/reopen modal)
