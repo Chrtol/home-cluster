@@ -16,8 +16,9 @@ import EmptyState from '../EmptyState';
  * Props:
  * - config: { itemCount: number (default 5) }
  * - size: Widget size determines item count if not in config
+ * - onViewActivity: (id, logType) => void - callback when activity is clicked (opens modal)
  */
-const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
+const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -134,7 +135,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         const summary = foodNames || 'Food items';
 
         return {
+          id: f.id,
           type: 'feeding',
+          logType: 'feeding', // For modal
           category: 'feeding',
           subcategory: primaryCategory,
           icon: Utensils,
@@ -157,7 +160,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       const mistings = mistingsData.map(m => {
         const reptileFromMap = reptilesMap[m.reptile_id];
         return {
+          id: m.id,
           type: 'misting',
+          logType: 'misting', // For modal
           category: 'misting',
           subcategory: null,
           icon: Droplets,
@@ -183,7 +188,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         .map(w => {
           const reptileFromMap = reptilesMap[w.reptile_id];
           return {
+            id: w.id,
             type: 'health',
+            logType: 'weight', // For modal
             category: 'health',
             subcategory: 'weight',
             icon: Scale,
@@ -219,7 +226,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         const summary = h.title || recordTypeLabels[h.record_type] || 'Health Record';
 
         return {
+          id: h.id,
           type: 'health',
+          logType: 'health', // For modal
           category: 'health',
           subcategory: h.record_type || 'observation',
           icon: HeartPulse,
@@ -252,7 +261,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
         const typeLabel = measurementTypeLabels[m.measurement_type] || m.measurement_type;
 
         return {
+          id: m.id,
           type: 'health',
+          logType: 'measurement', // For modal
           category: 'health',
           subcategory: 'measurement',
           icon: Ruler,
@@ -467,12 +478,17 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
           const Icon = activity.icon;
           const colors = categoryColors[activity.category];
 
-          return (
-            <Link
-              key={`${activity.type}-${activity.timestamp}-${index}`}
-              to={activity.detailLink}
-              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/50 transition-colors group"
-            >
+          // Handle click - use modal if callback provided, otherwise fallback to link
+          const handleClick = (e) => {
+            if (onViewActivity) {
+              e.preventDefault();
+              onViewActivity(activity.id, activity.logType);
+            }
+          };
+
+          // Content shared between Link and clickable div
+          const itemContent = (
+            <>
               <ReptileAvatar
                 reptile={activity.reptile}
                 size="sm"
@@ -500,6 +516,37 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
                   {activity.prominentValue}
                 </span>
               )}
+            </>
+          );
+
+          // Use div with onClick when modal callback provided, Link otherwise
+          if (onViewActivity) {
+            return (
+              <div
+                key={`${activity.type}-${activity.timestamp}-${index}`}
+                onClick={handleClick}
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onViewActivity(activity.id, activity.logType);
+                  }
+                }}
+              >
+                {itemContent}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={`${activity.type}-${activity.timestamp}-${index}`}
+              to={activity.detailLink}
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/50 transition-colors group"
+            >
+              {itemContent}
             </Link>
           );
         })}
