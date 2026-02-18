@@ -12,8 +12,7 @@ spec:
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/gatus/guarded
-    # - ../../../../components/proxy-application
-    # - ../../../../components/ext-auth
+    - ../../../../components/oidc-application
   dependsOn:
     - name: cloudnative-pg-cluster-v17
       namespace: database
@@ -24,12 +23,14 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      # EXT_AUTH_PORT: "8084"
-      # GROUP: Media
-      # SUBDOMAIN: *app
-      # DESCRIPTION: Book and audiobook downloader
       CEPH_RBD_CAPACITY: 2Gi
-      # PROXY_ADMIN_GROUP: media-admins
+      # OIDC component variables
+      GROUP: "Media"
+      SUBDOMAIN: readmeabook
+      DISPLAY_NAME: "ReadMeABook"
+      DESCRIPTION: "Audiobook downloader and manager"
+      REDIRECT_PATH: "/api/auth/oidc/callback"
+      OIDC_SECRET_NAMESPACE: *namespace
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
