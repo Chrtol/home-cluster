@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Scale, Activity, HeartPulse, Droplets, ChevronLeft } from 'lucide-react';
+import { Utensils, Scale, Activity, HeartPulse, Droplets, ChevronLeft, Ruler } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 import EmptyState from '../EmptyState';
 
@@ -69,6 +69,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
   const healthSubcategoryLabels = {
     'bathing': 'Bathing',
     'shedding': 'Shedding',
+    'shedding_check': 'Shedding Check',
+    'brumation': 'Brumation',
+    'brumation_check': 'Brumation Check',
     'observation': 'Observation',
     'vet_visit': 'Vet Visit',
     'medication': 'Medication',
@@ -100,11 +103,12 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
       setLoading(true);
       setError(null);
 
-      const [feedingsRes, weighingsRes, healthRes, mistingsRes, reptilesRes] = await Promise.all([
+      const [feedingsRes, weighingsRes, healthRes, mistingsRes, measurementsRes, reptilesRes] = await Promise.all([
         axios.get('/api/feedings', { params: { limit: itemCount * 3 } }),
         axios.get('/api/weight/dashboard'),
         axios.get('/api/health', { params: { limit: itemCount * 3 } }),
         axios.get('/api/misting', { params: { limit: itemCount * 3 } }),
+        axios.get('/api/measurements/dashboard', { params: { limit: itemCount * 3 } }),
         axios.get('/api/reptiles')
       ]);
 
@@ -206,6 +210,9 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
           'vet_visit': 'Vet Visit',
           'medication': 'Medication',
           'shedding': 'Shedding',
+          'shedding_check': 'Shedding Check',
+          'brumation': 'Brumation',
+          'brumation_check': 'Brumation Check',
           'bowel_movement': 'Bowel Movement',
           'bathing': 'Bathing'
         };
@@ -227,11 +234,44 @@ const RecentActivityWidget = ({ config = {}, size = 'small' }) => {
           timestamp: h.date || h.created_at,
           summary,
           prominentValue: null,
-          detailLink: `/reptiles/${h.reptile_id}#health`
+          detailLink: `/health-log/health/${h.id}`
         };
       });
 
-      const combined = [...feedings, ...mistings, ...weighings, ...healthRecords];
+      const measurementsData = Array.isArray(measurementsRes.data) ? measurementsRes.data : [];
+      const measurements = measurementsData.map(m => {
+        const reptileFromMap = reptilesMap[m.reptile_id];
+        const measurementTypeLabels = {
+          'svl': 'SVL',
+          'total_length': 'Total Length',
+          'shell_length': 'Shell Length',
+          'humidity': 'Humidity',
+          'temperature': 'Temperature',
+          'custom': m.custom_label || 'Custom'
+        };
+        const typeLabel = measurementTypeLabels[m.measurement_type] || m.measurement_type;
+
+        return {
+          type: 'health',
+          category: 'health',
+          subcategory: 'measurement',
+          icon: Ruler,
+          reptile_id: m.reptile_id,
+          reptile_name: reptileFromMap?.name || m.reptile_name || 'Unknown',
+          reptile: reptileFromMap || {
+            id: m.reptile_id,
+            name: m.reptile_name,
+            avatar_photo_url: m.avatar_photo_url,
+            avatar_border_color: null
+          },
+          timestamp: m.measured_at,
+          summary: typeLabel,
+          prominentValue: `${m.value}${m.unit}`,
+          detailLink: `/health-log/measurement/${m.id}`
+        };
+      });
+
+      const combined = [...feedings, ...mistings, ...weighings, ...healthRecords, ...measurements];
       combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       setActivities(combined);

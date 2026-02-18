@@ -90,27 +90,35 @@ const ReptileStatusCards = ({
         // Find today's tasks for this reptile from schedule instances
         const todayTasks = instances
           .filter(i => i.schedule?.reptile_id === reptile.id)
-          .map(i => ({
-            id: i.id,
-            instance_id: i.id,
-            schedule_id: i.schedule_id,
-            schedule_type: i.schedule?.schedule_type,
-            // Include schedule name for display - fallback to capitalized schedule_type
-            name: i.schedule?.name,
-            task_name: i.schedule?.name,
-            scheduled_time: i.schedule?.earliest_time,
-            status: i.status,
-            completed_at: i.status === 'completed' ? i.updated_at : null,
-            reptile_id: reptile.id,
-            reptile_name: reptile.name,
-            // Include schedule data for QuickLogForm
-            food_category: i.schedule?.food_category,
-            health_subtype: i.schedule?.health_subtype,
-            measurement_type: i.schedule?.measurement_type,
-            supplements: i.supplements || i.schedule?.supplements,
-            // Include reptile for QuickLogForm
-            reptile: reptile
-          }));
+          .map(i => {
+            // Get completion data if available
+            const completion = i.completions?.[0];
+            return {
+              id: i.id,
+              instance_id: i.id,
+              schedule_id: i.schedule_id,
+              schedule_type: i.schedule?.schedule_type,
+              // Include schedule name for display - fallback to capitalized schedule_type
+              name: i.schedule?.name,
+              task_name: i.schedule?.name,
+              scheduled_time: i.schedule?.earliest_time,
+              status: i.status,
+              completed_at: i.status === 'completed' ? i.updated_at : null,
+              reptile_id: reptile.id,
+              reptile_name: reptile.name,
+              // Include schedule data for QuickLogForm
+              food_category: i.schedule?.food_category,
+              health_subtype: i.schedule?.health_subtype,
+              measurement_type: i.schedule?.measurement_type,
+              health_category: i.schedule?.health_category,
+              supplements: i.supplements || i.schedule?.supplements,
+              // Include reptile for QuickLogForm
+              reptile: reptile,
+              // Include completion data for view navigation
+              completion_type: completion?.completion_type,
+              completion_id: completion?.completion_id
+            };
+          });
 
         // Find last feeding
         const lastFeeding = bulkData?.last_activity?.[reptile.id]?.last_feeding?.[0]?.fed_at || null;

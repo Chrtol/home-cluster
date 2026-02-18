@@ -8,8 +8,53 @@ from app.database import get_db
 from app.models import User, Measurement, AccessLevel, Reptile
 from app.permissions import check_reptile_access
 from app.schemas import Measurement as MeasurementSchema, MeasurementCreate, MeasurementUpdate
+from app.schedule_matcher import assign_measurement_to_schedule
 
 router = APIRouter()
+
+
+@router.get("/dashboard")
+async def get_dashboard_measurements(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = 50
+):
+    """Get recent measurements for all user's reptiles (for dashboard)"""
+    from app.permissions import get_user_reptiles
+
+    user_reptiles = await get_user_reptiles(db, current_user)
+    reptile_ids = [item["reptile"].id for item in user_reptiles]
+
+    if not reptile_ids:
+        return []
+
+    # Get recent measurements with reptile names
+    result = await db.execute(
+        select(Measurement, Reptile.name, Reptile.id, Reptile.avatar_photo_id)
+        .join(Reptile, Measurement.reptile_id == Reptile.id)
+        .where(Measurement.reptile_id.in_(reptile_ids))
+        .order_by(Measurement.measured_at.desc())
+        .limit(limit)
+    )
+
+    # Transform results to include reptile name and avatar
+    measurements = []
+    for measurement, reptile_name, reptile_id, avatar_photo_id in result.all():
+        m_dict = {
+            "id": measurement.id,
+            "reptile_id": measurement.reptile_id,
+            "measurement_type": measurement.measurement_type,
+            "value": measurement.value,
+            "unit": measurement.unit,
+            "measured_at": measurement.measured_at,
+            "notes": measurement.notes,
+            "custom_label": measurement.custom_label,
+            "reptile_name": reptile_name,
+            "avatar_photo_url": f"/api/photos/reptiles/{reptile_id}/avatar" if avatar_photo_id else None
+        }
+        measurements.append(m_dict)
+
+    return measurements
 
 
 @router.get("/reptile/{reptile_id}", response_model=List[MeasurementSchema])
@@ -86,6 +131,11 @@ async def create_measurement(
             elif measurement.unit == 'in':
                 length_cm = measurement.value * 2.54
             reptile.length = int(round(length_cm))
+
+    await db.flush()
+
+    # Try to assign to a matching health schedule
+    await assign_measurement_to_schedule(db, new_measurement)
 
     await db.commit()
     await db.refresh(new_measurement)

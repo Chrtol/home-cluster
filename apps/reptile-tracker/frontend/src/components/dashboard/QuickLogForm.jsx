@@ -37,6 +37,43 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   // Shedding check state (for shedding_check health schedules)
   const [isShedding, setIsShedding] = useState(null); // null = not selected, true = yes, false = no
 
+  // Brumation check state (for brumation_check health schedules)
+  const [isBrumating, setIsBrumating] = useState(null); // null = not selected, true = yes, false = no
+
+  // Measurement input state (for measurement health schedules)
+  const [measurementValue, setMeasurementValue] = useState('');
+  const [measurementUnit, setMeasurementUnit] = useState('');
+
+  // Default units for measurement types
+  const measurementTypeDefaults = {
+    svl: 'cm',
+    total_length: 'cm',
+    shell_length: 'cm',
+    humidity: '%',
+    temperature: 'C',
+  };
+
+  // Human-readable labels for measurement types
+  const measurementTypeLabels = {
+    svl: 'Snout-Vent Length',
+    total_length: 'Total Length',
+    shell_length: 'Shell Length',
+    humidity: 'Humidity',
+    temperature: 'Temperature',
+    temp: 'Temperature',
+    custom: 'Custom Measurement',
+  };
+
+  // Set default unit when task loads for measurement schedules
+  useEffect(() => {
+    if (task?.health_subtype === 'measurement' && task?.measurement_type) {
+      const defaultUnit = measurementTypeDefaults[task.measurement_type.toLowerCase()];
+      if (defaultUnit && !measurementUnit) {
+        setMeasurementUnit(defaultUnit);
+      }
+    }
+  }, [task]);
+
   // Handle Escape key to close modal
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -203,6 +240,12 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       return;
     }
 
+    // Validate brumation_check selection
+    if (scheduleType === 'health' && healthSubtype === 'brumation_check' && isBrumating === null) {
+      setError('Please select whether reptile is entering brumation');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
@@ -258,31 +301,91 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             notes: notes.trim() || null
           };
         } else if (healthSubtype === 'shedding_check') {
-          // Shedding check - create shedding event if yes, otherwise just mark complete
+          // Shedding check - ALWAYS create a record for audit trail
+          // First, create the shedding check record
+          endpoint = '/api/health';
+          payload = {
+            reptile_id: reptileId,
+            record_type: 'shedding_check',
+            title: isShedding ? 'Shedding Check: Yes' : 'Shedding Check: No',
+            description: notes.trim() || null,
+            date: fedAt.toISOString()
+          };
+
+          // Post the shedding check record
+          await axios.post(endpoint, payload);
+
+          // If yes, ALSO create a shedding start event to begin the shed cycle
           if (isShedding) {
-            // Create shedding start event
-            endpoint = '/api/health';
-            payload = {
+            await axios.post('/api/health', {
               reptile_id: reptileId,
               record_type: 'shedding',
               event_type: 'start',
               title: 'Started Shedding',
-              description: notes.trim() || null,
+              description: 'Triggered from shedding check',
               date: fedAt.toISOString()
-            };
-          } else {
-            // No shedding - just mark the task complete without creating a record
-            // onSubmit will handle marking the schedule instance complete
-            if (onSubmit) {
-              await onSubmit();
-            }
-            onClose();
+            });
+          }
+
+          // Call success handler and close (we already posted, so skip the final post)
+          if (onSubmit) {
+            await onSubmit();
+          }
+          onClose();
+          return;
+        } else if (healthSubtype === 'brumation_check') {
+          // Brumation check - ALWAYS create a record for audit trail
+          endpoint = '/api/health';
+          payload = {
+            reptile_id: reptileId,
+            record_type: 'brumation_check',
+            title: isBrumating ? 'Brumation Check: Yes' : 'Brumation Check: No',
+            description: notes.trim() || null,
+            date: fedAt.toISOString()
+          };
+
+          // Post the brumation check record
+          await axios.post(endpoint, payload);
+
+          // If yes, ALSO create a brumation start event
+          if (isBrumating) {
+            await axios.post('/api/health', {
+              reptile_id: reptileId,
+              record_type: 'brumation',
+              event_type: 'start',
+              title: 'Started Brumation',
+              description: 'Triggered from brumation check',
+              date: fedAt.toISOString()
+            });
+          }
+
+          // Call success handler and close (we already posted, so skip the final post)
+          if (onSubmit) {
+            await onSubmit();
+          }
+          onClose();
+          return;
+        } else if (healthSubtype === 'measurement') {
+          // Measurement logs with value input
+          if (!measurementValue || parseFloat(measurementValue) <= 0) {
+            setError('Please enter a measurement value');
+            setSubmitting(false);
             return;
           }
-        } else if (healthSubtype === 'measurement') {
-          // Measurements need value - redirect to full form
-          navigate(getFullFormPath());
-          return;
+          if (!measurementUnit) {
+            setError('Please select a unit');
+            setSubmitting(false);
+            return;
+          }
+          endpoint = '/api/measurements';
+          payload = {
+            reptile_id: reptileId,
+            measurement_type: task.measurement_type?.toLowerCase() || 'custom',
+            value: parseFloat(measurementValue),
+            unit: measurementUnit,
+            measured_at: fedAt.toISOString(),
+            notes: notes.trim() || null
+          };
         } else if (healthSubtype === 'bathing') {
           endpoint = '/api/health';
           payload = {
@@ -292,8 +395,25 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             description: notes.trim() || null,
             date: fedAt.toISOString()
           };
+        } else if (healthSubtype === 'health_record') {
+          // Health record - use health_category from schedule if available
+          const healthCategory = task?.health_category || 'observation';
+          const titleMap = {
+            'medication': 'Medication',
+            'observation': 'Health Observation',
+            'vet_visit': 'Vet Visit',
+            'bowel_movement': 'Bowel Movement'
+          };
+          endpoint = '/api/health';
+          payload = {
+            reptile_id: reptileId,
+            record_type: healthCategory,
+            title: titleMap[healthCategory] || 'Health Record',
+            description: notes.trim() || null,
+            date: fedAt.toISOString()
+          };
         } else {
-          // Default to observation for health_record and unknown subtypes
+          // Default fallback for unknown subtypes
           endpoint = '/api/health';
           payload = {
             reptile_id: reptileId,
@@ -460,6 +580,50 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             </div>
           )}
 
+          {/* Measurement input for measurement health schedules */}
+          {scheduleType === 'health' && task?.health_subtype === 'measurement' && (
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-foreground">
+                {measurementTypeLabels[task.measurement_type?.toLowerCase()] || task.measurement_type?.replace('_', ' ') || 'Measurement'}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={measurementValue}
+                  onChange={(e) => setMeasurementValue(e.target.value)}
+                  placeholder="Value"
+                  className="flex-1 px-2 py-1.5 bg-muted border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  autoFocus
+                />
+                <select
+                  value={measurementUnit}
+                  onChange={(e) => setMeasurementUnit(e.target.value)}
+                  className="w-20 px-2 py-1.5 bg-muted border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+                  <option value="">Unit</option>
+                  <option value="cm">cm</option>
+                  <option value="mm">mm</option>
+                  <option value="in">in</option>
+                  <option value="%">%</option>
+                  <option value="C">°C</option>
+                  <option value="F">°F</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Health record type display */}
+          {scheduleType === 'health' && task?.health_subtype === 'health_record' && (
+            <div className="bg-muted rounded p-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Record Type</p>
+              <p className="text-xs text-foreground capitalize">
+                {(task.health_category || 'observation').replace('_', ' ')}
+              </p>
+            </div>
+          )}
+
           {/* Time picker */}
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
@@ -521,6 +685,39 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
                   onClick={() => setIsShedding(false)}
                   className={`flex-1 px-3 py-2 text-sm font-medium rounded border transition-colors ${
                     isShedding === false
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted text-foreground border-border hover:bg-muted/80'
+                  }`}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Brumation check - Yes/No selection */}
+          {scheduleType === 'health' && task?.health_subtype === 'brumation_check' && (
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-2">
+                Is {reptileName} entering brumation?
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBrumating(true)}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded border transition-colors ${
+                    isBrumating === true
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-muted text-foreground border-border hover:bg-muted/80'
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsBrumating(false)}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded border transition-colors ${
+                    isBrumating === false
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-muted text-foreground border-border hover:bg-muted/80'
                   }`}

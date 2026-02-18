@@ -56,13 +56,15 @@ const categoryColors = {
 const healthSubcategoryLabels = {
   'bathing': 'Bathing',
   'shedding': 'Shedding',
+  'shedding_check': 'Shedding Check',
   'observation': 'Observation',
   'vet_visit': 'Vet Visit',
   'medication': 'Medication',
   'bowel_movement': 'Bowel',
   'weight': 'Weight',
   'measurement': 'Measurement',
-  'brumation': 'Brumation'
+  'brumation': 'Brumation',
+  'brumation_check': 'Brumation Check'
 };
 
 // Subcategory labels for feeding (food categories)

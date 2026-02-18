@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Utensils, Droplet, HeartPulse } from 'lucide-react';
 import { useConfetti } from '../../hooks/useConfetti';
@@ -7,14 +8,15 @@ import ConfettiDismissOverlay from '../ConfettiDismissOverlay';
  * TaskChip - Clickable task status chip
  *
  * Displays a task with status-based styling (done/due/overdue).
- * Click triggers quick-log form (wired in Plan 08-03).
+ * Click triggers quick-log form for pending tasks, or navigates to view mode for completed tasks.
  *
  * Props:
- * - task: Task object with status, name, time
+ * - task: Task object with status, name, time, completion_type, completion_id
  * - onQuickLog: Handler for task chip clicks (task => void)
  * - className: Additional CSS classes
  */
 const TaskChip = ({ task, onQuickLog, className = '' }) => {
+  const navigate = useNavigate();
   const { triggerSubtle, isActive, dismiss } = useConfetti();
 
   if (!task) return null;
@@ -110,7 +112,44 @@ const TaskChip = ({ task, onQuickLog, className = '' }) => {
 
   const TaskIcon = getTaskIcon();
 
+  // Get the view URL for a completed task based on completion type
+  // Uses route params pattern: /page/:id or /health-log/:type/:id
+  const getCompletedTaskViewUrl = () => {
+    const { completion_type, completion_id, reptile_id } = task;
+
+    if (!completion_id) return null;
+
+    switch (completion_type) {
+      case 'feeding':
+        return `/feed/${completion_id}`;
+      case 'weighing':
+        return `/health-log/weight/${completion_id}`;
+      case 'misting':
+        return `/misting/${completion_id}`;
+      case 'measurement':
+        return `/health-log/measurement/${completion_id}`;
+      case 'bathing':
+      case 'shedding_check':
+      case 'brumation_check':
+      case 'health_record':
+        return `/health-log/health/${completion_id}`;
+      default:
+        // Fallback to reptile page
+        return reptile_id ? `/reptiles/${reptile_id}` : null;
+    }
+  };
+
   const handleClick = () => {
+    // For completed tasks, navigate to view mode
+    if (status === 'done' && task.completion_id) {
+      const viewUrl = getCompletedTaskViewUrl();
+      if (viewUrl) {
+        navigate(viewUrl);
+        return;
+      }
+    }
+
+    // For pending/overdue tasks, open QuickLogForm
     if (onQuickLog) {
       onQuickLog(task);
     }

@@ -58,12 +58,14 @@ const healthLogSchema = z.object({
   path: ['title'],
 }).refine((data) => {
   // If log_type is shedding or brumation, event_subtype is required
+  // Valid shedding subtypes: start, complete, check_no
+  // Valid brumation subtypes: start, end
   if (data.log_type === 'shedding' || data.log_type === 'brumation') {
     return data.event_subtype && data.event_subtype.length > 0;
   }
   return true;
 }, {
-  message: "Event subtype is required for shedding and brumation events",
+  message: "Please select an option",
   path: ['event_subtype'],
 }).refine((data) => {
   // If log_type is measurement, measurement fields are required
@@ -296,7 +298,8 @@ export default function HealthLog() {
           }
 
           if (measurementTypeParam) {
-            form.setValue('measurement_type', measurementTypeParam);
+            // Normalize to lowercase to match Select options
+            form.setValue('measurement_type', measurementTypeParam.toLowerCase());
           }
 
           if (recordTypeParam) {
@@ -344,10 +347,31 @@ export default function HealthLog() {
     }
   }, [logType, healthStatus, mode, canStartShedding, canCompleteShedding, canStartBrumation, canEndBrumation, form]);
 
+  // Default unit mapping for measurement types
+  const measurementTypeDefaults = {
+    svl: 'cm',
+    total_length: 'cm',
+    shell_length: 'cm',
+    humidity: '%',
+    temperature: 'C',
+  };
+
+  // Auto-set default unit when measurement type changes
+  useEffect(() => {
+    if (logType === 'measurement' && measurementType && !form.getValues('measurement_unit')) {
+      const defaultUnit = measurementTypeDefaults[measurementType];
+      if (defaultUnit) {
+        form.setValue('measurement_unit', defaultUnit);
+      }
+    }
+  }, [logType, measurementType, form]);
+
   // Helper function to generate auto-title for shedding/brumation
   const getAutoTitle = (logType, subtype) => {
     if (logType === 'shedding') {
-      return subtype === 'start' ? 'Started shedding' : 'Shed complete';
+      if (subtype === 'start') return 'Started shedding';
+      if (subtype === 'complete') return 'Shed complete';
+      if (subtype === 'check_no') return 'Shedding Check: No';
     }
     if (logType === 'brumation') {
       return subtype === 'start' ? 'Started brumation' : 'Ended brumation';
@@ -358,7 +382,11 @@ export default function HealthLog() {
   // Helper function to format event type for display
   const formatEventType = (recordType, eventType) => {
     if (recordType === 'shedding') {
-      return eventType === 'start' ? 'Started Shedding' : 'Shed Complete';
+      if (eventType === 'start') return 'Started Shedding';
+      if (eventType === 'complete') return 'Shed Complete';
+    }
+    if (recordType === 'shedding_check') {
+      return 'Shedding Check: No';
     }
     if (recordType === 'brumation') {
       return eventType === 'start' ? 'Started Brumating' : 'Ended Brumation';
@@ -585,27 +613,79 @@ export default function HealthLog() {
           setLastLogType('weight');
           setShowSuccessActions(true);
         } else if (data.log_type === 'shedding' || data.log_type === 'brumation') {
-          // Shedding or brumation event
-          const payload = {
-            reptile_id: data.reptile_id,
-            record_type: data.log_type,
-            event_type: data.event_subtype,
-            title: getAutoTitle(data.log_type, data.event_subtype),
-            description: data.notes || null,
-            date: new Date(dateTimeString).toISOString(),
-          };
-          const response = await axios.post('/api/health', payload);
+          // Handle shedding check "No" case - creates audit record without starting shed cycle
+          if (data.log_type === 'shedding' && data.event_subtype === 'check_no') {
+            const payload = {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding_check',
+              title: 'Shedding Check: No',
+              description: data.notes || null,
+              date: new Date(dateTimeString).toISOString(),
+            };
+            const response = await axios.post('/api/health', payload);
 
-          // Dispatch attribution event if completing for another user
-          if (response.data.attribution) {
-            notifyStreakAttribution(response.data.attribution);
+            if (response.data.attribution) {
+              notifyStreakAttribution(response.data.attribution);
+            }
+
+            triggerSubtle();
+            setSuccess(`Shedding check logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}. No signs of shedding.`);
+            setLastCreatedId(response.data.id);
+            setLastLogType('health');
+            setShowSuccessActions(true);
+          } else if (data.log_type === 'shedding' && data.event_subtype === 'start') {
+            // Shedding start - create both shedding_check: Yes AND shedding start event
+            // First, create the shedding check audit record
+            await axios.post('/api/health', {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding_check',
+              title: 'Shedding Check: Yes',
+              description: data.notes || null,
+              date: new Date(dateTimeString).toISOString(),
+            });
+
+            // Then create the shedding start event
+            const response = await axios.post('/api/health', {
+              reptile_id: data.reptile_id,
+              record_type: 'shedding',
+              event_type: 'start',
+              title: 'Started shedding',
+              description: 'Triggered from shedding check',
+              date: new Date(dateTimeString).toISOString(),
+            });
+
+            if (response.data.attribution) {
+              notifyStreakAttribution(response.data.attribution);
+            }
+
+            triggerSubtle();
+            setSuccess(`Shedding started for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
+            setLastCreatedId(response.data.id);
+            setLastLogType('health');
+            setShowSuccessActions(true);
+          } else {
+            // Shedding complete or brumation event
+            const payload = {
+              reptile_id: data.reptile_id,
+              record_type: data.log_type,
+              event_type: data.event_subtype,
+              title: getAutoTitle(data.log_type, data.event_subtype),
+              description: data.notes || null,
+              date: new Date(dateTimeString).toISOString(),
+            };
+            const response = await axios.post('/api/health', payload);
+
+            // Dispatch attribution event if completing for another user
+            if (response.data.attribution) {
+              notifyStreakAttribution(response.data.attribution);
+            }
+
+            triggerSubtle();
+            setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
+            setLastCreatedId(response.data.id);
+            setLastLogType('health');
+            setShowSuccessActions(true);
           }
-
-          triggerSubtle();
-          setSuccess(`${data.log_type === 'shedding' ? 'Shedding' : 'Brumation'} event logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
-          setLastCreatedId(response.data.id);
-          setLastLogType('health');
-          setShowSuccessActions(true);
         } else if (data.log_type === 'bathing') {
           // Bathing event - simple, no event_type needed
           const payload = {
@@ -985,7 +1065,7 @@ export default function HealthLog() {
               name="event_subtype"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-muted-foreground">Event Type</FormLabel>
+                  <FormLabel className="text-muted-foreground">Is this reptile shedding?</FormLabel>
                   {mode === 'create' && formatCurrentStatus() && (
                     <div className="mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-900 dark:text-blue-100">
                       Current status: {formatCurrentStatus()}
@@ -1002,7 +1082,17 @@ export default function HealthLog() {
                       className={!canStartShedding && mode === 'create' ? 'opacity-50 cursor-not-allowed' : ''}
                       title={!canStartShedding && mode === 'create' ? 'Already shedding' : ''}
                     >
-                      Started Shedding
+                      Yes, showing signs
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        field.onChange('check_no');
+                      }}
+                      disabled={mode === 'edit'}
+                      variant={field.value === 'check_no' ? 'default' : 'outline'}
+                    >
+                      No, not shedding
                     </Button>
                     <Button
                       type="button"

@@ -648,7 +648,9 @@ async def assign_health_record_to_schedule(
     record_type_mapping = {
         'bathing': ('bathing', CompletionType.BATHING),
         'shedding': ('shedding_check', CompletionType.SHEDDING_CHECK),
+        'shedding_check': ('shedding_check', CompletionType.SHEDDING_CHECK),  # Direct shedding check record
         'brumation': ('brumation_check', CompletionType.BRUMATION_CHECK),
+        'brumation_check': ('brumation_check', CompletionType.BRUMATION_CHECK),  # Direct brumation check record
         'observation': ('health_record', CompletionType.HEALTH_RECORD),
         'vet_visit': ('health_record', CompletionType.HEALTH_RECORD),
         'medication': ('health_record', CompletionType.HEALTH_RECORD),
