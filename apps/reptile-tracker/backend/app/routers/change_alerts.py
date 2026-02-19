@@ -30,6 +30,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Fast-growing juveniles with daily insect feeding",
         alerts={
             "feeding": {"enabled": True, "window_days": 7, "threshold_increase": 20, "threshold_decrease": 20, "cooldown_days": 3},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 25, "threshold_decrease": 5, "cooldown_days": 7},
             "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "rolling_average_window": 3, "cooldown_days": 14},
             "measurement_total_length": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "rolling_average_window": 3, "cooldown_days": 14},
         }
@@ -40,6 +41,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Mature dragons with weekly insect feeding",
         alerts={
             "feeding": {"enabled": True, "window_days": 14, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 7},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
             "measurement_svl": {"enabled": False},  # Adults don't grow much
         }
     ),
@@ -49,6 +51,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Growing pythons fed every 7-10 days",
         alerts={
             "feeding": {"enabled": True, "window_days": 21, "threshold_increase": 25, "threshold_decrease": 25, "cooldown_days": 14},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 25, "threshold_decrease": 5, "cooldown_days": 7},
             "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 15, "threshold_decrease": 5, "rolling_average_window": 3, "cooldown_days": 21},
         }
     ),
@@ -58,6 +61,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Mature pythons fed every 14-21 days",
         alerts={
             "feeding": {"enabled": True, "window_days": 28, "threshold_increase": 40, "threshold_decrease": 40, "cooldown_days": 21},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
         }
     ),
     "leopard_gecko_juvenile": SpeciesPreset(
@@ -66,6 +70,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Growing geckos fed every 1-2 days",
         alerts={
             "feeding": {"enabled": True, "window_days": 7, "threshold_increase": 25, "threshold_decrease": 25, "cooldown_days": 3},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 25, "threshold_decrease": 5, "cooldown_days": 7},
             "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "rolling_average_window": 3, "cooldown_days": 14},
         }
     ),
@@ -75,6 +80,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Mature geckos fed every 2-3 days",
         alerts={
             "feeding": {"enabled": True, "window_days": 14, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 7},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
         }
     ),
     "crested_gecko": SpeciesPreset(
@@ -83,6 +89,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="CGD-fed geckos with occasional insects",
         alerts={
             "feeding": {"enabled": True, "window_days": 14, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 7},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
         }
     ),
     "corn_snake": SpeciesPreset(
@@ -91,6 +98,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         description="Fed every 7-14 days depending on age",
         alerts={
             "feeding": {"enabled": True, "window_days": 21, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 14},
+            "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
             "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "rolling_average_window": 3, "cooldown_days": 21},
         }
     ),
