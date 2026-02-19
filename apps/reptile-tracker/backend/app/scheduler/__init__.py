@@ -77,6 +77,15 @@ from .feeding_alerts import (
     INSECT_NUTRITIONAL_MULTIPLIERS,
 )
 
+# Re-export measurement alert functions from measurement_alerts.py (Phase 28 - Generalized Change Alerts)
+from .measurement_alerts import (
+    STANDARD_MEASUREMENT_TYPES,
+    get_measurement_rolling_average,
+    check_measurement_alert,
+    check_all_measurement_alerts_for_reptile,
+    update_measurement_alert_tracking,
+)
+
 __all__ = [
     "scheduler",
     "start_scheduler",
@@ -122,4 +131,10 @@ __all__ = [
     "normalize_insect_quantity",
     "extract_species",
     "INSECT_NUTRITIONAL_MULTIPLIERS",
+    # Measurement alert functions (Phase 28)
+    "STANDARD_MEASUREMENT_TYPES",
+    "get_measurement_rolling_average",
+    "check_measurement_alert",
+    "check_all_measurement_alerts_for_reptile",
+    "update_measurement_alert_tracking",
 ]
