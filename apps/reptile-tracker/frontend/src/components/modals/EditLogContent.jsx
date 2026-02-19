@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, X, Bug, Leaf, Utensils } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -19,6 +19,24 @@ const feedingSchema = z.object({
   fed_date: z.string().min(1, 'Date is required'),
   fed_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/, 'Invalid time format'),
   notes: z.string().optional(),
+  include_insects: z.boolean(),
+  include_salad: z.boolean(),
+  include_prepared: z.boolean(),
+  insect_items: z.array(z.object({
+    id: z.number(),
+    food_id: z.string(),
+    quantity: z.number().min(1),
+    supplement_ids: z.array(z.number())
+  })),
+  salad_components: z.array(z.number()),
+  salad_supplements: z.array(z.number()),
+  prepared_items: z.array(z.object({
+    id: z.number(),
+    food_id: z.string(),
+    quantity: z.number().min(1),
+    supplement_ids: z.array(z.number())
+  })),
+  global_supplements: z.array(z.number())
 });
 
 const mistingSchema = z.object({
@@ -98,6 +116,9 @@ export function EditLogContent({
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [foods, setFoods] = useState([]);
+  const [supplements, setSupplements] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
 
   const schema = schemas[logType] || feedingSchema;
 
@@ -106,10 +127,45 @@ export function EditLogContent({
     switch (logType) {
       case 'feeding': {
         const { date, time } = parseDateTime(log.fed_at);
+
+        // Parse existing foods into insect and prepared items
+        const insectItems = [];
+        const preparedItems = [];
+        let saladSupplements = [];
+
+        if (log.foods && Array.isArray(log.foods)) {
+          log.foods.forEach(foodItem => {
+            // Check if this is the Salad item
+            if (foodItem.is_salad) {
+              saladSupplements = foodItem.supplement_ids || [];
+            } else {
+              // Categorize as insect or prepared based on food category
+              const itemData = {
+                id: foodItem.id || Date.now() + Math.random(),
+                food_id: String(foodItem.food_id),
+                quantity: foodItem.quantity || 1,
+                supplement_ids: foodItem.supplement_ids || []
+              };
+
+              // Check category - we'll need to match against foods data later
+              // For now, add to prepared by default (will be refined after foods load)
+              preparedItems.push(itemData);
+            }
+          });
+        }
+
         return {
           fed_date: date,
           fed_time: time,
           notes: log.notes || '',
+          include_insects: insectItems.length > 0,
+          include_salad: log.is_salad || false,
+          include_prepared: preparedItems.length > 0,
+          insect_items: insectItems,
+          salad_components: log.salad_components || [],
+          salad_supplements: saladSupplements,
+          prepared_items: preparedItems,
+          global_supplements: log.supplements || []
         };
       }
       case 'misting': {
@@ -162,6 +218,49 @@ export function EditLogContent({
     defaultValues: getDefaultValues(),
     mode: 'onBlur',
   });
+
+  // Set up useFieldArray for food items
+  const { fields: insectFields, append: appendInsect, remove: removeInsect } = useFieldArray({
+    control: form.control,
+    name: 'insect_items'
+  });
+  const { fields: preparedFields, append: appendPrepared, remove: removePrepared } = useFieldArray({
+    control: form.control,
+    name: 'prepared_items'
+  });
+
+  // Watch food type toggles
+  const watchIncludeInsects = useWatch({ control: form.control, name: 'include_insects' });
+  const watchIncludeSalad = useWatch({ control: form.control, name: 'include_salad' });
+  const watchIncludePrepared = useWatch({ control: form.control, name: 'include_prepared' });
+
+  // Compute food category filters
+  const insectFoods = foods.filter(f => f.category === 'insect' || f.category === 'worms');
+  const saladFoods = foods.filter(f => f.category === 'vegetable' || f.category === 'fruit');
+  const preparedFoods = foods.filter(f =>
+    ['prepared', 'frozen_animal', 'live_rodent', 'fish_seafood', 'eggs', 'other'].includes(f.category) && f.name !== 'Salad'
+  );
+
+  // Fetch foods and supplements when logType is feeding
+  useEffect(() => {
+    const fetchFoodData = async () => {
+      if (logType !== 'feeding') return;
+      setLoadingData(true);
+      try {
+        const [foodsRes, supplementsRes] = await Promise.all([
+          axios.get(`/api/foods?reptile_id=${log.reptile_id}`),
+          axios.get('/api/supplements'),
+        ]);
+        setFoods(foodsRes.data);
+        setSupplements(supplementsRes.data);
+      } catch (err) {
+        console.error('Failed to fetch food data:', err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    fetchFoodData();
+  }, [logType, log.reptile_id]);
 
   // Reset form when log changes
   useEffect(() => {
