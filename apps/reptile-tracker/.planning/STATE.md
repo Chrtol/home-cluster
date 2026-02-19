@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 28 - Generalized Change Alerts (2 of 3 plans complete)
-**Plan:** 28-05 complete
+**Phase:** 28 - Generalized Change Alerts (6 of 7 plans complete)
+**Plan:** 28-06 complete
 **Status:** In progress
-**Last activity:** 2026-02-19 — Completed 28-05-PLAN.md (Change Alerts Tab on Notifications Page)
-**Progress:** ██░ (67% - 2/3 plans complete)
+**Last activity:** 2026-02-19 — Completed 28-06-PLAN.md (Species Presets Quick-Setup)
+**Progress:** ██████░ (86% - 6/7 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,9 +23,26 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Continue Phase 28 (plans remaining: 28-02, 28-03, or other plans as needed)
+**Next:** Execute Phase 28 Plan 07 (final plan in phase)
 
 ## Recent Completions
+
+### Phase 28 Plan 06: Species Presets Quick-Setup
+**Completed:** 2026-02-19
+**Summary:** One-click species preset selector that configures feeding, weight, and measurement alerts for each reptile
+
+**Key accomplishments:**
+- Created SpeciesPresetsSection component with preset dropdown, preview, and apply functionality
+- Integrated preset selector at top of each reptile's expanded panel in ChangeAlertsTab
+- Added weight alert configs to all 8 species presets (juveniles: 25% gain/5% loss, adults: 10% gain/5% loss)
+- Enabled one-click application of curated alert configurations
+
+**Files created:**
+- `frontend/src/components/notifications/SpeciesPresetsSection.jsx`
+
+**Files modified:**
+- `frontend/src/components/notifications/ChangeAlertsTab.jsx`
+- `backend/app/routers/change_alerts.py`
 
 ### Phase 28 Plan 05: Change Alerts Tab on Notifications Page
 **Completed:** 2026-02-19
@@ -136,9 +153,9 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-19
-**Action:** Completed Phase 28 Plan 05 - Change Alerts Tab on Notifications Page
-**Stopped at:** Phase 28 Plan 05 complete
-**Resume from:** .planning/phases/28-generalized-change-alerts/28-05-SUMMARY.md
+**Action:** Completed Phase 28 Plan 06 - Species Presets Quick-Setup
+**Stopped at:** Phase 28 Plan 06 complete
+**Resume from:** .planning/phases/28-generalized-change-alerts/28-06-SUMMARY.md
 
 ## Phase 26 Plan Summary
 
