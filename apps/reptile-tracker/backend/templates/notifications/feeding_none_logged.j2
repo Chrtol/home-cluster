@@ -1,0 +1,16 @@
+{# No Feedings Logged Alert - separate from "eating less" per CONTEXT.md #}
+{% set short %}
+{{ reptile_name }}: No insect feedings logged in {{ window_days }} days
+{% endset %}
+
+{% set long %}
+**Feeding Alert for {{ reptile_name }}**
+
+No insect feedings have been logged in the past {{ window_days }} days.
+
+**Previous period had:** {{ previous_feeding_count }} feedings ({{ previous_period_total }} normalized units)
+
+This may indicate missed logging or a change in feeding schedule.
+{% endset %}
+
+{% if format == 'short' %}{{ short }}{% else %}{{ long }}{% endif %}

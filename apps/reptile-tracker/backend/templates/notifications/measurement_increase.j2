@@ -1,0 +1,18 @@
+{# Measurement Increase Alert - neutral observation per CONTEXT.md #}
+{% set short %}
+{{ reptile_name }}: {{ measurement_type_display }} increased {{ change_percent }}% above average
+{% endset %}
+
+{% set long %}
+**Measurement Alert for {{ reptile_name }}**
+
+{{ measurement_type_display }} has increased {{ change_percent }}% above the rolling average.
+
+**Current:** {{ current_value }} {{ unit }}
+**Baseline (avg of {{ measurements_in_baseline }}):** {{ baseline_value }} {{ unit }}
+**Change:** +{{ change_absolute }} {{ unit }} ({{ change_percent }}%)
+
+This is a neutral observation - you know your reptile best.
+{% endset %}
+
+{% if format == 'short' %}{{ short }}{% else %}{{ long }}{% endif %}

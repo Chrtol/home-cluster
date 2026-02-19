@@ -1,0 +1,17 @@
+{# Feeding Increase Alert - neutral observation per CONTEXT.md #}
+{% set short %}
+{{ reptile_name }}: Feeding {{ change_percent }}% above {{ window_days }}-day average
+{% endset %}
+
+{% set long %}
+**Feeding Trend Alert for {{ reptile_name }}**
+
+Insect feeding quantity is {{ change_percent }}% above the {{ window_days }}-day average.
+
+**Current period:** {{ current_period_total }} normalized units ({{ current_feeding_count }} feedings)
+**Previous period:** {{ previous_period_total }} normalized units ({{ previous_feeding_count }} feedings)
+
+This is a neutral observation - you know your reptile best.
+{% endset %}
+
+{% if format == 'short' %}{{ short }}{% else %}{{ long }}{% endif %}
