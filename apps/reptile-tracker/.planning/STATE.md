@@ -97,6 +97,7 @@ For future milestones:
 |---|-------------|------|--------|-----------|
 | 001 | Add streak miss details modal and completed task tooltips | 2026-02-17 | 23f2c77e0 | [001-add-streak-miss-details-modal-and-comple](./quick/001-add-streak-miss-details-modal-and-comple/) |
 | 002 | Fix streak calculation bug - streaks not resetting after misses | 2026-02-18 | 77029e5c4 | [002-fix-streak-calculation-bug-streaks-not-r](./quick/002-fix-streak-calculation-bug-streaks-not-r/) |
+| 003 | Fix blank notifications page JSON parse error | 2026-02-19 | 98dd5b116 | [003-fix-blank-notifications-page-json-parse-](./quick/003-fix-blank-notifications-page-json-parse-/) |
 
 ## Session Continuity
 
