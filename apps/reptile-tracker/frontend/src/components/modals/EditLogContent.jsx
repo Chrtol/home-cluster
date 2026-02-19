@@ -298,18 +298,55 @@ export function EditLogContent({
       const endpoint = getEndpoint(logType, log.id);
 
       switch (logType) {
-        case 'feeding':
+        case 'feeding': {
+          // Build foods array from insects, salad, and prepared items
+          const foodsPayload = [];
+
+          // Add insect items
+          if (data.include_insects) {
+            data.insect_items.forEach(item => {
+              foodsPayload.push({
+                food_id: parseInt(item.food_id),
+                quantity: item.quantity,
+                supplement_ids: item.supplement_ids || []
+              });
+            });
+          }
+
+          // Add prepared items
+          if (data.include_prepared) {
+            data.prepared_items.forEach(item => {
+              foodsPayload.push({
+                food_id: parseInt(item.food_id),
+                quantity: item.quantity,
+                supplement_ids: item.supplement_ids || []
+              });
+            });
+          }
+
+          // Add salad if included
+          if (data.include_salad) {
+            const saladFood = foods.find(f => f.name === 'Salad');
+            if (saladFood) {
+              foodsPayload.push({
+                food_id: saladFood.id,
+                quantity: 1,
+                supplement_ids: data.salad_supplements || []
+              });
+            }
+          }
+
           payload = {
             fed_at: buildDateTimeWithTz(data.fed_date, data.fed_time),
             notes: data.notes || '',
-            // Preserve existing feeding data
-            is_salad: log.is_salad || false,
-            foods: log.foods || [],
-            supplements: log.supplements || [],
-            salad_components: log.salad_components || [],
+            is_salad: data.include_salad,
+            foods: foodsPayload,
+            supplements: data.global_supplements || [],
+            salad_components: data.include_salad ? data.salad_components : [],
           };
           response = await axios.put(endpoint, payload);
           break;
+        }
 
         case 'misting':
           payload = {
