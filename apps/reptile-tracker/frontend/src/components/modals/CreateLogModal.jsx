@@ -417,9 +417,12 @@ export function CreateLogModal({
       setShowSuggestion(false);
 
       // Check for pre-filled supplements from prefill prop
-      if (effectiveLogType === 'feeding' && safePrefill.supplements && safePrefill.supplements.length > 0) {
+      // If instance_id is present, we're from a schedule context - always use pre-fill mode (not suggestion)
+      if (effectiveLogType === 'feeding' && (safePrefill.instance_id || (safePrefill.supplements && safePrefill.supplements.length > 0))) {
         // Extract IDs from objects if needed (schedule instances pass objects)
-        const supplementIds = safePrefill.supplements.map(s => typeof s === 'object' ? s.id : s);
+        const supplementIds = safePrefill.supplements?.length > 0
+          ? safePrefill.supplements.map(s => typeof s === 'object' ? s.id : s)
+          : [];
         setSupplementsPreFilled(true);
         setOriginalPreFilledSupplements(supplementIds);
       } else {

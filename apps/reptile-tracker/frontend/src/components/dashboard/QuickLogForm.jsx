@@ -229,6 +229,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     const scheduleType = task?.schedule_type || task?.type;
     const reptileId = task?.reptile_id || task?.reptile?.id;
     const healthSubtype = task?.health_subtype;
+    const instanceId = task?.instance_id || task?.id;
 
     // Map schedule type to log type
     let logType = scheduleType;
@@ -238,8 +239,10 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       else logType = 'health';
     }
 
-    // Build prefill from task data
+    // Build prefill from task data - include supplements for pre-fill
     const prefill = {
+      instance_id: instanceId,
+      supplements: task?.supplements || [],
       health_subtype: healthSubtype,
       measurement_type: task?.measurement_type,
       food_category: task?.food_category,

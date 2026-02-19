@@ -113,6 +113,7 @@ export function ViewInstanceModal({
     // Map schedule_type to log type
     let logType = schedule.schedule_type;
     const prefill = {
+      instance_id: instance.id, // Pass instance_id for supplement pre-fill
       supplements: instance.supplements || [], // Instance-specific supplements
     };
 
