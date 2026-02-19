@@ -2514,7 +2514,7 @@ export default function Dashboard() {
           scheduleId={viewScheduleId}
           open={viewScheduleOpen}
           onOpenChange={(open) => !open && closeViewSchedule()}
-          onEdit={() => navigate(`/schedule/${viewScheduleId}/edit`)}
+          onEdit={() => navigate(`/schedule-edit/${viewScheduleId}`)}
           onDelete={() => {
             closeViewSchedule();
             refreshDashboard();

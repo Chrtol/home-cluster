@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -325,7 +326,10 @@ export function EditLogContent({
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Note: Food items and supplements cannot be edited here. Use the full feeding log page for detailed changes.
+                  Note: Food items and supplements cannot be edited here.{' '}
+                  <Link to={`/feed/${log.id}`} className="text-primary hover:underline">
+                    Edit full feeding details →
+                  </Link>
                 </p>
               </>
             )}
