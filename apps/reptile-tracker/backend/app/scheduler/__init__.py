@@ -10,6 +10,8 @@ Structure:
 - auto_complete.py: Extracted auto-complete job functions (accept scheduler as parameter)
 - notifications.py: Extracted notification sender functions (send reminders, overdue alerts, interval warnings)
 - overdue.py: Extracted overdue detection functions
+- weight_alerts.py: Weight change alert detection (Phase 24)
+- feeding_alerts.py: Feeding change alert detection with nutritional multipliers (Phase 28)
 """
 
 # Re-export everything from core.py for backward compatibility
@@ -65,6 +67,16 @@ from .weight_alerts import (
     AGE_AWARE_DEFAULTS,
 )
 
+# Re-export feeding alert functions from feeding_alerts.py (Phase 28 - Generalized Change Alerts)
+from .feeding_alerts import (
+    check_feeding_alert,
+    calculate_feeding_trend,
+    get_insect_feedings_in_period,
+    normalize_insect_quantity,
+    extract_species,
+    INSECT_NUTRITIONAL_MULTIPLIERS,
+)
+
 __all__ = [
     "scheduler",
     "start_scheduler",
@@ -103,4 +115,11 @@ __all__ = [
     "get_age_aware_defaults_for_reptile",
     "get_effective_cooldown_days",
     "AGE_AWARE_DEFAULTS",
+    # Feeding alert functions (Phase 28)
+    "check_feeding_alert",
+    "calculate_feeding_trend",
+    "get_insect_feedings_in_period",
+    "normalize_insect_quantity",
+    "extract_species",
+    "INSECT_NUTRITIONAL_MULTIPLIERS",
 ]
