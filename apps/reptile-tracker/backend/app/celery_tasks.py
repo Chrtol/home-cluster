@@ -1164,6 +1164,149 @@ async def send_weight_change_alert_task(
 
 
 @celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
+async def send_change_alert_notification_task(
+    self,
+    reptile_id: int,
+    alert_context: dict
+):
+    """
+    Celery task to send change alert notification (feeding or measurement).
+
+    Args:
+        reptile_id: Reptile ID
+        alert_context: Dict with alert details (trigger_type, values, etc.)
+    """
+    logger.info(f"=== CELERY send_change_alert_notification_task STARTED === reptile_id={reptile_id}")
+
+    try:
+        async with async_session_maker() as db:
+            # Load reptile
+            reptile = await db.get(Reptile, reptile_id)
+
+            if not reptile:
+                logger.error(f"Reptile {reptile_id} not found for change alert")
+                return
+
+            # Get users who have access to this reptile
+            from app.permissions import get_reptile_users
+            users = await get_reptile_users(db, reptile)
+
+            if not users:
+                logger.warning(f"No users with access to reptile {reptile_id}")
+                return
+
+            trigger_type = alert_context.get("trigger_type")
+            if not trigger_type:
+                logger.error(f"No trigger_type in alert_context: {alert_context}")
+                return
+
+            # Send to each user's configured channels
+            for user in users:
+                try:
+                    # Get user's notification settings
+                    settings_result = await db.execute(
+                        select(NotificationSettings).where(NotificationSettings.user_id == user.id)
+                    )
+                    settings = settings_result.scalar_one_or_none()
+
+                    if not settings:
+                        logger.debug(f"No notification settings for user {user.id}")
+                        continue
+
+                    # Get enabled channels
+                    channels_result = await db.execute(
+                        select(NotificationChannel).where(
+                            NotificationChannel.notification_settings_id == settings.id,
+                            NotificationChannel.enabled == True
+                        )
+                    )
+                    channels = channels_result.scalars().all()
+
+                    for channel in channels:
+                        try:
+                            # Get template for trigger type
+                            template = await get_template_for_trigger(
+                                db=db,
+                                trigger_type=trigger_type,
+                                user_id=user.id,
+                                channel_type=channel.webhook_type
+                            )
+
+                            # Build notification context
+                            context = {
+                                "reptile_id": reptile.id,
+                                "reptile_name": reptile.name,
+                                **alert_context
+                            }
+
+                            # Render template or use fallback
+                            if template:
+                                message = render_template(get_template_message(template, channel), context)
+                                title = render_template(template.title_template, context) if template.title_template else f"Alert - {reptile.name}"
+                            else:
+                                # Fallback messages based on trigger type
+                                if trigger_type == "feeding_decrease":
+                                    title = f"{reptile.name}: Feeding Decrease"
+                                    message = alert_context.get("message", "Feeding quantity decreased")
+                                elif trigger_type == "feeding_increase":
+                                    title = f"{reptile.name}: Feeding Increase"
+                                    message = alert_context.get("message", "Feeding quantity increased")
+                                elif trigger_type == "feeding_none_logged":
+                                    title = f"{reptile.name}: No Feedings Logged"
+                                    message = alert_context.get("message", "No feedings logged recently")
+                                elif trigger_type == "measurement_increase":
+                                    title = f"{reptile.name}: Measurement Increase"
+                                    message = alert_context.get("message", "Measurement increased")
+                                elif trigger_type == "measurement_decrease":
+                                    title = f"{reptile.name}: Measurement Decrease"
+                                    message = alert_context.get("message", "Measurement decreased")
+                                else:
+                                    title = f"{reptile.name}: Change Alert"
+                                    message = alert_context.get("message", "Change detected")
+
+                            # Send via webhook or in-app
+                            if channel.webhook_type == "in_app":
+                                await create_in_app_notification(
+                                    db=db,
+                                    user=user,
+                                    notification_type=NotificationType.HEALTH_EVENT,
+                                    title=title,
+                                    message=message,
+                                    link=f"/reptiles/{reptile.id}",
+                                    notification_metadata={
+                                        "reptile_id": reptile.id,
+                                        "alert_type": trigger_type,
+                                        **context
+                                    }
+                                )
+                            else:
+                                await send_webhook_notification(
+                                    webhook_url=channel.webhook_url,
+                                    webhook_type=channel.webhook_type,
+                                    message=message,
+                                    title=title,
+                                    config=channel.config,
+                                    context=context,
+                                    trigger_type=trigger_type,
+                                    template=template
+                                )
+
+                            logger.info(f"Sent change alert via {channel.webhook_type} for reptile {reptile.name} to user {user.email}")
+
+                        except Exception as channel_error:
+                            logger.error(f"Failed to send change alert to channel {channel.id}: {channel_error}")
+
+                except Exception as user_error:
+                    logger.error(f"Failed to send change alert to user {user.id}: {user_error}")
+
+            logger.info(f"Change alert sent for reptile {reptile.name}")
+
+    except Exception as exc:
+        logger.error(f"Error sending change alert: {exc}", exc_info=True)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=3, default_retry_delay=60)
 async def send_weekly_planner_task(
     self,
     user_id: int,

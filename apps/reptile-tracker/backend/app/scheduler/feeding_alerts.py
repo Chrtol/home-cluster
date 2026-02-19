@@ -330,3 +330,41 @@ def check_feeding_alert(
             }
 
     return None
+
+
+def update_feeding_alert_tracking(
+    db: Session,
+    reptile_id: int,
+    context: dict
+) -> None:
+    """
+    Update tracking record with new feeding alert timestamp.
+
+    Args:
+        db: Database session
+        reptile_id: Reptile ID
+        context: Alert context dict containing alert details
+    """
+    tracking = db.query(ChangeAlertTracking).filter(
+        and_(
+            ChangeAlertTracking.reptile_id == reptile_id,
+            ChangeAlertTracking.alert_type == "feeding"
+        )
+    ).first()
+
+    now = datetime.now(timezone.utc)
+
+    if tracking:
+        tracking.last_alert_at = now
+        tracking.last_alert_context = context
+        tracking.updated_at = now
+    else:
+        tracking = ChangeAlertTracking(
+            reptile_id=reptile_id,
+            alert_type="feeding",
+            last_alert_at=now,
+            last_alert_context=context
+        )
+        db.add(tracking)
+
+    db.flush()
