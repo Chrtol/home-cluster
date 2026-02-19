@@ -128,44 +128,21 @@ export function EditLogContent({
       case 'feeding': {
         const { date, time } = parseDateTime(log.fed_at);
 
-        // Parse existing foods into insect and prepared items
-        const insectItems = [];
-        const preparedItems = [];
-        let saladSupplements = [];
-
-        if (log.foods && Array.isArray(log.foods)) {
-          log.foods.forEach(foodItem => {
-            // Check if this is the Salad item
-            if (foodItem.is_salad) {
-              saladSupplements = foodItem.supplement_ids || [];
-            } else {
-              // Categorize as insect or prepared based on food category
-              const itemData = {
-                id: foodItem.id || Date.now() + Math.random(),
-                food_id: String(foodItem.food_id),
-                quantity: foodItem.quantity || 1,
-                supplement_ids: foodItem.supplement_ids || []
-              };
-
-              // Check category - we'll need to match against foods data later
-              // For now, add to prepared by default (will be refined after foods load)
-              preparedItems.push(itemData);
-            }
-          });
-        }
-
+        // Food items will be properly categorized after foods data loads (via useEffect)
+        // For now, just set the basic values
+        // Note: log.supplements and log.salad_components are objects with {id, name}, extract IDs
         return {
           fed_date: date,
           fed_time: time,
           notes: log.notes || '',
-          include_insects: insectItems.length > 0,
+          include_insects: false,
           include_salad: log.is_salad || false,
-          include_prepared: preparedItems.length > 0,
-          insect_items: insectItems,
-          salad_components: log.salad_components || [],
-          salad_supplements: saladSupplements,
-          prepared_items: preparedItems,
-          global_supplements: log.supplements || []
+          include_prepared: false,
+          insect_items: [],
+          salad_components: log.salad_components?.map(c => c.id) || [],
+          salad_supplements: [],
+          prepared_items: [],
+          global_supplements: log.supplements?.map(s => s.id) || []
         };
       }
       case 'misting': {
@@ -262,6 +239,55 @@ export function EditLogContent({
     fetchFoodData();
   }, [logType, log.reptile_id]);
 
+  // Re-categorize food items after foods data loads
+  useEffect(() => {
+    if (logType !== 'feeding' || foods.length === 0 || !log.foods || log.foods.length === 0) return;
+
+    const insectCategories = ['insect', 'worms'];
+
+    const newInsectItems = [];
+    const newPreparedItems = [];
+    let newSaladSupplements = [];
+
+    log.foods.forEach(foodItem => {
+      // Handle salad item separately
+      if (foodItem.name === 'Salad') {
+        // Extract supplement IDs from supplement objects
+        newSaladSupplements = foodItem.supplements?.map(s => s.id) || [];
+        return;
+      }
+
+      // Category is embedded directly on the food item from the API
+      const category = foodItem.category;
+
+      // Find the food_id by matching name against our fetched foods list
+      const matchedFood = foods.find(f => f.name === foodItem.name);
+      const foodId = matchedFood?.id || foodItem.id || foodItem.food_id;
+
+      const itemData = {
+        id: Date.now() + Math.random(),
+        food_id: String(foodId),
+        quantity: foodItem.quantity || 1,
+        // Extract supplement IDs from supplement objects
+        supplement_ids: foodItem.supplements?.map(s => s.id) || []
+      };
+
+      if (insectCategories.includes(category)) {
+        newInsectItems.push(itemData);
+      } else {
+        // All other categories go to prepared/other
+        newPreparedItems.push(itemData);
+      }
+    });
+
+    // Clear and reset with properly categorized items
+    form.setValue('insect_items', newInsectItems);
+    form.setValue('include_insects', newInsectItems.length > 0);
+    form.setValue('prepared_items', newPreparedItems);
+    form.setValue('include_prepared', newPreparedItems.length > 0);
+    form.setValue('salad_supplements', newSaladSupplements);
+  }, [foods, log.foods, logType]);
+
   // Reset form when log changes
   useEffect(() => {
     form.reset(getDefaultValues());
@@ -337,6 +363,7 @@ export function EditLogContent({
           }
 
           payload = {
+            reptile_id: log.reptile_id,
             fed_at: buildDateTimeWithTz(data.fed_date, data.fed_time),
             notes: data.notes || '',
             is_salad: data.include_salad,
@@ -398,7 +425,18 @@ export function EditLogContent({
       onSave?.(response.data);
     } catch (err) {
       console.error('Failed to update log:', err);
-      setError(err.response?.data?.detail || 'Failed to update log. Please try again.');
+      // Handle Pydantic validation errors (array of {type, loc, msg, input})
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        const messages = detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join('; ');
+        setError(messages || 'Validation error');
+      } else if (typeof detail === 'string') {
+        setError(detail);
+      } else if (detail?.msg) {
+        setError(detail.msg);
+      } else {
+        setError('Failed to update log. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -534,7 +572,7 @@ export function EditLogContent({
                           </Button>
                         </div>
                         {insectFields.map((field, index) => (
-                          <div key={field.id} className="space-y-2 p-2 bg-background rounded border">
+                          <div key={field.id} className="space-y-2 p-2 bg-card rounded-md border border-border">
                             <div className="flex gap-2 items-center">
                               <Select
                                 value={form.watch(`insect_items.${index}.food_id`)}
@@ -589,7 +627,7 @@ export function EditLogContent({
                             </div>
                             {/* Per-item supplements */}
                             {supplements.length > 0 && (
-                              <div className="flex flex-wrap gap-1 pt-1 border-t">
+                              <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
                                 {supplements.map(sup => {
                                   const ids = form.watch(`insect_items.${index}.supplement_ids`) || [];
                                   const checked = ids.includes(sup.id);
@@ -629,7 +667,7 @@ export function EditLogContent({
                             return (
                               <label
                                 key={f.id}
-                                className="flex items-center gap-2 p-1.5 border rounded text-sm cursor-pointer hover:bg-background"
+                                className="flex items-center gap-2 p-1.5 border border-border rounded text-sm cursor-pointer hover:bg-card"
                               >
                                 <input
                                   type="checkbox"
@@ -646,7 +684,7 @@ export function EditLogContent({
                         </div>
                         {/* Salad supplements */}
                         {supplements.length > 0 && (
-                          <div className="flex flex-wrap gap-1 pt-2 border-t">
+                          <div className="flex flex-wrap gap-1 pt-2 border-t border-border">
                             <span className="text-xs text-muted-foreground w-full mb-1">Salad supplements:</span>
                             {supplements.map(sup => {
                               const saladSupps = form.watch('salad_supplements') || [];
@@ -693,7 +731,7 @@ export function EditLogContent({
                           </Button>
                         </div>
                         {preparedFields.map((field, index) => (
-                          <div key={field.id} className="space-y-2 p-2 bg-background rounded border">
+                          <div key={field.id} className="space-y-2 p-2 bg-card rounded-md border border-border">
                             <div className="flex gap-2 items-center">
                               <Select
                                 value={form.watch(`prepared_items.${index}.food_id`)}
@@ -748,7 +786,7 @@ export function EditLogContent({
                             </div>
                             {/* Per-item supplements */}
                             {supplements.length > 0 && (
-                              <div className="flex flex-wrap gap-1 pt-1 border-t">
+                              <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
                                 {supplements.map(sup => {
                                   const ids = form.watch(`prepared_items.${index}.supplement_ids`) || [];
                                   const checked = ids.includes(sup.id);
@@ -789,7 +827,7 @@ export function EditLogContent({
                             return (
                               <label
                                 key={sup.id}
-                                className="flex items-center gap-2 p-1.5 border rounded text-sm cursor-pointer hover:bg-muted"
+                                className="flex items-center gap-2 p-1.5 border border-border rounded text-sm cursor-pointer hover:bg-muted"
                               >
                                 <input
                                   type="checkbox"
