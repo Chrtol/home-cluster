@@ -1,7 +1,7 @@
 from datetime import datetime, time, date
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, field_serializer
+from pydantic import BaseModel, EmailStr, Field, field_serializer, ConfigDict
 from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType
 
 
@@ -1477,3 +1477,99 @@ class CompletionAttributionResponse(BaseModel):
     completed_by_user_id: int
     message: str
     milestone_reached: Optional[int] = None  # 7, 30, 100, or 365 if milestone just achieved
+
+
+# ---- Change Alert Configuration Schemas ----
+
+class ChangeAlertConfigBase(BaseModel):
+    """Base schema for change alert configuration."""
+    alert_type: str  # "feeding", "measurement_svl", etc.
+    enabled: bool = False
+    cooldown_days: Optional[int] = None  # NULL = inherit global
+    threshold_type: str = "percentage"  # "percentage" or "absolute"
+    threshold_increase: Optional[float] = None
+    threshold_decrease: Optional[float] = None
+    window_days: Optional[int] = None  # Feeding-specific
+    rolling_average_window: Optional[int] = None  # Measurement-specific
+
+
+class ChangeAlertConfigCreate(ChangeAlertConfigBase):
+    """Schema for creating a change alert config."""
+    reptile_id: int
+
+
+class ChangeAlertConfigUpdate(BaseModel):
+    """Schema for updating a change alert config (all fields optional)."""
+    enabled: Optional[bool] = None
+    cooldown_days: Optional[int] = None
+    threshold_type: Optional[str] = None
+    threshold_increase: Optional[float] = None
+    threshold_decrease: Optional[float] = None
+    window_days: Optional[int] = None
+    rolling_average_window: Optional[int] = None
+
+
+class ChangeAlertConfigResponse(ChangeAlertConfigBase):
+    """Schema for change alert config response."""
+    id: int
+    reptile_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GlobalChangeAlertSettingsResponse(BaseModel):
+    """Schema for global change alert settings."""
+    # Feeding alerts
+    feeding_alert_enabled: bool
+    feeding_alert_window_days: int
+    feeding_alert_threshold_percent: int
+    feeding_alert_cooldown_days: int
+
+    # Measurement alerts
+    measurement_alert_enabled: bool
+    measurement_alert_rolling_window: int
+    measurement_alert_threshold_percent: int
+    measurement_alert_cooldown_days: int
+    measurement_alert_types: Optional[List[str]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GlobalChangeAlertSettingsUpdate(BaseModel):
+    """Schema for updating global change alert settings."""
+    feeding_alert_enabled: Optional[bool] = None
+    feeding_alert_window_days: Optional[int] = None
+    feeding_alert_threshold_percent: Optional[int] = None
+    feeding_alert_cooldown_days: Optional[int] = None
+
+    measurement_alert_enabled: Optional[bool] = None
+    measurement_alert_rolling_window: Optional[int] = None
+    measurement_alert_threshold_percent: Optional[int] = None
+    measurement_alert_cooldown_days: Optional[int] = None
+    measurement_alert_types: Optional[List[str]] = None
+
+
+class SpeciesPreset(BaseModel):
+    """Schema for a species preset definition."""
+    id: str
+    name: str
+    description: Optional[str] = None
+    alerts: Dict[str, Dict[str, Any]]
+
+
+class ApplyPresetRequest(BaseModel):
+    """Schema for applying a species preset to a reptile."""
+    preset_id: str
+    reptile_id: int
+
+
+class ReptileAlertSummary(BaseModel):
+    """Summary of all alert configs for a reptile."""
+    reptile_id: int
+    reptile_name: str
+    configs: List[ChangeAlertConfigResponse]
+    # Effective settings (merged with global defaults)
+    effective_feeding: Optional[Dict[str, Any]] = None
+    effective_measurements: Dict[str, Dict[str, Any]] = {}
