@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 27 - Read-Only Views & UX Polish (8 of 9 plans complete)
-**Plan:** 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a, 27-07b complete, ready for 27-08
+**Phase:** 28 - Generalized Change Alerts (1 of 3 plans complete)
+**Plan:** 28-01 complete
 **Status:** In progress
-**Last activity:** 2026-02-18 — Completed 27-07b-PLAN.md (Schedule widget modal integration)
-**Progress:** ████████░ (89% - 8/9 plans complete)
+**Last activity:** 2026-02-19 — Completed 28-01-PLAN.md (Database models for generalized change alerts)
+**Progress:** █░░ (33% - 1/3 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,7 +23,23 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 27 Plan 08 (Visual polish - dense spacing, hover states)
+**Next:** Execute Phase 28 Plan 02 (Feeding alerts implementation)
+
+## Recent Completions
+
+### Phase 28 Plan 01: Database Models for Generalized Change Alerts
+**Completed:** 2026-02-19
+**Summary:** Polymorphic alert config/tracking tables with global defaults for feeding trends and measurement growth alerts
+
+**Key accomplishments:**
+- Added ChangeAlertConfig and ChangeAlertTracking models with polymorphic alert_type field
+- Added feeding_alert_* and measurement_alert_* global defaults to NotificationSettings
+- Created migration 0105 with data preservation from WeightAlertTracking
+- Established extensible foundation for feeding and measurement alerts
+
+**Files modified:**
+- `backend/app/models.py`
+- `backend/migrations/versions/0105_add_generalized_change_alerts.py`
 
 ### Architecture Summary
 
@@ -102,29 +118,9 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-19
-**Action:** Added ViewInstanceModal for dashboard, fixed CreateLogModal supplement pre-fill
-**Stopped at:** UAT pending for uncommitted changes (22 files)
-**Uncommitted:** `feat(reptile-tracker): dashboard modals now show instance data instead of schedule definitions`
-
-### UAT Checklist for Current Changes
-
-1. **ViewInstanceModal (from dashboard calendar/timeline)**
-   - [ ] Click task in TodayScheduleTimeline → opens ViewInstanceModal (not ViewScheduleModal)
-   - [ ] Modal shows: scheduled date, status badge, pre-calculated supplements
-   - [ ] "Track" button opens CreateLogModal with supplements pre-filled
-   - [ ] "Skip" button marks instance as skipped
-   - [ ] "View Schedule" button opens ViewScheduleModal for the parent schedule
-
-2. **CreateLogModal supplement pre-fill**
-   - [ ] Opening from schedule instance → supplements already selected (blue banner, no Apply button)
-   - [ ] Opening from Track button (no schedule) → shows green suggestion banner with Apply button
-
-3. **ViewScheduleModal layout**
-   - [ ] Two-column header: "SCHEDULE TYPE" on left, "REPTILE" on right
-   - [ ] Reptile header text left-aligned with avatar below it
-
-**Resume file:** `.planning/phases/27-read-only-views-ux-polish/27-08-PLAN.md`
-**Next step:** After UAT, commit changes then execute Plan 27-08 (Visual polish)
+**Action:** Completed Phase 28 Plan 01 - Database models for generalized change alerts
+**Stopped at:** Phase 28 Plan 01 complete
+**Resume from:** Phase 28 Plan 02 (Feeding trend alerts implementation)
 
 ## Phase 26 Plan Summary
 
@@ -155,6 +151,29 @@ For future milestones:
 | Display measurement_type in TaskChip for measurement schedules | 26-06 | Provides clarity about which measurement is due (SVL, Total Length, etc.) | Users can see exact measurement type in task chip label |
 | Added MEASUREMENT to CompletionType enum | 26-07 | Required to support measurement logs completing health schedules | Enables measurement schedule completion functionality |
 | Used health_subtype filtering in schedule matcher | 26-07 | Enables precise matching of weight logs to weight health schedules and measurement logs to measurement health schedules | Schedule matcher now supports health schedule type alignment |
+
+## Phase 28 Plan Summary
+
+**Goal:** Generalize weight alert infrastructure to support feeding trend alerts and measurement growth alerts.
+
+**Plans:**
+- **28-01 (Wave 1):** Database models and migration - COMPLETE
+- **28-02 (Wave 2):** Feeding trend alerts implementation
+- **28-03 (Wave 3):** Measurement growth alerts implementation
+
+**Key Patterns Established:**
+- Polymorphic alert_type field enables single table for multiple alert types
+- Per-reptile config override pattern (NULL cooldown_days = inherit global)
+- JSON last_alert_context for type-specific tracking data
+- Data migration preserves existing weight alert tracking
+
+## Phase 28 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| Use alert_type polymorphism instead of separate tables | 28-01 | Enables extensible alert system without schema changes for new alert types | Single config/tracking table serves feeding, measurement, weight, and future alert types |
+| Preserve WeightAlertTracking table during migration | 28-01 | Maintains backward compatibility during transition period | Both old and new tracking systems coexist until weight alerts migrated to new system |
+| Migrate existing weight alert data to new tables | 28-01 | Ensures continuity of cooldown tracking when transitioning to new system | No alert spam when migrating existing reptile weight alerts |
 
 ## Phase 27 Plan Summary
 
@@ -203,4 +222,4 @@ For future milestones:
 
 ---
 
-**Project Status:** Phase 27 execution in progress. Plans 27-01, 27-02, 27-03, 27-04, 27-05, 27-06, 27-07a, 27-07b complete.
+**Project Status:** Phase 28 execution in progress. Plan 28-01 complete.
