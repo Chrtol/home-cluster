@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
+import SpeciesPresetsSection from './SpeciesPresetsSection';
 
 function ChangeAlertsTab() {
   const [searchParams] = useSearchParams();
@@ -508,6 +509,13 @@ function ChangeAlertsTab() {
                     {/* Expanded Content */}
                     <Collapsible.Content className="bg-card border-t border-border">
                       <div className="p-4 space-y-6">
+                        {/* Species Preset Quick Setup */}
+                        <SpeciesPresetsSection
+                          reptileId={reptile.id}
+                          reptileName={reptile.name}
+                          onApplied={() => handleToggleExpand(reptile.id)}
+                        />
+
                         {/* Feeding Alert Overrides */}
                         <div className="space-y-4">
                           <h3 className="font-semibold text-foreground">Feeding Alert Overrides</h3>

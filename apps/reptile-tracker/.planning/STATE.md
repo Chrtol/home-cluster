@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 28 - Generalized Change Alerts (1 of 3 plans complete)
-**Plan:** 28-01 complete
+**Phase:** 28 - Generalized Change Alerts (2 of 3 plans complete)
+**Plan:** 28-05 complete
 **Status:** In progress
-**Last activity:** 2026-02-19 — Completed 28-01-PLAN.md (Database models for generalized change alerts)
-**Progress:** █░░ (33% - 1/3 plans complete)
+**Last activity:** 2026-02-19 — Completed 28-05-PLAN.md (Change Alerts Tab on Notifications Page)
+**Progress:** ██░ (67% - 2/3 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,9 +23,27 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 28 Plan 02 (Feeding alerts implementation)
+**Next:** Continue Phase 28 (plans remaining: 28-02, 28-03, or other plans as needed)
 
 ## Recent Completions
+
+### Phase 28 Plan 05: Change Alerts Tab on Notifications Page
+**Completed:** 2026-02-19
+**Summary:** Created Change Alerts tab with global feeding/measurement settings and per-reptile overrides, deprecated old weight alerts UI
+
+**Key accomplishments:**
+- Created ChangeAlertsTab component (743 lines) with global feeding and measurement alert settings
+- Added global feeding alerts (window, threshold, cooldown) and measurement alerts (types, rolling window, threshold, cooldown)
+- Implemented per-reptile override collapsibles for both feeding and measurement alerts
+- Replaced ReptileAlertsTab weight settings with redirect notice to Change Alerts tab
+- Added 6th tab to Notifications page with TrendingUp icon
+
+**Files created:**
+- `frontend/src/components/notifications/ChangeAlertsTab.jsx`
+
+**Files modified:**
+- `frontend/src/pages/Notifications.jsx`
+- `frontend/src/components/notifications/ReptileAlertsTab.jsx`
 
 ### Phase 28 Plan 01: Database Models for Generalized Change Alerts
 **Completed:** 2026-02-19
@@ -118,9 +136,9 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-19
-**Action:** Completed Phase 28 Plan 01 - Database models for generalized change alerts
-**Stopped at:** Phase 28 Plan 01 complete
-**Resume from:** Phase 28 Plan 02 (Feeding trend alerts implementation)
+**Action:** Completed Phase 28 Plan 05 - Change Alerts Tab on Notifications Page
+**Stopped at:** Phase 28 Plan 05 complete
+**Resume from:** .planning/phases/28-generalized-change-alerts/28-05-SUMMARY.md
 
 ## Phase 26 Plan Summary
 
@@ -174,6 +192,9 @@ For future milestones:
 | Use alert_type polymorphism instead of separate tables | 28-01 | Enables extensible alert system without schema changes for new alert types | Single config/tracking table serves feeding, measurement, weight, and future alert types |
 | Preserve WeightAlertTracking table during migration | 28-01 | Maintains backward compatibility during transition period | Both old and new tracking systems coexist until weight alerts migrated to new system |
 | Migrate existing weight alert data to new tables | 28-01 | Ensures continuity of cooldown tracking when transitioning to new system | No alert spam when migrating existing reptile weight alerts |
+| Use TrendingUp icon for Change Alerts tab | 28-05 | Visually represents growth/change trends for feeding and measurement alerts | Consistent iconography across notification tabs |
+| Replace entire ReptileAlertsTab content with redirect notice | 28-05 | Weight alerts moved to new generalized system, old UI is deprecated | Users clearly directed to new location without confusing dual interfaces |
+| Inherit pattern with null values for per-reptile overrides | 28-05 | Matches existing ReptileAlertsTab pattern for consistency | Empty inputs inherit global defaults, clear UX for override behavior |
 
 ## Phase 27 Plan Summary
 
