@@ -396,40 +396,381 @@ export function EditLogContent({
             {/* Feeding Fields */}
             {logType === 'feeding' && (
               <>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="fed_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date</FormLabel>
-                        <FormControl>
-                          <DatePicker value={field.value} onChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                {loadingData ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="fed_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date</FormLabel>
+                            <FormControl>
+                              <DatePicker value={field.value} onChange={field.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="fed_time"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Time</FormLabel>
+                            <FormControl>
+                              <TimePicker value={field.value} onChange={field.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Food Type Toggles */}
+                    <div className="space-y-2">
+                      <FormLabel>Food Types</FormLabel>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={watchIncludeInsects ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const newValue = !watchIncludeInsects;
+                            form.setValue('include_insects', newValue);
+                            if (newValue && insectFields.length === 0) {
+                              if (insectFoods.length > 0) {
+                                appendInsect({ id: Date.now(), food_id: insectFoods[0].id.toString(), quantity: 1, supplement_ids: [] });
+                              }
+                            }
+                          }}
+                        >
+                          <Bug className="h-4 w-4 mr-1" /> Insects
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={watchIncludeSalad ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => form.setValue('include_salad', !watchIncludeSalad)}
+                        >
+                          <Leaf className="h-4 w-4 mr-1" /> Salad
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={watchIncludePrepared ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const newValue = !watchIncludePrepared;
+                            form.setValue('include_prepared', newValue);
+                            if (newValue && preparedFields.length === 0) {
+                              if (preparedFoods.length > 0) {
+                                appendPrepared({ id: Date.now(), food_id: preparedFoods[0].id.toString(), quantity: 1, supplement_ids: [] });
+                              }
+                            }
+                          }}
+                        >
+                          <Utensils className="h-4 w-4 mr-1" /> Other
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Insects Section */}
+                    {watchIncludeInsects && (
+                      <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Insects/Worms</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (insectFoods.length > 0) {
+                                appendInsect({ id: Date.now(), food_id: insectFoods[0].id.toString(), quantity: 1, supplement_ids: [] });
+                              }
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {insectFields.map((field, index) => (
+                          <div key={field.id} className="space-y-2 p-2 bg-background rounded border">
+                            <div className="flex gap-2 items-center">
+                              <Select
+                                value={form.watch(`insect_items.${index}.food_id`)}
+                                onValueChange={(v) => form.setValue(`insect_items.${index}.food_id`, v)}
+                              >
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {insectFoods.map(f => (
+                                    <SelectItem key={f.id} value={f.id.toString()}>{f.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => form.setValue(`insect_items.${index}.quantity`, Math.max(1, form.watch(`insect_items.${index}.quantity`) - 1))}
+                                >
+                                  -
+                                </Button>
+                                <Input
+                                  type="number"
+                                  className="w-14 h-8 text-center"
+                                  value={form.watch(`insect_items.${index}.quantity`)}
+                                  onChange={(e) => form.setValue(`insect_items.${index}.quantity`, Math.max(1, parseInt(e.target.value) || 1))}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => form.setValue(`insect_items.${index}.quantity`, form.watch(`insect_items.${index}.quantity`) + 1)}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                              {insectFields.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive"
+                                  onClick={() => removeInsect(index)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                            {/* Per-item supplements */}
+                            {supplements.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1 border-t">
+                                {supplements.map(sup => {
+                                  const ids = form.watch(`insect_items.${index}.supplement_ids`) || [];
+                                  const checked = ids.includes(sup.id);
+                                  return (
+                                    <label
+                                      key={sup.id}
+                                      className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted cursor-pointer"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          const updated = checked ? ids.filter(id => id !== sup.id) : [...ids, sup.id];
+                                          form.setValue(`insect_items.${index}.supplement_ids`, updated);
+                                        }}
+                                        className="rounded h-3 w-3"
+                                      />
+                                      {sup.name}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="fed_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Time</FormLabel>
-                        <FormControl>
-                          <TimePicker value={field.value} onChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+
+                    {/* Salad Section */}
+                    {watchIncludeSalad && (
+                      <div className="space-y-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <span className="text-sm font-medium">Salad Components</span>
+                        <div className="grid grid-cols-2 gap-1">
+                          {saladFoods.map(f => {
+                            const components = form.watch('salad_components') || [];
+                            const checked = components.includes(f.id);
+                            return (
+                              <label
+                                key={f.id}
+                                className="flex items-center gap-2 p-1.5 border rounded text-sm cursor-pointer hover:bg-background"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    const updated = checked ? components.filter(id => id !== f.id) : [...components, f.id];
+                                    form.setValue('salad_components', updated);
+                                  }}
+                                />
+                                {f.name}
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {/* Salad supplements */}
+                        {supplements.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-2 border-t">
+                            <span className="text-xs text-muted-foreground w-full mb-1">Salad supplements:</span>
+                            {supplements.map(sup => {
+                              const saladSupps = form.watch('salad_supplements') || [];
+                              const checked = saladSupps.includes(sup.id);
+                              return (
+                                <label
+                                  key={sup.id}
+                                  className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-secondary cursor-pointer"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => {
+                                      const updated = checked ? saladSupps.filter(id => id !== sup.id) : [...saladSupps, sup.id];
+                                      form.setValue('salad_supplements', updated);
+                                    }}
+                                    className="rounded h-3 w-3"
+                                  />
+                                  {sup.name}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     )}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Note: Food items and supplements cannot be edited here.{' '}
-                  <Link to={`/feed/${log.id}`} className="text-primary hover:underline">
-                    Edit full feeding details →
-                  </Link>
-                </p>
+
+                    {/* Prepared/Other Foods Section */}
+                    {watchIncludePrepared && (
+                      <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Other Foods</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (preparedFoods.length > 0) {
+                                appendPrepared({ id: Date.now(), food_id: preparedFoods[0].id.toString(), quantity: 1, supplement_ids: [] });
+                              }
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {preparedFields.map((field, index) => (
+                          <div key={field.id} className="space-y-2 p-2 bg-background rounded border">
+                            <div className="flex gap-2 items-center">
+                              <Select
+                                value={form.watch(`prepared_items.${index}.food_id`)}
+                                onValueChange={(v) => form.setValue(`prepared_items.${index}.food_id`, v)}
+                              >
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {preparedFoods.map(f => (
+                                    <SelectItem key={f.id} value={f.id.toString()}>{f.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => form.setValue(`prepared_items.${index}.quantity`, Math.max(1, form.watch(`prepared_items.${index}.quantity`) - 1))}
+                                >
+                                  -
+                                </Button>
+                                <Input
+                                  type="number"
+                                  className="w-14 h-8 text-center"
+                                  value={form.watch(`prepared_items.${index}.quantity`)}
+                                  onChange={(e) => form.setValue(`prepared_items.${index}.quantity`, Math.max(1, parseInt(e.target.value) || 1))}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => form.setValue(`prepared_items.${index}.quantity`, form.watch(`prepared_items.${index}.quantity`) + 1)}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                              {preparedFields.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive"
+                                  onClick={() => removePrepared(index)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                            {/* Per-item supplements */}
+                            {supplements.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1 border-t">
+                                {supplements.map(sup => {
+                                  const ids = form.watch(`prepared_items.${index}.supplement_ids`) || [];
+                                  const checked = ids.includes(sup.id);
+                                  return (
+                                    <label
+                                      key={sup.id}
+                                      className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted cursor-pointer"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          const updated = checked ? ids.filter(id => id !== sup.id) : [...ids, sup.id];
+                                          form.setValue(`prepared_items.${index}.supplement_ids`, updated);
+                                        }}
+                                        className="rounded h-3 w-3"
+                                      />
+                                      {sup.name}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Global Supplements */}
+                    {supplements.length > 0 && (
+                      <div className="space-y-2">
+                        <FormLabel>Global Supplements</FormLabel>
+                        <p className="text-xs text-muted-foreground">Applied to all food items</p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {supplements.map(sup => {
+                            const globalSupps = form.watch('global_supplements') || [];
+                            const checked = globalSupps.includes(sup.id);
+                            return (
+                              <label
+                                key={sup.id}
+                                className="flex items-center gap-2 p-1.5 border rounded text-sm cursor-pointer hover:bg-muted"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    const updated = checked ? globalSupps.filter(id => id !== sup.id) : [...globalSupps, sup.id];
+                                    form.setValue('global_supplements', updated);
+                                  }}
+                                />
+                                {sup.name}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </>
             )}
 
