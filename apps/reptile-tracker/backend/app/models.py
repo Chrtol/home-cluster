@@ -993,6 +993,63 @@ class WeightAlertTracking(Base):
     last_alert_weight_log = relationship("WeightLog")
 
 
+class ChangeAlertConfig(Base):
+    """Per-reptile configuration for change alerts (feeding, measurement, etc.)."""
+    __tablename__ = "change_alert_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    alert_type = Column(String(50), nullable=False)  # "feeding", "measurement_svl", "measurement_total_length", etc.
+
+    # Common settings
+    enabled = Column(Boolean, default=False, nullable=False)
+    cooldown_days = Column(Integer, nullable=True)  # NULL = inherit global
+
+    # Threshold settings
+    threshold_type = Column(String(20), default="percentage", nullable=False)  # "percentage" or "absolute"
+    threshold_increase = Column(Float, nullable=True)  # Threshold for increase (percentage or absolute)
+    threshold_decrease = Column(Float, nullable=True)  # Threshold for decrease (percentage or absolute)
+
+    # Feeding-specific settings
+    window_days = Column(Integer, nullable=True)  # Time window for comparison (default 14)
+
+    # Measurement-specific settings
+    rolling_average_window = Column(Integer, nullable=True)  # Number of measurements to average (default 3)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    reptile = relationship("Reptile", backref="change_alert_configs")
+
+    __table_args__ = (
+        UniqueConstraint('reptile_id', 'alert_type', name='uq_reptile_change_alert_type'),
+        Index('ix_change_alert_config_lookup', 'reptile_id', 'alert_type'),
+    )
+
+
+class ChangeAlertTracking(Base):
+    """Tracks last alert timestamp per reptile per alert type for cooldown enforcement."""
+    __tablename__ = "change_alert_tracking"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reptile_id = Column(Integer, ForeignKey("reptiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    alert_type = Column(String(50), nullable=False)  # "weight", "feeding", "measurement_svl", etc.
+    last_alert_at = Column(DateTime(timezone=True), nullable=True)
+    last_alert_context = Column(JSON, nullable=True)  # Type-specific context (baseline, current, etc.)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    reptile = relationship("Reptile", backref="change_alert_tracking")
+
+    __table_args__ = (
+        UniqueConstraint('reptile_id', 'alert_type', name='uq_reptile_alert_tracking_type'),
+        Index('ix_change_alert_tracking_lookup', 'reptile_id', 'alert_type'),
+    )
+
+
 # Household and Invitation models
 household_members = Table(
     "household_members",
