@@ -398,16 +398,8 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
   const saveConfig = useCallback(async (alertType, data) => {
     setSavingTypes(prev => new Set(prev).add(alertType));
     try {
-      const config = configs.find(c => c.alert_type === alertType);
-      if (config) {
-        await axios.put(`/api/change-alerts/configs/${config.id}`, data);
-      } else {
-        await axios.post('/api/change-alerts/configs', {
-          reptile_id: reptileId,
-          alert_type: alertType,
-          ...data
-        });
-      }
+      // PATCH creates if doesn't exist, updates if exists
+      await axios.patch(`/api/change-alerts/reptile/${reptileId}/${alertType}`, data);
       await onSave();
     } catch (error) {
       console.error('Failed to save config:', error);
@@ -418,7 +410,7 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
         return next;
       });
     }
-  }, [configs, reptileId, onSave]);
+  }, [reptileId, onSave]);
 
   const handleChange = useCallback((alertType, updates) => {
     setFormData(prev => {
