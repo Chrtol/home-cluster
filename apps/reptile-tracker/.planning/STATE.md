@@ -176,12 +176,13 @@ For future milestones:
 | 001 | Add streak miss details modal and completed task tooltips | 2026-02-17 | 23f2c77e0 | [001-add-streak-miss-details-modal-and-comple](./quick/001-add-streak-miss-details-modal-and-comple/) |
 | 002 | Fix streak calculation bug - streaks not resetting after misses | 2026-02-18 | 77029e5c4 | [002-fix-streak-calculation-bug-streaks-not-r](./quick/002-fix-streak-calculation-bug-streaks-not-r/) |
 | 003 | Fix blank notifications page JSON parse error | 2026-02-19 | 98dd5b116 | [003-fix-blank-notifications-page-json-parse-](./quick/003-fix-blank-notifications-page-json-parse-/) |
+| 004 | Fix change alert settings save and notification sending | 2026-02-20 | 8b8237b9f | [004-fix-change-alert-settings-save-and-notif](./quick/004-fix-change-alert-settings-save-and-notif/) |
 
 ## Session Continuity
 
 **Last session:** 2026-02-20
-**Action:** Completed v1.4 milestone (Phases 26, 27, 28)
-**Stopped at:** v1.4 complete
+**Action:** Completed quick task 004 - Fixed change alert settings save and notification sending
+**Stopped at:** Change Alerts system fully functional
 **Resume from:** Ready for v1.5 (Phases 29-31)
 
 ## Phase 26 Plan Summary
