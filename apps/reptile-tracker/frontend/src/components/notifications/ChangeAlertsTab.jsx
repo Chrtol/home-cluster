@@ -1,751 +1,446 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import * as Collapsible from '@radix-ui/react-collapsible';
-import SpeciesPresetsSection from './SpeciesPresetsSection';
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { ChevronDown, Info, RefreshCw, Sparkles } from 'lucide-react';
+import ReptileAvatar from '@/components/ReptileAvatar';
+import ChangeAlertActivationFlow from './ChangeAlertActivationFlow';
+import axiosInstance from '@/utils/axiosInstance';
 
-function ChangeAlertsTab() {
-  const [searchParams] = useSearchParams();
-  const preselectedReptile = searchParams.get('reptile');
-
+export default function ChangeAlertsTab() {
   const [reptiles, setReptiles] = useState([]);
-  const [globalSettings, setGlobalSettings] = useState(null);
+  const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [expandedReptile, setExpandedReptile] = useState(null);
-  const [savingId, setSavingId] = useState(null);
-  const [savingGlobal, setSavingGlobal] = useState(false);
-
-  // Global form state
-  const [globalFormData, setGlobalFormData] = useState({
-    // Feeding alerts
-    feeding_alert_enabled: false,
-    feeding_alert_window_days: 14,
-    feeding_alert_threshold_percent: 50,
-    feeding_alert_cooldown_days: 7,
-
-    // Measurement alerts
-    measurement_alert_enabled: false,
-    measurement_alert_types: [],
-    measurement_alert_rolling_window_logs: 3,
-    measurement_alert_threshold_percent: 10,
-    measurement_alert_cooldown_days: 14
-  });
-
-  // Per-reptile form state
-  const [formData, setFormData] = useState({});
+  const [activationModalOpen, setActivationModalOpen] = useState(false);
+  const [expandedReptiles, setExpandedReptiles] = useState(new Set());
 
   useEffect(() => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (preselectedReptile && reptiles.length > 0) {
-      setExpandedReptile(parseInt(preselectedReptile));
-    }
-  }, [preselectedReptile, reptiles]);
-
   const loadData = async () => {
     try {
       setLoading(true);
+      const [reptilesRes, configsRes] = await Promise.all([
+        axiosInstance.get('/api/reptiles'),
+        axiosInstance.get('/api/change-alerts/configs')
+      ]);
 
-      // Load global notification settings
-      const settingsRes = await axios.get('/api/notification-settings/me');
-      setGlobalSettings(settingsRes.data);
-
-      // Initialize global form data
-      setGlobalFormData({
-        feeding_alert_enabled: settingsRes.data.feeding_alert_enabled || false,
-        feeding_alert_window_days: settingsRes.data.feeding_alert_window_days ?? 14,
-        feeding_alert_threshold_percent: settingsRes.data.feeding_alert_threshold_percent ?? 50,
-        feeding_alert_cooldown_days: settingsRes.data.feeding_alert_cooldown_days ?? 7,
-
-        measurement_alert_enabled: settingsRes.data.measurement_alert_enabled || false,
-        measurement_alert_types: settingsRes.data.measurement_alert_types || [],
-        measurement_alert_rolling_window_logs: settingsRes.data.measurement_alert_rolling_window_logs ?? 3,
-        measurement_alert_threshold_percent: settingsRes.data.measurement_alert_threshold_percent ?? 10,
-        measurement_alert_cooldown_days: settingsRes.data.measurement_alert_cooldown_days ?? 14
-      });
-
-      // Load reptiles
-      const reptilesRes = await axios.get('/api/reptiles');
       setReptiles(reptilesRes.data);
-    } catch (err) {
-      console.error('Failed to load data:', err);
-      setError('Failed to load change alert settings');
+
+      // Group configs by reptile_id
+      const configsByReptile = {};
+      configsRes.data.forEach(config => {
+        if (!configsByReptile[config.reptile_id]) {
+          configsByReptile[config.reptile_id] = [];
+        }
+        configsByReptile[config.reptile_id].push(config);
+      });
+      setConfigs(configsByReptile);
+    } catch (error) {
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGlobalFormChange = (field, value) => {
-    setGlobalFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const hasAnyAlerts = Object.keys(configs).length > 0;
 
-  const handleMeasurementTypeToggle = (measurementType) => {
-    setGlobalFormData(prev => {
-      const types = prev.measurement_alert_types || [];
-      const hasType = types.includes(measurementType);
-
-      return {
-        ...prev,
-        measurement_alert_types: hasType
-          ? types.filter(t => t !== measurementType)
-          : [...types, measurementType]
-      };
+  const toggleExpanded = (reptileId) => {
+    setExpandedReptiles(prev => {
+      const next = new Set(prev);
+      if (next.has(reptileId)) {
+        next.delete(reptileId);
+      } else {
+        next.add(reptileId);
+      }
+      return next;
     });
   };
 
-  const handleSaveGlobal = async () => {
-    setSavingGlobal(true);
-    setError('');
-    setSuccess('');
-
+  const handleApplyPreset = async (reptileId, presetId) => {
     try {
-      await axios.post('/api/notification-settings/me', {
-        feeding_alert_enabled: globalFormData.feeding_alert_enabled,
-        feeding_alert_window_days: parseInt(globalFormData.feeding_alert_window_days) || 14,
-        feeding_alert_threshold_percent: parseFloat(globalFormData.feeding_alert_threshold_percent) || 50,
-        feeding_alert_cooldown_days: parseInt(globalFormData.feeding_alert_cooldown_days) || 7,
-
-        measurement_alert_enabled: globalFormData.measurement_alert_enabled,
-        measurement_alert_types: globalFormData.measurement_alert_types,
-        measurement_alert_rolling_window_logs: parseInt(globalFormData.measurement_alert_rolling_window_logs) || 3,
-        measurement_alert_threshold_percent: parseFloat(globalFormData.measurement_alert_threshold_percent) || 10,
-        measurement_alert_cooldown_days: parseInt(globalFormData.measurement_alert_cooldown_days) || 14
+      await axiosInstance.post('/api/change-alerts/presets/apply', {
+        reptile_id: reptileId,
+        preset_id: presetId
       });
-
-      setSuccess('Global change alert settings saved');
-      setTimeout(() => setSuccess(''), 3000);
       await loadData();
-    } catch (err) {
-      console.error('Failed to save global settings:', err);
-      setError(err.response?.data?.detail || 'Failed to save global settings');
-    } finally {
-      setSavingGlobal(false);
+    } catch (error) {
+      console.error('Failed to apply preset:', error);
     }
   };
 
-  const handleToggleExpand = (reptileId) => {
-    if (expandedReptile === reptileId) {
-      setExpandedReptile(null);
-      setFormData({});
-    } else {
-      const reptile = reptiles.find(r => r.id === reptileId);
-      setExpandedReptile(reptileId);
-
-      // Initialize form with current values or null (inherit)
-      setFormData({
-        // Feeding overrides
-        feeding_alert_enabled_override: reptile.feeding_alert_enabled_override ?? null,
-        feeding_alert_window_days: reptile.feeding_alert_window_days ?? null,
-        feeding_alert_threshold_percent: reptile.feeding_alert_threshold_percent ?? null,
-        feeding_alert_cooldown_days: reptile.feeding_alert_cooldown_days ?? null,
-
-        // Measurement overrides
-        measurement_alert_enabled_override: reptile.measurement_alert_enabled_override ?? null,
-        measurement_alert_types: reptile.measurement_alert_types ?? null,
-        measurement_alert_rolling_window_logs: reptile.measurement_alert_rolling_window_logs ?? null,
-        measurement_alert_threshold_percent: reptile.measurement_alert_threshold_percent ?? null,
-        measurement_alert_cooldown_days: reptile.measurement_alert_cooldown_days ?? null
-      });
-    }
-  };
-
-  const handleFormChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleReptileMeasurementTypeToggle = (measurementType) => {
-    setFormData(prev => {
-      // If null, start with empty array (not global default)
-      const types = prev.measurement_alert_types ?? [];
-      const hasType = types.includes(measurementType);
-
-      return {
-        ...prev,
-        measurement_alert_types: hasType
-          ? types.filter(t => t !== measurementType)
-          : [...types, measurementType]
-      };
-    });
-  };
-
-  const handleSaveReptile = async (reptileId) => {
-    setSavingId(reptileId);
-    setError('');
-    setSuccess('');
-
+  const handleBulkApplyToAll = async () => {
     try {
-      const reptile = reptiles.find(r => r.id === reptileId);
-      const updates = {
-        feeding_alert_enabled_override: formData.feeding_alert_enabled_override,
-        feeding_alert_window_days: formData.feeding_alert_window_days ? parseInt(formData.feeding_alert_window_days) : null,
-        feeding_alert_threshold_percent: formData.feeding_alert_threshold_percent ? parseFloat(formData.feeding_alert_threshold_percent) : null,
-        feeding_alert_cooldown_days: formData.feeding_alert_cooldown_days !== null && formData.feeding_alert_cooldown_days !== undefined
-          ? parseInt(formData.feeding_alert_cooldown_days)
-          : null,
-
-        measurement_alert_enabled_override: formData.measurement_alert_enabled_override,
-        measurement_alert_types: formData.measurement_alert_types,
-        measurement_alert_rolling_window_logs: formData.measurement_alert_rolling_window_logs ? parseInt(formData.measurement_alert_rolling_window_logs) : null,
-        measurement_alert_threshold_percent: formData.measurement_alert_threshold_percent ? parseFloat(formData.measurement_alert_threshold_percent) : null,
-        measurement_alert_cooldown_days: formData.measurement_alert_cooldown_days !== null && formData.measurement_alert_cooldown_days !== undefined
-          ? parseInt(formData.measurement_alert_cooldown_days)
-          : null
-      };
-
-      const res = await axios.patch(`/api/reptiles/${reptileId}`, updates);
-      setReptiles(reptiles.map(r => r.id === reptileId ? res.data : r));
-      setExpandedReptile(null);
-      setFormData({});
-      setSuccess(`Change alert settings saved for ${reptile?.name || 'reptile'}`);
-
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      console.error('Failed to save:', err);
-      setError(err.response?.data?.detail || 'Failed to save change alert settings');
-    } finally {
-      setSavingId(null);
+      await axiosInstance.post('/api/change-alerts/presets/bulk-apply', {
+        reptile_ids: reptiles.map(r => r.id),
+        alert_types: {
+          feeding: true,
+          weight: true,
+          measurements: true
+        }
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Failed to bulk apply:', error);
     }
-  };
-
-  const getReptileAlertStatus = (reptile) => {
-    const feedingEnabled = reptile.feeding_alert_enabled_override ?? globalFormData.feeding_alert_enabled;
-    const measurementEnabled = reptile.measurement_alert_enabled_override ?? globalFormData.measurement_alert_enabled;
-
-    if (!feedingEnabled && !measurementEnabled) {
-      return 'All disabled';
-    }
-
-    const parts = [];
-    if (feedingEnabled) parts.push('Feeding');
-    if (measurementEnabled) parts.push('Measurement');
-
-    return parts.join(' + ') + ' enabled';
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-muted-foreground">Loading change alert settings...</div>
-      </div>
-    );
+    return <div className="text-muted-foreground">Loading...</div>;
   }
-
-  const measurementTypes = [
-    { value: 'svl', label: 'SVL (Snout-Vent Length)' },
-    { value: 'total_length', label: 'Total Length' },
-    { value: 'tail_length', label: 'Tail Length' },
-    { value: 'head_width', label: 'Head Width' },
-    { value: 'other', label: 'Other' }
-  ];
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
-        </div>
+      {/* Activation prompt - only when no ChangeAlertConfig rows exist */}
+      {!hasAnyAlerts && (
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-6 w-6 text-primary mt-1" />
+              <div className="flex-1">
+                <CardTitle>Get Started with Change Alerts</CardTitle>
+                <CardDescription className="mt-2">
+                  Enable smart notifications when your reptiles' feeding patterns, weight, or measurements change significantly.
+                  We'll configure sensible defaults based on each reptile's species.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setActivationModalOpen(true)}>
+              Set Up Alerts
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      {success && (
-        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <p className="text-green-800 dark:text-green-200 text-sm">{success}</p>
-        </div>
+      {/* Bulk Actions Card - only when alerts exist */}
+      {hasAnyAlerts && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-2">
+            <Button variant="outline" onClick={handleBulkApplyToAll}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reset All to Species Defaults
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Global Feeding Alert Settings */}
-      <div className="card">
-        <h2 className="text-xl font-bold mb-4 text-foreground">Global Feeding Alert Settings</h2>
-        <p className="text-sm text-muted-foreground mb-6">
-          Get notified when feeding frequency drops significantly. Alerts trigger when the time between feedings exceeds the expected interval by your threshold.
-        </p>
-
-        <div className="space-y-4">
-          {/* Enable Toggle */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={globalFormData.feeding_alert_enabled}
-              onChange={(e) => handleGlobalFormChange('feeding_alert_enabled', e.target.checked)}
-              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <div className="flex-1">
-              <div className="font-medium text-foreground">Enable Feeding Alerts</div>
-              <div className="text-sm text-muted-foreground">
-                Alert when feeding frequency drops below expected rate
-              </div>
-            </div>
-          </label>
-
-          {globalFormData.feeding_alert_enabled && (
-            <div className="ml-7 space-y-4 pt-2 border-t border-border">
-              {/* Window Days */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Baseline Window (days)
-                </label>
-                <input
-                  type="number"
-                  value={globalFormData.feeding_alert_window_days}
-                  onChange={(e) => handleGlobalFormChange('feeding_alert_window_days', e.target.value)}
-                  min="7"
-                  max="90"
-                  className="input-field w-32"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Calculate expected feeding frequency based on this many days of history (7-90)
-                </p>
-              </div>
-
-              {/* Threshold */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Alert Threshold (%)
-                </label>
-                <input
-                  type="number"
-                  value={globalFormData.feeding_alert_threshold_percent}
-                  onChange={(e) => handleGlobalFormChange('feeding_alert_threshold_percent', e.target.value)}
-                  min="10"
-                  max="500"
-                  step="5"
-                  className="input-field w-32"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Alert when time between feedings exceeds expected interval by this percentage (10-500%)
-                </p>
-              </div>
-
-              {/* Cooldown */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Cooldown Period (days)
-                </label>
-                <input
-                  type="number"
-                  value={globalFormData.feeding_alert_cooldown_days}
-                  onChange={(e) => handleGlobalFormChange('feeding_alert_cooldown_days', e.target.value)}
-                  min="0"
-                  max="90"
-                  className="input-field w-32"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Minimum days between feeding alerts for the same reptile (0-90, 0 = no cooldown)
-                </p>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleSaveGlobal}
-            disabled={savingGlobal}
-            className="btn-primary"
-          >
-            {savingGlobal ? 'Saving...' : 'Save Global Feeding Settings'}
-          </button>
-        </div>
-      </div>
-
-      {/* Global Measurement Alert Settings */}
-      <div className="card">
-        <h2 className="text-xl font-bold mb-4 text-foreground">Global Measurement Alert Settings</h2>
-        <p className="text-sm text-muted-foreground mb-6">
-          Get notified when measurement growth rates are unusual. Alerts trigger when the rolling average change exceeds your threshold.
-        </p>
-
-        <div className="space-y-4">
-          {/* Enable Toggle */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={globalFormData.measurement_alert_enabled}
-              onChange={(e) => handleGlobalFormChange('measurement_alert_enabled', e.target.checked)}
-              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <div className="flex-1">
-              <div className="font-medium text-foreground">Enable Measurement Alerts</div>
-              <div className="text-sm text-muted-foreground">
-                Alert when measurement growth rates are unusual
-              </div>
-            </div>
-          </label>
-
-          {globalFormData.measurement_alert_enabled && (
-            <div className="ml-7 space-y-4 pt-2 border-t border-border">
-              {/* Measurement Types */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Alert for Measurement Types
-                </label>
-                <div className="space-y-2">
-                  {measurementTypes.map(mt => (
-                    <label key={mt.value} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={globalFormData.measurement_alert_types.includes(mt.value)}
-                        onChange={() => handleMeasurementTypeToggle(mt.value)}
-                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                      <span className="text-sm text-foreground">{mt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Rolling Window */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Rolling Window (logs)
-                </label>
-                <input
-                  type="number"
-                  value={globalFormData.measurement_alert_rolling_window_logs}
-                  onChange={(e) => handleGlobalFormChange('measurement_alert_rolling_window_logs', e.target.value)}
-                  min="2"
-                  max="20"
-                  className="input-field w-32"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Calculate average change over this many recent logs (2-20)
-                </p>
-              </div>
-
-              {/* Threshold */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Alert Threshold (%)
-                </label>
-                <input
-                  type="number"
-                  value={globalFormData.measurement_alert_threshold_percent}
-                  onChange={(e) => handleGlobalFormChange('measurement_alert_threshold_percent', e.target.value)}
-                  min="1"
-                  max="200"
-                  step="1"
-                  className="input-field w-32"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Alert when rolling average change exceeds this percentage (1-200%)
-                </p>
-              </div>
-
-              {/* Cooldown */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Cooldown Period (days)
-                </label>
-                <input
-                  type="number"
-                  value={globalFormData.measurement_alert_cooldown_days}
-                  onChange={(e) => handleGlobalFormChange('measurement_alert_cooldown_days', e.target.value)}
-                  min="0"
-                  max="90"
-                  className="input-field w-32"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Minimum days between measurement alerts for the same reptile and measurement type (0-90)
-                </p>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleSaveGlobal}
-            disabled={savingGlobal}
-            className="btn-primary"
-          >
-            {savingGlobal ? 'Saving...' : 'Save Global Measurement Settings'}
-          </button>
-        </div>
-      </div>
-
-      {/* Per-Reptile Overrides */}
-      {reptiles.length > 0 && (
-        <div className="card">
-          <h2 className="text-xl font-bold mb-4 text-foreground">Per-Reptile Overrides</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Customize feeding and measurement alert settings for individual reptiles. Leave blank to inherit global defaults.
-          </p>
-
-          <div className="space-y-3">
-            {reptiles.map((reptile) => {
-              const isExpanded = expandedReptile === reptile.id;
+      {/* Per-Reptile List */}
+      {hasAnyAlerts && reptiles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Alert Settings by Reptile</CardTitle>
+            <CardDescription>Click to expand and customize</CardDescription>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {reptiles.map(reptile => {
+              const reptileConfigs = configs[reptile.id] || [];
+              const isExpanded = expandedReptiles.has(reptile.id);
 
               return (
-                <Collapsible.Root
-                  key={reptile.id}
-                  open={isExpanded}
-                  onOpenChange={() => handleToggleExpand(reptile.id)}
-                >
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    {/* Header */}
-                    <Collapsible.Trigger asChild>
-                      <button className="w-full flex items-center justify-between p-4 bg-card hover:bg-secondary transition-colors">
-                        <div className="flex items-center gap-3">
-                          {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                          <div className="text-left">
-                            <div className="font-semibold text-foreground">{reptile.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {reptile.species}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {getReptileAlertStatus(reptile)}
-                        </div>
-                      </button>
-                    </Collapsible.Trigger>
-
-                    {/* Expanded Content */}
-                    <Collapsible.Content className="bg-card border-t border-border">
-                      <div className="p-4 space-y-6">
-                        {/* Species Preset Quick Setup */}
-                        <SpeciesPresetsSection
-                          reptileId={reptile.id}
-                          reptileName={reptile.name}
-                          onApplied={() => handleToggleExpand(reptile.id)}
-                        />
-
-                        {/* Feeding Alert Overrides */}
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-foreground">Feeding Alert Overrides</h3>
-
-                          {/* Enable Override */}
-                          <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">
-                              Enable Feeding Alerts
-                            </label>
-                            <select
-                              value={formData.feeding_alert_enabled_override === null ? 'inherit' : formData.feeding_alert_enabled_override}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                handleFormChange('feeding_alert_enabled_override',
-                                  val === 'inherit' ? null : val === 'true'
-                                );
-                              }}
-                              className="w-full px-3 py-2 bg-background border border-input rounded-md"
-                            >
-                              <option value="inherit">Inherit global ({globalFormData.feeding_alert_enabled ? 'Enabled' : 'Disabled'})</option>
-                              <option value="true">Enable</option>
-                              <option value="false">Disable</option>
-                            </select>
-                          </div>
-
-                          {(formData.feeding_alert_enabled_override ?? globalFormData.feeding_alert_enabled) && (
-                            <>
-                              {/* Window Days Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Baseline Window (days)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.feeding_alert_window_days ?? ''}
-                                  onChange={(e) => handleFormChange('feeding_alert_window_days', e.target.value || null)}
-                                  min="7"
-                                  max="90"
-                                  className="input-field w-32"
-                                  placeholder={`Global: ${globalFormData.feeding_alert_window_days}`}
-                                />
-                              </div>
-
-                              {/* Threshold Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Alert Threshold (%)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.feeding_alert_threshold_percent ?? ''}
-                                  onChange={(e) => handleFormChange('feeding_alert_threshold_percent', e.target.value || null)}
-                                  min="10"
-                                  max="500"
-                                  step="5"
-                                  className="input-field w-32"
-                                  placeholder={`Global: ${globalFormData.feeding_alert_threshold_percent}`}
-                                />
-                              </div>
-
-                              {/* Cooldown Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Cooldown Period (days)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.feeding_alert_cooldown_days ?? ''}
-                                  onChange={(e) => handleFormChange('feeding_alert_cooldown_days', e.target.value || null)}
-                                  min="0"
-                                  max="90"
-                                  className="input-field w-32"
-                                  placeholder={`Global: ${globalFormData.feeding_alert_cooldown_days}`}
-                                />
-                              </div>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Measurement Alert Overrides */}
-                        <div className="space-y-4 pt-4 border-t border-border">
-                          <h3 className="font-semibold text-foreground">Measurement Alert Overrides</h3>
-
-                          {/* Enable Override */}
-                          <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">
-                              Enable Measurement Alerts
-                            </label>
-                            <select
-                              value={formData.measurement_alert_enabled_override === null ? 'inherit' : formData.measurement_alert_enabled_override}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                handleFormChange('measurement_alert_enabled_override',
-                                  val === 'inherit' ? null : val === 'true'
-                                );
-                              }}
-                              className="w-full px-3 py-2 bg-background border border-input rounded-md"
-                            >
-                              <option value="inherit">Inherit global ({globalFormData.measurement_alert_enabled ? 'Enabled' : 'Disabled'})</option>
-                              <option value="true">Enable</option>
-                              <option value="false">Disable</option>
-                            </select>
-                          </div>
-
-                          {(formData.measurement_alert_enabled_override ?? globalFormData.measurement_alert_enabled) && (
-                            <>
-                              {/* Measurement Types Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Alert for Measurement Types
-                                </label>
-                                <div className="space-y-2">
-                                  {measurementTypes.map(mt => (
-                                    <label key={mt.value} className="flex items-center gap-2 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={(formData.measurement_alert_types ?? globalFormData.measurement_alert_types).includes(mt.value)}
-                                        onChange={() => handleReptileMeasurementTypeToggle(mt.value)}
-                                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                                      />
-                                      <span className="text-sm text-foreground">{mt.label}</span>
-                                    </label>
-                                  ))}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {formData.measurement_alert_types === null && 'Inheriting global types'}
-                                </p>
-                              </div>
-
-                              {/* Rolling Window Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Rolling Window (logs)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.measurement_alert_rolling_window_logs ?? ''}
-                                  onChange={(e) => handleFormChange('measurement_alert_rolling_window_logs', e.target.value || null)}
-                                  min="2"
-                                  max="20"
-                                  className="input-field w-32"
-                                  placeholder={`Global: ${globalFormData.measurement_alert_rolling_window_logs}`}
-                                />
-                              </div>
-
-                              {/* Threshold Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Alert Threshold (%)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.measurement_alert_threshold_percent ?? ''}
-                                  onChange={(e) => handleFormChange('measurement_alert_threshold_percent', e.target.value || null)}
-                                  min="1"
-                                  max="200"
-                                  step="1"
-                                  className="input-field w-32"
-                                  placeholder={`Global: ${globalFormData.measurement_alert_threshold_percent}`}
-                                />
-                              </div>
-
-                              {/* Cooldown Override */}
-                              <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                  Cooldown Period (days)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.measurement_alert_cooldown_days ?? ''}
-                                  onChange={(e) => handleFormChange('measurement_alert_cooldown_days', e.target.value || null)}
-                                  min="0"
-                                  max="90"
-                                  className="input-field w-32"
-                                  placeholder={`Global: ${globalFormData.measurement_alert_cooldown_days}`}
-                                />
-                              </div>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Save Buttons */}
-                        <div className="flex gap-3 pt-2">
-                          <button
-                            onClick={() => handleSaveReptile(reptile.id)}
-                            disabled={savingId === reptile.id}
-                            className="btn-primary"
-                          >
-                            {savingId === reptile.id ? 'Saving...' : 'Save Overrides'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setExpandedReptile(null);
-                              setFormData({});
-                            }}
-                            className="btn-secondary"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                <Collapsible key={reptile.id} open={isExpanded} onOpenChange={() => toggleExpanded(reptile.id)}>
+                  <CollapsibleTrigger className="w-full py-3 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <ReptileAvatar reptile={reptile} size="sm" />
+                        <span className="font-medium">{reptile.name}</span>
+                        <span className="text-muted-foreground text-sm">({reptile.species})</span>
                       </div>
-                    </Collapsible.Content>
-                  </div>
-                </Collapsible.Root>
+                      <div className="flex items-center gap-2">
+                        <AlertTypeBadges configs={reptileConfigs} />
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 pb-2 space-y-4">
+                    <PresetSuggestion
+                      reptile={reptile}
+                      onApply={(presetId) => handleApplyPreset(reptile.id, presetId)}
+                    />
+                    <details className="mt-4">
+                      <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                        Advanced settings
+                      </summary>
+                      <ManualOverrideForm
+                        reptileId={reptile.id}
+                        configs={reptileConfigs}
+                        onSave={loadData}
+                      />
+                    </details>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Info Card */}
-      <div className="card bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
-        <h3 className="font-bold text-foreground mb-3">How Change Alerts Work</h3>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            <strong>Feeding Alerts:</strong> Detect when feeding frequency drops. The system calculates expected feeding intervals based on recent history, then alerts when time between feedings exceeds expected by your threshold.
-          </p>
-          <p>
-            <strong>Measurement Alerts:</strong> Track growth rate changes. Alerts trigger when the rolling average change (over N recent logs) exceeds your threshold percentage.
-          </p>
-          <p>
-            <strong>Cooldown periods:</strong> Prevent notification spam by limiting alert frequency per reptile.
-          </p>
-          <p>
-            <strong>Per-reptile overrides:</strong> Customize settings for individual animals with unique growth patterns or health needs.
-          </p>
-        </div>
-      </div>
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>How it works:</strong> Change alerts compare recent activity to historical baselines.
+          You'll be notified when feeding patterns shift, weight changes significantly, or measurements
+          show unexpected growth. Each alert type has a cooldown period to prevent notification fatigue.
+        </AlertDescription>
+      </Alert>
+
+      {/* Activation Modal */}
+      <ChangeAlertActivationFlow
+        open={activationModalOpen}
+        onOpenChange={setActivationModalOpen}
+        reptiles={reptiles}
+        onComplete={loadData}
+      />
     </div>
   );
 }
 
-export default ChangeAlertsTab;
+function AlertTypeBadges({ configs }) {
+  if (configs.length === 0) {
+    return <Badge variant="outline">No alerts</Badge>;
+  }
+
+  const enabledConfigs = configs.filter(c => c.enabled);
+  if (enabledConfigs.length === 0) {
+    return <Badge variant="outline">Disabled</Badge>;
+  }
+
+  const typeLabels = {
+    feeding: 'Feed',
+    weight: 'Weight',
+    measurement_svl: 'SVL',
+    measurement_total_length: 'Length',
+    measurement_head_width: 'Head',
+    measurement_body_girth: 'Girth',
+  };
+
+  return (
+    <div className="flex gap-1">
+      {enabledConfigs.slice(0, 3).map(config => (
+        <Badge key={config.id} variant="secondary" className="text-xs">
+          {typeLabels[config.alert_type] || config.alert_type}
+        </Badge>
+      ))}
+      {enabledConfigs.length > 3 && (
+        <Badge variant="secondary" className="text-xs">
+          +{enabledConfigs.length - 3}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
+function PresetSuggestion({ reptile, onApply }) {
+  const [presets, setPresets] = useState([]);
+  const [suggestedPreset, setSuggestedPreset] = useState(null);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    loadPresets();
+  }, []);
+
+  const loadPresets = async () => {
+    try {
+      const response = await axiosInstance.get('/api/change-alerts/presets');
+      setPresets(response.data);
+
+      // Auto-match preset based on species and age
+      const match = autoMatchPreset(reptile.species, reptile.age_category, response.data);
+      setSuggestedPreset(match);
+    } catch (error) {
+      console.error('Failed to load presets:', error);
+    }
+  };
+
+  const autoMatchPreset = (species, ageCategory, presetList) => {
+    const normalizedSpecies = species.toLowerCase().replace(/ /g, '_');
+    const ageMapping = {
+      hatchling: 'juvenile',
+      juvenile: 'juvenile',
+      adult: 'adult',
+      gravid: 'adult',
+    };
+    const presetAge = ageMapping[ageCategory] || 'adult';
+    const fullKey = `${normalizedSpecies}_${presetAge}`;
+
+    // Try full key first
+    let match = presetList.find(p => p.id === fullKey);
+    if (match) return match;
+
+    // Try species-only key
+    match = presetList.find(p => p.id === normalizedSpecies);
+    return match || null;
+  };
+
+  const handleApply = async () => {
+    if (!suggestedPreset) return;
+    setApplying(true);
+    try {
+      await onApply(suggestedPreset.id);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  if (!suggestedPreset) {
+    return (
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          No preset available for {reptile.species}. Use advanced settings below to configure manually.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <Card className="bg-muted/50">
+      <CardHeader>
+        <CardTitle className="text-base">Suggested Preset</CardTitle>
+        <CardDescription>{suggestedPreset.name}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">{suggestedPreset.description}</p>
+        <Button
+          variant="secondary"
+          onClick={handleApply}
+          disabled={applying}
+          className="w-full"
+        >
+          {applying ? 'Applying...' : 'Apply Preset'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ManualOverrideForm({ reptileId, configs, onSave }) {
+  const [formData, setFormData] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    // Initialize form data from configs
+    const initial = {};
+    configs.forEach(config => {
+      initial[config.alert_type] = {
+        enabled: config.enabled,
+        cooldown_days: config.cooldown_days,
+        threshold_type: config.threshold_type,
+        threshold_increase: config.threshold_increase,
+        threshold_decrease: config.threshold_decrease,
+        window_days: config.window_days,
+        rolling_average_window: config.rolling_average_window,
+      };
+    });
+    setFormData(initial);
+  }, [configs]);
+
+  const handleSave = async (alertType) => {
+    setSaving(true);
+    try {
+      const config = configs.find(c => c.alert_type === alertType);
+      if (config) {
+        await axiosInstance.put(`/api/change-alerts/configs/${config.id}`, formData[alertType]);
+      } else {
+        await axiosInstance.post('/api/change-alerts/configs', {
+          reptile_id: reptileId,
+          alert_type: alertType,
+          ...formData[alertType]
+        });
+      }
+      await onSave();
+    } catch (error) {
+      console.error('Failed to save config:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const alertTypes = ['feeding', 'weight', 'measurement_svl', 'measurement_total_length'];
+
+  return (
+    <div className="mt-4 space-y-4 pl-4">
+      {alertTypes.map(alertType => {
+        const data = formData[alertType] || {};
+        const typeLabel = alertType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        return (
+          <Card key={alertType}>
+            <CardHeader>
+              <CardTitle className="text-sm">{typeLabel}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`${alertType}-enabled`}>Enabled</Label>
+                <Switch
+                  id={`${alertType}-enabled`}
+                  checked={data.enabled || false}
+                  onCheckedChange={(checked) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      [alertType]: { ...prev[alertType], enabled: checked }
+                    }))
+                  }
+                />
+              </div>
+              {data.enabled && (
+                <>
+                  {data.window_days !== undefined && (
+                    <div className="space-y-2">
+                      <Label htmlFor={`${alertType}-window`}>Window Days</Label>
+                      <Input
+                        id={`${alertType}-window`}
+                        type="number"
+                        value={data.window_days || ''}
+                        onChange={(e) =>
+                          setFormData(prev => ({
+                            ...prev,
+                            [alertType]: { ...prev[alertType], window_days: parseInt(e.target.value) }
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                  {data.threshold_decrease !== undefined && (
+                    <div className="space-y-2">
+                      <Label htmlFor={`${alertType}-threshold`}>Threshold %</Label>
+                      <Input
+                        id={`${alertType}-threshold`}
+                        type="number"
+                        value={data.threshold_decrease || ''}
+                        onChange={(e) =>
+                          setFormData(prev => ({
+                            ...prev,
+                            [alertType]: { ...prev[alertType], threshold_decrease: parseInt(e.target.value) }
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => handleSave(alertType)}
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
