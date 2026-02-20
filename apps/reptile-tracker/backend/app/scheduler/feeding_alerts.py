@@ -18,7 +18,6 @@ from app.models import (
     Reptile,
     ChangeAlertConfig,
     ChangeAlertTracking,
-    NotificationSettings,
 )
 
 
@@ -222,15 +221,14 @@ def check_feeding_alert(
     2. "Eating less" - Insect quantity decreased by threshold %
 
     Respects:
-    - Per-reptile config (ChangeAlertConfig)
-    - Global defaults (NotificationSettings)
+    - Per-reptile config (ChangeAlertConfig) - ONLY source of truth
     - Cooldown period (ChangeAlertTracking)
 
     Returns:
         dict with keys: alert_type, message, current_quantity, previous_quantity, threshold_percent
         None if no alert needed
     """
-    # Get per-reptile config
+    # Get per-reptile config - this is the ONLY source of truth
     config = db.query(ChangeAlertConfig).filter(
         and_(
             ChangeAlertConfig.reptile_id == reptile_id,
@@ -238,45 +236,14 @@ def check_feeding_alert(
         )
     ).first()
 
-    # Get global defaults
-    settings = db.query(NotificationSettings).filter(
-        NotificationSettings.user_id == user_id
-    ).first()
-
-    # Determine if enabled
-    if config:
-        enabled = config.enabled
-    elif settings:
-        enabled = settings.feeding_alert_enabled
-    else:
-        enabled = False
-
-    if not enabled:
+    # If no config exists or disabled, alerts not enabled for this reptile
+    if not config or not config.enabled:
         return None
 
-    # Get window_days (per-reptile or global default)
-    if config and config.window_days is not None:
-        window_days = config.window_days
-    elif settings:
-        window_days = settings.feeding_alert_window_days
-    else:
-        window_days = 14  # hardcoded fallback
-
-    # Get threshold_decrease (per-reptile or global default)
-    if config and config.threshold_decrease is not None:
-        threshold_percent = config.threshold_decrease
-    elif settings:
-        threshold_percent = settings.feeding_alert_threshold_percent
-    else:
-        threshold_percent = 30  # hardcoded fallback
-
-    # Get cooldown_days (per-reptile or global default)
-    if config and config.cooldown_days is not None:
-        cooldown_days = config.cooldown_days
-    elif settings:
-        cooldown_days = settings.feeding_alert_cooldown_days
-    else:
-        cooldown_days = 7  # hardcoded fallback
+    # Use config values with hardcoded fallbacks
+    window_days = config.window_days if config.window_days is not None else 14
+    threshold_percent = config.threshold_decrease if config.threshold_decrease is not None else 30
+    cooldown_days = config.cooldown_days if config.cooldown_days is not None else 7
 
     # Check cooldown
     tracking = db.query(ChangeAlertTracking).filter(

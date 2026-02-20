@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
     Reptile, Measurement, ChangeAlertConfig, ChangeAlertTracking,
-    NotificationSettings, User, reptile_access, AccessLevel
+    User, reptile_access, AccessLevel
 )
 
 logger = logging.getLogger(__name__)
@@ -105,14 +105,12 @@ async def get_measurement_alert_config(
     """
     Get effective measurement alert configuration for a reptile and measurement type.
 
-    Priority:
-    1. Per-reptile ChangeAlertConfig for specific measurement type
-    2. Global NotificationSettings (if measurement type is in enabled list)
-    3. Disabled by default
+    ChangeAlertConfig is the ONLY source of truth.
+    Returns disabled config if no ChangeAlertConfig exists.
     """
     alert_type = f"measurement_{measurement_type}"
 
-    # Check per-reptile config
+    # Check per-reptile config - this is the ONLY source of truth
     config_result = await db.execute(
         select(ChangeAlertConfig)
         .where(
@@ -124,18 +122,6 @@ async def get_measurement_alert_config(
     )
     reptile_config = config_result.scalar_one_or_none()
 
-    # Get global settings
-    settings_result = await db.execute(
-        select(NotificationSettings).where(NotificationSettings.user_id == user_id)
-    )
-    global_settings = settings_result.scalar_one_or_none()
-
-    # Check if this measurement type is globally enabled
-    global_enabled = False
-    if global_settings and global_settings.measurement_alert_enabled:
-        enabled_types = global_settings.measurement_alert_types or []
-        global_enabled = measurement_type in enabled_types
-
     # Get default thresholds for this type
     defaults = get_default_threshold(measurement_type)
 
@@ -146,25 +132,11 @@ async def get_measurement_alert_config(
             "threshold_type": reptile_config.threshold_type or defaults["type"],
             "threshold_increase": reptile_config.threshold_increase or defaults["increase"],
             "threshold_decrease": reptile_config.threshold_decrease or defaults["decrease"],
-            "rolling_window": reptile_config.rolling_average_window or (
-                global_settings.measurement_alert_rolling_window if global_settings else 3
-            ),
-            "cooldown_days": (
-                reptile_config.cooldown_days if reptile_config.cooldown_days is not None
-                else global_settings.measurement_alert_cooldown_days if global_settings
-                else 14
-            ),
-        }
-    elif global_enabled:
-        return {
-            "enabled": True,
-            "threshold_type": defaults["type"],
-            "threshold_increase": defaults["increase"],
-            "threshold_decrease": defaults["decrease"],
-            "rolling_window": global_settings.measurement_alert_rolling_window if global_settings else 3,
-            "cooldown_days": global_settings.measurement_alert_cooldown_days if global_settings else 14,
+            "rolling_window": reptile_config.rolling_average_window if reptile_config.rolling_average_window is not None else 3,
+            "cooldown_days": reptile_config.cooldown_days if reptile_config.cooldown_days is not None else 14,
         }
     else:
+        # No config = alerts not enabled for this reptile/measurement type
         return {
             "enabled": False,
             "threshold_type": defaults["type"],
