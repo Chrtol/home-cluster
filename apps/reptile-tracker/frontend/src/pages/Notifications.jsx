@@ -1,10 +1,9 @@
 import { useSearchParams } from 'react-router-dom';
-import { Bell, FileText, Settings as SettingsIcon, AlertTriangle, Calendar, TrendingUp } from 'lucide-react';
+import { Bell, FileText, Settings as SettingsIcon, Calendar, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChannelsTab from '../components/notifications/ChannelsTab';
 import TemplatesTab from '../components/notifications/TemplatesTab';
 import GlobalSettingsTab from '../components/notifications/GlobalSettingsTab';
-import ReptileAlertsTab from '../components/notifications/ReptileAlertsTab';
 import ScheduleNotificationsTab from '../components/notifications/ScheduleNotificationsTab';
 import ChangeAlertsTab from '../components/notifications/ChangeAlertsTab';
 
@@ -37,10 +36,6 @@ export default function Notifications() {
             <FileText size={18} />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="reptiles" className="flex items-center gap-2">
-            <AlertTriangle size={18} />
-            Reptile Alerts
-          </TabsTrigger>
           <TabsTrigger value="schedules" className="flex items-center gap-2">
             <Calendar size={18} />
             Schedule Notifications
@@ -61,10 +56,6 @@ export default function Notifications() {
 
         <TabsContent value="templates">
           <TemplatesTab />
-        </TabsContent>
-
-        <TabsContent value="reptiles">
-          <ReptileAlertsTab />
         </TabsContent>
 
         <TabsContent value="schedules">

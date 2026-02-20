@@ -1,6 +1,6 @@
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-20
 
 ## Project Reference
 
@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 28 - Generalized Change Alerts (6 of 8 plans complete)
-**Plan:** 28-06 complete, 28-08 added
+**Phase:** 28 - Generalized Change Alerts (7 of 8 plans complete)
+**Plan:** 28-07 complete (code), 28-08 ready
 **Status:** In progress
-**Last activity:** 2026-02-19 — Added 28-08-PLAN.md (UX Redesign)
-**Progress:** █████░░ (75% - 6/8 plans complete)
+**Last activity:** 2026-02-20 — Completed 28-07, expanded 28-08 scope
+**Progress:** ██████░ (88% - 7/8 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,9 +23,14 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 28 Plan 07 (scheduler sweep), then Plan 08 (UX redesign)
+**Next:** Execute Phase 28 Plan 08 (data model refactor + UX redesign)
 
-**Note:** Plans 28-05 and 28-06 are superseded by 28-08 which redesigns the UX with progressive disclosure, activation wizard, and auto-matched species presets.
+**Plan 28-08 Scope:**
+1. **Data model refactor** - Remove 9 global columns from NotificationSettings, ChangeAlertConfig becomes single source of truth
+2. **Update sweep logic** - Use hardcoded defaults instead of global fallback
+3. **Bulk operations** - bulk-apply (activation), bulk-update (apply to all)
+4. **UX redesign** - Activation wizard, per-reptile list with badges, progressive disclosure
+5. **End-to-end verification** - Moved from 28-07
 
 ## Recent Completions
 
