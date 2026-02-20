@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 28 - Generalized Change Alerts (6 of 7 plans complete)
-**Plan:** 28-06 complete
+**Phase:** 28 - Generalized Change Alerts (6 of 8 plans complete)
+**Plan:** 28-06 complete, 28-08 added
 **Status:** In progress
-**Last activity:** 2026-02-19 — Completed 28-06-PLAN.md (Species Presets Quick-Setup)
-**Progress:** ██████░ (86% - 6/7 plans complete)
+**Last activity:** 2026-02-19 — Added 28-08-PLAN.md (UX Redesign)
+**Progress:** █████░░ (75% - 6/8 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,7 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 28 Plan 07 (final plan in phase)
+**Next:** Execute Phase 28 Plan 07 (scheduler sweep), then Plan 08 (UX redesign)
+
+**Note:** Plans 28-05 and 28-06 are superseded by 28-08 which redesigns the UX with progressive disclosure, activation wizard, and auto-matched species presets.
 
 ## Recent Completions
 

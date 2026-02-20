@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any, Optional
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.auth import get_current_user
 from app.models import (
     User, Reptile, ChangeAlertConfig, NotificationSettings,
     reptile_access, AccessLevel

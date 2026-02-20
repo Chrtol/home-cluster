@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 
 from app.models import (
-    FeedingLog,
-    FeedingLogFood,
+    Feeding,
+    feeding_foods,
     Food,
     Reptile,
     ChangeAlertConfig,
@@ -131,32 +131,32 @@ def get_insect_feedings_in_period(
     Returns:
         Total cricket-equivalents fed in period
     """
-    # Query all feeding logs in period
-    feedings = db.query(FeedingLog).filter(
+    # Query all feedings in period
+    feedings = db.query(Feeding).filter(
         and_(
-            FeedingLog.reptile_id == reptile_id,
-            FeedingLog.fed_at >= start_date,
-            FeedingLog.fed_at <= end_date
+            Feeding.reptile_id == reptile_id,
+            Feeding.fed_at >= start_date,
+            Feeding.fed_at <= end_date
         )
     ).all()
 
     total_cricket_equivalents = 0.0
 
     for feeding in feedings:
-        # Get foods for this feeding
-        foods = db.query(FeedingLogFood, Food).join(
-            Food, FeedingLogFood.food_id == Food.id
+        # Get foods for this feeding via the association table
+        foods = db.query(Food, feeding_foods.c.quantity).join(
+            feeding_foods, Food.id == feeding_foods.c.food_id
         ).filter(
-            FeedingLogFood.feeding_log_id == feeding.id
+            feeding_foods.c.feeding_id == feeding.id
         ).all()
 
-        for food_log, food in foods:
+        for food, quantity in foods:
             # Skip non-insect foods (salad, vegetables, prepared foods)
             if food.food_type not in ["insect", "worms"]:
                 continue
 
             # Normalize to cricket-equivalents
-            cricket_equiv = normalize_insect_quantity(food.name, food_log.quantity)
+            cricket_equiv = normalize_insect_quantity(food.name, quantity)
             total_cricket_equivalents += cricket_equiv
 
     return total_cricket_equivalents
@@ -196,11 +196,11 @@ def calculate_feeding_trend(
     previous_quantity = get_insect_feedings_in_period(db, reptile_id, previous_start, previous_end)
 
     # Check if there are ANY feedings in current period (not just insects)
-    has_current_feedings = db.query(FeedingLog).filter(
+    has_current_feedings = db.query(Feeding).filter(
         and_(
-            FeedingLog.reptile_id == reptile_id,
-            FeedingLog.fed_at >= current_start,
-            FeedingLog.fed_at <= current_end
+            Feeding.reptile_id == reptile_id,
+            Feeding.fed_at >= current_start,
+            Feeding.fed_at <= current_end
         )
     ).count() > 0
 
