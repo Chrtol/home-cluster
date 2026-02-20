@@ -11,12 +11,11 @@ from typing import List, Dict, Any, Optional
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import (
-    User, Reptile, ChangeAlertConfig, NotificationSettings,
+    User, Reptile, ChangeAlertConfig,
     reptile_access, AccessLevel
 )
 from app.schemas import (
     ChangeAlertConfigCreate, ChangeAlertConfigUpdate, ChangeAlertConfigResponse,
-    GlobalChangeAlertSettingsResponse, GlobalChangeAlertSettingsUpdate,
     SpeciesPreset, ApplyPresetRequest, ReptileAlertSummary,
     BulkApplyPresetRequest, BulkUpdateRequest, BulkOperationResult
 )
@@ -172,64 +171,6 @@ async def verify_reptile_access(
     return reptile
 
 
-# ---- Global Settings Endpoints ----
-
-@router.get("/global", response_model=GlobalChangeAlertSettingsResponse)
-async def get_global_settings(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get global change alert settings for current user."""
-    result = await db.execute(
-        select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
-    )
-    settings = result.scalar_one_or_none()
-
-    if not settings:
-        # Return defaults
-        return GlobalChangeAlertSettingsResponse(
-            feeding_alert_enabled=False,
-            feeding_alert_window_days=14,
-            feeding_alert_threshold_percent=30,
-            feeding_alert_cooldown_days=7,
-            measurement_alert_enabled=False,
-            measurement_alert_rolling_window=3,
-            measurement_alert_threshold_percent=10,
-            measurement_alert_cooldown_days=14,
-            measurement_alert_types=None,
-        )
-
-    return GlobalChangeAlertSettingsResponse.model_validate(settings)
-
-
-@router.patch("/global", response_model=GlobalChangeAlertSettingsResponse)
-async def update_global_settings(
-    updates: GlobalChangeAlertSettingsUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Update global change alert settings."""
-    result = await db.execute(
-        select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
-    )
-    settings = result.scalar_one_or_none()
-
-    if not settings:
-        # Create settings with defaults
-        settings = NotificationSettings(user_id=current_user.id)
-        db.add(settings)
-
-    # Apply updates
-    update_data = updates.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(settings, field, value)
-
-    await db.commit()
-    await db.refresh(settings)
-
-    return GlobalChangeAlertSettingsResponse.model_validate(settings)
-
-
 # ---- All Configs Endpoint ----
 
 @router.get("/configs", response_model=List[ChangeAlertConfigResponse])
@@ -279,36 +220,19 @@ async def get_reptile_alerts(
     )
     configs = result.scalars().all()
 
-    # Get global settings for effective calculation
-    settings_result = await db.execute(
-        select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
-    )
-    global_settings = settings_result.scalar_one_or_none()
-
-    # Calculate effective settings
+    # Calculate effective settings (using hardcoded defaults - no global settings)
+    # Defaults: window_days=14, threshold_percent=30, cooldown_days=7
     effective_feeding = None
     effective_measurements = {}
 
     # Find feeding config
     feeding_config = next((c for c in configs if c.alert_type == "feeding"), None)
-    if feeding_config or (global_settings and global_settings.feeding_alert_enabled):
+    if feeding_config:
         effective_feeding = {
-            "enabled": feeding_config.enabled if feeding_config else global_settings.feeding_alert_enabled,
-            "window_days": (
-                feeding_config.window_days if feeding_config and feeding_config.window_days
-                else global_settings.feeding_alert_window_days if global_settings
-                else 14
-            ),
-            "threshold_percent": (
-                feeding_config.threshold_increase if feeding_config and feeding_config.threshold_increase
-                else global_settings.feeding_alert_threshold_percent if global_settings
-                else 30
-            ),
-            "cooldown_days": (
-                feeding_config.cooldown_days if feeding_config and feeding_config.cooldown_days is not None
-                else global_settings.feeding_alert_cooldown_days if global_settings
-                else 7
-            ),
+            "enabled": feeding_config.enabled,
+            "window_days": feeding_config.window_days or 14,
+            "threshold_percent": feeding_config.threshold_increase or 30,
+            "cooldown_days": feeding_config.cooldown_days if feeding_config.cooldown_days is not None else 7,
         }
 
     # Find measurement configs
