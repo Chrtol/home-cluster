@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { ChevronDown, Info, RefreshCw, Sparkles } from 'lucide-react';
+import { ChevronDown, Info, RefreshCw } from 'lucide-react';
 import ReptileAvatar from '@/components/ReptileAvatar';
 import ChangeAlertActivationFlow from './ChangeAlertActivationFlow';
 import axios from 'axios';
@@ -16,7 +16,6 @@ export default function ChangeAlertsTab() {
   const [reptiles, setReptiles] = useState([]);
   const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(true);
-  const [activationModalOpen, setActivationModalOpen] = useState(false);
   const [expandedReptiles, setExpandedReptiles] = useState(new Set());
 
   useEffect(() => {
@@ -97,27 +96,12 @@ export default function ChangeAlertsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Activation prompt - only when no ChangeAlertConfig rows exist */}
-      {!hasAnyAlerts && (
-        <Card className="border-primary/50 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-start gap-3">
-              <Sparkles className="h-6 w-6 text-primary mt-1" />
-              <div className="flex-1">
-                <CardTitle>Get Started with Change Alerts</CardTitle>
-                <CardDescription className="mt-2">
-                  Enable smart notifications when your reptiles' feeding patterns, weight, or measurements change significantly.
-                  We'll configure sensible defaults based on each reptile's species.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setActivationModalOpen(true)}>
-              Set Up Alerts
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Inline activation wizard - only when no ChangeAlertConfig rows exist */}
+      {!hasAnyAlerts && reptiles.length > 0 && (
+        <ChangeAlertActivationFlow
+          reptiles={reptiles}
+          onComplete={loadData}
+        />
       )}
 
       {/* Bulk Actions Card - only when alerts exist */}
@@ -185,23 +169,17 @@ export default function ChangeAlertsTab() {
         </Card>
       )}
 
-      {/* Info Card */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>How it works:</strong> Change alerts compare recent activity to historical baselines.
-          You'll be notified when feeding patterns shift, weight changes significantly, or measurements
-          show unexpected growth. Each alert type has a cooldown period to prevent notification fatigue.
-        </AlertDescription>
-      </Alert>
-
-      {/* Activation Modal */}
-      <ChangeAlertActivationFlow
-        open={activationModalOpen}
-        onOpenChange={setActivationModalOpen}
-        reptiles={reptiles}
-        onComplete={loadData}
-      />
+      {/* Info Card - only show when alerts are configured */}
+      {hasAnyAlerts && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>How it works:</strong> Change alerts compare recent activity to historical baselines.
+            You'll be notified when feeding patterns shift, weight changes significantly, or measurements
+            show unexpected growth. Each alert type has a cooldown period to prevent notification fatigue.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
