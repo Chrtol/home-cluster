@@ -268,7 +268,7 @@ def check_feeding_alert(
             return None
 
         return {
-            "alert_type": "no_feedings_logged",
+            "trigger_type": "feeding_none_logged",
             "message": f"{reptile.name} has no feeding logs in the last {window_days} days.",
             "current_quantity": 0.0,
             "previous_quantity": previous_qty,
@@ -287,7 +287,7 @@ def check_feeding_alert(
                 return None
 
             return {
-                "alert_type": "eating_less",
+                "trigger_type": "feeding_decrease",
                 "message": f"{reptile.name} is eating {abs(percent_change):.1f}% less insects than the previous {window_days}-day period (current: {current_qty:.1f} cricket-equiv, previous: {previous_qty:.1f} cricket-equiv).",
                 "current_quantity": current_qty,
                 "previous_quantity": previous_qty,

@@ -406,6 +406,23 @@ async def create_feeding(
             webhook_type=notif_settings.webhook_type,
         )
 
+    # Check for feeding trend change and trigger alert if needed
+    try:
+        from app.database import SessionLocal
+        # Need sync session for feeding_alerts (it uses sync SQLAlchemy)
+        with SessionLocal() as sync_db:
+            from app.scheduler.feeding_alerts import check_feeding_alert
+            alert_context = check_feeding_alert(sync_db, feeding.reptile_id, current_user.id)
+            if alert_context:
+                from app.celery_tasks import send_change_alert_notification_task
+                send_change_alert_notification_task.delay(
+                    reptile_id=feeding.reptile_id,
+                    alert_context=alert_context
+                )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to check feeding alert: {e}", exc_info=True)
+
     return feeding_dict
 
 

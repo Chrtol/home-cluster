@@ -149,6 +149,21 @@ async def create_measurement(
 
     await db.commit()
     await db.refresh(new_measurement)
+
+    # Check for measurement change and trigger alert if needed
+    try:
+        from app.scheduler.measurement_alerts import check_measurement_alert
+        alert_context = await check_measurement_alert(db, new_measurement)
+        if alert_context:
+            from app.celery_tasks import send_change_alert_notification_task
+            send_change_alert_notification_task.delay(
+                reptile_id=new_measurement.reptile_id,
+                alert_context=alert_context
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to check measurement alert: {e}", exc_info=True)
+
     return new_measurement
 
 
