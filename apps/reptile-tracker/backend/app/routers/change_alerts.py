@@ -230,6 +230,36 @@ async def update_global_settings(
     return GlobalChangeAlertSettingsResponse.model_validate(settings)
 
 
+# ---- All Configs Endpoint ----
+
+@router.get("/configs", response_model=List[ChangeAlertConfigResponse])
+async def get_all_configs(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all change alert configs for all reptiles the user has access to."""
+    # Get all reptile IDs the user has access to
+    reptile_result = await db.execute(
+        select(reptile_access.c.reptile_id).where(
+            reptile_access.c.user_id == current_user.id
+        )
+    )
+    reptile_ids = [row[0] for row in reptile_result.fetchall()]
+
+    if not reptile_ids:
+        return []
+
+    # Get all configs for those reptiles
+    result = await db.execute(
+        select(ChangeAlertConfig).where(
+            ChangeAlertConfig.reptile_id.in_(reptile_ids)
+        )
+    )
+    configs = result.scalars().all()
+
+    return [ChangeAlertConfigResponse.model_validate(c) for c in configs]
+
+
 # ---- Reptile-Specific Config Endpoints ----
 
 @router.get("/reptile/{reptile_id}", response_model=ReptileAlertSummary)
