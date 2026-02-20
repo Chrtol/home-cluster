@@ -805,21 +805,6 @@ class NotificationSettings(Base):
     weight_alert_cooldown_enabled = Column(Boolean, default=True, nullable=False)  # Enable cooldown between alerts
     weight_alert_cooldown_days = Column(Integer, default=7, nullable=False)  # Days between alerts (global setting)
 
-    # Feeding alert global defaults (Phase 28)
-    feeding_alert_enabled = Column(Boolean, default=False, nullable=False)
-    feeding_alert_window_days = Column(Integer, default=14, nullable=False)
-    feeding_alert_threshold_percent = Column(Integer, default=30, nullable=False)
-    feeding_alert_cooldown_days = Column(Integer, default=7, nullable=False)
-
-    # Measurement alert global defaults (Phase 28)
-    measurement_alert_enabled = Column(Boolean, default=False, nullable=False)
-    measurement_alert_rolling_window = Column(Integer, default=3, nullable=False)
-    measurement_alert_threshold_percent = Column(Integer, default=10, nullable=False)
-    measurement_alert_cooldown_days = Column(Integer, default=14, nullable=False)
-
-    # List of measurement types to alert on (JSON array, e.g., ["svl", "total_length"])
-    measurement_alert_types = Column(JSON, nullable=True)
-
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
