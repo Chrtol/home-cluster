@@ -12,11 +12,40 @@ import ReptileAvatar from '@/components/ReptileAvatar';
 import ChangeAlertActivationFlow from './ChangeAlertActivationFlow';
 import axios from 'axios';
 
+// Friendly display names for alert types
+const ALERT_TYPE_LABELS = {
+  feeding: 'Feeding',
+  weight: 'Weight',
+  measurement_svl: 'SVL (Snout-Vent Length)',
+  measurement_total_length: 'Total Length',
+  measurement_head_width: 'Head Width',
+  measurement_body_girth: 'Body Girth',
+  measurement_tail_length: 'Tail Length',
+  measurement_shell_length: 'Shell Length',
+  measurement_humidity: 'Humidity',
+  measurement_temperature: 'Temperature',
+};
+
+// Short labels for badges
+const ALERT_TYPE_BADGE_LABELS = {
+  feeding: 'Feed',
+  weight: 'Weight',
+  measurement_svl: 'SVL',
+  measurement_total_length: 'Length',
+  measurement_head_width: 'Head',
+  measurement_body_girth: 'Girth',
+  measurement_tail_length: 'Tail',
+  measurement_shell_length: 'Shell',
+  measurement_humidity: 'Humid',
+  measurement_temperature: 'Temp',
+};
+
 export default function ChangeAlertsTab() {
   const [reptiles, setReptiles] = useState([]);
   const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedReptiles, setExpandedReptiles] = useState(new Set());
+  const [togglingReptiles, setTogglingReptiles] = useState(new Set());
 
   useEffect(() => {
     loadData();
@@ -60,6 +89,37 @@ export default function ChangeAlertsTab() {
       }
       return next;
     });
+  };
+
+  // Check if any alerts are enabled for a reptile
+  const isReptileAlertsEnabled = (reptileId) => {
+    const reptileConfigs = configs[reptileId] || [];
+    return reptileConfigs.some(c => c.enabled);
+  };
+
+  // Toggle all alerts for a reptile on/off
+  const handleToggleReptileAlerts = async (reptileId, enable) => {
+    const reptileConfigs = configs[reptileId] || [];
+    if (reptileConfigs.length === 0) return;
+
+    setTogglingReptiles(prev => new Set(prev).add(reptileId));
+    try {
+      // Update all configs for this reptile
+      await axios.post('/api/change-alerts/bulk-update', {
+        reptile_ids: [reptileId],
+        alert_types: reptileConfigs.map(c => c.alert_type),
+        settings: { enabled: enable }
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Failed to toggle reptile alerts:', error);
+    } finally {
+      setTogglingReptiles(prev => {
+        const next = new Set(prev);
+        next.delete(reptileId);
+        return next;
+      });
+    }
   };
 
   const handleApplyPreset = async (reptileId, presetId) => {
@@ -123,23 +183,42 @@ export default function ChangeAlertsTab() {
             {reptiles.map(reptile => {
               const reptileConfigs = configs[reptile.id] || [];
               const isExpanded = expandedReptiles.has(reptile.id);
+              const alertsEnabled = isReptileAlertsEnabled(reptile.id);
+              const isToggling = togglingReptiles.has(reptile.id);
+              const hasConfigs = reptileConfigs.length > 0;
 
               return (
                 <Collapsible key={reptile.id} open={isExpanded} onOpenChange={() => toggleExpanded(reptile.id)}>
-                  <CollapsibleTrigger className="w-full py-3 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <ReptileAvatar reptile={reptile} size="sm" />
-                        <span className="font-medium">{reptile.name}</span>
-                        <span className="text-muted-foreground text-sm">({reptile.species})</span>
+                  <div className="flex items-center py-3">
+                    {/* Master toggle for all alerts - only show if reptile has configs */}
+                    {hasConfigs && (
+                      <div
+                        className="pr-3 flex items-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Switch
+                          checked={alertsEnabled}
+                          onCheckedChange={(checked) => handleToggleReptileAlerts(reptile.id, checked)}
+                          disabled={isToggling}
+                          aria-label={`Toggle all alerts for ${reptile.name}`}
+                        />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <AlertTypeBadges configs={reptileConfigs} />
-                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    )}
+                    <CollapsibleTrigger className="flex-1 hover:bg-muted/50 transition-colors rounded-lg px-2 py-1 -my-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <ReptileAvatar reptile={reptile} size="sm" />
+                          <span className="font-medium">{reptile.name}</span>
+                          <span className="text-muted-foreground text-sm">({reptile.species})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <AlertTypeBadges configs={reptileConfigs} />
+                          <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
                       </div>
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-4 pb-2 space-y-4">
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="pt-4 pb-2 space-y-4 ml-10">
                     <PresetSuggestion
                       reptile={reptile}
                       onApply={(presetId) => handleApplyPreset(reptile.id, presetId)}
@@ -179,23 +258,14 @@ function AlertTypeBadges({ configs }) {
 
   const enabledConfigs = configs.filter(c => c.enabled);
   if (enabledConfigs.length === 0) {
-    return <Badge variant="outline">Disabled</Badge>;
+    return <Badge variant="outline" className="text-muted-foreground">All off</Badge>;
   }
-
-  const typeLabels = {
-    feeding: 'Feed',
-    weight: 'Weight',
-    measurement_svl: 'SVL',
-    measurement_total_length: 'Length',
-    measurement_head_width: 'Head',
-    measurement_body_girth: 'Girth',
-  };
 
   return (
     <div className="flex gap-1">
       {enabledConfigs.slice(0, 3).map(config => (
         <Badge key={config.id} variant="secondary" className="text-xs">
-          {typeLabels[config.alert_type] || config.alert_type}
+          {ALERT_TYPE_BADGE_LABELS[config.alert_type] || config.alert_type.replace('measurement_', '').toUpperCase()}
         </Badge>
       ))}
       {enabledConfigs.length > 3 && (
@@ -375,7 +445,7 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
     <div className="space-y-3">
       {alertTypes.map(alertType => {
         const data = formData[alertType] || alertTypeDefaults[alertType];
-        const typeLabel = alertType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const typeLabel = ALERT_TYPE_LABELS[alertType] || alertType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         const isSaving = savingTypes.has(alertType);
 
         return (

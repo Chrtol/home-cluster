@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Phase:** 28 - Generalized Change Alerts (7 of 8 plans complete)
-**Plan:** 28-07 complete (code), 28-08 ready
-**Status:** In progress
-**Last activity:** 2026-02-20 — Completed 28-07, expanded 28-08 scope
-**Progress:** ██████░ (88% - 7/8 plans complete)
+**Phase:** 28 - Generalized Change Alerts (8 of 8 plans complete)
+**Plan:** Phase complete
+**Status:** Complete
+**Last activity:** 2026-02-20 — Completed Phase 28, all plans executed
+**Progress:** ████████ (100% - 8/8 plans complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
@@ -23,16 +23,35 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 
-**Next:** Execute Phase 28 Plan 08 (data model refactor + UX redesign)
-
-**Plan 28-08 Scope:**
-1. **Data model refactor** - Remove 9 global columns from NotificationSettings, ChangeAlertConfig becomes single source of truth
-2. **Update sweep logic** - Use hardcoded defaults instead of global fallback
-3. **Bulk operations** - bulk-apply (activation), bulk-update (apply to all)
-4. **UX redesign** - Activation wizard, per-reptile list with badges, progressive disclosure
-5. **End-to-end verification** - Moved from 28-07
+**Next:** Phases 26-07, 26-08 (gap closure), then 27-01 through 27-08
 
 ## Recent Completions
+
+### Phase 28 Plan 08: Data Model Refactor & UX Redesign
+**Completed:** 2026-02-20
+**Summary:** Complete Change Alerts system with single source of truth data model, 3-step activation wizard, and polished per-reptile management UI
+
+**Key accomplishments:**
+- Removed 9 global change alert columns from NotificationSettings (migration 0106)
+- ChangeAlertConfig is now the single source of truth for all alert settings
+- Created 3-step inline activation wizard (select reptiles → select alert types → confirm)
+- Added bulk-apply and bulk-update endpoints with auto_match_preset
+- Redesigned ChangeAlertsTab with master on/off toggle per reptile
+- Added friendly display names for all alert types (SVL → "SVL (Snout-Vent Length)")
+- Removed obsolete ReptileAlertsTab and SpeciesPresetsSection components
+
+**Files created:**
+- `frontend/src/components/notifications/ChangeAlertActivationFlow.jsx`
+- `backend/migrations/versions/0106_remove_global_change_alert_columns.py`
+
+**Files modified:**
+- `frontend/src/components/notifications/ChangeAlertsTab.jsx`
+- `frontend/src/pages/Notifications.jsx`
+- `backend/app/routers/change_alerts.py`
+
+**Files deleted:**
+- `frontend/src/components/notifications/ReptileAlertsTab.jsx`
+- `frontend/src/components/notifications/SpeciesPresetsSection.jsx`
 
 ### Phase 28 Plan 06: Species Presets Quick-Setup
 **Completed:** 2026-02-19
@@ -159,10 +178,10 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2026-02-19
-**Action:** Completed Phase 28 Plan 06 - Species Presets Quick-Setup
-**Stopped at:** Phase 28 Plan 06 complete
-**Resume from:** .planning/phases/28-generalized-change-alerts/28-06-SUMMARY.md
+**Last session:** 2026-02-20
+**Action:** Completed Phase 28 Plan 08 - Data Model Refactor & UX Redesign
+**Stopped at:** Phase 28 complete
+**Resume from:** .planning/phases/28-generalized-change-alerts/28-08-SUMMARY.md
 
 ## Phase 26 Plan Summary
 
@@ -217,8 +236,9 @@ For future milestones:
 | Preserve WeightAlertTracking table during migration | 28-01 | Maintains backward compatibility during transition period | Both old and new tracking systems coexist until weight alerts migrated to new system |
 | Migrate existing weight alert data to new tables | 28-01 | Ensures continuity of cooldown tracking when transitioning to new system | No alert spam when migrating existing reptile weight alerts |
 | Use TrendingUp icon for Change Alerts tab | 28-05 | Visually represents growth/change trends for feeding and measurement alerts | Consistent iconography across notification tabs |
-| Replace entire ReptileAlertsTab content with redirect notice | 28-05 | Weight alerts moved to new generalized system, old UI is deprecated | Users clearly directed to new location without confusing dual interfaces |
-| Inherit pattern with null values for per-reptile overrides | 28-05 | Matches existing ReptileAlertsTab pattern for consistency | Empty inputs inherit global defaults, clear UX for override behavior |
+| ChangeAlertConfig is single source of truth | 28-08 | Eliminates global/per-reptile confusion, cleaner data model | No global columns in NotificationSettings |
+| Master toggle uses bulk-update endpoint | 28-08 | Reuses existing endpoint, consistent behavior | One toggle enables/disables all alert types for a reptile |
+| Friendly label constants (ALERT_TYPE_LABELS) | 28-08 | Centralized, easy to maintain, consistent | SVL shows as "SVL (Snout-Vent Length)" in forms |
 
 ## Phase 27 Plan Summary
 
@@ -267,4 +287,4 @@ For future milestones:
 
 ---
 
-**Project Status:** Phase 28 execution in progress. Plan 28-01 complete.
+**Project Status:** Phase 28 complete. v1.4 milestone has Phase 26 gap closures (26-07, 26-08) and Phase 27 remaining.
