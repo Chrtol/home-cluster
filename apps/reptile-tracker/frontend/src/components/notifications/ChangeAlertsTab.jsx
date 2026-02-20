@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { ChevronDown, Info, RefreshCw } from 'lucide-react';
+import { ChevronDown, Info, RefreshCw, Sparkles } from 'lucide-react';
 import ReptileAvatar from '@/components/ReptileAvatar';
 import ChangeAlertActivationFlow from './ChangeAlertActivationFlow';
 import axios from 'axios';
@@ -104,27 +104,20 @@ export default function ChangeAlertsTab() {
         />
       )}
 
-      {/* Bulk Actions Card - only when alerts exist */}
-      {hasAnyAlerts && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Button variant="outline" onClick={handleBulkApplyToAll}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset All to Species Defaults
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Per-Reptile List */}
       {hasAnyAlerts && reptiles.length > 0 && (
-        <Card>
+        <Card className="border-0">
           <CardHeader>
-            <CardTitle>Alert Settings by Reptile</CardTitle>
-            <CardDescription>Click to expand and customize</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Alert Settings by Reptile</CardTitle>
+                <CardDescription>Click to expand and customize</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleBulkApplyToAll} className="text-muted-foreground hover:text-foreground">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reset All
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="divide-y">
             {reptiles.map(reptile => {
@@ -151,16 +144,11 @@ export default function ChangeAlertsTab() {
                       reptile={reptile}
                       onApply={(presetId) => handleApplyPreset(reptile.id, presetId)}
                     />
-                    <details className="mt-4">
-                      <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-                        Advanced settings
-                      </summary>
-                      <ManualOverrideForm
-                        reptileId={reptile.id}
-                        configs={reptileConfigs}
-                        onSave={loadData}
-                      />
-                    </details>
+                    <ManualOverrideForm
+                      reptileId={reptile.id}
+                      configs={reptileConfigs}
+                      onSave={loadData}
+                    />
                   </CollapsibleContent>
                 </Collapsible>
               );
@@ -171,7 +159,7 @@ export default function ChangeAlertsTab() {
 
       {/* Info Card - only show when alerts are configured */}
       {hasAnyAlerts && (
-        <Alert>
+        <Alert className="border-0">
           <Info className="h-4 w-4" />
           <AlertDescription>
             <strong>How it works:</strong> Change alerts compare recent activity to historical baselines.
@@ -272,34 +260,25 @@ function PresetSuggestion({ reptile, onApply }) {
   };
 
   if (!suggestedPreset) {
-    return (
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          No preset available for {reptile.species}. Use advanced settings below to configure manually.
-        </AlertDescription>
-      </Alert>
-    );
+    return null; // No preset available, just show manual settings
   }
 
   return (
-    <Card className="bg-muted/50">
-      <CardHeader>
-        <CardTitle className="text-base">Suggested Preset</CardTitle>
-        <CardDescription>{suggestedPreset.name}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">{suggestedPreset.description}</p>
-        <Button
-          variant="secondary"
-          onClick={handleApply}
-          disabled={applying}
-          className="w-full"
-        >
-          {applying ? 'Applying...' : 'Apply Preset'}
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+      <div className="flex items-center gap-2 text-sm">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <span className="text-muted-foreground">Suggested:</span>
+        <span className="font-medium">{suggestedPreset.name}</span>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleApply}
+        disabled={applying}
+      >
+        {applying ? 'Applying...' : 'Apply'}
+      </Button>
+    </div>
   );
 }
 
@@ -313,7 +292,8 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
   };
 
   const [formData, setFormData] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [savingTypes, setSavingTypes] = useState(new Set());
+  const debounceTimers = useRef({});
 
   useEffect(() => {
     // Initialize form data: merge defaults with existing configs
@@ -338,154 +318,151 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
     setFormData(initial);
   }, [configs]);
 
-  const handleSave = async (alertType) => {
-    setSaving(true);
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(clearTimeout);
+    };
+  }, []);
+
+  const saveConfig = useCallback(async (alertType, data) => {
+    setSavingTypes(prev => new Set(prev).add(alertType));
     try {
       const config = configs.find(c => c.alert_type === alertType);
       if (config) {
-        await axios.put(`/api/change-alerts/configs/${config.id}`, formData[alertType]);
+        await axios.put(`/api/change-alerts/configs/${config.id}`, data);
       } else {
         await axios.post('/api/change-alerts/configs', {
           reptile_id: reptileId,
           alert_type: alertType,
-          ...formData[alertType]
+          ...data
         });
       }
       await onSave();
     } catch (error) {
       console.error('Failed to save config:', error);
     } finally {
-      setSaving(false);
+      setSavingTypes(prev => {
+        const next = new Set(prev);
+        next.delete(alertType);
+        return next;
+      });
     }
-  };
+  }, [configs, reptileId, onSave]);
+
+  const handleChange = useCallback((alertType, updates) => {
+    setFormData(prev => {
+      const newData = { ...prev, [alertType]: { ...prev[alertType], ...updates } };
+
+      // Debounce the save - 500ms for typing, immediate for toggles
+      const isToggle = 'enabled' in updates;
+      const delay = isToggle ? 0 : 500;
+
+      clearTimeout(debounceTimers.current[alertType]);
+      debounceTimers.current[alertType] = setTimeout(() => {
+        saveConfig(alertType, newData[alertType]);
+      }, delay);
+
+      return newData;
+    });
+  }, [saveConfig]);
 
   const alertTypes = ['feeding', 'weight', 'measurement_svl', 'measurement_total_length'];
   const isFeedingType = (type) => type === 'feeding';
   const isMeasurementType = (type) => type.startsWith('measurement_');
 
   return (
-    <div className="mt-4 space-y-4 pl-4">
+    <div className="space-y-3">
       {alertTypes.map(alertType => {
         const data = formData[alertType] || alertTypeDefaults[alertType];
         const typeLabel = alertType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const existingConfig = configs.find(c => c.alert_type === alertType);
+        const isSaving = savingTypes.has(alertType);
 
         return (
-          <Card key={alertType}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">{typeLabel}</CardTitle>
-                <Switch
-                  id={`${alertType}-enabled`}
-                  checked={data.enabled || false}
-                  onCheckedChange={(checked) =>
-                    setFormData(prev => ({
-                      ...prev,
-                      [alertType]: { ...prev[alertType], enabled: checked }
-                    }))
-                  }
-                />
+          <div key={alertType} className="p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{typeLabel}</span>
+                {isSaving && <span className="text-xs text-muted-foreground">Saving...</span>}
               </div>
-            </CardHeader>
+              <Switch
+                id={`${alertType}-enabled`}
+                checked={data.enabled || false}
+                onCheckedChange={(checked) => handleChange(alertType, { enabled: checked })}
+              />
+            </div>
             {data.enabled && (
-              <CardContent className="space-y-4 pt-0">
+              <div className="mt-3 space-y-3 text-sm">
                 {/* Feeding alerts use window_days */}
                 {isFeedingType(alertType) && (
-                  <div className="space-y-2">
-                    <Label htmlFor={`${alertType}-window`}>Comparison Window (days)</Label>
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor={`${alertType}-window`} className="text-muted-foreground whitespace-nowrap">Window</Label>
                     <Input
                       id={`${alertType}-window`}
                       type="number"
+                      className="w-20 h-8"
                       value={data.window_days ?? ''}
-                      onChange={(e) =>
-                        setFormData(prev => ({
-                          ...prev,
-                          [alertType]: { ...prev[alertType], window_days: parseInt(e.target.value) || null }
-                        }))
-                      }
+                      onChange={(e) => handleChange(alertType, { window_days: parseInt(e.target.value) || null })}
                     />
-                    <p className="text-xs text-muted-foreground">Compare recent feeding to this many days prior</p>
+                    <span className="text-muted-foreground text-xs">days</span>
                   </div>
                 )}
 
                 {/* Measurement alerts use rolling average */}
                 {isMeasurementType(alertType) && (
-                  <div className="space-y-2">
-                    <Label htmlFor={`${alertType}-rolling`}>Rolling Average Window</Label>
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor={`${alertType}-rolling`} className="text-muted-foreground whitespace-nowrap">Rolling avg</Label>
                     <Input
                       id={`${alertType}-rolling`}
                       type="number"
+                      className="w-20 h-8"
                       value={data.rolling_average_window ?? ''}
-                      onChange={(e) =>
-                        setFormData(prev => ({
-                          ...prev,
-                          [alertType]: { ...prev[alertType], rolling_average_window: parseInt(e.target.value) || null }
-                        }))
-                      }
+                      onChange={(e) => handleChange(alertType, { rolling_average_window: parseInt(e.target.value) || null })}
                     />
-                    <p className="text-xs text-muted-foreground">Number of past measurements to average (1 = compare to previous only)</p>
+                    <span className="text-muted-foreground text-xs">measurements</span>
                   </div>
                 )}
 
-                {/* All types have threshold */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`${alertType}-threshold-up`}>Increase Threshold %</Label>
+                {/* Thresholds */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Label className="text-muted-foreground">Thresholds</Label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground text-xs">+</span>
                     <Input
-                      id={`${alertType}-threshold-up`}
                       type="number"
+                      className="w-16 h-8"
                       value={data.threshold_increase ?? ''}
-                      onChange={(e) =>
-                        setFormData(prev => ({
-                          ...prev,
-                          [alertType]: { ...prev[alertType], threshold_increase: parseInt(e.target.value) || null }
-                        }))
-                      }
+                      onChange={(e) => handleChange(alertType, { threshold_increase: parseInt(e.target.value) || null })}
                     />
+                    <span className="text-muted-foreground text-xs">%</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`${alertType}-threshold-down`}>Decrease Threshold %</Label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground text-xs">-</span>
                     <Input
-                      id={`${alertType}-threshold-down`}
                       type="number"
+                      className="w-16 h-8"
                       value={data.threshold_decrease ?? ''}
-                      onChange={(e) =>
-                        setFormData(prev => ({
-                          ...prev,
-                          [alertType]: { ...prev[alertType], threshold_decrease: parseInt(e.target.value) || null }
-                        }))
-                      }
+                      onChange={(e) => handleChange(alertType, { threshold_decrease: parseInt(e.target.value) || null })}
                     />
+                    <span className="text-muted-foreground text-xs">%</span>
                   </div>
                 </div>
 
                 {/* Cooldown */}
-                <div className="space-y-2">
-                  <Label htmlFor={`${alertType}-cooldown`}>Cooldown (days)</Label>
+                <div className="flex items-center gap-3">
+                  <Label htmlFor={`${alertType}-cooldown`} className="text-muted-foreground whitespace-nowrap">Cooldown</Label>
                   <Input
                     id={`${alertType}-cooldown`}
                     type="number"
+                    className="w-20 h-8"
                     value={data.cooldown_days ?? ''}
-                    onChange={(e) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        [alertType]: { ...prev[alertType], cooldown_days: parseInt(e.target.value) || null }
-                      }))
-                    }
+                    onChange={(e) => handleChange(alertType, { cooldown_days: parseInt(e.target.value) || null })}
                   />
-                  <p className="text-xs text-muted-foreground">Minimum days between alerts of this type</p>
+                  <span className="text-muted-foreground text-xs">days</span>
                 </div>
-
-                <Button
-                  size="sm"
-                  onClick={() => handleSave(alertType)}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : existingConfig ? 'Update' : 'Create'}
-                </Button>
-              </CardContent>
+              </div>
             )}
-          </Card>
+          </div>
         );
       })}
     </div>
