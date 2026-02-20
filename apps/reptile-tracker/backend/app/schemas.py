@@ -1,5 +1,5 @@
 from datetime import datetime, time, date
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union, Literal
 from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_serializer, ConfigDict
 from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType
@@ -1563,6 +1563,25 @@ class ApplyPresetRequest(BaseModel):
     """Schema for applying a species preset to a reptile."""
     preset_id: str
     reptile_id: int
+
+
+class BulkApplyPresetRequest(BaseModel):
+    """Schema for bulk-applying species presets to multiple reptiles."""
+    reptile_ids: List[int]
+    alert_types: Dict[str, bool]  # {"feeding": true, "weight": true, "measurement_svl": true}
+
+
+class BulkUpdateRequest(BaseModel):
+    """Schema for bulk-updating alert settings across multiple reptiles."""
+    reptile_ids: Union[List[int], Literal["all"]]
+    alert_types: List[str]  # ["feeding", "weight", "measurement_svl"]
+    settings: Dict[str, Any]  # {"enabled": true, "threshold_decrease": 20}
+
+
+class BulkOperationResult(BaseModel):
+    """Result of a bulk operation."""
+    success_count: int
+    results: List[Dict[str, Any]]
 
 
 class ReptileAlertSummary(BaseModel):
