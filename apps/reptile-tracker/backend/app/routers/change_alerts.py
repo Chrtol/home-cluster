@@ -42,7 +42,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         alerts={
             "feeding": {"enabled": True, "window_days": 14, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 7},
             "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
-            "measurement_svl": {"enabled": False},  # Adults don't grow much
+            "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 5, "threshold_decrease": 3, "rolling_average_window": 3, "cooldown_days": 28},
         }
     ),
     "ball_python_juvenile": SpeciesPreset(
@@ -62,6 +62,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         alerts={
             "feeding": {"enabled": True, "window_days": 28, "threshold_increase": 40, "threshold_decrease": 40, "cooldown_days": 21},
             "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
+            "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 5, "threshold_decrease": 3, "rolling_average_window": 3, "cooldown_days": 28},
         }
     ),
     "leopard_gecko_juvenile": SpeciesPreset(
@@ -81,6 +82,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         alerts={
             "feeding": {"enabled": True, "window_days": 14, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 7},
             "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
+            "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 5, "threshold_decrease": 3, "rolling_average_window": 3, "cooldown_days": 28},
         }
     ),
     "crested_gecko": SpeciesPreset(
@@ -90,6 +92,7 @@ SPECIES_PRESETS: Dict[str, SpeciesPreset] = {
         alerts={
             "feeding": {"enabled": True, "window_days": 14, "threshold_increase": 30, "threshold_decrease": 30, "cooldown_days": 7},
             "weight": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 10, "threshold_decrease": 5, "cooldown_days": 7},
+            "measurement_svl": {"enabled": True, "threshold_type": "percentage", "threshold_increase": 8, "threshold_decrease": 3, "rolling_average_window": 3, "cooldown_days": 21},
         }
     ),
     "corn_snake": SpeciesPreset(
