@@ -361,6 +361,7 @@ async def check_measurement_alert(
     trigger_type = f"measurement_{change['direction']}"
 
     return {
+        "alert_type": f"measurement_{measurement.measurement_type}",  # For ChangeAlertTracking lookup
         "reptile_id": measurement.reptile_id,
         "reptile_name": reptile.name,
         "trigger_type": trigger_type,

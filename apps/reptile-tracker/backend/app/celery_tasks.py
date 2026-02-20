@@ -1299,6 +1299,38 @@ async def send_change_alert_notification_task(
                 except Exception as user_error:
                     logger.error(f"Failed to send change alert to user {user.id}: {user_error}")
 
+            # Update tracking record (marks alert as sent, starts cooldown)
+            # Uses alert_type from context for generic tracking across all alert types
+            alert_type = alert_context.get("alert_type")
+            if alert_type:
+                from app.models import ChangeAlertTracking
+                from datetime import datetime, timezone as tz
+
+                tracking_result = await db.execute(
+                    select(ChangeAlertTracking).where(
+                        ChangeAlertTracking.reptile_id == reptile_id,
+                        ChangeAlertTracking.alert_type == alert_type
+                    )
+                )
+                tracking = tracking_result.scalar_one_or_none()
+                now = datetime.now(tz.utc)
+
+                if tracking:
+                    tracking.last_alert_at = now
+                    tracking.last_alert_context = alert_context
+                    tracking.updated_at = now
+                else:
+                    tracking = ChangeAlertTracking(
+                        reptile_id=reptile_id,
+                        alert_type=alert_type,
+                        last_alert_at=now,
+                        last_alert_context=alert_context
+                    )
+                    db.add(tracking)
+
+                await db.commit()
+                logger.info(f"Updated tracking for {alert_type} alert on reptile {reptile.name}")
+
             logger.info(f"Change alert sent for reptile {reptile.name}")
 
     except Exception as exc:
