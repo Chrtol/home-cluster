@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { ChevronDown, Info, RefreshCw, Sparkles } from 'lucide-react';
 import ReptileAvatar from '@/components/ReptileAvatar';
 import ChangeAlertActivationFlow from './ChangeAlertActivationFlow';
-import axiosInstance from '@/utils/axiosInstance';
+import axios from 'axios';
 
 export default function ChangeAlertsTab() {
   const [reptiles, setReptiles] = useState([]);
@@ -27,8 +27,8 @@ export default function ChangeAlertsTab() {
     try {
       setLoading(true);
       const [reptilesRes, configsRes] = await Promise.all([
-        axiosInstance.get('/api/reptiles'),
-        axiosInstance.get('/api/change-alerts/configs')
+        axios.get('/api/reptiles'),
+        axios.get('/api/change-alerts/configs')
       ]);
 
       setReptiles(reptilesRes.data);
@@ -65,7 +65,7 @@ export default function ChangeAlertsTab() {
 
   const handleApplyPreset = async (reptileId, presetId) => {
     try {
-      await axiosInstance.post('/api/change-alerts/presets/apply', {
+      await axios.post('/api/change-alerts/presets/apply', {
         reptile_id: reptileId,
         preset_id: presetId
       });
@@ -77,7 +77,7 @@ export default function ChangeAlertsTab() {
 
   const handleBulkApplyToAll = async () => {
     try {
-      await axiosInstance.post('/api/change-alerts/presets/bulk-apply', {
+      await axios.post('/api/change-alerts/presets/bulk-apply', {
         reptile_ids: reptiles.map(r => r.id),
         alert_types: {
           feeding: true,
@@ -252,7 +252,7 @@ function PresetSuggestion({ reptile, onApply }) {
 
   const loadPresets = async () => {
     try {
-      const response = await axiosInstance.get('/api/change-alerts/presets');
+      const response = await axios.get('/api/change-alerts/presets');
       setPresets(response.data);
 
       // Auto-match preset based on species and age
@@ -351,9 +351,9 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
     try {
       const config = configs.find(c => c.alert_type === alertType);
       if (config) {
-        await axiosInstance.put(`/api/change-alerts/configs/${config.id}`, formData[alertType]);
+        await axios.put(`/api/change-alerts/configs/${config.id}`, formData[alertType]);
       } else {
-        await axiosInstance.post('/api/change-alerts/configs', {
+        await axios.post('/api/change-alerts/configs', {
           reptile_id: reptileId,
           alert_type: alertType,
           ...formData[alertType]

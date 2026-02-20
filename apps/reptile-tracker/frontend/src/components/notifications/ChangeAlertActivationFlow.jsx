@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import ReptileAvatar from '@/components/ReptileAvatar';
 import { Check } from 'lucide-react';
-import axiosInstance from '@/utils/axiosInstance';
+import axios from 'axios';
 
 export default function ChangeAlertActivationFlow({ open, onOpenChange, reptiles, onComplete }) {
   const [step, setStep] = useState(1);
@@ -49,7 +49,7 @@ export default function ChangeAlertActivationFlow({ open, onOpenChange, reptiles
   const handleEnableAlerts = async () => {
     setIsSubmitting(true);
     try {
-      await axiosInstance.post('/api/change-alerts/presets/bulk-apply', {
+      await axios.post('/api/change-alerts/presets/bulk-apply', {
         reptile_ids: Array.from(selectedReptiles),
         alert_types: alertTypes
       });
