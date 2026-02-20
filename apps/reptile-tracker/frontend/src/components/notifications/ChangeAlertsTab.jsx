@@ -304,22 +304,36 @@ function PresetSuggestion({ reptile, onApply }) {
 }
 
 function ManualOverrideForm({ reptileId, configs, onSave }) {
+  // Default values for each alert type
+  const alertTypeDefaults = {
+    feeding: { enabled: false, window_days: 14, threshold_decrease: 30, cooldown_days: 7 },
+    weight: { enabled: false, threshold_type: 'percentage', threshold_increase: 10, threshold_decrease: 5, cooldown_days: 7 },
+    measurement_svl: { enabled: false, threshold_type: 'percentage', threshold_increase: 10, threshold_decrease: 5, rolling_average_window: 3, cooldown_days: 14 },
+    measurement_total_length: { enabled: false, threshold_type: 'percentage', threshold_increase: 10, threshold_decrease: 5, rolling_average_window: 3, cooldown_days: 14 },
+  };
+
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Initialize form data from configs
+    // Initialize form data: merge defaults with existing configs
     const initial = {};
-    configs.forEach(config => {
-      initial[config.alert_type] = {
-        enabled: config.enabled,
-        cooldown_days: config.cooldown_days,
-        threshold_type: config.threshold_type,
-        threshold_increase: config.threshold_increase,
-        threshold_decrease: config.threshold_decrease,
-        window_days: config.window_days,
-        rolling_average_window: config.rolling_average_window,
-      };
+    Object.keys(alertTypeDefaults).forEach(alertType => {
+      const existingConfig = configs.find(c => c.alert_type === alertType);
+      if (existingConfig) {
+        initial[alertType] = {
+          ...alertTypeDefaults[alertType],
+          enabled: existingConfig.enabled,
+          cooldown_days: existingConfig.cooldown_days ?? alertTypeDefaults[alertType].cooldown_days,
+          threshold_type: existingConfig.threshold_type ?? alertTypeDefaults[alertType].threshold_type,
+          threshold_increase: existingConfig.threshold_increase ?? alertTypeDefaults[alertType].threshold_increase,
+          threshold_decrease: existingConfig.threshold_decrease ?? alertTypeDefaults[alertType].threshold_decrease,
+          window_days: existingConfig.window_days ?? alertTypeDefaults[alertType].window_days,
+          rolling_average_window: existingConfig.rolling_average_window ?? alertTypeDefaults[alertType].rolling_average_window,
+        };
+      } else {
+        initial[alertType] = { ...alertTypeDefaults[alertType] };
+      }
     });
     setFormData(initial);
   }, [configs]);
@@ -346,21 +360,21 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
   };
 
   const alertTypes = ['feeding', 'weight', 'measurement_svl', 'measurement_total_length'];
+  const isFeedingType = (type) => type === 'feeding';
+  const isMeasurementType = (type) => type.startsWith('measurement_');
 
   return (
     <div className="mt-4 space-y-4 pl-4">
       {alertTypes.map(alertType => {
-        const data = formData[alertType] || {};
+        const data = formData[alertType] || alertTypeDefaults[alertType];
         const typeLabel = alertType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const existingConfig = configs.find(c => c.alert_type === alertType);
 
         return (
           <Card key={alertType}>
-            <CardHeader>
-              <CardTitle className="text-sm">{typeLabel}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor={`${alertType}-enabled`}>Enabled</Label>
+                <CardTitle className="text-sm">{typeLabel}</CardTitle>
                 <Switch
                   id={`${alertType}-enabled`}
                   checked={data.enabled || false}
@@ -372,50 +386,105 @@ function ManualOverrideForm({ reptileId, configs, onSave }) {
                   }
                 />
               </div>
-              {data.enabled && (
-                <>
-                  {data.window_days !== undefined && (
-                    <div className="space-y-2">
-                      <Label htmlFor={`${alertType}-window`}>Window Days</Label>
-                      <Input
-                        id={`${alertType}-window`}
-                        type="number"
-                        value={data.window_days || ''}
-                        onChange={(e) =>
-                          setFormData(prev => ({
-                            ...prev,
-                            [alertType]: { ...prev[alertType], window_days: parseInt(e.target.value) }
-                          }))
-                        }
-                      />
-                    </div>
-                  )}
-                  {data.threshold_decrease !== undefined && (
-                    <div className="space-y-2">
-                      <Label htmlFor={`${alertType}-threshold`}>Threshold %</Label>
-                      <Input
-                        id={`${alertType}-threshold`}
-                        type="number"
-                        value={data.threshold_decrease || ''}
-                        onChange={(e) =>
-                          setFormData(prev => ({
-                            ...prev,
-                            [alertType]: { ...prev[alertType], threshold_decrease: parseInt(e.target.value) }
-                          }))
-                        }
-                      />
-                    </div>
-                  )}
-                  <Button
-                    size="sm"
-                    onClick={() => handleSave(alertType)}
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </Button>
-                </>
-              )}
-            </CardContent>
+            </CardHeader>
+            {data.enabled && (
+              <CardContent className="space-y-4 pt-0">
+                {/* Feeding alerts use window_days */}
+                {isFeedingType(alertType) && (
+                  <div className="space-y-2">
+                    <Label htmlFor={`${alertType}-window`}>Comparison Window (days)</Label>
+                    <Input
+                      id={`${alertType}-window`}
+                      type="number"
+                      value={data.window_days ?? ''}
+                      onChange={(e) =>
+                        setFormData(prev => ({
+                          ...prev,
+                          [alertType]: { ...prev[alertType], window_days: parseInt(e.target.value) || null }
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">Compare recent feeding to this many days prior</p>
+                  </div>
+                )}
+
+                {/* Measurement alerts use rolling average */}
+                {isMeasurementType(alertType) && (
+                  <div className="space-y-2">
+                    <Label htmlFor={`${alertType}-rolling`}>Rolling Average Window</Label>
+                    <Input
+                      id={`${alertType}-rolling`}
+                      type="number"
+                      value={data.rolling_average_window ?? ''}
+                      onChange={(e) =>
+                        setFormData(prev => ({
+                          ...prev,
+                          [alertType]: { ...prev[alertType], rolling_average_window: parseInt(e.target.value) || null }
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">Number of past measurements to average (1 = compare to previous only)</p>
+                  </div>
+                )}
+
+                {/* All types have threshold */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`${alertType}-threshold-up`}>Increase Threshold %</Label>
+                    <Input
+                      id={`${alertType}-threshold-up`}
+                      type="number"
+                      value={data.threshold_increase ?? ''}
+                      onChange={(e) =>
+                        setFormData(prev => ({
+                          ...prev,
+                          [alertType]: { ...prev[alertType], threshold_increase: parseInt(e.target.value) || null }
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`${alertType}-threshold-down`}>Decrease Threshold %</Label>
+                    <Input
+                      id={`${alertType}-threshold-down`}
+                      type="number"
+                      value={data.threshold_decrease ?? ''}
+                      onChange={(e) =>
+                        setFormData(prev => ({
+                          ...prev,
+                          [alertType]: { ...prev[alertType], threshold_decrease: parseInt(e.target.value) || null }
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Cooldown */}
+                <div className="space-y-2">
+                  <Label htmlFor={`${alertType}-cooldown`}>Cooldown (days)</Label>
+                  <Input
+                    id={`${alertType}-cooldown`}
+                    type="number"
+                    value={data.cooldown_days ?? ''}
+                    onChange={(e) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        [alertType]: { ...prev[alertType], cooldown_days: parseInt(e.target.value) || null }
+                      }))
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum days between alerts of this type</p>
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleSave(alertType)}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : existingConfig ? 'Update' : 'Create'}
+                </Button>
+              </CardContent>
+            )}
           </Card>
         );
       })}
