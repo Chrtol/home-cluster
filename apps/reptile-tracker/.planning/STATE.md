@@ -7,23 +7,24 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.4 Schedule Type Alignment & UX Polish
+**Current focus:** v1.4 Complete — Ready for v1.5
 
 ## Current Position
 
-**Phase:** 28 - Generalized Change Alerts (8 of 8 plans complete)
-**Plan:** Phase complete
+**Phase:** v1.4 Complete (Phases 26, 27, 28 all done)
+**Plan:** Milestone complete
 **Status:** Complete
-**Last activity:** 2026-02-20 — Completed Phase 28, all plans executed
-**Progress:** ████████ (100% - 8/8 plans complete)
+**Last activity:** 2026-02-20 — Completed v1.4 milestone
+**Progress:** ████████ (100% - all phases complete)
 
 **Completed Milestones:**
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
 - v1.1 UI Overhaul (Phases 7-13) — 2026-02-10
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
+- v1.4 Schedule Type Alignment & UX Polish (Phases 26-28) — 2026-02-20
 
-**Next:** Phases 26-07, 26-08 (gap closure), then 27-01 through 27-08
+**Next:** v1.5 Notification Template UI Improvements (Phases 29-31)
 
 ## Recent Completions
 
@@ -179,9 +180,9 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-02-20
-**Action:** Completed Phase 28 Plan 08 - Data Model Refactor & UX Redesign
-**Stopped at:** Phase 28 complete
-**Resume from:** .planning/phases/28-generalized-change-alerts/28-08-SUMMARY.md
+**Action:** Completed v1.4 milestone (Phases 26, 27, 28)
+**Stopped at:** v1.4 complete
+**Resume from:** Ready for v1.5 (Phases 29-31)
 
 ## Phase 26 Plan Summary
 
@@ -194,7 +195,8 @@ For future milestones:
 - **26-04 (Wave 3):** Completion flow (pre-fill navigation, shedding check modal) ✓
 - **26-05 (Wave 4):** Human verification checkpoint (all 10 success criteria) ✓
 - **26-06 (Wave 5):** Gap closure - field propagation (health_subtype/measurement_type through event pipeline) ✓
-- **26-07 (Wave 5):** Gap closure - Recent Activity and schedule matching for health schedules
+- **26-07 (Wave 5):** Gap closure - Recent Activity and schedule matching for health schedules ✓
+- **26-08 (Wave 6):** Human verification for gap closure UAT tests ✓
 
 **Key Changes:**
 - Schedule types become: feeding, misting, health (was weighing), supplement
@@ -253,7 +255,8 @@ For future milestones:
 - **27-06 (Wave 4):** Activity History modal integration - COMPLETE
 - **27-07a (Wave 4):** Dashboard modal integration (log views) - COMPLETE
 - **27-07b (Wave 5):** Dashboard modal integration (schedule views, create) - COMPLETE
-- **27-08 (Wave 6):** Visual polish (dense spacing, hover states)
+- **27-08 (Wave 6):** Human verification checkpoint - COMPLETE
+- **27-09 (Wave 6):** Gap closure: Full feeding edit in modal - COMPLETE
 
 **Key Patterns Established:**
 - Sheet component: side="right" for view modals, side="left" for create/edit
@@ -287,4 +290,4 @@ For future milestones:
 
 ---
 
-**Project Status:** Phase 28 complete. v1.4 milestone has Phase 26 gap closures (26-07, 26-08) and Phase 27 remaining.
+**Project Status:** v1.4 milestone complete (2026-02-20). Ready for v1.5 Notification Template UI Improvements (Phases 29-31).
