@@ -15,7 +15,6 @@ resources:
   - ./recyclarr/ks.yaml
   - ./bazarr/ks.yaml
   - ./seerr/ks.yaml
-  - ./huntarr/ks.yaml
   - ./cleanuparr/ks.yaml
   - ./wizarr/ks.yaml
   - ./gluetun/ks.yaml
