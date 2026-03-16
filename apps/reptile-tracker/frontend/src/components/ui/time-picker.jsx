@@ -29,6 +29,7 @@ function TimePicker({
   const [manualInput, setManualInput] = React.useState(value || '')
   const [isOpen, setIsOpen] = React.useState(false)
   const gridRef = React.useRef(null)
+  const nativeInputRef = React.useRef(null)
 
   // Detect if user is on mobile device
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
@@ -104,6 +105,43 @@ function TimePicker({
 
   const displayText = value || placeholder
 
+  // On mobile, use a native time input styled as a button (no popover)
+  // This triggers the native OS time picker directly without double-UI issues
+  if (isMobile) {
+    return (
+      <div className={cn('relative', className)}>
+        <input
+          ref={nativeInputRef}
+          type="time"
+          value={value || ''}
+          min={minTime}
+          max={maxTime}
+          disabled={disabled}
+          onChange={(e) => {
+            if (e.target.value) {
+              onChange(e.target.value)
+            }
+          }}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          aria-label={placeholder}
+        />
+        <Button
+          variant="outline"
+          disabled={disabled}
+          className={cn(
+            'w-full justify-start text-left font-normal pointer-events-none',
+            !value && 'text-muted-foreground'
+          )}
+          tabIndex={-1}
+        >
+          <Clock className="mr-2 h-4 w-4" />
+          {displayText}
+        </Button>
+      </div>
+    )
+  }
+
+  // Desktop: use popover with manual input and quick-pick grid
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -125,40 +163,20 @@ function TimePicker({
           {/* Manual input */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Manual entry</label>
-            {isMobile ? (
-              <input
-                type="time"
-                value={manualInput}
-                onChange={(e) => {
-                  setManualInput(e.target.value);
-                  if (e.target.value) {
-                    onChange(e.target.value);
-                  }
-                }}
-                className={cn(
-                  'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
-                  'text-sm shadow-sm transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                  '[&::-webkit-calendar-picker-indicator]:cursor-pointer'
-                )}
-              />
-            ) : (
-              <input
-                type="text"
-                inputMode="text"
-                placeholder="HH:MM"
-                value={manualInput}
-                onChange={handleManualChange}
-                className={cn(
-                  'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
-                  'text-sm shadow-sm transition-colors',
-                  'placeholder:text-muted-foreground',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  'disabled:cursor-not-allowed disabled:opacity-50'
-                )}
-              />
-            )}
+            <input
+              type="text"
+              inputMode="text"
+              placeholder="HH:MM"
+              value={manualInput}
+              onChange={handleManualChange}
+              className={cn(
+                'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
+                'text-sm shadow-sm transition-colors',
+                'placeholder:text-muted-foreground',
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'disabled:cursor-not-allowed disabled:opacity-50'
+              )}
+            />
           </div>
 
           {/* Quick-pick grid */}
