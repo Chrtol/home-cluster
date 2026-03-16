@@ -229,6 +229,9 @@ export function CreateLogModal({
     const now = { date: getCurrentDate(), time: getCurrentTime() };
     const baseReptileId = reptileId || 0;
 
+    // Use scheduled_date if available (from schedule instance), otherwise fall back to date or now
+    const defaultDate = safePrefill.scheduled_date || safePrefill.date || now.date;
+
     if (effectiveLogType === 'feeding') {
       // Extract supplement IDs from objects if needed (schedule instances pass objects)
       let supplementIds = [];
@@ -237,7 +240,7 @@ export function CreateLogModal({
       }
       return {
         reptile_id: baseReptileId,
-        fed_date: safePrefill.date || now.date,
+        fed_date: defaultDate,
         fed_time: safePrefill.time || now.time,
         notes: safePrefill.notes || '',
         include_insects: true,
@@ -254,7 +257,7 @@ export function CreateLogModal({
     if (effectiveLogType === 'misting') {
       return {
         reptile_id: baseReptileId,
-        misted_at_date: safePrefill.date || now.date,
+        misted_at_date: defaultDate,
         misted_at_time: safePrefill.time || now.time,
         notes: safePrefill.notes || '',
       };
@@ -280,7 +283,7 @@ export function CreateLogModal({
 
     return {
       reptile_id: baseReptileId,
-      log_date: safePrefill.date || now.date,
+      log_date: defaultDate,
       log_time: safePrefill.time || now.time,
       health_log_type: healthLogType,
       weight_grams: safePrefill.weight_grams || '',

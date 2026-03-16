@@ -30,8 +30,13 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   const [availableFoods, setAvailableFoods] = useState([]);
   const [foodQuantity, setFoodQuantity] = useState(1);
 
-  // Time selection state
-  const [fedAt, setFedAt] = useState(new Date());
+  // Time selection state - initialize from task's scheduled_date if available
+  const [fedAt, setFedAt] = useState(() => {
+    if (task?.scheduled_date) {
+      return new Date(task.scheduled_date);
+    }
+    return new Date();
+  });
 
   // Weight input state (for weight_check health schedules)
   const [weightGrams, setWeightGrams] = useState('');
@@ -73,6 +78,13 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       if (defaultUnit && !measurementUnit) {
         setMeasurementUnit(defaultUnit);
       }
+    }
+  }, [task]);
+
+  // Update fedAt when task changes
+  useEffect(() => {
+    if (task?.scheduled_date) {
+      setFedAt(new Date(task.scheduled_date));
     }
   }, [task]);
 
@@ -242,6 +254,7 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     // Build prefill from task data - include supplements for pre-fill
     const prefill = {
       instance_id: instanceId,
+      scheduled_date: task?.scheduled_date,
       supplements: task?.supplements || [],
       health_subtype: healthSubtype,
       measurement_type: task?.measurement_type,
