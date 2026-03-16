@@ -30,6 +30,9 @@ function TimePicker({
   const [isOpen, setIsOpen] = React.useState(false)
   const gridRef = React.useRef(null)
 
+  // Detect if user is on mobile device
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
   // Update manual input when value changes from outside
   React.useEffect(() => {
     setManualInput(value || '')
@@ -122,20 +125,40 @@ function TimePicker({
           {/* Manual input */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Manual entry</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="HH:MM"
-              value={manualInput}
-              onChange={handleManualChange}
-              className={cn(
-                'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
-                'text-sm shadow-sm transition-colors',
-                'placeholder:text-muted-foreground',
-                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                'disabled:cursor-not-allowed disabled:opacity-50'
-              )}
-            />
+            {isMobile ? (
+              <input
+                type="time"
+                value={manualInput}
+                onChange={(e) => {
+                  setManualInput(e.target.value);
+                  if (e.target.value) {
+                    onChange(e.target.value);
+                  }
+                }}
+                className={cn(
+                  'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
+                  'text-sm shadow-sm transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                  '[&::-webkit-calendar-picker-indicator]:cursor-pointer'
+                )}
+              />
+            ) : (
+              <input
+                type="text"
+                inputMode="text"
+                placeholder="HH:MM"
+                value={manualInput}
+                onChange={handleManualChange}
+                className={cn(
+                  'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
+                  'text-sm shadow-sm transition-colors',
+                  'placeholder:text-muted-foreground',
+                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  'disabled:cursor-not-allowed disabled:opacity-50'
+                )}
+              />
+            )}
           </div>
 
           {/* Quick-pick grid */}
