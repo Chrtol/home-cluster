@@ -177,12 +177,13 @@ For future milestones:
 | 002 | Fix streak calculation bug - streaks not resetting after misses | 2026-02-18 | 77029e5c4 | [002-fix-streak-calculation-bug-streaks-not-r](./quick/002-fix-streak-calculation-bug-streaks-not-r/) |
 | 003 | Fix blank notifications page JSON parse error | 2026-02-19 | 98dd5b116 | [003-fix-blank-notifications-page-json-parse-](./quick/003-fix-blank-notifications-page-json-parse-/) |
 | 004 | Fix change alert settings save and notification sending | 2026-02-20 | 8b8237b9f | [004-fix-change-alert-settings-save-and-notif](./quick/004-fix-change-alert-settings-save-and-notif/) |
+| 005 | Fix form pre-fill and mobile UI bugs | 2026-03-16 | 01687aee3 | [005-fix-reptile-tracker-form-and-mobile-ui-b](./quick/005-fix-reptile-tracker-form-and-mobile-ui-b/) |
 
 ## Session Continuity
 
-**Last session:** 2026-02-20
-**Action:** Completed quick task 004 - Fixed change alert settings save and notification sending
-**Stopped at:** Change Alerts system fully functional
+**Last session:** 2026-03-16
+**Action:** Completed quick task 005 - Fixed form pre-fill and mobile UI bugs
+**Stopped at:** Fixed 6 bugs: default food pre-fill, date pre-fill from schedule, login refresh loop, mobile time input, badge overflow
 **Resume from:** Ready for v1.5 (Phases 29-31)
 
 ## Phase 26 Plan Summary
