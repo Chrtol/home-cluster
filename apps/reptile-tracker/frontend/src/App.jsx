@@ -57,6 +57,11 @@ function App() {
         if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
           originalRequest._retry = true
 
+          // Don't redirect if already on login page
+          if (window.location.pathname === '/login') {
+            return Promise.reject(error)
+          }
+
           try {
             setIsRefreshing(true)
             // Try to refresh the token
@@ -66,9 +71,12 @@ function App() {
           } catch (refreshError) {
             // Refresh failed - redirect to login
             console.error('Token refresh failed:', refreshError)
-            setIsAuthenticated(false)
-            setUser(null)
-            window.location.href = '/login'
+            // Don't redirect if already on login page
+            if (window.location.pathname !== '/login') {
+              setIsAuthenticated(false)
+              setUser(null)
+              window.location.href = '/login'
+            }
             return Promise.reject(refreshError)
           } finally {
             setIsRefreshing(false)
@@ -77,9 +85,12 @@ function App() {
 
         // If it's a 401 but we already tried refreshing, or if refresh is in progress
         if (error.response?.status === 401) {
-          setIsAuthenticated(false)
-          setUser(null)
-          window.location.href = '/login'
+          // Don't redirect if already on login page
+          if (window.location.pathname !== '/login') {
+            setIsAuthenticated(false)
+            setUser(null)
+            window.location.href = '/login'
+          }
         }
 
         return Promise.reject(error)
