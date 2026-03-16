@@ -236,7 +236,7 @@ const ReptileStatusCard = ({
               <p className="text-xs text-muted-foreground mb-2">{reptile.species}</p>
 
               {/* Quick stats row - min-h-6 ensures consistent height with/without NextFeedingIndicator */}
-              <div className="flex items-center gap-3 text-xs min-h-6">
+              <div className="flex items-center gap-2 sm:gap-3 text-xs min-h-6 flex-wrap">
                 <div className="flex items-center gap-1">
                   <span className={lastFed ? 'text-primary' : 'text-muted-foreground'}>🍽️</span>
                   <span className="text-muted-foreground">{getLastFedDisplay()}</span>

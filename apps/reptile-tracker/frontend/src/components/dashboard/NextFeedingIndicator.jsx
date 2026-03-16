@@ -106,13 +106,14 @@ const NextFeedingIndicator = ({ scheduleInstances, reptileId, isHidden }) => {
   return (
     <div
       className={cn(
-        "flex items-center gap-1 px-2 py-1 min-h-6 rounded-full text-xs font-medium whitespace-nowrap",
+        "flex items-center gap-1 px-2 py-1 min-h-6 rounded-full text-xs font-medium whitespace-nowrap shrink-0",
+        "max-w-[140px] sm:max-w-none overflow-hidden",
         colors.bg, colors.text
       )}
       title="Next feeding"
     >
-      <Utensils className="w-3 h-3" />
-      <span>{formatNextFeeding(nextFeeding)}</span>
+      <Utensils className="w-3 h-3 flex-shrink-0" />
+      <span className="truncate">{formatNextFeeding(nextFeeding)}</span>
     </div>
   );
 };
