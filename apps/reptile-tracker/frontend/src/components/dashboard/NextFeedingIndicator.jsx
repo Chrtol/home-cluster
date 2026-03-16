@@ -106,7 +106,7 @@ const NextFeedingIndicator = ({ scheduleInstances, reptileId, isHidden }) => {
   return (
     <div
       className={cn(
-        "flex items-center gap-1 px-2 h-6 rounded-full text-xs font-medium",
+        "flex items-center gap-1 px-2 py-1 min-h-6 rounded-full text-xs font-medium whitespace-nowrap",
         colors.bg, colors.text
       )}
       title="Next feeding"
