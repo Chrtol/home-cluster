@@ -304,28 +304,34 @@ export default function FeedingLog() {
 
     // Set default insect if configured and insects are enabled
     if (selectedReptileData.default_insect_id && watchIncludeInsects) {
-      form.setValue('insect_items', [{
-        id: Date.now(),
-        food_id: selectedReptileData.default_insect_id.toString(),
-        quantity: 1,
-        supplement_ids: []
-      }]);
-    } else if (!selectedReptileData.default_insect_id && watchIncludeInsects) {
-      form.setValue('insect_items', []);
+      // Replace existing items with default
+      const currentItems = form.getValues('insect_items') || [];
+      // Only update if current items are empty or contain the initial placeholder
+      if (currentItems.length === 0 || (currentItems.length === 1 && currentItems[0].food_id !== selectedReptileData.default_insect_id.toString())) {
+        form.setValue('insect_items', [{
+          id: Date.now(),
+          food_id: selectedReptileData.default_insect_id.toString(),
+          quantity: 1,
+          supplement_ids: []
+        }]);
+      }
     }
 
     // Set default prepared food if configured and prepared is enabled
     if (selectedReptileData.default_prepared_id && watchIncludePrepared) {
-      form.setValue('prepared_items', [{
-        id: Date.now(),
-        food_id: selectedReptileData.default_prepared_id.toString(),
-        quantity: 1,
-        supplement_ids: []
-      }]);
-    } else if (!selectedReptileData.default_prepared_id && watchIncludePrepared) {
-      form.setValue('prepared_items', []);
+      // Replace existing items with default
+      const currentItems = form.getValues('prepared_items') || [];
+      // Only update if current items are empty or contain the initial placeholder
+      if (currentItems.length === 0 || (currentItems.length === 1 && currentItems[0].food_id !== selectedReptileData.default_prepared_id.toString())) {
+        form.setValue('prepared_items', [{
+          id: Date.now(),
+          food_id: selectedReptileData.default_prepared_id.toString(),
+          quantity: 1,
+          supplement_ids: []
+        }]);
+      }
     }
-  }, [watchReptileId, watchIncludeInsects, watchIncludePrepared, mode, reptiles]);
+  }, [watchReptileId, watchIncludeInsects, watchIncludePrepared, mode, reptiles, foods]);
 
   // Fetch supplement suggestion when reptile or food types change
   useEffect(() => {
