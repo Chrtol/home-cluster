@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: ghcr.io/fccview/jotty
-              tag: 1.19.1@sha256:231f9f828d94060ea9246411fd5e5d70fbbdf5c8d92a8ddf9b6c4fc5287e5a08
+              tag: 1.21.1@sha256:275c844be9aae5736ad4d120f554278be41a48e125af3782d3713a72aff9e264
             env:
               TZ: ${SECRET_TIMEZONE}
               NODE_ENV: production
