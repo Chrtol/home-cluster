@@ -29,7 +29,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: newt
-        image: ghcr.io/fosrl/newt:1.9.0@sha256:22edec551d81c500a9a3c790a41cd8f7eada3b47ba0a31a187c80d61318e4cc6
+        image: ghcr.io/fosrl/newt:1.10.4@sha256:ccd2b0e9a0492d7492c00dff1295d0c487a2f71f9f8fc80b1c61e597f5181aed
         # Use sh -c to properly expand environment variable
         # Each pod gets a unique interface name to avoid conflicts
         command:
