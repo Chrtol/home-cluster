@@ -77,10 +77,23 @@ spec:
               resources:
                 requests:
                   storage: 1Gi
+    # Drop high-cardinality histogram buckets not needed for homelab monitoring
+    # These metrics account for ~60k+ series and are rarely used
+    kubeApiServer:
+      serviceMonitor:
+        metricRelabelings:
+          - sourceLabels: [__name__]
+            regex: apiserver_(request_duration|request_body_size|response_sizes|watch_cache_read_wait|watch_list_duration|watch_events_sizes|request_sli_duration)_seconds_bucket
+            action: drop
     kubeEtcd:
       service:
         selector:
           component: kube-apiserver # etcd runs on control plane nodes
+      serviceMonitor:
+        metricRelabelings:
+          - sourceLabels: [__name__]
+            regex: etcd_request_duration_seconds_bucket
+            action: drop
     kubeProxy:
       enabled: false
     prometheus:
@@ -117,6 +130,20 @@ spec:
             cpu: 100m
           limits:
             memory: 2000Mi
+        # Increase probe tolerance for large TSDB (17GB+)
+        # Prometheus returns 503 while loading, needs time to become ready
+        startupProbe:
+          failureThreshold: 120
+          periodSeconds: 10
+          timeoutSeconds: 10
+        livenessProbe:
+          failureThreshold: 10
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          failureThreshold: 5
+          periodSeconds: 10
+          timeoutSeconds: 10
         storageSpec:
           volumeClaimTemplate:
             spec:
