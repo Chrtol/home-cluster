@@ -26,3 +26,4 @@ ai-activity/*
 *.log
 apps/reptile-tracker/.planning/
 .planning
+tmp/*

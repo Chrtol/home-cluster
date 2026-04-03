@@ -66,8 +66,12 @@ spec:
               capabilities: { add: ["NET_ADMIN"] }
               allowPrivilegeEscalation: true
             resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
               limits:
                 squat.ai/tun: "1"
+                memory: 128Mi
             probes:
               liveness:
                 enabled: true
@@ -77,7 +81,8 @@ spec:
                     path: /
                     port: 9999
                   periodSeconds: 30
-                  failureThreshold: 3
+                  timeoutSeconds: 10
+                  failureThreshold: 5
               startup:
                 enabled: true
                 custom: true
@@ -87,6 +92,7 @@ spec:
                     port: 9999
                   failureThreshold: 30
                   periodSeconds: 10
+                  timeoutSeconds: 10
         containers:
           app:
             image:
