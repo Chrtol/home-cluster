@@ -10,4 +10,3 @@ resources:
   - ./external/ks.yaml
   - ./internal/ks.yaml
   - ./envoy-gateway/ks.yaml
-  - ./newt/ks.yaml
