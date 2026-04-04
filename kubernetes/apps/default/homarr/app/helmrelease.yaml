@@ -64,10 +64,25 @@ spec:
     strategyType: Recreate
 
     livenessProbe:
-      enabled: false
+      enabled: true
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 5
 
     readinessProbe:
-      enabled: false
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+    startupProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
 
     lifecycle:
       preStop:
