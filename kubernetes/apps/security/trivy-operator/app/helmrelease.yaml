@@ -47,18 +47,19 @@ spec:
       resources:
         requests:
           cpu: 15m
-          memory: 512M
+          memory: 146Mi
         limits:
-          memory: 1Gi
+          memory: 256Mi
     trivyOperator:
       excludeImages: "quay.io/backube/*"
       skipResourceByLabels: "app.kubernetes.io/created-by=volsync"
       resources:
         requests:
-          cpu: 15m
-          memory: 672M
+          cpu: 23m
+          memory: 1152Mi
         limits:
-          memory: 1500Mi
+          cpu: 35m
+          memory: 1536Mi
       
     # https://github.com/aquasecurity/trivy-operator/issues/2566
     # Configure node collector for Talos Linux (only mount writable /var paths)

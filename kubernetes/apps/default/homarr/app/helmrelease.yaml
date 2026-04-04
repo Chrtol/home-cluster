@@ -81,6 +81,14 @@ spec:
       runAsGroup: 0
       allowPrivilegeEscalation: false
 
+    resources:
+      requests:
+        cpu: 78m
+        memory: 896Mi
+      limits:
+        cpu: 100m
+        memory: 1280Mi
+
     httproute:
       enabled: true
       parentRefs:

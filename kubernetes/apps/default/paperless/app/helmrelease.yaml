@@ -65,10 +65,10 @@ spec:
               readOnlyRootFilesystem: false
             resources:
               requests:
-                cpu: 10m
-                memory: 1Gi
+                cpu: 50m
+                memory: 1280Mi
               limits:
-                memory: 2500Mi
+                memory: 2Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false

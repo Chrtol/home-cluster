@@ -52,10 +52,10 @@ spec:
                 enabled: true
             resources:
               requests:
-                cpu: 15m
-                memory: 549M
+                cpu: 23m
+                memory: 549Mi
               limits:
-                memory: 1Gi
+                memory: 768Mi
 
       chrome:
         annotations:

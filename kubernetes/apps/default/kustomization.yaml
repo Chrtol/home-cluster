@@ -8,7 +8,6 @@ components:
   - ../../components/repos/app-template
 resources:
   - ./echo/ks.yaml
-  - ./homepage/ks.yaml
   - ./mealie/ks.yaml
   - ./it-tools/ks.yaml
   - ./mosquitto/ks.yaml
@@ -19,7 +18,6 @@ resources:
   - ./actual/ks.yaml
   - ./apprise/ks.yaml
   - ./karakeep/ks.yaml
-  - ./openflow/ks.yaml
   - ./n8n/ks.yaml
   - ./smtp-relay/ks.yaml
   - ./reptile-tracker/ks.yaml

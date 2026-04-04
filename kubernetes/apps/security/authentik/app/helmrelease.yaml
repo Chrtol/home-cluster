@@ -145,9 +145,14 @@ spec:
           value: "service.name=authentik-worker,service.namespace=security,app.type=identity-provider,component=worker"
       autoscaling:
         enabled: true
-        minReplicas: 3
-        maxReplicas: 10
-        targetCPUUtilizationPercentage: 70
+        minReplicas: 1
+        maxReplicas: 5
+        targetCPUUtilizationPercentage: 60
+        behavior:
+          scaleUp:
+            stabilizationWindowSeconds: 300
+          scaleDown:
+            stabilizationWindowSeconds: 300
       serviceAccount:
         create: true
       extraContainers:
@@ -173,9 +178,9 @@ spec:
           resources:
             requests:
               cpu: 11m
-              memory: 352Mi
+              memory: 128Mi
             limits:
-              memory: 512Mi
+              memory: 256Mi
       volumes:
         - name: sidecar-blueprints
           emptyDir: {}
@@ -197,10 +202,10 @@ spec:
             timeoutSeconds: 10
       resources:
         requests:
-          cpu: 300m
-          memory: 814M
+          cpu: 130m
+          memory: 768Mi
         limits:
-          memory: 1200Mi
+          memory: 1Gi
     prometheus:
       rules:
         enabled: true

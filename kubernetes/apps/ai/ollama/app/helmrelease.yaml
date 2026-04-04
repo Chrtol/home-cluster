@@ -55,8 +55,8 @@ spec:
               SYCL_CACHE_PERSISTENT: "1"
             resources:
               requests:
-                cpu: "500m"
-                memory: "8Gi"
+                cpu: 15m
+                memory: 4352Mi
               limits:
                 cpu: "4"
                 memory: "16Gi"

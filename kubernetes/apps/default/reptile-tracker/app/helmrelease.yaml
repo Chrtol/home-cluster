@@ -122,8 +122,8 @@ spec:
                   periodSeconds: 5
             resources:
               requests:
-                cpu: 100m
-                memory: 256Mi
+                cpu: 15m
+                memory: 300Mi
               limits:
                 memory: 512Mi
           frontend:
@@ -156,7 +156,7 @@ spec:
                   periodSeconds: 5
             resources:
               requests:
-                cpu: 50m
+                cpu: 15m
                 memory: 64Mi
               limits:
                 memory: 128Mi
@@ -253,8 +253,8 @@ spec:
                   failureThreshold: 3
             resources:
               requests:
-                cpu: 100m
-                memory: 256Mi
+                cpu: 15m
+                memory: 301Mi
               limits:
                 memory: 512Mi
     persistence:
