@@ -37,15 +37,6 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           enableServiceLinks: false
-          affinity:
-            nodeAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 100
-                  preference:
-                    matchExpressions:
-                      - key: kubernetes.io/hostname
-                        operator: In
-                        values: ["lenovo2"]
         initContainers:
           01-init-db:
             image:
@@ -112,10 +103,10 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 256Mi
+                memory: 2Gi
               limits:
                 cpu: "3"
-                memory: 4096Mi
+                memory: 4Gi
                 gpu.intel.com/i915: 1
 
       machine-learning:
@@ -141,10 +132,10 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 274M
+                memory: 1536Mi
               limits:
                 cpu: "2"
-                memory: 3949M
+                memory: 4Gi
 
     service:
       server:

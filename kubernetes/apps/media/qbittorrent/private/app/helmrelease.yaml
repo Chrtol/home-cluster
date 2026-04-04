@@ -148,6 +148,7 @@ spec:
             resources:
               requests:
                 cpu: 100m
+                memory: 4Gi
               limits:
                 memory: 8Gi
           port-forward:
