@@ -13,5 +13,5 @@ spec:
     # Pinned to 1.6.3 due to ext_authz redirect regression in 1.7.0
     # See: allowed_client_headers not configured, breaking Location header forwarding
     # TODO: Test 1.7.x+ when issue is resolved upstream
-    tag: v1.6.3
+    tag: v1.8.0
   url: oci://mirror.gcr.io/envoyproxy/gateway-helm
