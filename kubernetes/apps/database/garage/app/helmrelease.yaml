@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: dxflrs/garage
-              tag: v1.3.1  # Rollback for proper migration
+              tag: v2.3.0  # Rollback for proper migration
             command:
               - /garage
               - server
