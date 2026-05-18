@@ -18,7 +18,7 @@ spec:
           install-packages:
             image:
               repository: ghcr.io/node-red/node-red
-              tag: 4.1.4@sha256:926f1f116276e434dd8c74ab7ca36eb0158e1def5cf2fbe78451938ee0e58790
+              tag: 4.1.10@sha256:eaa2fa23f751581162a4ff9eebb28fcbfcca7935b1a839f63672718f3c816761
             command:
               - /bin/sh
               - -c
@@ -33,7 +33,7 @@ spec:
           app:
             image:
               repository: ghcr.io/node-red/node-red
-              tag: 4.1.4@sha256:926f1f116276e434dd8c74ab7ca36eb0158e1def5cf2fbe78451938ee0e58790
+              tag: 4.1.10@sha256:eaa2fa23f751581162a4ff9eebb28fcbfcca7935b1a839f63672718f3c816761
             env:
               TZ: ${SECRET_TIMEZONE}
             envFrom:
