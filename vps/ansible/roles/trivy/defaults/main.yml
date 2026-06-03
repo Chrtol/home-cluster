@@ -8,8 +8,8 @@ trivy_server_url: "https://trivy.{{ lookup('env', 'VPS_PROXY_DOMAIN') }}"
 # Authentication token for Trivy server (same token used by Kubernetes ExternalSecret)
 trivy_server_token: "{{ lookup('env', 'TRIVY_SERVER_TOKEN') }}"
 
-# Scan schedule (cron format) - default: daily at 3 AM
-trivy_scan_schedule: "0 3 * * *"
+# Scan schedule (systemd OnCalendar format) - default: daily at 3 AM
+trivy_scan_schedule: "*-*-* 03:00:00"
 
 # What to scan
 trivy_scan_filesystem: true
