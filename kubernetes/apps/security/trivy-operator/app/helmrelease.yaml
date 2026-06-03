@@ -44,6 +44,7 @@ spec:
       mode: ClientServer
       severity: HIGH,CRITICAL
       storageClassEnabled: false # ephemeral storage
+      serverTokenSecretName: trivy-server-secret
       resources:
         requests:
           cpu: 15m

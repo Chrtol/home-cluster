@@ -14,5 +14,5 @@ spec:
     - trivy.${SECRET_DOMAIN}
   rules:
     - backendRefs:
-        - name: trivy-server
+        - name: trivy-service
           port: 4954

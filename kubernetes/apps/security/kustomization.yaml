@@ -10,4 +10,3 @@ resources:
   - ./authentik/ks.yaml
   - ./crowdsec/ks.yaml
   - ./trivy-operator/ks.yaml
-  - ./trivy-server/ks.yaml
