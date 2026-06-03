@@ -10,6 +10,26 @@ spec:
     name: tuppr
     namespace: flux-system
   interval: 1h
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: apiextensions.k8s.io
+              version: v1
+              kind: CustomResourceDefinition
+              name: talosupgrades.tuppr.home-operations.com
+            patch: |
+              - op: replace
+                path: /spec/versions/0/schema/openAPIV3Schema/properties/status/properties/phase/enum
+                value:
+                  - Pending
+                  - InProgress
+                  - Completed
+                  - Failed
+                  - Upgrading
+                  - Rebooting
+                  - Draining
+                  - WaitingForHealthChecks
   values:
     replicaCount: 2
     monitoring:
