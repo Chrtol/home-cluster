@@ -26,7 +26,7 @@ spec:
                   spec:
                     initContainers:
                       - name: init-db
-                        image: ghcr.io/home-operations/postgres-init:18.1
+                        image: ghcr.io/home-operations/postgres-init:18.4
                         envFrom:
                           - secretRef:
                               name: homarr-secret
