@@ -9,9 +9,6 @@ data:
     metadata_dir = "/mnt/meta"
     data_dir = "/mnt/data"
 
-    # Temporary: using sqlite during v1->v2 migration (will convert back to lmdb)
-    db_engine = "sqlite"
-
     # v2.0.0 uses replication_factor and consistency_mode instead of replication_mode
     replication_factor = 1
     consistency_mode = "consistent"
