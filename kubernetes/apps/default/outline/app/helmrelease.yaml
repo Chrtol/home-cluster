@@ -29,7 +29,7 @@ spec:
           app:
             image:
               repository: docker.io/outlinewiki/outline
-              tag: 1.4.0@sha256:26aabb32fc2a2382908e80326de0d07ba7a4eedeab57ff1389b1efbe32f8209a
+              tag: 1.8.0@sha256:bbaac3434e972b860aa2aeea87a465f277dfdcb23ffdcf4ee65f3fb2ca988745
             command: ["/bin/sh", "-c", "npm run db:migrate -- --env=production-ssl-disabled && npm run start -- --env=production-ssl-disabled"]
             env:
               TZ: ${SECRET_TIMEZONE}
