@@ -25,6 +25,7 @@ spec:
       APP: *app
       CEPH_RBD_CAPACITY: 2Gi
       GATUS_SUBDOMAIN: audiobooks
+      VOLSYNC_CACHE_CAPACITY: 3Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
