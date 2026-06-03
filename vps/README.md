@@ -2,89 +2,64 @@
 
 This directory contains Ansible automation for VPS management.
 
-## ⚠️ Important: Existing VPS vs New VPS
+## Playbooks
 
-### For EXISTING VPS (Your Current Situation)
-Use the minimal playbook that ONLY deploys Pangolin:
-
+### Full VPS Setup
 ```bash
-# From GitHub Actions or locally
-ansible-playbook pangolin-only.yml -i inventory.yml
-```
-
-This will:
-- Add firewall rules for Pangolin staging ports (8081, 8443, 51821, 21821)
-- Deploy Pangolin in staging mode
-- NOT touch any existing services or configurations
-
-Note: The playbook safely adds iptables rules for the staging ports without disrupting existing rules.
-
-### For NEW VPS (Future Reference)
-Use the full playbook for complete server setup:
-
-```bash
-# Complete server configuration from scratch
 ansible-playbook site.yml -i inventory.yml
 ```
 
 This includes:
-- System hardening
+- System hardening and automatic updates
 - Docker installation
-- Firewall configuration
-- Automatic updates
-- Pangolin deployment
+- UFW firewall configuration
+- CrowdSec IDS
+- Traefik reverse proxy
+- Trivy security scanner (client mode, connects to cluster server)
+
+### Traefik Reverse Proxy Only (GitOps)
+```bash
+ansible-playbook reverse-proxy.yml -i inventory.yml
+```
+
+Manages Traefik configuration declaratively. Triggered by GitHub Actions on push.
 
 ## Directory Structure
 
 ```
 vps/
 ├── ansible/
-│   ├── pangolin-only.yml    # SAFE: Only deploys Pangolin
-│   ├── site.yml             # FULL: Complete VPS setup (new servers)
+│   ├── site.yml             # Full VPS setup
+│   ├── reverse-proxy.yml    # Traefik GitOps playbook
 │   ├── inventory.yml        # Dynamic inventory from env vars
 │   └── roles/
-│       ├── base/            # System configuration (FULL setup only)
-│       ├── docker/          # Docker installation (FULL setup only)
-│       ├── firewall/        # UFW rules (FULL setup only)
-│       ├── crowdsec/        # Security (optional)
-│       └── pangolin/        # Pangolin stack (used by both)
-└── github-secrets-setup.md  # 1Password integration guide
+│       ├── base/            # System configuration
+│       ├── docker/          # Docker installation
+│       ├── firewall/        # UFW rules
+│       ├── crowdsec/        # CrowdSec IDS
+│       ├── traefik/         # Traefik reverse proxy
+│       └── trivy/           # Trivy security scanner
 ```
 
-## Deployment Options
+## Deployment
 
-### Option 1: GitHub Actions (Recommended)
+### GitHub Actions (Recommended)
 ```bash
-git push  # Automatically triggers deployment
+git push  # Automatically triggers reverse-proxy deployment
 ```
 
-### Option 2: Manual Dry Run (Preview Changes)
-```bash
-cd vps/ansible
-ansible-playbook pangolin-only.yml -i inventory.yml --check --diff
-```
-
-### Option 3: Manual Deployment
+### Manual Dry Run
 ```bash
 cd vps/ansible
-ansible-playbook pangolin-only.yml -i inventory.yml
+ansible-playbook reverse-proxy.yml -i inventory.yml --check --diff
+```
+
+### Manual Deployment
+```bash
+cd vps/ansible
+ansible-playbook reverse-proxy.yml -i inventory.yml
 ```
 
 ## Required Secrets
 
-See `github-secrets-setup.md` for 1Password configuration.
-
-## Rollback
-
-If something goes wrong:
-1. Stop Pangolin: `docker compose -f /opt/pangolin/docker-compose.yml down`
-2. Remove Pangolin: `rm -rf /opt/pangolin`
-3. Fix issues and redeploy
-
-## Future Use Cases
-
-The full `site.yml` playbook is saved for:
-- Disaster recovery (new VPS from scratch)
-- Testing environments
-- Development VPS setup
-- Documentation of ideal configuration
+See `1PASSWORD_SECRETS.md` in the ansible directory for configuration.

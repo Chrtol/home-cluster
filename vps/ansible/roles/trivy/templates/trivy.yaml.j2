@@ -1,0 +1,15 @@
+# Trivy client configuration
+# Connects to remote Trivy server in Kubernetes cluster
+
+# Remote server configuration
+server:
+  url: {{ trivy_server_url }}
+  token: {{ trivy_server_token }}
+
+# Scan settings
+severity: {{ trivy_severity }}
+ignore-unfixed: true
+
+# Cache settings (minimal since server handles DB)
+cache:
+  dir: /var/cache/trivy

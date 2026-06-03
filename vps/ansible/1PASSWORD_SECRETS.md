@@ -42,7 +42,12 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 - `VPS_METRICS_PASSWORD` - Plaintext password for metrics auth (used by Prometheus scraper)
 - `VPS_METRICS_PASSWORD_HASH` - bcrypt hash for metrics auth, used by Traefik (generate with `htpasswd -nB prometheus`)
 
-### 4. CrowdSec Bouncer API Key (Vault: `Lab`, Item: `crowdsec`)
+### 4. Trivy Security Scanner (Vault: `Lab`, Item: `trivy-server`)
+- `TRIVY_SERVER_TOKEN` - Authentication token for Trivy server (generate with `openssl rand -hex 32`)
+
+The Trivy server URL is derived from your domain: `https://trivy.${SECRET_DOMAIN}`
+
+### 5. CrowdSec Bouncer API Key (Vault: `Lab`, Item: `crowdsec`)
 **This item must be created after setting up the CrowdSec bouncer on the VPS**
 
 #### Required Field:

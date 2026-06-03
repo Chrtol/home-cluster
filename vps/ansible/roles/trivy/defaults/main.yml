@@ -1,0 +1,25 @@
+---
+# Trivy client configuration
+
+# Trivy server URL (in Kubernetes cluster, accessed via WireGuard)
+# Derived from VPS_PROXY_DOMAIN which is already loaded from 1Password
+trivy_server_url: "https://trivy.{{ lookup('env', 'VPS_PROXY_DOMAIN') }}"
+
+# Authentication token for Trivy server (same token used by Kubernetes ExternalSecret)
+trivy_server_token: "{{ lookup('env', 'TRIVY_SERVER_TOKEN') }}"
+
+# Scan schedule (cron format) - default: daily at 3 AM
+trivy_scan_schedule: "0 3 * * *"
+
+# What to scan
+trivy_scan_filesystem: true
+trivy_scan_docker_images: true
+
+# Severity filter
+trivy_severity: "HIGH,CRITICAL"
+
+# Output format: table, json, sarif
+trivy_output_format: "json"
+
+# Output directory for scan results
+trivy_output_dir: "/var/log/trivy"

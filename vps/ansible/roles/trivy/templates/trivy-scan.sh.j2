@@ -1,0 +1,50 @@
+#!/bin/bash
+# Trivy security scan script for VPS
+# Connects to remote Trivy server in Kubernetes cluster
+
+set -euo pipefail
+
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+OUTPUT_DIR="{{ trivy_output_dir }}"
+SERVER_URL="{{ trivy_server_url }}"
+SERVER_TOKEN="{{ trivy_server_token }}"
+
+echo "Starting Trivy security scan at $(date)"
+echo "Server: ${SERVER_URL}"
+
+{% if trivy_scan_filesystem %}
+# Filesystem scan
+echo "Scanning filesystem..."
+trivy fs / \
+  --server "${SERVER_URL}" \
+  --token "${SERVER_TOKEN}" \
+  --severity {{ trivy_severity }} \
+  --ignore-unfixed \
+  --format {{ trivy_output_format }} \
+  --output "${OUTPUT_DIR}/filesystem-${TIMESTAMP}.{{ trivy_output_format }}" \
+  --skip-dirs /proc,/sys,/dev,/run,/var/lib/docker \
+  2>&1 || echo "Filesystem scan completed with warnings"
+
+{% endif %}
+{% if trivy_scan_docker_images %}
+# Docker image scan
+echo "Scanning Docker images..."
+for image in $(docker images --format "{{ '{{' }}.Repository{{ '}}' }}:{{ '{{' }}.Tag{{ '}}' }}" | grep -v '<none>'); do
+  echo "Scanning image: ${image}"
+  safe_name=$(echo "${image}" | tr '/:' '_')
+  trivy image "${image}" \
+    --server "${SERVER_URL}" \
+    --token "${SERVER_TOKEN}" \
+    --severity {{ trivy_severity }} \
+    --ignore-unfixed \
+    --format {{ trivy_output_format }} \
+    --output "${OUTPUT_DIR}/image-${safe_name}-${TIMESTAMP}.{{ trivy_output_format }}" \
+    2>&1 || echo "Image scan for ${image} completed with warnings"
+done
+
+{% endif %}
+# Cleanup old reports (keep last 7 days)
+find "${OUTPUT_DIR}" -type f -mtime +7 -delete 2>/dev/null || true
+
+echo "Trivy scan completed at $(date)"
+echo "Reports saved to: ${OUTPUT_DIR}"

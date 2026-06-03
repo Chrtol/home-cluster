@@ -1,0 +1,86 @@
+---
+# Install and configure Trivy CLI as a client to the cluster's Trivy server
+
+- name: Verify required secrets are present
+  ansible.builtin.assert:
+    that:
+      - trivy_server_token != ""
+      - lookup('env', 'VPS_PROXY_DOMAIN') != ""
+    fail_msg: "Required Trivy secrets not found. Ensure TRIVY_SERVER_TOKEN and VPS_PROXY_DOMAIN are set from 1Password."
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - wget
+      - apt-transport-https
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Add Trivy GPG key
+  ansible.builtin.apt_key:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    state: present
+
+- name: Add Trivy repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+    state: present
+
+- name: Install Trivy
+  ansible.builtin.apt:
+    name: trivy
+    state: present
+    update_cache: true
+
+- name: Create Trivy configuration directory
+  ansible.builtin.file:
+    path: /etc/trivy
+    state: directory
+    mode: "0755"
+
+- name: Create Trivy client configuration
+  ansible.builtin.template:
+    src: trivy.yaml.j2
+    dest: /etc/trivy/trivy.yaml
+    mode: "0600"
+  notify: restart trivy-scan timer
+
+- name: Create output directory for scan results
+  ansible.builtin.file:
+    path: "{{ trivy_output_dir }}"
+    state: directory
+    mode: "0750"
+
+- name: Create Trivy scan script
+  ansible.builtin.template:
+    src: trivy-scan.sh.j2
+    dest: /usr/local/bin/trivy-scan.sh
+    mode: "0755"
+
+- name: Create systemd service for Trivy scan
+  ansible.builtin.template:
+    src: trivy-scan.service.j2
+    dest: /etc/systemd/system/trivy-scan.service
+    mode: "0644"
+  notify: daemon reload
+
+- name: Create systemd timer for scheduled scans
+  ansible.builtin.template:
+    src: trivy-scan.timer.j2
+    dest: /etc/systemd/system/trivy-scan.timer
+    mode: "0644"
+  notify:
+    - daemon reload
+    - restart trivy-scan timer
+
+- name: Enable and start Trivy scan timer
+  ansible.builtin.systemd:
+    name: trivy-scan.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Display Trivy configuration info
+  ansible.builtin.debug:
+    msg: "Trivy client configured. Run 'sudo trivy-scan.sh' for manual scan."

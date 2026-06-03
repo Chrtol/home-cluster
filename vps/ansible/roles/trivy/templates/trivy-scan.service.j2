@@ -1,0 +1,16 @@
+[Unit]
+Description=Trivy Security Scan
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/trivy-scan.sh
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=false
+ProtectSystem=strict
+ReadWritePaths={{ trivy_output_dir }} /var/cache/trivy
+PrivateTmp=true

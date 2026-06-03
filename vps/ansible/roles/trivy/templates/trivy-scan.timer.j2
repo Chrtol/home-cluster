@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Trivy Security Scan on schedule
+
+[Timer]
+OnCalendar={{ trivy_scan_schedule }}
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

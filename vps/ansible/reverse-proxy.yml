@@ -63,23 +63,20 @@
     - name: Display configuration summary
       debug:
         msg: |
-          ========================================
-          Applying Traefik Configuration State
-          ========================================
-          Domain: {{ proxy_domain }}
-          External Ingress IP: {{ proxy_external_ingress_ip }}
-          Envoy Gateway IP: {{ proxy_envoy_gateway_ip }}
-          Echo Test Enabled: {{ enable_echo_test }}
-          Metrics Enabled: {{ enable_metrics }}
-          OpenTelemetry: {{ otel_service_name }} -> {{ otel_endpoint }}
+          Applying VPS configuration...
+          Features: Traefik, Trivy Scanner
           Authentik: {{ 'Enabled' if authentik_enabled else 'Disabled' }}
-          CrowdSec: {{ 'Enabled' if crowdsec_enabled else 'Disabled' }} (LAPI: {{ crowdsec_lapi_host }})
-          ========================================
+          CrowdSec: {{ 'Enabled' if crowdsec_enabled else 'Disabled' }}
+          Metrics: {{ 'Enabled' if enable_metrics else 'Disabled' }}
 
   tasks:
     - name: Ensure traefik is deployed
       include_role:
         name: traefik
+
+    - name: Ensure trivy scanner is deployed
+      include_role:
+        name: trivy
 
   post_tasks:
     - name: Clean up old backup files (keep 2 most recent)
@@ -124,25 +121,11 @@
     - name: Show deployment result
       debug:
         msg: |
-          ========================================
-          Traefik configuration state applied!
-
-          Features:
-          - OpenTelemetry with CLIENT/SERVER spans
-          - Automatic Let's Encrypt certificates
-          - Native Authentik forward auth support
-          - Gateway API ready
-
-          OpenTelemetry:
-          - Service: {{ otel_service_name }}
-          - Endpoint: {{ otel_endpoint }}
-          - Sample Rate: {{ otel_sample_rate }}
+          VPS configuration applied!
 
           Status:
           - Traefik: {{ 'Running' if traefik_container_status is defined else 'Not Running' }}
           - Health Check: {{ 'OK' if health_test.status is defined and health_test.status == 200 else 'Failed' }}
           - External Ingress: {{ 'Reachable' if ingress_test.status is defined else 'Unreachable' }}
 
-          Traefik Dashboard: https://traefik.{{ proxy_domain }}
-          Logs: docker logs traefik
-          ========================================
+          Trivy: Daily scans at 3 AM, results in /var/log/trivy/

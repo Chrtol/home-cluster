@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'vps/ansible/roles/traefik/**'
+      - 'vps/ansible/roles/trivy/**'
       - 'vps/ansible/reverse-proxy.yml'
       - '.github/workflows/vps-reverse-proxy-deploy.yml'
   workflow_dispatch:
@@ -78,6 +79,10 @@ jobs:
           # Metrics Authentication
           VPS_METRICS_USER: "op://Lab/vps-proxy/VPS_METRICS_USER"
           VPS_METRICS_PASSWORD_HASH: "op://Lab/vps-proxy/VPS_METRICS_PASSWORD_HASH"
+
+          # Trivy Security Scanner
+          VPS_PROXY_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
+          TRIVY_SERVER_TOKEN: "op://Lab/trivy-server/TRIVY_SERVER_TOKEN"
 
       - name: Setup SSH key
         run: |
