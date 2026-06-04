@@ -74,6 +74,7 @@ spec:
               limits:
                 memory: 256Mi
     defaultPodOptions:
+      automountServiceAccountToken: true
       priorityClassName: control-plane-priority
       securityContext:
         runAsNonRoot: true

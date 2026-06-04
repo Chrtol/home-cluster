@@ -25,7 +25,7 @@ spec:
               APPRISE_STATEFUL_MODE: simple
               APPRISE_WORKER_COUNT: 4
               IPV4_ONLY: true
-              BASE_URL: https://apprise.${SECRET_DOMAIN}
+              APPRISE_BASE_URL: apprise.${SECRET_DOMAIN}
               APPRISE_STATIC_ROOT: /opt/apprise/static
             securityContext:
               allowPrivilegeEscalation: false

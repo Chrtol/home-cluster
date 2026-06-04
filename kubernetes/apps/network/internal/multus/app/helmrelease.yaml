@@ -45,6 +45,7 @@ spec:
         serviceAccount:
           name: *app
     defaultPodOptions:
+      automountServiceAccountToken: true
       hostNetwork: true
       priorityClassName: system-node-critical
       tolerations:
