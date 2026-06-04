@@ -15,7 +15,6 @@ resources:
   - ./goldilocks/ks.yaml
   - ./exporters/ks.yaml
   - ./network-monitor/ks.yaml
-  - ./capacitor/ks.yaml
   - ./grafana-operator/ks.yaml
   - ./tempo/ks.yaml
   - ./opentelemetry/ks.yaml
