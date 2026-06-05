@@ -283,7 +283,7 @@ spec:
         # System Needs Reboot
         - alert: OPNsenseNeedsReboot
           expr: |
-            opnsense_firmware_needs_reboot == 1
+            opnsense_firmware_needs_reboot{needs_reboot="1"} == 1
           for: 1h
           labels:
             severity: warning
