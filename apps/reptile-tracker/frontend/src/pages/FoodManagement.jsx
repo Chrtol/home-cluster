@@ -15,6 +15,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Friendly name mappings
 const CATEGORY_LABELS = {
@@ -94,6 +104,10 @@ function FoodsTab() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteFood, setPendingDeleteFood] = useState(null);
+
   const form = useForm({
     resolver: zodResolver(foodSchema),
     defaultValues: {
@@ -148,28 +162,29 @@ function FoodsTab() {
     setSuccess('');
   };
 
-  const handleDelete = async (food) => {
-    let confirmMessage = `Are you sure you want to delete "${food.name}"?`;
+  const handleDelete = (food) => {
+    setPendingDeleteFood(food);
+    setDeleteDialogOpen(true);
+  };
 
-    if (food.is_default) {
-      confirmMessage = `"${food.name}" is a default food. Are you sure you want to delete it? This action cannot be undone.`;
-    }
-
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+  const executeDeleteFood = async () => {
+    if (!pendingDeleteFood) return;
 
     try {
-      const url = food.is_default
-        ? `/api/foods/${food.id}?force=true`
-        : `/api/foods/${food.id}`;
+      const url = pendingDeleteFood.is_default
+        ? `/api/foods/${pendingDeleteFood.id}?force=true`
+        : `/api/foods/${pendingDeleteFood.id}`;
 
       await axios.delete(url);
       setSuccess('Food deleted successfully');
       fetchFoods();
+      setDeleteDialogOpen(false);
+      setPendingDeleteFood(null);
     } catch (error) {
       console.error('Failed to delete food:', error);
       setError(error.response?.data?.detail || 'Failed to delete food');
+      setDeleteDialogOpen(false);
+      setPendingDeleteFood(null);
     }
   };
 
@@ -628,6 +643,24 @@ function FoodsTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AlertDialog for delete food confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Food</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteFood?.is_default
+                ? `"${pendingDeleteFood?.name}" is a default food. Are you sure you want to delete it? This action cannot be undone.`
+                : `Are you sure you want to delete "${pendingDeleteFood?.name}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteFood(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteFood}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -649,6 +682,10 @@ function SupplementsTab() {
   const [editingSupplement, setEditingSupplement] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteSupplement, setPendingDeleteSupplement] = useState(null);
 
   const form = useForm({
     resolver: zodResolver(supplementSchema),
@@ -706,28 +743,29 @@ function SupplementsTab() {
     setSuccess('');
   };
 
-  const handleDelete = async (supplement) => {
-    let confirmMessage = `Are you sure you want to delete "${supplement.name}"?`;
+  const handleDelete = (supplement) => {
+    setPendingDeleteSupplement(supplement);
+    setDeleteDialogOpen(true);
+  };
 
-    if (supplement.is_default) {
-      confirmMessage = `"${supplement.name}" is a default supplement. Are you sure you want to delete it? This action cannot be undone.`;
-    }
-
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+  const executeDeleteSupplement = async () => {
+    if (!pendingDeleteSupplement) return;
 
     try {
-      const url = supplement.is_default
-        ? `/api/supplements/${supplement.id}?force=true`
-        : `/api/supplements/${supplement.id}`;
+      const url = pendingDeleteSupplement.is_default
+        ? `/api/supplements/${pendingDeleteSupplement.id}?force=true`
+        : `/api/supplements/${pendingDeleteSupplement.id}`;
 
       await axios.delete(url);
       setSuccess('Supplement deleted successfully');
       fetchSupplements();
+      setDeleteDialogOpen(false);
+      setPendingDeleteSupplement(null);
     } catch (error) {
       console.error('Failed to delete supplement:', error);
       setError(error.response?.data?.detail || 'Failed to delete supplement');
+      setDeleteDialogOpen(false);
+      setPendingDeleteSupplement(null);
     }
   };
 
@@ -1038,6 +1076,24 @@ function SupplementsTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AlertDialog for delete supplement confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Supplement</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteSupplement?.is_default
+                ? `"${pendingDeleteSupplement?.name}" is a default supplement. Are you sure you want to delete it? This action cannot be undone.`
+                : `Are you sure you want to delete "${pendingDeleteSupplement?.name}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteSupplement(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteSupplement}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

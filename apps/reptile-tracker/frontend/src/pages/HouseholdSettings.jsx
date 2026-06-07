@@ -4,6 +4,16 @@ import { Shield, Trash2, UserCog } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatting';
 import PageHeader from '@/components/PageHeader';
 import LoadingState from '@/components/LoadingState';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function HouseholdSettings() {
   const [household, setHousehold] = useState(null);
@@ -12,6 +22,12 @@ export default function HouseholdSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Dialog states for role change and remove member
+  const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState(null);
+  const [removeMemberDialogOpen, setRemoveMemberDialogOpen] = useState(false);
+  const [pendingRemoveMember, setPendingRemoveMember] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -47,39 +63,53 @@ export default function HouseholdSettings() {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
-    if (!window.confirm(`Are you sure you want to change this member's role to ${newRole}?`)) {
-      return;
-    }
+  const handleRoleChange = (userId, newRole) => {
+    setPendingRoleChange({ userId, newRole });
+    setRoleChangeDialogOpen(true);
+  };
+
+  const executeRoleChange = async () => {
+    if (!pendingRoleChange) return;
 
     try {
-      await axios.patch(`/api/households/${household.id}/members/${userId}/role`, {
-        access_level: newRole
+      await axios.patch(`/api/households/${household.id}/members/${pendingRoleChange.userId}/role`, {
+        access_level: pendingRoleChange.newRole
       });
       setSuccess('Role updated successfully');
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
+      setRoleChangeDialogOpen(false);
+      setPendingRoleChange(null);
     } catch (err) {
       console.error('Failed to update role:', err);
       setError(err.response?.data?.detail || 'Failed to update role');
       setTimeout(() => setError(''), 3000);
+      setRoleChangeDialogOpen(false);
+      setPendingRoleChange(null);
     }
   };
 
-  const handleRemoveMember = async (userId, memberName) => {
-    if (!window.confirm(`Are you sure you want to remove ${memberName} from the household?`)) {
-      return;
-    }
+  const handleRemoveMember = (userId, memberName) => {
+    setPendingRemoveMember({ userId, memberName });
+    setRemoveMemberDialogOpen(true);
+  };
+
+  const executeRemoveMember = async () => {
+    if (!pendingRemoveMember) return;
 
     try {
-      await axios.delete(`/api/households/${household.id}/members/${userId}`);
+      await axios.delete(`/api/households/${household.id}/members/${pendingRemoveMember.userId}`);
       setSuccess('Member removed successfully');
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
+      setRemoveMemberDialogOpen(false);
+      setPendingRemoveMember(null);
     } catch (err) {
       console.error('Failed to remove member:', err);
       setError(err.response?.data?.detail || 'Failed to remove member');
       setTimeout(() => setError(''), 3000);
+      setRemoveMemberDialogOpen(false);
+      setPendingRemoveMember(null);
     }
   };
 
@@ -219,6 +249,38 @@ export default function HouseholdSettings() {
           </div>
         </div>
       </div>
+
+      {/* AlertDialog for role change confirmation */}
+      <AlertDialog open={roleChangeDialogOpen} onOpenChange={setRoleChangeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Member Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change this member's role to {pendingRoleChange?.newRole}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingRoleChange(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeRoleChange}>Change Role</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for remove member confirmation */}
+      <AlertDialog open={removeMemberDialogOpen} onOpenChange={setRemoveMemberDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {pendingRemoveMember?.memberName} from the household?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingRemoveMember(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeRemoveMember}>Remove Member</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

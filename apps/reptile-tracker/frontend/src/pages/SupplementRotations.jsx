@@ -15,6 +15,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ReptileNameWithAvatar from '@/components/ReptileNameWithAvatar';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Zod schema for rotation form
 const rotationSchema = z.object({
@@ -69,6 +80,10 @@ function SupplementRotations() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRotation, setEditingRotation] = useState(null);
   const [filterReptile, setFilterReptile] = useState('all');
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteRotation, setPendingDeleteRotation] = useState(null);
 
   // Day helpers
   const dayNumbers = getDayNumbers();
@@ -125,7 +140,7 @@ function SupplementRotations() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      alert('Failed to load data');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -209,15 +224,24 @@ function SupplementRotations() {
     setDialogOpen(true);
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm('Are you sure you want to delete this rotation?')) return;
+  function handleDelete(rotation) {
+    setPendingDeleteRotation(rotation);
+    setDeleteDialogOpen(true);
+  }
+
+  async function executeDelete() {
+    if (!pendingDeleteRotation) return;
 
     try {
-      await axios.delete(`/api/feeding-rotations/${id}`, { withCredentials: true });
+      await axios.delete(`/api/feeding-rotations/${pendingDeleteRotation.id}`, { withCredentials: true });
       await loadData();
+      setDeleteDialogOpen(false);
+      setPendingDeleteRotation(null);
     } catch (error) {
       console.error('Error deleting rotation:', error);
-      alert('Failed to delete rotation');
+      toast.error('Failed to delete rotation');
+      setDeleteDialogOpen(false);
+      setPendingDeleteRotation(null);
     }
   }
 
@@ -252,7 +276,7 @@ function SupplementRotations() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Error saving rotation:', error);
-      alert(formatValidationError(error.response?.data) || 'Failed to save rotation');
+      toast.error(formatValidationError(error.response?.data) || 'Failed to save rotation');
     }
   }
 
@@ -616,7 +640,7 @@ function SupplementRotations() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(rotation.id)}
+                          onClick={() => handleDelete(rotation)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 size={16} />
@@ -630,6 +654,22 @@ function SupplementRotations() {
           </Table>
         </div>
       )}
+
+      {/* AlertDialog for delete rotation confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Rotation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this supplement rotation? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteRotation(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

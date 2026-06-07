@@ -8,6 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const NotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);
@@ -15,6 +25,11 @@ const NotificationHistory = () => {
   const [filter, setFilter] = useState('all'); // all, unread, read
   const [typeFilter, setTypeFilter] = useState('all');
   const navigate = useNavigate();
+
+  // Delete dialog states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [deleteAllReadDialogOpen, setDeleteAllReadDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
@@ -71,29 +86,38 @@ const NotificationHistory = () => {
     }
   };
 
-  const handleDelete = async (notificationId) => {
-    if (!window.confirm('Are you sure you want to delete this notification?')) {
-      return;
-    }
+  const handleDelete = (notificationId) => {
+    setPendingDeleteId(notificationId);
+    setDeleteDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!pendingDeleteId) return;
 
     try {
-      await axios.delete(`/api/notifications/${notificationId}`);
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      await axios.delete(`/api/notifications/${pendingDeleteId}`);
+      setNotifications(prev => prev.filter(n => n.id !== pendingDeleteId));
+      setDeleteDialogOpen(false);
+      setPendingDeleteId(null);
     } catch (err) {
       console.error('Error deleting notification:', err);
+      setDeleteDialogOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
-  const handleDeleteAllRead = async () => {
-    if (!window.confirm('Are you sure you want to delete all read notifications?')) {
-      return;
-    }
+  const handleDeleteAllRead = () => {
+    setDeleteAllReadDialogOpen(true);
+  };
 
+  const executeDeleteAllRead = async () => {
     try {
       await axios.delete('/api/notifications');
       fetchNotifications();
+      setDeleteAllReadDialogOpen(false);
     } catch (err) {
       console.error('Error deleting read notifications:', err);
+      setDeleteAllReadDialogOpen(false);
     }
   };
 
@@ -310,6 +334,38 @@ const NotificationHistory = () => {
           </div>
         )}
       </div>
+
+      {/* AlertDialog for delete single notification confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Notification</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this notification?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for delete all read notifications confirmation */}
+      <AlertDialog open={deleteAllReadDialogOpen} onOpenChange={setDeleteAllReadDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete All Read Notifications</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete all read notifications? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteAllRead}>Delete All Read</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

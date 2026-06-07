@@ -8,6 +8,17 @@ import ReptileNameWithAvatar from "../components/ReptileNameWithAvatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import LoadingState from "../components/LoadingState";
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 function Calendar() {
   const navigate = useNavigate();
@@ -46,6 +57,10 @@ function Calendar() {
   const [showSchedules, setShowSchedules] = useState(false);
   const [visibleReptiles, setVisibleReptiles] = useState(new Set());
   const [visibleCategories, setVisibleCategories] = useState(new Set());
+
+  // Delete schedule dialog state
+  const [deleteScheduleDialogOpen, setDeleteScheduleDialogOpen] = useState(false);
+  const [pendingDeleteSchedule, setPendingDeleteSchedule] = useState(null);
   const [quotaStatuses, setQuotaStatuses] = useState({});
 
   useEffect(() => {
@@ -517,23 +532,29 @@ function Calendar() {
     return colors[color] || colors.gray;
   };
 
-  const handleDeleteSchedule = async (schedule) => {
-    const scheduleName = schedule.name || schedule.schedule_type;
-    if (!window.confirm(`Are you sure you want to delete schedule "${scheduleName}"?`)) {
-      return;
-    }
+  const handleDeleteSchedule = (schedule) => {
+    setPendingDeleteSchedule(schedule);
+    setDeleteScheduleDialogOpen(true);
+  };
+
+  const executeDeleteSchedule = async () => {
+    if (!pendingDeleteSchedule) return;
 
     try {
-      const response = await axios.delete(`/api/schedules/${schedule.id}`, {
+      await axios.delete(`/api/schedules/${pendingDeleteSchedule.id}`, {
         validateStatus: (status) => status >= 200 && status < 300, // Accept all 2xx as success
       });
 
       // Refresh schedules and recalculate events
       await fetchSchedules();
-      alert("Schedule deleted successfully");
+      toast.success("Schedule deleted successfully");
+      setDeleteScheduleDialogOpen(false);
+      setPendingDeleteSchedule(null);
     } catch (error) {
       console.error("Error deleting schedule:", error);
-      alert("Failed to delete schedule");
+      toast.error("Failed to delete schedule");
+      setDeleteScheduleDialogOpen(false);
+      setPendingDeleteSchedule(null);
     }
   };
 
@@ -1630,6 +1651,21 @@ function Calendar() {
         )}
       </div>
 
+      {/* AlertDialog for delete schedule confirmation */}
+      <AlertDialog open={deleteScheduleDialogOpen} onOpenChange={setDeleteScheduleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete schedule "{pendingDeleteSchedule?.name || pendingDeleteSchedule?.schedule_type}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteSchedule(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteSchedule}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
