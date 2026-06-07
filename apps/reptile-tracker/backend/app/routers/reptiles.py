@@ -16,6 +16,8 @@ from app.schemas import (
     ReptileWithHousehold,
     GrantAccess,
     Food as FoodSchema,
+    DirectTransferRequest,
+    DirectTransferResponse,
 )
 
 router = APIRouter()
@@ -436,3 +438,78 @@ async def remove_reptile_favorite_food(
     await db.commit()
 
     return None
+
+
+@router.post("/transfer", response_model=DirectTransferResponse)
+async def transfer_reptiles_to_household(
+    request: DirectTransferRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transfer reptiles directly to another household within the app.
+
+    User must be a member of both the source household(s) and destination household.
+    """
+    # Verify user is a member of the destination household
+    dest_household_result = await db.execute(
+        select(Household)
+        .join(household_members, household_members.c.household_id == Household.id)
+        .where(
+            household_members.c.user_id == current_user.id,
+            Household.id == request.destination_household_id,
+        )
+    )
+    dest_household = dest_household_result.scalar_one_or_none()
+
+    if not dest_household:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of the destination household",
+        )
+
+    # Fetch all reptiles and verify user has access to each
+    reptiles_to_transfer = []
+    for reptile_id in request.reptile_ids:
+        try:
+            await check_reptile_access(db, current_user, reptile_id, AccessLevel.OWNER)
+            reptile_result = await db.execute(
+                select(Reptile).where(Reptile.id == reptile_id)
+            )
+            reptile = reptile_result.scalar_one_or_none()
+            if reptile:
+                # Cannot transfer to the same household
+                if reptile.household_id == request.destination_household_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Reptile '{reptile.name}' is already in the destination household",
+                    )
+                reptiles_to_transfer.append(reptile)
+        except HTTPException as e:
+            if e.status_code == status.HTTP_403_FORBIDDEN:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"You don't have owner access to reptile ID {reptile_id}",
+                )
+            raise
+
+    if not reptiles_to_transfer:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid reptiles to transfer",
+        )
+
+    # Perform the transfer
+    reptile_names = []
+    for reptile in reptiles_to_transfer:
+        reptile.household_id = request.destination_household_id
+        reptile_names.append(reptile.name)
+
+    await db.commit()
+
+    return DirectTransferResponse(
+        success=True,
+        transferred_count=len(reptiles_to_transfer),
+        destination_household_name=dest_household.name,
+        reptile_names=reptile_names,
+    )

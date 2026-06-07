@@ -1695,3 +1695,17 @@ class TransferStatusResponse(BaseModel):
     transfer_export_file: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DirectTransferRequest(BaseModel):
+    """Request to transfer reptiles directly to another household."""
+    reptile_ids: List[int]
+    destination_household_id: int
+
+
+class DirectTransferResponse(BaseModel):
+    """Response for direct transfer operation."""
+    success: bool
+    transferred_count: int
+    destination_household_name: str
+    reptile_names: List[str]

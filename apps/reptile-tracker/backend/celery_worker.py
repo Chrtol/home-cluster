@@ -18,6 +18,6 @@ if __name__ == "__main__":
         'worker',
         '--loglevel=info',
         '--concurrency=2',  # Process 2 tasks concurrently
-        '--queues=notifications',  # Only process notification queue
+        '--queues=celery,notifications',  # Process both default and notification queues
         '--max-tasks-per-child=1000',  # Restart worker after 1000 tasks
     ])

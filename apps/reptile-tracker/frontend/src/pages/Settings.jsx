@@ -44,6 +44,9 @@ import {
 } from '../utils/householdSettings';
 import { DatePicker } from '@/components/ui/date-picker';
 import PendingTransfersSection from '../components/import-export/PendingTransfersSection';
+import ExportWizard from '../components/import-export/ExportWizard';
+import ImportWizard from '../components/import-export/ImportWizard';
+import { HardDriveDownload, HardDriveUpload, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 export default function Settings() {
   return (
@@ -68,13 +71,14 @@ export default function Settings() {
             <Users size={18} />
             Household
           </TabsTrigger>
+          <TabsTrigger value="import-export" className="flex items-center gap-2">
+            <HardDriveDownload size={18} />
+            Import/Export
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="preferences">
-          <div className="space-y-6">
-            <PendingTransfersSection />
-            <PreferencesTab />
-          </div>
+          <PreferencesTab />
         </TabsContent>
         <TabsContent value="streak">
           <StreakVacationTab />
@@ -85,7 +89,222 @@ export default function Settings() {
         <TabsContent value="household">
           <HouseholdSection />
         </TabsContent>
+        <TabsContent value="import-export">
+          <ImportExportTab />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// IMPORT/EXPORT TAB COMPONENT
+function ImportExportTab() {
+  const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [activeExport, setActiveExport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [pollingError, setPollingError] = useState(null);
+
+  // Poll for active export jobs
+  useEffect(() => {
+    let errorCount = 0;
+    const checkActiveExport = async () => {
+      try {
+        // Check localStorage for any pending export task
+        const pendingTaskId = localStorage.getItem('pending_export_task_id');
+        if (pendingTaskId) {
+          const response = await axios.get(`/api/exports/${pendingTaskId}/status`);
+          errorCount = 0;
+          setPollingError(null);
+          setActiveExport({ ...response.data, task_id: pendingTaskId });
+        } else {
+          setActiveExport(null);
+        }
+      } catch (err) {
+        console.error('Export status poll failed:', err);
+        errorCount++;
+        // After 5 consecutive errors, show error and clear
+        if (errorCount >= 5) {
+          setPollingError('Unable to check export status');
+          localStorage.removeItem('pending_export_task_id');
+          setActiveExport(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkActiveExport();
+    const interval = setInterval(checkActiveExport, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleDownload = async () => {
+    if (!activeExport?.task_id) return;
+    try {
+      const response = await axios.get(`/api/exports/${activeExport.task_id}/download`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(response.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reptile-export-${new Date().toISOString().split('T')[0]}.${activeExport.export_type || 'json'}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      // Clear after download
+      localStorage.removeItem('pending_export_task_id');
+      setActiveExport(null);
+      toast.success('Export downloaded successfully');
+    } catch (err) {
+      console.error('Download failed:', err);
+      toast.error('Failed to download export');
+    }
+  };
+
+  const clearExport = () => {
+    localStorage.removeItem('pending_export_task_id');
+    setActiveExport(null);
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="text-green-500" size={20} />;
+      case 'failed':
+        return <XCircle className="text-red-500" size={20} />;
+      case 'pending':
+      case 'progress':
+        return <Loader2 className="text-primary animate-spin" size={20} />;
+      default:
+        return <Clock className="text-muted-foreground" size={20} />;
+    }
+  };
+
+  // Export steps: 1=Starting, 2=Collecting, 3=Serializing, 4=Storing, 5=Complete
+  const getStepNumber = (status, step) => {
+    if (status === 'complete') return 5;
+    if (status === 'failed') return 0;
+    switch (step) {
+      case 'collecting': return 2;
+      case 'serializing': return 3;
+      case 'storing': return 4;
+      default: return 1; // pending/starting
+    }
+  };
+
+  const getStepLabel = (status, step) => {
+    if (status === 'complete') return 'Export Ready';
+    if (status === 'failed') return 'Export Failed';
+    switch (step) {
+      case 'collecting': return 'Collecting data...';
+      case 'serializing': return 'Preparing file...';
+      case 'storing': return 'Saving export...';
+      default: return 'Starting...';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Active Export Status */}
+      {activeExport && (
+        <div className="card">
+          <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+            {getStatusIcon(activeExport.status)}
+            Export Job
+          </h2>
+          <div className="space-y-3">
+            <div className="p-3 bg-secondary/50 rounded-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">
+                    {getStepLabel(activeExport.status, activeExport.step)}
+                  </p>
+                  {activeExport.error && (
+                    <p className="text-sm text-red-500">{activeExport.error}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {activeExport.status === 'complete' && (
+                    <button onClick={handleDownload} className="btn-primary flex items-center gap-2">
+                      <Download size={16} />
+                      Download
+                    </button>
+                  )}
+                  <button onClick={clearExport} className="btn-secondary text-sm">
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+              {/* Stepped progress bar */}
+              {(activeExport.status === 'pending' || activeExport.status === 'progress' || activeExport.status === 'complete') && (
+                <div className="space-y-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((stepNum) => (
+                      <div
+                        key={stepNum}
+                        className={`h-2 flex-1 rounded-full transition-colors ${
+                          stepNum <= getStepNumber(activeExport.status, activeExport.step)
+                            ? 'bg-primary'
+                            : 'bg-secondary'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Step {getStepNumber(activeExport.status, activeExport.step)}/5
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Polling Error */}
+      {pollingError && !activeExport && (
+        <div className="card border-amber-500/50">
+          <div className="flex items-center gap-2 text-amber-600">
+            <Clock size={18} />
+            <p className="text-sm">{pollingError}. Check back later or try exporting again.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Transfers */}
+      <PendingTransfersSection />
+
+      {/* Export/Import Actions */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+          <HardDriveDownload size={20} />
+          Data Management
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Export your reptile data for backup or transfer to another account. Import data from a previous export.
+        </p>
+        <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={() => setExportOpen(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Download size={18} />
+            Export Data
+          </button>
+          <button
+            onClick={() => setImportOpen(true)}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <HardDriveUpload size={18} />
+            Import Data
+          </button>
+        </div>
+      </div>
+
+      {/* Wizards */}
+      <ExportWizard open={exportOpen} onOpenChange={setExportOpen} />
+      <ImportWizard open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }

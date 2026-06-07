@@ -36,6 +36,8 @@ const badgeVariants = cva(
         "birthday-soon": "border-transparent bg-pink-500/20 text-pink-600",
         "birthday-imminent": "border-transparent bg-pink-500/30 text-pink-700 font-semibold",
         "birthday-today": "border-transparent bg-pink-500 text-white shadow font-bold",
+        // Transfer status (Phase 34)
+        "pending-transfer": "border-transparent bg-amber-500/20 text-amber-600 dark:text-amber-400",
       },
     },
     defaultVariants: {

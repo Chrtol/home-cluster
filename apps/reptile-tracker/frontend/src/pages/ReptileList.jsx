@@ -177,9 +177,14 @@ export default function ReptileList() {
                       <div className="flex items-start gap-3">
                         <ReptileAvatar reptile={reptile} size="md" className="flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
-                            {reptile.name}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                              {reptile.name}
+                            </h3>
+                            {reptile.transfer_status === 'pending' && (
+                              <Badge variant="pending-transfer" className="text-[10px] px-1.5 py-0">Transfer</Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground mb-2 truncate">{reptile.species}</p>
                           {reptile.date_of_birth && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">

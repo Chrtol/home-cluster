@@ -416,23 +416,21 @@ export default function Layout({ user, onLogout }) {
                   </button>
                 </>
               ) : (
-                <div className="flex items-center gap-2 px-2 py-1.5 min-w-0">
+                <div className="flex items-center gap-2 px-2 py-1.5">
                   <div className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
                     <span className="text-xs font-medium text-primary">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                    <p className="text-xs font-medium text-foreground truncate max-w-full">
-                      {user?.name || 'User'}
-                    </p>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-xs font-medium text-foreground truncate">{user?.name || 'User'}</p>
                   </div>
                   <Link
                     to="/settings"
-                    className={`p-1 rounded-lg transition-colors ${
+                    className={`p-1.5 rounded-lg transition-colors text-muted-foreground ${
                       location.pathname === '/settings'
-                        ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                        ? 'bg-secondary'
+                        : 'hover:bg-secondary'
                     }`}
                     title="Settings"
                   >

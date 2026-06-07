@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import init_db, async_session_maker
 from app.rate_limit import limiter, rate_limit_exceeded_handler
-from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting, schedules, schedule_instances, feeding_rotations, schedule_templates, supplement_rotation_templates, measurements, bulk, quotas, photos, streaks, responsibilities, user_streaks
+from app.routers import auth, reptiles, feedings, foods, supplements, weight, health, stats, misting, schedules, schedule_instances, feeding_rotations, schedule_templates, supplement_rotation_templates, measurements, bulk, quotas, photos, streaks, responsibilities, user_streaks, exports
 from app.routers import households, invitations, notification_settings, notification_channels, notification_templates, template_groups, user_notifications, change_alerts
 from app.seed_data import seed_database
 from app.scheduler import start_scheduler, stop_scheduler
@@ -208,6 +208,7 @@ app.include_router(photos.router, prefix="/api/photos", tags=["Photos"])
 app.include_router(streaks.router, prefix="/api", tags=["Streaks"])
 app.include_router(responsibilities.router, prefix="/api/responsibilities", tags=["Responsibilities"])
 app.include_router(user_streaks.router, prefix="/api/user-streaks", tags=["User Streaks"])
+app.include_router(exports.router, prefix="/api", tags=["Import/Export"])
 
 
 @app.get("/")
