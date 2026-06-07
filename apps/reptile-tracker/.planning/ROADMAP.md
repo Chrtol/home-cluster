@@ -784,7 +784,7 @@ Plans:
 - [x] 33-01-PLAN.md — Foundational components: ConfirmButton, TaskCounterOverlay, CelebrationContext extension (Wave 1)
 - [x] 33-02-PLAN.md — Settings.jsx: Replace alert() calls with toast, add ConfirmButton for non-destructive (Wave 2)
 - [x] 33-03-PLAN.md — Settings.jsx: Replace confirm() calls with AlertDialog for destructive actions (Wave 2) [merged into 33-02]
-- [ ] 33-04-PLAN.md — Component dialog replacement: PhotoGallery, NotificationTemplatesTab, and 6 other files (Wave 3)
+- [x] 33-04-PLAN.md — Component dialog replacement: PhotoGallery, NotificationTemplatesTab, and 6 other files (Wave 3)
 - [ ] 33-05-PLAN.md — Page dialog replacement: ReptileDetail, ScheduleTemplates, and 10 other pages (Wave 3)
 - [ ] 33-06-PLAN.md — Celebration wiring: TaskCounterOverlay in App.jsx, triggers in QuickLogForm and log pages (Wave 4)
 - [ ] 33-07-PLAN.md — Human verification checkpoint: dialogs, toasts, celebrations, reduced motion (Wave 5)
@@ -886,5 +886,5 @@ Plans:
 | 30. Grouped Template List View | v1.5 | 0/1 | Future | - |
 | 31. Improved Template Editor | v1.5 | 0/1 | Future | - |
 | 32. Bug Fixes | v1.6 | 3/3 | Complete | 2026-06-07 |
-| 33. UX Polish & Feature Completion | v1.6 | 0/7 | Planning | - |
+| 33. UX Polish & Feature Completion | v1.6 | 4/7 | Executing | - |
 | 34. Import/Export Wizard | v1.6 | 0/1 | Future | - |
