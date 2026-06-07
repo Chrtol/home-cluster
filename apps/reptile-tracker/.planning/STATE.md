@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Schedule Type Alignment & UX Polish
+milestone: v1.6
+milestone_name: UX Polish
 status: executing
-stopped_at: Phase 32 context gathered — 19 implementation decisions captured
-last_updated: "2026-06-07T13:42:51.976Z"
+stopped_at: Phase 33 Plan 02 complete — Settings dialog replacement
+last_updated: "2026-06-07T16:46:01Z"
 last_activity: 2026-06-07
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 29
-  completed_plans: 25
-  percent: 22
+  completed_plans: 26
+  percent: 89
 ---
 
 # Reptile Tracker - Project State
@@ -240,11 +240,35 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-06-07
-**Action:** Phase 32 context gathering (discuss-phase)
-**Stopped at:** Phase 32 context gathered — 19 implementation decisions captured
-**Resume from:** `.planning/phases/32-bug-fixes/32-CONTEXT.md`
+**Action:** Phase 33 Plan 02 execution (Settings dialog replacement)
+**Stopped at:** Phase 33 Plan 02 complete
+**Resume from:** `.planning/phases/33-ux-polish/33-02-SUMMARY.md`
 
-**Next step:** `/gsd:plan-phase 32` to create execution plans
+**Next step:** Continue with Phase 33 remaining plans or `/gsd:plan-phase 32` for bug fixes
+
+## Phase 33 Plan Summary (UX Polish)
+
+**Goal:** Replace browser-native dialogs with in-app components for consistent UX.
+
+**Plans:**
+
+- **33-01 (Wave 1):** Foundational UX components (ConfirmButton, AlertDialog extensions, CelebrationContext) - COMPLETE
+- **33-02 (Wave 2):** Settings.jsx dialog replacement - COMPLETE
+
+**Key accomplishments in 33-02:**
+
+- Replaced 27 alert() calls with Sonner toast variants
+- Replaced all confirm() calls with AlertDialog or ConfirmButton
+- Added 5 AlertDialog components for destructive confirmations
+- Settings page now uses consistent in-app dialogs
+
+## Phase 33 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| Use AlertDialog for all household destructive actions | 33-02 | These actions affect other users and data | Consistent confirmation UX |
+| Use ConfirmButton for display settings reset | 33-02 | Local-only settings, quick action | Inline confirmation without modal |
+| Toast variants by message type | 33-02 | error/success/warning/info match semantic meaning | Consistent feedback patterns |
 
 ## Phase 26 Plan Summary
 
