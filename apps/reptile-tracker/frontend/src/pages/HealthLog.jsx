@@ -17,6 +17,7 @@ import PageHeader from '../components/PageHeader';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 import { useConfetti } from '../hooks/useConfetti';
 import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
+import { useCelebrations } from '@/contexts/CelebrationContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,6 +103,7 @@ export default function HealthLog() {
   const { reptileId, id, type } = useParams(); // Get reptileId, id, and type from URL
   const [searchParams] = useSearchParams();
   const { triggerSubtle, isActive, dismiss } = useConfetti();
+  const { triggerCelebration, celebrationsEnabled } = useCelebrations();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -628,6 +630,17 @@ export default function HealthLog() {
             notifyStreakAttribution(response.data.attribution);
           }
 
+          // Trigger celebration after API success (per D-12, D-13)
+          if (celebrationsEnabled) {
+            try {
+              const streakRes = await axios.get('/api/user-streaks/me');
+              const totalTasks = streakRes.data.total_tasks_completed || 0;
+              triggerCelebration(totalTasks - 1, totalTasks);
+            } catch (err) {
+              console.debug('Could not fetch streak for celebration:', err);
+            }
+          }
+
           triggerSubtle();
           setSuccess(`Weight logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
@@ -647,6 +660,17 @@ export default function HealthLog() {
 
             if (response.data.attribution) {
               notifyStreakAttribution(response.data.attribution);
+            }
+
+            // Trigger celebration after API success (per D-12, D-13)
+            if (celebrationsEnabled) {
+              try {
+                const streakRes = await axios.get('/api/user-streaks/me');
+                const totalTasks = streakRes.data.total_tasks_completed || 0;
+                triggerCelebration(totalTasks - 1, totalTasks);
+              } catch (err) {
+                console.debug('Could not fetch streak for celebration:', err);
+              }
             }
 
             triggerSubtle();
@@ -679,6 +703,17 @@ export default function HealthLog() {
               notifyStreakAttribution(response.data.attribution);
             }
 
+            // Trigger celebration after API success (per D-12, D-13)
+            if (celebrationsEnabled) {
+              try {
+                const streakRes = await axios.get('/api/user-streaks/me');
+                const totalTasks = streakRes.data.total_tasks_completed || 0;
+                triggerCelebration(totalTasks - 1, totalTasks);
+              } catch (err) {
+                console.debug('Could not fetch streak for celebration:', err);
+              }
+            }
+
             triggerSubtle();
             setSuccess(`Shedding started for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
             setLastCreatedId(response.data.id);
@@ -699,6 +734,17 @@ export default function HealthLog() {
             // Dispatch attribution event if completing for another user
             if (response.data.attribution) {
               notifyStreakAttribution(response.data.attribution);
+            }
+
+            // Trigger celebration after API success (per D-12, D-13)
+            if (celebrationsEnabled) {
+              try {
+                const streakRes = await axios.get('/api/user-streaks/me');
+                const totalTasks = streakRes.data.total_tasks_completed || 0;
+                triggerCelebration(totalTasks - 1, totalTasks);
+              } catch (err) {
+                console.debug('Could not fetch streak for celebration:', err);
+              }
             }
 
             triggerSubtle();
@@ -723,6 +769,17 @@ export default function HealthLog() {
             notifyStreakAttribution(response.data.attribution);
           }
 
+          // Trigger celebration after API success (per D-12, D-13)
+          if (celebrationsEnabled) {
+            try {
+              const streakRes = await axios.get('/api/user-streaks/me');
+              const totalTasks = streakRes.data.total_tasks_completed || 0;
+              triggerCelebration(totalTasks - 1, totalTasks);
+            } catch (err) {
+              console.debug('Could not fetch streak for celebration:', err);
+            }
+          }
+
           triggerSubtle();
           setSuccess(`Bathing logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
@@ -741,6 +798,18 @@ export default function HealthLog() {
           const typeLabel = data.measurement_type === 'custom'
             ? data.custom_label
             : data.measurement_type.replace('_', ' ');
+
+          // Trigger celebration after API success (per D-12, D-13)
+          if (celebrationsEnabled) {
+            try {
+              const streakRes = await axios.get('/api/user-streaks/me');
+              const totalTasks = streakRes.data.total_tasks_completed || 0;
+              triggerCelebration(totalTasks - 1, totalTasks);
+            } catch (err) {
+              console.debug('Could not fetch streak for celebration:', err);
+            }
+          }
+
           triggerSubtle();
           setSuccess(`${typeLabel} measurement logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);
@@ -758,6 +827,18 @@ export default function HealthLog() {
             payload.consistency = data.consistency;
           }
           const response = await axios.post('/api/health', payload);
+
+          // Trigger celebration after API success (per D-12, D-13)
+          if (celebrationsEnabled) {
+            try {
+              const streakRes = await axios.get('/api/user-streaks/me');
+              const totalTasks = streakRes.data.total_tasks_completed || 0;
+              triggerCelebration(totalTasks - 1, totalTasks);
+            } catch (err) {
+              console.debug('Could not fetch streak for celebration:', err);
+            }
+          }
+
           triggerSubtle();
           setSuccess(`Health record logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);
           setLastCreatedId(response.data.id);

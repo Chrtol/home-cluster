@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
 import { Loader2, Bug, Leaf, Utensils, Plus, X, Heart } from 'lucide-react';
+import { useCelebrations } from '@/contexts/CelebrationContext';
 
 import {
   Sheet,
@@ -202,6 +203,7 @@ export function CreateLogModal({
   const safePrefill = prefill ?? {};
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { triggerCelebration, celebrationsEnabled } = useCelebrations();
   const [reptiles, setReptiles] = useState([]);
   const [foods, setFoods] = useState([]);
   const [supplements, setSupplements] = useState([]);
@@ -819,6 +821,17 @@ export function CreateLogModal({
             payload.consistency = data.consistency;
           }
           response = await axios.post('/api/health', payload);
+        }
+      }
+
+      // Trigger celebration after API success (per D-12, D-13)
+      if (celebrationsEnabled) {
+        try {
+          const streakRes = await axios.get('/api/user-streaks/me');
+          const totalTasks = streakRes.data.total_tasks_completed || 0;
+          triggerCelebration(totalTasks - 1, totalTasks);
+        } catch (err) {
+          console.debug('Could not fetch streak for celebration:', err);
         }
       }
 

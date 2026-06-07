@@ -14,6 +14,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import PageHeader from '../components/PageHeader';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
+import { useCelebrations } from '@/contexts/CelebrationContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ export default function MistingLog() {
   const navigate = useNavigate();
   const { reptileId, id } = useParams();
   const [searchParams] = useSearchParams();
+  const { triggerCelebration, celebrationsEnabled } = useCelebrations();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -229,6 +231,17 @@ export default function MistingLog() {
         // Dispatch attribution event if completing for another user
         if (response.data.attribution) {
           notifyStreakAttribution(response.data.attribution);
+        }
+
+        // Trigger celebration after API success (per D-12, D-13)
+        if (celebrationsEnabled) {
+          try {
+            const streakRes = await axios.get('/api/user-streaks/me');
+            const totalTasks = streakRes.data.total_tasks_completed || 0;
+            triggerCelebration(totalTasks - 1, totalTasks);
+          } catch (err) {
+            console.debug('Could not fetch streak for celebration:', err);
+          }
         }
 
         setSuccess(`Misting logged for ${reptiles.find(r => r.id === data.reptile_id)?.name}.`);

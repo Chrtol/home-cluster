@@ -17,6 +17,7 @@ import LoadingState from '@/components/LoadingState';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 import { useConfetti } from '../hooks/useConfetti';
 import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
+import { useCelebrations } from '@/contexts/CelebrationContext';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -72,6 +73,7 @@ export default function FeedingLog() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { triggerSubtle, isActive, dismiss } = useConfetti();
+  const { triggerCelebration, celebrationsEnabled } = useCelebrations();
 
   // Mode state
   const [mode, setMode] = useState('create'); // create, view, edit
@@ -587,6 +589,17 @@ export default function FeedingLog() {
         // Dispatch attribution event if completing for another user
         if (response.data.attribution) {
           notifyStreakAttribution(response.data.attribution);
+        }
+
+        // Trigger celebration after API success (per D-12, D-13)
+        if (celebrationsEnabled) {
+          try {
+            const streakRes = await axios.get('/api/user-streaks/me');
+            const totalTasks = streakRes.data.total_tasks_completed || 0;
+            triggerCelebration(totalTasks - 1, totalTasks);
+          } catch (err) {
+            console.debug('Could not fetch streak for celebration:', err);
+          }
         }
 
         triggerSubtle();
