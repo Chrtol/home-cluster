@@ -15,6 +15,17 @@ import ResponsibilityManager from '../components/ResponsibilityManager';
 import { Badge } from '@/components/ui/badge';
 import { useCelebrations } from '../contexts/CelebrationContext';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // A new component for the weight chart
 const WeightChart = ({ data }) => {
@@ -138,6 +149,18 @@ export default function ReptileDetail() {
   const [autoOpenCropperAfterUpload, setAutoOpenCropperAfterUpload] = useState(false);
   const [croppingPhotoId, setCroppingPhotoId] = useState(null); // Track which photo we're cropping
 
+  // Dialog states for confirmations
+  const [deleteReptileDialogOpen, setDeleteReptileDialogOpen] = useState(false);
+  const [toggleActiveDialogOpen, setToggleActiveDialogOpen] = useState(false);
+  const [deleteFeedingDialogOpen, setDeleteFeedingDialogOpen] = useState(false);
+  const [pendingDeleteFeedingId, setPendingDeleteFeedingId] = useState(null);
+  const [deleteMistingDialogOpen, setDeleteMistingDialogOpen] = useState(false);
+  const [pendingDeleteMistingId, setPendingDeleteMistingId] = useState(null);
+  const [deleteWeightDialogOpen, setDeleteWeightDialogOpen] = useState(false);
+  const [pendingDeleteWeightId, setPendingDeleteWeightId] = useState(null);
+  const [deleteHealthDialogOpen, setDeleteHealthDialogOpen] = useState(false);
+  const [pendingDeleteHealthId, setPendingDeleteHealthId] = useState(null);
+
   const { celebrationsEnabled } = useCelebrations();
 
   // Check if today is the reptile's birthday
@@ -199,79 +222,118 @@ export default function ReptileDetail() {
     fetchData();
   }, [id]);
 
-  const handleToggleActive = async () => {
+  const handleToggleActive = () => {
+    setToggleActiveDialogOpen(true);
+  };
+
+  const executeToggleActive = async () => {
     const newActiveState = !reptile.is_active;
     const action = newActiveState ? 'unhide' : 'hide';
 
-    if (window.confirm(`Are you sure you want to ${action} this reptile? ${newActiveState ? 'It will appear in all views again.' : 'It will be hidden from most views.'}`)) {
-      try {
-        await axios.patch(`/api/reptiles/${id}`, { is_active: newActiveState });
-        setReptile({ ...reptile, is_active: newActiveState });
-      } catch (error) {
-        console.error(`Error ${action}ing reptile:`, error);
-        alert(`Failed to ${action} reptile. You may not have permission.`);
-      }
+    try {
+      await axios.patch(`/api/reptiles/${id}`, { is_active: newActiveState });
+      setReptile({ ...reptile, is_active: newActiveState });
+      setToggleActiveDialogOpen(false);
+    } catch (error) {
+      console.error(`Error ${action}ing reptile:`, error);
+      toast.error(`Failed to ${action} reptile. You may not have permission.`);
+      setToggleActiveDialogOpen(false);
     }
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this reptile? This action cannot be undone!')) {
-      axios.delete(`/api/reptiles/${id}`)
-        .then(() => {
-          navigate('/reptiles');
-        })
-        .catch(error => {
-          console.error('Error deleting reptile:', error);
-          alert('Failed to delete reptile. You may not have permission.');
-        });
+    setDeleteReptileDialogOpen(true);
+  };
+
+  const executeDeleteReptile = async () => {
+    try {
+      await axios.delete(`/api/reptiles/${id}`);
+      setDeleteReptileDialogOpen(false);
+      navigate('/reptiles');
+    } catch (error) {
+      console.error('Error deleting reptile:', error);
+      toast.error('Failed to delete reptile. You may not have permission.');
+      setDeleteReptileDialogOpen(false);
     }
   };
 
-  const handleDeleteFeeding = async (feedingId) => {
-    if (window.confirm('Are you sure you want to delete this feeding?')) {
-      try {
-        await axios.delete(`/api/feedings/${feedingId}`);
-        setFeedings(feedings.filter(f => f.id !== feedingId));
-      } catch (error) {
-        console.error('Error deleting feeding:', error);
-        alert('Failed to delete feeding. You may not have permission.');
-      }
+  const handleDeleteFeeding = (feedingId) => {
+    setPendingDeleteFeedingId(feedingId);
+    setDeleteFeedingDialogOpen(true);
+  };
+
+  const executeDeleteFeeding = async () => {
+    if (!pendingDeleteFeedingId) return;
+    try {
+      await axios.delete(`/api/feedings/${pendingDeleteFeedingId}`);
+      setFeedings(feedings.filter(f => f.id !== pendingDeleteFeedingId));
+      setDeleteFeedingDialogOpen(false);
+      setPendingDeleteFeedingId(null);
+    } catch (error) {
+      console.error('Error deleting feeding:', error);
+      toast.error('Failed to delete feeding. You may not have permission.');
+      setDeleteFeedingDialogOpen(false);
+      setPendingDeleteFeedingId(null);
     }
   };
 
-  const handleDeleteMisting = async (mistingId) => {
-    if (window.confirm('Are you sure you want to delete this misting log?')) {
-      try {
-        await axios.delete(`/api/misting/${mistingId}`);
-        setMistingLogs(mistingLogs.filter(m => m.id !== mistingId));
-      } catch (error) {
-        console.error('Error deleting misting log:', error);
-        alert('Failed to delete misting log. You may not have permission.');
-      }
+  const handleDeleteMisting = (mistingId) => {
+    setPendingDeleteMistingId(mistingId);
+    setDeleteMistingDialogOpen(true);
+  };
+
+  const executeDeleteMisting = async () => {
+    if (!pendingDeleteMistingId) return;
+    try {
+      await axios.delete(`/api/misting/${pendingDeleteMistingId}`);
+      setMistingLogs(mistingLogs.filter(m => m.id !== pendingDeleteMistingId));
+      setDeleteMistingDialogOpen(false);
+      setPendingDeleteMistingId(null);
+    } catch (error) {
+      console.error('Error deleting misting log:', error);
+      toast.error('Failed to delete misting log. You may not have permission.');
+      setDeleteMistingDialogOpen(false);
+      setPendingDeleteMistingId(null);
     }
   };
 
-  const handleDeleteWeight = async (weightId) => {
-    if (window.confirm('Are you sure you want to delete this weight log?')) {
-      try {
-        await axios.delete(`/api/weight/${weightId}`);
-        setWeightLogs(weightLogs.filter(w => w.id !== weightId));
-      } catch (error) {
-        console.error('Error deleting weight log:', error);
-        alert('Failed to delete weight log. You may not have permission.');
-      }
+  const handleDeleteWeight = (weightId) => {
+    setPendingDeleteWeightId(weightId);
+    setDeleteWeightDialogOpen(true);
+  };
+
+  const executeDeleteWeight = async () => {
+    if (!pendingDeleteWeightId) return;
+    try {
+      await axios.delete(`/api/weight/${pendingDeleteWeightId}`);
+      setWeightLogs(weightLogs.filter(w => w.id !== pendingDeleteWeightId));
+      setDeleteWeightDialogOpen(false);
+      setPendingDeleteWeightId(null);
+    } catch (error) {
+      console.error('Error deleting weight log:', error);
+      toast.error('Failed to delete weight log. You may not have permission.');
+      setDeleteWeightDialogOpen(false);
+      setPendingDeleteWeightId(null);
     }
   };
 
-  const handleDeleteHealth = async (healthId) => {
-    if (window.confirm('Are you sure you want to delete this health record?')) {
-      try {
-        await axios.delete(`/api/health/${healthId}`);
-        setHealthRecords(healthRecords.filter(h => h.id !== healthId));
-      } catch (error) {
-        console.error('Error deleting health record:', error);
-        alert('Failed to delete health record. You may not have permission.');
-      }
+  const handleDeleteHealth = (healthId) => {
+    setPendingDeleteHealthId(healthId);
+    setDeleteHealthDialogOpen(true);
+  };
+
+  const executeDeleteHealth = async () => {
+    if (!pendingDeleteHealthId) return;
+    try {
+      await axios.delete(`/api/health/${pendingDeleteHealthId}`);
+      setHealthRecords(healthRecords.filter(h => h.id !== pendingDeleteHealthId));
+      setDeleteHealthDialogOpen(false);
+      setPendingDeleteHealthId(null);
+    } catch (error) {
+      console.error('Error deleting health record:', error);
+      toast.error('Failed to delete health record. You may not have permission.');
+      setDeleteHealthDialogOpen(false);
+      setPendingDeleteHealthId(null);
     }
   };
 
@@ -291,7 +353,7 @@ export default function ReptileDetail() {
       }
     } catch (error) {
       console.error('Error toggling favorite food:', error);
-      alert('Failed to update favorite food. You may not have permission.');
+      toast.error('Failed to update favorite food. You may not have permission.');
     }
   };
 
@@ -333,7 +395,7 @@ export default function ReptileDetail() {
       });
     } catch (error) {
       console.error('Error updating default food:', error);
-      alert('Failed to update default food. You may not have permission.');
+      toast.error('Failed to update default food. You may not have permission.');
     }
   };
 
@@ -393,7 +455,7 @@ export default function ReptileDetail() {
       setShowAvatarCropper(true);
     } catch (error) {
       console.error('Error loading avatar photo:', error);
-      alert('Failed to load avatar photo');
+      toast.error('Failed to load avatar photo');
     }
   };
 
@@ -425,7 +487,7 @@ export default function ReptileDetail() {
       setReptile(reptileResponse.data);
 
       // Show success notification
-      alert('Avatar updated successfully!');
+      toast.success('Avatar updated successfully!');
 
       // Close the cropper modal
       setShowAvatarCropper(false);
@@ -433,7 +495,7 @@ export default function ReptileDetail() {
     } catch (error) {
       console.error('Error updating avatar:', error);
       console.error('Backend error details:', error.response?.data);
-      alert(`Failed to update avatar: ${error.response?.data?.detail || error.message}`);
+      toast.error(`Failed to update avatar: ${error.response?.data?.detail || error.message}`);
     }
   };
 
@@ -1180,6 +1242,106 @@ export default function ReptileDetail() {
           <span className="text-sm text-foreground">{toastMessage}</span>
         </div>
       )}
+
+      {/* AlertDialog for delete reptile confirmation */}
+      <AlertDialog open={deleteReptileDialogOpen} onOpenChange={setDeleteReptileDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Reptile</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {reptile?.name}? This action cannot be undone and will remove all associated records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteReptile}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for toggle active confirmation */}
+      <AlertDialog open={toggleActiveDialogOpen} onOpenChange={setToggleActiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{reptile?.is_active ? 'Hide' : 'Unhide'} Reptile</AlertDialogTitle>
+            <AlertDialogDescription>
+              {reptile?.is_active
+                ? `Are you sure you want to hide ${reptile?.name}? It will be hidden from most views.`
+                : `Are you sure you want to unhide ${reptile?.name}? It will appear in all views again.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeToggleActive}>
+              {reptile?.is_active ? 'Hide' : 'Unhide'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for delete feeding confirmation */}
+      <AlertDialog open={deleteFeedingDialogOpen} onOpenChange={setDeleteFeedingDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Feeding</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this feeding record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteFeedingId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteFeeding}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for delete misting confirmation */}
+      <AlertDialog open={deleteMistingDialogOpen} onOpenChange={setDeleteMistingDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Misting Log</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this misting log? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteMistingId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteMisting}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for delete weight confirmation */}
+      <AlertDialog open={deleteWeightDialogOpen} onOpenChange={setDeleteWeightDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Weight Log</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this weight log? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteWeightId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteWeight}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for delete health record confirmation */}
+      <AlertDialog open={deleteHealthDialogOpen} onOpenChange={setDeleteHealthDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Health Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this health record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteHealthId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteHealth}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

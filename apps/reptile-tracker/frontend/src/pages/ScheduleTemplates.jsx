@@ -20,6 +20,17 @@ import {
 import * as api from '../utils/scheduleTemplateApi';
 import { getDayNames, getDayNumbers, getUserTimeFormat } from '../utils/dateFormatting';
 import axios from 'axios';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -69,6 +80,10 @@ function ScheduleTemplates() {
 
   // Import modal
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // Delete template dialog state
+  const [deleteTemplateDialogOpen, setDeleteTemplateDialogOpen] = useState(false);
+  const [pendingDeleteTemplate, setPendingDeleteTemplate] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -142,7 +157,7 @@ function ScheduleTemplates() {
       setReptiles(normalizedReptiles);
     } catch (error) {
       console.error('Error loading data:', error);
-      alert('Failed to load schedule templates');
+      toast.error('Failed to load schedule templates');
       setTemplates([]);
       setReptiles([]);
     } finally {
@@ -346,7 +361,7 @@ function ScheduleTemplates() {
       api.downloadJSON(data, filename);
     } catch (error) {
       console.error('Error exporting templates:', error);
-      alert('Failed to export templates');
+      toast.error('Failed to export templates');
     }
   }
 
@@ -357,38 +372,47 @@ function ScheduleTemplates() {
     try {
       const jsonData = await api.parseJSONFile(file);
       await api.importScheduleTemplates(jsonData);
-      alert(`Successfully imported ${jsonData.templates?.length || 0} templates`);
+      toast.success(`Successfully imported ${jsonData.templates?.length || 0} templates`);
       setImportModalOpen(false);
       loadData();
     } catch (error) {
       console.error('Error importing templates:', error);
-      alert('Failed to import templates. Please check the file format.');
+      toast.error('Failed to import templates. Please check the file format.');
     }
   }
 
   async function handleDuplicate(templateId) {
     try {
       const newTemplate = await api.duplicateScheduleTemplate(templateId);
-      alert('Template duplicated successfully! You can now customize it.');
+      toast.success('Template duplicated successfully! You can now customize it.');
       loadData();
       closeViewModal();
     } catch (error) {
       console.error('Error duplicating template:', error);
-      alert('Failed to duplicate template');
+      toast.error('Failed to duplicate template');
     }
   }
 
-  async function handleDelete(templateId, templateName) {
-    if (!confirm(`Are you sure you want to delete "${templateName}"?`)) return;
+  function handleDelete(templateId, templateName) {
+    setPendingDeleteTemplate({ id: templateId, name: templateName });
+    setDeleteTemplateDialogOpen(true);
+  }
+
+  async function executeDeleteTemplate() {
+    if (!pendingDeleteTemplate) return;
 
     try {
-      await api.deleteScheduleTemplate(templateId);
-      alert('Template deleted successfully');
+      await api.deleteScheduleTemplate(pendingDeleteTemplate.id);
+      toast.success('Template deleted successfully');
       loadData();
       closeViewModal();
+      setDeleteTemplateDialogOpen(false);
+      setPendingDeleteTemplate(null);
     } catch (error) {
       console.error('Error deleting template:', error);
-      alert(error.response?.data?.detail || 'Failed to delete template');
+      toast.error(error.response?.data?.detail || 'Failed to delete template');
+      setDeleteTemplateDialogOpen(false);
+      setPendingDeleteTemplate(null);
     }
   }
 
@@ -617,13 +641,13 @@ function ScheduleTemplates() {
 
   async function handleApplyTemplate() {
     if (!selectedReptile) {
-      alert('Please select a reptile');
+      toast.warning('Please select a reptile');
       return;
     }
 
     // Only require age category if there are multiple age options
     if (!selectedAgeCategory && selectedTemplate?.groupName && selectedTemplate?.ageCategories?.length > 1) {
-      alert('Please select a life stage for your reptile');
+      toast.warning('Please select a life stage for your reptile');
       return;
     }
 
@@ -633,7 +657,7 @@ function ScheduleTemplates() {
     }
 
     if (selectedTemplateIds.size === 0 && customSchedules.length === 0) {
-      alert('Please select at least one schedule to create or add a custom schedule');
+      toast.warning('Please select at least one schedule to create or add a custom schedule');
       return;
     }
 
@@ -789,13 +813,13 @@ function ScheduleTemplates() {
       const message = totalCreated > 1
         ? `Successfully created ${totalCreated} schedules and rotations!`
         : 'Schedule created successfully!';
-      alert(message);
+      toast.success(message);
 
       setApplyModalOpen(false);
       navigate('/calendar');
     } catch (error) {
       console.error('Error applying template:', error);
-      alert(error.response?.data?.detail || 'Failed to create schedules');
+      toast.error(error.response?.data?.detail || 'Failed to create schedules');
     }
   }
 
@@ -3324,6 +3348,22 @@ function ScheduleTemplates() {
           </div>
         </div>
       )}
+
+      {/* AlertDialog for delete template confirmation */}
+      <AlertDialog open={deleteTemplateDialogOpen} onOpenChange={setDeleteTemplateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{pendingDeleteTemplate?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteTemplate(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDeleteTemplate}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
