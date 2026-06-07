@@ -446,6 +446,32 @@ export function updateProfileCards(profileId, cards) {
 }
 
 /**
+ * Update statistics charts for a specific profile
+ * @param {string} profileId - Profile ID to update
+ * @param {Array} charts - Updated statistics charts array
+ * @returns {boolean} Success status
+ */
+export function updateProfileStatistics(profileId, charts) {
+  const profiles = getDisplayProfiles();
+  const profileIndex = profiles.findIndex(p => p.id === profileId);
+
+  if (profileIndex === -1) return false;
+
+  profiles[profileIndex] = {
+    ...profiles[profileIndex],
+    statistics_charts: charts,
+    updated_at: new Date().toISOString()
+  };
+
+  localStorage.setItem('display_profiles', JSON.stringify(profiles));
+
+  // Also update current session settings (global)
+  saveStatisticsChartSettings(charts);
+
+  return true;
+}
+
+/**
  * Reset a profile's dashboard cards to default
  * @param {string} profileId - Profile ID to reset
  * @returns {boolean} Success status

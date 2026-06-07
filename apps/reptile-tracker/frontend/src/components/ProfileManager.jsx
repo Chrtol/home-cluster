@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Copy, Trash2, Edit2, Download, Upload, Check, X, AlertCircle, Monitor, Smartphone, Eye } from 'lucide-react';
+import { Save, Copy, Trash2, Edit2, Download, Upload, Check, X, AlertCircle, Monitor, Smartphone, Eye, BarChart3 } from 'lucide-react';
 import ProfilePreviewPanel from './ProfilePreviewPanel';
+import StatisticsPreviewPanel from './StatisticsPreviewPanel';
 import {
   getDisplayProfiles,
   getActiveProfileId,
@@ -65,6 +66,7 @@ export default function ProfileManager({ onProfileChange }) {
   const [newProfileTarget, setNewProfileTarget] = useState('both'); // 'desktop', 'mobile', or 'both'
   const [showNewProfileForm, setShowNewProfileForm] = useState(false);
   const [previewProfileId, setPreviewProfileId] = useState(null);
+  const [statisticsPreviewProfileId, setStatisticsPreviewProfileId] = useState(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -457,14 +459,23 @@ export default function ProfileManager({ onProfileChange }) {
                   </div>
 
                   <div className="flex gap-1 flex-wrap">
-                    {/* Preview button - always available */}
+                    {/* Edit Dashboard button - always available */}
                     <button
                       onClick={() => setPreviewProfileId(profile.id)}
                       className="btn-secondary text-xs px-2 py-1.5 flex items-center gap-1"
-                      title="Preview and edit layout"
+                      title="Edit dashboard layout"
                     >
                       <Eye size={14} />
-                      Preview
+                      Dashboard
+                    </button>
+                    {/* Edit Statistics button - always available */}
+                    <button
+                      onClick={() => setStatisticsPreviewProfileId(profile.id)}
+                      className="btn-secondary text-xs px-2 py-1.5 flex items-center gap-1"
+                      title="Edit statistics layout"
+                    >
+                      <BarChart3 size={14} />
+                      Statistics
                     </button>
                     {!isActiveDesktop && (
                       <button
@@ -549,11 +560,19 @@ export default function ProfileManager({ onProfileChange }) {
         </div>
       </div>
 
-      {/* Profile Preview Panel */}
+      {/* Profile Preview Panel (Dashboard) */}
       <ProfilePreviewPanel
         profileId={previewProfileId}
         open={!!previewProfileId}
         onOpenChange={(open) => !open && setPreviewProfileId(null)}
+        onSave={() => loadProfiles()}
+      />
+
+      {/* Statistics Preview Panel */}
+      <StatisticsPreviewPanel
+        profileId={statisticsPreviewProfileId}
+        open={!!statisticsPreviewProfileId}
+        onOpenChange={(open) => !open && setStatisticsPreviewProfileId(null)}
         onSave={() => loadProfiles()}
       />
 

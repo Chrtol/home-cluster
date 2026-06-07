@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, ChevronUp, ChevronDown, PartyPopper } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, ChevronUp, ChevronDown, PartyPopper, BarChart3 } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import ProfileManager from '../components/ProfileManager';
+import StatisticsPreviewPanel from '../components/StatisticsPreviewPanel';
 import { useCelebrations } from '../contexts/CelebrationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -338,6 +339,7 @@ function DisplayTab() {
   const [draggedItem, setDraggedItem] = useState(null);
   const [reptiles, setReptiles] = useState([]);
   const [selectedReptileId, setSelectedReptileId] = useState(null); // null = global settings
+  const [statisticsPreviewOpen, setStatisticsPreviewOpen] = useState(false);
 
   useEffect(() => {
     // Load all display settings from localStorage
@@ -636,355 +638,25 @@ function DisplayTab() {
         </div>
       </div>
 
-      {/* Dashboard Customization */}
+      {/* Statistics Page Settings */}
       <div className="card">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Layout size={20} />
-            Dashboard Layout
+            <BarChart3 size={20} />
+            Statistics Page
           </h2>
-          <button onClick={handleResetDashboard} className="btn-secondary text-sm whitespace-nowrap">
-            Reset Dashboard
+          <button
+            onClick={() => setStatisticsPreviewOpen(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <BarChart3 size={18} />
+            Edit Chart Layout
           </button>
         </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Show/hide cards, reorder (drag on desktop, use arrows on mobile), and adjust card sizes on the Dashboard page.
-        </p>
-        <div className="space-y-2">
-          {dashboardCards.map((card, index) => (
-            <div
-              key={card.id}
-              draggable={window.innerWidth >= 768} // Only draggable on desktop
-              onDragStart={(e) => window.innerWidth >= 768 && handleDragStart(e, index, 'dashboard')}
-              onDragOver={(e) => window.innerWidth >= 768 && handleDragOver(e, index, 'dashboard')}
-              onDragEnd={window.innerWidth >= 768 ? handleDragEnd : undefined}
-              className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all sm:cursor-move ${
-                card.visible
-                  ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-border bg-card/50'
-              } ${draggedItem?.index === index && draggedItem?.type === 'dashboard' ? 'opacity-50' : ''}`}
-            >
-              {/* Top row on mobile: reorder buttons (mobile) / drag handle (desktop), visibility toggle, label */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                {/* Mobile reorder buttons */}
-                <div className="flex flex-col gap-0.5 sm:hidden flex-shrink-0">
-                  <button
-                    onClick={() => handleDashboardCardMoveUp(index)}
-                    disabled={index === 0}
-                    className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                    title="Move up"
-                  >
-                    <ChevronUp size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDashboardCardMoveDown(index)}
-                    disabled={index === dashboardCards.length - 1}
-                    className={`p-0.5 rounded ${index === dashboardCards.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                    title="Move down"
-                  >
-                    <ChevronDown size={16} />
-                  </button>
-                </div>
-                {/* Desktop drag handle */}
-                <GripVertical size={20} className="text-gray-400 flex-shrink-0 hidden sm:block" />
-                <button
-                  onClick={() => handleDashboardCardToggle(card.id)}
-                  className="flex items-center gap-2 flex-shrink-0"
-                >
-                  {card.visible ? <Eye size={16} className="text-blue-600 dark:text-blue-400 sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <span className={`font-medium text-sm sm:text-base ${card.visible ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {card.label}
-                  </span>
-                </div>
-              </div>
-              {/* Bottom row on mobile: controls (interpolation + size buttons) */}
-              {card.visible && (
-                <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap pl-6 sm:pl-0">
-                  {/* Interpolation dropdown for weight charts */}
-                  {card.interpolationMode !== undefined && (
-                    <>
-                      <select
-                        value={card.interpolationMode || 'linear'}
-                        onChange={(e) => { e.stopPropagation(); handleDashboardCardInterpolationChange(card.id, e.target.value); }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="input py-1 px-2 text-xs w-24 sm:min-w-[100px]"
-                        title="Weight interpolation mode"
-                      >
-                        <option value="linear">Linear</option>
-                        <option value="step">Step</option>
-                        <option value="none">Dots</option>
-                      </select>
-                      {/* Divider - hidden on mobile */}
-                      <div className="hidden sm:block h-6 w-px bg-border"></div>
-                    </>
-                  )}
-                  {/* Size buttons */}
-                  <div className="flex gap-1 flex-shrink-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'xs'); }}
-                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                        card.size === 'xs'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Extra Small (1/4 width)"
-                    >
-                      XS
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'small'); }}
-                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                        card.size === 'small'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Small (1/2 width)"
-                    >
-                      S
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'medium'); }}
-                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                        card.size === 'medium'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Medium (3/4 width)"
-                    >
-                      M
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDashboardCardSizeChange(card.id, 'large'); }}
-                      className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                        card.size === 'large'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                      title="Large (Full width)"
-                    >
-                      L
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Statistics Customization */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Layout size={20} />
-            Statistics Layout
-          </h2>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-            <select
-              value={selectedReptileId || ''}
-              onChange={(e) => setSelectedReptileId(e.target.value ? parseInt(e.target.value) : null)}
-              className="input text-sm py-1 px-2 min-w-[150px] sm:min-w-[200px] flex-1 sm:flex-initial"
-              title="Select reptile to customize"
-            >
-              <option value="">All Reptiles (Global)</option>
-              {reptiles.map(reptile => (
-                <option key={reptile.id} value={reptile.id}>
-                  {reptile.name}
-                  {hasCustomStatisticsSettings(reptile.id) ? ' (Custom)' : ''}
-                </option>
-              ))}
-            </select>
-            {/* Divider - hidden on mobile */}
-            <div className="hidden sm:block h-6 w-px bg-border"></div>
-            <button onClick={handleResetStatistics} className="btn-secondary text-sm whitespace-nowrap">
-              {selectedReptileId ? 'Reset to Default' : 'Reset Statistics'}
-            </button>
-          </div>
-        </div>
-
-        {/* Per-Reptile Settings Info */}
-        {selectedReptileId && (
-          <div className="mb-4 flex flex-col sm:flex-row gap-2">
-            {hasCustomStatisticsSettings(selectedReptileId) ? (
-              <div className="flex-1 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  <strong>Custom layout active</strong> for this reptile. Changes only affect this reptile's statistics page.
-                </p>
-              </div>
-            ) : (
-              <div className="flex-1 p-3 bg-card border border-border rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Currently using <strong>global layout</strong>. Make changes to create a custom layout for this reptile.
-                </p>
-              </div>
-            )}
-            <div className="flex gap-2 sm:flex-shrink-0">
-              {hasCustomStatisticsSettings(selectedReptileId) ? (
-                <button onClick={handleUseGlobal} className="btn-secondary text-sm whitespace-nowrap">
-                  Use Global
-                </button>
-              ) : (
-                <button onClick={handleCopyFromGlobal} className="btn-secondary text-sm whitespace-nowrap">
-                  Copy from Global
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        <p className="text-sm text-muted-foreground mb-4">
-          {selectedReptileId
-            ? 'Customize the statistics layout for this specific reptile. Reorder using drag (desktop) or arrows (mobile).'
-            : 'Configure the default statistics layout for all reptiles (unless they have custom settings). Reorder using drag (desktop) or arrows (mobile).'}
-        </p>
-        <div className="space-y-2">
-          {statisticsCharts.map((chart, index) => {
-            // Check if this is a summary card child and if its parent is visible
-            const isChild = chart.parentId !== undefined;
-            const parentChart = isChild ? statisticsCharts.find(c => c.id === chart.parentId) : null;
-            const showChild = !isChild || (parentChart && parentChart.visible);
-
-            if (!showChild) return null;
-
-            return (
-              <div
-                key={chart.id}
-                draggable={!isChild && window.innerWidth >= 768} // Only draggable on desktop and not child
-                onDragStart={(e) => !isChild && window.innerWidth >= 768 && handleDragStart(e, index, 'statistics')}
-                onDragOver={(e) => !isChild && window.innerWidth >= 768 && handleDragOver(e, index, 'statistics')}
-                onDragEnd={!isChild && window.innerWidth >= 768 ? handleDragEnd : undefined}
-                className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all ${
-                  !isChild ? 'sm:cursor-move' : ''
-                } ${
-                  chart.visible
-                    ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-                    : 'border-border bg-card/50'
-                } ${draggedItem?.index === index && draggedItem?.type === 'statistics' && !isChild ? 'opacity-50' : ''} ${
-                  isChild ? 'ml-6 sm:ml-8' : ''
-                }`}
-              >
-                {/* Top row on mobile: reorder buttons (mobile) / drag handle (desktop), visibility toggle, label */}
-                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  {/* Mobile reorder buttons (only for parent items) */}
-                  {!isChild && (
-                    <div className="flex flex-col gap-0.5 sm:hidden flex-shrink-0">
-                      <button
-                        onClick={() => handleStatisticsChartMoveUp(index)}
-                        disabled={index === 0}
-                        className={`p-0.5 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                        title="Move up"
-                      >
-                        <ChevronUp size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleStatisticsChartMoveDown(index)}
-                        disabled={index === statisticsCharts.length - 1}
-                        className={`p-0.5 rounded ${index === statisticsCharts.length - 1 ? 'text-gray-300 dark:text-gray-600' : 'text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                        title="Move down"
-                      >
-                        <ChevronDown size={16} />
-                      </button>
-                    </div>
-                  )}
-                  {/* Desktop drag handle (only for parent items) */}
-                  {!isChild && <GripVertical size={20} className="text-gray-400 flex-shrink-0 hidden sm:block" />}
-                  <button
-                    onClick={() => handleStatisticsChartToggle(chart.id)}
-                    className="flex items-center gap-2 flex-shrink-0"
-                  >
-                    {chart.visible ? <Eye size={16} className="text-green-600 dark:text-green-400 sm:w-[18px] sm:h-[18px]" /> : <EyeOff size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <span className={`${isChild ? 'text-sm' : 'font-medium text-sm sm:text-base'} ${chart.visible ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {chart.label}
-                    </span>
-                  </div>
-                </div>
-                {/* Bottom row on mobile: controls (interpolation + size buttons) */}
-                {chart.visible && !isChild && (
-                  <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap pl-6 sm:pl-0">
-                    {/* Interpolation dropdown for weight charts */}
-                    {chart.interpolationMode !== undefined && (
-                      <>
-                        <select
-                          value={chart.interpolationMode || 'linear'}
-                          onChange={(e) => { e.stopPropagation(); handleStatisticsChartInterpolationChange(chart.id, e.target.value); }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="input py-1 px-2 text-xs w-24 sm:min-w-[100px]"
-                          title="Weight interpolation mode"
-                        >
-                          <option value="linear">Linear</option>
-                          <option value="step">Step</option>
-                          <option value="none">Dots</option>
-                        </select>
-                        {/* Divider - hidden on mobile */}
-                        <div className="hidden sm:block h-6 w-px bg-border"></div>
-                      </>
-                    )}
-                    {/* Size buttons - only show for non-child items */}
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'xs'); }}
-                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                          chart.size === 'xs'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                        title="Extra Small (1/4 width)"
-                      >
-                        XS
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'small'); }}
-                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                          chart.size === 'small'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                        title="Small (1/2 width)"
-                      >
-                        S
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'medium'); }}
-                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                          chart.size === 'medium'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                        title="Medium (3/4 width)"
-                      >
-                        M
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleStatisticsChartSizeChange(chart.id, 'large'); }}
-                        className={`px-1.5 sm:px-2 py-1 text-xs rounded transition-colors ${
-                          chart.size === 'large'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-secondary text-muted-foreground hover:bg-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                        title="Large (Full width)"
-                      >
-                        L
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Chart Settings */}
-      <div className="card">
-        <h2 className="text-xl font-semibold mb-4 text-foreground">Chart Appearance</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Customize how charts are displayed across the app.
-        </p>
+        {/* Chart appearance settings */}
         <div className="space-y-4">
+          <h3 className="text-sm font-medium text-foreground">Chart Appearance</h3>
           <label className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -1032,6 +704,17 @@ function DisplayTab() {
           </div>
         </div>
       </div>
+
+      {/* Statistics Preview Panel */}
+      <StatisticsPreviewPanel
+        profileId={null}
+        open={statisticsPreviewOpen}
+        onOpenChange={setStatisticsPreviewOpen}
+        onSave={() => {
+          setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
+          showSuccess('Statistics layout saved!');
+        }}
+      />
     </div>
   );
 }
