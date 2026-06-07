@@ -2,7 +2,7 @@ from datetime import datetime, time, date
 from typing import Optional, List, Dict, Any, Union, Literal
 from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_serializer, ConfigDict
-from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType
+from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType, TransferStatus
 
 
 # User schemas
@@ -1592,3 +1592,104 @@ class ReptileAlertSummary(BaseModel):
     # Effective settings (merged with global defaults)
     effective_feeding: Optional[Dict[str, Any]] = None
     effective_measurements: Dict[str, Dict[str, Any]] = {}
+
+
+# ---- Import/Export Schemas (Phase 34) ----
+
+class ExportRequest(BaseModel):
+    """Request to initiate an export job."""
+    reptile_ids: List[int]
+    export_type: Literal["json", "zip"]
+    is_transfer: bool = False  # If true, marks reptiles as pending transfer (D-17)
+
+
+class ExportStatusResponse(BaseModel):
+    """Response for export job status polling."""
+    task_id: str
+    status: str  # "pending", "progress", "complete", "failed"
+    step: Optional[str] = None  # Current step for progress display
+    file_path: Optional[str] = None  # Download path when complete
+    error: Optional[str] = None  # Error message if failed
+
+
+class ImportPreviewItem(BaseModel):
+    """Individual item in import preview (reptile, schedule, etc.)."""
+    type: str  # "reptile", "schedule", "log", etc.
+    name: str
+    status: Literal["ok", "warning", "error"]
+    message: Optional[str] = None  # Reason for warning/error
+
+
+class ImportPreview(BaseModel):
+    """Preview of what will be imported (D-12)."""
+    valid: bool  # True if import can proceed
+    reptiles: List[ImportPreviewItem]
+    schedules_count: int
+    logs_count: int
+    photos_count: int
+    warnings: List[str]  # Non-blocking issues
+    errors: List[str]  # Blocking issues
+    renamed_reptiles: List[Dict[str, str]]  # {original, new} for auto-renamed reptiles (D-08)
+
+
+class ImportCommitRequest(BaseModel):
+    """Request to commit a previewed import."""
+    preview_token: str  # UUID from preview step
+    destination: Literal["current", "new"]  # Import to current household or create new (D-13)
+    new_household_name: Optional[str] = None  # Required if destination is "new"
+
+
+class ExportedReptile(BaseModel):
+    """Schema for exported reptile data structure (matches RESEARCH.md export format)."""
+    name: str
+    species: str
+    date_of_birth: Optional[datetime] = None
+    notes: Optional[str] = None
+    feeding_schedule_enabled: bool
+    is_active: bool
+    # Related data
+    feedings: List[dict]
+    weight_logs: List[dict]
+    health_records: List[dict]
+    misting_logs: List[dict]
+    schedules: List[dict]
+    photos: List[dict]
+
+
+class ExportData(BaseModel):
+    """Root schema for export data bundle."""
+    version: str = "1.0"
+    exported_at: datetime
+    source_household: str
+    reptiles: List[ExportedReptile]
+    # Optional shared data (included if relevant to exported reptiles)
+    notification_templates: Optional[List[dict]] = None
+    foods: Optional[List[dict]] = None
+    supplements: Optional[List[dict]] = None
+
+
+class PendingExportResponse(BaseModel):
+    """Response schema for pending export status."""
+    id: int
+    task_id: str
+    export_type: str
+    reptile_ids: List[int]
+    is_transfer: bool
+    status: str
+    step: Optional[str] = None
+    file_path: Optional[str] = None
+    error: Optional[str] = None
+    expires_at: datetime
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransferStatusResponse(BaseModel):
+    """Response for reptile transfer status."""
+    reptile_id: int
+    transfer_status: TransferStatus
+    transfer_exported_at: Optional[datetime] = None
+    transfer_export_file: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
