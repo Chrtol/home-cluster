@@ -123,6 +123,14 @@ class QuotaPeriod(str, PyEnum):
     MONTH = "month"  # Group by month for display
 
 
+class TransferStatus(str, PyEnum):
+    """Status of reptile transfer (import/export)"""
+    NONE = "none"  # No transfer in progress
+    PENDING = "pending"  # Transfer initiated, awaiting completion
+    COMPLETED = "completed"  # Transfer completed
+    CANCELLED = "cancelled"  # Transfer cancelled
+
+
 # Association table for reptile access
 reptile_access = Table(
     "reptile_access",
@@ -269,6 +277,11 @@ class Reptile(Base):
     # Per-reptile cooldown override (Phase 25)
     # NULL = inherit global setting, 0 = no cooldown, positive = days
     weight_alert_cooldown_days = Column(Integer, nullable=True)
+
+    # Transfer status (Phase 34 - Import/Export)
+    transfer_status = Column(Enum(TransferStatus, values_callable=lambda x: [e.value for e in x]), default=TransferStatus.NONE, nullable=False)
+    transfer_exported_at = Column(DateTime(timezone=True), nullable=True)  # When export was initiated
+    transfer_export_file = Column(String, nullable=True)  # Path to export file
 
     # Relationships
     users = relationship("User", secondary=reptile_access, back_populates="reptiles")
@@ -1321,3 +1334,35 @@ class UserStreakFreeze(Base):
 
     # Relationships
     user = relationship("User", backref="streak_freezes")
+
+
+class PendingExport(Base):
+    """Tracks pending export jobs for the import/export system (Phase 34)"""
+    __tablename__ = "pending_exports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    household_id = Column(Integer, nullable=False, index=True)  # Denormalized for lookup
+
+    # Celery task tracking
+    task_id = Column(String(100), nullable=False, index=True)  # Celery task ID
+
+    # Export configuration
+    export_type = Column(String(10), nullable=False)  # "json" or "zip"
+    reptile_ids = Column(JSON, nullable=False)  # List of reptile IDs being exported
+    is_transfer = Column(Boolean, default=False, nullable=False)  # True if this is a transfer export (D-17)
+
+    # Job status tracking
+    status = Column(String(20), default="pending", nullable=False)  # "pending", "progress", "complete", "failed"
+    step = Column(String(50), nullable=True)  # Current step for progress display (e.g., "collecting_data", "packaging_photos")
+    file_path = Column(String, nullable=True)  # Storage path when complete
+    error = Column(Text, nullable=True)  # Error message if failed
+
+    # Expiration (D-07: export files expire after 7 days)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", backref="pending_exports")
