@@ -1627,6 +1627,8 @@ class ImportPreview(BaseModel):
     schedules_count: int
     logs_count: int
     photos_count: int
+    templates_to_import: int = 0  # D-11: templates for new trigger types
+    templates_skipped: int = 0  # D-11: templates skipped (trigger types already exist)
     warnings: List[str]  # Non-blocking issues
     errors: List[str]  # Blocking issues
     renamed_reptiles: List[Dict[str, str]]  # {original, new} for auto-renamed reptiles (D-08)
