@@ -486,17 +486,12 @@ function DisplayTab() {
   };
 
   const handleResetDashboard = () => {
-    if (!confirm('Reset dashboard layout to default? This cannot be undone.')) return;
     const defaults = resetDashboardCardSettings();
     setDashboardCards(defaults);
     showSuccess('Dashboard layout reset to defaults');
   };
 
   const handleResetStatistics = () => {
-    const message = selectedReptileId
-      ? 'Reset this reptile\'s statistics layout to default? This will remove custom settings for this reptile.'
-      : 'Reset global statistics layout to default? This cannot be undone.';
-    if (!confirm(message)) return;
     const defaults = resetStatisticsChartSettings(selectedReptileId);
     setStatisticsCharts(defaults);
     showSuccess('Statistics layout reset to defaults');
@@ -504,7 +499,6 @@ function DisplayTab() {
 
   const handleCopyFromGlobal = () => {
     if (!selectedReptileId) return;
-    if (!confirm('Copy global settings to this reptile? This will overwrite any custom settings for this reptile.')) return;
     copyGlobalSettingsToReptile(selectedReptileId);
     setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
     showSuccess('Global settings copied to this reptile');
@@ -512,14 +506,12 @@ function DisplayTab() {
 
   const handleUseGlobal = () => {
     if (!selectedReptileId) return;
-    if (!confirm('Remove custom settings for this reptile and use global settings instead?')) return;
     resetStatisticsChartSettings(selectedReptileId);
     setStatisticsCharts(getStatisticsChartSettings(selectedReptileId));
     showSuccess('Now using global settings for this reptile');
   };
 
   const handleResetAll = () => {
-    if (!confirm('Reset ALL display settings to defaults? This cannot be undone.')) return;
     resetAllDisplaySettings();
     setDashboardCards(getDashboardCardSettings());
     setStatisticsCharts(getStatisticsChartSettings());
@@ -643,10 +635,15 @@ function DisplayTab() {
               className="hidden"
             />
           </label>
-          <button onClick={handleResetAll} className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-2">
+          <ConfirmButton
+            onConfirm={handleResetAll}
+            confirmText="Reset All?"
+            variant="outline"
+            className="text-red-600 dark:text-red-400 flex items-center gap-2"
+          >
             <RotateCcw size={18} />
             Reset All to Defaults
-          </button>
+          </ConfirmButton>
         </div>
       </div>
 
