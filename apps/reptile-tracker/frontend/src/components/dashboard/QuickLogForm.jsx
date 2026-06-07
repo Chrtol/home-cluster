@@ -5,6 +5,7 @@ import { X, ExternalLink, Plus, Minus } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatting';
 import { TimePicker } from '../ui/time-picker';
 import { useCreateLogModal } from '@/contexts/CreateLogModalContext';
+import { useCelebrations } from '@/contexts/CelebrationContext';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -21,6 +22,7 @@ import { useCreateLogModal } from '@/contexts/CreateLogModalContext';
 const QuickLogForm = ({ task, onClose, onSubmit }) => {
   const navigate = useNavigate();
   const { openCreateLog } = useCreateLogModal();
+  const { triggerCelebration, celebrationsEnabled } = useCelebrations();
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -395,6 +397,17 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             });
           }
 
+          // Trigger celebration after API success (per D-12)
+          if (celebrationsEnabled) {
+            try {
+              const streakRes = await axios.get('/api/user-streaks/me');
+              const totalTasks = streakRes.data.total_tasks_completed || 0;
+              triggerCelebration(totalTasks - 1, totalTasks);
+            } catch (err) {
+              console.debug('Could not fetch streak for celebration:', err);
+            }
+          }
+
           // Call success handler and close (we already posted, so skip the final post)
           if (onSubmit) {
             await onSubmit();
@@ -425,6 +438,17 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
               description: 'Triggered from brumation check',
               date: fedAt.toISOString()
             });
+          }
+
+          // Trigger celebration after API success (per D-12)
+          if (celebrationsEnabled) {
+            try {
+              const streakRes = await axios.get('/api/user-streaks/me');
+              const totalTasks = streakRes.data.total_tasks_completed || 0;
+              triggerCelebration(totalTasks - 1, totalTasks);
+            } catch (err) {
+              console.debug('Could not fetch streak for celebration:', err);
+            }
           }
 
           // Call success handler and close (we already posted, so skip the final post)
@@ -497,6 +521,17 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
       }
 
       await axios.post(endpoint, payload);
+
+      // Trigger celebration after API success (per D-12)
+      if (celebrationsEnabled) {
+        try {
+          const streakRes = await axios.get('/api/user-streaks/me');
+          const totalTasks = streakRes.data.total_tasks_completed || 0;
+          triggerCelebration(totalTasks - 1, totalTasks);
+        } catch (err) {
+          console.debug('Could not fetch streak for celebration:', err);
+        }
+      }
 
       // Call success handler to refresh widgets
       if (onSubmit) {
