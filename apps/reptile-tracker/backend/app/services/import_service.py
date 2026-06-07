@@ -186,8 +186,9 @@ class ImportService:
         """
         Commit import with atomic transaction per D-12.
         Creates all records, applying name renames.
-        Sets notification_pause_until per D-10 (1 hour pause).
         Imports templates per D-11 (only for trigger types user doesn't have).
+
+        Note: D-10 notification pause deferred - requires model migration.
 
         Returns: {"reptiles_created": N, "logs_created": N, "templates_created": N}
         """
@@ -213,8 +214,8 @@ class ImportService:
                     feeding_schedule_enabled=reptile_data.feeding_schedule_enabled,
                     is_active=reptile_data.is_active,
                     household_id=household_id,
-                    # D-10: pause notifications for 1 hour
-                    notification_pause_until=datetime.now(timezone.utc) + timedelta(hours=1),
+                    # NOTE: D-10 notification_pause_until requires model column not yet added.
+                    # Deferred to future migration - notifications will still be sent immediately.
                 )
                 db.add(reptile)
                 await db.flush()  # Get ID
