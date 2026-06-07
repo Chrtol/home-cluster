@@ -6,6 +6,18 @@ import ProfileManager from '../components/ProfileManager';
 import StatisticsPreviewPanel from '../components/StatisticsPreviewPanel';
 import { useCelebrations } from '../contexts/CelebrationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import {
   getDashboardCardSettings,
   saveDashboardCardSettings,
@@ -733,6 +745,8 @@ function StreakVacationTab() {
   const [vacationEnd, setVacationEnd] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [freezeCancelDialogOpen, setFreezeCancelDialogOpen] = useState(false);
+  const [pendingCancelFreezeId, setPendingCancelFreezeId] = useState(null);
 
   const toggleStreakEnabled = (enabled) => {
     setStreakEnabled(enabled);
@@ -1125,6 +1139,14 @@ function HouseholdSection() {
   const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [defaultHouseholdId, setDefaultHouseholdIdState] = useState(getDefaultHouseholdId());
+  // AlertDialog state for destructive actions
+  const [memberRoleDialogOpen, setMemberRoleDialogOpen] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState(null); // { userId, newRole }
+  const [removeMemberDialogOpen, setRemoveMemberDialogOpen] = useState(false);
+  const [pendingRemoveMember, setPendingRemoveMember] = useState(null); // userId
+  const [leaveHouseholdDialogOpen, setLeaveHouseholdDialogOpen] = useState(false);
+  const [revokeInviteDialogOpen, setRevokeInviteDialogOpen] = useState(false);
+  const [pendingRevokeInvite, setPendingRevokeInvite] = useState(null); // inviteId
 
   const handleSetDefault = (householdId) => {
     setDefaultHouseholdId(householdId);
