@@ -1,13 +1,13 @@
 import { RotateCcw, Settings } from 'lucide-react';
 import { resetDashboardCardSettings } from '../../utils/displaySettings';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 
 /**
  * EditModeControls - Controls for dashboard customization mode
  *
  * Provides:
  * - Toggle button to enter/exit edit mode
- * - Reset button to restore default layout
- * - Confirmation dialog for destructive actions
+ * - Reset button to restore default layout (uses ConfirmButton for inline confirmation)
  *
  * Props:
  * - isEditMode: boolean - Current edit mode state
@@ -15,12 +15,10 @@ import { resetDashboardCardSettings } from '../../utils/displaySettings';
  * - onResetLayout: function - Reset layout handler (called after confirmation)
  */
 const EditModeControls = ({ isEditMode, onToggleEditMode, onResetLayout }) => {
-  const handleResetClick = () => {
-    if (window.confirm('Reset dashboard layout to defaults? This will remove all customizations.')) {
-      resetDashboardCardSettings();
-      if (onResetLayout) {
-        onResetLayout();
-      }
+  const handleResetLayout = () => {
+    resetDashboardCardSettings();
+    if (onResetLayout) {
+      onResetLayout();
     }
   };
 
@@ -28,14 +26,17 @@ const EditModeControls = ({ isEditMode, onToggleEditMode, onResetLayout }) => {
     <div className="flex items-center gap-2">
       {isEditMode ? (
         <>
-          <button
-            onClick={handleResetClick}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border border-border bg-muted text-foreground hover:bg-muted/80 transition-colors"
+          <ConfirmButton
+            onConfirm={handleResetLayout}
+            confirmText="Reset?"
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs"
             title="Reset to default layout"
           >
             <RotateCcw size={14} />
             Reset
-          </button>
+          </ConfirmButton>
           <button
             onClick={onToggleEditMode}
             className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, ZoomIn, ZoomOut, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 /**
  * AvatarCropper component
@@ -90,7 +91,7 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
   const handleSave = () => {
     if (!croppedAreaPixels && !croppedArea) {
       console.error('Crop data not set yet');
-      alert('Please wait for the image to load completely and adjust the crop area');
+      toast.error('Please wait for the image to load completely and adjust the crop area');
       return;
     }
 
@@ -150,7 +151,7 @@ const AvatarCropper = ({ imageUrl, onSave, onCancel, initialCrop, initialZoom, i
         croppedArea,
         imageSize
       });
-      alert('Unable to save crop settings. Please try adjusting the crop area again.');
+      toast.error('Unable to save crop settings. Please try adjusting the crop area again.');
       return;
     }
 

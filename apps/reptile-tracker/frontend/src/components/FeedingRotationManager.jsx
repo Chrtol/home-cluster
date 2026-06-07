@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { Plus, Edit, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDayNames, getDayNumbers } from '../utils/dateFormatting';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function FeedingRotationManager({ reptileId, reptileName, autoShowPreview = false }) {
   const [rotations, setRotations] = useState([]);
@@ -11,6 +22,8 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
   const [editingRotation, setEditingRotation] = useState(null);
   const [showPreview, setShowPreview] = useState(autoShowPreview);
   const [preview, setPreview] = useState([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteRotationId, setPendingDeleteRotationId] = useState(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -89,21 +102,31 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
       }
       await fetchData();
       resetForm();
+      toast.success(editingRotation ? 'Rotation updated' : 'Rotation created');
     } catch (error) {
       console.error('Error saving rotation:', error);
-      alert('Failed to save rotation: ' + (error.response?.data?.detail || error.message));
+      toast.error('Failed to save rotation: ' + (error.response?.data?.detail || error.message));
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this rotation?')) return;
+  const handleDeleteClick = (id) => {
+    setPendingDeleteRotationId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteRotationId) return;
 
     try {
-      await axios.delete(`/api/feeding-rotations/${id}`);
+      await axios.delete(`/api/feeding-rotations/${pendingDeleteRotationId}`);
       await fetchData();
+      toast.success('Rotation deleted');
     } catch (error) {
       console.error('Error deleting rotation:', error);
-      alert('Failed to delete rotation');
+      toast.error('Failed to delete rotation');
+    } finally {
+      setDeleteDialogOpen(false);
+      setPendingDeleteRotationId(null);
     }
   };
 
@@ -533,7 +556,7 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
                     <Edit size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(rotation.id)}
+                    onClick={() => handleDeleteClick(rotation.id)}
                     className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-secondary rounded-lg transition-colors"
                     title="Delete rotation"
                   >
@@ -553,6 +576,26 @@ export default function FeedingRotationManager({ reptileId, reptileName, autoSho
           </p>
         </div>
       )}
+
+      {/* Delete Rotation Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Rotation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The rotation rule will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteRotationId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
