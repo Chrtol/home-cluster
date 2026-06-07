@@ -555,11 +555,11 @@ function DisplayTab() {
           setChartSettings(getChartSettings());
           showSuccess('Settings imported successfully');
         } else {
-          alert('Failed to import settings. Please check the file format.');
+          toast.error('Failed to import settings. Please check the file format.');
         }
       } catch (err) {
         console.error('Import error:', err);
-        alert('Failed to import settings. Invalid file format.');
+        toast.error('Failed to import settings. Invalid file format.');
       }
     };
     reader.readAsText(file);
@@ -871,9 +871,14 @@ function StreakVacationTab() {
   };
 
   const cancelFreeze = async (freezeId) => {
-    if (!confirm('Cancel this scheduled freeze? Freeze days will be refunded if not started yet.')) {
-      return;
-    }
+    // Set pending cancel and open dialog
+    setPendingCancelFreezeId(freezeId);
+    setFreezeCancelDialogOpen(true);
+  };
+
+  const executeCancelFreeze = async () => {
+    if (!pendingCancelFreezeId) return;
+    const freezeId = pendingCancelFreezeId;
 
     try {
       await axios.delete(`/api/user-streaks/me/freeze/${freezeId}`);
@@ -885,6 +890,8 @@ function StreakVacationTab() {
       console.error('Failed to cancel freeze:', err);
       setError(err.response?.data?.detail || 'Failed to cancel freeze');
       setTimeout(() => setError(''), 3000);
+    } finally {
+      setPendingCancelFreezeId(null);
     }
   };
 
@@ -1118,6 +1125,22 @@ function StreakVacationTab() {
           </>)}
         </div>
       </div>
+
+      {/* AlertDialog for cancel freeze confirmation */}
+      <AlertDialog open={freezeCancelDialogOpen} onOpenChange={setFreezeCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Scheduled Freeze</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cancel this scheduled freeze? Freeze days will be refunded if the freeze has not started yet.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingCancelFreezeId(null)}>Keep Freeze</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeCancelFreeze}>Cancel Freeze</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1231,7 +1254,7 @@ function HouseholdSection() {
 
   const createHousehold = async () => {
     if (!newHouseholdName.trim()) {
-      alert('Please enter a household name');
+      toast.warning('Please enter a household name');
       return;
     }
 
@@ -1250,11 +1273,11 @@ function HouseholdSection() {
         setShowCreateForm(false);
       } else {
         const err = await res.json();
-        alert('Failed to create household: ' + (err.detail || res.statusText));
+        toast.error('Failed to create household: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('createHousehold error', e);
-      alert('Failed to create household');
+      toast.error('Failed to create household');
     } finally {
       setCreating(false);
     }
@@ -1262,7 +1285,7 @@ function HouseholdSection() {
 
   const joinHousehold = async () => {
     if (!joinCode.trim()) {
-      alert('Please enter an invitation code');
+      toast.warning('Please enter an invitation code');
       return;
     }
 
@@ -1276,7 +1299,7 @@ function HouseholdSection() {
       });
       if (res.ok) {
         const data = await res.json();
-        alert('Successfully joined household!');
+        toast.success('Successfully joined household!');
         setJoinCode('');
         setShowJoinForm(false);
         // Refresh households list
@@ -1287,11 +1310,11 @@ function HouseholdSection() {
         }
       } else {
         const err = await res.json();
-        alert('Failed to join household: ' + (err.detail || res.statusText));
+        toast.error('Failed to join household: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('joinHousehold error', e);
-      alert('Failed to join household');
+      toast.error('Failed to join household');
     } finally {
       setCreating(false);
     }
@@ -1313,11 +1336,11 @@ function HouseholdSection() {
         setInviteCode(data.code);
       } else {
         const err = await res.json();
-        alert('Failed to create invite: ' + (err.detail || res.statusText));
+        toast.error('Failed to create invite: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('createInvite error', e);
-      alert('Failed to create invite');
+      toast.error('Failed to create invite');
     } finally {
       setCreating(false);
     }
@@ -1326,7 +1349,7 @@ function HouseholdSection() {
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(inviteLink);
-      alert('Invite link copied to clipboard');
+      toast.info('Invite link copied to clipboard');
     } catch (e) {
       console.error('copy failed', e);
     }
@@ -1335,7 +1358,7 @@ function HouseholdSection() {
   const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(inviteCode);
-      alert('Invite code copied to clipboard');
+      toast.info('Invite code copied to clipboard');
     } catch (e) {
       console.error('copy failed', e);
     }
@@ -1343,7 +1366,7 @@ function HouseholdSection() {
 
   const updateHouseholdName = async (householdId) => {
     if (!editName.trim()) {
-      alert('Please enter a household name');
+      toast.warning('Please enter a household name');
       return;
     }
 
@@ -1365,40 +1388,51 @@ function HouseholdSection() {
         setEditName('');
       } else {
         const err = await res.json();
-        alert('Failed to update household: ' + (err.detail || res.statusText));
+        toast.error('Failed to update household: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('updateHousehold error', e);
-      alert('Failed to update household');
+      toast.error('Failed to update household');
     } finally {
       setCreating(false);
     }
   };
 
   const handleRoleChange = async (userId, newRole) => {
-    if (!confirm(`Are you sure you want to change this member's role to ${newRole}?`)) {
-      return;
-    }
+    // Set pending role change and open dialog
+    setPendingRoleChange({ userId, newRole });
+    setMemberRoleDialogOpen(true);
+  };
+
+  const executeRoleChange = async () => {
+    if (!pendingRoleChange) return;
+    const { userId, newRole } = pendingRoleChange;
 
     setCreating(true);
     try {
       await axios.patch(`/api/households/${selectedHousehold.id}/members/${userId}/role`, {
         access_level: newRole
       });
-      alert('Role updated successfully');
+      toast.success('Role updated successfully');
       fetchMembers();
     } catch (err) {
       console.error('Failed to update role:', err);
-      alert(err.response?.data?.detail || 'Failed to update role');
+      toast.error(err.response?.data?.detail || 'Failed to update role');
     } finally {
       setCreating(false);
+      setPendingRoleChange(null);
     }
   };
 
   const removeMember = async (userId) => {
-    if (!confirm('Are you sure you want to remove this member from the household?')) {
-      return;
-    }
+    // Set pending member and open dialog
+    setPendingRemoveMember(userId);
+    setRemoveMemberDialogOpen(true);
+  };
+
+  const executeRemoveMember = async () => {
+    if (!pendingRemoveMember) return;
+    const userId = pendingRemoveMember;
 
     setCreating(true);
     try {
@@ -1407,24 +1441,29 @@ function HouseholdSection() {
         credentials: 'include'
       });
       if (res.ok) {
-        alert('Member removed successfully');
+        toast.success('Member removed successfully');
         fetchMembers();
       } else {
         const err = await res.json();
-        alert('Failed to remove member: ' + (err.detail || res.statusText));
+        toast.error('Failed to remove member: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('removeMember error', e);
-      alert('Failed to remove member');
+      toast.error('Failed to remove member');
     } finally {
       setCreating(false);
+      setPendingRemoveMember(null);
     }
   };
 
   const leaveHousehold = async (householdId) => {
-    if (!confirm('Are you sure you want to leave this household? You will lose access to all reptiles in this household.')) {
-      return;
-    }
+    // Open dialog for leave confirmation
+    setLeaveHouseholdDialogOpen(true);
+  };
+
+  const executeLeaveHousehold = async () => {
+    if (!selectedHousehold) return;
+    const householdId = selectedHousehold.id;
 
     setCreating(true);
     try {
@@ -1433,7 +1472,7 @@ function HouseholdSection() {
         credentials: 'include'
       });
       if (res.ok) {
-        alert('You have left the household');
+        toast.success('You have left the household');
         // Refresh households list
         const householdsRes = await fetch('/api/households/me', { credentials: 'include' });
         if (householdsRes.ok) {
@@ -1443,20 +1482,25 @@ function HouseholdSection() {
         }
       } else {
         const err = await res.json();
-        alert('Failed to leave household: ' + (err.detail || res.statusText));
+        toast.error('Failed to leave household: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('leaveHousehold error', e);
-      alert('Failed to leave household');
+      toast.error('Failed to leave household');
     } finally {
       setCreating(false);
     }
   };
 
   const deleteInvitation = async (invitationId) => {
-    if (!confirm('Are you sure you want to revoke this invitation?')) {
-      return;
-    }
+    // Set pending invite and open dialog
+    setPendingRevokeInvite(invitationId);
+    setRevokeInviteDialogOpen(true);
+  };
+
+  const executeRevokeInvite = async () => {
+    if (!pendingRevokeInvite) return;
+    const invitationId = pendingRevokeInvite;
 
     setCreating(true);
     try {
@@ -1465,17 +1509,18 @@ function HouseholdSection() {
         credentials: 'include'
       });
       if (res.ok) {
-        alert('Invitation revoked successfully');
+        toast.success('Invitation revoked successfully');
         fetchInvitations();
       } else {
         const err = await res.json();
-        alert('Failed to revoke invitation: ' + (err.detail || res.statusText));
+        toast.error('Failed to revoke invitation: ' + (err.detail || res.statusText));
       }
     } catch (e) {
       console.error('deleteInvitation error', e);
-      alert('Failed to revoke invitation');
+      toast.error('Failed to revoke invitation');
     } finally {
       setCreating(false);
+      setPendingRevokeInvite(null);
     }
   };
 
@@ -1896,6 +1941,74 @@ function HouseholdSection() {
           )}
         </>
       )}
+
+      {/* AlertDialog for role change confirmation */}
+      <AlertDialog open={memberRoleDialogOpen} onOpenChange={setMemberRoleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Member Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change this member's role to {pendingRoleChange?.newRole}?
+              This will affect their permissions in the household.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingRoleChange(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeRoleChange}>Change Role</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for remove member confirmation */}
+      <AlertDialog open={removeMemberDialogOpen} onOpenChange={setRemoveMemberDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this member from the household?
+              They will lose access to all reptiles and data in this household.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingRemoveMember(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeRemoveMember}>Remove Member</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for leave household confirmation */}
+      <AlertDialog open={leaveHouseholdDialogOpen} onOpenChange={setLeaveHouseholdDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Household</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave this household?
+              You will lose access to all reptiles in this household.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeLeaveHousehold}>Leave Household</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for revoke invitation confirmation */}
+      <AlertDialog open={revokeInviteDialogOpen} onOpenChange={setRevokeInviteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revoke this invitation?
+              Anyone with this invite code will no longer be able to join the household.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingRevokeInvite(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeRevokeInvite}>Revoke Invitation</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
