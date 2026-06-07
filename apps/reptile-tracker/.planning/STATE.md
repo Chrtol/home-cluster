@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: UX Polish
 status: executing
-stopped_at: Phase 33 Plan 05 complete — Page dialog replacement
-last_updated: "2026-06-07T17:16:00Z"
+stopped_at: Phase 33 Plan 06 complete — Wiring celebrations and TaskCounterOverlay
+last_updated: "2025-06-07T18:30:00Z"
 last_activity: 2026-06-07
 progress:
   total_phases: 9
@@ -239,12 +239,12 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2026-06-07
-**Action:** Phase 33 Plan 05 execution (Page dialog replacement)
-**Stopped at:** Phase 33 Plan 05 complete — AlertDialog and toast for 12 page components
-**Resume from:** `.planning/phases/33-ux-polish/33-05-SUMMARY.md`
+**Last session:** 2025-06-07
+**Action:** Phase 33 Plan 06 execution (Wiring celebrations and TaskCounterOverlay)
+**Stopped at:** Phase 33 Plan 06 complete — Celebrations wired into all log submission flows
+**Resume from:** `.planning/phases/33-ux-polish/33-06-SUMMARY.md`
 
-**Next step:** Phase 33 complete — proceed with next phase or milestone
+**Next step:** Continue with Phase 33 Plan 07 or next phase
 
 ## Phase 33 Plan Summary (UX Polish)
 
@@ -257,6 +257,7 @@ For future milestones:
 - **33-03 (Wave 2):** Settings AlertDialog consolidation - COMPLETE (no-op, already done in 33-02)
 - **33-04 (Wave 3):** Component dialog replacement - COMPLETE (8 components: PhotoGallery, PhotoLightbox, NotificationTemplatesTab, ChannelsTab, ScheduleNotificationsTab, FeedingRotationManager, EditModeControls, AvatarCropper)
 - **33-05 (Wave 4):** Page dialog replacement - COMPLETE (12 pages: ReptileDetail, ScheduleTemplates, ScheduleTemplateForm, ScheduleInstanceDetail, FeedingLog, MistingLog, HealthLog, FoodManagement, Calendar, NotificationHistory, SupplementRotations, HouseholdSettings)
+- **33-06 (Wave 5):** Wiring celebrations + TaskCounterOverlay - COMPLETE (App.jsx, QuickLogForm, CreateLogModal, FeedingLog, MistingLog, HealthLog, Settings)
 
 **Key accomplishments in 33-02:**
 
@@ -272,6 +273,9 @@ For future milestones:
 | Use AlertDialog for all household destructive actions | 33-02 | These actions affect other users and data | Consistent confirmation UX |
 | Use ConfirmButton for display settings reset | 33-02 | Local-only settings, quick action | Inline confirmation without modal |
 | Toast variants by message type | 33-02 | error/success/warning/info match semantic meaning | Consistent feedback patterns |
+| Trigger celebration after API success | 33-06 | Ensures count accuracy from backend | Counter reflects actual task completion |
+| Celebration errors silently caught | 33-06 | Avoid blocking form submission flow | UX not disrupted by streak API failures |
+| Confetti synchronized with overlay visibility | 33-06 | Both effects fire together via useEffect | Cohesive celebration experience |
 
 ## Phase 26 Plan Summary
 
