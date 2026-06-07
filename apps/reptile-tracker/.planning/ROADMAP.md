@@ -751,9 +751,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 32-01-PLAN.md — Backend fixes: add missing and_ import, fix validation error display (Wave 1)
-- [ ] 32-02-PLAN.md — Form pre-fill fixes: current time, default food, dashboard refresh (Wave 2)
-- [ ] 32-03-PLAN.md — Profile preview panel: Sheet-based layout editing for non-active profiles (Wave 2)
+- [x] 32-01-PLAN.md — Backend fixes: add missing and_ import, fix validation error display (Wave 1)
+- [x] 32-02-PLAN.md — Form pre-fill fixes: current time, default food, dashboard refresh (Wave 2)
+- [x] 32-03-PLAN.md — Profile preview panel: Sheet-based layout editing for non-active profiles (Wave 2)
 
 ### Phase 33: UX Polish & Feature Completion
 
@@ -803,50 +803,30 @@ Plans:
 - Backend import API (validation, conflict detection, data insertion)
 - Frontend wizard UI for guided export/import flows
 - Photo/media handling for exports
+- Transfer mode for cross-instance reptile ownership changes
 
-**Export Flow:**
-1. **User selection**: Export your own user or other users (requires appropriate permissions)
-2. **Reptile selection**: Multi-select which reptiles to export
-3. **Data inclusion**: All data associated with selected reptiles:
-   - Reptile detail page info (name, species, morph, birth date, etc.)
-   - Statistics and logs (feedings, health records, measurements)
-   - Notification settings
-   - Schedules and supplement rotations
-   - Photos and avatar
-4. **Format**: JSON or other portable format (consider compression for photos)
+**Plans**: 6 plans in 5 waves
 
-**Import Flow:**
-1. **Source selection**: Upload file or receive from another instance
-2. **Household decision**:
-   - Create a new household, OR
-   - Choose an existing household to join
-3. **Conflict resolution**: Handle duplicate reptile names, user accounts, etc.
-4. **Validation**: Preview what will be imported before committing
-
-**Future consideration — Vet Export:**
-A separate "vet export" feature (printable 1-page summary for veterinary visits) is planned for a future phase. Design decision needed: should vet export share infrastructure with this export system (same entry point, different export "type") or be completely separate? Key differences:
-- This phase: Full data dump (JSON) for migration/backup
-- Vet export: Curated, human-readable summary (printable PDF/HTML)
-
-Consider building export infrastructure in a way that could support multiple export formats/types later.
+Plans:
+- [ ] 34-01-PLAN.md — Database models and schemas (TransferStatus enum, PendingExport model, export/import schemas) (Wave 1)
+- [ ] 34-02-PLAN.md — Export service and Celery task (DataCollector, JSON/ZIP serializers, generate_export_task) (Wave 2)
+- [ ] 34-03-PLAN.md — Import service (parse, preview, commit with atomic transaction) (Wave 2)
+- [ ] 34-04-PLAN.md — API router endpoints (export, import, transfer management) (Wave 3)
+- [ ] 34-05-PLAN.md — Frontend wizards and profile menu (ExportWizard, ImportWizard, ProfileMenuDropdown) (Wave 4)
+- [ ] 34-06-PLAN.md — Transfer badge, Settings section, and human verification (Wave 5)
 
 **Success Criteria** (what must be TRUE):
   1. Backend export API generates complete data package for selected reptiles
   2. Backend import API validates and inserts data with transaction safety
-  3. User can access export wizard from settings or profile menu
-  4. Export wizard allows selecting specific users (with permission check)
-  5. Export wizard allows multi-selecting reptiles to include
-  6. Exported file contains all reptile data: info, logs, schedules, rotations, notifications, photos
-  7. User can import from uploaded file
-  8. Import wizard offers choice: new household or existing household
-  9. Import shows preview of what will be created before committing
-  10. Duplicate/conflict handling shows clear options to user
-  11. Import completes without data loss or corruption
-
-**Plans**: TBD
-
-Plans:
-- [ ] 34-01: TBD (run /gsd:plan-phase 34 to break down)
+  3. User can access export wizard from profile menu dropdown
+  4. Export wizard allows multi-selecting reptiles to include
+  5. Exported file contains all reptile data: info, logs, schedules, rotations, notifications, photos
+  6. User can import from uploaded file
+  7. Import wizard offers choice: new household or existing household
+  8. Import shows preview of what will be created before committing
+  9. Duplicate/conflict handling auto-renames with "(imported)" suffix
+  10. Import completes without data loss or corruption
+  11. Transfer mode marks reptiles as pending until manually completed
 
 ## Progress
 
@@ -888,4 +868,4 @@ Plans:
 | 31. Improved Template Editor | v1.5 | 0/1 | Future | - |
 | 32. Bug Fixes | v1.6 | 3/3 | Complete | 2026-06-07 |
 | 33. UX Polish & Feature Completion | v1.6 | 8/8 | Complete | 2026-06-07 |
-| 34. Import/Export Wizard | v1.6 | 0/1 | Future | - |
+| 34. Import/Export System | v1.6 | 0/6 | Planning | - |
