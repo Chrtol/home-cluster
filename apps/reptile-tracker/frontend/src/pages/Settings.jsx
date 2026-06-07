@@ -5,6 +5,7 @@ import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTime
 import ProfileManager from '../components/ProfileManager';
 import StatisticsPreviewPanel from '../components/StatisticsPreviewPanel';
 import { useCelebrations } from '../contexts/CelebrationContext';
+import { useConfetti } from '../hooks/useConfetti';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
@@ -94,7 +95,8 @@ function PreferencesTab() {
   const [darkMode, setDarkMode] = useState(true);
   const [showFavoritesFirst, setShowFavoritesFirst] = useState(true);
   const [success, setSuccess] = useState('');
-  const { celebrationsEnabled, toggleCelebrations, prefersReducedMotion } = useCelebrations();
+  const { celebrationsEnabled, toggleCelebrations, prefersReducedMotion, triggerCelebration } = useCelebrations();
+  const { triggerSubtle } = useConfetti();
 
   useEffect(() => {
     // Load settings from localStorage
@@ -237,6 +239,18 @@ function PreferencesTab() {
                   <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${celebrationsEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                 </div>
               </button>
+              {celebrationsEnabled && (
+                <button
+                  onClick={() => {
+                    triggerCelebration(99, 100);
+                    triggerSubtle();
+                  }}
+                  className="mt-2 px-4 py-2 text-sm rounded-lg border border-violet-300 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors flex items-center gap-2"
+                >
+                  <PartyPopper size={16} />
+                  Test Celebrations
+                </button>
+              )}
             </div>
 
             {/* Time Format */}
