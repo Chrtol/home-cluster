@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Star, Edit2, Trash2, Download } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import AvatarCropper from './AvatarCropper';
 import { formatDateTime } from '../utils/dateFormatting';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 /**
  * PhotoLightbox component
@@ -35,6 +46,7 @@ const PhotoLightbox = ({
   const [selectedCategory, setSelectedCategory] = useState('general');
   const [imageLoading, setImageLoading] = useState(true);
   const [showCropper, setShowCropper] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const currentPhoto = photos[currentIndex];
 
@@ -126,16 +138,16 @@ const PhotoLightbox = ({
     } catch (err) {
       console.error('Error setting avatar:', err);
       console.error('Backend error details:', err.response?.data);
-      alert(`Failed to set avatar: ${err.response?.data?.detail || err.message}`);
+      toast.error(`Failed to set avatar: ${err.response?.data?.detail || err.message}`);
     }
   };
 
-  const handleDeletePhoto = async () => {
-    if (!currentPhoto) return;
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirm('Are you sure you want to delete this photo?')) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!currentPhoto) return;
 
     try {
       await axios.delete(`/api/photos/${currentPhoto.id}`);
@@ -143,6 +155,8 @@ const PhotoLightbox = ({
       if (onPhotoDeleted) {
         onPhotoDeleted(currentPhoto.id);
       }
+
+      toast.success('Photo deleted');
 
       // Close lightbox if this was the last photo
       if (photos.length === 1) {
@@ -155,7 +169,9 @@ const PhotoLightbox = ({
       }
     } catch (err) {
       console.error('Error deleting photo:', err);
-      alert(err.response?.data?.detail || 'Failed to delete photo');
+      toast.error(err.response?.data?.detail || 'Failed to delete photo');
+    } finally {
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -179,9 +195,10 @@ const PhotoLightbox = ({
       if (onPhotoUpdated) {
         onPhotoUpdated(response.data);
       }
+      toast.success('Photo updated');
     } catch (err) {
       console.error('Error updating photo:', err);
-      alert('Failed to update photo');
+      toast.error('Failed to update photo');
     }
   };
 
@@ -369,7 +386,7 @@ const PhotoLightbox = ({
               Download
             </button>
             <button
-              onClick={handleDeletePhoto}
+              onClick={handleDeleteClick}
               className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
             >
               <Trash2 size={16} />
@@ -402,6 +419,24 @@ const PhotoLightbox = ({
           }
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Photo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The photo will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

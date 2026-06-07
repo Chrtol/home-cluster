@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Trash2, Star, Edit2, Upload, Download } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import AvatarCropper from './AvatarCropper';
 import { formatDate } from '../utils/dateFormatting';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 /**
  * PhotoGallery component
@@ -43,6 +54,8 @@ const PhotoGallery = ({
   const [captionText, setCaptionText] = useState('');
   const [editingCategory, setEditingCategory] = useState('general');
   const [cropperPhoto, setCropperPhoto] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeletePhoto, setPendingDeletePhoto] = useState(null);
 
   const categories = [
     { value: 'all', label: 'All Photos' },
@@ -124,25 +137,32 @@ const PhotoGallery = ({
     } catch (err) {
       console.error('Error setting avatar:', err);
       console.error('Backend error details:', err.response?.data);
-      alert(`Failed to set avatar: ${err.response?.data?.detail || err.message}`);
+      toast.error(`Failed to set avatar: ${err.response?.data?.detail || err.message}`);
     }
   };
 
-  const handleDeletePhoto = async (photoId) => {
-    if (!confirm('Are you sure you want to delete this photo?')) {
-      return;
-    }
+  const handleDeletePhotoClick = (photoId) => {
+    setPendingDeletePhoto(photoId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeletePhoto) return;
 
     try {
-      await axios.delete(`/api/photos/${photoId}`);
-      setPhotos(photos.filter(p => p.id !== photoId));
+      await axios.delete(`/api/photos/${pendingDeletePhoto}`);
+      setPhotos(photos.filter(p => p.id !== pendingDeletePhoto));
 
       if (onPhotoDeleted) {
-        onPhotoDeleted(photoId);
+        onPhotoDeleted(pendingDeletePhoto);
       }
+      toast.success('Photo deleted');
     } catch (err) {
       console.error('Error deleting photo:', err);
-      alert(err.response?.data?.detail || 'Failed to delete photo');
+      toast.error(err.response?.data?.detail || 'Failed to delete photo');
+    } finally {
+      setDeleteDialogOpen(false);
+      setPendingDeletePhoto(null);
     }
   };
 
@@ -165,9 +185,10 @@ const PhotoGallery = ({
       if (onPhotoUpdated) {
         onPhotoUpdated(response.data);
       }
+      toast.success('Photo updated');
     } catch (err) {
       console.error('Error updating photo:', err);
-      alert('Failed to update photo');
+      toast.error('Failed to update photo');
     }
   };
 
@@ -298,7 +319,7 @@ const PhotoGallery = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeletePhoto(photo.id);
+                      handleDeletePhotoClick(photo.id);
                     }}
                     className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded flex items-center justify-center gap-1 transition-colors"
                     title="Delete photo"
@@ -401,6 +422,26 @@ const PhotoGallery = ({
           }
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Photo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The photo will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeletePhoto(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
