@@ -10,11 +10,16 @@ const CelebrationContext = createContext(null);
  * - Backend sync (stored in user profile for cross-device)
  * - prefers-reduced-motion detection (auto-disables by default)
  * - User override capability (can enable even with reduced-motion)
+ * - Task counter overlay state for coordinated celebrations
  */
 export function CelebrationProvider({ children }) {
   const [celebrationsEnabled, setCelebrationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Task counter overlay state
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [counterState, setCounterState] = useState({ previousCount: 0, newCount: 0 });
 
   // Detect prefers-reduced-motion
   useEffect(() => {
@@ -77,12 +82,31 @@ export function CelebrationProvider({ children }) {
     }
   }, []);
 
+  // Trigger task counter overlay celebration
+  // Consumer components will also call useConfetti.triggerSubtle() for synchronized confetti
+  const triggerCelebration = useCallback((previousCount, newCount) => {
+    if (!celebrationsEnabled) return;
+
+    setOverlayVisible(true);
+    setCounterState({ previousCount, newCount });
+  }, [celebrationsEnabled]);
+
+  // Dismiss the overlay
+  const dismissOverlay = useCallback(() => {
+    setOverlayVisible(false);
+  }, []);
+
   const value = {
     celebrationsEnabled,
     loading,
     prefersReducedMotion,
     toggleCelebrations,
     setCelebrations,
+    // Task counter overlay state and methods
+    overlayVisible,
+    counterState,
+    triggerCelebration,
+    dismissOverlay,
   };
 
   return (
