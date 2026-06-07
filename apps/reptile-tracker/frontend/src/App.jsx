@@ -29,12 +29,39 @@ import SupplementRotations from './pages/SupplementRotations';
 import NotificationHistory from './pages/NotificationHistory';
 import Notifications from './pages/Notifications';
 import ActivityHistory from './pages/ActivityHistory';
-import { CelebrationProvider } from './contexts/CelebrationContext';
+import { CelebrationProvider, useCelebrations } from './contexts/CelebrationContext';
+import TaskCounterOverlay from './components/TaskCounterOverlay';
+import { useConfetti } from './hooks/useConfetti';
 import { CreateLogModalProvider } from './contexts/CreateLogModalContext';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 axios.defaults.withCredentials = true;
+
+/**
+ * CelebrationOverlayManager - Renders TaskCounterOverlay and triggers confetti
+ * Must be inside CelebrationProvider to access context
+ */
+function CelebrationOverlayManager() {
+  const { overlayVisible, counterState, dismissOverlay } = useCelebrations();
+  const { triggerSubtle } = useConfetti();
+
+  // Trigger confetti when overlay becomes visible (synchronized per D-14)
+  useEffect(() => {
+    if (overlayVisible) {
+      triggerSubtle();
+    }
+  }, [overlayVisible, triggerSubtle]);
+
+  return (
+    <TaskCounterOverlay
+      isVisible={overlayVisible}
+      previousCount={counterState.previousCount}
+      newCount={counterState.newCount}
+      onDismiss={dismissOverlay}
+    />
+  );
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -160,6 +187,7 @@ function App() {
 
   return (
     <CelebrationProvider>
+      <CelebrationOverlayManager />
       <Toaster
         position="top-center"
         theme="dark"
