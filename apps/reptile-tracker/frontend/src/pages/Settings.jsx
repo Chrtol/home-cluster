@@ -43,6 +43,7 @@ import {
   isDefaultHousehold
 } from '../utils/householdSettings';
 import { DatePicker } from '@/components/ui/date-picker';
+import PendingTransfersSection from '../components/import-export/PendingTransfersSection';
 
 export default function Settings() {
   return (
@@ -70,7 +71,10 @@ export default function Settings() {
         </TabsList>
 
         <TabsContent value="preferences">
-          <PreferencesTab />
+          <div className="space-y-6">
+            <PendingTransfersSection />
+            <PreferencesTab />
+          </div>
         </TabsContent>
         <TabsContent value="streak">
           <StreakVacationTab />
@@ -1244,7 +1248,7 @@ function HouseholdSection() {
 
     setCreating(true);
     try {
-      const res = await fetch('/api/households/', {
+      const res = await fetch('/api/households', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
