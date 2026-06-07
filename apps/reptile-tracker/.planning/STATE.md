@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.6
-milestone_name: UX Polish
+milestone_name: Bug Fixes & Polish
 status: executing
-stopped_at: Phase 33 Plan 06 complete — Wiring celebrations and TaskCounterOverlay
-last_updated: "2025-06-07T18:30:00Z"
+stopped_at: Phase 34 UI-SPEC approved — Import/Export System
+last_updated: "2026-06-07T21:30:00Z"
 last_activity: 2026-06-07
 progress:
-  total_phases: 9
+  total_phases: 3
   completed_phases: 2
-  total_plans: 29
-  completed_plans: 29
-  percent: 100
+  total_plans: 14
+  completed_plans: 11
+  percent: 78
 ---
 
 # Reptile Tracker - Project State
@@ -23,15 +23,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.6 Phase 32 — Bug Fixes (context gathered, ready for planning)
+**Current focus:** v1.6 Phase 34 — Import/Export System (context gathered, ready for planning)
 
 ## Current Position
 
-**Phase:** v1.4 Complete (Phases 26, 27, 28 all done)
-**Plan:** Milestone complete
-**Status:** Ready to execute
+**Phase:** 34 (Import/Export System) - UI-SPEC APPROVED
+**Plan:** UI design contract approved, ready for planning
+**Status:** 29 implementation decisions + UI-SPEC approved
 **Last activity:** 2026-06-07
-**Progress:** ████████ (100% - all phases complete)
+**Progress:** ██████░░ (66% - 2/3 v1.6 phases complete)
 
 **Completed Milestones:**
 
@@ -41,7 +41,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 - v1.4 Schedule Type Alignment & UX Polish (Phases 26-28) — 2026-02-20
 
-**Next:** v1.5 Notification Template UI Improvements (Phases 29-31)
+**Next:** `/gsd:plan-phase 34` to create implementation plans (UI-SPEC available as design context)
 
 ## Recent Completions
 
@@ -239,14 +239,14 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2025-06-07
-**Action:** Phase 33 Plan 06 execution (Wiring celebrations and TaskCounterOverlay)
-**Stopped at:** Phase 33 Plan 06 complete — Celebrations wired into all log submission flows
-**Resume from:** `.planning/phases/33-ux-polish/33-06-SUMMARY.md`
+**Last session:** 2026-06-07
+**Action:** Phase 34 UI-SPEC approved — 6/6 dimensions passed
+**Stopped at:** Phase 34 UI-SPEC approved — Import/Export System
+**Resume from:** `.planning/phases/34-import-export/34-UI-SPEC.md`
 
-**Next step:** Continue with Phase 33 Plan 07 or next phase
+**Next step:** `/gsd:plan-phase 34` to create implementation plans (with UI-SPEC as design context)
 
-## Phase 33 Plan Summary (UX Polish)
+## Phase 33 Plan Summary (UX Polish) - COMPLETE
 
 **Goal:** Replace browser-native dialogs with in-app components for consistent UX.
 
@@ -258,6 +258,8 @@ For future milestones:
 - **33-04 (Wave 3):** Component dialog replacement - COMPLETE (8 components: PhotoGallery, PhotoLightbox, NotificationTemplatesTab, ChannelsTab, ScheduleNotificationsTab, FeedingRotationManager, EditModeControls, AvatarCropper)
 - **33-05 (Wave 4):** Page dialog replacement - COMPLETE (12 pages: ReptileDetail, ScheduleTemplates, ScheduleTemplateForm, ScheduleInstanceDetail, FeedingLog, MistingLog, HealthLog, FoodManagement, Calendar, NotificationHistory, SupplementRotations, HouseholdSettings)
 - **33-06 (Wave 5):** Wiring celebrations + TaskCounterOverlay - COMPLETE (App.jsx, QuickLogForm, CreateLogModal, FeedingLog, MistingLog, HealthLog, Settings)
+- **33-07 (Wave 6):** Human verification checkpoint - COMPLETE (dialogs, toasts, celebrations verified)
+- **33-08 (Wave 6):** UAT gap closure - COMPLETE (ConfirmButton red styling, Settings.jsx toast migration)
 
 **Key accomplishments in 33-02:**
 
@@ -389,4 +391,4 @@ For future milestones:
 
 ---
 
-**Project Status:** v1.4 milestone complete (2026-02-20). Ready for v1.5 Notification Template UI Improvements (Phases 29-31).
+**Project Status:** v1.6 Phase 34 context gathered (2026-06-07). Next: `/gsd:plan-phase 34` for Import/Export System implementation plans.
