@@ -634,10 +634,12 @@ export default function HealthLog() {
           if (celebrationsEnabled) {
             try {
               const streakRes = await axios.get('/api/user-streaks/me');
-              const totalTasks = streakRes.data.total_tasks_completed || 0;
-              triggerCelebration(totalTasks - 1, totalTasks);
+              const currentStreak = streakRes.data.current_streak || 1;
+              const prevCount = Math.max(0, currentStreak - 1);
+              triggerCelebration(prevCount, currentStreak);
             } catch (err) {
               console.debug('Could not fetch streak for celebration:', err);
+              triggerCelebration(0, 1);
             }
           }
 
@@ -666,10 +668,12 @@ export default function HealthLog() {
             if (celebrationsEnabled) {
               try {
                 const streakRes = await axios.get('/api/user-streaks/me');
-                const totalTasks = streakRes.data.total_tasks_completed || 0;
-                triggerCelebration(totalTasks - 1, totalTasks);
+                const currentStreak = streakRes.data.current_streak || 1;
+                const prevCount = Math.max(0, currentStreak - 1);
+                triggerCelebration(prevCount, currentStreak);
               } catch (err) {
                 console.debug('Could not fetch streak for celebration:', err);
+                triggerCelebration(0, 1);
               }
             }
 
@@ -707,10 +711,12 @@ export default function HealthLog() {
             if (celebrationsEnabled) {
               try {
                 const streakRes = await axios.get('/api/user-streaks/me');
-                const totalTasks = streakRes.data.total_tasks_completed || 0;
-                triggerCelebration(totalTasks - 1, totalTasks);
+                const currentStreak = streakRes.data.current_streak || 1;
+                const prevCount = Math.max(0, currentStreak - 1);
+                triggerCelebration(prevCount, currentStreak);
               } catch (err) {
                 console.debug('Could not fetch streak for celebration:', err);
+                triggerCelebration(0, 1);
               }
             }
 
@@ -740,10 +746,12 @@ export default function HealthLog() {
             if (celebrationsEnabled) {
               try {
                 const streakRes = await axios.get('/api/user-streaks/me');
-                const totalTasks = streakRes.data.total_tasks_completed || 0;
-                triggerCelebration(totalTasks - 1, totalTasks);
+                const currentStreak = streakRes.data.current_streak || 1;
+                const prevCount = Math.max(0, currentStreak - 1);
+                triggerCelebration(prevCount, currentStreak);
               } catch (err) {
                 console.debug('Could not fetch streak for celebration:', err);
+                triggerCelebration(0, 1);
               }
             }
 
@@ -773,10 +781,12 @@ export default function HealthLog() {
           if (celebrationsEnabled) {
             try {
               const streakRes = await axios.get('/api/user-streaks/me');
-              const totalTasks = streakRes.data.total_tasks_completed || 0;
-              triggerCelebration(totalTasks - 1, totalTasks);
+              const currentStreak = streakRes.data.current_streak || 1;
+              const prevCount = Math.max(0, currentStreak - 1);
+              triggerCelebration(prevCount, currentStreak);
             } catch (err) {
               console.debug('Could not fetch streak for celebration:', err);
+              triggerCelebration(0, 1);
             }
           }
 
@@ -803,10 +813,12 @@ export default function HealthLog() {
           if (celebrationsEnabled) {
             try {
               const streakRes = await axios.get('/api/user-streaks/me');
-              const totalTasks = streakRes.data.total_tasks_completed || 0;
-              triggerCelebration(totalTasks - 1, totalTasks);
+              const currentStreak = streakRes.data.current_streak || 1;
+              const prevCount = Math.max(0, currentStreak - 1);
+              triggerCelebration(prevCount, currentStreak);
             } catch (err) {
               console.debug('Could not fetch streak for celebration:', err);
+              triggerCelebration(0, 1);
             }
           }
 
@@ -832,10 +844,12 @@ export default function HealthLog() {
           if (celebrationsEnabled) {
             try {
               const streakRes = await axios.get('/api/user-streaks/me');
-              const totalTasks = streakRes.data.total_tasks_completed || 0;
-              triggerCelebration(totalTasks - 1, totalTasks);
+              const currentStreak = streakRes.data.current_streak || 1;
+              const prevCount = Math.max(0, currentStreak - 1);
+              triggerCelebration(prevCount, currentStreak);
             } catch (err) {
               console.debug('Could not fetch streak for celebration:', err);
+              triggerCelebration(0, 1);
             }
           }
 

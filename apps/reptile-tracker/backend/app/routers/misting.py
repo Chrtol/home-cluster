@@ -25,7 +25,11 @@ async def list_all_misting_logs(
     """List misting logs with optional filters (for dashboard Recent Activity)"""
     query = (
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile), selectinload(MistingLog.logged_by))
+        .options(
+            selectinload(MistingLog.reptile),
+            selectinload(MistingLog.logged_by),
+            selectinload(MistingLog.schedule_completion)
+        )
         .order_by(MistingLog.misted_at.desc())
     )
 
@@ -54,13 +58,14 @@ async def list_misting_logs(
     db: AsyncSession = Depends(get_db),
 ):
     """List all misting logs for a reptile"""
-    from sqlalchemy.orm import selectinload
-    from app.models import Reptile
-
     await check_reptile_access(db, current_user, reptile_id, AccessLevel.VIEWER)
     result = await db.execute(
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile), selectinload(MistingLog.logged_by))
+        .options(
+            selectinload(MistingLog.reptile),
+            selectinload(MistingLog.logged_by),
+            selectinload(MistingLog.schedule_completion)
+        )
         .where(MistingLog.reptile_id == reptile_id)
         .order_by(MistingLog.misted_at.desc())
     )
@@ -74,11 +79,13 @@ async def get_misting_log(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific misting log"""
-    from sqlalchemy.orm import selectinload
-
     result = await db.execute(
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile), selectinload(MistingLog.logged_by))
+        .options(
+            selectinload(MistingLog.reptile),
+            selectinload(MistingLog.logged_by),
+            selectinload(MistingLog.schedule_completion)
+        )
         .where(MistingLog.id == log_id)
     )
     log = result.scalar_one_or_none()
@@ -156,7 +163,11 @@ async def update_misting_log(
     """Update a misting log"""
     result = await db.execute(
         select(MistingLog)
-        .options(selectinload(MistingLog.reptile))
+        .options(
+            selectinload(MistingLog.reptile),
+            selectinload(MistingLog.logged_by),
+            selectinload(MistingLog.schedule_completion)
+        )
         .where(MistingLog.id == log_id)
     )
     log = result.scalar_one_or_none()

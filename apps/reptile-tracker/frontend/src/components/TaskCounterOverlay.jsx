@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Flame } from "lucide-react"
 
 // Encouraging messages for task completion celebration
 const ENCOURAGING_MESSAGES = [
@@ -48,9 +49,12 @@ export function TaskCounterOverlay({
       return
     }
 
+    // Initialize displayCount to previousCount immediately when overlay opens
+    // This prevents showing stale value (0) on first render
+    setDisplayCount(previousCount)
+
     // If counts are the same, no animation needed
     if (previousCount === newCount) {
-      setDisplayCount(newCount)
       return
     }
 
@@ -109,6 +113,11 @@ export function TaskCounterOverlay({
             className="bg-card rounded-xl p-8 shadow-2xl text-center"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Fire icon for visual consistency with streak badge */}
+            <div className="flex justify-center mb-2">
+              <Flame className="w-10 h-10 text-orange-500" />
+            </div>
+
             {/* Counter display */}
             <motion.div
               key={displayCount}
@@ -121,7 +130,7 @@ export function TaskCounterOverlay({
 
             {/* Tasks completed label */}
             <div className="text-lg text-muted-foreground mt-2">
-              tasks completed
+              task streak
             </div>
 
             {/* Encouraging message */}

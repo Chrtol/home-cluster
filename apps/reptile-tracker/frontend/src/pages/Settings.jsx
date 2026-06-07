@@ -94,7 +94,6 @@ function PreferencesTab() {
   const [firstDayOfWeek, setFirstDayOfWeek] = useState('sunday');
   const [darkMode, setDarkMode] = useState(true);
   const [showFavoritesFirst, setShowFavoritesFirst] = useState(true);
-  const [success, setSuccess] = useState('');
   const { celebrationsEnabled, toggleCelebrations, prefersReducedMotion, triggerCelebration } = useCelebrations();
   const { triggerSubtle } = useConfetti();
 
@@ -159,12 +158,10 @@ function PreferencesTab() {
         show_favorites_first: showFavoritesFirst
       });
 
-      setSuccess('Settings saved successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Settings saved successfully!');
     } catch (err) {
       console.error('Error saving settings:', err);
-      setSuccess('Settings saved locally, but failed to sync to server');
-      setTimeout(() => setSuccess(''), 5000);
+      toast.warning('Settings saved locally, but failed to sync to server');
     }
   };
 
@@ -174,12 +171,6 @@ function PreferencesTab() {
 
   return (
     <div>
-      {success && (
-        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
-          {success}
-        </div>
-      )}
-
       <div className="card space-y-6">
         <div>
           <h2 className="text-xl font-semibold mb-4 text-foreground">General Preferences</h2>
@@ -361,7 +352,6 @@ function DisplayTab() {
   const [dashboardCards, setDashboardCards] = useState([]);
   const [statisticsCharts, setStatisticsCharts] = useState([]);
   const [chartSettings, setChartSettings] = useState(null);
-  const [success, setSuccess] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
   const [reptiles, setReptiles] = useState([]);
   const [selectedReptileId, setSelectedReptileId] = useState(null); // null = global settings
@@ -573,8 +563,7 @@ function DisplayTab() {
   };
 
   const showSuccess = (message = 'Settings saved successfully!') => {
-    setSuccess(message);
-    setTimeout(() => setSuccess(''), 3000);
+    toast.success(message);
   };
 
   // Simple drag and drop handlers (no external library needed)
@@ -616,12 +605,6 @@ function DisplayTab() {
 
   return (
     <div className="space-y-6">
-      {success && (
-        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
-          {success}
-        </div>
-      )}
-
       {/* Profile Manager */}
       <ProfileManager onProfileChange={handleProfileChange} />
 
@@ -754,7 +737,6 @@ function StreakVacationTab() {
   const [loading, setLoading] = useState(true);
   const [vacationStart, setVacationStart] = useState('');
   const [vacationEnd, setVacationEnd] = useState('');
-  const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [freezeCancelDialogOpen, setFreezeCancelDialogOpen] = useState(false);
   const [pendingCancelFreezeId, setPendingCancelFreezeId] = useState(null);
@@ -836,8 +818,7 @@ function StreakVacationTab() {
   const toggleManualFreeze = async () => {
     try {
       await axios.post('/api/user-streaks/me/freeze');
-      setSuccess('Freeze toggled successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Freeze toggled successfully!');
       fetchStreakData();
     } catch (err) {
       console.error('Failed to toggle freeze:', err);
@@ -868,8 +849,7 @@ function StreakVacationTab() {
         start_date: vacationStart,
         end_date: vacationEnd
       });
-      setSuccess('Vacation freeze scheduled successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Vacation freeze scheduled successfully!');
       setVacationStart('');
       setVacationEnd('');
       fetchStreakData();
@@ -893,8 +873,7 @@ function StreakVacationTab() {
 
     try {
       await axios.delete(`/api/user-streaks/me/freeze/${freezeId}`);
-      setSuccess('Scheduled freeze cancelled successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Scheduled freeze cancelled successfully!');
       fetchStreakData();
       fetchScheduledFreezes();
     } catch (err) {
@@ -917,12 +896,6 @@ function StreakVacationTab() {
 
   return (
     <div>
-      {success && (
-        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg">
-          {success}
-        </div>
-      )}
-
       {error && (
         <div className="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg">
           {error}

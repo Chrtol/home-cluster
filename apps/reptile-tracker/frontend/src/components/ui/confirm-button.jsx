@@ -60,9 +60,9 @@ export function ConfirmButton({
     }
   }
 
-  // Amber styling when in confirmation state
+  // Red styling when in confirmation state
   const confirmingClasses = confirming
-    ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600"
+    ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
     : ""
 
   return (
