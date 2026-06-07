@@ -14,6 +14,16 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import PageHeader from '../components/PageHeader';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Validation schema
 const mistingSchema = z.object({
@@ -36,6 +46,9 @@ export default function MistingLog() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Initialize form
   const form = useForm({
@@ -174,9 +187,12 @@ export default function MistingLog() {
     }
   }, [id, mode, reptiles, reptileId, form]);
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this misting log?')) return;
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
 
+  const executeDelete = async () => {
+    setDeleteDialogOpen(false);
     try {
       await axios.delete(`/api/misting/${id}`);
       setSuccess('Misting log deleted successfully!');
@@ -407,6 +423,22 @@ export default function MistingLog() {
           </div>
         </form>
       </Form>
+
+      {/* AlertDialog for delete misting log confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Misting Log</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this misting log? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

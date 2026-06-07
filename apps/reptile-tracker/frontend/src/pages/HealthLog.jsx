@@ -17,6 +17,16 @@ import PageHeader from '../components/PageHeader';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 import { useConfetti } from '../hooks/useConfetti';
 import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Validation schema with conditional logic
 const healthLogSchema = z.object({
@@ -108,6 +118,9 @@ export default function HealthLog() {
   const [showSuccessActions, setShowSuccessActions] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState(null);
   const [lastLogType, setLastLogType] = useState(null);
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Initialize form
   const form = useForm({
@@ -494,12 +507,13 @@ export default function HealthLog() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
     const currentLogType = form.getValues('log_type');
-    if (!window.confirm(`Are you sure you want to delete this ${
-      currentLogType === 'weight' ? 'weight' :
-      currentLogType === 'measurement' ? 'measurement' : 'health'
-    } log?`)) return;
+    setDeleteDialogOpen(false);
 
     try {
       if (currentLogType === 'weight') {
@@ -515,6 +529,13 @@ export default function HealthLog() {
       console.error('Failed to delete log:', err);
       setError(err.response?.data?.detail || 'Failed to delete log. You may not have permission.');
     }
+  };
+
+  const getDeleteDialogTitle = () => {
+    const currentLogType = form.getValues('log_type');
+    if (currentLogType === 'weight') return 'Delete Weight Log';
+    if (currentLogType === 'measurement') return 'Delete Measurement Log';
+    return 'Delete Health Log';
   };
 
   const onSubmit = async (data) => {
@@ -1424,6 +1445,22 @@ export default function HealthLog() {
       </Form>
       )}
       <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
+
+      {/* AlertDialog for delete health log confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{getDeleteDialogTitle()}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this log? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

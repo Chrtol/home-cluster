@@ -3,6 +3,17 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, Calendar, Clock, Utensils, Droplets, Scale, Activity, CheckCircle, AlertCircle, XCircle, MinusCircle, Bell, Plus, Bot } from 'lucide-react';
 import { formatDate, formatTime } from '../utils/dateFormatting';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ScheduleInstanceDetail() {
   const { id } = useParams();
@@ -12,6 +23,10 @@ export default function ScheduleInstanceDetail() {
   const [completionRecord, setCompletionRecord] = useState(null); // Full completion record with auto_completed flag
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Dialog states for mark skipped/missed confirmations
+  const [markSkippedDialogOpen, setMarkSkippedDialogOpen] = useState(false);
+  const [markMissedDialogOpen, setMarkMissedDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchInstanceDetails();
@@ -179,35 +194,39 @@ export default function ScheduleInstanceDetail() {
     }
   };
 
-  const handleMarkSkipped = async () => {
-    if (!confirm('Mark this auto-completed instance as skipped? This indicates the task was intentionally not performed.')) {
-      return;
-    }
+  const handleMarkSkipped = () => {
+    setMarkSkippedDialogOpen(true);
+  };
 
+  const executeMarkSkipped = async () => {
     try {
       await axios.post(`/api/schedule-instances/${id}/mark-skipped`);
       // Refresh the instance details
       await fetchInstanceDetails();
-      alert('Instance marked as skipped');
+      toast.success('Instance marked as skipped');
+      setMarkSkippedDialogOpen(false);
     } catch (err) {
       console.error('Error marking instance as skipped:', err);
-      alert('Failed to mark instance as skipped. ' + (err.response?.data?.detail || ''));
+      toast.error('Failed to mark instance as skipped. ' + (err.response?.data?.detail || ''));
+      setMarkSkippedDialogOpen(false);
     }
   };
 
-  const handleMarkMissed = async () => {
-    if (!confirm('Mark this auto-completed instance as missed? This indicates the task was not performed and should have been.')) {
-      return;
-    }
+  const handleMarkMissed = () => {
+    setMarkMissedDialogOpen(true);
+  };
 
+  const executeMarkMissed = async () => {
     try {
       await axios.post(`/api/schedule-instances/${id}/mark-missed`);
       // Refresh the instance details
       await fetchInstanceDetails();
-      alert('Instance marked as missed');
+      toast.success('Instance marked as missed');
+      setMarkMissedDialogOpen(false);
     } catch (err) {
       console.error('Error marking instance as missed:', err);
-      alert('Failed to mark instance as missed. ' + (err.response?.data?.detail || ''));
+      toast.error('Failed to mark instance as missed. ' + (err.response?.data?.detail || ''));
+      setMarkMissedDialogOpen(false);
     }
   };
 
@@ -654,6 +673,38 @@ export default function ScheduleInstanceDetail() {
           )}
 
       </div>
+
+      {/* AlertDialog for mark skipped confirmation */}
+      <AlertDialog open={markSkippedDialogOpen} onOpenChange={setMarkSkippedDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Skipped</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mark this auto-completed instance as skipped? This indicates the task was intentionally not performed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeMarkSkipped}>Mark Skipped</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog for mark missed confirmation */}
+      <AlertDialog open={markMissedDialogOpen} onOpenChange={setMarkMissedDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Missed</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mark this auto-completed instance as missed? This indicates the task was not performed and should have been.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeMarkMissed}>Mark Missed</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TimePicker } from '@/components/ui/time-picker';
+import { toast } from 'sonner';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -154,7 +155,7 @@ function ScheduleTemplateForm() {
       });
     } catch (error) {
       console.error('Error fetching template:', error);
-      alert('Failed to load template');
+      toast.error('Failed to load template');
     } finally {
       setInitialLoading(false);
     }
@@ -199,15 +200,15 @@ function ScheduleTemplateForm() {
       setLoading(true);
       if (isEditing) {
         await api.updateScheduleTemplate(id, templateData);
-        alert('Template updated successfully!');
+        toast.success('Template updated successfully!');
       } else {
         await api.createScheduleTemplate(templateData);
-        alert('Template created successfully!');
+        toast.success('Template created successfully!');
       }
       navigate('/schedule-templates');
     } catch (error) {
       console.error('Error saving template:', error);
-      alert(error.response?.data?.detail || 'Failed to save template');
+      toast.error(error.response?.data?.detail || 'Failed to save template');
     } finally {
       setLoading(false);
     }

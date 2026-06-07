@@ -17,6 +17,17 @@ import LoadingState from '@/components/LoadingState';
 import { notifyStreakAttribution } from '@/components/UserStreakDisplay';
 import { useConfetti } from '../hooks/useConfetti';
 import ConfettiDismissOverlay from '../components/ConfettiDismissOverlay';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Zod schema for feeding form
 const feedingSchema = z.object({
@@ -91,6 +102,9 @@ export default function FeedingLog() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [viewModeSuccess, setViewModeSuccess] = useState('');
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Initialize form
   const form = useForm({
@@ -454,7 +468,7 @@ export default function FeedingLog() {
   // Quick add to reptile favorites
   const toggleReptileFavorite = async (foodId) => {
     if (!watchReptileId) {
-      alert('Please select a reptile first');
+      toast.warning('Please select a reptile first');
       return;
     }
 
@@ -476,12 +490,16 @@ export default function FeedingLog() {
       ));
     } catch (error) {
       console.error('Failed to toggle reptile favorite:', error);
-      alert('Failed to update favorite status');
+      toast.error('Failed to update favorite status');
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this feeding?')) return;
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
+    setDeleteDialogOpen(false);
 
     try {
       await axios.delete(`/api/feedings/${id}`);
@@ -1507,6 +1525,22 @@ export default function FeedingLog() {
         </form>
       </Form>
       <ConfettiDismissOverlay isActive={isActive} onDismiss={dismiss} />
+
+      {/* AlertDialog for delete feeding confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Feeding</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this feeding? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={executeDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
