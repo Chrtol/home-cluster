@@ -3,13 +3,14 @@ Celery tasks for asynchronous notification delivery
 """
 import asyncio
 import logging
-from datetime import date as py_date
+from datetime import date as py_date, datetime, timezone, timedelta
+import uuid
 from celery import Task
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.celery_app import celery_app
 from app.database import async_session_maker
-from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType, ScheduleInstance, InstanceStatus, WeightLog
+from app.models import User, Reptile, Schedule, NotificationSettings, NotificationChannel, NotificationType, ScheduleInstance, InstanceStatus, WeightLog, PendingExport, TransferStatus
 from app.notifications import send_webhook_notification, get_template_for_trigger, render_template, get_template_message
 from app.scheduler import create_in_app_notification, is_within_quiet_hours
 from app.scheduler.frequency_cap import is_frequency_cap_reached, increment_notification_count, get_frequency_cap_mode
@@ -1498,3 +1499,99 @@ async def send_weekly_planner_task(
     except Exception as exc:
         logger.error(f"Error sending weekly planner: {exc}", exc_info=True)
         raise self.retry(exc=exc, countdown=2 ** self.request.retries * 60)
+
+
+@celery_app.task(base=AsyncTask, bind=True, max_retries=2, default_retry_delay=120)
+async def generate_export_task(
+    self,
+    pending_export_id: int,
+) -> dict:
+    """
+    Generate export bundle in background per D-05.
+
+    This task:
+    1. Loads the PendingExport record
+    2. Collects all reptile data using DataCollector
+    3. Serializes to JSON or ZIP format
+    4. Stores export file using the storage backend
+    5. Updates reptile transfer_status when is_transfer=True
+
+    Args:
+        pending_export_id: ID of the PendingExport record
+
+    Returns:
+        Dict with status and file_path on success
+    """
+    from app.services.export_service import DataCollector, JSONExportSerializer, ZIPExportSerializer
+    from app.storage import get_storage_backend
+
+    try:
+        async with async_session_maker() as db:
+            # Load PendingExport record
+            export = await db.get(PendingExport, pending_export_id)
+            if not export:
+                return {'status': 'failed', 'error': 'Export record not found'}
+
+            # Update status: collecting
+            export.status = 'progress'
+            export.step = 'collecting'
+            await db.commit()
+
+            # Collect data
+            collector = DataCollector()
+            data = await collector.collect(db, export.reptile_ids, export.household_id)
+
+            # Update status: serializing
+            export.step = 'serializing'
+            await db.commit()
+
+            # Serialize based on export_type
+            if export.export_type == "json":
+                serializer = JSONExportSerializer()
+                content = serializer.serialize(data)
+            else:
+                serializer = ZIPExportSerializer(get_storage_backend())
+                content = await serializer.serialize(data)
+
+            # Update status: storing
+            export.step = 'storing'
+            await db.commit()
+
+            # Store export file per D-06 (same storage backend as photos)
+            storage = get_storage_backend()
+            ext = "json" if export.export_type == "json" else "zip"
+            filename = f"exports/{export.user_id}/{uuid.uuid4()}.{ext}"
+            await storage.save_photo(filename, content)
+
+            # Mark complete
+            export.status = 'complete'
+            export.step = None
+            export.file_path = filename
+            export.updated_at = datetime.now(timezone.utc)
+
+            # If is_transfer, mark reptiles as pending transfer per D-17
+            if export.is_transfer:
+                for reptile_id in export.reptile_ids:
+                    reptile = await db.get(Reptile, reptile_id)
+                    if reptile:
+                        reptile.transfer_status = TransferStatus.PENDING
+                        reptile.transfer_exported_at = datetime.now(timezone.utc)
+                        reptile.transfer_export_file = filename
+
+            await db.commit()
+            logger.info(f"Export generation complete: {filename}")
+            return {'status': 'complete', 'file_path': filename}
+
+    except Exception as e:
+        logger.error(f"Export generation failed: {e}", exc_info=True)
+        try:
+            async with async_session_maker() as db:
+                export = await db.get(PendingExport, pending_export_id)
+                if export:
+                    export.status = 'failed'
+                    export.error = str(e)
+                    export.updated_at = datetime.now(timezone.utc)
+                    await db.commit()
+        except Exception:
+            pass
+        raise self.retry(exc=e, countdown=2 ** self.request.retries * 120)
