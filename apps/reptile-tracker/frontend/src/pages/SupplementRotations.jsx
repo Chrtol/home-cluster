@@ -49,6 +49,17 @@ const rotationSchema = z.object({
   path: ['schedule_days_of_week']
 });
 
+// Helper to format FastAPI/Pydantic validation errors into readable strings
+function formatValidationError(data) {
+  if (!data) return null;
+  if (typeof data.detail === 'string') return data.detail;
+  if (Array.isArray(data.detail)) {
+    return data.detail.map(e => e.msg || e.message || JSON.stringify(e)).join('; ');
+  }
+  if (typeof data === 'string') return data;
+  return null;
+}
+
 function SupplementRotations() {
   const navigate = useNavigate();
   const [reptiles, setReptiles] = useState([]);
@@ -241,7 +252,7 @@ function SupplementRotations() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Error saving rotation:', error);
-      alert(error.response?.data?.detail || 'Failed to save rotation');
+      alert(formatValidationError(error.response?.data) || 'Failed to save rotation');
     }
   }
 

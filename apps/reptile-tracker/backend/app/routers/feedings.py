@@ -1,7 +1,7 @@
 from typing import List, Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, insert, delete, func
+from sqlalchemy import select, insert, delete, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.auth import get_current_user

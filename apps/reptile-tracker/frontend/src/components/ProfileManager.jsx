@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Save, Copy, Trash2, Edit2, Download, Upload, Check, X, AlertCircle, Monitor, Smartphone } from 'lucide-react';
+import { Save, Copy, Trash2, Edit2, Download, Upload, Check, X, AlertCircle, Monitor, Smartphone, Eye } from 'lucide-react';
+import ProfilePreviewPanel from './ProfilePreviewPanel';
 import {
   getDisplayProfiles,
   getActiveProfileId,
@@ -63,6 +64,7 @@ export default function ProfileManager({ onProfileChange }) {
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileTarget, setNewProfileTarget] = useState('both'); // 'desktop', 'mobile', or 'both'
   const [showNewProfileForm, setShowNewProfileForm] = useState(false);
+  const [previewProfileId, setPreviewProfileId] = useState(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -455,6 +457,15 @@ export default function ProfileManager({ onProfileChange }) {
                   </div>
 
                   <div className="flex gap-1 flex-wrap">
+                    {/* Preview button - always available */}
+                    <button
+                      onClick={() => setPreviewProfileId(profile.id)}
+                      className="btn-secondary text-xs px-2 py-1.5 flex items-center gap-1"
+                      title="Preview and edit layout"
+                    >
+                      <Eye size={14} />
+                      Preview
+                    </button>
                     {!isActiveDesktop && (
                       <button
                         onClick={() => handleSetAsDesktop(profile.id)}
@@ -537,6 +548,14 @@ export default function ProfileManager({ onProfileChange }) {
           </ul>
         </div>
       </div>
+
+      {/* Profile Preview Panel */}
+      <ProfilePreviewPanel
+        profileId={previewProfileId}
+        open={!!previewProfileId}
+        onOpenChange={(open) => !open && setPreviewProfileId(null)}
+        onSave={() => loadProfiles()}
+      />
 
       {/* Modal */}
       <Modal

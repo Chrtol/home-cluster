@@ -387,6 +387,54 @@ export function CreateLogModal({
     refetchFoods();
   }, [watchReptileId, open, effectiveLogType]);
 
+  // Auto-select default food for reptile (per D-09 - matching FeedingLog.jsx pattern)
+  useEffect(() => {
+    if (!open || effectiveLogType !== 'feeding' || !watchReptileId || foods.length === 0) return;
+
+    const applyDefaultFoods = async () => {
+      try {
+        const reptileRes = await axios.get(`/api/reptiles/${watchReptileId}`);
+        const reptile = reptileRes.data;
+
+        // Auto-add default insect if available and insect_items is empty
+        if (reptile.default_insect_id && watchIncludeInsects) {
+          const currentItems = form.getValues('insect_items') || [];
+          if (currentItems.length === 0 || (currentItems.length === 1 && currentItems[0].food_id !== reptile.default_insect_id.toString())) {
+            const defaultFood = foods.find(f => f.id === reptile.default_insect_id);
+            if (defaultFood) {
+              form.setValue('insect_items', [{
+                id: Date.now(),
+                food_id: String(reptile.default_insect_id),
+                quantity: 1,
+                supplement_ids: []
+              }]);
+            }
+          }
+        }
+
+        // Auto-add default prepared if available and prepared_items is empty
+        if (reptile.default_prepared_id && watchIncludePrepared) {
+          const currentItems = form.getValues('prepared_items') || [];
+          if (currentItems.length === 0 || (currentItems.length === 1 && currentItems[0].food_id !== reptile.default_prepared_id.toString())) {
+            const defaultFood = foods.find(f => f.id === reptile.default_prepared_id);
+            if (defaultFood) {
+              form.setValue('prepared_items', [{
+                id: Date.now(),
+                food_id: String(reptile.default_prepared_id),
+                quantity: 1,
+                supplement_ids: []
+              }]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch reptile for default food:', err);
+      }
+    };
+
+    applyDefaultFoods();
+  }, [watchReptileId, watchIncludeInsects, watchIncludePrepared, open, effectiveLogType, foods]);
+
   // Fetch health status for shedding/brumation validation
   useEffect(() => {
     if (!open || effectiveLogType !== 'health' || !watchReptileId || watchReptileId === 0) {

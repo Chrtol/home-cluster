@@ -30,13 +30,8 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   const [availableFoods, setAvailableFoods] = useState([]);
   const [foodQuantity, setFoodQuantity] = useState(1);
 
-  // Time selection state - initialize from task's scheduled_date if available
-  const [fedAt, setFedAt] = useState(() => {
-    if (task?.scheduled_date) {
-      return new Date(task.scheduled_date);
-    }
-    return new Date();
-  });
+  // Time selection state - always use current time when form opens (Decision D-01)
+  const [fedAt, setFedAt] = useState(() => new Date());
 
   // Weight input state (for weight_check health schedules)
   const [weightGrams, setWeightGrams] = useState('');
@@ -81,12 +76,9 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
     }
   }, [task]);
 
-  // Update fedAt when task changes
-  useEffect(() => {
-    if (task?.scheduled_date) {
-      setFedAt(new Date(task.scheduled_date));
-    }
-  }, [task]);
+  // REMOVED: Per D-01, we want current time, not schedule time
+  // The useEffect that updated fedAt from task.scheduled_date has been removed
+  // Form now snapshots new Date() once when it opens (D-02)
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -173,6 +165,37 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
         });
 
         setAvailableFoods(foods);
+
+        // Auto-select default food if set on reptile (per D-07)
+        if (reptileId && foods.length > 0) {
+          try {
+            const reptileRes = await axios.get(`/api/reptiles/${reptileId}`);
+            const reptile = reptileRes.data;
+
+            // Check food_category from schedule to decide which default to use
+            const category = task?.food_category?.toLowerCase();
+            let defaultFoodId = null;
+
+            if (category === 'insect' || category === 'insects') {
+              defaultFoodId = reptile.default_insect_id;
+            } else if (category === 'prepared' || category === 'other') {
+              defaultFoodId = reptile.default_prepared_id;
+            } else {
+              // No specific category - prefer insect default, fallback to prepared
+              defaultFoodId = reptile.default_insect_id || reptile.default_prepared_id;
+            }
+
+            if (defaultFoodId) {
+              const defaultFood = foods.find(f => f.id === defaultFoodId);
+              // Only auto-select if no foods already selected (don't override user selection)
+              if (defaultFood && selectedFoods.length === 0) {
+                setSelectedFoods([defaultFood]);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch reptile for default food:', err);
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch foods:', err);
       }

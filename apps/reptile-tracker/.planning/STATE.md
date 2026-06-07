@@ -1,23 +1,40 @@
+---
+gsd_state_version: 1.0
+milestone: v1.4
+milestone_name: Schedule Type Alignment & UX Polish
+status: executing
+stopped_at: Phase 32 context gathered — 19 implementation decisions captured
+last_updated: "2026-06-07T13:42:51.976Z"
+last_activity: 2026-06-07
+progress:
+  total_phases: 9
+  completed_phases: 2
+  total_plans: 29
+  completed_plans: 25
+  percent: 22
+---
+
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-06-07
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.4 Complete — Ready for v1.5
+**Current focus:** v1.6 Phase 32 — Bug Fixes (context gathered, ready for planning)
 
 ## Current Position
 
 **Phase:** v1.4 Complete (Phases 26, 27, 28 all done)
 **Plan:** Milestone complete
-**Status:** Complete
-**Last activity:** 2026-02-20 — Completed v1.4 milestone
+**Status:** Ready to execute
+**Last activity:** 2026-06-07
 **Progress:** ████████ (100% - all phases complete)
 
 **Completed Milestones:**
+
 - v1.0 Scheduling Refactor (Phases 1-6) — 2026-02-07
 - v1.1 UI Overhaul (Phases 7-13) — 2026-02-10
 - v1.2 Local Development Environment (Phases 14-16) — 2026-02-11
@@ -29,10 +46,12 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Recent Completions
 
 ### Phase 28 Plan 08: Data Model Refactor & UX Redesign
+
 **Completed:** 2026-02-20
 **Summary:** Complete Change Alerts system with single source of truth data model, 3-step activation wizard, and polished per-reptile management UI
 
 **Key accomplishments:**
+
 - Removed 9 global change alert columns from NotificationSettings (migration 0106)
 - ChangeAlertConfig is now the single source of truth for all alert settings
 - Created 3-step inline activation wizard (select reptiles → select alert types → confirm)
@@ -42,40 +61,49 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - Removed obsolete ReptileAlertsTab and SpeciesPresetsSection components
 
 **Files created:**
+
 - `frontend/src/components/notifications/ChangeAlertActivationFlow.jsx`
 - `backend/migrations/versions/0106_remove_global_change_alert_columns.py`
 
 **Files modified:**
+
 - `frontend/src/components/notifications/ChangeAlertsTab.jsx`
 - `frontend/src/pages/Notifications.jsx`
 - `backend/app/routers/change_alerts.py`
 
 **Files deleted:**
+
 - `frontend/src/components/notifications/ReptileAlertsTab.jsx`
 - `frontend/src/components/notifications/SpeciesPresetsSection.jsx`
 
 ### Phase 28 Plan 06: Species Presets Quick-Setup
+
 **Completed:** 2026-02-19
 **Summary:** One-click species preset selector that configures feeding, weight, and measurement alerts for each reptile
 
 **Key accomplishments:**
+
 - Created SpeciesPresetsSection component with preset dropdown, preview, and apply functionality
 - Integrated preset selector at top of each reptile's expanded panel in ChangeAlertsTab
 - Added weight alert configs to all 8 species presets (juveniles: 25% gain/5% loss, adults: 10% gain/5% loss)
 - Enabled one-click application of curated alert configurations
 
 **Files created:**
+
 - `frontend/src/components/notifications/SpeciesPresetsSection.jsx`
 
 **Files modified:**
+
 - `frontend/src/components/notifications/ChangeAlertsTab.jsx`
 - `backend/app/routers/change_alerts.py`
 
 ### Phase 28 Plan 05: Change Alerts Tab on Notifications Page
+
 **Completed:** 2026-02-19
 **Summary:** Created Change Alerts tab with global feeding/measurement settings and per-reptile overrides, deprecated old weight alerts UI
 
 **Key accomplishments:**
+
 - Created ChangeAlertsTab component (743 lines) with global feeding and measurement alert settings
 - Added global feeding alerts (window, threshold, cooldown) and measurement alerts (types, rolling window, threshold, cooldown)
 - Implemented per-reptile override collapsibles for both feeding and measurement alerts
@@ -83,29 +111,35 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - Added 6th tab to Notifications page with TrendingUp icon
 
 **Files created:**
+
 - `frontend/src/components/notifications/ChangeAlertsTab.jsx`
 
 **Files modified:**
+
 - `frontend/src/pages/Notifications.jsx`
 - `frontend/src/components/notifications/ReptileAlertsTab.jsx`
 
 ### Phase 28 Plan 01: Database Models for Generalized Change Alerts
+
 **Completed:** 2026-02-19
 **Summary:** Polymorphic alert config/tracking tables with global defaults for feeding trends and measurement growth alerts
 
 **Key accomplishments:**
+
 - Added ChangeAlertConfig and ChangeAlertTracking models with polymorphic alert_type field
 - Added feeding_alert_* and measurement_alert_* global defaults to NotificationSettings
 - Created migration 0105 with data preservation from WeightAlertTracking
 - Established extensible foundation for feeding and measurement alerts
 
 **Files modified:**
+
 - `backend/app/models.py`
 - `backend/migrations/versions/0105_add_generalized_change_alerts.py`
 
 ### Architecture Summary
 
 #### Notification System
+
 - **Template-based:** All notifications use Jinja2 templates with fallback messages
 - **Format variants:** Short/long templates with channel-level format preference
 - **Multi-channel:** In-app, Discord, Pushover
@@ -113,11 +147,13 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - **Frequency caps:** Prevent alert fatigue (5/reptile/day, 7-day weight alert cooldown)
 
 #### Gamification System
+
 - **User streaks:** Duolingo-style with freeze capability
 - **Reptile streaks:** Per-reptile with grace period forgiveness
 - **Celebrations:** Confetti on completion and milestones (respects prefers-reduced-motion)
 
 #### Health Tracking
+
 - **Status derivation:** From health_records (not stored redundantly)
 - **Unified logging:** Single Health Log page for all health events
 - **Batch queries:** LEFT JOIN pattern for dashboard efficiency
@@ -125,21 +161,25 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Key Files Reference
 
 ### Notification System
+
 - `backend/app/notifications.py` - Jinja2 environment, template rendering, format variants
 - `backend/app/scheduler/digest.py` - Daily/weekly planner generation
 - `backend/app/scheduler/weight_alerts.py` - Weight change detection and alerting
 - `frontend/src/pages/Notifications.jsx` - Unified settings page with 5 tabs
 
 ### Gamification
+
 - `backend/app/services/streak_service.py` - Streak calculation
 - `frontend/src/contexts/CelebrationContext.jsx` - Confetti animations
 - `frontend/src/components/dashboard/UserStreakDisplay.jsx` - Header streak
 
 ### Health Tracking
+
 - `backend/app/services/health_service.py` - Status derivation
 - `frontend/src/pages/HealthLog.jsx` - Unified logging page
 
 ### Modals (Phase 27)
+
 - `frontend/src/components/ui/sheet.jsx` - Directional slide-in modal component
 - `frontend/src/components/ui/alert-dialog.jsx` - Confirmation dialog component
 - `frontend/src/hooks/useModalState.js` - URL-driven modal state management
@@ -157,17 +197,35 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Known Tech Debt
 
 From v1.3:
+
 - Follow-up preview always shows 24-hour format (should use user preference)
 - Some error states use inline toast but no retry mechanism
 - PageHeader component under-utilized
 
+Reported bugs (tracked in v1.6 Phase 32):
+
+- Quick-logging doesn't pre-fill current time
+- Logging a task doesn't auto-refresh dashboard
+- Default food not pre-filled when logging
+- Dashboard layout can't be edited for other device profiles from current device
+- Deleting feeding log returns 500 error
+- Creating supplement rotation returns 422 with `[object Object]` popup
+
+UX inconsistencies (tracked in v1.6 Phase 33):
+
+- Browser toasts/popups should be replaced with in-app banners
+- Gamification animation partially implemented (confetti exists but task counter overlay not wired up)
+
 ## Deferred Features
 
 For future milestones:
+
 - Growth milestone alerts for juveniles
 - Rolling average baseline for weight comparison
 - Format preview in template editor (side-by-side short/long)
 - Full undo for deleted logs (requires re-creation API)
+- Import/export system for users and reptiles (tracked in v1.6 Phase 34)
+- Vet export: printable 1-page reptile summary for veterinary visits (may share infrastructure with Phase 34)
 
 ## Quick Tasks Completed
 
@@ -181,16 +239,19 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2026-03-16
-**Action:** Completed quick task 005 - Fixed form pre-fill and mobile UI bugs
-**Stopped at:** Fixed 6 bugs: default food pre-fill, date pre-fill from schedule, login refresh loop, mobile time input, badge overflow
-**Resume from:** Ready for v1.5 (Phases 29-31)
+**Last session:** 2026-06-07
+**Action:** Phase 32 context gathering (discuss-phase)
+**Stopped at:** Phase 32 context gathered — 19 implementation decisions captured
+**Resume from:** `.planning/phases/32-bug-fixes/32-CONTEXT.md`
+
+**Next step:** `/gsd:plan-phase 32` to create execution plans
 
 ## Phase 26 Plan Summary
 
 **Goal:** Replace "weighing" schedule type with "health" schedule type that supports sub-types aligned with the health logging system.
 
 **Plans:**
+
 - **26-01 (Wave 1):** Add bathing as health record type (backend + HealthLog.jsx) ✓
 - **26-02 (Wave 2):** Database migration (schedule_type change, health_subtype/measurement_type columns) ✓
 - **26-03 (Wave 2):** Schedule form UI (health sub-type selector with conditional measurement selector) ✓
@@ -201,6 +262,7 @@ For future milestones:
 - **26-08 (Wave 6):** Human verification for gap closure UAT tests ✓
 
 **Key Changes:**
+
 - Schedule types become: feeding, misting, health (was weighing), supplement
 - Health schedules have 6 sub-types: weight, measurement, shedding_check, brumation_check, health_record, bathing
 - Measurement sub-type has secondary selector for measurement_type
@@ -222,11 +284,13 @@ For future milestones:
 **Goal:** Generalize weight alert infrastructure to support feeding trend alerts and measurement growth alerts.
 
 **Plans:**
+
 - **28-01 (Wave 1):** Database models and migration - COMPLETE
 - **28-02 (Wave 2):** Feeding trend alerts implementation
 - **28-03 (Wave 3):** Measurement growth alerts implementation
 
 **Key Patterns Established:**
+
 - Polymorphic alert_type field enables single table for multiple alert types
 - Per-reptile config override pattern (NULL cooldown_days = inherit global)
 - JSON last_alert_context for type-specific tracking data
@@ -249,6 +313,7 @@ For future milestones:
 **Goal:** Replace full-page views with directional slide-in modals and polish UI density.
 
 **Plans:**
+
 - **27-01 (Wave 1):** Sheet component & modal state hook - COMPLETE
 - **27-02 (Wave 2):** View modal components (ViewLogModal, LogViewContent, CollapsibleNotes) - COMPLETE
 - **27-03 (Wave 2):** CreateLogModal component - COMPLETE
@@ -261,6 +326,7 @@ For future milestones:
 - **27-09 (Wave 6):** Gap closure: Full feeding edit in modal - COMPLETE
 
 **Key Patterns Established:**
+
 - Sheet component: side="right" for view modals, side="left" for create/edit
 - useModalState hook for URL-driven state with deep linking support
 - Spring physics animation (damping=30, stiffness=300)
