@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { Bell, Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 function ChannelsTab() {
   const [loading, setLoading] = useState(true);
@@ -24,6 +35,10 @@ function ChannelsTab() {
   // Modal-specific messages (for test notifications)
   const [modalError, setModalError] = useState('');
   const [modalSuccess, setModalSuccess] = useState('');
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteChannelId, setPendingDeleteChannelId] = useState(null);
 
   // Pushover config state
   const [pushoverApiKey, setPushoverApiKey] = useState('');
@@ -186,20 +201,25 @@ function ChannelsTab() {
     }
   };
 
-  const handleDeleteChannel = async (channelId) => {
-    if (!confirm('Are you sure you want to delete this notification channel?')) {
-      return;
-    }
+  const handleDeleteChannelClick = (channelId) => {
+    setPendingDeleteChannelId(channelId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDeleteChannel = async () => {
+    if (!pendingDeleteChannelId) return;
 
     try {
       setError('');
-      await axios.delete(`/api/notification-channels/${channelId}`);
-      setSuccess('Channel deleted successfully!');
+      await axios.delete(`/api/notification-channels/${pendingDeleteChannelId}`);
+      toast.success('Channel deleted');
       loadData();
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Failed to delete channel:', err);
-      setError(err.response?.data?.detail || 'Failed to delete channel');
+      toast.error(err.response?.data?.detail || 'Failed to delete channel');
+    } finally {
+      setDeleteDialogOpen(false);
+      setPendingDeleteChannelId(null);
     }
   };
 
@@ -377,7 +397,7 @@ function ChannelsTab() {
                     </button>
                     {!channel.is_system ? (
                       <button
-                        onClick={() => handleDeleteChannel(channel.id)}
+                        onClick={() => handleDeleteChannelClick(channel.id)}
                         className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 rounded transition-colors"
                         title="Delete channel"
                       >
@@ -708,6 +728,26 @@ function ChannelsTab() {
           </div>
         </div>
       </div>
+
+      {/* Delete Channel Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Channel?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The notification channel will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteChannelId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDeleteChannel}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Pencil, Trash2, ExternalLink, Bell, BellOff, Clock, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { TimePicker } from '@/components/ui/time-picker';
 import { getUserTimeFormat } from '@/utils/dateFormatting';
@@ -58,6 +69,8 @@ function ScheduleNotificationsTab() {
   const [expandedSchedule, setExpandedSchedule] = useState(null);
   const [editingData, setEditingData] = useState({});
   const [deletingScheduleId, setDeletingScheduleId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteSchedule, setPendingDeleteSchedule] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -175,26 +188,30 @@ function ScheduleNotificationsTab() {
     }
   };
 
-  const handleDelete = async (scheduleId, e) => {
+  const handleDeleteClick = (scheduleId, e) => {
     e.stopPropagation();
     const schedule = schedules.find(s => s.id === scheduleId);
-    if (!confirm(`Delete schedule "${schedule?.name || 'this schedule'}"? This cannot be undone.`)) {
-      return;
-    }
+    setPendingDeleteSchedule({ id: scheduleId, name: schedule?.name });
+    setDeleteDialogOpen(true);
+  };
 
-    setDeletingScheduleId(scheduleId);
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteSchedule) return;
+
+    setDeletingScheduleId(pendingDeleteSchedule.id);
     setError('');
 
     try {
-      await axios.delete(`/api/schedules/${scheduleId}`);
-      setSchedules(schedules.filter(s => s.id !== scheduleId));
-      setSuccess(`Schedule "${schedule?.name || ''}" deleted`);
-      setTimeout(() => setSuccess(''), 3000);
+      await axios.delete(`/api/schedules/${pendingDeleteSchedule.id}`);
+      setSchedules(schedules.filter(s => s.id !== pendingDeleteSchedule.id));
+      toast.success(`Schedule "${pendingDeleteSchedule.name || ''}" deleted`);
     } catch (err) {
       console.error('Failed to delete schedule:', err);
-      setError(err.response?.data?.detail || 'Failed to delete schedule');
+      toast.error(err.response?.data?.detail || 'Failed to delete schedule');
     } finally {
       setDeletingScheduleId(null);
+      setDeleteDialogOpen(false);
+      setPendingDeleteSchedule(null);
     }
   };
 
@@ -432,7 +449,7 @@ function ScheduleNotificationsTab() {
 
                                   {/* Delete button */}
                                   <button
-                                    onClick={(e) => handleDelete(schedule.id, e)}
+                                    onClick={(e) => handleDeleteClick(schedule.id, e)}
                                     disabled={deletingScheduleId === schedule.id}
                                     className="p-2 rounded-lg text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                                     title="Delete Schedule"
@@ -591,6 +608,26 @@ function ScheduleNotificationsTab() {
           </p>
         </div>
       </div>
+
+      {/* Delete Schedule Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Schedule?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete "{pendingDeleteSchedule?.name || 'this schedule'}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteSchedule(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

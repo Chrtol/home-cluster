@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const NotificationTemplatesTab = () => {
   const [templates, setTemplates] = useState([]);
@@ -20,6 +31,12 @@ const NotificationTemplatesTab = () => {
   const [systemTemplatesExpanded, setSystemTemplatesExpanded] = useState(true);
   const [customGroupsExpanded, setCustomGroupsExpanded] = useState({});
   const [helpSectionExpanded, setHelpSectionExpanded] = useState(false);
+
+  // Delete dialog state
+  const [deleteGroupDialogOpen, setDeleteGroupDialogOpen] = useState(false);
+  const [pendingDeleteGroupId, setPendingDeleteGroupId] = useState(null);
+  const [deleteTemplateDialogOpen, setDeleteTemplateDialogOpen] = useState(false);
+  const [pendingDeleteTemplateId, setPendingDeleteTemplateId] = useState(null);
 
   // Form state
   const [templateName, setTemplateName] = useState('');
@@ -199,18 +216,25 @@ const NotificationTemplatesTab = () => {
     }
   };
 
-  const handleDeleteGroup = async (groupId) => {
-    if (!confirm('Are you sure? Templates in this group will not be deleted, but will become ungrouped.')) {
-      return;
-    }
+  const handleDeleteGroupClick = (groupId) => {
+    setPendingDeleteGroupId(groupId);
+    setDeleteGroupDialogOpen(true);
+  };
+
+  const handleConfirmDeleteGroup = async () => {
+    if (!pendingDeleteGroupId) return;
 
     try {
-      await axios.delete(`/api/template-groups/${groupId}`);
+      await axios.delete(`/api/template-groups/${pendingDeleteGroupId}`);
       await fetchGroups();
       await fetchTemplates(); // Refresh templates to update group assignments
+      toast.success('Group deleted');
     } catch (err) {
       console.error('Error deleting group:', err);
-      setError(err.response?.data?.detail || 'Failed to delete group');
+      toast.error(err.response?.data?.detail || 'Failed to delete group');
+    } finally {
+      setDeleteGroupDialogOpen(false);
+      setPendingDeleteGroupId(null);
     }
   };
 
@@ -246,7 +270,7 @@ const NotificationTemplatesTab = () => {
   const handleEditTemplate = (template) => {
     // Only allow editing custom templates
     if (template.template_type !== 'custom') {
-      alert('System templates cannot be edited');
+      toast.info('System templates cannot be edited. Use "Customize" to create an editable copy.');
       return;
     }
 
@@ -352,23 +376,31 @@ const NotificationTemplatesTab = () => {
 
       setShowModal(false);
       fetchTemplates();
+      toast.success(editingTemplate ? 'Template updated' : 'Template created');
     } catch (err) {
       console.error('Error saving template:', err);
-      alert(err.response?.data?.detail || 'Failed to save template');
+      toast.error(err.response?.data?.detail || 'Failed to save template');
     }
   };
 
-  const handleDeleteTemplate = async (templateId) => {
-    if (!confirm('Are you sure you want to delete this template?')) {
-      return;
-    }
+  const handleDeleteTemplateClick = (templateId) => {
+    setPendingDeleteTemplateId(templateId);
+    setDeleteTemplateDialogOpen(true);
+  };
+
+  const handleConfirmDeleteTemplate = async () => {
+    if (!pendingDeleteTemplateId) return;
 
     try {
-      await axios.delete(`/api/notification-templates/${templateId}`);
+      await axios.delete(`/api/notification-templates/${pendingDeleteTemplateId}`);
       fetchTemplates();
+      toast.success('Template deleted');
     } catch (err) {
       console.error('Error deleting template:', err);
-      alert(err.response?.data?.detail || 'Failed to delete template');
+      toast.error(err.response?.data?.detail || 'Failed to delete template');
+    } finally {
+      setDeleteTemplateDialogOpen(false);
+      setPendingDeleteTemplateId(null);
     }
   };
 
@@ -376,10 +408,10 @@ const NotificationTemplatesTab = () => {
     try {
       await axios.post(`/api/notification-templates/${template.id}/copy`);
       fetchTemplates();
-      alert('Template copied successfully! You can now edit your custom version.');
+      toast.success('Template copied! You can now edit your custom version.');
     } catch (err) {
       console.error('Error copying template:', err);
-      alert(err.response?.data?.detail || 'Failed to copy template');
+      toast.error(err.response?.data?.detail || 'Failed to copy template');
     }
   };
 
@@ -482,7 +514,7 @@ const NotificationTemplatesTab = () => {
       fetchTemplates();
     } catch (err) {
       console.error('Error toggling template:', err);
-      alert('Failed to toggle template');
+      toast.error('Failed to toggle template');
     }
   };
 
@@ -873,7 +905,7 @@ const NotificationTemplatesTab = () => {
                                 Edit
                               </button>
                               <button
-                                onClick={() => handleDeleteTemplate(template.id)}
+                                onClick={() => handleDeleteTemplateClick(template.id)}
                                 className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800"
                               >
                                 Delete
@@ -1581,7 +1613,7 @@ const NotificationTemplatesTab = () => {
                 {editingGroup && (
                   <button
                     onClick={() => {
-                      handleDeleteGroup(editingGroup.id);
+                      handleDeleteGroupClick(editingGroup.id);
                       setShowGroupModal(false);
                     }}
                     className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded hover:bg-red-700 dark:hover:bg-red-600"
@@ -1650,6 +1682,46 @@ const NotificationTemplatesTab = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Group Confirmation Dialog */}
+      <AlertDialog open={deleteGroupDialogOpen} onOpenChange={setDeleteGroupDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Group?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Templates in this group will not be deleted, but will become ungrouped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteGroupId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDeleteGroup}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Template Confirmation Dialog */}
+      <AlertDialog open={deleteTemplateDialogOpen} onOpenChange={setDeleteTemplateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The template will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDeleteTemplateId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDeleteTemplate}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
