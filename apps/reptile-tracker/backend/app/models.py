@@ -131,6 +131,12 @@ class TransferStatus(str, PyEnum):
     CANCELLED = "cancelled"  # Transfer cancelled
 
 
+class FeedingStatus(str, PyEnum):
+    """Status of a feeding attempt"""
+    EATEN = "eaten"      # Normal feeding - food was consumed
+    REFUSED = "refused"  # Reptile refused to eat
+
+
 # Association table for reptile access
 reptile_access = Table(
     "reptile_access",
@@ -202,6 +208,11 @@ class User(Base):
     celebrations_enabled = Column(Boolean, default=True)  # Enable celebration animations (confetti, birthday hats)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Local authentication fields (Phase 35, D-12 to D-15)
+    password_hash = Column(String(255), nullable=True)  # NULL for OIDC-only users, per D-12
+    temp_password_hash = Column(String(255), nullable=True)  # For admin-generated resets, per D-15
+    temp_password_expires = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     reptiles = relationship("Reptile", secondary=reptile_access, back_populates="users")
@@ -344,6 +355,11 @@ class Feeding(Base):
     # Link to schedule completion (if this feeding fulfilled a schedule)
     schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
 
+    # Feeding status for refused tracking (Phase 35)
+    status = Column(Enum(FeedingStatus), default=FeedingStatus.EATEN, nullable=False, server_default="eaten")
+    retry_scheduled_for = Column(DateTime(timezone=True), nullable=True)
+    retry_instance_id = Column(Integer, ForeignKey("schedule_instances.id", ondelete="SET NULL"), nullable=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -353,6 +369,7 @@ class Feeding(Base):
     supplements = relationship("Supplement", secondary=feeding_supplements)
     salad_components = relationship("Food", secondary=feeding_salad_components)
     schedule_completion = relationship("ScheduleCompletion", foreign_keys=[schedule_completion_id])
+    retry_instance = relationship("ScheduleInstance", foreign_keys=[retry_instance_id])
 
 
 class WeightLog(Base):

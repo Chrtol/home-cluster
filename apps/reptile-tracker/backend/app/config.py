@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     max_photos_per_log: int = 3
     allow_caretaker_delete_others: bool = False
 
+    # Local authentication settings (Phase 35)
+    local_auth_enabled: bool = False  # Per D-13: Enable username/password auth
+    self_registration_enabled: bool = False  # Per D-14: Allow self-registration (admin can always create users)
+
     class Config:
         env_file = ".env"
         case_sensitive = False
