@@ -1,8 +1,16 @@
 from datetime import datetime, time, date
 from typing import Optional, List, Dict, Any, Union, Literal
 from uuid import UUID
+from enum import Enum
 from pydantic import BaseModel, EmailStr, Field, field_serializer, ConfigDict
-from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType, TransferStatus
+from app.models import AccessLevel, FoodCategory, InsectSize, AnimalSize, CompletionStatus, CompletionType, TransferStatus, FeedingStatus
+
+
+class RetryOption(str, Enum):
+    """Retry scheduling option for refused feedings"""
+    TOMORROW_SAME_TIME = "tomorrow_same_time"
+    NEXT_SCHEDULED = "next_scheduled"
+    CUSTOM = "custom"
 
 
 # User schemas
@@ -217,6 +225,10 @@ class FeedingCreate(BaseModel):
     is_salad: bool = False
     salad_components: List[int] = []  # List of food IDs for salad
     notes: Optional[str] = None
+    # Refusal tracking fields
+    status: FeedingStatus = FeedingStatus.COMPLETED
+    retry_option: Optional[RetryOption] = None
+    retry_datetime: Optional[datetime] = None  # For custom retry time
 
 
 class FoodWithQuantity(BaseModel):
@@ -249,6 +261,10 @@ class Feeding(BaseModel):
     schedule_completion_id: Optional[int] = None
     created_at: datetime
     attribution: Optional["CompletionAttributionResponse"] = None
+    # Refusal tracking
+    status: FeedingStatus = FeedingStatus.COMPLETED
+    retry_scheduled_for: Optional[datetime] = None
+    retry_instance_id: Optional[int] = None
 
     @field_serializer('fed_at', 'created_at')
     def serialize_datetime(self, dt: datetime, _info):

@@ -18,6 +18,7 @@ from app.models import (
     feeding_food_supplements,
     NotificationSettings,
     InstanceStatus,
+    FeedingStatus,
 )
 from app.permissions import check_reptile_access
 from app.schemas import FeedingCreate, Feeding as FeedingSchema, FeedingWithUser
@@ -151,6 +152,9 @@ async def list_feedings(
                 for f in feeding.salad_components
             ],
             "created_at": feeding.created_at,
+            "status": feeding.status,
+            "retry_scheduled_for": feeding.retry_scheduled_for,
+            "retry_instance_id": feeding.retry_instance_id,
             "user": {
                 "id": feeding.user.id,
                 "email": feeding.user.email,
@@ -203,6 +207,7 @@ async def create_feeding(
         notes=feeding.notes,
         is_salad=feeding.is_salad,
         created_at=datetime.utcnow(),
+        status=feeding.status,
     )
     db.add(new_feeding)
     await db.flush()
@@ -387,6 +392,9 @@ async def create_feeding(
         ],
         "created_at": new_feeding.created_at,
         "attribution": attribution,
+        "status": new_feeding.status,
+        "retry_scheduled_for": new_feeding.retry_scheduled_for,
+        "retry_instance_id": new_feeding.retry_instance_id,
     }
 
     # Send notification if configured
@@ -529,6 +537,9 @@ async def get_feeding(
             for f in feeding.salad_components
         ],
         "created_at": feeding.created_at,
+        "status": feeding.status,
+        "retry_scheduled_for": feeding.retry_scheduled_for,
+        "retry_instance_id": feeding.retry_instance_id,
         "user": {
             "id": feeding.user.id,
             "email": feeding.user.email,
@@ -592,6 +603,7 @@ async def update_feeding(
     print(f"[DEBUG UPDATE] After assignment: {feeding.fed_at}", file=sys.stderr, flush=True)
     feeding.notes = feeding_update.notes
     feeding.is_salad = feeding_update.is_salad
+    feeding.status = feeding_update.status
 
     # Delete existing associations
     await db.execute(delete(feeding_foods).where(feeding_foods.c.feeding_id == feeding_id))
@@ -726,6 +738,9 @@ async def update_feeding(
             for f in updated_feeding.salad_components
         ],
         "created_at": updated_feeding.created_at,
+        "status": updated_feeding.status,
+        "retry_scheduled_for": updated_feeding.retry_scheduled_for,
+        "retry_instance_id": updated_feeding.retry_instance_id,
     }
 
     return feeding_dict
