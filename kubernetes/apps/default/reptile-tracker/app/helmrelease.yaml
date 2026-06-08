@@ -32,6 +32,7 @@ spec:
           reloader.stakater.com/auto: "true"
         # Note: This app has built-in OTEL instrumentation via opentelemetry-instrument in entrypoint.sh
         # Don't use Operator auto-instrumentation - it conflicts with app's own OTEL packages
+        strategy: Recreate
         initContainers:
           init-db:
             image:
@@ -165,7 +166,18 @@ spec:
           reloader.stakater.com/auto: "true"
         # Note: This app has built-in OTEL instrumentation - don't use Operator auto-instrumentation
         replicas: 1
-        strategy: RollingUpdate
+        strategy: Recreate
+        pod:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/controller
+                        operator: In
+                        values:
+                          - reptile-tracker
+                  topologyKey: kubernetes.io/hostname
         containers:
           worker:
             image:
