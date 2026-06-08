@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler, HeartPulse, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Utensils, Droplets, Activity as ActivityIcon, Scale, Calendar, Heart, Snowflake, Ruler, HeartPulse, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
@@ -36,6 +36,13 @@ const categoryColors = {
     border: 'border-emerald-500/30 dark:border-emerald-500/40',
     activeBg: 'bg-emerald-600 hover:bg-emerald-600/90',
     icon: Utensils
+  },
+  refused: {
+    bg: 'bg-amber-500/15 dark:bg-amber-500/20',
+    text: 'text-amber-700 dark:text-amber-400',
+    border: 'border-amber-500/30 dark:border-amber-500/40',
+    activeBg: 'bg-amber-600 hover:bg-amber-600/90',
+    icon: XCircle
   },
   misting: {
     bg: 'bg-sky-500/15 dark:bg-sky-500/20',
@@ -226,6 +233,7 @@ const ActivityHistory = () => {
         const supplementText = supplementNames ? ` + ${supplementNames}` : '';
         // Get primary food category from first food item
         const primaryCategory = foodItems[0]?.category || 'other';
+        const isRefused = f.status === 'refused';
 
         return {
           id: f.id,
@@ -233,8 +241,8 @@ const ActivityHistory = () => {
           logType: 'feeding', // For modal
           category: 'feeding',
           subcategory: primaryCategory,
-          icon: Utensils,
-          iconColor: 'text-emerald-600',
+          icon: isRefused ? XCircle : Utensils,
+          iconColor: isRefused ? 'text-amber-600' : 'text-emerald-600',
           reptile_id: f.reptile_id,
           reptile_name: f.reptile?.name || reptilesMap[f.reptile_id]?.name || 'Unknown',
           reptile: reptilesMap[f.reptile_id] || (f.reptile ? {
@@ -244,10 +252,11 @@ const ActivityHistory = () => {
             avatar_border_color: f.reptile.avatar_border_color
           } : null),
           timestamp: f.fed_at,
-          summary: summary + supplementText,
+          summary: isRefused ? `Refused: ${summary}${supplementText}` : summary + supplementText,
           prominentValue: totalItems > 0 ? `×${totalItems}` : null,
           detailLink: `/feed/${f.id}`,
-          notes: f.notes
+          notes: f.notes,
+          isRefused
         };
       });
 
@@ -741,7 +750,13 @@ const ActivityHistory = () => {
                       <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                         {activity.reptile_name}
                       </span>
-                      <CategoryBadge category={activity.category} subcategory={activity.subcategory} />
+                      {activity.isRefused ? (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded font-medium bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 dark:border-amber-500/40">
+                          Refused
+                        </span>
+                      ) : (
+                        <CategoryBadge category={activity.category} subcategory={activity.subcategory} />
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                       </span>

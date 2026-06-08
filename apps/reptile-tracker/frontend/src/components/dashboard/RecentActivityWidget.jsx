@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Utensils, Scale, Activity, HeartPulse, Droplets, ChevronLeft, Ruler } from 'lucide-react';
+import { Utensils, Scale, Activity, HeartPulse, Droplets, ChevronLeft, Ruler, XCircle } from 'lucide-react';
 import ReptileAvatar from '../ReptileAvatar';
 import EmptyState from '../EmptyState';
 
@@ -47,6 +47,14 @@ const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) =
       activeBg: 'bg-emerald-600',
       activeText: 'text-white',
       icon: Utensils
+    },
+    refused: {
+      bg: 'bg-amber-500/15 dark:bg-amber-500/20',
+      text: 'text-amber-700 dark:text-amber-400',
+      border: 'border-amber-500/30 dark:border-amber-500/40',
+      activeBg: 'bg-amber-600',
+      activeText: 'text-white',
+      icon: XCircle
     },
     misting: {
       bg: 'bg-sky-500/15 dark:bg-sky-500/20',
@@ -133,6 +141,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) =
         // Get primary food category from first food item
         const primaryCategory = foodItems[0]?.category || 'other';
         const summary = foodNames || 'Food items';
+        const isRefused = f.status === 'refused';
 
         return {
           id: f.id,
@@ -140,7 +149,7 @@ const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) =
           logType: 'feeding', // For modal
           category: 'feeding',
           subcategory: primaryCategory,
-          icon: Utensils,
+          icon: isRefused ? XCircle : Utensils,
           reptile_id: f.reptile_id,
           reptile_name: f.reptile?.name || reptilesMap[f.reptile_id]?.name || 'Unknown',
           reptile: reptilesMap[f.reptile_id] || (f.reptile ? {
@@ -150,9 +159,10 @@ const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) =
             avatar_border_color: f.reptile.avatar_border_color
           } : null),
           timestamp: f.fed_at,
-          summary,
+          summary: isRefused ? `Refused: ${summary}` : summary,
           prominentValue: totalItems > 0 ? `×${totalItems}` : null,
-          detailLink: `/feed/${f.id}`
+          detailLink: `/feed/${f.id}`,
+          isRefused
         };
       });
 
@@ -476,7 +486,8 @@ const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) =
       <div className="space-y-1">
         {filteredActivities.map((activity, index) => {
           const Icon = activity.icon;
-          const colors = categoryColors[activity.category];
+          // Use amber colors for refused feedings
+          const colors = activity.isRefused ? categoryColors.refused : categoryColors[activity.category];
 
           // Handle click - use modal if callback provided, otherwise fallback to link
           const handleClick = (e) => {
@@ -499,7 +510,13 @@ const RecentActivityWidget = ({ config = {}, size = 'small', onViewActivity }) =
                   <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors truncate">
                     {activity.reptile_name}
                   </span>
-                  <CategoryBadge category={activity.category} subcategory={activity.subcategory} small />
+                  {activity.isRefused ? (
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[10px] rounded font-medium bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 dark:border-amber-500/40">
+                      Refused
+                    </span>
+                  ) : (
+                    <CategoryBadge category={activity.category} subcategory={activity.subcategory} small />
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] text-muted-foreground truncate">
