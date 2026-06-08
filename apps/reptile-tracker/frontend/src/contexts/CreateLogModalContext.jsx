@@ -1,44 +1,54 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 
 /**
- * CreateLogModalContext - Provides global access to open CreateLogModal from anywhere
+ * CreateLogModalContext - Provides global access to CreateLogModal from anywhere
  *
  * Usage:
- * 1. Wrap your app with CreateLogModalProvider
- * 2. In Dashboard, call useCreateLogModalRegistration() to register the modal opener
- * 3. In Layout/other components, call useCreateLogModal() to get openCreateLog function
+ * 1. Wrap your app with CreateLogModalProvider (at App.jsx level)
+ * 2. Render CreateLogModal inside the provider, consuming context state
+ * 3. In any component, call useCreateLogModal().openCreateLog to open the modal
+ *
+ * Per D-01: Modal is mounted at app root, available from any page
+ * Per D-02: No memory - always reset to default state on open
  */
 const CreateLogModalContext = createContext(null);
 
 export function CreateLogModalProvider({ children }) {
-  // Store the registered opener function from Dashboard
-  const [registeredOpener, setRegisteredOpener] = useState(null);
+  // Modal state - managed directly in context (no registration pattern)
+  const [open, setOpen] = useState(false);
+  const [logType, setLogType] = useState('feeding');
+  const [reptileId, setReptileId] = useState(null);
+  const [prefillData, setPrefillData] = useState(null);
 
-  // Function for Dashboard to register its modal opener
-  const registerOpener = useCallback((openerFn) => {
-    setRegisteredOpener(() => openerFn);
+  // Open the modal with specified parameters
+  // Per D-02: Always reset to fresh state on open
+  const openCreateLog = useCallback((type, reptile = null, prefill = null) => {
+    setLogType(type || 'feeding');
+    setReptileId(reptile);
+    setPrefillData(prefill);
+    setOpen(true);
   }, []);
 
-  // Function for Dashboard to unregister when unmounting
-  const unregisterOpener = useCallback(() => {
-    setRegisteredOpener(null);
+  // Close the modal and reset state
+  const closeCreateLog = useCallback(() => {
+    setOpen(false);
+    // Reset state on close for clean next open
+    setLogType('feeding');
+    setReptileId(null);
+    setPrefillData(null);
   }, []);
-
-  // Function that other components call to open the modal
-  const openCreateLog = useCallback((logType, reptileId = null, prefill = null) => {
-    if (registeredOpener) {
-      registeredOpener(logType, reptileId, prefill);
-      return true;
-    }
-    return false; // Modal not available (not on Dashboard)
-  }, [registeredOpener]);
 
   return (
     <CreateLogModalContext.Provider value={{
+      // State for CreateLogModal component
+      open,
+      logType,
+      reptileId,
+      prefillData,
+      // Actions
       openCreateLog,
-      registerOpener,
-      unregisterOpener,
-      isRegistered: !!registeredOpener
+      closeCreateLog,
+      setOpen,
     }}>
       {children}
     </CreateLogModalContext.Provider>
@@ -46,26 +56,24 @@ export function CreateLogModalProvider({ children }) {
 }
 
 /**
- * Hook for components that want to OPEN the modal (Layout, QuickLogForm, etc.)
+ * Hook for components that want to interact with the modal
+ * Returns openCreateLog for opening, and modal state for rendering
  */
 export function useCreateLogModal() {
   const context = useContext(CreateLogModalContext);
   if (!context) {
-    // Return a no-op if not in provider
-    return { openCreateLog: () => false, isRegistered: false };
+    // Return no-op if not in provider (shouldn't happen in normal usage)
+    return {
+      openCreateLog: () => false,
+      closeCreateLog: () => {},
+      open: false,
+      logType: 'feeding',
+      reptileId: null,
+      prefillData: null,
+      setOpen: () => {},
+    };
   }
-  return { openCreateLog: context.openCreateLog, isRegistered: context.isRegistered };
-}
-
-/**
- * Hook for Dashboard to REGISTER its modal opener
- */
-export function useCreateLogModalRegistration() {
-  const context = useContext(CreateLogModalContext);
-  if (!context) {
-    return { registerOpener: () => {}, unregisterOpener: () => {} };
-  }
-  return { registerOpener: context.registerOpener, unregisterOpener: context.unregisterOpener };
+  return context;
 }
 
 export default CreateLogModalContext;

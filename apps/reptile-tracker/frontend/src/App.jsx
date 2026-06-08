@@ -34,7 +34,8 @@ import ActivityHistory from './pages/ActivityHistory';
 import { CelebrationProvider, useCelebrations } from './contexts/CelebrationContext';
 import TaskCounterOverlay from './components/TaskCounterOverlay';
 import { useConfetti } from './hooks/useConfetti';
-import { CreateLogModalProvider } from './contexts/CreateLogModalContext';
+import { CreateLogModalProvider, useCreateLogModal } from './contexts/CreateLogModalContext';
+import { CreateLogModal } from './components/modals/CreateLogModal';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -61,6 +62,30 @@ function CelebrationOverlayManager() {
       previousCount={counterState.previousCount}
       newCount={counterState.newCount}
       onDismiss={dismissOverlay}
+    />
+  );
+}
+
+/**
+ * CreateLogModalManager - Renders CreateLogModal at app level
+ * Must be inside CreateLogModalProvider to access context
+ * Per D-01: Modal is accessible from any page in the app
+ */
+function CreateLogModalManager({ onSuccess }) {
+  const { open, logType, reptileId, prefillData, closeCreateLog, setOpen } = useCreateLogModal();
+
+  return (
+    <CreateLogModal
+      logType={logType}
+      reptileId={reptileId}
+      prefill={prefillData}
+      open={open}
+      onOpenChange={(isOpen) => !isOpen && closeCreateLog()}
+      onSuccess={() => {
+        closeCreateLog();
+        onSuccess?.();
+      }}
+      onCancel={closeCreateLog}
     />
   );
 }
@@ -220,7 +245,13 @@ function App() {
             </>
           ) : hasHousehold === true ? (
             // Authenticated with household - normal app
-            <Route element={<CreateLogModalProvider><Layout user={user} onLogout={handleLogout} /></CreateLogModalProvider>}>
+            // CreateLogModalProvider wraps Layout + CreateLogModalManager so modal is accessible from any page
+            <Route element={
+              <CreateLogModalProvider>
+                <Layout user={user} onLogout={handleLogout} />
+                <CreateLogModalManager />
+              </CreateLogModalProvider>
+            }>
               <Route path="/" element={<Dashboard />} />
               <Route path="/activity" element={<ActivityHistory />} />
               <Route path="/reptiles" element={<ReptileList />} />

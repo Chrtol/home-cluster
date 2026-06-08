@@ -21,8 +21,7 @@ import { useModalState } from '@/hooks/useModalState';
 import { ViewLogModal } from '@/components/modals/ViewLogModal';
 import { ViewScheduleModal } from '@/components/modals/ViewScheduleModal';
 import { ViewInstanceModal } from '@/components/modals/ViewInstanceModal';
-import { CreateLogModal } from '@/components/modals/CreateLogModal';
-import { useCreateLogModalRegistration } from '@/contexts/CreateLogModalContext';
+import { useCreateLogModal } from '@/contexts/CreateLogModalContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -53,13 +52,10 @@ export default function Dashboard() {
   const { isOpen: viewLogOpen, modalId: viewLogId, open: openViewLog, close: closeViewLog } = useModalState('viewLog');
   const { isOpen: viewInstanceOpen, modalId: viewInstanceId, open: openViewInstance, close: closeViewInstance } = useModalState('viewInstance');
   const { isOpen: viewScheduleOpen, modalId: viewScheduleId, open: openViewSchedule, close: closeViewSchedule } = useModalState('viewSchedule');
-  const { isOpen: createOpen, modalId: createType, open: openCreate, close: closeCreate } = useModalState('create');
   const [selectedLogType, setSelectedLogType] = useState(null); // Log type for view modal
 
-  // Register CreateLogModal opener with global context (allows Track button to open modal)
-  const { registerOpener, unregisterOpener } = useCreateLogModalRegistration();
-  const [selectedReptileId, setSelectedReptileId] = useState(null); // Reptile ID for create modal
-  const [prefillData, setPrefillData] = useState(null); // Prefill data for create modal
+  // Access CreateLogModal from global context (modal is now in App.jsx)
+  const { openCreateLog } = useCreateLogModal();
 
   // Weekly calendar state
   const [schedules, setSchedules] = useState([]);
@@ -81,18 +77,10 @@ export default function Dashboard() {
   // Current date for calendar navigation (defaults to today)
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
 
-  // Handler to open CreateLogModal - memoized for stable reference in context registration
+  // Handler to open CreateLogModal - delegates to global context
   const handleCreateLog = useCallback((logType, reptileId, prefill) => {
-    setSelectedReptileId(reptileId);
-    setPrefillData(prefill);
-    openCreate(logType);
-  }, [openCreate]);
-
-  // Register the CreateLogModal opener with global context
-  useEffect(() => {
-    registerOpener(handleCreateLog);
-    return () => unregisterOpener();
-  }, [registerOpener, unregisterOpener, handleCreateLog]);
+    openCreateLog(logType, reptileId, prefill);
+  }, [openCreateLog]);
 
   // Load display settings on mount and apply correct profile for screen size
   useEffect(() => {
@@ -2521,19 +2509,7 @@ export default function Dashboard() {
           }}
         />
 
-        {/* Create Log Modal (Phase 27) */}
-        <CreateLogModal
-          logType={createType}
-          reptileId={selectedReptileId}
-          prefill={prefillData}
-          open={createOpen}
-          onOpenChange={(open) => !open && closeCreate()}
-          onSuccess={() => {
-            closeCreate();
-            refreshDashboard();
-          }}
-          onCancel={closeCreate}
-        />
+        {/* CreateLogModal is now rendered at App.jsx level via CreateLogModalContext */}
       </div>
     </div>
   );
