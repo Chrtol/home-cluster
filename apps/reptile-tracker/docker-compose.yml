@@ -43,6 +43,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       WEBHOOK_URL: ${WEBHOOK_URL:-}
       ENVIRONMENT: development
+      LOCAL_AUTH_ENABLED: "true"
       SQL_ECHO: "false"
       COOKIE_SECURE: "false"
       LOCAL_STORAGE_PATH: /app/photos
