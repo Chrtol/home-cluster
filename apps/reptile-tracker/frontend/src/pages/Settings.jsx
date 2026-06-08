@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, ChevronUp, ChevronDown, PartyPopper, BarChart3 } from 'lucide-react';
+import { Shield, Trash2, Settings as SettingsIcon, Users, Layout, Eye, EyeOff, Download, Upload, RotateCcw, GripVertical, Moon, Sun, ChevronUp, ChevronDown, PartyPopper, BarChart3, Wrench } from 'lucide-react';
 import { formatDate as utilFormatDate, formatTime as utilFormatTime, getUserTimeFormat, getUserDateFormat, getUserTimezone } from '../utils/dateFormatting';
 import ProfileManager from '../components/ProfileManager';
 import StatisticsPreviewPanel from '../components/StatisticsPreviewPanel';
@@ -46,7 +46,11 @@ import { DatePicker } from '@/components/ui/date-picker';
 import PendingTransfersSection from '../components/import-export/PendingTransfersSection';
 import ExportWizard from '../components/import-export/ExportWizard';
 import ImportWizard from '../components/import-export/ImportWizard';
+import DevUserSwitcher from '../components/DevUserSwitcher';
 import { HardDriveDownload, HardDriveUpload, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
+
+// Check if development environment
+const isDevelopment = import.meta.env.DEV || import.meta.env.VITE_ENVIRONMENT === 'development';
 
 export default function Settings() {
   return (
@@ -75,6 +79,12 @@ export default function Settings() {
             <HardDriveDownload size={18} />
             Import/Export
           </TabsTrigger>
+          {isDevelopment && (
+            <TabsTrigger value="dev-tools" className="flex items-center gap-2">
+              <Wrench size={18} />
+              Dev Tools
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="preferences">
@@ -92,7 +102,114 @@ export default function Settings() {
         <TabsContent value="import-export">
           <ImportExportTab />
         </TabsContent>
+        {isDevelopment && (
+          <TabsContent value="dev-tools">
+            <DevToolsTab />
+          </TabsContent>
+        )}
       </Tabs>
+    </div>
+  );
+}
+
+// DEV TOOLS TAB COMPONENT (development environment only)
+function DevToolsTab() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch current user info
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await axios.get('/auth/me');
+        setCurrentUser(response.data);
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+          <Wrench size={20} />
+          User Switching
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Switch between seeded dev users to test different roles and permissions.
+          Available users: owner, admin, caretaker, viewer (Household A), and other (Household B for isolation testing).
+        </p>
+
+        {/* Current user display */}
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading current user...</p>
+        ) : currentUser ? (
+          <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
+            <p className="text-sm">
+              <span className="text-muted-foreground">Currently signed in as: </span>
+              <span className="font-medium text-foreground">{currentUser.email}</span>
+            </p>
+          </div>
+        ) : null}
+
+        {/* DevUserSwitcher component */}
+        <DevUserSwitcher currentUser={currentUser} />
+      </div>
+
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4 text-foreground">Dev User Passwords</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Quick reference for local auth testing:
+        </p>
+        <div className="overflow-x-auto">
+          <table className="text-sm w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 pr-4 text-muted-foreground font-medium">Email</th>
+                <th className="text-left py-2 pr-4 text-muted-foreground font-medium">Password</th>
+                <th className="text-left py-2 text-muted-foreground font-medium">Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border/50">
+                <td className="py-2 pr-4 font-mono text-xs">dev@local.dev</td>
+                <td className="py-2 pr-4 font-mono text-xs">dev123</td>
+                <td className="py-2">Owner (default)</td>
+              </tr>
+              <tr className="border-b border-border/50">
+                <td className="py-2 pr-4 font-mono text-xs">owner@local.dev</td>
+                <td className="py-2 pr-4 font-mono text-xs">owner123</td>
+                <td className="py-2">Owner</td>
+              </tr>
+              <tr className="border-b border-border/50">
+                <td className="py-2 pr-4 font-mono text-xs">admin@local.dev</td>
+                <td className="py-2 pr-4 font-mono text-xs">admin123</td>
+                <td className="py-2">Admin</td>
+              </tr>
+              <tr className="border-b border-border/50">
+                <td className="py-2 pr-4 font-mono text-xs">caretaker@local.dev</td>
+                <td className="py-2 pr-4 font-mono text-xs">caretaker123</td>
+                <td className="py-2">Caretaker</td>
+              </tr>
+              <tr className="border-b border-border/50">
+                <td className="py-2 pr-4 font-mono text-xs">viewer@local.dev</td>
+                <td className="py-2 pr-4 font-mono text-xs">viewer123</td>
+                <td className="py-2">Viewer</td>
+              </tr>
+              <tr>
+                <td className="py-2 pr-4 font-mono text-xs">other@local.dev</td>
+                <td className="py-2 pr-4 font-mono text-xs">other123</td>
+                <td className="py-2">Owner (Household B)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
