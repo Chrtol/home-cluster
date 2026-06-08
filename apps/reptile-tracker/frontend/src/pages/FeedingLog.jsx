@@ -4,7 +4,7 @@ import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2, Calendar, Heart, Star } from 'lucide-react';
+import { Leaf, Bug, Utensils, Plus, X, Edit2, Trash2, Calendar, Heart, Star, XCircle, Clock, CalendarClock } from 'lucide-react';
 import { getUserTimeFormat, formatDateTime } from '../utils/dateFormatting';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -53,7 +53,12 @@ const feedingSchema = z.object({
     quantity: z.number().min(1),
     supplement_ids: z.array(z.number())
   })),
-  global_supplements: z.array(z.number())
+  global_supplements: z.array(z.number()),
+  // Refusal tracking fields
+  is_refused: z.boolean(),
+  retry_option: z.enum(['tomorrow_same_time', 'next_scheduled', 'custom', '']).optional(),
+  retry_date: z.string().optional(),
+  retry_time: z.string().optional()
 }).refine(data => data.include_insects || data.include_salad || data.include_prepared, {
   message: 'Please select at least one feeding type',
   path: ['include_insects']
@@ -66,6 +71,12 @@ const feedingSchema = z.object({
 }).refine(data => !data.include_prepared || data.prepared_items.length > 0, {
   message: 'Please add at least one prepared food item or uncheck Prepared Food',
   path: ['prepared_items']
+}).refine(data => !data.is_refused || data.retry_option, {
+  message: 'Please select a retry option for the refused feeding',
+  path: ['retry_option']
+}).refine(data => !(data.is_refused && data.retry_option === 'custom') || (data.retry_date && data.retry_time), {
+  message: 'Please select a date and time for the custom retry',
+  path: ['retry_date']
 });
 
 export default function FeedingLog() {
@@ -123,7 +134,12 @@ export default function FeedingLog() {
       salad_components: [],
       salad_supplements: [],
       prepared_items: [],
-      global_supplements: []
+      global_supplements: [],
+      // Refusal tracking
+      is_refused: false,
+      retry_option: '',
+      retry_date: '',
+      retry_time: ''
     }
   });
 
@@ -144,6 +160,8 @@ export default function FeedingLog() {
   const watchIncludeSalad = useWatch({ control: form.control, name: 'include_salad' });
   const watchIncludePrepared = useWatch({ control: form.control, name: 'include_prepared' });
   const watchFedDate = useWatch({ control: form.control, name: 'fed_date' });
+  const watchIsRefused = useWatch({ control: form.control, name: 'is_refused' });
+  const watchRetryOption = useWatch({ control: form.control, name: 'retry_option' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -530,6 +548,20 @@ export default function FeedingLog() {
 
     const fedAtISO = `${data.fed_date}T${data.fed_time}:00${offsetString}`;
 
+    // Calculate retry datetime if custom option selected
+    let retryDatetime = null;
+    if (data.is_refused && data.retry_option === 'custom' && data.retry_date && data.retry_time) {
+      const [rYear, rMonth, rDay] = data.retry_date.split('-').map(Number);
+      const [rHour, rMinute] = data.retry_time.split(':').map(Number);
+      const retryLocalDate = new Date(rYear, rMonth - 1, rDay, rHour, rMinute, 0);
+      const rtzOffset = -retryLocalDate.getTimezoneOffset();
+      const rOffsetHours = Math.floor(Math.abs(rtzOffset) / 60);
+      const rOffsetMinutes = Math.abs(rtzOffset) % 60;
+      const rOffsetSign = rtzOffset >= 0 ? '+' : '-';
+      const rOffsetString = `${rOffsetSign}${String(rOffsetHours).padStart(2, '0')}:${String(rOffsetMinutes).padStart(2, '0')}`;
+      retryDatetime = `${data.retry_date}T${data.retry_time}:00${rOffsetString}`;
+    }
+
     let payload = {
       reptile_id: parseInt(data.reptile_id),
       fed_at: fedAtISO,
@@ -537,7 +569,11 @@ export default function FeedingLog() {
       is_salad: data.include_salad,
       foods: [],
       supplements: data.global_supplements,
-      salad_components: []
+      salad_components: [],
+      // Refusal tracking
+      status: data.is_refused ? 'refused' : 'completed',
+      retry_option: data.is_refused ? data.retry_option : null,
+      retry_datetime: retryDatetime
     };
 
     // Add insect foods with per-item supplements
@@ -707,6 +743,31 @@ export default function FeedingLog() {
                     }
                     return null;
                   })()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refused feeding indicator */}
+        {existingFeeding.status === 'refused' && (
+          <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+            <div className="flex items-start gap-3">
+              <XCircle size={20} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                  Refused Feeding
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-300">
+                  This feeding was refused by the reptile.
+                  {existingFeeding.retry_scheduled_for && (
+                    <span>
+                      {' '}Retry scheduled for{' '}
+                      <span className="font-medium">
+                        {formatDateTime(existingFeeding.retry_scheduled_for)}
+                      </span>
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -1501,6 +1562,137 @@ export default function FeedingLog() {
                 </FormItem>
               )}
             />
+          </div>
+
+          {/* Refused Feeding Toggle */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+              <label className="flex items-center gap-3 cursor-pointer flex-1">
+                <input
+                  type="checkbox"
+                  checked={watchIsRefused}
+                  onChange={(e) => {
+                    form.setValue('is_refused', e.target.checked);
+                    if (!e.target.checked) {
+                      form.setValue('retry_option', '');
+                      form.setValue('retry_date', '');
+                      form.setValue('retry_time', '');
+                    }
+                  }}
+                  className="rounded w-5 h-5"
+                />
+                <div className="flex items-center gap-2">
+                  <XCircle size={20} className="text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium text-amber-900 dark:text-amber-100">Refused Feeding</span>
+                </div>
+              </label>
+            </div>
+
+            {/* Retry Options - shown when refused is checked */}
+            {watchIsRefused && (
+              <div className="p-4 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700 rounded-lg space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock size={18} className="text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium text-amber-900 dark:text-amber-100">Schedule Retry</span>
+                </div>
+
+                <p className="text-sm text-amber-800 dark:text-amber-300">
+                  When would you like to try feeding again?
+                </p>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-2 rounded hover:bg-amber-100 dark:hover:bg-amber-800/30 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="retry_option"
+                      value="tomorrow_same_time"
+                      checked={watchRetryOption === 'tomorrow_same_time'}
+                      onChange={(e) => form.setValue('retry_option', e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <span className="font-medium text-sm">Tomorrow, same time</span>
+                      <p className="text-xs text-muted-foreground">Retry at the same time tomorrow</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 p-2 rounded hover:bg-amber-100 dark:hover:bg-amber-800/30 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="retry_option"
+                      value="next_scheduled"
+                      checked={watchRetryOption === 'next_scheduled'}
+                      onChange={(e) => form.setValue('retry_option', e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <span className="font-medium text-sm">Next scheduled feeding</span>
+                      <p className="text-xs text-muted-foreground">Wait until the next scheduled feeding time</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 p-2 rounded hover:bg-amber-100 dark:hover:bg-amber-800/30 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="retry_option"
+                      value="custom"
+                      checked={watchRetryOption === 'custom'}
+                      onChange={(e) => form.setValue('retry_option', e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <span className="font-medium text-sm">Custom date/time</span>
+                      <p className="text-xs text-muted-foreground">Choose a specific time to retry</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Custom date/time picker */}
+                {watchRetryOption === 'custom' && (
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <FormField
+                      control={form.control}
+                      name="retry_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm">Retry Date</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="retry_time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm">Retry Time</FormLabel>
+                          <FormControl>
+                            <TimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {form.formState.errors.retry_option && (
+                  <p className="text-sm font-medium text-destructive">{form.formState.errors.retry_option.message}</p>
+                )}
+                {form.formState.errors.retry_date && (
+                  <p className="text-sm font-medium text-destructive">{form.formState.errors.retry_date.message}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notes */}
