@@ -45,7 +45,7 @@ services:
       ENVIRONMENT: development
       SQL_ECHO: "false"
       COOKIE_SECURE: "false"
-      LOCAL_STORAGE_PATH: /app
+      LOCAL_STORAGE_PATH: /app/photos
     ports:
       - "8000:8000"
     depends_on:
@@ -73,6 +73,7 @@ services:
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       ENVIRONMENT: development
+      LOCAL_STORAGE_PATH: /app/photos
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,6 +81,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
+      - photos_data:/app/photos
 
   frontend:
     build:
