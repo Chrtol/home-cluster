@@ -226,7 +226,7 @@ class FeedingCreate(BaseModel):
     salad_components: List[int] = []  # List of food IDs for salad
     notes: Optional[str] = None
     # Refusal tracking fields
-    status: FeedingStatus = FeedingStatus.COMPLETED
+    status: FeedingStatus = FeedingStatus.EATEN
     retry_option: Optional[RetryOption] = None
     retry_datetime: Optional[datetime] = None  # For custom retry time
 
@@ -262,7 +262,7 @@ class Feeding(BaseModel):
     created_at: datetime
     attribution: Optional["CompletionAttributionResponse"] = None
     # Refusal tracking
-    status: FeedingStatus = FeedingStatus.COMPLETED
+    status: FeedingStatus = FeedingStatus.EATEN
     retry_scheduled_for: Optional[datetime] = None
     retry_instance_id: Optional[int] = None
 

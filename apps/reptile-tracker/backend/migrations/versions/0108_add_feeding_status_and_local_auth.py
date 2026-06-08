@@ -1,7 +1,7 @@
 """Add feeding status and local auth fields
 
-Revision ID: 0107
-Revises: 0106
+Revision ID: 0108
+Revises: 0107
 Create Date: 2026-06-08 13:15:00.000000
 
 Phase 35 Foundation Migration:
@@ -12,8 +12,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0107'
-down_revision = '0106'
+revision = '0108'
+down_revision = '0107'
 branch_labels = None
 depends_on = None
 
