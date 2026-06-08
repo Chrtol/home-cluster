@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Bug Fixes & Polish
 status: executing
-stopped_at: Phase 35 Plan 03 complete — Refused Feeding Tracking
-last_updated: "2026-06-08T13:37:00Z"
+stopped_at: Phase 35 Plan 04 complete — Local Auth & Dev User Switching
+last_updated: "2026-06-08T13:46:00Z"
 last_activity: 2026-06-08
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 18
-  completed_plans: 14
-  percent: 78
+  completed_plans: 15
+  percent: 83
 ---
 
 # Reptile Tracker - Project State
@@ -23,15 +23,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 03 complete)
+**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 04 complete)
 
 ## Current Position
 
 **Phase:** 35 (Bug Fixes & Feeding Enhancements)
-**Plan:** 04 (next)
-**Status:** Plan 03 complete — Refused Feeding Tracking
+**Plan:** 05 (next)
+**Status:** Plan 04 complete — Local Auth & Dev User Switching
 **Last activity:** 2026-06-08
-**Progress:** ████████░░ (78% - 14/18 v1.6 plans complete)
+**Progress:** ████████░░ (83% - 15/18 v1.6 plans complete)
 
 **Completed Milestones:**
 
@@ -41,9 +41,38 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 - v1.4 Schedule Type Alignment & UX Polish (Phases 26-28) — 2026-02-20
 
-**Next:** Execute Phase 35 Plan 04
+**Next:** Execute Phase 35 Plan 05
 
 ## Recent Completions
+
+### Phase 35 Plan 04: Local Auth & Dev User Switching
+
+**Completed:** 2026-06-08
+**Summary:** Local authentication with bcrypt password hashing, 5 seeded dev users across 2 households for multi-role testing, and DevUserSwitcher in Settings Dev Tools tab
+
+**Key accomplishments:**
+
+- Created auth_router.py with bcrypt password hashing via passlib
+- Added POST /auth/local for local username/password authentication
+- Added POST /auth/dev/switch for dev user session switching (dev only)
+- Added GET /auth/dev/users for dev switcher dropdown list
+- Created 5 dev users across 2 households (owner, admin, caretaker, viewer in A; other in B)
+- All users have password_hash set with oidc_sub pattern "local:{email}"
+- Updated Login.jsx with local auth toggle and email/password form
+- Created DevUserSwitcher.jsx with Select dropdown for instant switching
+- Added Dev Tools tab to Settings.jsx (development environment only)
+
+**Files created:**
+
+- `backend/app/routers/auth_router.py`
+- `frontend/src/components/DevUserSwitcher.jsx`
+
+**Files modified:**
+
+- `backend/app/main.py`
+- `backend/app/seed_dev_data.py`
+- `frontend/src/pages/Login.jsx`
+- `frontend/src/pages/Settings.jsx`
 
 ### Phase 35 Plan 03: Refused Feeding Tracking
 
@@ -317,11 +346,11 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Action:** Phase 35 Plan 03 executed — Refused Feeding Tracking
-**Stopped at:** Phase 35 Plan 03 complete
-**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-04-PLAN.md`
+**Action:** Phase 35 Plan 04 executed — Local Auth & Dev User Switching
+**Stopped at:** Phase 35 Plan 04 complete
+**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-05-PLAN.md`
 
-**Next step:** Execute Phase 35 Plan 04
+**Next step:** Execute Phase 35 Plan 05
 
 ## Phase 33 Plan Summary (UX Polish) - COMPLETE
 
@@ -485,6 +514,17 @@ For future milestones:
 | XCircle icon for refused | 35-03 | Visually indicates "not completed" without being negative | Clear status at a glance |
 | "Refused" badge replaces category | 35-03 | Status is more important than category for refused items | Prominent indication in activity views |
 
+## Phase 35 Plan 04 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| bcrypt via passlib CryptContext | 35-04 | Industry standard for password hashing | Secure local auth |
+| oidc_sub pattern 'local:{email}' | 35-04 | Distinguishes local users from OIDC users | Clear audit trail, no collisions |
+| Dev Tools tab only in development | 35-04 | Security: prevent accidental user switching in prod | Environment-gated feature |
+| Environment check returns 403 | 35-04 | Standard HTTP semantics for forbidden action | Clear error handling |
+| queryClient.clear() before reload | 35-04 | Ensures fresh data for new user session | No stale cache from previous user |
+| Password reference table in Dev Tools | 35-04 | Quick reference for testing without docs lookup | Faster dev iteration |
+
 ---
 
-**Project Status:** v1.6 Phase 35 Plan 03 complete (2026-06-08). Next: Execute Phase 35 Plan 04.
+**Project Status:** v1.6 Phase 35 Plan 04 complete (2026-06-08). Next: Execute Phase 35 Plan 05.
