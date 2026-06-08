@@ -1,0 +1,85 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app postiz-temporal
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  values:
+    controllers:
+      postiz-temporal:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Create the two Temporal databases (temporal + temporal_visibility),
+          # both owned by the temporal role, on the existing CloudNative-PG cluster.
+          init-db-default:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 18.4
+              pullPolicy: IfNotPresent
+            env:
+              INIT_POSTGRES_DBNAME: temporal
+            envFrom: &envFrom
+              - secretRef:
+                  name: postiz-temporal-secret
+          init-db-visibility:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 18.4
+              pullPolicy: IfNotPresent
+            env:
+              INIT_POSTGRES_DBNAME: temporal_visibility
+            envFrom: *envFrom
+        containers:
+          app:
+            image:
+              repository: docker.io/temporalio/auto-setup
+              tag: 1.28.1@sha256:607d68caa111338d754771efb876c92dfcdae06d056e4530bb31cd0f37406e6a
+              pullPolicy: IfNotPresent
+            env:
+              # SQL persistence on CloudNative-PG, Postgres-based visibility (no Elasticsearch)
+              DB: postgres12
+              DB_PORT: "5432"
+              DBNAME: temporal
+              VISIBILITY_DBNAME: temporal_visibility
+              ENABLE_ES: "false"
+              # Databases are pre-created by the initContainers above
+              SKIP_DB_CREATE: "true"
+              BIND_ON_IP: 0.0.0.0
+              DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+            envFrom: *envFrom
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          grpc:
+            port: 7233
+    persistence:
+      dynamicconfig:
+        type: configMap
+        name: postiz-temporal-dynamicconfig
+        globalMounts:
+          - path: /etc/temporal/config/dynamicconfig/development-sql.yaml
+            subPath: development-sql.yaml
+            readOnly: true

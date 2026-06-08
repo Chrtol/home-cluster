@@ -1,0 +1,77 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app postiz-temporal
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  dependsOn:
+    - name: cloudnative-pg
+      namespace: database
+  path: "./kubernetes/apps/default/postiz/temporal"
+  postBuild:
+    substitute:
+      APP: *app
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 10m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app postiz
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/oidc-application
+    - ../../../../components/gatus/external
+  dependsOn:
+    - name: postiz-temporal
+      namespace: default
+    - name: cloudnative-pg
+      namespace: database
+    - name: dragonfly
+      namespace: database
+    - name: authentik
+      namespace: security
+  path: "./kubernetes/apps/default/postiz/app"
+  postBuild:
+    substitute:
+      APP: *app
+      CEPH_RBD_CAPACITY: 20Gi
+      GATUS_SUBDOMAIN: postiz
+      # OIDC component variables
+      GROUP: "Default"
+      SUBDOMAIN: postiz
+      DISPLAY_NAME: "Postiz"
+      DESCRIPTION: "Social media scheduling & management"
+      REDIRECT_PATH: "/settings"
+      OIDC_SECRET_NAMESPACE: default
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 10m

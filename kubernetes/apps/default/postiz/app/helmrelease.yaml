@@ -1,0 +1,117 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app postiz
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  values:
+    controllers:
+      postiz:
+        labels:
+          postgres: "true"
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              tag: 18.4
+              pullPolicy: IfNotPresent
+            envFrom:
+              - secretRef:
+                  name: postiz-secret
+        containers:
+          app:
+            image:
+              repository: ghcr.io/gitroomhq/postiz-app
+              tag: v2.21.8@sha256:3ec7bc8ecf61f08c22e0954291702b097f944def515dc259cb3a441aba4046c0
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # Public URLs (same host internal + external)
+              MAIN_URL: https://postiz.${SECRET_DOMAIN}
+              FRONTEND_URL: https://postiz.${SECRET_DOMAIN}
+              NEXT_PUBLIC_BACKEND_URL: https://postiz.${SECRET_DOMAIN}/api
+              BACKEND_INTERNAL_URL: http://localhost:3000
+              # Combined "general" image (frontend + backend + workers + cron behind Caddy on :5000)
+              IS_GENERAL: "true"
+              RUN_CRON: "true"
+              # Set to "true" after your first OAuth login to lock down sign-ups
+              DISABLE_REGISTRATION: "false"
+              # Local storage on the Ceph-RBD PVC
+              STORAGE_PROVIDER: local
+              UPLOAD_DIRECTORY: /uploads
+              NEXT_PUBLIC_UPLOAD_DIRECTORY: /uploads
+              API_LIMIT: "30"
+              NX_ADD_PLUGINS: "false"
+              # Temporal workflow engine (in-cluster, postgres-backed)
+              TEMPORAL_ADDRESS: postiz-temporal.default.svc.cluster.local:7233
+              TEMPORAL_NAMESPACE: default
+              # Map the Authentik blueprint secret keys onto the names Postiz expects
+              POSTIZ_OAUTH_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ .Release.Name }}-oidc-authentik-application"
+                    key: clientID
+              POSTIZ_OAUTH_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ .Release.Name }}-oidc-authentik-application"
+                    key: clientSecret
+            envFrom:
+              - secretRef:
+                  name: postiz-secret
+            securityContext:
+              readOnlyRootFilesystem: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 1Gi
+              limits:
+                memory: 3Gi
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: &port 5000
+    route:
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["postiz.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["postiz.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        existingClaim: postiz
+        advancedMounts:
+          postiz:
+            app:
+              - path: /uploads
+                subPath: uploads
+              - path: /config
+                subPath: config
