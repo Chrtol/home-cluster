@@ -862,7 +862,7 @@ Plans:
 
 Plans:
 - [x] 35-01-PLAN.md — Foundation: React Query setup, FeedingStatus/password_hash models, migration (Wave 1)
-- [ ] 35-02-PLAN.md — Quick-log availability + Header stats refresh (BUG-02, BUG-04) (Wave 2)
+- [x] 35-02-PLAN.md — Quick-log availability + Header stats refresh (BUG-02, BUG-04) (Wave 2)
 - [ ] 35-03-PLAN.md — Refused feeding tracking (FEAT-02) (Wave 3)
 - [ ] 35-04-PLAN.md — Local user authentication and dev switcher (FEAT-03) (Wave 4)
 - [ ] 35-05-PLAN.md — Human verification checkpoint (Wave 5)
@@ -910,4 +910,4 @@ Plans:
 | 32. Bug Fixes | v1.6 | 3/3 | Complete | 2026-06-07 |
 | 33. UX Polish & Feature Completion | v1.6 | 8/8 | Complete | 2026-06-07 |
 | 34. Import/Export System | v1.6 | 6/6 | Complete | 2026-06-08 |
-| 35. Bug Fixes & Feeding Enhancements | v1.7 | 1/5 | In Progress | - |
+| 35. Bug Fixes & Feeding Enhancements | v1.7 | 2/5 | In Progress | - |

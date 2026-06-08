@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Bug Fixes & Polish
 status: executing
-stopped_at: Phase 35 Plan 01 complete — Foundation Infrastructure
-last_updated: "2026-06-08T13:17:00Z"
+stopped_at: Phase 35 Plan 02 complete — Header Stats Refresh
+last_updated: "2026-06-08T13:25:00Z"
 last_activity: 2026-06-08
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 18
-  completed_plans: 12
-  percent: 66
+  completed_plans: 13
+  percent: 72
 ---
 
 # Reptile Tracker - Project State
@@ -23,15 +23,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 01 complete)
+**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 02 complete)
 
 ## Current Position
 
 **Phase:** 35 (Bug Fixes & Feeding Enhancements)
-**Plan:** 02 (next)
-**Status:** Plan 01 complete — React Query, FeedingStatus, local auth models
+**Plan:** 03 (next)
+**Status:** Plan 02 complete — Header Stats Refresh with React Query
 **Last activity:** 2026-06-08
-**Progress:** ████████░░ (66% - 12/18 v1.6 plans complete)
+**Progress:** ████████░░ (72% - 13/18 v1.6 plans complete)
 
 **Completed Milestones:**
 
@@ -41,9 +41,33 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 - v1.4 Schedule Type Alignment & UX Polish (Phases 26-28) — 2026-02-20
 
-**Next:** Execute Phase 35 Plan 02
+**Next:** Execute Phase 35 Plan 03
 
 ## Recent Completions
+
+### Phase 35 Plan 02: Header Stats Refresh
+
+**Completed:** 2026-06-08
+**Summary:** Global CreateLogModal mounted at App.jsx level for any-page access, header stats converted to React Query with cache invalidation triggering immediate refresh after task completion
+
+**Key accomplishments:**
+
+- Refactored CreateLogModalContext to manage state directly (no registration pattern)
+- Added CreateLogModalManager component in App.jsx to render modal at app level
+- Removed CreateLogModal and registration from Dashboard.jsx
+- Added close-on-navigation using useLocation + prevPathRef pattern
+- Converted QuickStatsHeader to useQuery with queryKey ['dashboard', 'quickStats']
+- Converted UserStreakDisplay to useQuery with queryKey ['dashboard', 'userStreak']
+- Added queryClient.invalidateQueries after CreateLogModal submission
+
+**Files modified:**
+
+- `frontend/src/contexts/CreateLogModalContext.jsx`
+- `frontend/src/App.jsx`
+- `frontend/src/pages/Dashboard.jsx`
+- `frontend/src/components/modals/CreateLogModal.jsx`
+- `frontend/src/components/QuickStatsHeader.jsx`
+- `frontend/src/components/UserStreakDisplay.jsx`
 
 ### Phase 35 Plan 01: Foundation Infrastructure
 
@@ -233,7 +257,6 @@ From v1.3:
 Reported bugs (tracked in v1.6 Phase 32):
 
 - Quick-logging doesn't pre-fill current time
-- Logging a task doesn't auto-refresh dashboard
 - Default food not pre-filled when logging
 - Dashboard layout can't be edited for other device profiles from current device
 - Deleting feeding log returns 500 error
@@ -268,11 +291,11 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Action:** Phase 35 Plan 01 executed — Foundation Infrastructure
-**Stopped at:** Phase 35 Plan 01 complete
-**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-02-PLAN.md`
+**Action:** Phase 35 Plan 02 executed — Header Stats Refresh
+**Stopped at:** Phase 35 Plan 02 complete
+**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-03-PLAN.md`
 
-**Next step:** Execute Phase 35 Plan 02 (Header Stats Refresh)
+**Next step:** Execute Phase 35 Plan 03
 
 ## Phase 33 Plan Summary (UX Polish) - COMPLETE
 
@@ -417,6 +440,15 @@ For future milestones:
 | onViewInstance replaces onViewSchedule in dashboard | 27-08 | Widgets pass instance ID to open instance modal, not schedule ID | TaskChip, TodayScheduleTimeline, ReptileStatusCards all updated |
 | Supplement pre-fill extracts IDs from objects | 27-08 | Schedule instances pass `[{id, name}]` but form expects `[id]` | CreateLogModal now handles both formats |
 
+## Phase 35 Plan 02 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| CreateLogModalContext manages state directly | 35-02 | Eliminates registration pattern, simpler API | Modal accessible from any page without Dashboard mount |
+| CreateLogModalManager renders at Layout level | 35-02 | Sibling to Layout within CreateLogModalProvider | Modal available app-wide, state managed by context |
+| useLocation + prevPathRef for close-on-nav | 35-02 | Standard React Router pattern for detecting URL changes | Modal closes when user navigates away |
+| Query keys use ['dashboard', ...] prefix | 35-02 | Enables selective invalidation with shared prefix | invalidateQueries(['dashboard']) refreshes both stats |
+
 ---
 
-**Project Status:** v1.6 Phase 35 Plan 01 complete (2026-06-08). Next: Execute Phase 35 Plan 02 for Header Stats Refresh.
+**Project Status:** v1.6 Phase 35 Plan 02 complete (2026-06-08). Next: Execute Phase 35 Plan 03.
