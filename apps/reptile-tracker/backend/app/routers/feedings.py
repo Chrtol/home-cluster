@@ -303,6 +303,16 @@ async def create_feeding(
             first_day_of_week=0  # Default to Monday
         )
 
+    # Handle refusal retry scheduling if status is REFUSED and retry_option provided
+    if feeding.status == FeedingStatus.REFUSED and feeding.retry_option:
+        from app.services.feeding_refusal_service import schedule_feeding_retry
+        await schedule_feeding_retry(
+            db,
+            new_feeding,
+            feeding.retry_option,
+            feeding.retry_datetime
+        )
+
     await db.commit()
 
     # Reload with relationships

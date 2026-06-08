@@ -7,6 +7,11 @@ from .health_status_service import (
     batch_derive_health_statuses,
     validate_health_record_state,
 )
+from .feeding_refusal_service import (
+    schedule_feeding_retry,
+    get_next_scheduled_feeding,
+    cancel_retry,
+)
 
 __all__ = [
     "get_active_shed_record",
@@ -14,4 +19,7 @@ __all__ = [
     "derive_health_status",
     "batch_derive_health_statuses",
     "validate_health_record_state",
+    "schedule_feeding_retry",
+    "get_next_scheduled_feeding",
+    "cancel_retry",
 ]
