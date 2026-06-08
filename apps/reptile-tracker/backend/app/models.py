@@ -356,7 +356,9 @@ class Feeding(Base):
     schedule_completion_id = Column(Integer, ForeignKey("schedule_completions.id", ondelete="SET NULL"), nullable=True, index=True)
 
     # Feeding status for refused tracking (Phase 35)
-    status = Column(Enum(FeedingStatus), default=FeedingStatus.EATEN, nullable=False, server_default="eaten")
+    # Note: server_default removed - causes issues with create_all() on fresh DB.
+    # Migration 0107 handles existing rows; Python default handles new inserts.
+    status = Column(Enum(FeedingStatus, name='feedingstatus', create_constraint=True), default=FeedingStatus.EATEN, nullable=False)
     retry_scheduled_for = Column(DateTime(timezone=True), nullable=True)
     retry_instance_id = Column(Integer, ForeignKey("schedule_instances.id", ondelete="SET NULL"), nullable=True)
 
