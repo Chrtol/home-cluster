@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -218,6 +219,18 @@ export function CreateLogModal({
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [supplementsPreFilled, setSupplementsPreFilled] = useState(false);
   const [originalPreFilledSupplements, setOriginalPreFilledSupplements] = useState([]);
+
+  // Close on navigation (per D-03)
+  const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
+
+  // Close modal when URL changes (navigation away from current page)
+  useEffect(() => {
+    if (prevPathRef.current !== location.pathname && open) {
+      onOpenChange?.(false);
+    }
+    prevPathRef.current = location.pathname;
+  }, [location.pathname, open, onOpenChange]);
 
   // Determine effective log type for schema selection
   const effectiveLogType = (logType === 'weight' || logType === 'measurement') ? 'health' : logType;
