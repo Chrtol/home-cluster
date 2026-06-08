@@ -212,6 +212,9 @@ spec:
               COOKIE_SAMESITE: "lax"
               ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
               REFRESH_TOKEN_EXPIRE_DAYS: "7"
+              # Photo storage configuration
+              PHOTO_STORAGE_BACKEND: "local"
+              LOCAL_STORAGE_PATH: "/app/data/photos"
               # OpenTelemetry configuration
               OTEL_SERVICE_NAME: "reptile-tracker-celery"
               OTEL_RESOURCE_ATTRIBUTES: "service.name=reptile-tracker-celery,service.namespace=default,app.type=reptile-management,component=celery-worker,deployment.environment=production"
@@ -265,6 +268,9 @@ spec:
         advancedMounts:
           reptile-tracker:
             backend:
+              - path: /app/data/photos
+          celery-worker:
+            worker:
               - path: /app/data/photos
     service:
       backend:

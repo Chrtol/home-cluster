@@ -23,7 +23,10 @@ COPY cleanup_duplicate_templates.py ./cleanup_duplicate_templates.py
 COPY celery_worker.py ./celery_worker.py
 RUN chmod +x ./entrypoint.sh ./entrypoint-celery.sh
 
-# Create non-root user
+# Create photos directory for storage volume mount
+RUN mkdir -p /app/photos
+
+# Create non-root user and set ownership
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
