@@ -50,6 +50,10 @@ spec:
               ENABLE_ES: "false"
               # Databases are pre-created by the initContainers above
               SKIP_DB_CREATE: "true"
+              # SQL visibility allows only 3 Text search attributes; the demo
+              # CustomStringField/CustomTextField would consume 2, leaving too few
+              # for Postiz's organizationId + postId. Don't seed the demo attributes.
+              SKIP_ADD_CUSTOM_SEARCH_ATTRIBUTES: "true"
               BIND_ON_IP: 0.0.0.0
               DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
             envFrom: *envFrom
