@@ -3,35 +3,35 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Bug Fixes & Polish
 status: executing
-stopped_at: Phase 34 UI-SPEC approved — Import/Export System
-last_updated: "2026-06-07T21:30:00Z"
-last_activity: 2026-06-07
+stopped_at: Phase 35 Plan 01 complete — Foundation Infrastructure
+last_updated: "2026-06-08T13:17:00Z"
+last_activity: 2026-06-08
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 2
-  total_plans: 14
-  completed_plans: 11
-  percent: 78
+  total_plans: 18
+  completed_plans: 12
+  percent: 66
 ---
 
 # Reptile Tracker - Project State
 
-**Last Updated:** 2026-06-07
+**Last Updated:** 2026-06-08
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.6 Phase 34 — Import/Export System (context gathered, ready for planning)
+**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 01 complete)
 
 ## Current Position
 
-**Phase:** 34 (Import/Export System) - UI-SPEC APPROVED
-**Plan:** UI design contract approved, ready for planning
-**Status:** 29 implementation decisions + UI-SPEC approved
-**Last activity:** 2026-06-07
-**Progress:** ██████░░ (66% - 2/3 v1.6 phases complete)
+**Phase:** 35 (Bug Fixes & Feeding Enhancements)
+**Plan:** 02 (next)
+**Status:** Plan 01 complete — React Query, FeedingStatus, local auth models
+**Last activity:** 2026-06-08
+**Progress:** ████████░░ (66% - 12/18 v1.6 plans complete)
 
 **Completed Milestones:**
 
@@ -41,9 +41,37 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 - v1.4 Schedule Type Alignment & UX Polish (Phases 26-28) — 2026-02-20
 
-**Next:** `/gsd:plan-phase 34` to create implementation plans (UI-SPEC available as design context)
+**Next:** Execute Phase 35 Plan 02
 
 ## Recent Completions
+
+### Phase 35 Plan 01: Foundation Infrastructure
+
+**Completed:** 2026-06-08
+**Summary:** React Query v5 installed with QueryClientProvider wrapping app, FeedingStatus enum and local auth fields added to models with migration 0107
+
+**Key accomplishments:**
+
+- Installed @tanstack/react-query v5.101.0 for cache invalidation infrastructure
+- Created queryClient.js with staleTime: 30000 (30s real-time feel)
+- Wrapped App.jsx with QueryClientProvider inside CelebrationProvider
+- Added FeedingStatus enum (EATEN/REFUSED) for refused feeding tracking
+- Added status, retry_scheduled_for, retry_instance_id to Feeding model
+- Added password_hash, temp_password_hash, temp_password_expires to User model
+- Added local_auth_enabled and self_registration_enabled to config
+- Created migration 0107 with feedingstatus enum and all new columns
+
+**Files created:**
+
+- `frontend/src/lib/queryClient.js`
+- `backend/migrations/versions/0107_add_feeding_status_and_local_auth.py`
+
+**Files modified:**
+
+- `frontend/package.json`
+- `frontend/src/App.jsx`
+- `backend/app/models.py`
+- `backend/app/config.py`
 
 ### Phase 28 Plan 08: Data Model Refactor & UX Redesign
 
@@ -239,12 +267,12 @@ For future milestones:
 
 ## Session Continuity
 
-**Last session:** 2026-06-07
-**Action:** Phase 34 UI-SPEC approved — 6/6 dimensions passed
-**Stopped at:** Phase 34 UI-SPEC approved — Import/Export System
-**Resume from:** `.planning/phases/34-import-export/34-UI-SPEC.md`
+**Last session:** 2026-06-08
+**Action:** Phase 35 Plan 01 executed — Foundation Infrastructure
+**Stopped at:** Phase 35 Plan 01 complete
+**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-02-PLAN.md`
 
-**Next step:** `/gsd:plan-phase 34` to create implementation plans (with UI-SPEC as design context)
+**Next step:** Execute Phase 35 Plan 02 (Header Stats Refresh)
 
 ## Phase 33 Plan Summary (UX Polish) - COMPLETE
 
@@ -391,4 +419,4 @@ For future milestones:
 
 ---
 
-**Project Status:** v1.6 Phase 34 context gathered (2026-06-07). Next: `/gsd:plan-phase 34` for Import/Export System implementation plans.
+**Project Status:** v1.6 Phase 35 Plan 01 complete (2026-06-08). Next: Execute Phase 35 Plan 02 for Header Stats Refresh.

@@ -6,9 +6,10 @@
 - **v1.1 UI Overhaul** - Phases 7-13 (shipped 2026-02-10)
 - **v1.2 Local Development Environment** - Phases 14-16 (shipped 2026-02-11)
 - **v1.3 Engagement & Awareness** - Phases 17-25 (shipped 2026-02-16)
-- **v1.4 Schedule Type Alignment & UX Polish** - Phases 26-28 (next)
+- **v1.4 Schedule Type Alignment & UX Polish** - Phases 26-28 (shipped 2026-02-20)
 - **v1.5 Notification Template UI Improvements** - Phases 29-31 (future)
 - **v1.6 Bug Fixes & Polish** - Phases 32-34 (shipped 2026-06-08)
+- **v1.7 Bug Fixes & Feeding Enhancements** - Phase 35 (next)
 
 ## Phases
 
@@ -831,6 +832,43 @@ Plans:
 
 </details>
 
+## v1.7 Bug Fixes & Feeding Enhancements (Phase 35)
+
+**Milestone Goal:** Fix UX regressions, improve header responsiveness, and add refused feeding tracking for better reptile health monitoring.
+
+### Phase 35: Bug Fixes & Feeding Enhancements
+
+**Goal**: Fix quick-log pane availability, header stats refresh, and add refused feeding tracking with dev user switcher
+
+**Depends on**: Phase 34 (v1.6 complete)
+
+**Requirements**: BUG-02, BUG-04, FEAT-02, FEAT-03
+
+**Items from backlog:**
+1. **BUG-02**: Quick-log pane not available from non-dashboard pages — the Track pane should open from any page
+2. **BUG-04**: Header stats don't refresh after logging task — streak count, due/done counts should update in real-time
+3. **FEAT-02**: Attempted/refused feeding logging — track when reptile refuses to eat for appetite pattern monitoring
+4. **FEAT-03**: Local user accounts (dev) — dev user switcher for testing multi-user scenarios
+
+**Success Criteria** (what must be TRUE):
+  1. Quick-log Track pane opens from any page, not just dashboard
+  2. Header taskbar (streak, due/done, notifications) refreshes after task completion
+  3. Feeding log form has refused/partial status option
+  4. Refused feedings display differently in history (amber indicator)
+  5. Dev mode has user switcher dropdown with pre-configured test users
+  6. Dev user switcher allows testing different roles and household scenarios
+
+**Plans**: 5 plans in 5 waves
+
+Plans:
+- [x] 35-01-PLAN.md — Foundation: React Query setup, FeedingStatus/password_hash models, migration (Wave 1)
+- [ ] 35-02-PLAN.md — Quick-log availability + Header stats refresh (BUG-02, BUG-04) (Wave 2)
+- [ ] 35-03-PLAN.md — Refused feeding tracking (FEAT-02) (Wave 3)
+- [ ] 35-04-PLAN.md — Local user authentication and dev switcher (FEAT-03) (Wave 4)
+- [ ] 35-05-PLAN.md — Human verification checkpoint (Wave 5)
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -872,3 +910,4 @@ Plans:
 | 32. Bug Fixes | v1.6 | 3/3 | Complete | 2026-06-07 |
 | 33. UX Polish & Feature Completion | v1.6 | 8/8 | Complete | 2026-06-07 |
 | 34. Import/Export System | v1.6 | 6/6 | Complete | 2026-06-08 |
+| 35. Bug Fixes & Feeding Enhancements | v1.7 | 1/5 | In Progress | - |
