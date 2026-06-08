@@ -33,9 +33,9 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               # Public URLs (same host internal + external)
-              MAIN_URL: https://postiz.${SECRET_DOMAIN}
-              FRONTEND_URL: https://postiz.${SECRET_DOMAIN}
-              NEXT_PUBLIC_BACKEND_URL: https://postiz.${SECRET_DOMAIN}/api
+              MAIN_URL: https://post.${SECRET_DOMAIN}
+              FRONTEND_URL: https://post.${SECRET_DOMAIN}
+              NEXT_PUBLIC_BACKEND_URL: https://post.${SECRET_DOMAIN}/api
               BACKEND_INTERNAL_URL: http://localhost:3000
               # Combined "general" image (frontend + backend + workers + cron behind Caddy on :5000)
               IS_GENERAL: "true"
@@ -96,7 +96,7 @@ spec:
               - identifier: app
                 port: *port
       internal:
-        hostnames: ["postiz.${SECRET_DOMAIN}"]
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
