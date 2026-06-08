@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./helmrelease.yaml
+configMapGenerator:
+  - name: legal-html
+    files:
+      - index.html=./resources/index.html
+      - terms.html=./resources/terms.html
+      - privacy.html=./resources/privacy.html
+generatorOptions:
+  disableNameSuffixHash: true

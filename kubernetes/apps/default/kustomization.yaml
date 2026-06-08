@@ -29,3 +29,4 @@ resources:
   - ./paperless/ks.yaml
   - ./node-red/ks.yaml
   - ./postiz/ks.yaml
+  - ./legal/ks.yaml
