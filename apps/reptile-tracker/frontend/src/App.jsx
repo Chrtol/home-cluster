@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { Toaster } from 'sonner';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -187,8 +189,9 @@ function App() {
 
   return (
     <CelebrationProvider>
-      <CelebrationOverlayManager />
-      <Toaster
+      <QueryClientProvider client={queryClient}>
+        <CelebrationOverlayManager />
+        <Toaster
         position="top-center"
         theme="dark"
         toastOptions={{
@@ -256,6 +259,7 @@ function App() {
           )}
         </Routes>
       </Router>
+      </QueryClientProvider>
     </CelebrationProvider>
   )
 }
