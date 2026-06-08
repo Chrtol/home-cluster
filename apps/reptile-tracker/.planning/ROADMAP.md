@@ -8,7 +8,7 @@
 - **v1.3 Engagement & Awareness** - Phases 17-25 (shipped 2026-02-16)
 - **v1.4 Schedule Type Alignment & UX Polish** - Phases 26-28 (next)
 - **v1.5 Notification Template UI Improvements** - Phases 29-31 (future)
-- **v1.6 Bug Fixes & Polish** - Phases 32-34 (future)
+- **v1.6 Bug Fixes & Polish** - Phases 32-34 (shipped 2026-06-08)
 
 ## Phases
 
@@ -720,7 +720,8 @@ Plans:
 
 ---
 
-## v1.6 Bug Fixes & Polish (Phases 32-34)
+<details>
+<summary>v1.6 Bug Fixes & Polish (Phases 32-34) - SHIPPED 2026-06-08</summary>
 
 **Milestone Goal:** Fix reported bugs, complete partially-implemented features, and polish UX consistency.
 
@@ -808,12 +809,12 @@ Plans:
 **Plans**: 6 plans in 5 waves
 
 Plans:
-- [ ] 34-01-PLAN.md — Database models and schemas (TransferStatus enum, PendingExport model, export/import schemas) (Wave 1)
-- [ ] 34-02-PLAN.md — Export service and Celery task (DataCollector, JSON/ZIP serializers, generate_export_task) (Wave 2)
-- [ ] 34-03-PLAN.md — Import service (parse, preview, commit with atomic transaction) (Wave 2)
-- [ ] 34-04-PLAN.md — API router endpoints (export, import, transfer management) (Wave 3)
-- [ ] 34-05-PLAN.md — Frontend wizards and profile menu (ExportWizard, ImportWizard, ProfileMenuDropdown) (Wave 4)
-- [ ] 34-06-PLAN.md — Transfer badge, Settings section, and human verification (Wave 5)
+- [x] 34-01-PLAN.md — Database models and schemas (TransferStatus enum, PendingExport model, export/import schemas) (Wave 1)
+- [x] 34-02-PLAN.md — Export service and Celery task (DataCollector, JSON/ZIP serializers, generate_export_task) (Wave 2)
+- [x] 34-03-PLAN.md — Import service (parse, preview, commit with atomic transaction) (Wave 2)
+- [x] 34-04-PLAN.md — API router endpoints (export, import, transfer management) (Wave 3)
+- [x] 34-05-PLAN.md — Frontend wizards and profile menu (ExportWizard, ImportWizard, ProfileMenuDropdown) (Wave 4)
+- [x] 34-06-PLAN.md — Transfer badge, Settings section, and human verification (Wave 5)
 
 **Success Criteria** (what must be TRUE):
   1. Backend export API generates complete data package for selected reptiles
@@ -827,6 +828,8 @@ Plans:
   9. Duplicate/conflict handling auto-renames with "(imported)" suffix
   10. Import completes without data loss or corruption
   11. Transfer mode marks reptiles as pending until manually completed
+
+</details>
 
 ## Progress
 
@@ -868,4 +871,4 @@ Plans:
 | 31. Improved Template Editor | v1.5 | 0/1 | Future | - |
 | 32. Bug Fixes | v1.6 | 3/3 | Complete | 2026-06-07 |
 | 33. UX Polish & Feature Completion | v1.6 | 8/8 | Complete | 2026-06-07 |
-| 34. Import/Export System | v1.6 | 0/6 | Planning | - |
+| 34. Import/Export System | v1.6 | 6/6 | Complete | 2026-06-08 |
