@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Bug Fixes & Polish
 status: executing
-stopped_at: Phase 35 Plan 02 complete — Header Stats Refresh
-last_updated: "2026-06-08T13:25:00Z"
+stopped_at: Phase 35 Plan 03 complete — Refused Feeding Tracking
+last_updated: "2026-06-08T13:37:00Z"
 last_activity: 2026-06-08
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 18
-  completed_plans: 13
-  percent: 72
+  completed_plans: 14
+  percent: 78
 ---
 
 # Reptile Tracker - Project State
@@ -23,15 +23,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A polished, information-dense tool for managing reptile care — the dashboard as a single pane of glass, with smart notifications and gamification.
-**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 02 complete)
+**Current focus:** v1.6 Phase 35 — Bug Fixes & Feeding Enhancements (Plan 03 complete)
 
 ## Current Position
 
 **Phase:** 35 (Bug Fixes & Feeding Enhancements)
-**Plan:** 03 (next)
-**Status:** Plan 02 complete — Header Stats Refresh with React Query
+**Plan:** 04 (next)
+**Status:** Plan 03 complete — Refused Feeding Tracking
 **Last activity:** 2026-06-08
-**Progress:** ████████░░ (72% - 13/18 v1.6 plans complete)
+**Progress:** ████████░░ (78% - 14/18 v1.6 plans complete)
 
 **Completed Milestones:**
 
@@ -41,9 +41,35 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - v1.3 Engagement & Awareness (Phases 17-25) — 2026-02-16
 - v1.4 Schedule Type Alignment & UX Polish (Phases 26-28) — 2026-02-20
 
-**Next:** Execute Phase 35 Plan 03
+**Next:** Execute Phase 35 Plan 04
 
 ## Recent Completions
+
+### Phase 35 Plan 03: Refused Feeding Tracking
+
+**Completed:** 2026-06-08
+**Summary:** Feeding refusal tracking with retry scheduling service, form UI with amber styling, and amber indicators in activity widgets
+
+**Key accomplishments:**
+
+- Added RetryOption enum and status/retry fields to FeedingCreate and Feeding schemas
+- Created feeding_refusal_service.py with schedule_feeding_retry, cancel_retry functions
+- Added refused toggle with amber styling and retry options (tomorrow, next scheduled, custom)
+- Added amber indicators in RecentActivityWidget and ActivityHistory for refused feedings
+- XCircle icon replaces Utensils for refused feedings, "Refused" badge replaces category badge
+
+**Files created:**
+
+- `backend/app/services/feeding_refusal_service.py`
+
+**Files modified:**
+
+- `backend/app/schemas.py`
+- `backend/app/routers/feedings.py`
+- `backend/app/services/__init__.py`
+- `frontend/src/pages/FeedingLog.jsx`
+- `frontend/src/components/dashboard/RecentActivityWidget.jsx`
+- `frontend/src/pages/ActivityHistory.jsx`
 
 ### Phase 35 Plan 02: Header Stats Refresh
 
@@ -291,11 +317,11 @@ For future milestones:
 ## Session Continuity
 
 **Last session:** 2026-06-08
-**Action:** Phase 35 Plan 02 executed — Header Stats Refresh
-**Stopped at:** Phase 35 Plan 02 complete
-**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-03-PLAN.md`
+**Action:** Phase 35 Plan 03 executed — Refused Feeding Tracking
+**Stopped at:** Phase 35 Plan 03 complete
+**Resume from:** `.planning/phases/35-bug-fixes-feeding-enhancements/35-04-PLAN.md`
 
-**Next step:** Execute Phase 35 Plan 03
+**Next step:** Execute Phase 35 Plan 04
 
 ## Phase 33 Plan Summary (UX Polish) - COMPLETE
 
@@ -449,6 +475,16 @@ For future milestones:
 | useLocation + prevPathRef for close-on-nav | 35-02 | Standard React Router pattern for detecting URL changes | Modal closes when user navigates away |
 | Query keys use ['dashboard', ...] prefix | 35-02 | Enables selective invalidation with shared prefix | invalidateQueries(['dashboard']) refreshes both stats |
 
+## Phase 35 Plan 03 Decisions
+
+| Decision | Plan | Rationale | Impact |
+|----------|------|-----------|--------|
+| Amber color scheme for refused feedings | 35-03 | Distinct from green (feeding), red (health) - neutral warning tone | Clear visual distinction without negative connotation |
+| Three retry options | 35-03 | Covers common patterns: quick retry, skip to next, custom | Flexible without overwhelming |
+| Retry creates ScheduleInstance | 35-03 | Leverages existing notification infrastructure | Retry reminders work automatically |
+| XCircle icon for refused | 35-03 | Visually indicates "not completed" without being negative | Clear status at a glance |
+| "Refused" badge replaces category | 35-03 | Status is more important than category for refused items | Prominent indication in activity views |
+
 ---
 
-**Project Status:** v1.6 Phase 35 Plan 02 complete (2026-06-08). Next: Execute Phase 35 Plan 03.
+**Project Status:** v1.6 Phase 35 Plan 03 complete (2026-06-08). Next: Execute Phase 35 Plan 04.
