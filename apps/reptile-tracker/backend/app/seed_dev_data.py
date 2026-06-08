@@ -6,7 +6,9 @@ Only runs when:
 2. No reptiles exist in the database (idempotent)
 
 Creates:
-- Dev user (dev@local.dev) and household - matches auth.py dev bypass
+- 5 dev users across 2 households for multi-role testing (per D-16)
+  - Household A: owner, admin, caretaker, viewer (4 users with all 4 reptiles)
+  - Household B: owner (1 user, no reptiles - for isolation testing)
 - 4 reptiles with different species
 - 60-90 days of activity history per reptile
 - Feeding schedules with completed instances
@@ -18,6 +20,7 @@ from datetime import datetime, timedelta, timezone, date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from faker import Faker
+from passlib.context import CryptContext
 
 from app.config import settings
 from datetime import time
@@ -28,6 +31,9 @@ from app.models import (
     household_members, reptile_access, feeding_foods, feeding_supplements,
     AccessLevel, ScheduleMode, InstanceStatus, CompletionStatus, CompletionType
 )
+
+# Password hashing for dev users with local auth
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 logger = logging.getLogger(__name__)
 
@@ -83,33 +89,99 @@ reptile_configs = [
 
 
 async def create_dev_user_and_household(db: AsyncSession) -> tuple[User, Household]:
-    """Create dev household and user"""
-    # Create household
-    household = Household(name="Dev Household")
-    db.add(household)
+    """Create dev household and user (kept for backward compatibility)"""
+    users, household_a, _ = await create_dev_users_and_households(db)
+    # Return the owner user (first one) and household A
+    return users[0], household_a
+
+
+# Dev users configuration per D-16
+dev_users_config = [
+    # Household A - 4 roles for testing different permission levels
+    {"email": "owner@local.dev", "name": "Owner User", "role": AccessLevel.OWNER, "household": "A", "password": "owner123"},
+    {"email": "admin@local.dev", "name": "Admin User", "role": AccessLevel.ADMIN, "household": "A", "password": "admin123"},
+    {"email": "caretaker@local.dev", "name": "Caretaker User", "role": AccessLevel.CARETAKER, "household": "A", "password": "caretaker123"},
+    {"email": "viewer@local.dev", "name": "Viewer User", "role": AccessLevel.VIEWER, "household": "A", "password": "viewer123"},
+    # Household B - for cross-household isolation testing
+    {"email": "other@local.dev", "name": "Other Owner", "role": AccessLevel.OWNER, "household": "B", "password": "other123"},
+]
+
+
+async def create_dev_users_and_households(db: AsyncSession) -> tuple[list[User], Household, Household]:
+    """
+    Create dev households and users per D-16.
+
+    Creates:
+    - Dev Household A with 4 users (owner, admin, caretaker, viewer)
+    - Dev Household B with 1 user (owner) - for isolation testing
+    - All users have password_hash set for local authentication
+
+    Returns tuple of (users_list, household_a, household_b).
+    The first user in the list is the Owner User from Household A.
+    """
+    # Create two households
+    household_a = Household(name="Dev Household A")
+    db.add(household_a)
+
+    household_b = Household(name="Dev Household B")
+    db.add(household_b)
+
     await db.flush()
 
-    # Create user - must match auth.py dev bypass credentials
-    # auth.py looks for email="dev@local.dev" and creates oidc_sub="dev-bypass-local"
-    user = User(
+    users = []
+
+    for user_config in dev_users_config:
+        # Determine which household this user belongs to
+        household = household_a if user_config["household"] == "A" else household_b
+
+        # Create user with password hash for local auth
+        # Use oidc_sub pattern "local:{email}" for local users
+        user = User(
+            oidc_sub=f"local:{user_config['email']}",
+            email=user_config["email"],
+            name=user_config["name"],
+            timezone="America/New_York",
+            password_hash=pwd_context.hash(user_config["password"])
+        )
+        db.add(user)
+        await db.flush()
+
+        # Add user to their household with their role
+        await db.execute(
+            household_members.insert().values(
+                household_id=household.id,
+                user_id=user.id,
+                access_level=user_config["role"]
+            )
+        )
+
+        users.append(user)
+
+    # Also create the original dev@local.dev user for backward compatibility with auth.py bypass
+    # This user will be in Household A as an owner
+    dev_user = User(
         oidc_sub="dev-bypass-local",
         email="dev@local.dev",
         name="Local Developer",
-        timezone="America/New_York"
+        timezone="America/New_York",
+        password_hash=pwd_context.hash("dev123")  # Simple password for default dev user
     )
-    db.add(user)
+    db.add(dev_user)
     await db.flush()
 
-    # Add user to household with owner access
+    # Add dev@local.dev to Household A as owner
     await db.execute(
         household_members.insert().values(
-            household_id=household.id,
-            user_id=user.id,
+            household_id=household_a.id,
+            user_id=dev_user.id,
             access_level=AccessLevel.OWNER
         )
     )
 
-    return user, household
+    # Insert dev_user at the beginning since it's the primary dev user
+    users.insert(0, dev_user)
+
+    return users, household_a, household_b
 
 
 async def get_foods_by_category(db: AsyncSession) -> dict[str, list[Food]]:
@@ -853,12 +925,14 @@ async def seed_dev_test_data(db: AsyncSession):
     2. No reptiles exist in the database (idempotent)
 
     Creates:
-    - Dev user (dev@local.dev) and household - matches auth.py dev bypass
-    - 4 reptiles with different species
+    - 5 dev users across 2 households for multi-role testing (per D-16)
+    - 4 reptiles with different species (all in Household A)
     - 60-90 days of activity history per reptile
     - Feeding schedules with completed instances
     - Daily Check schedules with proper instance history
     - Edge cases: 1 reptile in shed, 1 with overdue task
+    - Household A users have reptile_access to all 4 reptiles
+    - Household B user has NO access to reptiles (isolation testing)
     """
     # Double-check environment (defensive)
     if settings.environment != "development":
@@ -873,9 +947,19 @@ async def seed_dev_test_data(db: AsyncSession):
 
     logger.info("Seeding development test data...")
 
-    # 1. Create dev user and household
-    user, household = await create_dev_user_and_household(db)
-    logger.info(f"Created dev user: {user.email}")
+    # 1. Create dev users and households (5 users across 2 households per D-16)
+    users, household_a, household_b = await create_dev_users_and_households(db)
+
+    # Primary user for reptile creation (owner from Household A)
+    # Note: users[0] is dev@local.dev (backward compat), users[1] is owner@local.dev
+    primary_user = users[1]  # owner@local.dev
+    household = household_a
+
+    # Identify Household A users for reptile access
+    # users[0] = dev@local.dev, users[1:5] = owner, admin, caretaker, viewer
+    household_a_users = users[:5]  # All but the last one (other@local.dev in Household B)
+
+    logger.info(f"Created {len(users)} dev users across 2 households")
 
     # 2. Get seeded foods and supplements for feeding records
     foods = await get_foods_by_category(db)
@@ -883,8 +967,10 @@ async def seed_dev_test_data(db: AsyncSession):
     supplements_by_id = {s.id: s for s in supplements.values()}
 
     # 3. Create reptiles with activity history
+    created_reptiles = []  # Track for granting access to all Household A users
     for config in reptile_configs:
-        reptile = await create_reptile_with_access(db, config, user, household)
+        reptile = await create_reptile_with_access(db, config, primary_user, household)
+        created_reptiles.append(reptile)
 
         # Create feeding schedule
         feeding_schedule = await create_feeding_schedule(db, reptile, config)
@@ -894,7 +980,7 @@ async def seed_dev_test_data(db: AsyncSession):
 
         # Create feeding history with schedule instances and supplements
         last_sequence = await create_feedings_with_schedule_instances(
-            db, reptile, user, feeding_schedule, foods, supplements_by_id, config
+            db, reptile, primary_user, feeding_schedule, foods, supplements_by_id, config
         )
         last_sequence = last_sequence or 0
 
@@ -924,13 +1010,39 @@ async def seed_dev_test_data(db: AsyncSession):
         await create_daily_check_schedule_with_history(db, reptile, days_back=30)
 
         # Create weight history
-        await create_weight_history(db, reptile, user, config)
+        await create_weight_history(db, reptile, primary_user, config)
 
         # Edge case: shed status
         if config.get("is_in_shed"):
-            await create_shed_record(db, reptile, user)
+            await create_shed_record(db, reptile, primary_user)
 
         logger.info(f"Created reptile: {reptile.name} ({reptile.species})")
+
+    # 4. Grant reptile_access to all Household A users for all reptiles
+    # Note: primary_user already has OWNER access from create_reptile_with_access
+    # Grant access to the other Household A users (dev@local.dev, admin, caretaker, viewer)
+    for user in household_a_users:
+        if user.id == primary_user.id:
+            continue  # Skip primary user - already has access
+
+        # Get the user's household access level to use as reptile access level
+        user_config = next(
+            (cfg for cfg in dev_users_config if cfg["email"] == user.email),
+            None
+        )
+        # For dev@local.dev, use OWNER access
+        access_level = user_config["role"] if user_config else AccessLevel.OWNER
+
+        for reptile in created_reptiles:
+            await db.execute(
+                reptile_access.insert().values(
+                    user_id=user.id,
+                    reptile_id=reptile.id,
+                    access_level=access_level
+                )
+            )
+
+    logger.info(f"Granted reptile access to {len(household_a_users)} Household A users for {len(created_reptiles)} reptiles")
 
     await db.commit()
     logger.info("Development test data seeding complete!")
