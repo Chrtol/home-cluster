@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import confetti from 'canvas-confetti'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -7,6 +8,12 @@ import { Flame, Snowflake, Trophy, AlertCircle, ChevronLeft, ChevronRight } from
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+
+// Fetch function for React Query
+const fetchUserStreak = async () => {
+  const response = await axios.get('/api/user-streaks/me')
+  return response.data
+}
 
 /**
  * UserStreakDisplay - Shows user's streak with flame icon in header
@@ -16,38 +23,22 @@ import { Badge } from '@/components/ui/badge'
  * - Snowflake overlay when frozen (vacation mode)
  * - Popover with detailed streak info and milestone progress
  * - Attribution toast when completing tasks for other users
+ * - Uses React Query for cache invalidation (per D-06)
  */
 export default function UserStreakDisplay() {
-  const [streak, setStreak] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const queryClient = useQueryClient()
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [showMissesDetail, setShowMissesDetail] = useState(false)
   const [missedTasks, setMissedTasks] = useState([])
   const [loadingMisses, setLoadingMisses] = useState(false)
 
-  const fetchStreak = async () => {
-    try {
-      const response = await axios.get('/api/user-streaks/me')
-      setStreak(response.data)
-      setError(false)
-    } catch (err) {
-      console.error('Failed to fetch user streak:', err)
-      setError(true)
-      // Graceful degradation - don't show anything if API fails
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchStreak()
-
-    // Refresh every 5 minutes (same as QuickStatsHeader)
-    const interval = setInterval(fetchStreak, 5 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [])
+  // React Query for user streak - invalidated when tasks complete
+  const { data: streak, isLoading: loading, isError: error } = useQuery({
+    queryKey: ['dashboard', 'userStreak'],
+    queryFn: fetchUserStreak,
+    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+  })
 
   // Attribution toast handler and milestone celebration
   useEffect(() => {
@@ -68,18 +59,19 @@ export default function UserStreakDisplay() {
         triggerMilestoneCelebration(milestone_reached)
       }
 
-      // Refetch streak data
-      fetchStreak()
+      // Invalidate dashboard queries to trigger refetch (per D-06)
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     }
 
     window.addEventListener('task-completed', handleTaskComplete)
     return () => window.removeEventListener('task-completed', handleTaskComplete)
-  }, [])
+  }, [queryClient])
 
   const handleManualFreeze = async () => {
     try {
       await axios.post('/api/user-streaks/me/freeze')
-      fetchStreak() // Refresh data
+      // Invalidate to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'userStreak'] })
     } catch (err) {
       console.error('Failed to toggle freeze:', err)
     }
@@ -87,8 +79,9 @@ export default function UserStreakDisplay() {
 
   const handleRecalculate = async () => {
     try {
-      const response = await axios.post('/api/user-streaks/me/recalculate')
-      setStreak(response.data)
+      await axios.post('/api/user-streaks/me/recalculate')
+      // Invalidate to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'userStreak'] })
     } catch (err) {
       console.error('Failed to recalculate streak:', err)
     }

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
 import { Loader2, Bug, Leaf, Utensils, Plus, X, Heart } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCelebrations } from '@/contexts/CelebrationContext';
 
 import {
@@ -204,6 +205,7 @@ export function CreateLogModal({
   const safePrefill = prefill ?? {};
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const queryClient = useQueryClient();
   const { triggerCelebration, celebrationsEnabled } = useCelebrations();
   const [reptiles, setReptiles] = useState([]);
   const [foods, setFoods] = useState([]);
@@ -836,6 +838,9 @@ export function CreateLogModal({
           response = await axios.post('/api/health', payload);
         }
       }
+
+      // Invalidate dashboard queries to trigger immediate refresh (per D-05)
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
 
       // Trigger celebration after API success (per D-12, D-13)
       if (celebrationsEnabled) {

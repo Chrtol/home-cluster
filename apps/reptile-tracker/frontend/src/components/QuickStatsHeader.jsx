@@ -1,55 +1,47 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Utensils, Droplets, Heart, Clock } from 'lucide-react'
 import axios from 'axios'
 import UserStreakDisplay from './UserStreakDisplay'
 
+// Helper to format date as YYYY-MM-DD
+const toLocalISODate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Fetch function for React Query
+const fetchQuickStats = async () => {
+  const today = new Date()
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - today.getDay())
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+
+  const response = await axios.get('/api/bulk/dashboard', {
+    params: {
+      week_start: toLocalISODate(weekStart),
+      week_end: toLocalISODate(weekEnd)
+    }
+  })
+
+  return response.data.weekly_instances || []
+}
+
 /**
  * QuickStatsHeader - Displays "due today" stats in the persistent header
- * Fetches its own data independently from Dashboard
+ * Uses React Query for data fetching with cache invalidation support (per D-04)
  */
 export default function QuickStatsHeader() {
-  const [weeklyInstances, setWeeklyInstances] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Calculate week range (same as Dashboard)
-        const today = new Date()
-        const weekStart = new Date(today)
-        weekStart.setDate(today.getDate() - today.getDay())
-        const weekEnd = new Date(weekStart)
-        weekEnd.setDate(weekStart.getDate() + 6)
-
-        const toLocalISODate = (date) => {
-          const year = date.getFullYear()
-          const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = String(date.getDate()).padStart(2, '0')
-          return `${year}-${month}-${day}`
-        }
-
-        const response = await axios.get('/api/bulk/dashboard', {
-          params: {
-            week_start: toLocalISODate(weekStart),
-            week_end: toLocalISODate(weekEnd)
-          }
-        })
-
-        setWeeklyInstances(response.data.weekly_instances || [])
-      } catch (error) {
-        console.error('Failed to fetch quick stats:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchData, 5 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [])
+  // React Query for dashboard stats - invalidated when tasks complete
+  const { data: weeklyInstances = [], isLoading: loading } = useQuery({
+    queryKey: ['dashboard', 'quickStats'],
+    queryFn: fetchQuickStats,
+    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+  })
 
   // Parse instances into events
   const todayEvents = useMemo(() => {
