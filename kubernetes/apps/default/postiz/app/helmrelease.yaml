@@ -86,7 +86,7 @@ spec:
       external:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hostnames: ["postiz.${SECRET_DOMAIN}"]
+        hostnames: ["post.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external
             namespace: network
