@@ -3,8 +3,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/com
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WizardStepIndicator } from './WizardStepIndicator';
-import { ArrowRight, ArrowLeft, Upload, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Upload, Loader2, AlertTriangle, CheckCircle, Plus } from 'lucide-react';
 import axios from 'axios';
 
 /**
@@ -14,18 +15,40 @@ import axios from 'axios';
  * Step 3: Select destination household
  * Step 4: Confirm and commit import
  */
-export default function ImportWizard({ open, onOpenChange, currentHouseholdName = 'My Household' }) {
+export default function ImportWizard({ open, onOpenChange }) {
   const [step, setStep] = useState(1);
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [previewToken, setPreviewToken] = useState(null);
-  const [destination, setDestination] = useState('current'); // 'current' or 'new'
+  const [households, setHouseholds] = useState([]);
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState(null);
+  const [createNewHousehold, setCreateNewHousehold] = useState(false);
   const [newHouseholdName, setNewHouseholdName] = useState('');
   const [isCommitting, setIsCommitting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Fetch households when wizard opens
+  useEffect(() => {
+    if (open) {
+      const fetchHouseholds = async () => {
+        try {
+          const res = await axios.get('/api/households/me');
+          setHouseholds(res.data);
+          // Default to first household
+          if (res.data.length > 0) {
+            setSelectedHouseholdId(res.data[0].id);
+          }
+        } catch (e) {
+          console.error('Failed to load households', e);
+        }
+      };
+      fetchHouseholds();
+    }
+  }, [open]);
 
   // Reset on close
   useEffect(() => {
@@ -34,10 +57,12 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
       setFile(null);
       setPreview(null);
       setPreviewToken(null);
-      setDestination('current');
+      setSelectedHouseholdId(null);
+      setCreateNewHousehold(false);
       setNewHouseholdName('');
       setResult(null);
       setError(null);
+      setIsDragging(false);
     }
   }, [open]);
 
@@ -46,6 +71,44 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
     if (selectedFile) {
       setFile(selectedFile);
       setError(null);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      // Validate file type
+      const validTypes = ['.json', '.zip', 'application/json', 'application/zip'];
+      const isValid = validTypes.some(type =>
+        droppedFile.name.endsWith(type) || droppedFile.type === type
+      );
+      if (isValid) {
+        setFile(droppedFile);
+        setError(null);
+      } else {
+        setError('Please drop a .json or .zip file');
+      }
     }
   };
 
@@ -61,8 +124,10 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
       const response = await axios.post('/api/exports/imports/preview', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      console.log('Preview response:', response.data);
       setPreview(response.data);
       setPreviewToken(response.data.preview_token);
+      console.log('Set previewToken to:', response.data.preview_token);
       setStep(2);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to parse import file');
@@ -72,15 +137,20 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
   };
 
   const handleCommit = async () => {
-    if (!previewToken) return;
+    console.log('handleCommit called, previewToken:', previewToken);
+    if (!previewToken) {
+      setError('Preview token missing. Please re-upload the file.');
+      return;
+    }
     setIsCommitting(true);
     setError(null);
 
     try {
       const response = await axios.post('/api/exports/imports/commit', {
         preview_token: previewToken,
-        destination,
-        new_household_name: destination === 'new' ? newHouseholdName : null,
+        household_id: createNewHousehold ? null : selectedHouseholdId,
+        create_new_household: createNewHousehold,
+        new_household_name: createNewHousehold ? newHouseholdName : null,
       });
       setResult(response.data);
       setStep(4);
@@ -94,7 +164,12 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
   const canProceed = () => {
     if (step === 1) return file !== null;
     if (step === 2) return preview?.valid !== false;
-    if (step === 3) return destination === 'current' || (destination === 'new' && newHouseholdName.trim() !== '');
+    if (step === 3) {
+      if (createNewHousehold) {
+        return newHouseholdName.trim() !== '';
+      }
+      return selectedHouseholdId !== null;
+    }
     return false;
   };
 
@@ -116,9 +191,19 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
 
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`
+          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+          ${isDragging
+            ? 'border-primary bg-primary/10'
+            : 'border-border hover:border-primary/50'
+          }
+        `}
       >
-        <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <Upload className={`mx-auto h-12 w-12 mb-4 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
         {file ? (
           <div>
             <p className="font-medium">{file.name}</p>
@@ -126,7 +211,7 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
           </div>
         ) : (
           <div>
-            <p className="font-medium">Click to select file</p>
+            <p className="font-medium">{isDragging ? 'Drop file here' : 'Click or drag file here'}</p>
             <p className="text-sm text-muted-foreground">JSON or ZIP format</p>
           </div>
         )}
@@ -195,51 +280,59 @@ export default function ImportWizard({ open, onOpenChange, currentHouseholdName 
   );
 
   // Step 3: Household selection
+  const handleHouseholdSelect = (value) => {
+    if (value === 'new') {
+      setCreateNewHousehold(true);
+      setSelectedHouseholdId(null);
+    } else {
+      setCreateNewHousehold(false);
+      setSelectedHouseholdId(parseInt(value));
+    }
+  };
+
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-center mb-4">
         <h3 className="font-medium">Choose Destination</h3>
-        <p className="text-sm text-muted-foreground">Where should the imported data go?</p>
+        <p className="text-sm text-muted-foreground">Select a household to import into</p>
       </div>
 
-      <div className="grid gap-3">
-        <button
-          onClick={() => setDestination('current')}
-          className={`
-            p-4 rounded-lg border-2 text-left transition-all
-            ${destination === 'current'
-              ? 'border-primary bg-primary/10'
-              : 'border-border hover:border-primary/50'
-            }
-          `}
+      <div className="space-y-3">
+        <label className="text-sm font-medium">Destination Household</label>
+        <Select
+          value={createNewHousehold ? 'new' : (selectedHouseholdId?.toString() || '')}
+          onValueChange={handleHouseholdSelect}
         >
-          <div className="font-medium">Add to {currentHouseholdName}</div>
-          <div className="text-sm text-muted-foreground">Import into your current household</div>
-        </button>
-
-        <button
-          onClick={() => setDestination('new')}
-          className={`
-            p-4 rounded-lg border-2 text-left transition-all
-            ${destination === 'new'
-              ? 'border-primary bg-primary/10'
-              : 'border-border hover:border-primary/50'
-            }
-          `}
-        >
-          <div className="font-medium">Create New Household</div>
-          <div className="text-sm text-muted-foreground">Start fresh with imported data</div>
-        </button>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a household" />
+          </SelectTrigger>
+          <SelectContent>
+            {households.map((h) => (
+              <SelectItem key={h.id} value={h.id.toString()}>
+                {h.name}
+              </SelectItem>
+            ))}
+            <SelectItem value="new">
+              <span className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Household
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {destination === 'new' && (
-        <input
-          type="text"
-          value={newHouseholdName}
-          onChange={(e) => setNewHouseholdName(e.target.value)}
-          placeholder="New household name"
-          className="w-full px-3 py-2 border border-border rounded-lg bg-background"
-        />
+      {createNewHousehold && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">New Household Name</label>
+          <input
+            type="text"
+            value={newHouseholdName}
+            onChange={(e) => setNewHouseholdName(e.target.value)}
+            placeholder="Enter household name"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+          />
+        </div>
       )}
 
       {error && (

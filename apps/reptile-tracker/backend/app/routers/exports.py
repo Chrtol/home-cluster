@@ -257,7 +257,7 @@ async def commit_import(
     renamed_map = cache["renamed_map"]
 
     # Determine destination household per D-13
-    if request.destination == "new":
+    if request.create_new_household:
         # Create new household
         household = models.Household(
             name=request.new_household_name or f"{current_user.name}'s Household",
@@ -274,11 +274,35 @@ async def commit_import(
             )
         )
         household_id = household.id
+    elif request.household_id:
+        # Use specified household, check permissions per D-14
+        result = await db.execute(
+            select(models.household_members.c.access_level)
+            .where(
+                models.household_members.c.user_id == current_user.id,
+                models.household_members.c.household_id == request.household_id
+            )
+        )
+        row = result.first()
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not a member of this household"
+            )
+
+        access_level = row[0]
+        if access_level not in (models.AccessLevel.OWNER, models.AccessLevel.ADMIN):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only owners and admins can import into this household"
+            )
+        household_id = request.household_id
     else:
-        # Use current household, check permissions per D-14
+        # Fallback: Use user's first household
         result = await db.execute(
             select(models.household_members.c.household_id, models.household_members.c.access_level)
             .where(models.household_members.c.user_id == current_user.id)
+            .limit(1)
         )
         row = result.first()
         if not row:

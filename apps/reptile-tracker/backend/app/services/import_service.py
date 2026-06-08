@@ -20,6 +20,65 @@ from sqlalchemy import select
 from app import models, schemas
 
 
+def _parse_datetime(value):
+    """Parse datetime from string or return as-is if already datetime."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        # Try ISO format with timezone
+        try:
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            pass
+        # Try without timezone
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            pass
+    return None
+
+
+def _parse_date(value):
+    """Parse date from string or return as-is if already date."""
+    from datetime import date
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, str):
+        try:
+            # Try parsing as date
+            return date.fromisoformat(value[:10])  # Take just YYYY-MM-DD part
+        except ValueError:
+            pass
+    return None
+
+
+def _parse_time(value):
+    """Parse time from string or return as-is if already time."""
+    from datetime import time
+    if value is None:
+        return None
+    if isinstance(value, time):
+        return value
+    if isinstance(value, str):
+        try:
+            # Parse HH:MM:SS or HH:MM format
+            parts = value.split(':')
+            if len(parts) >= 2:
+                hour = int(parts[0])
+                minute = int(parts[1])
+                second = int(parts[2]) if len(parts) > 2 else 0
+                return time(hour, minute, second)
+        except (ValueError, IndexError):
+            pass
+    return None
+
+
 class ImportService:
     """Service for parsing, previewing, and committing imports."""
 
@@ -228,7 +287,7 @@ class ImportService:
                     feeding = models.Feeding(
                         reptile_id=reptile.id,
                         user_id=user_id,  # D-15: map to importer
-                        fed_at=feeding_data.get('fed_at'),
+                        fed_at=_parse_datetime(feeding_data.get('fed_at')),
                         notes=feeding_data.get('notes'),
                         is_salad=feeding_data.get('is_salad', False),
                     )
@@ -240,7 +299,7 @@ class ImportService:
                         reptile_id=reptile.id,
                         logged_by_user_id=user_id,
                         weight_grams=weight_data.get('weight_grams'),
-                        measured_at=weight_data.get('measured_at'),
+                        measured_at=_parse_datetime(weight_data.get('measured_at')),
                         notes=weight_data.get('notes'),
                     )
                     db.add(weight)
@@ -250,7 +309,7 @@ class ImportService:
                     health = models.HealthRecord(
                         reptile_id=reptile.id,
                         logged_by_user_id=user_id,
-                        date=health_data.get('date'),
+                        date=_parse_date(health_data.get('date')),
                         record_type=health_data.get('record_type'),
                         title=health_data.get('title', 'Imported health record'),
                         description=health_data.get('description'),
@@ -262,7 +321,7 @@ class ImportService:
                     misting = models.MistingLog(
                         reptile_id=reptile.id,
                         logged_by_user_id=user_id,
-                        misted_at=misting_data.get('misted_at'),
+                        misted_at=_parse_datetime(misting_data.get('misted_at')),
                         notes=misting_data.get('notes'),
                     )
                     db.add(misting)
@@ -278,8 +337,8 @@ class ImportService:
                         schedule_rule=schedule_data.get('schedule_rule'),
                         enabled=schedule_data.get('enabled', True),
                         # D-09: import times as-is (timezone-agnostic)
-                        earliest_time=schedule_data.get('earliest_time'),
-                        latest_time=schedule_data.get('latest_time'),
+                        earliest_time=_parse_time(schedule_data.get('earliest_time')),
+                        latest_time=_parse_time(schedule_data.get('latest_time')),
                         time_window_enabled=schedule_data.get('time_window_enabled', False),
                         frequency_days=schedule_data.get('frequency_days'),
                         days_of_week=schedule_data.get('days_of_week'),

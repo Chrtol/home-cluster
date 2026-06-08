@@ -1632,13 +1632,15 @@ class ImportPreview(BaseModel):
     warnings: List[str]  # Non-blocking issues
     errors: List[str]  # Blocking issues
     renamed_reptiles: List[Dict[str, str]]  # {original, new} for auto-renamed reptiles (D-08)
+    preview_token: Optional[str] = None  # Token for commit step (added by endpoint)
 
 
 class ImportCommitRequest(BaseModel):
     """Request to commit a previewed import."""
     preview_token: str  # UUID from preview step
-    destination: Literal["current", "new"]  # Import to current household or create new (D-13)
-    new_household_name: Optional[str] = None  # Required if destination is "new"
+    household_id: Optional[int] = None  # Specific household to import into
+    create_new_household: bool = False  # If true, create a new household
+    new_household_name: Optional[str] = None  # Required if create_new_household is true
 
 
 class ExportedReptile(BaseModel):

@@ -63,7 +63,7 @@ export default function ProfileMenuDropdown({ user, reptiles = [], currentHouseh
       </div>
 
       <ExportWizard open={exportOpen} onOpenChange={setExportOpen} reptiles={reptiles} />
-      <ImportWizard open={importOpen} onOpenChange={setImportOpen} currentHouseholdName={currentHouseholdName} />
+      <ImportWizard open={importOpen} onOpenChange={setImportOpen} />
     </>
   );
 }
