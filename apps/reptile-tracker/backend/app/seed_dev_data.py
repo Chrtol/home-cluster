@@ -355,8 +355,10 @@ async def create_feedings_with_schedule_instances(
         return
 
     # Generate feedings
+    # Stop far enough back that users can log new feedings (min_days_between requirement)
+    feeding_interval = config.get("feeding_interval_days", 3)
     current_date = datetime.now(timezone.utc) - timedelta(days=days_back)
-    end_date = datetime.now(timezone.utc) - timedelta(days=1)  # Stop at yesterday
+    end_date = datetime.now(timezone.utc) - timedelta(days=feeding_interval + 1)  # Leave room for user to log
 
     # Track feeding sequence number for supplement rotations
     feeding_sequence = 0

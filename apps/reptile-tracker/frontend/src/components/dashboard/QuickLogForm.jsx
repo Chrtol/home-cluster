@@ -4,8 +4,10 @@ import axios from 'axios';
 import { X, ExternalLink, Plus, Minus } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatting';
 import { TimePicker } from '../ui/time-picker';
+import { DatePicker } from '../ui/date-picker';
 import { useCreateLogModal } from '@/contexts/CreateLogModalContext';
 import { useCelebrations } from '@/contexts/CelebrationContext';
+import { queryClient } from '@/lib/queryClient';
 
 /**
  * QuickLogForm - Inline quick-log form for logging tasks from the dashboard
@@ -31,6 +33,12 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
   const [selectedFoods, setSelectedFoods] = useState([]);
   const [availableFoods, setAvailableFoods] = useState([]);
   const [foodQuantity, setFoodQuantity] = useState(1);
+
+  // Refused feeding state (FEAT-02)
+  const [isRefused, setIsRefused] = useState(false);
+  const [retryOption, setRetryOption] = useState('next_scheduled');
+  const [retryDate, setRetryDate] = useState('');
+  const [retryTime, setRetryTime] = useState('');
 
   // Time selection state - always use current time when form opens (Decision D-01)
   const [fedAt, setFedAt] = useState(() => new Date());
@@ -336,14 +344,18 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
         payload = {
           reptile_id: reptileId,
           fed_at: fedAt.toISOString(),
-          foods: selectedFoods.map(f => ({
+          foods: isRefused ? [] : selectedFoods.map(f => ({
             food_id: f.id,
             quantity: foodQuantity
           })),
           supplements: [], // Global supplements
           is_salad: false,
           salad_components: [],
-          notes: notes.trim() || null
+          notes: notes.trim() || null,
+          // Refused feeding fields (FEAT-02)
+          is_refused: isRefused,
+          retry_date: isRefused && retryOption === 'custom' && retryDate ? retryDate : null,
+          retry_time: isRefused && retryOption === 'custom' && retryTime ? retryTime : null,
         };
       } else if (scheduleType === 'misting') {
         endpoint = '/api/misting';
@@ -526,6 +538,9 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
 
       await axios.post(endpoint, payload);
 
+      // Immediately refetch all dashboard/header data (BUG-04 fix)
+      await queryClient.refetchQueries({ queryKey: ['dashboard'] });
+
       // Trigger celebration after API success (per D-12)
       if (celebrationsEnabled) {
         try {
@@ -614,8 +629,8 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
             </div>
           )}
 
-          {/* Food selector for feeding tasks */}
-          {scheduleType === 'feeding' && (
+          {/* Food selector for feeding tasks (hidden when refused) */}
+          {scheduleType === 'feeding' && !isRefused && (
             <div>
               <label className="block text-xs font-medium text-foreground mb-1">
                 Food Item
@@ -667,6 +682,89 @@ const QuickLogForm = ({ task, onClose, onSubmit }) => {
                       <Plus className="w-3 h-3" />
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Refused feeding toggle (FEAT-02) */}
+          {scheduleType === 'feeding' && (
+            <div className="space-y-2">
+              <label className="inline-flex items-center gap-2 cursor-pointer group">
+                <div className={`relative w-10 h-5 rounded-full transition-colors ${
+                  isRefused ? 'bg-primary' : 'bg-muted'
+                }`}>
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                    isRefused ? 'translate-x-5' : 'translate-x-0.5'
+                  }`} />
+                  <input
+                    type="checkbox"
+                    checked={isRefused}
+                    onChange={(e) => {
+                      setIsRefused(e.target.checked);
+                      if (!e.target.checked) {
+                        setRetryOption('next_scheduled');
+                        setRetryDate('');
+                        setRetryTime('');
+                      }
+                    }}
+                    className="sr-only"
+                  />
+                </div>
+                <span className={`text-xs transition-colors ${
+                  isRefused ? 'text-foreground font-medium' : 'text-muted-foreground group-hover:text-foreground'
+                }`}>Refused to eat</span>
+              </label>
+
+              {/* Retry options when refused */}
+              {isRefused && (
+                <div className="pl-1 space-y-1.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Next retry</p>
+                  {[
+                    { value: 'next_scheduled', label: 'Next scheduled' },
+                    { value: 'tomorrow_same_time', label: 'Tomorrow same time' },
+                    { value: 'custom', label: 'Custom date/time' },
+                  ].map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-2 p-1.5 rounded cursor-pointer transition-colors text-xs ${
+                        retryOption === option.value
+                          ? 'bg-primary/10 text-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                      }`}
+                      onClick={() => setRetryOption(option.value)}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        retryOption === option.value
+                          ? 'border-primary'
+                          : 'border-muted-foreground'
+                      }`}>
+                        {retryOption === option.value && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        )}
+                      </div>
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+
+                  {/* Custom date/time inputs */}
+                  {retryOption === 'custom' && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <DatePicker
+                        value={retryDate}
+                        onChange={setRetryDate}
+                        placeholder="Date"
+                        className="h-8 text-xs"
+                      />
+                      <TimePicker
+                        value={retryTime}
+                        onChange={setRetryTime}
+                        placeholder="Time"
+                        step={15}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

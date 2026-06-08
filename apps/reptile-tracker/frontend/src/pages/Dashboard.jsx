@@ -137,11 +137,11 @@ export default function Dashboard() {
     setCurrentWeekDate(new Date());
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Calculate date range based on calendar view
-        const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
+  // Extract fetchData to useCallback so it can be called directly from handlers
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      // Calculate date range based on calendar view
+      const firstDayOfWeek = getUserFirstDayOfWeek() === 'monday' ? 1 : 0;
 
         let weekStart, weekEnd;
 
@@ -362,14 +362,17 @@ export default function Dashboard() {
           }
         }
 
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [calendarReptileFilter, calendarView, currentWeekDate, refreshTrigger]);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [calendarReptileFilter, calendarView, currentWeekDate]);
+
+  // Trigger data fetch on mount and when dependencies change
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData, refreshTrigger]);
 
   // Initialize reptile filter when reptiles are loaded
   useEffect(() => {
@@ -1079,14 +1082,14 @@ export default function Dashboard() {
   };
 
   const handleQuickLogSubmit = async () => {
-    // Refresh data after successful log
-    setRefreshTrigger(prev => prev + 1);
+    // Refresh data after successful log - await to ensure data is updated before closing
+    await fetchDashboardData();
     setQuickLogTask(null);
   };
 
   // Dashboard refresh function for modals
-  const refreshDashboard = () => {
-    setRefreshTrigger(prev => prev + 1);
+  const refreshDashboard = async () => {
+    await fetchDashboardData();
   };
 
   // Modal callback handlers (Phase 27)

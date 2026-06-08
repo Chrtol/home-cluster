@@ -82,34 +82,27 @@ export default function Layout({ user, onLogout }) {
         setTrackMenuOpen(prev => !prev)
       }
 
-      // When Track menu is open, F/M/H open modal (Dashboard) or navigate (other pages)
+      // When Track menu is open, F/M/H always open modal from any page (BUG-02 fix)
       if (trackMenuOpen) {
         const key = e.key.toLowerCase()
-        const isDashboard = location.pathname === '/'
 
         if (key === 'f') {
           e.preventDefault()
           setTrackMenuOpen(false)
-          if (isDashboard && openCreateLog) {
+          if (openCreateLog) {
             openCreateLog('feeding')
-          } else {
-            navigate('/feed')
           }
         } else if (key === 'm') {
           e.preventDefault()
           setTrackMenuOpen(false)
-          if (isDashboard && openCreateLog) {
+          if (openCreateLog) {
             openCreateLog('misting')
-          } else {
-            navigate('/misting-log')
           }
         } else if (key === 'h') {
           e.preventDefault()
           setTrackMenuOpen(false)
-          if (isDashboard && openCreateLog) {
+          if (openCreateLog) {
             openCreateLog('health')
-          } else {
-            navigate('/health-log')
           }
         }
       }
@@ -171,13 +164,13 @@ export default function Layout({ user, onLogout }) {
     const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
     const setIsOpen = externalSetIsOpen || setInternalIsOpen
     const { openCreateLog } = useCreateLogModal()
-    const isDashboard = location.pathname === '/'
 
     const handleOptionClick = (path, logType) => {
-      // On Dashboard, open modal instead of navigating
-      if (isDashboard && openCreateLog && logType) {
+      // Always open modal from any page (BUG-02 fix)
+      if (openCreateLog && logType) {
         openCreateLog(logType)
       } else {
+        // Fallback to navigation only if modal context unavailable
         navigate(path)
       }
       setIsOpen(false)
@@ -656,44 +649,50 @@ export default function Layout({ user, onLogout }) {
         )}
 
 
-        {/* Mobile Track Menu Popup */}
+        {/* Mobile Track Menu Popup - uses modal from any page (BUG-02 fix) */}
         {trackMenuOpen && (
           <>
             <div className="fixed inset-0 bg-black/40" onClick={() => setTrackMenuOpen(false)} style={{ bottom: '64px' }}></div>
             <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 bg-card rounded-lg shadow-2xl border border-border overflow-hidden">
-              <Link
-                to="/feed"
-                onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-primary/20 active:scale-[0.98] transition-all border-b border-border"
+              <button
+                onClick={() => {
+                  setTrackMenuOpen(false)
+                  openCreateLog('feeding')
+                }}
+                className="w-full flex items-center gap-3 px-4 py-4 hover:bg-primary/20 active:scale-[0.98] transition-all border-b border-border"
               >
                 <Utensils size={24} className="text-primary" />
                 <div className="text-left flex-1">
                   <div className="font-semibold text-foreground">Log Feeding</div>
                   <div className="text-xs text-muted-foreground">Record food and supplements</div>
                 </div>
-              </Link>
-              <Link
-                to="/health-log"
-                onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-green-900/20 active:scale-[0.98] transition-all border-b border-border"
+              </button>
+              <button
+                onClick={() => {
+                  setTrackMenuOpen(false)
+                  openCreateLog('health')
+                }}
+                className="w-full flex items-center gap-3 px-4 py-4 hover:bg-green-900/20 active:scale-[0.98] transition-all border-b border-border"
               >
                 <Activity size={24} className="text-green-400" />
                 <div className="text-left flex-1">
                   <div className="font-semibold text-foreground">Log Health</div>
                   <div className="text-xs text-muted-foreground">Record health and weight data</div>
                 </div>
-              </Link>
-              <Link
-                to="/misting-log"
-                onClick={() => setTrackMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 hover:bg-blue-900/20 active:scale-[0.98] transition-all"
+              </button>
+              <button
+                onClick={() => {
+                  setTrackMenuOpen(false)
+                  openCreateLog('misting')
+                }}
+                className="w-full flex items-center gap-3 px-4 py-4 hover:bg-blue-900/20 active:scale-[0.98] transition-all"
               >
                 <Droplets size={24} className="text-blue-400" />
                 <div className="text-left flex-1">
                   <div className="font-semibold text-foreground">Log Misting</div>
                   <div className="text-xs text-muted-foreground">Record misting and humidity</div>
                 </div>
-              </Link>
+              </button>
             </div>
           </>
         )}

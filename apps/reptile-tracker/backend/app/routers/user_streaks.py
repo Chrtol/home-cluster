@@ -497,7 +497,7 @@ async def recalculate_streak(
                 # Break point - reset streak to 0
                 streak = 0
                 consecutive_misses = 0
-        elif row.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+        elif row.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_EARLY, CompletionStatus.COMPLETED_LATE):
             # Completion - increment streak and reset miss counter
             streak += 1
             consecutive_misses = 0

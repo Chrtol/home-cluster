@@ -431,7 +431,7 @@ async def recalculate_all_user_streaks(db: AsyncSession) -> int:
                     # Break point - reset streak to 0
                     streak = 0
                     consecutive_misses = 0
-            elif row.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+            elif row.status in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_EARLY, CompletionStatus.COMPLETED_LATE):
                 # Completion - increment streak and reset miss counter
                 streak += 1
                 consecutive_misses = 0
@@ -471,8 +471,8 @@ def _process_completion_for_streak(connection, target):
 
     logger.info(f"_process_completion_for_streak called for completion {target.id}, status={target.status}")
 
-    # Only process actual completions
-    if target.status not in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE):
+    # Only process actual completions (on time, early, or late all count)
+    if target.status not in (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_EARLY, CompletionStatus.COMPLETED_LATE):
         logger.debug(f"Completion {target.id}: status {target.status} is not a completed status, skipping")
         return
 
@@ -662,7 +662,7 @@ def on_schedule_completion_updated(mapper, connection, target):
     logger.info(f"ScheduleCompletion {target.id}: status changed from {old_status} to {new_status}")
 
     # Only trigger if transitioning TO a completed status FROM a non-completed status
-    completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_LATE)
+    completed_statuses = (CompletionStatus.COMPLETED_ON_TIME, CompletionStatus.COMPLETED_EARLY, CompletionStatus.COMPLETED_LATE)
     if old_status not in completed_statuses and new_status in completed_statuses:
         logger.info(f"ScheduleCompletion {target.id}: triggering streak update for completion transition")
         _process_completion_for_streak(connection, target)

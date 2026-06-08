@@ -49,19 +49,30 @@ const feedingSchema = z.object({
     quantity: z.number().min(1),
     supplement_ids: z.array(z.number())
   })),
-  global_supplements: z.array(z.number())
-}).refine(data => data.include_insects || data.include_salad || data.include_prepared, {
+  global_supplements: z.array(z.number()),
+  // Refused feeding fields (FEAT-02)
+  is_refused: z.boolean(),
+  retry_option: z.enum(['tomorrow_same_time', 'next_scheduled', 'custom', '']).optional(),
+  retry_date: z.string().optional(),
+  retry_time: z.string().optional(),
+}).refine(data => data.is_refused || data.include_insects || data.include_salad || data.include_prepared, {
   message: 'Please select at least one feeding type',
   path: ['include_insects']
-}).refine(data => !data.include_insects || data.insect_items.length > 0, {
+}).refine(data => data.is_refused || !data.include_insects || data.insect_items.length > 0, {
   message: 'Please add at least one insect item or uncheck Insects',
   path: ['insect_items']
-}).refine(data => !data.include_salad || data.salad_components.length > 0, {
+}).refine(data => data.is_refused || !data.include_salad || data.salad_components.length > 0, {
   message: 'Please select at least one salad component or uncheck Salad',
   path: ['salad_components']
-}).refine(data => !data.include_prepared || data.prepared_items.length > 0, {
+}).refine(data => data.is_refused || !data.include_prepared || data.prepared_items.length > 0, {
   message: 'Please add at least one prepared food item or uncheck Other Food',
   path: ['prepared_items']
+}).refine(data => !data.is_refused || data.retry_option, {
+  message: 'Please select a retry option',
+  path: ['retry_option']
+}).refine(data => !(data.is_refused && data.retry_option === 'custom') || (data.retry_date && data.retry_time), {
+  message: 'Please select a date and time for the custom retry',
+  path: ['retry_date']
 });
 
 const mistingSchema = z.object({
@@ -268,6 +279,11 @@ export function CreateLogModal({
         salad_supplements: [],
         prepared_items: [],
         global_supplements: supplementIds,
+        // Refused feeding (FEAT-02)
+        is_refused: false,
+        retry_option: '',
+        retry_date: '',
+        retry_time: '',
       };
     }
 
@@ -338,6 +354,8 @@ export function CreateLogModal({
   const watchIncludeInsects = useWatch({ control: form.control, name: 'include_insects' });
   const watchIncludeSalad = useWatch({ control: form.control, name: 'include_salad' });
   const watchIncludePrepared = useWatch({ control: form.control, name: 'include_prepared' });
+  const watchIsRefused = useWatch({ control: form.control, name: 'is_refused' });
+  const watchRetryOption = useWatch({ control: form.control, name: 'retry_option' });
   const healthLogType = useWatch({ control: form.control, name: 'health_log_type' });
   const measurementType = useWatch({ control: form.control, name: 'measurement_type' });
   const recordType = useWatch({ control: form.control, name: 'record_type' });
@@ -698,6 +716,12 @@ export function CreateLogModal({
       if (effectiveLogType === 'feeding') {
         const fedAtISO = buildDateTimeISO(data.fed_date, data.fed_time);
 
+        // Calculate retry datetime if custom option selected
+        let retryDatetime = null;
+        if (data.is_refused && data.retry_option === 'custom' && data.retry_date && data.retry_time) {
+          retryDatetime = buildDateTimeISO(data.retry_date, data.retry_time);
+        }
+
         let payload = {
           reptile_id: data.reptile_id,
           fed_at: fedAtISO,
@@ -705,41 +729,48 @@ export function CreateLogModal({
           is_salad: data.include_salad,
           foods: [],
           supplements: data.global_supplements,
-          salad_components: []
+          salad_components: [],
+          // Refused feeding (FEAT-02)
+          status: data.is_refused ? 'refused' : 'eaten',
+          retry_option: data.is_refused ? data.retry_option : null,
+          retry_datetime: retryDatetime,
         };
 
-        // Add insect foods
-        if (data.include_insects) {
-          payload.foods.push(...data.insect_items.map(item => ({
-            food_id: parseInt(item.food_id),
-            quantity: item.quantity,
-            supplement_ids: item.supplement_ids || []
-          })));
-        }
-
-        // Add prepared foods
-        if (data.include_prepared) {
-          payload.foods.push(...data.prepared_items.map(item => ({
-            food_id: parseInt(item.food_id),
-            quantity: item.quantity,
-            supplement_ids: item.supplement_ids || []
-          })));
-        }
-
-        // Add salad
-        if (data.include_salad) {
-          const saladFood = foods.find(f => f.name === 'Salad');
-          if (!saladFood) {
-            setError("Salad food item not found. Please create it in Food Management.");
-            setSubmitting(false);
-            return;
+        // Only add food items if not refused
+        if (!data.is_refused) {
+          // Add insect foods
+          if (data.include_insects) {
+            payload.foods.push(...data.insect_items.map(item => ({
+              food_id: parseInt(item.food_id),
+              quantity: item.quantity,
+              supplement_ids: item.supplement_ids || []
+            })));
           }
-          payload.foods.push({
-            food_id: saladFood.id,
-            quantity: 1,
-            supplement_ids: data.salad_supplements || []
-          });
-          payload.salad_components = data.salad_components;
+
+          // Add prepared foods
+          if (data.include_prepared) {
+            payload.foods.push(...data.prepared_items.map(item => ({
+              food_id: parseInt(item.food_id),
+              quantity: item.quantity,
+              supplement_ids: item.supplement_ids || []
+            })));
+          }
+
+          // Add salad
+          if (data.include_salad) {
+            const saladFood = foods.find(f => f.name === 'Salad');
+            if (!saladFood) {
+              setError("Salad food item not found. Please create it in Food Management.");
+              setSubmitting(false);
+              return;
+            }
+            payload.foods.push({
+              food_id: saladFood.id,
+              quantity: 1,
+              supplement_ids: data.salad_supplements || []
+            });
+            payload.salad_components = data.salad_components;
+          }
         }
 
         response = await axios.post('/api/feedings', payload);
@@ -839,10 +870,12 @@ export function CreateLogModal({
         }
       }
 
-      // Invalidate dashboard queries to trigger immediate refresh (per D-05)
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      // Refetch dashboard queries to trigger immediate refresh (per D-05, BUG-04 fix)
+      // Use refetchQueries instead of invalidateQueries to ensure data is updated before continuing
+      await queryClient.refetchQueries({ queryKey: ['dashboard'] });
 
       // Trigger celebration after API success (per D-12, D-13)
+      // Note: Animation shows prevCount→currentStreak, which may be approximate
       if (celebrationsEnabled) {
         try {
           const streakRes = await axios.get('/api/user-streaks/me');
@@ -938,6 +971,8 @@ export function CreateLogModal({
                     watchIncludeInsects={watchIncludeInsects}
                     watchIncludeSalad={watchIncludeSalad}
                     watchIncludePrepared={watchIncludePrepared}
+                    watchIsRefused={watchIsRefused}
+                    watchRetryOption={watchRetryOption}
                     watchReptileId={watchReptileId}
                     insectFoods={insectFoods}
                     saladFoods={saladFoods}
@@ -1027,6 +1062,8 @@ function FeedingForm({
   watchIncludeInsects,
   watchIncludeSalad,
   watchIncludePrepared,
+  watchIsRefused,
+  watchRetryOption,
   watchReptileId,
   insectFoods,
   saladFoods,
@@ -1043,7 +1080,119 @@ function FeedingForm({
 }) {
   return (
     <>
-      {/* Food Type Selection */}
+      {/* Refused Feeding Toggle (FEAT-02) - subtle inline style */}
+      <div className="space-y-3">
+        <label className="inline-flex items-center gap-2 cursor-pointer group">
+          <div className={`relative w-10 h-5 rounded-full transition-colors ${
+            watchIsRefused ? 'bg-primary' : 'bg-muted'
+          }`}>
+            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+              watchIsRefused ? 'translate-x-5' : 'translate-x-0.5'
+            }`} />
+            <input
+              type="checkbox"
+              checked={watchIsRefused || false}
+              onChange={(e) => {
+                form.setValue('is_refused', e.target.checked);
+                if (e.target.checked) {
+                  // Default to next scheduled feeding
+                  form.setValue('retry_option', 'next_scheduled');
+                } else {
+                  form.setValue('retry_option', '');
+                  form.setValue('retry_date', '');
+                  form.setValue('retry_time', '');
+                }
+              }}
+              className="sr-only"
+            />
+          </div>
+          <span className={`text-sm transition-colors ${
+            watchIsRefused ? 'text-foreground font-medium' : 'text-muted-foreground group-hover:text-foreground'
+          }`}>Refused to eat</span>
+        </label>
+
+        {/* Retry Options - shown when refused is checked */}
+        {watchIsRefused && (
+          <div className="p-3 bg-muted/30 border border-border rounded-lg space-y-3">
+            <div className="text-sm font-medium text-foreground">When should we retry?</div>
+
+            <div className="space-y-1.5">
+              {[
+                { value: 'tomorrow_same_time', label: 'Tomorrow, same time' },
+                { value: 'next_scheduled', label: 'Next scheduled feeding' },
+                { value: 'custom', label: 'Custom date/time' },
+              ].map((option) => (
+                <label
+                  key={option.value}
+                  className={`flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors text-sm ${
+                    watchRetryOption === option.value
+                      ? 'bg-primary/10 text-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                  }`}
+                  onClick={() => form.setValue('retry_option', option.value)}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    watchRetryOption === option.value
+                      ? 'border-primary'
+                      : 'border-muted-foreground'
+                  }`}>
+                    {watchRetryOption === option.value && (
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                    )}
+                  </div>
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Custom date/time picker */}
+            {watchRetryOption === 'custom' && (
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <FormField
+                  control={form.control}
+                  name="retry_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Date</FormLabel>
+                      <FormControl>
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="retry_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Time</FormLabel>
+                      <FormControl>
+                        <TimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
+            {form.formState.errors.retry_option && (
+              <p className="text-sm font-medium text-destructive">{form.formState.errors.retry_option.message}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Food Type Selection - hidden when refused */}
+      {!watchIsRefused && (
+      <>
       <div className="space-y-2">
         <label className="block text-sm font-medium">Feeding Type</label>
         <div className="grid grid-cols-3 gap-2">
@@ -1357,6 +1506,8 @@ function FeedingForm({
             })}
           </div>
         </div>
+      )}
+      </>
       )}
 
       {/* Date and Time */}

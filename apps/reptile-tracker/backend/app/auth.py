@@ -85,6 +85,7 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         samesite=settings.cookie_samesite,
         max_age=settings.access_token_expire_minutes * 60,
         domain=settings.cookie_domain,
+        path="/",  # Cookie must be sent for all paths
     )
 
     # Refresh token cookie (longer-lived)
@@ -96,13 +97,14 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         samesite=settings.cookie_samesite,
         max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
         domain=settings.cookie_domain,
+        path="/",  # Cookie must be sent for all paths
     )
 
 
 def clear_auth_cookies(response: Response):
     """Clear authentication cookies on logout"""
-    response.delete_cookie("access_token", domain=settings.cookie_domain)
-    response.delete_cookie("refresh_token", domain=settings.cookie_domain)
+    response.delete_cookie("access_token", domain=settings.cookie_domain, path="/")
+    response.delete_cookie("refresh_token", domain=settings.cookie_domain, path="/")
 
 
 async def get_current_user(
@@ -114,10 +116,36 @@ async def get_current_user(
     Get current user from JWT token (supports both Bearer token and secure cookie)
     M-4 Fix: Improved exception handling with specific errors
 
-    Development mode: Bypasses authentication and returns dev@localhost user
+    Development mode: Uses JWT if present (for dev user switching), otherwise falls back to dev@local.dev
     """
-    # Development bypass: auto-login as dev@local.dev
+    # Try to get token from Authorization header first, then fall back to cookie
+    token = None
+    if credentials:
+        token = credentials.credentials
+    elif access_token:
+        token = access_token
+
+    # Development mode: try JWT first (for dev switcher), fall back to dev@local.dev
     if settings.environment == "development":
+        # If there's a valid token, use it (allows dev user switching)
+        if token:
+            try:
+                payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+                oidc_sub: str = payload.get("sub")
+                token_type: str = payload.get("type")
+
+                if oidc_sub and token_type == "access":
+                    result = await db.execute(select(User).where(User.oidc_sub == oidc_sub))
+                    user = result.scalar_one_or_none()
+                    if user:
+                        logger.debug(f"Development mode: using JWT user {user.email}")
+                        return user
+            except jwt.InvalidTokenError:
+                # Token invalid/expired, fall through to default dev user
+                logger.debug("Development mode: JWT invalid, falling back to dev user")
+                pass
+
+        # No valid token - fall back to default dev user
         result = await db.execute(select(User).where(User.email == "dev@local.dev"))
         user = result.scalar_one_or_none()
 
@@ -139,12 +167,6 @@ async def get_current_user(
         return user
 
     # Production: normal authentication flow continues below...
-    # Try to get token from Authorization header first, then fall back to cookie
-    token = None
-    if credentials:
-        token = credentials.credentials
-    elif access_token:
-        token = access_token
 
     if not token:
         logger.warning("Authentication failed: No token provided")
