@@ -145,7 +145,17 @@ spec:
         advancedMounts:
           postiz:
             app:
-              - path: /uploads
-                subPath: uploads
               - path: /config
                 subPath: config
+      # Media/uploads on TrueNAS NFS (bulk storage) instead of the Ceph-RBD PVC.
+      # Postiz still serves these via the backend /uploads -> /api/uploads rewrite,
+      # so the public HTTPS URL is unchanged (needed for TikTok/YouTube pull-from-URL).
+      uploads:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/applications/postiz
+        advancedMounts:
+          postiz:
+            app:
+              - path: /uploads
+                readOnly: false
