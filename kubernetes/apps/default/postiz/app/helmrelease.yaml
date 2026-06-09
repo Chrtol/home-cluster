@@ -40,8 +40,8 @@ spec:
               # Combined "general" image (frontend + backend + workers + cron behind Caddy on :5000)
               IS_GENERAL: "true"
               RUN_CRON: "true"
-              # Set to "true" after your first OAuth login to lock down sign-ups
-              DISABLE_REGISTRATION: "false"
+              # Locked down after first OAuth login — no public sign-ups
+              DISABLE_REGISTRATION: "true"
               # Local storage on the Ceph-RBD PVC
               STORAGE_PROVIDER: local
               UPLOAD_DIRECTORY: /uploads
