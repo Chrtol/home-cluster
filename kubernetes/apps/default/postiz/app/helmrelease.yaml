@@ -67,6 +67,40 @@ spec:
                   name: postiz-secret
             securityContext:
               readOnlyRootFilesystem: false
+            probes:
+              # Backend (NestJS) binds :3000 last, only after migrations + Temporal/Redis init.
+              # nginx(:5000), frontend(:4200), orchestrator(:3002) come up first, so probing
+              # :3000 is the true "Postiz is actually serving /api" signal. TCP, not HTTP,
+              # because /api/user/self returns 401 when healthy (which an httpGet probe would
+              # treat as failure). A wedged backend never binds :3000 -> TCP probe catches it.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 3000
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 30   # up to ~5min cold-boot headroom (orchestrator alone took 33s)
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 3000
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 3000
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3    # ~90s wedged -> kubelet restarts container -> self-heal
             resources:
               requests:
                 cpu: 100m
