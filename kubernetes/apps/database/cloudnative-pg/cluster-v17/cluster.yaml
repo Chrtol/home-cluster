@@ -37,7 +37,25 @@ spec:
       shared_buffers: 512MB
       archive_mode: "on"
       wal_keep_size: "512MB"
-      max_wal_size: "1GB"
+      # --- Tuned for high-latency Ceph backing (one slow SATA-SSD OSD ~46ms) ---
+      # Fewer, larger checkpoints so data-file write bursts hit the slow disk
+      # less often (default 1GB caused checkpoints every few minutes).
+      max_wal_size: "8GB"
+      min_wal_size: "2GB"
+      # Spread checkpoint writes across 90% of the interval instead of bursting.
+      checkpoint_completion_target: "0.9"
+      checkpoint_timeout: "30min"
+      # Larger WAL buffer eliminates mid-transaction WAL flushes to the slow disk
+      # (pg_stat_wal.wal_buffers_full was in the millions with the ~16MB default).
+      wal_buffers: "128MB"
+      # Group concurrent commits into a single fsync (commit_delay in microseconds).
+      # On a 46ms-fsync disk this batches many commits per flush, trading <2ms of
+      # latency for a large drop in fsync count.
+      commit_delay: "2000"
+      commit_siblings: "5"
+      # Spread background writer load so dirty pages trickle out between checkpoints.
+      bgwriter_lru_maxpages: "1000"
+      bgwriter_delay: "200ms"
     #shared_preload_libraries:
     #  - "vectors.so"
 
