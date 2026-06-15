@@ -59,6 +59,16 @@ spec:
     #shared_preload_libraries:
     #  - "vectors.so"
 
+  # Require one instance per node (hard anti-affinity). With 3 instances on 3
+  # nodes this guarantees a 1:1 spread, so draining a node can never stack two
+  # replicas onto a single surviving node during a rolling reboot. A displaced
+  # instance stays Pending until a node frees up — the desired behaviour when
+  # rebooting one node at a time.
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname
+
   nodeMaintenanceWindow:
     inProgress: false
     reusePVC: true
