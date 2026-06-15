@@ -21,12 +21,18 @@ resources:
   - ./tautulli/ks.yaml
   - ./immich/ks.yaml
   - ./audiobookshelf/ks.yaml
-  - ./readarr/ks.yaml
-  - ./readarr-books/ks.yaml
+  # Disabled: Readarr is discontinued/archived upstream; superseded by
+  # shelfmark + readmeabook. Removing it (and its rreading-glasses metadata
+  # proxy below) eliminates the dominant WAL churn on the slow Ceph OSD.
+  # - ./readarr/ks.yaml
+  # - ./readarr-books/ks.yaml
   - ./sabnzbd/ks.yaml
   - ./autobrr/ks.yaml
   - ./cross-seed/ks.yaml
-  - ./rreading-glasses/ks.yaml
+  # Disabled: rarely-used Readarr metadata proxy. Its Postgres `cache` table
+  # (~80 writes/sec, 4.77GB) was the dominant WAL source saturating the slow
+  # Ceph OSD. Re-enable alongside Readarr when needed.
+  # - ./rreading-glasses/ks.yaml
   - ./audiobookrequest/ks.yaml
   - ./booklore/ks.yaml
   - ./recommendarr/ks.yaml
