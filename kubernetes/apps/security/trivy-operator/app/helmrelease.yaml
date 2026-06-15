@@ -50,7 +50,9 @@ spec:
           cpu: 15m
           memory: 146Mi
         limits:
-          memory: 256Mi
+          # 256Mi (chart default) OOMKills scan jobs on large images; raise ceiling.
+          # request stays low since scan jobs are short-lived and bursty.
+          memory: 512Mi
     trivyOperator:
       excludeImages: "quay.io/backube/*"
       skipResourceByLabels: "app.kubernetes.io/created-by=volsync"
