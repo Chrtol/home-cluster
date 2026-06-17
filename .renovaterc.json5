@@ -49,6 +49,21 @@
   },
   packageRules: [
     {
+      // Cilium 1.19.x's gateway-api operator hard-requires TLSRoute under
+      // gateway.networking.k8s.io/v1alpha2 (served). gateway-api v1.4.0+ unserves
+      // v1alpha2 and adds the safe-upgrades ValidatingAdmissionPolicy, which crash-loops
+      // the cilium-operator and deadlocks the CRD Kustomization. Pin to v1.3.0 until
+      // Cilium is upgraded to a release that works with the newer CRD line.
+      description: 'Pin gateway-api CRDs to v1.3.0 for Cilium 1.19 compatibility',
+      matchDatasources: [
+        'github-releases',
+      ],
+      matchPackageNames: [
+        'kubernetes-sigs/gateway-api',
+      ],
+      allowedVersions: '<1.4.0',
+    },
+    {
       description: 'Cert-Manager Group',
       groupName: 'Cert-Manager',
       matchDatasources: [
