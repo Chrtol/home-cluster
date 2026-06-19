@@ -9,6 +9,17 @@ spec:
     kind: OCIRepository
     name: app-template
     namespace: flux-system
+  # Postiz runs DB migrations on boot and depends on temporal; its startup probe
+  # allows up to ~5m. Raise the HR timeout above that so a slow boot doesn't trip
+  # the default 5m wait, and let upgrades self-heal instead of stalling.
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     controllers:
       postiz:
