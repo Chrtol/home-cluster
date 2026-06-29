@@ -51,7 +51,9 @@ spec:
                     name: sabnzbd-gluetun-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
               VPN_SERVICE_PROVIDER: protonvpn
-              VPN_TYPE: openvpn
+              # WireGuard: much higher throughput + fewer connection resets than OpenVPN
+              # for Usenet. Requires WIREGUARD_PRIVATE_KEY in sabnzbd-gluetun-secret.
+              VPN_TYPE: wireguard
               SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
               FIREWALL_INPUT_PORTS: "80,8000,9999"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16
