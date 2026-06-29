@@ -13,7 +13,7 @@ spec:
     # Pinned to v1.3.0: this is the last release that still SERVES TLSRoute under
     # gateway.networking.k8s.io/v1alpha2, which Cilium 1.19.x's gateway-api operator
     # requires for its field indexer. v1.4.0+ unserves v1alpha2 -> operator crash-loops.
-    tag: v1.3.0
+    tag: v1.6.0
   ignore: |
     # exclude
     /*
