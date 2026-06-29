@@ -59,7 +59,10 @@ spec:
                     name: qbittorrent-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
               VPN_SERVICE_PROVIDER: protonvpn
-              VPN_TYPE: openvpn
+              # WireGuard: much higher throughput + fewer connection resets than OpenVPN.
+              # Requires WIREGUARD_PRIVATE_KEY in qbittorrent-secret (Proton WG config
+              # generated WITH NAT-PMP/port forwarding enabled).
+              VPN_TYPE: wireguard
               SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
               VPN_PORT_FORWARDING: on
               VPN_PORT_FORWARDING_PROVIDER: protonvpn
