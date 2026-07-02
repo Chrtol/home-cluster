@@ -599,6 +599,11 @@ async def preview_template(
         rendered_message = render_template(message_template, context, use_jinja=False)
         rendered_title = render_template(title_template or "", context, use_jinja=False) if title_template else None
 
+    # render_template sanitizes its own errors, but guard the response boundary so no
+    # internal exception detail (stack trace / error message) can ever be reflected back.
+    if not isinstance(rendered_message, str):
+        raise HTTPException(status_code=400, detail="Unable to render template preview")
+
     return {
         "rendered_message": rendered_message,
         "rendered_title": rendered_title,

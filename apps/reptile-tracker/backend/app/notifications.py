@@ -3,10 +3,11 @@ import logging
 import ipaddress
 from datetime import datetime, timezone, date as py_date
 from typing import Optional, Dict, Any, List
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from jinja2 import Environment, BaseLoader, TemplateError
+from jinja2 import BaseLoader, TemplateError
+from jinja2.sandbox import SandboxedEnvironment
 from app.config import settings
 from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
 
@@ -17,10 +18,13 @@ from app.models import Reptile, User, Feeding, Schedule, NotificationTemplate
 
 logger = logging.getLogger(__name__)
 
-# Jinja2 environment for digest templates (supports loops/conditionals)
-jinja_env = Environment(
+# Jinja2 environment for digest templates (supports loops/conditionals).
+# SandboxedEnvironment prevents Server-Side Template Injection (SSTI): user-authored
+# notification templates cannot reach unsafe attributes/callables (e.g. __class__,
+# __subclasses__) that would otherwise allow arbitrary code execution.
+jinja_env = SandboxedEnvironment(
     loader=BaseLoader(),
-    autoescape=False,  # We control the content
+    autoescape=True,
     trim_blocks=True,
     lstrip_blocks=True
 )
@@ -107,30 +111,42 @@ def validate_webhook_url_for_type(url: str, webhook_type: str) -> bool:
         return False
 
 
-def validate_webhook_url(url: str) -> bool:
+def _ip_is_blocked(ip: "ipaddress._BaseAddress") -> bool:
+    """Return True if the resolved IP falls in any private/internal/metadata range."""
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+        return True
+    return any(ip in blocked_range for blocked_range in BLOCKED_IP_RANGES)
+
+
+def resolve_safe_webhook_ip(url: str) -> Optional[str]:
     """
-    M-3 Fix: Validate webhook URL to prevent SSRF attacks
+    Validate a generic webhook URL against SSRF and return a vetted IP to connect to.
+
+    Returns the resolved IP address (as a string) that is safe to connect to, or None
+    if the URL is invalid or resolves to a blocked/internal address. The caller MUST
+    connect to the returned IP (not re-resolve the hostname) so that the address which
+    was vetted is the address that is dialed — this closes the DNS-rebinding / TOCTOU
+    window between validation and the outbound request.
 
     Blocks:
-    - Private IP addresses (RFC 1918)
-    - Localhost
-    - Link-local addresses
-    - AWS/Cloud metadata services
     - Non-HTTP(S) protocols
+    - Localhost / cloud metadata hostnames
+    - ALL resolved IPs in private / loopback / link-local / reserved ranges
     """
     try:
+        import socket
+
         parsed = urlparse(url)
 
         # Only allow HTTP and HTTPS protocols
         if parsed.scheme not in ["http", "https"]:
             logger.warning(f"Webhook URL rejected: Invalid protocol {parsed.scheme}")
-            return False
+            return None
 
-        # Check hostname
         hostname = parsed.hostname
         if not hostname:
             logger.warning("Webhook URL rejected: No hostname")
-            return False
+            return None
 
         # Check for known dangerous hostnames
         dangerous_hosts = [
@@ -139,32 +155,69 @@ def validate_webhook_url(url: str) -> bool:
             "169.254.169.254",  # AWS metadata
             "metadata.azure.internal",
         ]
-
         if hostname.lower() in dangerous_hosts:
             logger.warning(f"Webhook URL rejected: Blocked hostname {hostname}")
-            return False
+            return None
 
-        # Resolve hostname to IP and check if it's in blocked ranges
+        # Resolve ALL addresses the hostname maps to; every one must be safe.
+        # (A hostname can resolve to multiple A/AAAA records — validating only the
+        # first would leave a bypass.)
         try:
-            import socket
-            ip_str = socket.gethostbyname(hostname)
-            ip = ipaddress.ip_address(ip_str)
-
-            for blocked_range in BLOCKED_IP_RANGES:
-                if ip in blocked_range:
-                    logger.warning(f"Webhook URL rejected: IP {ip} in blocked range {blocked_range}")
-                    return False
-
-        except (socket.gaierror, ValueError) as e:
+            addrinfo = socket.getaddrinfo(hostname, parsed.port or (443 if parsed.scheme == "https" else 80))
+        except socket.gaierror as e:
             logger.warning(f"Webhook URL validation failed: Could not resolve hostname {hostname}: {e}")
-            return False
+            return None
 
-        logger.info(f"Webhook URL validated successfully: {url}")
-        return True
+        resolved_ips = {info[4][0] for info in addrinfo}
+        if not resolved_ips:
+            logger.warning(f"Webhook URL rejected: hostname {hostname} did not resolve to any address")
+            return None
+
+        safe_ip = None
+        for ip_str in resolved_ips:
+            try:
+                ip = ipaddress.ip_address(ip_str)
+            except ValueError:
+                logger.warning(f"Webhook URL rejected: unparseable resolved address {ip_str}")
+                return None
+            if _ip_is_blocked(ip):
+                logger.warning(f"Webhook URL rejected: IP {ip} is in a blocked range")
+                return None
+            safe_ip = ip_str
+
+        logger.info(f"Webhook URL validated successfully (pinned IP {safe_ip})")
+        return safe_ip
 
     except Exception as e:
         logger.error(f"Webhook URL validation error: {e}")
-        return False
+        return None
+
+
+def validate_webhook_url(url: str) -> bool:
+    """Backwards-compatible boolean wrapper around resolve_safe_webhook_ip()."""
+    return resolve_safe_webhook_ip(url) is not None
+
+
+def build_allowlisted_webhook_url(url: str, webhook_type: str) -> Optional[str]:
+    """
+    Validate an allowlisted-provider webhook URL and rebuild it from vetted components.
+
+    The returned URL's scheme and host are drawn from the trusted allowlist (never from
+    the raw input), so the destination cannot be attacker-controlled. Only the path and
+    query — which the provider needs to route to the correct webhook — are carried over.
+    Returns None if the URL is not a valid HTTPS URL on an allowlisted host.
+    """
+    if not validate_webhook_url_for_type(url, webhook_type):
+        return None
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname.lower()  # already confirmed to be in the allowlist
+        # Force HTTPS for provider APIs; carry over only path + query.
+        safe_url = urlunparse(("https", host, parsed.path, "", parsed.query, ""))
+        return safe_url
+    except Exception as e:
+        logger.error(f"Failed to build allowlisted webhook URL: {e}")
+        return None
 
 
 async def get_matching_templates(
@@ -401,13 +454,15 @@ def render_template(template_string: str, context: Dict[str, Any], use_jinja: bo
         Rendered string with variables substituted
     """
     if use_jinja:
-        # Jinja2 for digest templates (supports loops, conditionals)
+        # Jinja2 (sandboxed) for digest templates (supports loops, conditionals)
         try:
             template = jinja_env.from_string(template_string)
             return template.render(context)
         except TemplateError as e:
+            # Log full detail server-side only; return a generic message so internal
+            # error/stack-trace text is never reflected back to the client.
             logger.error(f"Jinja2 template error: {e}")
-            return f"[Template Error: {e}]"
+            return "[Template Error: invalid template syntax]"
     else:
         # Original format_map for simple templates
         try:
@@ -671,13 +726,13 @@ async def send_webhook_notification(
                 # SSRF protection: Discord webhooks must go to discord.com/discordapp.com only
                 if not webhook_url:
                     raise ValueError("Webhook URL is required")
-                url_is_discord = validate_webhook_url_for_type(webhook_url, "discord")
-                if not url_is_discord:
+                # Rebuild the URL from the trusted allowlist (scheme + host come from
+                # WEBHOOK_DOMAIN_ALLOWLIST, not from raw input) so the destination cannot
+                # be attacker-controlled — this also breaks SSRF taint flow.
+                validated_url = build_allowlisted_webhook_url(webhook_url, "discord")
+                if validated_url is None:
                     logger.error(f"Discord webhook blocked: URL not on Discord domain: {webhook_url}")
                     raise ValueError("Invalid webhook URL: Must be a Discord webhook URL")
-
-                # URL validated as Discord domain - safe to use
-                validated_url = webhook_url
 
                 # Create rich embed with fields if context is provided
                 if context and trigger_type:
@@ -755,22 +810,37 @@ async def send_webhook_notification(
                 return True
 
             else:  # generic webhook
-                # SSRF protection: Validate URL is not targeting internal/private networks
+                # SSRF protection: validate the URL is not targeting internal/private
+                # networks, then pin the outbound connection to the exact IP we vetted so
+                # a hostname that re-resolves to an internal address between validation and
+                # the request (DNS rebinding / TOCTOU) cannot be reached.
                 if not webhook_url:
                     raise ValueError("Webhook URL is required")
-                url_is_safe = validate_webhook_url(webhook_url)
-                if not url_is_safe:
+                safe_ip = resolve_safe_webhook_ip(webhook_url)
+                if safe_ip is None:
                     logger.error(f"Generic webhook blocked: Invalid or dangerous URL: {webhook_url}")
                     raise ValueError("Invalid webhook URL: URL is blocked for security reasons")
 
-                # URL has been validated as safe - not targeting private/internal networks
-                validated_url = webhook_url  # Explicitly mark as validated
+                parsed = urlparse(webhook_url)
                 payload = {
                     "message": message,
                     "title": title or "Reptile Tracker Notification",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
-                response = await client.post(validated_url, json=payload)
+                # Connect to the vetted IP directly; preserve Host header + SNI so TLS and
+                # virtual hosting keep working. The request target is now a locally
+                # constructed, validated value rather than raw user input.
+                port = parsed.port or (443 if parsed.scheme == "https" else 80)
+                pinned_netloc = f"[{safe_ip}]:{port}" if ":" in safe_ip else f"{safe_ip}:{port}"
+                pinned_url = urlunparse((parsed.scheme, pinned_netloc, parsed.path, "", parsed.query, ""))
+                request = client.build_request(
+                    "POST",
+                    pinned_url,
+                    json=payload,
+                    headers={"Host": parsed.netloc},
+                    extensions={"sni_hostname": parsed.hostname},
+                )
+                response = await client.send(request)
                 response.raise_for_status()
                 logger.info(f"Generic webhook notification sent successfully")
                 return True

@@ -475,18 +475,30 @@ const NotificationTemplatesTab = () => {
     return baseData;
   };
 
+  // Escape HTML so user-authored template content cannot inject markup (XSS).
+  // Applied BEFORE the markdown transforms below, so only our own <strong>/<em>
+  // tags reach the DOM — any tags typed by the user are rendered inert as text.
+  const escapeHtml = (value) =>
+    String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
   const renderTemplate = (template, text) => {
     const sampleData = getSampleData(template.trigger_type);
 
-    // Replace variables in the template (supports both {var} and {{var}} formats)
-    let rendered = text;
+    // Escape the raw template first so any HTML in it (and in substituted values)
+    // is neutralized before we generate our own safe markup.
+    let rendered = escapeHtml(text ?? '');
     Object.keys(sampleData).forEach((key) => {
       // Match both single {key} and double {{key}} curly braces
       const regex = new RegExp(`{{?\\s*${key}\\s*}}?`, 'g');
-      rendered = rendered.replace(regex, sampleData[key]);
+      rendered = rendered.replace(regex, escapeHtml(sampleData[key]));
     });
 
-    // Convert markdown to HTML
+    // Convert markdown to HTML (safe: operates on already-escaped content)
     // Bold: **text** -> <strong>text</strong>
     rendered = rendered.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     // Italic: *text* -> <em>text</em>

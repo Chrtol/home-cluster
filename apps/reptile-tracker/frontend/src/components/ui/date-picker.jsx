@@ -15,10 +15,11 @@ import { getUserDateFormat, getUserFirstDayOfWeek, toLocalISODate } from '@/util
  * DD.MM.YYYY -> dd.MM.yyyy
  */
 function convertDateFormat(userFormat) {
+  // MM (month) is already identical between the user format and date-fns, so only
+  // the year and day tokens need lowercasing.
   return userFormat
     .replace(/YYYY/g, 'yyyy')
     .replace(/DD/g, 'dd')
-    .replace(/MM/g, 'MM')
 }
 
 /**
