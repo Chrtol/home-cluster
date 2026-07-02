@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from typing import Optional
 from pydantic import BaseModel
 
@@ -29,39 +30,34 @@ async def get_my_notification_settings(
     Auto-creates default settings and in-app channel if they don't exist,
     ensuring every user always has the in-app notification channel available.
     """
+    # Atomic get-or-create: an INSERT ... ON CONFLICT DO NOTHING on the unique
+    # user_id column is race-proof by construction. Two concurrent requests (the UI
+    # fires several settings loads at once) can no longer both try a plain INSERT and
+    # have the loser 500 with a UniqueViolationError — the conflict is a no-op and we
+    # always re-select the winning row afterwards.
+    await db.execute(
+        pg_insert(NotificationSettings)
+        .values(user_id=current_user.id)
+        .on_conflict_do_nothing(index_elements=["user_id"])
+    )
     result = await db.execute(
         select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
     )
     settings = result.scalars().first()
-
     if not settings:
-        # Create default settings for user
-        # Handle race condition where settings were created by another request
-        try:
-            settings = NotificationSettings(user_id=current_user.id)
-            db.add(settings)
-            await db.flush()
-            # Create in-app channel for new settings
-            await ensure_in_app_channel(db, settings.id)
-            await db.commit()
-            await db.refresh(settings)
-        except IntegrityError:
-            # Settings were created by another request - rollback and re-query
-            await db.rollback()
-            logger.info(f"Race condition detected for user {current_user.id}, re-querying settings")
-            result = await db.execute(
-                select(NotificationSettings).where(NotificationSettings.user_id == current_user.id)
-            )
-            settings = result.scalars().first()
-            if not settings:
-                raise HTTPException(status_code=500, detail="Failed to create or retrieve notification settings")
-            # Ensure in-app channel exists
-            await ensure_in_app_channel(db, settings.id)
-            await db.commit()
-    else:
-        # Ensure in-app channel exists (for users created before this feature)
+        # Should be unreachable (the upsert guarantees a row), but fail loudly if not.
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create or retrieve notification settings")
+
+    # Ensure the in-app channel exists (covers both new rows and users created before
+    # this feature). ensure_in_app_channel is itself a check-then-insert, so tolerate a
+    # concurrent creation racing us here too.
+    try:
         await ensure_in_app_channel(db, settings.id)
         await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        logger.info(f"In-app channel already created concurrently for user {current_user.id}")
 
     return settings
 
