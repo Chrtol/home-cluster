@@ -33,6 +33,7 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               UN_WEBSERVER_METRICS: "true"
+              UN_ACTIVITY: "true"
               # Sonarr
               UN_SONARR_0_URL: http://sonarr.media.svc.cluster.local:80
               UN_SONARR_0_PATHS_0: /data/usenet/complete
@@ -43,6 +44,14 @@ spec:
               # Covers both the "movies" category subfolder and the
               # empty-path "radarr" category that saves to /data/torrents directly
               UN_RADARR_0_PATHS_1: /data/torrents
+              # Discord notifications (URL injected from unpackerr-secret).
+              # The native discord template is auto-detected from the webhook URL.
+              # Events: 4=extracted, 3=extract failed
+              UN_WEBHOOK_0_NAME: discord
+              UN_WEBHOOK_0_NICKNAME: Unpackerr
+              UN_WEBHOOK_0_SILENT: "false"
+              UN_WEBHOOK_0_EVENTS_0: "4"
+              UN_WEBHOOK_0_EVENTS_1: "3"
             envFrom:
               - secretRef:
                   name: unpackerr-secret
