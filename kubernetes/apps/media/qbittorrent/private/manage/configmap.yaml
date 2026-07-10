@@ -16,7 +16,11 @@ data:
       tag_update: False
       rem_unregistered: True
       tag_tracker_error: False
-      rem_orphaned: True
+      # Disabled: both qBit instances share /data/torrents, but each qbit_manage
+      # only sees ITS instance's torrents — so the other instance's files look
+      # orphaned (741 false positives on the private run, correctly aborted by the
+      # max-threshold safety). Unsafe until cross-instance orphan detection exists.
+      rem_orphaned: False
       tag_nohardlinks: False
       share_limits: False       # Prowlarr owns seeding limits — do not let qbm manage them
       skip_qb_version_check: False
