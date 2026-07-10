@@ -54,9 +54,13 @@ spec:
                 memory: 446M
     defaultPodOptions:
       securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: &pgid 1000
         fsGroupChangePolicy: OnRootMismatch
-        
+        supplementalGroups:
+          - 65539
+
     service:
       app:
         controller: *app
@@ -89,3 +93,13 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
+      # Required for the "Unlinked Downloads" cleaner: Cleanuparr must see the
+      # same /data mount qBittorrent uses so it can stat files and count hardlinks.
+      data:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data
+        advancedMounts:
+          cleanuparr:
+            app:
+              - path: /data
