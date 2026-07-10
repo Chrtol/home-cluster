@@ -41,3 +41,4 @@ resources:
   - ./tracearr/ks.yaml
   - ./shelfmark/ks.yaml
   - ./readmeabook/ks.yaml
+  - ./unpackerr/ks.yaml
