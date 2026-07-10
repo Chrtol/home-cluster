@@ -1,0 +1,64 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbit-manage-private-config
+data:
+  config.yml: |
+    # qbit-manage config for qbittorrent-private
+    # Rules live in git; qBit credentials injected via !ENV from the secret.
+    # NOTE: dry_run is True for the first deploy. Review the reported removals,
+    # then flip to False in git to enable real deletion.
+    commands:
+      dry_run: True
+      recheck: False
+      cat_update: False
+      tag_update: False
+      rem_unregistered: True
+      tag_tracker_error: False
+      rem_orphaned: True
+      tag_nohardlinks: False
+      share_limits: False       # Prowlarr owns seeding limits — do not let qbm manage them
+      skip_qb_version_check: False
+      skip_cleanup: False
+
+    qbt:
+      host: "qbittorrent-private.media.svc.cluster.local:80"
+      user: !ENV QBIT_USER
+      pass: !ENV QBIT_PASS
+
+    settings:
+      force_auto_tmm: False
+      tracker_error_tag: issue
+      nohardlinks_tag: noHL
+      # Extra-conservative for private trackers (H&R protection):
+      rem_unregistered_filter_completed: False
+      rem_unregistered_grace_minutes: 60   # skip newly-added torrents flagged unregistered
+      rem_unregistered_max_torrents: 5     # cap removals per tracker per run
+      rem_unregistered_ignore_list:
+        - unreachable
+        - maintenance
+        - tracker is down
+        - down for
+
+    directory:
+      # In-container paths; qBit and qbit-manage both see the share at /data/torrents.
+      root_dir: "/data/torrents"
+      orphaned_dir: "/data/torrents/orphaned_data"
+      recycle_bin: "/data/torrents/.RecycleBin"
+
+    cat:
+      # Every category MUST be declared so rem_orphaned does not treat
+      # referenced folders (including the Cleanuparr staging category) as orphaned.
+      tv: "/data/torrents/tv"
+      movies: "/data/torrents/movies"
+      audiobooks: "/data/torrents/audiobooks"
+      books: "/data/torrents/books"
+      music: "/data/torrents/music"
+      readmeabook: "/data/media/audiobooks"
+      cleanuparr-unlinked: "/data/torrents/cleanuparr-unlinked"
+
+    tracker:
+      # Fallback tag for any tracker not explicitly mapped.
+      other:
+        tag: other

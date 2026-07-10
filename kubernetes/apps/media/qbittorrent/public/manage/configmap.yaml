@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbit-manage-public-config
+data:
+  config.yml: |
+    # qbit-manage config for qbittorrent (public)
+    # Public trackers have no hit-and-run obligation, so removal can be less conservative.
+    # NOTE: dry_run is True for the first deploy. Review, then flip to False in git.
+    commands:
+      dry_run: True
+      recheck: False
+      cat_update: False
+      tag_update: False
+      rem_unregistered: True
+      tag_tracker_error: False
+      rem_orphaned: True
+      tag_nohardlinks: False
+      share_limits: False
+      skip_qb_version_check: False
+      skip_cleanup: False
+
+    qbt:
+      host: "qbittorrent.media.svc.cluster.local:80"
+      user: !ENV QBIT_USER
+      pass: !ENV QBIT_PASS
+
+    settings:
+      force_auto_tmm: False
+      tracker_error_tag: issue
+      nohardlinks_tag: noHL
+      rem_unregistered_filter_completed: False
+      rem_unregistered_grace_minutes: 10
+      rem_unregistered_max_torrents: 20
+      rem_unregistered_ignore_list:
+        - unreachable
+        - maintenance
+        - tracker is down
+        - down for
+
+    directory:
+      root_dir: "/data/torrents"
+      orphaned_dir: "/data/torrents/orphaned_data"
+      recycle_bin: "/data/torrents/.RecycleBin"
+
+    cat:
+      tv: "/data/torrents/tv"
+      movies: "/data/torrents/movies"
+      audiobooks: "/data/torrents/audiobooks"
+      books: "/data/torrents/books"
+      music: "/data/torrents/music"
+      cleanuparr-unlinked: "/data/torrents/cleanuparr-unlinked"
+
+    tracker:
+      other:
+        tag: other
