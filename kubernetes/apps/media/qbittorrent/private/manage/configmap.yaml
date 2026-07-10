@@ -7,10 +7,10 @@ data:
   config.yml: |
     # qbit-manage config for qbittorrent-private
     # Rules live in git; qBit credentials injected via !ENV from the secret.
-    # NOTE: dry_run is True for the first deploy. Review the reported removals,
-    # then flip to False in git to enable real deletion.
+    # dry_run verified safe on 2026-07-11 (14 unregistered found, cleanuparr-unlinked
+    # untouched); now live. Set dry_run True again if changing rules materially.
     commands:
-      dry_run: True
+      dry_run: False
       recheck: False
       cat_update: False
       tag_update: False

@@ -7,9 +7,10 @@ data:
   config.yml: |
     # qbit-manage config for qbittorrent (public)
     # Public trackers have no hit-and-run obligation, so removal can be less conservative.
-    # NOTE: dry_run is True for the first deploy. Review, then flip to False in git.
+    # dry_run verified safe on 2026-07-11; now live. Set dry_run True again if
+    # changing rules materially.
     commands:
-      dry_run: True
+      dry_run: False
       recheck: False
       cat_update: False
       tag_update: False

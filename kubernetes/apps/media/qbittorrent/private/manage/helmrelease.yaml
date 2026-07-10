@@ -70,6 +70,18 @@ spec:
           http:
             port: *port
 
+    route:
+      app:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+
     persistence:
       # Read-only ConfigMap template (rules live in git).
       config-template:
