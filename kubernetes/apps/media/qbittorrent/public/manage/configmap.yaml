@@ -22,7 +22,7 @@ data:
       rem_orphaned: False
       tag_nohardlinks: False
       share_limits: False
-      skip_qb_version_check: False
+      skip_qb_version_check: True    # qBit v5.2.3 exceeds qbit_manage v4.9.1's tested ceiling; bypass
       skip_cleanup: False
 
     qbt:
