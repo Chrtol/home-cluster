@@ -64,6 +64,8 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups:
+          - 65539
     service:
       app:
         ports:
@@ -84,9 +86,13 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
+      # Mount the /data PARENT (not just torrents) so qui's orphan scan can see
+      # /data/media hardlink targets and correctly protect referenced files.
+      # Without this, media-hardlinked files (e.g. readmeabook -> /data/media/audiobooks)
+      # are flagged as orphans and the scan reports "path inaccessible".
       media:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/torrents
+        path: /mnt/truenas/cf-nas/data
         globalMounts:
-          - path: /data/torrents
+          - path: /data
