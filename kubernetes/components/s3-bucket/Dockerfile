@@ -1,5 +1,5 @@
 # Multi-tool image for Garage S3 bucket management
-FROM alpine:3.23
+FROM alpine:3.24
 
 # Install required tools
 RUN apk add --no-cache \
