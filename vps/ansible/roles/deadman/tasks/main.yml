@@ -69,6 +69,7 @@
           - Grace period: {{ deadman_grace_seconds }}s
           - Notify: Pushover (priority {{ deadman_pushover_priority }})
           - Health: {{ 'OK' if (deadman_health.status | default(0)) == 200 else 'NOT READY — check logs' }}
+          - Event log: {{ deadman_data_dir }}/deadman.log  (also: docker logs {{ deadman_container_name }})
 
 # When disabled, ensure the container is not left running.
 - name: Dead-man's-switch — ensure removed when disabled

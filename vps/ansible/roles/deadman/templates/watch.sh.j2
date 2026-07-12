@@ -15,6 +15,8 @@ set -eu
 HEARTBEAT_FILE="/data/last_ping"
 STATE_FILE="/data/state"          # "up" or "down" — tracks last known heartbeat state
 LAST_NOTIFY_FILE="/data/last_notify"
+LOG_FILE="/data/deadman.log"      # persistent, rotated event log (survives restarts)
+LOG_MAX_BYTES=1048576             # 1 MiB, then rotate to deadman.log.1
 
 PORT="${DEADMAN_PORT:-9720}"
 TOKEN="${DEADMAN_TOKEN:?token required}"
@@ -25,7 +27,20 @@ PUSHOVER_TOKEN="${DEADMAN_PUSHOVER_TOKEN:?pushover token required}"
 PUSHOVER_USER="${DEADMAN_PUSHOVER_USER:?pushover user required}"
 PUSHOVER_PRIORITY="${DEADMAN_PUSHOVER_PRIORITY:-1}"
 
-log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*"; }
+# Log events to stdout (docker logs) AND a persistent file in the /data volume.
+# Only meaningful events are logged (startup, LOST/RECOVERED, pushover, errors) —
+# routine pings are intentionally NOT logged to keep the file small and readable.
+# Size-based rotation keeps a single .log.1 backup so it can't grow unbounded.
+log() {
+  line="$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*"
+  echo "$line"
+  # Rotate before appending if the file is at/over the size cap.
+  if [ -f "$LOG_FILE" ]; then
+    sz="$(stat -c %s "$LOG_FILE" 2>/dev/null || echo 0)"
+    [ "$sz" -ge "$LOG_MAX_BYTES" ] && mv -f "$LOG_FILE" "$LOG_FILE.1" 2>/dev/null || true
+  fi
+  echo "$line" >> "$LOG_FILE" 2>/dev/null || true
+}
 
 # Seed the heartbeat so a fresh start does not immediately alarm.
 [ -f "$HEARTBEAT_FILE" ] || touch "$HEARTBEAT_FILE"
@@ -114,7 +129,7 @@ listener_loop() {
   done
 }
 
-log "deadman watcher starting: port=$PORT grace=${GRACE}s check=${CHECK_INTERVAL}s"
+log "deadman watcher starting: port=$PORT grace=${GRACE}s check=${CHECK_INTERVAL}s renotify=${RENOTIFY}s state=$(cat "$STATE_FILE" 2>/dev/null || echo up) log=$LOG_FILE"
 staleness_loop &
 listener_loop
 {% endraw %}

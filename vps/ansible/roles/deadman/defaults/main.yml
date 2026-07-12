@@ -10,7 +10,8 @@
 # Feature toggle. Set from VPS_DEADMAN_ENABLED in 1Password (default: false).
 deadman_enabled: false
 
-# Install location
+# Install location. The data dir persists heartbeat state AND the event log
+# (deadman.log — startup, LOST/RECOVERED, pushover sends; rotated at ~1 MiB).
 deadman_dir: "/opt/deadman"
 deadman_data_dir: "{{ deadman_dir }}/data"
 
