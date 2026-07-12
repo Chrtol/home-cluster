@@ -10,18 +10,23 @@ spec:
   url: https://github.com/kubernetes-sigs/gateway-api
   ref:
     # renovate: datasource=github-releases depName=kubernetes-sigs/gateway-api
-    # Capped to the v1.4.x line: Cilium 1.19.5's gateway-api operator officially targets
-    # gateway-api v1.4.1 and its field indexer still requires TLSRoute served under
-    # gateway.networking.k8s.io/v1alpha2 (experimental channel). v1.5.0+ promotes TLSRoute
-    # to v1 and unserves v1alpha2 -> cilium-operator crash-loops. The real unblock is
-    # Cilium 1.20 (moves TLSRoute to v1); until then keep this < v1.5.0.
-    tag: v1.4.1
+    # Experimental channel at v1.6.0 serves TLSRoute under BOTH v1 (needed by Envoy
+    # Gateway 1.8.x) AND v1alpha2 (needed by Cilium 1.19.x's operator field indexer),
+    # plus v1alpha3. This satisfies both controllers from a single CRD. The prior
+    # "cap < v1.5.0" was a misdiagnosis: v1alpha2 is NOT dropped by the experimental
+    # channel; the earlier v1.5.1 incident was caused by the safe-upgrades VAP
+    # (excluded below) and a storedVersions edge case, not by v1alpha2 disappearing.
+    tag: v1.6.0
   ignore: |
     # exclude
     /*
     # include
     # experimental channel includes TLSRoute/TCPRoute/UDPRoute (required by Cilium's gateway-api operator)
     !config/crd/experimental
+    # exclude the safe-upgrades ValidatingAdmissionPolicy: it blocks installing
+    # experimental CRDs over standard-channel ones and was the real cause of the
+    # earlier v1.5.1 cilium-operator crash-loop incident.
+    config/crd/experimental/gateway.networking.k8s.io_vap_safeupgrades.yaml
 ---
 # yaml-language-server: $schema=https://k8s-schemas-cjso.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1

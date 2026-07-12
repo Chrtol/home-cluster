@@ -49,20 +49,20 @@
   },
   packageRules: [
     {
-      // Cilium 1.19.x's gateway-api operator hard-requires TLSRoute served under
-      // gateway.networking.k8s.io/v1alpha2 (experimental channel). Cilium 1.19.5
-      // officially targets gateway-api v1.4.1. gateway-api v1.5.0+ promotes TLSRoute
-      // to v1 and unserves v1alpha2, which crash-loops the cilium-operator and deadlocks
-      // the CRD Kustomization. Cap to the v1.4.x line until Cilium 1.20 (moves TLSRoute
-      // to v1) is adopted.
-      description: 'Cap gateway-api CRDs to <1.5.0 for Cilium 1.19 compatibility',
+      // gateway-api experimental channel must serve TLSRoute under BOTH v1 (Envoy
+      // Gateway 1.8.x) and v1alpha2 (Cilium 1.19.x operator field indexer). The
+      // experimental channel through v1.6.0 serves v1 + v1alpha2 + v1alpha3, so both
+      // controllers are satisfied. Cap to <1.7.0 as a safety margin: a future release
+      // could drop v1alpha2 (breaking Cilium) — re-verify TLSRoute served versions
+      // before lifting. The safe-upgrades VAP is excluded in crds.yaml.
+      description: 'Cap gateway-api CRDs to <1.7.0; experimental must serve TLSRoute v1 + v1alpha2',
       matchDatasources: [
         'github-releases',
       ],
       matchPackageNames: [
         'kubernetes-sigs/gateway-api',
       ],
-      allowedVersions: '<1.5.0',
+      allowedVersions: '<1.7.0',
     },
     {
       description: 'Cert-Manager Group',
