@@ -10,10 +10,12 @@ spec:
   url: https://github.com/kubernetes-sigs/gateway-api
   ref:
     # renovate: datasource=github-releases depName=kubernetes-sigs/gateway-api
-    # Pinned to v1.3.0: this is the last release that still SERVES TLSRoute under
-    # gateway.networking.k8s.io/v1alpha2, which Cilium 1.19.x's gateway-api operator
-    # requires for its field indexer. v1.4.0+ unserves v1alpha2 -> operator crash-loops.
-    tag: v1.3.0
+    # Capped to the v1.4.x line: Cilium 1.19.5's gateway-api operator officially targets
+    # gateway-api v1.4.1 and its field indexer still requires TLSRoute served under
+    # gateway.networking.k8s.io/v1alpha2 (experimental channel). v1.5.0+ promotes TLSRoute
+    # to v1 and unserves v1alpha2 -> cilium-operator crash-loops. The real unblock is
+    # Cilium 1.20 (moves TLSRoute to v1); until then keep this < v1.5.0.
+    tag: v1.4.1
   ignore: |
     # exclude
     /*
