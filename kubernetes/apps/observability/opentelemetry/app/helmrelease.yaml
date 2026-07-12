@@ -49,8 +49,6 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
-      # Explicitly set empty featureGates to satisfy schema
-      featureGates: ""
       # disabled by default - enable instrumentation types
       extraArgs:
         - --enable-go-instrumentation=true
