@@ -34,7 +34,7 @@ spec:
   values:
     image:
       repository: ghcr.io/homarr-labs/homarr
-      tag: v1.63.0@sha256:6daf640531c1c114ccce15775185b3fb8958365a62c2fabc559d9cc5ae064326
+      tag: v1.70.0@sha256:80ee593cd76afbbb34b8edb4b345281e2bf47d33e6d682684d6ad36624784ce0
       pullPolicy: IfNotPresent
 
 
