@@ -20,3 +20,30 @@ spec:
       ports:
         - protocol: TCP
           port: 9999
+---
+# The dragonfly-operator regenerates its own `dragonfly` NetworkPolicy whose 6379
+# ingress rule is `podSelector: {}` (same-namespace only) — this broke cross-namespace
+# clients (outline/homarr in default, an app in media) on the v1.5.0 -> v1.6.1 bump.
+# NetworkPolicies are additive (OR'd), so this repo-managed policy restores 6379 access
+# for the client namespaces without fighting the operator-managed policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dragonfly-allow-clients
+spec:
+  podSelector:
+    matchLabels:
+      app: dragonfly
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: media
+      ports:
+        - protocol: TCP
+          port: 6379
