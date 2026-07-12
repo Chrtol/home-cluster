@@ -40,7 +40,7 @@ spec:
           app:
             image:
               repository: ghcr.io/gitroomhq/postiz-app
-              tag: v2.21.8@sha256:3ec7bc8ecf61f08c22e0954291702b097f944def515dc259cb3a441aba4046c0
+              tag: v2.21.10@sha256:1d5a5dc6b896747d1483c01dc2562165bd313ad601b32f6cabb7f7dd08a911a9
             env:
               TZ: ${SECRET_TIMEZONE}
               # Public URLs (same host internal + external)
