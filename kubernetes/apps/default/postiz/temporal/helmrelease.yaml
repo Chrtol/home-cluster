@@ -39,7 +39,7 @@ spec:
           app:
             image:
               repository: docker.io/temporalio/auto-setup
-              tag: 1.28.1@sha256:607d68caa111338d754771efb876c92dfcdae06d056e4530bb31cd0f37406e6a
+              tag: 1.29.7@sha256:f14912b699cf73015ad5c4fc18d522d4b014db90e794039214dfb7c022c2644f
               pullPolicy: IfNotPresent
             env:
               # SQL persistence on CloudNative-PG, Postgres-based visibility (no Elasticsearch)
