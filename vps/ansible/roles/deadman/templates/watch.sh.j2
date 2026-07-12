@@ -1,4 +1,5 @@
 #!/bin/sh
+{% raw %}
 # Dead-man's-switch watcher (POSIX sh, BusyBox-compatible).
 #
 # Two concurrent responsibilities:
@@ -116,3 +117,4 @@ listener_loop() {
 log "deadman watcher starting: port=$PORT grace=${GRACE}s check=${CHECK_INTERVAL}s"
 staleness_loop &
 listener_loop
+{% endraw %}
