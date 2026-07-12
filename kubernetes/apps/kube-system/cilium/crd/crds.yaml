@@ -14,8 +14,10 @@ spec:
     # Gateway 1.8.x) AND v1alpha2 (needed by Cilium 1.19.x's operator field indexer),
     # plus v1alpha3. This satisfies both controllers from a single CRD. The prior
     # "cap < v1.5.0" was a misdiagnosis: v1alpha2 is NOT dropped by the experimental
-    # channel; the earlier v1.5.1 incident was caused by the safe-upgrades VAP
-    # (excluded below) and a storedVersions edge case, not by v1alpha2 disappearing.
+    # channel. The safe-upgrades VAP (shipped since v1.5) PERMITS this upgrade because
+    # the existing CRDs are already experimental-channel and the target is v1.5+ — so
+    # it is left installed (do NOT exclude it: the upstream kustomization.yaml
+    # references the file, and removing it breaks `kustomize build`).
     tag: v1.6.0
   ignore: |
     # exclude
@@ -23,10 +25,6 @@ spec:
     # include
     # experimental channel includes TLSRoute/TCPRoute/UDPRoute (required by Cilium's gateway-api operator)
     !config/crd/experimental
-    # exclude the safe-upgrades ValidatingAdmissionPolicy: it blocks installing
-    # experimental CRDs over standard-channel ones and was the real cause of the
-    # earlier v1.5.1 cilium-operator crash-loop incident.
-    config/crd/experimental/gateway.networking.k8s.io_vap_safeupgrades.yaml
 ---
 # yaml-language-server: $schema=https://k8s-schemas-cjso.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
