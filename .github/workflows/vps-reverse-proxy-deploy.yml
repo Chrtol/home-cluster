@@ -85,12 +85,11 @@ jobs:
           TRIVY_SERVER_TOKEN: "op://Lab/trivy-server/TRIVY_SERVER_TOKEN"
 
           # Dead-man's-switch watcher (out-of-cluster monitoring backstop)
-          # VPS_DEADMAN_GRACE_SECONDS is intentionally omitted — it is optional and
-          # defaults to 600 in the role. load-secrets-action fails on any missing
-          # op:// reference, so only required fields are listed here. To override the
-          # grace period, add the field in 1Password and re-add the line below.
+          # Every op:// reference must resolve — load-secrets-action fails on any
+          # missing field. All of these must exist in Lab/vps-proxy.
           VPS_DEADMAN_ENABLED: "op://Lab/vps-proxy/VPS_DEADMAN_ENABLED"
           VPS_DEADMAN_PING_TOKEN: "op://Lab/vps-proxy/VPS_DEADMAN_PING_TOKEN"
+          VPS_DEADMAN_GRACE_SECONDS: "op://Lab/vps-proxy/VPS_DEADMAN_GRACE_SECONDS"
           VPS_DEADMAN_PUSHOVER_TOKEN: "op://Lab/vps-proxy/VPS_DEADMAN_PUSHOVER_TOKEN"
           VPS_DEADMAN_PUSHOVER_USER: "op://Lab/vps-proxy/VPS_DEADMAN_PUSHOVER_USER"
 
