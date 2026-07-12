@@ -38,7 +38,7 @@ spec:
     - Ingress
   ingress:
     - from:
-        # default/outline + default/homarr
+        # default: outline, homarr, reptile-tracker (+ its celery worker share the label)
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: default
@@ -46,14 +46,16 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [outline, homarr]
-        # media/readmeabook
+                values: [outline, homarr, reptile-tracker]
+        # media: readmeabook, tracearr
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: media
           podSelector:
-            matchLabels:
-              app.kubernetes.io/name: readmeabook
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [readmeabook, tracearr]
       ports:
         - protocol: TCP
           port: 6379
