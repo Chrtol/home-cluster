@@ -1,0 +1,21 @@
+---
+# DNS record for the VPS-hosted dead-man's-switch watcher.
+# This is a DNS record ONLY — the endpoint is served by Traefik on the VPS
+# (out-of-cluster, independent failure domain), NOT through the cluster Gateway.
+# external-dns (crd source) creates a grey-cloud (DNS-only) A record in Cloudflare
+# pointing at the VPS public IP so the in-cluster Alertmanager heartbeat can reach it.
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: deadman
+  annotations:
+    # Grey cloud (DNS-only, unproxied) — keeps the heartbeat path as direct and
+    # cluster-independent as possible for a monitoring backstop.
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+spec:
+  endpoints:
+    - dnsName: "deadman.${SECRET_DOMAIN}"
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "${VPS_PUBLIC_IP}"
