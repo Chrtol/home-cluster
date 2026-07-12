@@ -13,6 +13,7 @@ on:
     paths:
       - 'vps/ansible/roles/traefik/**'
       - 'vps/ansible/roles/trivy/**'
+      - 'vps/ansible/roles/deadman/**'
       - 'vps/ansible/reverse-proxy.yml'
       - '.github/workflows/vps-reverse-proxy-deploy.yml'
   workflow_dispatch:
