@@ -41,3 +41,16 @@ spec:
   interval: 15m
   retryInterval: 1m
   timeout: 5m
+  # Neutralize the safe-upgrades ValidatingAdmissionPolicy. We deliberately run
+  # experimental-channel gateway-api CRDs (Cilium's operator requires TLSRoute
+  # v1alpha2). The upstream VAP denies experimental installs by default; switch it
+  # from Deny to Warn so Flux can apply the CRDs. The policy file stays in the build
+  # (removing it breaks kustomize build, since upstream kustomization.yaml lists it).
+  patches:
+    - target:
+        kind: ValidatingAdmissionPolicyBinding
+        name: safe-upgrades.gateway.networking.k8s.io
+      patch: |
+        - op: replace
+          path: /spec/validationActions
+          value: ["Warn"]
