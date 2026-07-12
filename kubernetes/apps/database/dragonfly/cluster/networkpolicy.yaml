@@ -47,7 +47,7 @@ spec:
               - key: app.kubernetes.io/name
                 operator: In
                 values: [outline, homarr, reptile-tracker]
-        # media: readmeabook, tracearr
+        # media: readmeabook, tracearr, immich
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: media
@@ -55,7 +55,7 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [readmeabook, tracearr]
+                values: [readmeabook, tracearr, immich]
       ports:
         - protocol: TCP
           port: 6379
