@@ -17,11 +17,19 @@ spec:
           - name: alertname
             value: InfoInhibitor
             matchType: =
-      - receiver: "null"
+      # Watchdog fires continuously by design. Route it to the heartbeat
+      # receiver so it pings the out-of-cluster dead-man's-switch on the VPS on a
+      # steady cadence. If these pings stop (cluster/ingress/monitoring down), the
+      # VPS watcher notifies via Pushover — an independent failure domain from the
+      # n8n webhook path, which routes through Envoy Gateway ingress.
+      - receiver: heartbeat
         matchers:
           - name: alertname
             value: Watchdog
             matchType: =
+        groupWait: 0s
+        groupInterval: 1m
+        repeatInterval: 2m30s
       - receiver: "null"
         matchers:
           - name: alertname
