@@ -38,12 +38,22 @@ spec:
     - Ingress
   ingress:
     - from:
+        # default/outline + default/homarr
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: default
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [outline, homarr]
+        # media/readmeabook
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: media
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: readmeabook
       ports:
         - protocol: TCP
           port: 6379
