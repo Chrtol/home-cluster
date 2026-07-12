@@ -42,9 +42,14 @@ log() {
   echo "$line" >> "$LOG_FILE" 2>/dev/null || true
 }
 
-# Seed the heartbeat so a fresh start does not immediately alarm.
-[ -f "$HEARTBEAT_FILE" ] || touch "$HEARTBEAT_FILE"
-[ -f "$STATE_FILE" ] || echo "up" > "$STATE_FILE"
+# Seed the heartbeat on EVERY startup so a redeploy/restart does not false-alarm.
+# The /data volume persists, so last_ping carries a stale mtime across restarts; a
+# watcher restart is NOT evidence the cluster is down, so we grant a fresh grace
+# window for Alertmanager to check in before any staleness evaluation. We also
+# reset state to "up" — if the cluster really is down, the loop will re-detect it
+# after grace and alarm once (no spurious LOST/RECOVERED churn on ordinary deploys).
+touch "$HEARTBEAT_FILE"
+echo "up" > "$STATE_FILE"
 
 send_pushover() {
   # $1 = title, $2 = message
