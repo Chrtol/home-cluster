@@ -1,0 +1,30 @@
+services:
+  deadman:
+    image: {{ deadman_image }}
+    container_name: {{ deadman_container_name }}
+    restart: unless-stopped
+    # Bind only to localhost — Traefik (host network) fronts TLS + routing.
+    ports:
+      - "127.0.0.1:{{ deadman_listen_port }}:{{ deadman_listen_port }}"
+    volumes:
+      - {{ deadman_dir }}/watch.sh:/watch.sh:ro
+      - {{ deadman_data_dir }}:/data
+    environment:
+      DEADMAN_PORT: "{{ deadman_listen_port }}"
+      DEADMAN_TOKEN: "{{ deadman_ping_token }}"
+      DEADMAN_GRACE_SECONDS: "{{ deadman_grace_seconds }}"
+      DEADMAN_CHECK_INTERVAL: "{{ deadman_check_interval_seconds }}"
+      DEADMAN_RENOTIFY_SECONDS: "{{ deadman_renotify_seconds }}"
+      DEADMAN_PUSHOVER_TOKEN: "{{ deadman_pushover_token }}"
+      DEADMAN_PUSHOVER_USER: "{{ deadman_pushover_user }}"
+      DEADMAN_PUSHOVER_PRIORITY: "{{ deadman_pushover_priority }}"
+    # Alpine ships without curl; install it, then hand off to the watcher.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "apk add --no-cache curl netcat-openbsd >/dev/null 2>&1 || apk add --no-cache curl >/dev/null 2>&1; exec /bin/sh /watch.sh"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:{{ deadman_listen_port }}/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

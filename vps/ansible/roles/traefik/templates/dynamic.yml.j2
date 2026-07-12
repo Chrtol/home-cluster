@@ -65,6 +65,22 @@ http:
         - metrics-rewrite-path
 {% endif %}
 
+{% if traefik_deadman_enabled | default(false) %}
+    # Dead-man's-switch ping endpoint (served LOCALLY on the VPS).
+    # Higher priority than the wildcard catch-all so the Alertmanager heartbeat
+    # terminates here on the VPS and never routes back into the (possibly-down)
+    # cluster — that independence is the entire point of the switch.
+    deadman-ping:
+      entryPoints:
+        - websecure
+      rule: "Host(`{{ traefik_deadman_host }}`)"
+      priority: 100
+      service: deadman
+      tls: {}
+      middlewares:
+        - security-headers
+{% endif %}
+
   # Services
   services:
     # Envoy Gateway service
@@ -81,6 +97,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://127.0.0.1:9100"
+{% endif %}
+
+{% if traefik_deadman_enabled | default(false) %}
+    # Dead-man's-switch watcher (localhost-bound container)
+    deadman:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:{{ traefik_deadman_listen_port | default(8080) }}"
 {% endif %}
 
   # Middlewares

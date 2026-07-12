@@ -38,3 +38,9 @@ traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
 traefik_enable_metrics: false
 traefik_metrics_user: ""  # VPS_METRICS_USER from 1Password
 traefik_metrics_password_hash: ""  # VPS_METRICS_PASSWORD_HASH (htpasswd hash) from 1Password
+
+# Dead-man's-switch routing (Traefik fronts the local watcher container).
+# Enabled together with the deadman role via VPS_DEADMAN_ENABLED.
+traefik_deadman_enabled: false
+traefik_deadman_host: "deadman.{{ traefik_domain }}"
+traefik_deadman_listen_port: 8080

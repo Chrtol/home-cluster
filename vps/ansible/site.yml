@@ -10,3 +10,4 @@
     - crowdsec    # CrowdSec IDS (optional)
     - traefik     # Traefik reverse proxy
     - trivy       # Trivy security scanner (client mode)
+    - deadman     # Dead-man's-switch watcher (out-of-cluster monitoring backstop)

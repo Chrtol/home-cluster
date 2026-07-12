@@ -35,8 +35,18 @@
     enable_echo_test: "{{ lookup('env', 'PROXY_ENABLE_ECHO_TEST') | default('true') | bool }}"
     enable_metrics: "{{ lookup('env', 'PROXY_ENABLE_METRICS') | default('true') | bool }}"
 
+    # Dead-man's-switch watcher (out-of-cluster monitoring backstop) from 1Password
+    deadman_enabled: "{{ lookup('env', 'VPS_DEADMAN_ENABLED') | default('false') | bool }}"
+    deadman_ping_token: "{{ lookup('env', 'VPS_DEADMAN_PING_TOKEN') | default('', true) }}"
+    deadman_grace_seconds: "{{ lookup('env', 'VPS_DEADMAN_GRACE_SECONDS') | default('600', true) }}"
+    deadman_pushover_token: "{{ lookup('env', 'VPS_DEADMAN_PUSHOVER_TOKEN') | default('', true) }}"
+    deadman_pushover_user: "{{ lookup('env', 'VPS_DEADMAN_PUSHOVER_USER') | default('', true) }}"
+    deadman_host: "deadman.{{ proxy_domain }}"
+
     # Pass variables to traefik role
     traefik_domain: "{{ proxy_domain }}"
+    traefik_deadman_enabled: "{{ deadman_enabled }}"
+    traefik_deadman_host: "{{ deadman_host }}"
     traefik_otel_endpoint: "{{ otel_endpoint }}"
     traefik_service_name: "{{ otel_service_name }}"
     traefik_sample_rate: "{{ otel_sample_rate }}"
@@ -77,6 +87,11 @@
     - name: Ensure trivy scanner is deployed
       include_role:
         name: trivy
+
+    # Deploy AFTER traefik so its route can front the watcher immediately.
+    - name: Ensure dead-man's-switch watcher is deployed
+      include_role:
+        name: deadman
 
   post_tasks:
     - name: Clean up old backup files (keep 2 most recent)

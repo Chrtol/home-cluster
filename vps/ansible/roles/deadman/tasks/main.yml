@@ -1,0 +1,87 @@
+---
+# Deploy the dead-man's-switch watcher (out-of-cluster monitoring backstop).
+# Entire role is gated on deadman_enabled so it can be toggled from 1Password.
+
+- name: Dead-man's-switch — manage watcher
+  when: deadman_enabled | bool
+  block:
+    - name: Create deadman directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ deadman_dir }}"
+        - "{{ deadman_data_dir }}"
+
+    - name: Template watcher script
+      ansible.builtin.template:
+        src: watch.sh.j2
+        dest: "{{ deadman_dir }}/watch.sh"
+        mode: "0755"
+      register: deadman_script
+
+    - name: Template docker-compose file
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "{{ deadman_dir }}/docker-compose.yml"
+        mode: "0644"
+      register: deadman_compose
+
+    # Recreate to guarantee the container runs the current script + env.
+    # Idempotent: desired state is a running container with current config.
+    - name: Stop and remove existing deadman container
+      community.docker.docker_compose_v2:
+        project_src: "{{ deadman_dir }}"
+        state: absent
+        remove_orphans: true
+
+    - name: Start deadman container with current configuration
+      community.docker.docker_compose_v2:
+        project_src: "{{ deadman_dir }}"
+        state: present
+        pull: always
+        recreate: always
+      register: deadman_result
+
+    - name: Pause to let container initialize
+      ansible.builtin.pause:
+        seconds: 3
+
+    - name: Verify watcher health endpoint
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ deadman_listen_port }}/healthz"
+        method: GET
+        status_code: [200]
+        timeout: 5
+      retries: 5
+      delay: 2
+      register: deadman_health
+      ignore_errors: true
+
+    - name: Display deadman status
+      ansible.builtin.debug:
+        msg: |
+          Dead-man's-switch watcher deployed.
+          - Container: {{ deadman_container_name }}
+          - Listen: 127.0.0.1:{{ deadman_listen_port }} (Traefik fronts TLS)
+          - Ping path: /ping/<token>  (host: {{ deadman_host }})
+          - Grace period: {{ deadman_grace_seconds }}s
+          - Notify: Pushover (priority {{ deadman_pushover_priority }})
+          - Health: {{ 'OK' if (deadman_health.status | default(0)) == 200 else 'NOT READY — check logs' }}
+
+# When disabled, ensure the container is not left running.
+- name: Dead-man's-switch — ensure removed when disabled
+  when: not (deadman_enabled | bool)
+  block:
+    - name: Check whether deadman compose project exists
+      ansible.builtin.stat:
+        path: "{{ deadman_dir }}/docker-compose.yml"
+      register: deadman_compose_stat
+
+    - name: Stop and remove deadman container (feature disabled)
+      community.docker.docker_compose_v2:
+        project_src: "{{ deadman_dir }}"
+        state: absent
+        remove_orphans: true
+      when: deadman_compose_stat.stat.exists

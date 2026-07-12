@@ -1,0 +1,48 @@
+---
+# Dead-man's-switch watcher configuration defaults
+#
+# Purpose: an independent, out-of-cluster backstop for cluster monitoring.
+# Alertmanager's Watchdog alert pings this watcher on a steady cadence via the
+# heartbeat receiver. If the pings STOP (cluster/ingress down, monitoring dead),
+# this watcher — running on the VPS, outside the cluster's failure domain —
+# notifies via Pushover directly (egress only, never through the cluster).
+
+# Feature toggle. Set from VPS_DEADMAN_ENABLED in 1Password (default: false).
+deadman_enabled: false
+
+# Install location
+deadman_dir: "/opt/deadman"
+deadman_data_dir: "{{ deadman_dir }}/data"
+
+# Container image (Alpine + curl + a tiny shell HTTP server)
+deadman_image: "alpine:3.21"
+deadman_container_name: "deadman"
+
+# Port the watcher listens on (localhost only; Traefik fronts TLS + routing)
+deadman_listen_port: 8080
+
+# Shared secret path token appended to the ping URL: /ping/<token>.
+# Set from VPS_DEADMAN_PING_TOKEN in 1Password. Keeps the endpoint from being
+# pinged by random internet traffic (it is publicly reachable via Traefik).
+deadman_ping_token: ""
+
+# Grace period (seconds). If no successful ping arrives within this window, the
+# watcher fires the Pushover notification. Alertmanager pings every ~2.5m via the
+# Watchdog route, so a grace of ~10m tolerates a few missed pings before alarming.
+deadman_grace_seconds: 600
+
+# How often the watcher's loop checks staleness (seconds)
+deadman_check_interval_seconds: 60
+
+# Re-notify interval (seconds) while the heartbeat remains down, so a single
+# missed alert is not the only warning. 0 = notify once per outage.
+deadman_renotify_seconds: 3600
+
+# Pushover credentials (egress to api.pushover.net). From 1Password.
+deadman_pushover_token: ""   # VPS_DEADMAN_PUSHOVER_TOKEN (application/API token)
+deadman_pushover_user: ""    # VPS_DEADMAN_PUSHOVER_USER  (user/group key)
+deadman_pushover_priority: 1 # 1 = high priority (bypasses quiet hours)
+
+# Hostname the ping endpoint is served on via Traefik (Host rule).
+# Defaults to deadman.<proxy_domain>. Kept internal to the VPS/Traefik.
+deadman_host: "deadman.{{ traefik_domain }}"

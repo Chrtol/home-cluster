@@ -42,6 +42,21 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 - `VPS_METRICS_PASSWORD` - Plaintext password for metrics auth (used by Prometheus scraper)
 - `VPS_METRICS_PASSWORD_HASH` - bcrypt hash for metrics auth, used by Traefik (generate with `htpasswd -nB prometheus`)
 
+#### Dead-man's-switch Watcher (out-of-cluster monitoring backstop):
+The cluster's only real alert path (n8n webhook) routes through Envoy Gateway ingress, so
+ingress/cluster outages take out alerting itself — alerts only fire once the outage ends. This
+watcher runs on the VPS (independent failure domain): Alertmanager's Watchdog alert pings it every
+~2.5m; if pings stop for longer than the grace period, the VPS notifies via Pushover directly.
+- `VPS_DEADMAN_ENABLED` - Enable the watcher + its Traefik route (true/false, default: false)
+- `VPS_DEADMAN_PING_TOKEN` - Secret path token for the ping URL `/ping/<token>` (generate with `openssl rand -hex 24`)
+- `VPS_DEADMAN_GRACE_SECONDS` - Seconds without a ping before alerting (default: 600)
+- `VPS_DEADMAN_PUSHOVER_TOKEN` - Pushover application/API token (egress to api.pushover.net)
+- `VPS_DEADMAN_PUSHOVER_USER` - Pushover user/group key
+
+Ping endpoint is served locally by the VPS at `https://deadman.${VPS_PROXY_DOMAIN}/ping/<token>`.
+Set the cluster's 1Password `alertmanager.ALERTMANAGER_HEARTBEAT_URL` field to this URL so the
+Alertmanager `heartbeat` receiver pings it.
+
 ### 4. Trivy Security Scanner (Vault: `Lab`, Item: `trivy-server`)
 - `TRIVY_SERVER_TOKEN` - Authentication token for Trivy server (generate with `openssl rand -hex 32`)
 
