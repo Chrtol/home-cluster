@@ -65,6 +65,19 @@
       allowedVersions: '<1.7.0',
     },
     {
+      // v0.26.1 entrypoint requires a writable /home and root to adduser/addgroup,
+      // incompatible with our runAsNonRoot + readOnlyRootFilesystem securityContext
+      // (crashloops). Cap to <0.26.0 until the manifest adds a writable /home tmpfs.
+      description: 'Cap paperless-gpt to <0.26.0 (needs writable /home under hardened securityContext)',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'ghcr.io/icereed/paperless-gpt',
+      ],
+      allowedVersions: '<0.26.0',
+    },
+    {
       description: 'Cert-Manager Group',
       groupName: 'Cert-Manager',
       matchDatasources: [

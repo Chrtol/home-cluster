@@ -18,7 +18,11 @@ spec:
           app:
             image:
               repository: ghcr.io/icereed/paperless-gpt
-              tag: v0.26.1@sha256:6b9024d1adebfcd6bd7ec5e9da2ca17f9879b1fb5ce749d72905bbb121091ef8
+              # Pinned to v0.25.1: v0.26.1 entrypoint tries to adduser/addgroup and
+              # mkdir /home/paperless-gpt at startup, which fails under our hardened
+              # securityContext (runAsNonRoot + readOnlyRootFilesystem) -> crashloop.
+              # Revisit v0.26+ with a writable /home tmpfs mount before bumping.
+              tag: v0.25.1@sha256:c0ce6186028911101a2cfe68353f14a9dbb2653596f3f1cff94de4b6db3114ff
             env:
               TZ: ${SECRET_TIMEZONE}
               PAPERLESS_BASE_URL: http://paperless.default.svc.cluster.local:8000
