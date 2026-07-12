@@ -50,8 +50,8 @@ spec:
                     port: &port 6767
                   initialDelaySeconds: 10
                   periodSeconds: 5
-                  timeoutSeconds: 1
-                  failureThreshold: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 60
               liveness: &probes
                 enabled: true
                 custom: true
