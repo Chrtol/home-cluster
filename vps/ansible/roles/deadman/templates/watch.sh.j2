@@ -108,12 +108,15 @@ build_response() {
   read -r method path _ || return 0
   # Strip trailing CR that HTTP clients send on the request line.
   path="${path%$(printf '\r')}"
-  case "$method $path" in
-    "GET /ping/$TOKEN"|"GET /ping/$TOKEN/")
+  # Match on PATH only (any method). Alertmanager's webhook receiver sends POST;
+  # manual curl / healthchecks use GET. The token in the path is the auth, so the
+  # HTTP method is irrelevant for a heartbeat — accept GET, POST, or anything.
+  case "$path" in
+    "/ping/$TOKEN"|"/ping/$TOKEN/")
       touch "$HEARTBEAT_FILE"
       body="ok"
       ;;
-    "GET /healthz")
+    "/healthz")
       body="alive"
       ;;
     *)
