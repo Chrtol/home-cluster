@@ -16,7 +16,7 @@ HEARTBEAT_FILE="/data/last_ping"
 STATE_FILE="/data/state"          # "up" or "down" — tracks last known heartbeat state
 LAST_NOTIFY_FILE="/data/last_notify"
 
-PORT="${DEADMAN_PORT:-8080}"
+PORT="${DEADMAN_PORT:-9720}"
 TOKEN="${DEADMAN_TOKEN:?token required}"
 GRACE="${DEADMAN_GRACE_SECONDS:-600}"
 CHECK_INTERVAL="${DEADMAN_CHECK_INTERVAL:-60}"

@@ -18,8 +18,10 @@ deadman_data_dir: "{{ deadman_dir }}/data"
 deadman_image: "alpine:3.21"
 deadman_container_name: "deadman"
 
-# Port the watcher listens on (localhost only; Traefik fronts TLS + routing)
-deadman_listen_port: 8080
+# Port the watcher listens on (localhost only; Traefik fronts TLS + routing).
+# NOTE: avoid 8080 — CrowdSec LAPI uses 127.0.0.1:8080 on this VPS
+# (see traefik role: traefik_crowdsec_lapi_host). 9100 is node-exporter.
+deadman_listen_port: 9720
 
 # Shared secret path token appended to the ping URL: /ping/<token>.
 # Set from VPS_DEADMAN_PING_TOKEN in 1Password. Keeps the endpoint from being

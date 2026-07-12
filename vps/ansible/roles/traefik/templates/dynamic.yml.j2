@@ -104,7 +104,7 @@ http:
     deadman:
       loadBalancer:
         servers:
-          - url: "http://127.0.0.1:{{ traefik_deadman_listen_port | default(8080) }}"
+          - url: "http://127.0.0.1:{{ traefik_deadman_listen_port | default(9720) }}"
 {% endif %}
 
   # Middlewares
