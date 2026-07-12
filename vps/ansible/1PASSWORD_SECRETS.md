@@ -49,9 +49,12 @@ watcher runs on the VPS (independent failure domain): Alertmanager's Watchdog al
 ~2.5m; if pings stop for longer than the grace period, the VPS notifies via Pushover directly.
 - `VPS_DEADMAN_ENABLED` - Enable the watcher + its Traefik route (true/false, default: false)
 - `VPS_DEADMAN_PING_TOKEN` - Secret path token for the ping URL `/ping/<token>` (generate with `openssl rand -hex 24`)
-- `VPS_DEADMAN_GRACE_SECONDS` - Seconds without a ping before alerting (default: 600)
 - `VPS_DEADMAN_PUSHOVER_TOKEN` - Pushover application/API token (egress to api.pushover.net)
 - `VPS_DEADMAN_PUSHOVER_USER` - Pushover user/group key
+- `VPS_DEADMAN_GRACE_SECONDS` - *(optional)* Seconds without a ping before alerting (default: 600).
+  Not wired into the CI workflow by default — `load-secrets-action` fails on any missing `op://`
+  reference. To override, create this field AND add the matching line back in
+  `.github/workflows/vps-reverse-proxy-deploy.yml`.
 
 Ping endpoint is served locally by the VPS at `https://deadman.${VPS_PROXY_DOMAIN}/ping/<token>`.
 Set the cluster's 1Password `alertmanager.ALERTMANAGER_HEARTBEAT_URL` field to this URL so the
