@@ -64,6 +64,15 @@ spec:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
+    persistence:
+      tmpfs:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 8Mi
+        advancedMounts:
+          plex-exporter:
+            app:
+              - path: /tmp
     service:
       app:
         controller: *app
