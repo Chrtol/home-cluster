@@ -1,0 +1,37 @@
+---
+# app-template values fragment. The consuming HelmRelease must reference it:
+#   spec:
+#     valuesFrom:
+#       - kind: ConfigMap
+#         name: ${APP}-cnpg-values
+# (a Component cannot patch it in: kustomize patches run before Flux variable
+# substitution, so a patch path can never contain ${APP} / ${DB_CONTROLLER}).
+#
+# Required variables : APP
+# Optional variables : DB_CONTROLLER (controller key in the app's values; defaults to ${APP} —
+#                                     override when the main controller is named differently,
+#                                     e.g. immich's is "server")
+#
+# The db.home.arpa/postgres pod label is what the CNPG NetworkPolicy selects on:
+# pulling in this component grants 5432 access by construction.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP}-cnpg-values
+data:
+  values.yaml: |
+    defaultPodOptions:
+      labels:
+        db.home.arpa/postgres: "true"
+    controllers:
+      ${DB_CONTROLLER:=${APP}}:
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              # renovate: datasource=docker depName=ghcr.io/home-operations/postgres-init
+              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
+              pullPolicy: IfNotPresent
+            envFrom:
+              - secretRef:
+                  name: ${APP}-initdb-secret

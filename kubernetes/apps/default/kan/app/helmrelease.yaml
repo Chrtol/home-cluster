@@ -17,6 +17,10 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       kan:
@@ -24,15 +28,6 @@ spec:
 
         annotations:
           reloader.stakater.com/auto: "true"
-
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
-            envFrom: &envFrom
-              - secretRef:
-                  name: kan-secret
 
         containers:
           app:
@@ -45,7 +40,9 @@ spec:
                 TZ: ${SECRET_TIMEZONE}
                 PORT: &port 3000
 
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: kan-secret
             resources:
               requests:
                 cpu: 15m

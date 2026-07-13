@@ -11,6 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   components:
+        - ../../../../components/cnpg
         - ../../../../components/gatus/external
   dependsOn:
     - name: cloudnative-pg
@@ -23,6 +24,8 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: KAN_POSTGRES_PASS
     substituteFrom:
     - name: cluster-secrets
       kind: Secret
