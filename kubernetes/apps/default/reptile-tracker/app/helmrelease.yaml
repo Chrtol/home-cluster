@@ -16,6 +16,12 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-dragonfly-values
   values:
     defaultPodOptions:
       securityContext:
@@ -33,15 +39,6 @@ spec:
         # Note: This app has built-in OTEL instrumentation via opentelemetry-instrument in entrypoint.sh
         # Don't use Operator auto-instrumentation - it conflicts with app's own OTEL packages
         strategy: Recreate
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom:
-              - secretRef:
-                  name: reptile-tracker-secret
         containers:
           backend:
             image:

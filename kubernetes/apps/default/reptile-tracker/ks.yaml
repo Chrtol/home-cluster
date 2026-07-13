@@ -20,6 +20,8 @@ spec:
       namespace: ceph-csi-rbd
   path: ./kubernetes/apps/default/reptile-tracker/app
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
     - ../../../../components/volsync
@@ -36,6 +38,10 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 5Gi
+      DB_NAME: "reptile_tracker_main reptile_tracker_log"
+      DB_USER: reptiletracker
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: REPTILE_TRACKER_POSTGRES_PASS
     substituteFrom:
     - name: cluster-secrets
       kind: Secret

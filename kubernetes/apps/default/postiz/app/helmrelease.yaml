@@ -20,22 +20,17 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-dragonfly-values
   values:
     controllers:
       postiz:
-        labels:
-          postgres: "true"
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom:
-              - secretRef:
-                  name: postiz-secret
         containers:
           app:
             image:

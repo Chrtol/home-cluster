@@ -40,6 +40,8 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
     - ../../../../components/gatus/external
@@ -58,6 +60,8 @@ spec:
       APP: *app
       CEPH_RBD_CAPACITY: 20Gi
       GATUS_SUBDOMAIN: post
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: POSTIZ_POSTGRES_PASS
       # OIDC component variables
       GROUP: "Default"
       SUBDOMAIN: post

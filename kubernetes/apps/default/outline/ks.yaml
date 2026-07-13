@@ -11,6 +11,8 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   components:
+        - ../../../../components/cnpg
+        - ../../../../components/dragonfly
         - ../../../../components/gatus/external
   dependsOn:
     - name: cloudnative-pg
@@ -26,6 +28,8 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: docs
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: OUTLINE_POSTGRES_PASS
     substituteFrom:
     - name: cluster-secrets
       kind: Secret

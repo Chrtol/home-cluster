@@ -17,22 +17,23 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-dragonfly-values
   values:
     controllers:
       affine:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
+          # image + envFrom (affine-initdb-secret) come from the cnpg component's
+          # values fragment; this env block deep-merges on top of it
           init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
-              pullPolicy: IfNotPresent
             env:
               INIT_POSTGRES_UTF8: "true"
-            envFrom: &envFrom
-              - secretRef:
-                  name: affine-secret
           init-config:
             dependsOn: init-db
             image:

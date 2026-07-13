@@ -9,22 +9,17 @@ spec:
     kind: OCIRepository
     name: app-template
     namespace: flux-system
+  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-dragonfly-values
   values:
     controllers:
       outline:
-        labels:
-          postgres: "true"
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: outline-secret
         containers:
           app:
             image:
@@ -53,7 +48,9 @@ spec:
               SMTP_FROM_EMAIL: "outline@${SECRET_DOMAIN}"
               SMTP_SECURE: false
               WEB_CONCURRENCY: 1
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: outline-secret
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true

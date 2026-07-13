@@ -9,6 +9,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
   dependsOn:
@@ -20,6 +22,8 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 2Gi
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: AFFINE_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
