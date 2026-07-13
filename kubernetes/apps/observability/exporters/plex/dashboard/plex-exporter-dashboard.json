@@ -10,10 +10,10 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 24,
+        "h": 1
       },
       "id": 100,
       "title": "Server Overview",
@@ -50,10 +50,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 0,
-        "y": 1
+        "y": 1,
+        "w": 6,
+        "h": 3
       },
       "id": 1,
       "options": {
@@ -114,10 +114,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 6,
-        "y": 1
+        "y": 1,
+        "w": 6,
+        "h": 3
       },
       "id": 2,
       "options": {
@@ -171,10 +171,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 12,
-        "y": 1
+        "y": 1,
+        "w": 6,
+        "h": 3
       },
       "id": 40,
       "options": {
@@ -224,15 +224,15 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 18,
-        "y": 1
+        "y": 1,
+        "w": 6,
+        "h": 3
       },
       "id": 3,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -269,10 +269,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 0,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 3
       },
       "id": 42,
       "options": {
@@ -315,10 +315,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 6,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 3
       },
       "id": 43,
       "options": {
@@ -361,10 +361,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 12,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 3
       },
       "id": 44,
       "options": {
@@ -425,10 +425,10 @@
         }
       },
       "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 18,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 3
       },
       "id": 41,
       "options": {
@@ -452,10 +452,10 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 7
+        "y": 7,
+        "w": 24,
+        "h": 1
       },
       "id": 102,
       "title": "Active Sessions",
@@ -648,10 +648,10 @@
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 24,
         "x": 0,
-        "y": 8
+        "y": 8,
+        "w": 24,
+        "h": 6
       },
       "id": 20,
       "options": {
@@ -661,7 +661,8 @@
             "displayName": "Play Time",
             "desc": true
           }
-        ]
+        ],
+        "cellHeight": "sm"
       },
       "title": "Active Sessions",
       "type": "table",
@@ -747,10 +748,10 @@
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 0,
-        "y": 38
+        "y": 14,
+        "w": 12,
+        "h": 7
       },
       "id": 21,
       "options": {
@@ -788,10 +789,10 @@
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 12,
-        "y": 38
+        "y": 14,
+        "w": 12,
+        "h": 7
       },
       "id": 22,
       "options": {
@@ -815,10 +816,10 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 16
+        "y": 21,
+        "w": 24,
+        "h": 1
       },
       "id": 101,
       "title": "Library Details",
@@ -879,10 +880,10 @@
         ]
       },
       "gridPos": {
-        "h": 12,
-        "w": 24,
         "x": 0,
-        "y": 17
+        "y": 22,
+        "w": 12,
+        "h": 6
       },
       "id": 10,
       "options": {
@@ -906,7 +907,7 @@
           ]
         }
       },
-      "title": "",
+      "title": "Libraries",
       "type": "table",
       "targets": [
         {
@@ -965,12 +966,65 @@
       ]
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 12,
+        "h": 6
+      },
+      "id": 50,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Library Growth",
+      "description": "Items added to each library section in the last 30 days",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "delta(plex_library_items[$__range])",
+          "legendFormat": "{{library}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
       "collapsed": false,
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 29
+        "y": 28,
+        "w": 24,
+        "h": 1
       },
       "id": 103,
       "title": "Resources",
@@ -995,10 +1049,10 @@
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 0,
-        "y": 30
+        "y": 29,
+        "w": 12,
+        "h": 7
       },
       "id": 30,
       "options": {
@@ -1038,10 +1092,10 @@
         }
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 12,
-        "y": 30
+        "y": 29,
+        "w": 12,
+        "h": 7
       },
       "id": 31,
       "options": {
@@ -1059,59 +1113,6 @@
         {
           "expr": "plex_host_memory_utilization_ratio",
           "legendFormat": "{{ server }}"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0,
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "stacking": {
-              "mode": "normal"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 46
-      },
-      "id": 50,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "title": "Library Growth",
-      "description": "Items added to each library section in the last 30 days",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "delta(plex_library_items[$__range])",
-          "legendFormat": "{{library}}",
-          "refId": "A"
         }
       ]
     }
