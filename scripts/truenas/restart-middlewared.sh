@@ -25,8 +25,13 @@ readonly ALERT_SERVICE="Discord Notifications"
 log() { printf '%s middlewared-restart: %s\n' "$(date -Is)" "$*"; }
 
 # Pull the Discord webhook out of the TrueNAS alert service config.
+#
+# Wrapped in `timeout` because midclt talks to middlewared over a unix socket,
+# and on the success path we call this immediately after restarting middlewared.
+# If it came back slow or unhealthy the socket could block forever - and this
+# runs unattended from cron at 05:00, so an indefinite hang would go unnoticed.
 webhook_url() {
-    midclt call alertservice.query "[[\"name\",\"=\",\"${ALERT_SERVICE}\"]]" 2>/dev/null \
+    timeout 20 midclt call alertservice.query "[[\"name\",\"=\",\"${ALERT_SERVICE}\"]]" 2>/dev/null \
         | python3 -c 'import sys, json; d = json.load(sys.stdin); print(d[0]["attributes"]["url"] if d else "")' 2>/dev/null || true
 }
 

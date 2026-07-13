@@ -1,0 +1,139 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nas-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: nas-health
+      interval: 1m
+      rules:
+        - alert: NASDown
+          expr: up{job="nas-node-exporter"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            category: nas
+          annotations:
+            summary: NAS is down or unreachable
+            description: The NAS has been unreachable for 5 minutes. NFS-backed media apps and PVCs will be affected.
+
+        # The leak that took nginx down on 2026-07-13: middlewared grew to 13.2 GB
+        # over 54 days (~235 MB/day) and the OOM killer sacrificed the web UI.
+        # A weekly cron restart keeps this under ~2.1 GB, so 8 GB means the restart
+        # has failed or the leak has accelerated sharply. At the observed rate that
+        # is still ~3 weeks of runway before the box is in danger.
+        - alert: NASMiddlewaredMemoryHigh
+          expr: namedprocess_namegroup_memory_bytes{job="nas-process-exporter",groupname="middlewared",memtype="resident"} > 8e9
+          for: 15m
+          labels:
+            severity: critical
+            category: nas
+          annotations:
+            summary: TrueNAS middlewared is leaking memory
+            description: >-
+              middlewared RSS is {{ $value | humanize1024 }}B (baseline ~485 MB). The weekly
+              restart cron is not keeping up. Left alone this will OOM-kill nginx and take the
+              web UI down. Restart it: sudo systemctl restart middlewared
+
+        # Early warning well below the critical threshold - at ~235 MB/day this
+        # should never trip if the Sunday restart is working, so if it does the
+        # cron job itself is worth checking.
+        - alert: NASMiddlewaredMemoryElevated
+          expr: namedprocess_namegroup_memory_bytes{job="nas-process-exporter",groupname="middlewared",memtype="resident"} > 4e9
+          for: 30m
+          labels:
+            severity: warning
+            category: nas
+          annotations:
+            summary: TrueNAS middlewared memory above expected weekly peak
+            description: >-
+              middlewared RSS is {{ $value | humanize1024 }}B, above the ~2.1 GB a normal week
+              should reach. Check that the Sunday 05:00 restart cron ran.
+
+        # This is the condition that actually killed nginx - available memory
+        # exhausted. Catches the failure directly, whatever the cause.
+        - alert: NASMemoryLow
+          expr: node_memory_MemAvailable_bytes{job="nas-node-exporter"} < 1e9
+          for: 10m
+          labels:
+            severity: critical
+            category: nas
+          annotations:
+            summary: NAS is nearly out of memory
+            description: >-
+              Only {{ $value | humanize1024 }}B available. The NAS has no swap, so the kernel
+              will OOM-kill a service (it took nginx on 2026-07-13). Check middlewared RSS.
+
+        # nginx dying is what surfaced as a bogus "certificate expired" Gatus alert,
+        # because a refused port and an expired cert look identical from outside.
+        # Alert on the actual cause instead of the symptom.
+        - alert: NASWebUIDown
+          expr: node_systemd_unit_state{job="nas-node-exporter",name="nginx.service",state="active"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            category: nas
+          annotations:
+            summary: TrueNAS web UI (nginx) is not running
+            description: >-
+              nginx is not active on the NAS. The web UI is down; SSH and NFS are likely still
+              fine. Most likely OOM-killed - check available memory and middlewared RSS.
+
+        - alert: NASBootPoolSpaceLow
+          expr: (1 - (node_filesystem_avail_bytes{job="nas-node-exporter",fstype="zfs",mountpoint="/"} / node_filesystem_size_bytes{job="nas-node-exporter",fstype="zfs",mountpoint="/"})) * 100 > 85
+          for: 30m
+          labels:
+            severity: warning
+            category: nas
+          annotations:
+            summary: NAS boot pool is filling up
+            description: NAS root filesystem is {{ $value | humanizePercentage }} full.
+
+        # Data pool thresholds are set in absolute free space, not percent, because
+        # what matters is "can I still fit the next season of something".
+        #
+        # ZFS is copy-on-write: it needs free space to write ANYTHING, including
+        # deletes and metadata updates. Performance degrades past ~80% and ZFS
+        # switches to slower best-fit allocation past ~90%. A pool near ~95% can
+        # become miserable to recover, since freeing space requires writing.
+        # Hence warn with room to act rather than at the cliff edge.
+        - alert: NASDataPoolSpaceLow
+          expr: node_filesystem_avail_bytes{job="nas-node-exporter",fstype="zfs",mountpoint="/mnt/truenas/cf-nas"} < 4e12
+          for: 30m
+          labels:
+            severity: warning
+            category: nas
+          annotations:
+            summary: NAS data pool is filling up
+            description: >-
+              Only {{ $value | humanize1024 }}B free on the data pool (32 TB usable). Time to
+              prune media or plan more disks.
+
+        - alert: NASDataPoolSpaceCritical
+          expr: node_filesystem_avail_bytes{job="nas-node-exporter",fstype="zfs",mountpoint="/mnt/truenas/cf-nas"} < 2e12
+          for: 15m
+          labels:
+            severity: critical
+            category: nas
+          annotations:
+            summary: NAS data pool is nearly full
+            description: >-
+              Only {{ $value | humanize1024 }}B free on the data pool. ZFS write performance
+              degrades badly this close to full and the pool gets hard to recover. Free space now.
+
+        # Catches degraded/faulted vdevs - a dead disk in the array. Distinct from
+        # capacity: the pool can be healthy and full, or roomy and falling apart.
+        - alert: NASPoolUnhealthy
+          expr: node_zfs_zpool_state{job="nas-node-exporter",state!="online"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            category: nas
+          annotations:
+            summary: NAS ZFS pool is not healthy
+            description: >-
+              Pool {{ $labels.zpool }} is in state {{ $labels.state }}. Check for a failed disk:
+              sudo zpool status

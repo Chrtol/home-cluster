@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: nas-node-exporter
+  namespace: observability
+  labels:
+    prometheus: kube-prometheus-stack
+spec:
+  staticConfigs:
+    - labels:
+        job: nas-node-exporter
+        instance: nas
+      targets:
+        - nas.${SECRET_DOMAIN}:9100
+  metricsPath: /metrics
+  scheme: http
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: nas-process-exporter
+  namespace: observability
+  labels:
+    prometheus: kube-prometheus-stack
+spec:
+  staticConfigs:
+    - labels:
+        job: nas-process-exporter
+        instance: nas
+      targets:
+        - nas.${SECRET_DOMAIN}:9256
+  metricsPath: /metrics
+  scheme: http
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
