@@ -11,6 +11,9 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   path: ./kubernetes/apps/observability/grafana/app
+  dependsOn:
+    - name: cloudnative-pg-cluster-v17
+      namespace: database
   components:
     - ../../../../components/gatus/guarded
   postBuild:

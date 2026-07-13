@@ -30,6 +30,20 @@ spec:
       grafana.internal/instance: grafana
     admin:
       existingSecret: grafana-admin-secret
+    # Grafana's SQLite DB lives on an emptyDir, so stars, playlists, annotations
+    # and OAuth-provisioned users were lost on every pod reschedule. Back it with
+    # the shared CNPG cluster instead.
+    envFromSecret: grafana-db-secret
+    extraInitContainers:
+      - name: init-db
+        image: ghcr.io/home-operations/postgres-init:18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
+        envFrom:
+          - secretRef:
+              name: grafana-db-secret
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: { drop: ["ALL"] }
     env:
       GF_DATE_FORMATS_USE_BROWSER_LOCALE: true
       GF_EXPLORE_ENABLED: true
