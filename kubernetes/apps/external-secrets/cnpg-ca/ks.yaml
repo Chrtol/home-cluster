@@ -24,6 +24,10 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: external-secrets
+  # Deliberately no targetNamespace: this Kustomization spans two namespaces --
+  # the ServiceAccount + ClusterSecretStore live in external-secrets, while the
+  # Role/RoleBinding granting access to postgres17-ca must live in database.
+  # Setting targetNamespace would override the explicit namespace on the RBAC
+  # objects and silently place them in the wrong namespace, granting nothing.
   timeout: 5m
   wait: true
