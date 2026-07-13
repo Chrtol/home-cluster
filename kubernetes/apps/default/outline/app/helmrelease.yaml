@@ -30,13 +30,21 @@ spec:
             image:
               repository: docker.io/outlinewiki/outline
               tag: 1.9.0@sha256:6744a369271ce3c5a37316e5bfc5311d8d4452eb5ee4ca9560c96c15fd718a39
-            command: ["/bin/sh", "-c", "npm run db:migrate -- --env=production-ssl-disabled && npm run start -- --env=production-ssl-disabled"]
+            # --env selects a sequelize profile from server/config/database.js.
+            # "production" sets dialectOptions.ssl = { rejectUnauthorized: false }:
+            # TLS on, server cert not verified -- which is what we want against
+            # CNPG's self-signed CA. "production-ssl-disabled" has no ssl options
+            # at all, so node-postgres connects in plaintext.
+            #
+            # Do NOT set PGSSLMODE here. node-pg maps it onto node's TLS defaults
+            # (rejectUnauthorized: true), which forces chain verification and dies
+            # with SELF_SIGNED_CERT_IN_CHAIN against the CNPG CA.
+            command: ["/bin/sh", "-c", "npm run db:migrate -- --env=production && npm run start -- --env=production"]
             env:
               TZ: ${SECRET_TIMEZONE}
               URL: https://docs.${SECRET_DOMAIN}
               LOG_LEVEL: info
               NODE_ENV: production
-              PGSSLMODE: disable
               FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
               FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
               PORT: &port 8080
