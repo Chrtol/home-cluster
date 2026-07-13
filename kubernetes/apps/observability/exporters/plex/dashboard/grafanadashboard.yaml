@@ -6,6 +6,10 @@ metadata:
   name: plex-exporter
 spec:
   allowCrossNamespaceImport: true
+  # The CR references the ConfigMap by name, so regenerating its contents leaves
+  # this spec byte-identical and the operator never re-pushes. Poll for content
+  # changes instead.
+  resyncPeriod: 1m
   configMapRef:
     name: plex-exporter-dashboard
     key: plex-exporter-dashboard.json
