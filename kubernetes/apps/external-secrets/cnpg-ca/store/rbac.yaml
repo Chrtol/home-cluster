@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cnpg-ca-reader
+  namespace: external-secrets
+---
+# Scoped deliberately narrow: this identity may read ONLY the postgres17-ca
+# secret, by name. The database namespace also holds postgres17-app (the DB
+# superuser/app credentials) and postgres17-replication -- resourceNames keeps
+# those out of reach.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cnpg-ca-reader
+  namespace: database
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["postgres17-ca"]
+    verbs: ["get"]
+---
+# The Kubernetes provider issues a SelfSubjectRulesReview to validate its own
+# access before reading; without this it fails with a permissions error.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cnpg-ca-reader-authz
+  namespace: database
+rules:
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectrulesreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cnpg-ca-reader
+  namespace: database
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cnpg-ca-reader
+subjects:
+  - kind: ServiceAccount
+    name: cnpg-ca-reader
+    namespace: external-secrets
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cnpg-ca-reader-authz
+  namespace: database
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cnpg-ca-reader-authz
+subjects:
+  - kind: ServiceAccount
+    name: cnpg-ca-reader
+    namespace: external-secrets
