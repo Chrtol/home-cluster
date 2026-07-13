@@ -1,0 +1,38 @@
+---
+# Patches fields on the OAuth2Provider that the upstream wrenix/authentik-application
+# chart cannot express (its values.yaml exposes only clientType, clientID,
+# clientSecret, redirectURL, signingKey and scopes).
+#
+# Authentik 2026.x requires grant_types to be set explicitly; providers created by
+# the chart's blueprint get an empty list, which makes the authorization code
+# exchange fail at login. This blueprint runs alongside the chart's own and sets
+# the field on the same provider (matched by name), so it is additive rather than
+# a replacement.
+#
+# Delete this file if the upstream chart ever grows a grantTypes value.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${APP}-oidc-grant-types-blueprint
+  namespace: ${OIDC_SECRET_NAMESPACE:=security}
+  labels:
+    goauthentik.io/blueprint: "1"
+stringData:
+  blueprint.yaml: |
+    version: 1
+    metadata:
+      name: ${APP}-oidc-grant-types
+    entries:
+      - model: authentik_providers_oauth2.OAuth2Provider
+        # Match the provider the chart's blueprint created, and patch it in place.
+        identifiers:
+          name: bp-${APP}-oidc
+        state: present
+        attrs:
+          # Standard OIDC web application: the login flow, plus token renewal so
+          # sessions don't require a full re-login. Deliberately excludes the
+          # legacy implicit / password / client_credentials grants that older
+          # Authentik versions granted by default.
+          grant_types:
+            - authorization_code
+            - refresh_token
