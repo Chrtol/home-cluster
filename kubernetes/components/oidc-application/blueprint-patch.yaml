@@ -16,7 +16,10 @@ metadata:
   name: ${APP}-oidc-grant-types-blueprint
   namespace: ${OIDC_SECRET_NAMESPACE:=security}
   labels:
-    goauthentik.io/blueprint: "1"
+    # Must match the LABEL the authentik blueprint sidecar selects on, which is
+    # the legacy underscore form -- NOT the goauthentik.io/blueprint form in the
+    # upstream docs. The chart-generated blueprint secrets use this same label.
+    goauthentik_blueprint: "1"
 stringData:
   blueprint.yaml: |
     version: 1
