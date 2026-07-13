@@ -30,6 +30,10 @@ def nid():
 
 
 def target(expr, legend="", instant=False):
+    # refId is assigned later by refids(), once the panel's full target list is
+    # known. Grafana requires refIds to be unique WITHIN a panel ("Multiple
+    # queries using the same RefId is not allowed"), so it cannot be set here -
+    # target() has no idea how many siblings it has.
     return {
         "datasource": DS,
         "editorMode": "code",
@@ -37,8 +41,14 @@ def target(expr, legend="", instant=False):
         "legendFormat": legend or "__auto",
         "range": not instant,
         "instant": instant,
-        "refId": "A",
     }
+
+
+def refids(targets):
+    """Assign unique refIds (A, B, C, ...) across a panel's targets."""
+    for i, t in enumerate(targets):
+        t["refId"] = chr(ord("A") + i)
+    return targets
 
 
 def stat(title, expr, unit, x, y, w=4, h=4, thresholds=None, legend="",
@@ -53,7 +63,7 @@ def stat(title, expr, unit, x, y, w=4, h=4, thresholds=None, legend="",
         "title": title,
         "datasource": DS,
         "gridPos": {"h": h, "w": w, "x": x, "y": y},
-        "targets": [target(expr, legend, instant=True)],
+        "targets": refids([target(expr, legend, instant=True)]),
         "options": {
             "colorMode": color_mode,
             "graphMode": "area",
@@ -88,7 +98,7 @@ def timeseries(title, targets, unit, x, y, w=12, h=8, desc="", stack=False,
         "description": desc,
         "datasource": DS,
         "gridPos": {"h": h, "w": w, "x": x, "y": y},
-        "targets": targets,
+        "targets": refids(targets),
         "options": {
             "legend": {
                 "calcs": legend_calcs or ["last", "max"],

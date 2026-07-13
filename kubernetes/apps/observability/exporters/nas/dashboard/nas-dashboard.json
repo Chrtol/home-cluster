@@ -606,7 +606,7 @@
           "legendFormat": "warning threshold (4 GB)",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "B"
         },
         {
           "datasource": {
@@ -618,7 +618,7 @@
           "legendFormat": "critical threshold (8 GB)",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "C"
         }
       ],
       "options": {
@@ -875,7 +875,7 @@
           "legendFormat": "ARC size",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "B"
         },
         {
           "datasource": {
@@ -887,7 +887,7 @@
           "legendFormat": "ARC cap (10 GB)",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "C"
         },
         {
           "datasource": {
@@ -899,7 +899,7 @@
           "legendFormat": "middlewared",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "D"
         }
       ],
       "options": {
@@ -1276,7 +1276,7 @@
           "legendFormat": "L2ARC hit %",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "B"
         }
       ],
       "options": {
@@ -1379,7 +1379,7 @@
           "legendFormat": "warning (4 TB)",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "B"
         },
         {
           "datasource": {
@@ -1391,7 +1391,7 @@
           "legendFormat": "critical (2 TB)",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "C"
         }
       ],
       "options": {
@@ -1674,7 +1674,7 @@
           "legendFormat": "tx {{device}}",
           "range": true,
           "instant": false,
-          "refId": "A"
+          "refId": "B"
         }
       ],
       "options": {
