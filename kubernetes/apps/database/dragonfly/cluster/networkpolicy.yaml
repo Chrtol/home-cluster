@@ -46,7 +46,7 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [outline, homarr, reptile-tracker]
+                values: [outline, homarr, reptile-tracker, paperless, postiz, affine]
         # media: readmeabook, tracearr, immich
         - namespaceSelector:
             matchLabels:
@@ -56,6 +56,15 @@ spec:
               - key: app.kubernetes.io/name
                 operator: In
                 values: [readmeabook, tracearr, immich]
+        # security: authentik (uses dragonfly as its cache/broker)
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: security
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [authentik]
       ports:
         - protocol: TCP
           port: 6379
