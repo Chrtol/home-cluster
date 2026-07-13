@@ -1,0 +1,62 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: plex-exporter
+  labels:
+    app.kubernetes.io/instance: plex-exporter
+    app.kubernetes.io/name: plex-exporter
+spec:
+  groups:
+    - name: plex-exporter
+      rules:
+        - alert: PlexExporterAbsent
+          annotations:
+            description: Plex Exporter has disappeared from Prometheus target discovery.
+            summary: Plex Exporter is down.
+          expr: |
+            absent(up{job=~".*plex-exporter.*"} == 1)
+          for: 15m
+          labels:
+            severity: critical
+
+        - alert: PlexAPIUnreachable
+          annotations:
+            description: >-
+              plex-exporter is running but its authenticated poll of the Plex API on
+              {{ $labels.server }} has returned plex_http_reachable=0 for 10m. Most often a
+              revoked or invalid PLEX_TOKEN. Metrics are stale until resolved.
+            summary: Plex API is unreachable to its exporter.
+          expr: |
+            plex_http_reachable == 0
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: PlexExporterCollectionErrors
+          annotations:
+            description: >-
+              plex-exporter has logged '{{ $labels.type }}' errors continuously for 30m.
+              Plex metrics of that category are degraded or incomplete; typically a Plex API
+              change after a server upgrade, or an auth issue.
+            summary: Plex exporter erroring on '{{ $labels.type }}' collection.
+          expr: |
+            sum by (type) (rate(plex_exporter_errors_total[15m])) > 0
+          for: 30m
+          labels:
+            severity: warning
+
+        - alert: PlexLibraryItemsCollapsed
+          annotations:
+            description: >-
+              Item count for Plex library '{{ $labels.library }}' has fallen by more than 50%
+              versus its level 1-2h ago and stayed down for 30m. Likely a lost NFS media mount
+              from the NAS, or an accidental library empty/delete/corruption.
+            summary: Plex library '{{ $labels.library }}' lost over 50% of its items.
+          expr: |
+            (max_over_time(plex_library_items[2h] offset 30m) - plex_library_items)
+              / clamp_min(max_over_time(plex_library_items[2h] offset 30m), 1) > 0.5
+              and max_over_time(plex_library_items[2h] offset 30m) > 50
+          for: 30m
+          labels:
+            severity: warning
