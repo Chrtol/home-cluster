@@ -17,10 +17,14 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/tracearr/app
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: TRACEARR_POSTGRES_PASSWORD
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

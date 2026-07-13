@@ -18,20 +18,15 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       bazarr:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: bazarr-secret
         containers:
           app:
             image:
@@ -39,7 +34,9 @@ spec:
               tag: 1.6.0
             env:
               TZ: ${SECRET_TIMEZONE}
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: bazarr-secret
             probes:
               startup:
                 enabled: true

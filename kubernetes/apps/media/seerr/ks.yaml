@@ -17,6 +17,7 @@ spec:
     - name: cloudnative-pg-cluster-v17
       namespace: database
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/external
   interval: 1h
   path: ./kubernetes/apps/media/seerr/app
@@ -24,6 +25,8 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: request
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: SEERR_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

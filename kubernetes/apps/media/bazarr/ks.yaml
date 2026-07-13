@@ -15,12 +15,15 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/bazarr/app
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/guarded
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application
   postBuild:
     substitute:
       APP: *app
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: BAZARR_POSTGRES_PASS
       EXT_AUTH_PORT: "6767"
       GROUP: Media
       SUBDOMAIN: *app

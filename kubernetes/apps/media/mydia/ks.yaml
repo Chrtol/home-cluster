@@ -17,12 +17,15 @@ spec:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   components:
+    - ../../../../components/cnpg
     - ../../../../components/ceph-rbd
     - ../../../../components/volsync
   postBuild:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 5Gi
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: MYDIA_POSTGRES_PASS
     substituteFrom:
     - name: cluster-secrets
       kind: Secret

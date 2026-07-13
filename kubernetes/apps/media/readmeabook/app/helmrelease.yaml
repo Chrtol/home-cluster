@@ -10,20 +10,17 @@ spec:
     name: app-template
     namespace: flux-system
   interval: 1h
+  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-dragonfly-values
   values:
     controllers:
       readmeabook:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: readmeabook-secret
         containers:
           app:
             image:
@@ -35,7 +32,9 @@ spec:
               PUBLIC_URL: "https://{{ .Release.Name }}.${SECRET_DOMAIN}"
               REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379/4
               TZ: ${SECRET_TIMEZONE}
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: readmeabook-secret
             probes:
               liveness: &probes
                 enabled: true

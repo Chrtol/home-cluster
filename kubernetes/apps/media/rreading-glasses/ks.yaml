@@ -9,6 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  components:
+    - ../../../../components/cnpg
   dependsOn:
     - name: cloudnative-pg
       namespace: database
@@ -17,6 +19,9 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      DB_NAME: rreading_glasses
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: RREADING_GLASSES_POSTGRES_PASSWORD
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

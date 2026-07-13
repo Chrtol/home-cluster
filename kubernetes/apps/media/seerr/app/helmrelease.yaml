@@ -18,6 +18,10 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       seerr:
@@ -28,15 +32,6 @@ spec:
             # OpenTelemetry Node.js auto-instrumentation
             instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
             instrumentation.opentelemetry.io/container-names: "app"
-
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
-            envFrom:
-              - secretRef:
-                  name: seerr-secret
 
         containers:
           app:

@@ -10,6 +10,8 @@ spec:
     labels:
       app.kubernetes.io/name: readmeabook
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
     - ../../../../components/gatus/guarded
     - ../../../../components/oidc-application
@@ -24,6 +26,8 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 2Gi
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: READMEABOOK_POSTGRES_PASS
       # OIDC component variables
       GROUP: "Media"
       SUBDOMAIN: readmeabook

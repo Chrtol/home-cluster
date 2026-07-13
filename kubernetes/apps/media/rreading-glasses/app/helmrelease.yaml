@@ -17,20 +17,15 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       rreading-glasses:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: rreading-glasses-secret
         containers:
           app:
             image:
@@ -46,7 +41,13 @@ spec:
               - --postgres-database=$(INIT_POSTGRES_DBNAME)
               - --verbose
               - --port=80
-            envFrom: *envFrom
+            # the app itself reads the $(INIT_POSTGRES_*) values in args above,
+            # so it also mounts the cnpg component's initdb secret
+            envFrom:
+              - secretRef:
+                  name: rreading-glasses-secret
+              - secretRef:
+                  name: rreading-glasses-initdb-secret
             probes:
               # TODO: application is very alpha, enable when a real health route is exposed
               liveness: &probes
