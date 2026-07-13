@@ -92,3 +92,9 @@ spec:
               - action: replace
                 targetLabel: instance
                 replacement: *app
+            # The exporter is a single logical instance. Pod identity churns on
+            # every restart, which forks a new series and makes panels render
+            # one entry per dead pod for the retention window.
+            metricRelabelings:
+              - action: labeldrop
+                regex: (pod|endpoint|container)
