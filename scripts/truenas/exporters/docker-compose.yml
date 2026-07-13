@@ -1,0 +1,73 @@
+# node-exporter + process-exporter for the TrueNAS box, deployed as a TrueNAS
+# "Custom App" (Apps -> Discover Apps -> Custom App -> Install via YAML).
+#
+# Scraped by kube-prometheus-stack via the ScrapeConfigs in
+# kubernetes/apps/observability/kube-prometheus-stack/app/nas-scrape-config.yaml
+# Alerted on by kubernetes/apps/observability/exporters/nas/app/prometheusrule.yaml
+#
+# WHY host pid/mounts: a container's /proc shows the CONTAINER's processes and
+# memory, not the host's. Without pid: host and the /proc bind-mount these would
+# happily export metrics about themselves and tell us nothing about the NAS.
+services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.9.1
+    container_name: node-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host/root
+      # Exclude the virtual/container filesystems so node_filesystem_* only
+      # reports real pools. Without this, /mnt/.ix-apps overlay mounts and the
+      # like flood the metrics and pollute the disk-space alerts.
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($$|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$$
+      # Needed for the NASWebUIDown alert (node_systemd_unit_state on nginx).
+      - --collector.systemd
+      # ZFS collector gives pool health + ARC stats, so we can finally see
+      # whether the 10 GB zfs_arc_max cap is right instead of guessing.
+      - --collector.zfs
+    # Reading other users' /proc entries and the systemd D-Bus socket needs
+    # privileges the default non-root container user does not have.
+    # Numeric uid:gid rather than "root" - see the note on process-exporter below.
+    user: "0:0"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+      # systemd collector talks to the private D-Bus socket to read unit states
+      # (powers the NASWebUIDown alert). It must be writable - it is a socket, and
+      # the client writes requests to it; a :ro mount makes the collector fail.
+      - /run/systemd/private:/run/systemd/private
+    # Ports are published via network_mode: host -> listens on 9100.
+
+  process-exporter:
+    image: ncabatoff/process-exporter:0.8.7
+    container_name: process-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    # MUST run as root. The image defaults to an unprivileged user, which can read
+    # /proc/PID/stat (scheduling) but NOT /proc/PID/status for a process owned by
+    # another user - so middlewared's memory silently reported as 0 while the group
+    # otherwise looked healthy. Root + read-only host /proc is the normal contained
+    # pattern for a process exporter.
+    #
+    # NUMERIC uid:gid, not "root": this image is distroless and ships no
+    # /etc/passwd, so Docker cannot resolve the NAME root and fails to start with
+    # "unable to find user root: no matching entries in passwd file". 0:0 needs no
+    # passwd lookup. (node-exporter's image does have /etc/passwd, hence it works
+    # either way.)
+    user: "0:0"
+    command:
+      - --procfs=/host/proc
+      - --config.path=/config/process-exporter.yml
+    volumes:
+      - /proc:/host/proc:ro
+      # Written by setup-exporters.sh. Groups middlewared by CMDLINE, not comm -
+      # middlewared rewrites its own argv and reports as "asyncio_loop", so a comm
+      # match would miss the very process that leaks. See process-exporter.yml.
+      - /mnt/truenas/ix-apps-config/process-exporter:/config:ro
+    # Listens on 9256.

@@ -1,0 +1,33 @@
+# process-exporter grouping config.
+#
+# The whole point of this file is one metric: middlewared's RSS.
+#
+# GOTCHA - the process lies about its name. middlewared's main process rewrites
+# its own argv, so it reports as "asyncio_loop" in comm/ps:
+#
+#     PID 993  comm=asyncio_loop  cmdline="middlewared"
+#
+# Matching on {{.Comm}} would therefore group the leaking process under
+# "asyncio_loop", the alert expression (groupname="middlewared") would never
+# match, and the whole thing would sit green while monitoring nothing.
+#
+# Matching on cmdline works and is verified: it correctly produced
+# namedprocess_namegroup_*{groupname="middlewared"} including the asyncio_loop
+# thread. (An `exe:` matcher was tried instead and made process-exporter fail to
+# start - don't reintroduce it.)
+#
+# NOTE: process-exporter must run as root to read /proc/PID/status for a process
+# owned by another user, or memory reports as 0 while everything else looks fine.
+# See user: root in docker-compose.yml.
+process_names:
+  # middlewared main process (the one that leaks) + its workers, as one group.
+  - name: middlewared
+    cmdline:
+      - middlewared
+
+  # Fallback: everything else grouped by process name. Gives useful context when
+  # something OTHER than middlewared starts eating the box.
+  # Must come last - process-exporter is first-match-wins.
+  - name: "{{.Comm}}"
+    cmdline:
+      - .+
