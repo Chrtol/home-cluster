@@ -36,7 +36,7 @@ spec:
               URL: https://docs.${SECRET_DOMAIN}
               LOG_LEVEL: info
               NODE_ENV: production
-              PGSSLMODE: require
+              PGSSLMODE: disable
               FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
               FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
               PORT: &port 8080
