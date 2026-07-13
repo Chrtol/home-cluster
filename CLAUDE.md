@@ -19,64 +19,6 @@ This is a Kubernetes home cluster deployment based on the onedr0p/cluster-templa
 - **External Access**: VPS with Traefik → WireGuard tunnel → OPNSense → Envoy Gateway
 - **Certificates**: cert-manager with Let's Encrypt
 
-**Template System:**
-- Uses makejinja to render Jinja2 templates from cluster.yaml and nodes.yaml
-- Templates are in `/templates/` directory with `.j2` suffix
-- Configuration is rendered to actual Kubernetes manifests
-
-**Cluster Configuration:**
-- Main config: `cluster.yaml` - defines cluster settings, networking, and domains
-- Node config: `nodes.yaml` - defines individual node specifications
-- Network: 10.0.30.0/24 with API server at 10.0.30.50
-
-## Common Commands
-
-### Talos Operations
-```bash
-# Generate Talos configuration
-task talos:generate-config
-
-# Apply config to specific node
-task talos:apply-node IP=10.0.30.100 MODE=auto
-
-# Upgrade Talos on a node
-task talos:upgrade-node IP=10.0.30.100
-
-# Upgrade Kubernetes cluster
-task talos:upgrade-k8s
-
-# Reset cluster (destructive)
-task talos:reset
-```
-
-### Debugging
-```bash
-# Gather cluster resources
-task template:debug
-
-# Check Flux status
-flux check
-flux get sources git -A
-flux get ks -A
-flux get hr -A
-
-# Check Cilium status
-cilium status
-```
-
-## Key Directories
-
-- `/apps/` - Custom application source code (e.g., reptile-tracker)
-- `/kubernetes/apps/` - Application manifests organized by namespace
-- `/kubernetes/flux/` - Flux configuration and repositories
-- `/talos/` - Talos configuration and patches
-- `/bootstrap/` - Initial cluster bootstrap configuration
-- `/templates/` - Jinja2 templates for configuration generation
-- `/vps/` - Ansible configuration for VPS (CI/CD deployed)
-  - Must be declarative and idempotent
-  - No hardcoded secrets, domains, or IP addresses
-  - All secrets/config from 1Password integration
-
 ## Secrets Management
 
 - Uses External Secrets with 1Password as the primary secrets backend
@@ -93,24 +35,10 @@ cilium status
 - **BGP**: AS 64514 peering with 10.0.30.1 (AS 64513)
 - **Domains**: Same domains used internally and externally (no split DNS)
 
-## Application Categories
-
-- **Media**: Plex, Sonarr, Radarr, Jellyseerr, Immich, Audiobookshelf, qBittorrent, etc.
-- **Monitoring**: Prometheus, Grafana, Gatus, Loki, Promtail
-- **Security**: Authentik (SSO/OIDC), CrowdSec, Trivy
-- **Database**: PostgreSQL (CloudNative-PG, preferred), Dragonfly (Redis-compatible), MariaDB
-- **AI**: Ollama
-- **Home Automation**: Home Assistant, Mosquitto, Zigbee2MQTT
-- **Storage**: Ceph CSI drivers (RBD and CephFS)
-- **Networking**: Cilium, Envoy Gateway, external-dns
-
 ## Important Notes
 
 - All nodes are configured as both controllers and workers
 - Uses external-dns to manage Cloudflare (external) and AdGuard Home on OPNSense (internal) DNS records
-- Renovate handles dependency updates automatically
-- Flux webhooks enable immediate deployment on git push
-- Template system allows for easy cluster configuration changes
 
 ## Memory
 
