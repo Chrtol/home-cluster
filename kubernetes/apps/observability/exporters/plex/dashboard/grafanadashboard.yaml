@@ -9,9 +9,6 @@ spec:
   configMapRef:
     name: plex-exporter-dashboard
     key: plex-exporter-dashboard.json
-  datasources:
-    - datasourceName: Prometheus
-      inputName: DS_PROMETHEUS
   folder: Media
   instanceSelector:
     matchLabels:
