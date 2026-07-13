@@ -15,10 +15,20 @@ spec:
     - name: cloudnative-pg-cluster-v17
       namespace: database
   components:
+    - ../../../../components/oidc-application
     - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
+      # OIDC component variables
+      GROUP: "Infrastructure"
+      SUBDOMAIN: grafana
+      DISPLAY_NAME: "Grafana"
+      DESCRIPTION: "Metrics, logs and dashboards"
+      REDIRECT_PATH: "/login/generic_oauth"
+      # Land the generated client secret in observability, not security, so the
+      # Grafana pod can read it directly.
+      OIDC_SECRET_NAMESPACE: observability
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
