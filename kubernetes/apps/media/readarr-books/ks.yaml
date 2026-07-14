@@ -10,6 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/guarded
     - ../../../../components/ceph-rbd
     - ../../../../components/ext-auth
@@ -22,6 +23,10 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 5Gi
+      DB_NAME: "readarr-books_main readarr-books_log readarr-books_cache"
+      DB_USER: readarrbooks
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: READARR_BOOKS_POSTGRES_PASS
       EXT_AUTH_PORT: "80"
     substituteFrom:
       - name: cluster-secrets

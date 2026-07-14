@@ -17,20 +17,15 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       readarr-books:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: readarr-books-secret
         containers:
           app:
             image:
@@ -47,7 +42,9 @@ spec:
               READARR__METADATASOURCE__TIMEOUT: 30
               READARR__METADATASOURCE__RETRYCOUNT: 5
               TZ: ${SECRET_TIMEZONE}
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: readarr-books-secret
             probes:
               liveness: &probes
                 enabled: true

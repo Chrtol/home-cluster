@@ -10,6 +10,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 1h
+  components:
+    - ../../../../components/cnpg
   dependsOn:
     - name: cloudnative-pg
       namespace: database
@@ -17,6 +19,10 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      DB_NAME: "temporal temporal_visibility"
+      DB_USER: temporal
+      DB_OP_ITEM: postiz
+      DB_PASS_FIELD: TEMPORAL_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

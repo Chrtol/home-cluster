@@ -9,32 +9,16 @@ spec:
     kind: OCIRepository
     name: app-template
     namespace: flux-system
+  # init-db initContainer (creates both temporal DBs via space-separated DB_NAME)
+  # + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       postiz-temporal:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          # Create the two Temporal databases (temporal + temporal_visibility),
-          # both owned by the temporal role, on the existing CloudNative-PG cluster.
-          init-db-default:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            env:
-              INIT_POSTGRES_DBNAME: temporal
-            envFrom: &envFrom
-              - secretRef:
-                  name: postiz-temporal-secret
-          init-db-visibility:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            env:
-              INIT_POSTGRES_DBNAME: temporal_visibility
-            envFrom: *envFrom
         containers:
           app:
             image:
@@ -56,7 +40,9 @@ spec:
               SKIP_ADD_CUSTOM_SEARCH_ATTRIBUTES: "true"
               BIND_ON_IP: 0.0.0.0
               DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: postiz-temporal-secret
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false

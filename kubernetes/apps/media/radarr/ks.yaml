@@ -14,6 +14,7 @@ spec:
       namespace: ceph-csi-rbd
   path: ./kubernetes/apps/media/radarr/app
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/guarded
     - ../../../../components/ext-auth
   prune: true
@@ -28,6 +29,9 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      DB_NAME: "radarr_main radarr_log"
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: RADARR_POSTGRES_PASS
       EXT_AUTH_PORT: "7878"
     substituteFrom:
       - name: cluster-secrets

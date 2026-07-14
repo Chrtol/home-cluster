@@ -18,6 +18,10 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       sonarr:
@@ -27,15 +31,6 @@ spec:
           annotations:
             instrumentation.opentelemetry.io/inject-dotnet: "observability/dotnet-instrumentation"
             instrumentation.opentelemetry.io/container-names: "app"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: sonarr-secret
         containers:
           app:
             image:
@@ -54,7 +49,9 @@ spec:
               # OpenTelemetry custom attributes
               OTEL_SERVICE_NAME: "sonarr"
               OTEL_RESOURCE_ATTRIBUTES: "service.namespace=media,app.type=media-management,media.type=tv"
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: sonarr-secret
             probes:
               liveness: &probes
                 enabled: true

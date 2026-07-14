@@ -18,20 +18,15 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: -1
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
   values:
     controllers:
       prowlarr:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          01-init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4
-              pullPolicy: IfNotPresent
-            envFrom:
-              - secretRef:
-                  name: &secret prowlarr-secret
         pod:
           securityContext:
             runAsNonRoot: true
