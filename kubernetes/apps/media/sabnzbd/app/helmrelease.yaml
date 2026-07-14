@@ -189,6 +189,19 @@ spec:
             readOnly: true
       tmp:
         type: emptyDir
+      # The 'incomplete' working dir MUST NOT live on NFS. Every article is written
+      # here as a small random write, plus the whole par2 verify/repair read-modify-
+      # write cycle. When that path can't keep up, sabnzbd does NOT apply backpressure
+      # to the downloaders — it buffers articles in RAM without bound (cache_limit does
+      # NOT cap this) until the cgroup OOM-kills it at the 12Gi limit. That was the
+      # cause of months of OOMs: memory to ~11.7Gi, downloads stalling as it climbed,
+      # and NNTP connections timing out while idle waiting on a writer that never drained.
+      # Local disk only; 'complete' stays on NFS.
+      incomplete:
+        type: emptyDir
+        sizeLimit: 100Gi
+        globalMounts:
+          - path: /incomplete
       coredns:
         type: configMap
         name: sabnzbd-coredns
