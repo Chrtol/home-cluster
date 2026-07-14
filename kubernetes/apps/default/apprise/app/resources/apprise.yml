@@ -1,10 +1,10 @@
 version: 1
 
-# ESO Go-template syntax ({{ }}), NOT flux envsubst dollar-brace placeholders —
-# this file is rendered by the ExternalSecret via templateFrom (values from the
-# pushover + apprise 1Password items). Dollar-brace placeholders here would be
-# claimed by flux post-build substitution first, which fails strict mode since
-# the keys are not in cluster-secrets. (Avoid even writing that syntax in this
-# comment: envsubst parses the whole ConfigMap.)
+# Rendered by the ExternalSecret via templateFrom, using ESO Go-template syntax
+# (values from the pushover + apprise 1Password items). Do NOT use flux envsubst
+# dollar-brace placeholders here: flux post-build substitution claims them first
+# and fails strict mode, since the keys are not in cluster-secrets. Both engines
+# scan the whole ConfigMap as plain text, so neither placeholder style may appear
+# even inside a comment like this one.
 urls:
   - pover://{{ .PUSHOVER_USER_KEY }}@{{ .APPRISE_PUSHOVER_API_TOKEN }}
