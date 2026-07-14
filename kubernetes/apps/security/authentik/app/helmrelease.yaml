@@ -34,7 +34,7 @@ spec:
         type: RollingUpdate
       envFrom:
         - secretRef:
-            name: &secret authentik-secret
+            name: authentik-secret
       volumeMounts:
         - name: sidecar-blueprints
           mountPath: /blueprints/sidecar
@@ -79,10 +79,12 @@ spec:
           value: "service.name=authentik,service.namespace=security,app.type=identity-provider"
       initContainers:
       - name: init-db
-        image: ghcr.io/home-operations/postgres-init:18.4
+        image: ghcr.io/home-operations/postgres-init:18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
         envFrom:
+          # Rendered by components/cnpg -- creates the dedicated "authentik" role
+          # instead of the shared "app" role the old inline INIT_POSTGRES_* block used.
           - secretRef:
-              name: *secret
+              name: authentik-initdb-secret
       metrics:
         enabled: false
         serviceMonitor:
