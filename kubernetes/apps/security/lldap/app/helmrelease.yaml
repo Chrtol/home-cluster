@@ -23,6 +23,14 @@ spec:
       strategy: rollback
   uninstall:
     keepHistory: false
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg
+  # component (see ks.yaml). spec.values below deep-merges over this.
+  # NOTE: the initContainer was renamed 01-init-db -> init-db to match the
+  # component's key; lldap has no other initContainer, so the ordering prefix
+  # was doing nothing.
+  valuesFrom:
+    - kind: ConfigMap
+      name: lldap-cnpg-values
   values:
     controllers:
       lldap:
@@ -30,21 +38,14 @@ spec:
         strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: 'true'
-        initContainers:
-          01-init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: lldap-secret
         containers:
           app:
             image:
               repository: ghcr.io/lldap/lldap
               tag: v0.6.3
-            envFrom: *envFrom
+            envFrom:
+              - secretRef:
+                  name: lldap-secret
             env:
               TZ: ${SECRET_TIMEZONE}
               LLDAP_HTTP_PORT: &port 80

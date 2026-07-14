@@ -14,10 +14,15 @@ spec:
     - name: external-secrets
       namespace: external-secrets
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
+      # Split off the shared "app" role: lldap now owns its DB with its own
+      # role and password (field on the lldap 1Password item).
+      DB_OP_ITEM: lldap
+      DB_PASS_FIELD: LLDAP_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
