@@ -39,7 +39,20 @@ spec:
               RADARR_URL: http://radarr.media.svc.cluster.local:7878
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
               BAZARR_URL: http://bazarr.media.svc.cluster.local:6767
-              SEERR_URL: http://seerr.media.svc.cluster.local:80
+              # Points at seerr, but MUST use the JELLYSEERR_ prefix. v3.0.3 (the latest
+              # release) has no 'seerr' entry in ACTIVE_CONNECTORS, so SEERR_* env vars
+              # parse to nothing and the collector never registers -- silently, with no
+              # log line at all. Seerr is a Jellyseerr fork and its /api/v1 is compatible.
+              # Consequence: the metrics are named jellyseerr_*, and the health gauge is
+              # scraparr_services_up{scraparr_services="jellyseerr"} -- the alerts match
+              # on that.
+              #
+              # A native 'seerr' connector exists on the upstream dev branch (commit
+              # 192e010, 2026-07-03) which also DEPRECATES jellyseerr/overseerr, but it is
+              # in no tagged release yet. When a release ships with it, switch to SEERR_*
+              # and rename jellyseerr_* -> seerr_* in prometheusrule.yaml at the same time,
+              # or the alerts go blind.
+              JELLYSEERR_URL: http://seerr.media.svc.cluster.local:80
             envFrom:
               - secretRef:
                   name: scraparr-secret

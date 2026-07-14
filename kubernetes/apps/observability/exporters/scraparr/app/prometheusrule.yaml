@@ -62,7 +62,7 @@ spec:
               or absent(scraparr_services_up{scraparr_services="radarr"})
               or absent(scraparr_services_up{scraparr_services="prowlarr"})
               or absent(scraparr_services_up{scraparr_services="bazarr"})
-              or absent(scraparr_services_up{scraparr_services="seerr"})
+              or absent(scraparr_services_up{scraparr_services="jellyseerr"})
             )
             and on() count(up{job=~".*scraparr.*"} == 1) > 0
           for: 30m
@@ -87,7 +87,7 @@ spec:
                 or label_replace(radarr_last_scrape,   "job_name", "radarr",   "", "")
                 or label_replace(prowlarr_last_scrape, "job_name", "prowlarr", "", "")
                 or label_replace(bazarr_last_scrape,   "job_name", "bazarr",   "", "")
-                or label_replace(seerr_last_scrape,    "job_name", "seerr",    "", "")
+                or label_replace(jellyseerr_last_scrape, "job_name", "seerr",  "", "")
               )
             ) > 1800
           for: 15m
