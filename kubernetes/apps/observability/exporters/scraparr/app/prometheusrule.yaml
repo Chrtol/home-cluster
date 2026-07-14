@@ -1,0 +1,196 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scraparr
+  labels:
+    app.kubernetes.io/instance: scraparr
+    app.kubernetes.io/name: scraparr
+spec:
+  groups:
+    - name: scraparr.exporter
+      rules:
+        - alert: ScraparrAbsent
+          annotations:
+            description: >-
+              Scraparr has disappeared from Prometheus target discovery. Every arr
+              metric below is served by this one exporter, so all the other alerts in
+              this group are blind until it returns.
+            summary: Scraparr is down.
+          expr: |
+            absent(up{job=~".*scraparr.*"} == 1)
+          for: 15m
+          labels:
+            severity: critical
+
+    - name: scraparr.services
+      rules:
+        # scraparr sets scraparr_services_up=0 when an arr's API refuses or errors.
+        # On a scraparr restart the gauge is not initialised until the first scrape
+        # attempt, so the series vanishes rather than reporting 0 -- hence the
+        # absent() arm. Without it a hard-down arr can go unalerted through a restart.
+        - alert: ArrServiceDown
+          annotations:
+            description: >-
+              Scraparr's authenticated poll of {{ $labels.scraparr_services }}
+              (alias {{ $labels.alias }}) has been failing for 15m. Usually the app is
+              down or crash-looping, or its API key was rotated without updating the
+              scraparr secret. That arr's metrics are stale until resolved.
+            summary: Arr service '{{ $labels.scraparr_services }}' is unreachable to scraparr.
+          expr: |
+            scraparr_services_up == 0
+          for: 15m
+          labels:
+            severity: critical
+
+        # Catches a connector that NEVER came up, which ArrServiceDown cannot see: if
+        # scraparr can't reach an arr on its very first poll, the gauge is never created,
+        # so there is no ==0 series to match. One alert per configured collector, each
+        # asserting its own series exists. Add a rule here when adding a collector.
+        - alert: ArrServiceMissing
+          annotations:
+            description: >-
+              Scraparr is serving metrics but has published no health gauge at all for
+              {{ $labels.service }} -- the collector never completed a first successful
+              scrape. Typically a wrong URL/port, a missing or invalid API key, or the
+              connector failing to start. Distinct from ArrServiceDown, which requires
+              the collector to have worked at least once.
+            summary: Scraparr collector '{{ $labels.service }}' never started.
+          expr: |
+            (
+              absent(scraparr_services_up{scraparr_services="sonarr"})
+              or absent(scraparr_services_up{scraparr_services="radarr"})
+              or absent(scraparr_services_up{scraparr_services="prowlarr"})
+              or absent(scraparr_services_up{scraparr_services="bazarr"})
+              or absent(scraparr_services_up{scraparr_services="seerr"})
+            )
+            and on() count(up{job=~".*scraparr.*"} == 1) > 0
+          for: 30m
+          labels:
+            severity: warning
+
+        # Each connector stamps <service>_last_scrape with a unix timestamp on every
+        # successful poll. A frozen timestamp means the connector is wedged even though
+        # the process is alive and its /metrics endpoint still answers -- so neither
+        # ArrServiceDown nor ScraparrAbsent would catch it.
+        - alert: ArrScrapeStale
+          annotations:
+            description: >-
+              Scraparr has not completed a successful scrape of {{ $labels.job_name }}
+              (alias {{ $labels.alias }}) in over 30m, though the exporter itself is
+              still serving metrics. The collector is wedged; check scraparr logs.
+            summary: Scraparr's '{{ $labels.job_name }}' collector is stale.
+          expr: |
+            (
+              time() - (
+                label_replace(sonarr_last_scrape,     "job_name", "sonarr",   "", "")
+                or label_replace(radarr_last_scrape,   "job_name", "radarr",   "", "")
+                or label_replace(prowlarr_last_scrape, "job_name", "prowlarr", "", "")
+                or label_replace(bazarr_last_scrape,   "job_name", "bazarr",   "", "")
+                or label_replace(seerr_last_scrape,    "job_name", "seerr",    "", "")
+              )
+            ) > 1800
+          for: 15m
+          labels:
+            severity: warning
+
+    - name: scraparr.queues
+      rules:
+        # queue_error counts items the arr has flagged as failed (failed import,
+        # download client error, unpack failure). A couple that clear themselves are
+        # normal; a sustained non-zero count is a stuck queue needing a human.
+        - alert: ArrQueueErrors
+          annotations:
+            description: >-
+              {{ $labels.job_name }} has held {{ $value | printf "%.0f" }} errored
+              item(s) in its queue for 1h. Typically a failed import, an unpack failure,
+              or a download client the arr can no longer reach. These do not clear on
+              their own -- the queue stays wedged until the items are removed or retried.
+            summary: '{{ $labels.job_name }} has {{ $value | printf "%.0f" }} stuck queue item(s).'
+          expr: |
+            (
+              label_replace(sonarr_queue_error, "job_name", "sonarr", "", "")
+              or label_replace(radarr_queue_error, "job_name", "radarr", "", "")
+            ) > 0
+          for: 1h
+          labels:
+            severity: warning
+
+    - name: scraparr.prowlarr
+      rules:
+        # prowlarr_indexer_healthy is 1 when Prowlarr's own health check passes.
+        # A persistently unhealthy indexer silently removes a source from every
+        # arr that searches through Prowlarr -- grabs just quietly stop.
+        - alert: ProwlarrIndexerUnhealthy
+          annotations:
+            description: >-
+              Prowlarr has marked indexer '{{ $labels.indexer }}' unhealthy for 1h.
+              While unhealthy it is skipped for searches across every arr, so releases
+              silently stop coming from it. Usually an expired account, a dead tracker,
+              or a login/captcha wall.
+            summary: Prowlarr indexer '{{ $labels.indexer }}' is unhealthy.
+          expr: |
+            prowlarr_indexer_healthy == 0
+          for: 1h
+          labels:
+            severity: warning
+
+        # Ratio of failed to total queries per indexer. Guarded by a floor on total
+        # queries so a single failure against a barely-used indexer cannot trip it.
+        - alert: ProwlarrIndexerFailingQueries
+          annotations:
+            description: >-
+              Over 50% of queries to Prowlarr indexer '{{ $labels.indexer }}' are
+              failing (currently {{ $value | humanizePercentage }}). The indexer is
+              still marked healthy, so searches keep being routed to it and keep
+              failing -- rate limiting or a partial outage at the tracker.
+            summary: Prowlarr indexer '{{ $labels.indexer }}' is failing most queries.
+          expr: |
+            prowlarr_failed_queries_by_indexer
+              / clamp_min(prowlarr_queries_by_indexer, 1) > 0.5
+              and prowlarr_queries_by_indexer > 10
+          for: 1h
+          labels:
+            severity: warning
+
+    - name: scraparr.bazarr
+      rules:
+        # bazarr_provider_status carries the provider's state in a `status` label.
+        # A provider stuck in a non-working state stops contributing subtitles without
+        # surfacing anywhere -- subs just quietly never arrive.
+        - alert: BazarrProviderDown
+          annotations:
+            description: >-
+              Bazarr subtitle provider '{{ $labels.provider }}' has been reporting
+              status '{{ $labels.status }}' for 2h. Bazarr keeps running and simply
+              stops getting subtitles from it -- usually a throttled/banned account or
+              a provider-side outage.
+            summary: Bazarr provider '{{ $labels.provider }}' is not working.
+          expr: |
+            bazarr_provider_status{status!~"(?i)(good|working|ok|enabled)"} == 1
+          for: 2h
+          labels:
+            severity: warning
+
+    - name: scraparr.disk
+      rules:
+        # The arrs report the free space of each root folder they manage. This is the
+        # media library disk (NFS from the NAS), NOT a Kubernetes PVC -- so none of the
+        # kubelet volume alerts cover it. Without this, the first sign of a full media
+        # disk is imports silently failing.
+        - alert: ArrRootFolderLowDisk
+          annotations:
+            description: >-
+              The root folder '{{ $labels.path }}' tracked by {{ $labels.job_name }} is
+              down to {{ $value | humanize1024 }}B free. This is library storage on the
+              NAS, not a PVC, so no kubelet alert covers it. Imports begin failing once
+              it fills.
+            summary: '{{ $labels.job_name }} root folder is low on disk ({{ $value | humanize1024 }}B free).'
+          expr: |
+            (
+              label_replace(sonarr_free_disk_size, "job_name", "sonarr", "", "")
+              or label_replace(radarr_free_disk_size, "job_name", "radarr", "", "")
+            ) < 107374182400
+          for: 30m
+          labels:
+            severity: warning
