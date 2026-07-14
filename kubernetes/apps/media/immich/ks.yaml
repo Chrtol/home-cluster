@@ -12,6 +12,8 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/media/immich/app
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/gatus/external
   sourceRef:
     kind: GitRepository
@@ -28,6 +30,9 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: photos
+      DB_CONTROLLER: server
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: IMMICH_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

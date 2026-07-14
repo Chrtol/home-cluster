@@ -22,6 +22,12 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
+  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-dragonfly-values
   values:
     defaultPodOptions:
       priorityClassName: external-facing
@@ -38,14 +44,15 @@ spec:
         pod:
           enableServiceLinks: false
         initContainers:
-          01-init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
+          # image + core INIT_POSTGRES_* come from the cnpg component; the second
+          # secretRef layers immich's extras on top (USER_FLAGS -s, SUPER_USER)
+          init-db:
             envFrom:
               - secretRef:
+                  name: immich-initdb-secret
+              - secretRef:
                   name: immich-secret
-          
+
           02-setup-folders:
             image:
               repository: busybox

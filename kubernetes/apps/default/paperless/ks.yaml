@@ -15,6 +15,8 @@ spec:
     - name: dragonfly-cluster
       namespace: database
   components:
+    - ../../../../components/cnpg
+    - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
   path: ./kubernetes/apps/default/paperless/app
@@ -31,6 +33,9 @@ spec:
     substitute:
       APP: *app
       CEPH_RBD_CAPACITY: 5Gi
+      DB_NAME: paperless-main
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: PAPERLESS_POSTGRES_PASSWORD
       # OIDC component variables
       GROUP: "Default"
       SUBDOMAIN: paperless
