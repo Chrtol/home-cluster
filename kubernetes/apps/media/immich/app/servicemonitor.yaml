@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: immich
+spec:
+  # Immich exposes native Prometheus metrics (OTEL) -- there is no exporter to deploy,
+  # so the scrape config lives with the app rather than under observability/exporters.
+  # Enabled by IMMICH_TELEMETRY_INCLUDE in the HelmRelease; keep the two in sync.
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: immich
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/service: immich-server
+  endpoints:
+    # api and microservices are served by the same server pod on two separate ports.
+    # Both are scraped; the job-queue metrics come from microservices.
+    - port: metrics-api
+      scheme: http
+      path: /metrics
+      interval: 1m
+      scrapeTimeout: 30s
+      relabelings:
+        - action: replace
+          targetLabel: instance
+          replacement: immich
+    - port: metrics-microservices
+      scheme: http
+      path: /metrics
+      interval: 1m
+      scrapeTimeout: 30s
+      relabelings:
+        - action: replace
+          targetLabel: instance
+          replacement: immich

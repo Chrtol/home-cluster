@@ -12,3 +12,5 @@ resources:
   # - ./ml-pvc.yaml
   - ./pvc.yaml
   - ./backendtrafficpolicy.yaml
+  - ./servicemonitor.yaml
+  - ./prometheusrule.yaml
