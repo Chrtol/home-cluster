@@ -17,6 +17,11 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg
+  # component (see ks.yaml). spec.values below deep-merges over this.
+  valuesFrom:
+    - kind: ConfigMap
+      name: mealie-cnpg-values
   values:
     controllers:
       mealie:
@@ -29,22 +34,15 @@ spec:
             instrumentation.opentelemetry.io/inject-python: "observability/python-instrumentation"
             instrumentation.opentelemetry.io/container-names: "app"
 
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
-            envFrom: &envFrom
-              - secretRef:
-                  name: *app
-
         containers:
           app:
             image:
               repository: ghcr.io/mealie-recipes/mealie
               tag: v3.20.1
               pullPolicy: IfNotPresent
-            envFrom: *envFrom # All values are created on the externalsecret
+            envFrom: # All values are created on the externalsecret
+              - secretRef:
+                  name: *app
             env:
               # OpenTelemetry custom attributes
               OTEL_SERVICE_NAME: "mealie"

@@ -13,6 +13,7 @@ spec:
   interval: 10m
   path: "./kubernetes/apps/default/mealie/app"
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/external
   prune: true
   sourceRef:
@@ -24,6 +25,10 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: recipes
+      # Split off the shared "app" role: mealie now owns its DB with its own
+      # role and password (field on the mealie 1Password item).
+      DB_OP_ITEM: mealie
+      DB_PASS_FIELD: MEALIE_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
