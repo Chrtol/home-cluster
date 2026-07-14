@@ -1,0 +1,102 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sabnzbd-exporter
+  labels:
+    app.kubernetes.io/instance: sabnzbd-exporter
+    app.kubernetes.io/name: sabnzbd-exporter
+spec:
+  groups:
+    - name: sabnzbd.exporter
+      rules:
+        - alert: SabnzbdExporterAbsent
+          annotations:
+            description: >-
+              The SABnzbd exporter has disappeared from Prometheus target discovery.
+              Every SABnzbd alert below is blind until it returns.
+            summary: SABnzbd exporter is down.
+          expr: |
+            absent(up{job=~".*sabnzbd-exporter.*"} == 1)
+          for: 15m
+          labels:
+            severity: critical
+
+        # exportarr's /healthz only proves the process is alive -- it does NOT check the
+        # SABnzbd backend. So a reachable exporter that cannot talk to SAB looks healthy
+        # to the probe. sabnzbd_info is only published on a successful API call, which
+        # makes its absence the real signal that SAB is unreachable or the key is wrong.
+        - alert: SabnzbdUnreachable
+          annotations:
+            description: >-
+              The exporter is up and scraping, but SABnzbd is publishing no metrics --
+              its API is unreachable or rejecting the API key. Downloads may be failing
+              silently. Note exportarr's own liveness probe cannot catch this: /healthz
+              reports process liveness, not backend health.
+            summary: SABnzbd API is unreachable to its exporter.
+          expr: |
+            absent(sabnzbd_info) and on() count(up{job=~".*sabnzbd-exporter.*"} == 1) > 0
+          for: 15m
+          labels:
+            severity: critical
+
+    - name: sabnzbd.queue
+      rules:
+        # A paused queue is SABnzbd's classic silent failure: the app is healthy, the
+        # pod is Running, nothing is wrong -- it simply downloads nothing, forever.
+        # Usually someone paused it to debug and forgot, or a disk-full event auto-paused
+        # it. Nothing else in the stack surfaces this.
+        - alert: SabnzbdPaused
+          annotations:
+            description: >-
+              SABnzbd's download queue has been paused for over 1h. The app is running
+              normally and will simply not download anything until it is resumed --
+              often left paused after debugging, or auto-paused by a full disk.
+            summary: SABnzbd queue is paused.
+          expr: |
+            sabnzbd_paused_all == 1 or sabnzbd_paused == 1
+          for: 1h
+          labels:
+            severity: warning
+
+    - name: sabnzbd.servers
+      rules:
+        # Ratio of successful to total articles per Usenet server. A provider that starts
+        # failing articles produces incomplete/corrupt downloads that then fail to repair
+        # -- visible as failed imports downstream in the arrs, with no obvious cause.
+        # Guarded by a floor on total articles so an idle server can't trip it.
+        - alert: SabnzbdServerArticleFailures
+          annotations:
+            description: >-
+              Usenet server '{{ $labels.server }}' is failing over 10% of article
+              fetches (currently {{ $value | humanizePercentage }} success). Incomplete
+              articles cause failed par2 repairs and failed imports in the arrs, which
+              usually get misattributed to the indexer rather than the provider.
+            summary: SABnzbd server '{{ $labels.server }}' is failing articles.
+          expr: |
+            (
+              rate(sabnzbd_server_articles_success[1h])
+                / clamp_min(rate(sabnzbd_server_articles_total[1h]), 1)
+            ) < 0.9
+            and rate(sabnzbd_server_articles_total[1h]) > 0
+          for: 1h
+          labels:
+            severity: warning
+
+    - name: sabnzbd.disk
+      rules:
+        # SABnzbd's incomplete/complete dirs live on the download volume. If it fills,
+        # SAB auto-pauses and every download stops -- so this is an early warning for
+        # the SabnzbdPaused condition above, not a duplicate of it.
+        - alert: SabnzbdLowDisk
+          annotations:
+            description: >-
+              SABnzbd's download volume is {{ $value | humanizePercentage }} full. When
+              it fills, SABnzbd auto-pauses and all downloading stops. This fires ahead
+              of that so the pause is preventable rather than diagnosed after the fact.
+            summary: SABnzbd download disk is over 90% full.
+          expr: |
+            (sabnzbd_disk_used_bytes / clamp_min(sabnzbd_disk_total_bytes, 1)) > 0.9
+          for: 30m
+          labels:
+            severity: warning
