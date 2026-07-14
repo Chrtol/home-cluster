@@ -83,20 +83,7 @@ spec:
           labels:
             severity: warning
 
-    - name: sabnzbd.disk
-      rules:
-        # SABnzbd's incomplete/complete dirs live on the download volume. If it fills,
-        # SAB auto-pauses and every download stops -- so this is an early warning for
-        # the SabnzbdPaused condition above, not a duplicate of it.
-        - alert: SabnzbdLowDisk
-          annotations:
-            description: >-
-              SABnzbd's download volume is {{ $value | humanizePercentage }} full. When
-              it fills, SABnzbd auto-pauses and all downloading stops. This fires ahead
-              of that so the pause is preventable rather than diagnosed after the fact.
-            summary: SABnzbd download disk is over 90% full.
-          expr: |
-            (sabnzbd_disk_used_bytes / clamp_min(sabnzbd_disk_total_bytes, 1)) > 0.9
-          for: 30m
-          labels:
-            severity: warning
+    # Deliberately NO disk alert here. sabnzbd_disk_*_bytes reports the NAS volume,
+    # which sonarr/radarr/immich all mount too -- one fill would fan out into several
+    # near-identical pages. Disk capacity is owned solely by the nas-exporter, which
+    # measures the volume directly rather than inferring it through an app's mount.

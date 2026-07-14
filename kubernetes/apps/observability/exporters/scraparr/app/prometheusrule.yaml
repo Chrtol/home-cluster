@@ -172,25 +172,8 @@ spec:
           labels:
             severity: warning
 
-    - name: scraparr.disk
-      rules:
-        # The arrs report the free space of each root folder they manage. This is the
-        # media library disk (NFS from the NAS), NOT a Kubernetes PVC -- so none of the
-        # kubelet volume alerts cover it. Without this, the first sign of a full media
-        # disk is imports silently failing.
-        - alert: ArrRootFolderLowDisk
-          annotations:
-            description: >-
-              The root folder '{{ $labels.path }}' tracked by {{ $labels.job_name }} is
-              down to {{ $value | humanize1024 }}B free. This is library storage on the
-              NAS, not a PVC, so no kubelet alert covers it. Imports begin failing once
-              it fills.
-            summary: '{{ $labels.job_name }} root folder is low on disk ({{ $value | humanize1024 }}B free).'
-          expr: |
-            (
-              label_replace(sonarr_free_disk_size, "job_name", "sonarr", "", "")
-              or label_replace(radarr_free_disk_size, "job_name", "radarr", "", "")
-            ) < 107374182400
-          for: 30m
-          labels:
-            severity: warning
+    # Deliberately NO disk alert here. sonarr_free_disk_size / radarr_free_disk_size
+    # both report the same NAS volume, seen through each app's own mount -- so a single
+    # fill would fan out into several near-identical pages (plus sabnzbd, plus immich).
+    # Disk capacity is owned solely by the nas-exporter, which measures the volume
+    # directly instead of inferring it from an app's view of its root folder.

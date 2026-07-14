@@ -34,17 +34,24 @@ spec:
         # queue is stuck rather than merely busy.
         #
         # min_over_time is the key: a busy queue dips to 0 between batches, a wedged one
-        # never does. 2h of never dipping means stuck, not working.
+        # never does. Never dipping across the window means stuck, not working.
+        #
+        # These gauges are created lazily, on the first JobStart event -- they do not
+        # exist on a freshly restarted pod and are wiped by every restart. That is why
+        # the window is 1h rather than longer: it has to be short enough to refill after
+        # a restart, or the alert can never evaluate. It is also why this must NOT be
+        # written as an absent()-style check -- an idle Immich legitimately publishes no
+        # queue series at all, and that is not a fault.
         - alert: ImmichQueueStuck
           annotations:
             description: >-
-              An Immich job queue has had jobs in flight continuously for 2h without
-              ever draining to zero. A healthy queue dips to 0 between batches; one that
-              never does is wedged. Thumbnails, ML or metadata are silently not being
-              generated even though the app looks fine.
+              An Immich job queue has had jobs in flight continuously for 1h without ever
+              draining to zero. A healthy queue dips to 0 between batches; one that never
+              does is wedged. Thumbnails, ML or metadata are silently not being generated
+              even though the app looks fine.
             summary: An Immich job queue is stuck ({{ $value | printf "%.0f" }} jobs in flight).
           expr: |
-            min_over_time({__name__=~"immich_queues_.+_active"}[2h]) > 0
+            min_over_time({__name__=~"immich_queues_.+_active"}[1h]) > 0
           for: 30m
           labels:
             severity: warning
