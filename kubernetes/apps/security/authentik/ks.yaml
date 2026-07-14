@@ -20,11 +20,19 @@ spec:
     - name: external-secrets
       namespace: external-secrets
   components:
+    - ../../../../components/cnpg
     - ../../../../components/gatus/external
   postBuild:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: sso
+      # Split off the shared "app" role: authentik now owns its DB with its own
+      # role and password (field on the authentik 1Password item). Last app off
+      # the shared role — after this, "app" owns nothing and can be dropped.
+      # Only the ExternalSecret half of the component is used: this chart is not
+      # app-template, so its values ConfigMap does not apply (see helmrelease.yaml).
+      DB_OP_ITEM: authentik
+      DB_PASS_FIELD: AUTHENTIK_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
