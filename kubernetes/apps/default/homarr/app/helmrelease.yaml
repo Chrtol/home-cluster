@@ -21,6 +21,11 @@ spec:
               kind: Deployment
               metadata:
                 name: homarr
+                annotations:
+                  # DB_URL is injected from db-secret via secretKeyRef, which is only
+                  # read at pod start. Without this, a changed db-url sits in the
+                  # secret while the running pod keeps the old value indefinitely.
+                  reloader.stakater.com/auto: "true"
               spec:
                 template:
                   spec:
