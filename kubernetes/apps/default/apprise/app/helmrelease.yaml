@@ -25,7 +25,6 @@ spec:
               APPRISE_STATEFUL_MODE: simple
               APPRISE_WORKER_COUNT: 4
               IPV4_ONLY: true
-              APPRISE_BASE_URL: apprise.${SECRET_DOMAIN}
               APPRISE_STATIC_ROOT: /opt/apprise/static
             securityContext:
               allowPrivilegeEscalation: false
@@ -49,7 +48,7 @@ spec:
       app:
         ports:
           http:
-            port: &port 8080
+            port: &port 8000
 
     route:
       internal:
