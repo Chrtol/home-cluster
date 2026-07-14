@@ -28,6 +28,14 @@ spec:
       type: Recreate
     labels:
       grafana.internal/instance: grafana
+    # This chart is not app-template, so the cnpg component's values ConfigMap
+    # does not apply — only its ExternalSecret (grafana-initdb-secret) is
+    # adopted. The pod label the CNPG NetworkPolicy selects on must therefore be
+    # set here by hand. It must be podLabels, NOT labels: .Values.labels lands on
+    # the Deployment only (which is why grafana.internal/instance above never
+    # reached the pod).
+    podLabels:
+      db.home.arpa/postgres: "true"
     admin:
       existingSecret: grafana-admin-secret
     # Grafana's SQLite DB lives on an emptyDir, so stars, playlists, annotations
@@ -39,7 +47,7 @@ spec:
         image: ghcr.io/home-operations/postgres-init:18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
         envFrom:
           - secretRef:
-              name: grafana-db-secret
+              name: grafana-initdb-secret
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true

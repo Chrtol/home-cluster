@@ -15,11 +15,18 @@ spec:
     - name: cloudnative-pg-cluster-v17
       namespace: database
   components:
+    - ../../../../components/cnpg
     - ../../../../components/oidc-application
     - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
+      # Split off the shared "app" role: grafana now owns its DB with its own
+      # role and password (field on the grafana 1Password item). Only the
+      # ExternalSecret half of the component is used here — the values ConfigMap
+      # is app-template-shaped and this chart is not (see helmrelease.yaml).
+      DB_OP_ITEM: grafana
+      DB_PASS_FIELD: GRAFANA_POSTGRES_PASS
       # OIDC component variables
       GROUP: "Infrastructure"
       SUBDOMAIN: grafana
