@@ -67,7 +67,6 @@ spec:
       rtmp:
         controller: *app
         type: LoadBalancer
-        externalTrafficPolicy: Local
         annotations:
           lbipam.cilium.io/ips: 10.0.30.74
         ports:
