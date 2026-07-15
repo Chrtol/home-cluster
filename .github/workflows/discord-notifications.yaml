@@ -5,7 +5,7 @@ name: "Discord Notifications"
 on:
   workflow_run:
     workflows:
-      - "Flux Local"
+      - "Flate"
       - "Build and Push Reptile Tracker Images"
       - "Labeler"
       - "Label Sync"
