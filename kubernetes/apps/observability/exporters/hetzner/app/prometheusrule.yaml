@@ -1,0 +1,128 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hetzner-storagebox-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: hetzner-storagebox
+      interval: 1m
+      rules:
+        # ── Is it working? Two independent detectors. ────────────────────────
+
+        # The collector emits up=0 when the Hetzner API call fails, so this is
+        # a real value we can match on (not a vanished series). for: 15m rides
+        # out a couple of failed poll cycles (5m each) before alerting.
+        - alert: HetznerStorageBoxAPIDown
+          expr: hetzner_storagebox_up == 0
+          for: 15m
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box API is unreachable
+            description: >-
+              The exporter has been unable to query the Hetzner API for box
+              {{ $labels.box }} for 15 minutes. Storage Box metrics are blind.
+              Check the token and https://status.hetzner.com.
+
+        # Independent from APIDown: catches the *poller itself* stalling. Even a
+        # handled API error still rewrites the .prom file, so if mtime goes
+        # stale the run.sh loop has wedged (not just the API). Regex match on
+        # the file label hedges against basename-vs-fullpath differences.
+        - alert: HetznerStorageBoxExporterStale
+          expr: time() - node_textfile_mtime_seconds{file=~".*storagebox.prom"} > 1800
+          for: 5m
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box exporter has stopped updating
+            description: >-
+              The storagebox.prom textfile has not been refreshed in over 30
+              minutes (poll interval is 5m). The exporter loop has likely
+              stalled. Check the hetzner-exporter pod.
+
+        # ── Snapshots: is the offsite backup rotation still happening? ────────
+
+        # snapshot_count is always at the cap (10) in steady state, so we alert
+        # on the AGE of the newest snapshot, not the count. 93600s = 26h gives
+        # a 2h grace over the ~daily 05:1x schedule to absorb jitter.
+        - alert: HetznerStorageBoxSnapshotStale
+          expr: time() - hetzner_storagebox_latest_snapshot_timestamp_seconds > 93600
+          for: 30m
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box snapshots have stopped
+            description: >-
+              The newest snapshot on box {{ $labels.box }} is over 26 hours old.
+              The daily snapshot rotation has stopped — offsite backups are no
+              longer being captured. Check the TrueNAS replication task and the
+              Hetzner snapshot plan.
+
+        # A sudden large DROP in backed-up data. On a backup MIRROR this is a
+        # red flag: if the TrueNAS source was wiped, the next sync propagates
+        # the deletion offsite. delta() over 6h; <-50e9 = lost >50 GB. Negative
+        # threshold because we only care about shrinkage, not normal growth.
+        - alert: HetznerStorageBoxDataShrink
+          expr: delta(hetzner_storagebox_data_bytes[6h]) < -50e9
+          for: 10m
+          labels:
+            severity: critical
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box backup data shrank sharply
+            description: >-
+              Box {{ $labels.box }} lost {{ $value | humanize1024 }}B of backed-up
+              data in the last 6 hours. On an offsite mirror this can mean the
+              source was deleted and the deletion is being replicated. Investigate
+              before the next sync/snapshot rotation locks it in.
+
+        # ── Disk usage ───────────────────────────────────────────────────────
+
+        # Ratio of used to total capacity. *100 turns it into a percent so the
+        # threshold reads naturally. Currently ~40%, so lots of runway.
+        - alert: HetznerStorageBoxSpaceLow
+          expr: (hetzner_storagebox_used_bytes / hetzner_storagebox_quota_bytes) * 100 > 85
+          for: 30m
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box is filling up
+            description: >-
+              Box {{ $labels.box }} is {{ $value | humanizePercentage }} full.
+              Plan capacity or prune old data.
+
+        - alert: HetznerStorageBoxSpaceCritical
+          expr: (hetzner_storagebox_used_bytes / hetzner_storagebox_quota_bytes) * 100 > 95
+          for: 15m
+          labels:
+            severity: critical
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box is nearly full
+            description: >-
+              Box {{ $labels.box }} is {{ $value | humanizePercentage }} full.
+              New backups will start failing. Free space or upgrade the plan.
+
+        # ── Box state ────────────────────────────────────────────────────────
+
+        # status is exposed as a label on a constant 1. Matching status!="active"
+        # fires for any non-active state (e.g. locked). The metric only exists
+        # when the API call succeeded, so this can't false-fire during an outage.
+        - alert: HetznerStorageBoxNotActive
+          expr: hetzner_storagebox_status{status!="active"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box is not in active state
+            description: >-
+              Box {{ $labels.box }} reports status "{{ $labels.status }}" instead
+              of active. Check the Hetzner console.
