@@ -13,3 +13,9 @@ configMapGenerator:
       # add resources/vps.sh here later
 generatorOptions:
   disableNameSuffixHash: true
+  annotations:
+    # The scripts contain shell ${VARS} (TEXTFILE_DIR, HETZNER_API_TOKEN, etc.)
+    # that Flux's postBuild envsubst would otherwise try to resolve and fail on
+    # under strict mode. Exclude this ConfigMap from Flux variable substitution
+    # so the shell expands them at runtime instead.
+    kustomize.toolkit.fluxcd.io/substitute: disabled
