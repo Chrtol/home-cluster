@@ -33,7 +33,7 @@ spec:
         # stale the run.sh loop has wedged (not just the API). Regex match on
         # the file label hedges against basename-vs-fullpath differences.
         - alert: HetznerStorageBoxExporterStale
-          expr: time() - node_textfile_mtime_seconds{file=~".*storagebox.prom"} > 1800
+          expr: time() - node_textfile_mtime_seconds{file="/textfile/storagebox.prom"} > 1800
           for: 5m
           labels:
             severity: warning
