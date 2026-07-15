@@ -49,13 +49,21 @@ spec:
               draining to zero. A healthy queue dips to 0 between batches; one that never
               does is wedged. Thumbnails, ML or metadata are silently not being generated
               even though the app looks fine.
-            summary: An Immich job queue is stuck ({{ $value | printf "%.0f" }} jobs in flight).
-          # min by (__name__) keeps each queue metric a distinct output series. Without it,
-          # min_over_time strips __name__ and every immich_queues_*_active series collapses to
-          # the same labelset, which Prometheus rejects ("vector cannot contain metrics with the
-          # same labelset") and the rule stops evaluating.
+            summary: An Immich job queue {{ $labels.queue }} is stuck ({{ $value | printf "%.0f" }} jobs in flight).
+          # A bare {__name__=~...} selector matches multiple metric names, and min_over_time
+          # DROPS __name__ from its output. Once dropped, every immich_queues_*_active series
+          # collapses to the same labelset and Prometheus rejects the vector ("vector cannot
+          # contain metrics with the same labelset"), so the rule stops evaluating. Aggregating
+          # `by (__name__)` does not help -- __name__ is already gone before the aggregation runs.
+          # Fix: label_replace the queue name into a real `queue` label BEFORE the function drops
+          # __name__, then keep each queue distinct by grouping on that surviving label.
           expr: |
-            min by (__name__) (min_over_time({__name__=~"immich_queues_.+_active"}[1h])) > 0
+            min by (queue) (
+              label_replace(
+                min_over_time({__name__=~"immich_queues_.+_active"}[1h]),
+                "queue", "$1", "__name__", "immich_queues_(.+)_active"
+              )
+            ) > 0
           for: 30m
           labels:
             severity: warning
@@ -70,12 +78,18 @@ spec:
               machine-learning service is unreachable from the server, or media files on
               the NFS mount from the NAS cannot be read. Affected assets get no
               thumbnails, no search embeddings, and no face detection.
-            summary: Immich jobs are failing.
-          # sum by (__name__) keeps each failing job type distinct instead of collapsing every
-          # immich_jobs_*_failed_total series into one labelset, which trips the same
-          # "same labelset" evaluation error as the queue rule above.
+            summary: Immich jobs are failing ({{ $labels.job_type }}).
+          # Same __name__-drop problem as ImmichQueueStuck above: rate() strips __name__ from a
+          # multi-name selector, collapsing every immich_jobs_*_failed_total series to one
+          # labelset. label_replace the job type into a real `job_type` label first, then sum
+          # per type so each failing job kind stays a distinct, non-colliding series.
           expr: |
-            sum by (__name__) (rate({__name__=~"immich_jobs_.+_failed_total"}[15m])) > 0
+            sum by (job_type) (
+              label_replace(
+                rate({__name__=~"immich_jobs_.+_failed_total"}[15m]),
+                "job_type", "$1", "__name__", "immich_jobs_(.+)_failed_total"
+              )
+            ) > 0
           for: 1h
           labels:
             severity: warning
