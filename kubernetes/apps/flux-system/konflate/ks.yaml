@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app konflate
+  namespace: &namespace flux-system
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/flux-system/konflate/app
+  components:
+    # Registers konflate in Authentik (Provider + Application + bp-konflate-users
+    # group). ext-auth is NOT used: konflate needs a /hooks auth exemption, so
+    # the route + SecurityPolicy are hand-written in the app dir instead.
+    - ../../../../components/proxy-application
+  postBuild:
+    substitute:
+      APP: *app
+      GROUP: Infrastructure
+      SUBDOMAIN: *app
+      DESCRIPTION: Rendered Flux PR diffs and review
+      PROXY_ADMIN_GROUP: bp-konflate-users
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  wait: false
+  timeout: 5m

@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Authentik forward-auth for the konflate UI. Targets ONLY the "konflate"
+# HTTPRoute — the "konflate-hooks" route (GitHub webhooks) is deliberately left
+# unauthenticated. Mirrors components/ext-auth/securitypolicy.yaml.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: konflate
+spec:
+  extAuth:
+    failOpen: false
+    timeout: 2s
+    headersToExtAuth:
+      - cookie
+      - authorization
+      - x-forwarded-for
+      - x-forwarded-host
+      - x-forwarded-proto
+    http:
+      backendRefs:
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: security
+          port: 9000
+      path: /outpost.goauthentik.io/auth/envoy
+      headersToBackend:
+        - set-cookie
+        - authorization
+        # Authentik user headers
+        - x-authentik-username
+        - x-authentik-groups
+        - x-authentik-entitlements
+        - x-authentik-email
+        - x-authentik-name
+        - x-authentik-uid
+        - x-authentik-jwt
+        # Authentik meta headers
+        - x-authentik-meta-jwks
+        - x-authentik-meta-outpost
+        - x-authentik-meta-provider
+        - x-authentik-meta-app
+        - x-authentik-meta-version
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: konflate

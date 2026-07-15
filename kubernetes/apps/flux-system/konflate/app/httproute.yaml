@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# Authenticated route for the konflate UI. The SecurityPolicy (securitypolicy.yaml)
+# targets THIS route by name and applies Authentik forwardAuth to it. The
+# /outpost.goauthentik.io rule carries the Authentik callback to the embedded
+# outpost. The /hooks webhook path is served by the separate konflate-hooks
+# route, which has no SecurityPolicy.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: konflate
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    gatus.home-operations.com/endpoint: |-
+      conditions: ["[STATUS] == 200"]
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - konflate.${SECRET_DOMAIN}
+  rules:
+    # Authentik callback to the embedded outpost
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io
+      backendRefs:
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: security
+          port: 9000
+    # Main konflate UI (authenticated via the SecurityPolicy)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: konflate
+          port: 8080

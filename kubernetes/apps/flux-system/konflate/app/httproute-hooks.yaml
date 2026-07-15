@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# Unauthenticated route for GitHub App webhooks: konflate verifies the payload
+# HMAC with KONFLATE_WEBHOOK_SECRET, so this endpoint must NOT sit behind
+# Authentik forwardAuth (a login redirect would turn GitHub's POST into a 302).
+# No SecurityPolicy targets this route. A more-specific /hooks match wins over
+# the "/" match on the authed konflate route.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: konflate-hooks
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - konflate.${SECRET_DOMAIN}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /hooks
+      backendRefs:
+        - name: konflate
+          port: 8080
