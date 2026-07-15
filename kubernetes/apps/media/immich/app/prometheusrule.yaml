@@ -50,8 +50,12 @@ spec:
               does is wedged. Thumbnails, ML or metadata are silently not being generated
               even though the app looks fine.
             summary: An Immich job queue is stuck ({{ $value | printf "%.0f" }} jobs in flight).
+          # min by (__name__) keeps each queue metric a distinct output series. Without it,
+          # min_over_time strips __name__ and every immich_queues_*_active series collapses to
+          # the same labelset, which Prometheus rejects ("vector cannot contain metrics with the
+          # same labelset") and the rule stops evaluating.
           expr: |
-            min_over_time({__name__=~"immich_queues_.+_active"}[1h]) > 0
+            min by (__name__) (min_over_time({__name__=~"immich_queues_.+_active"}[1h])) > 0
           for: 30m
           labels:
             severity: warning
@@ -67,8 +71,11 @@ spec:
               the NFS mount from the NAS cannot be read. Affected assets get no
               thumbnails, no search embeddings, and no face detection.
             summary: Immich jobs are failing.
+          # sum by (__name__) keeps each failing job type distinct instead of collapsing every
+          # immich_jobs_*_failed_total series into one labelset, which trips the same
+          # "same labelset" evaluation error as the queue rule above.
           expr: |
-            sum(rate({__name__=~"immich_jobs_.+_failed_total"}[15m])) > 0
+            sum by (__name__) (rate({__name__=~"immich_jobs_.+_failed_total"}[15m])) > 0
           for: 1h
           labels:
             severity: warning
