@@ -17,10 +17,22 @@ spec:
   components:
     - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
   postBuild:
     substitute:
       CEPH_RBD_CAPACITY: 5Gi
       APP: *app
+      # ext-auth: owns the external HTTPRoute + Authentik forward-auth SecurityPolicy
+      EXT_AUTH_PORT: "8080"
+      EXT_AUTH_GATEWAY: external
+      EXT_AUTH_DNS_TARGET: external.${SECRET_DOMAIN}
+      # proxy-application: registers the Authentik Provider + Application + group
+      GROUP: Media
+      SUBDOMAIN: *app
+      DESCRIPTION: Self-hosted live streaming server
+      # Grant the Media Users group (slug: media-users, nested under Media Admins)
+      PROXY_ADMIN_GROUP: media-users
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

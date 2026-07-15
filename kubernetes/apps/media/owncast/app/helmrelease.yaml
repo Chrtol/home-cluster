@@ -74,19 +74,9 @@ spec:
             port: 1935
             protocol: TCP
 
-    route:
-      app:
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: external
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *httpPort
+    # NOTE: The HTTPRoute is provided by the ext-auth component (see ks.yaml),
+    # which also attaches the Authentik forward-auth SecurityPolicy. Do not add
+    # an inline `route:` here or it will collide on the same hostname.
 
     persistence:
       # Holds owncast.db, config, and HLS segments — Ceph RBD (fast) since segments churn.
