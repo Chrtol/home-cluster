@@ -35,8 +35,8 @@ spec:
         containers:
           *app :
             image:
-              repository: ghcr.io/owncast/owncast
-              tag: v0.2.5
+              repository: docker.io/owncast/owncast
+              tag: 0.2.5
             env:
               TZ: "${SECRET_TIMEZONE}"
             probes:
