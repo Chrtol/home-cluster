@@ -15,7 +15,7 @@ metadata:
       conditions: ["[STATUS] == 200"]
 spec:
   parentRefs:
-    - name: envoy-external
+    - name: external
       namespace: network
       kind: Gateway
   hostnames:
