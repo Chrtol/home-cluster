@@ -38,14 +38,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      # base: "" so the action does NOT export FLATE_BASE — `test all` validates
+      # the full tree (no baseline). flate templates Helm by default (no
+      # --enable-helm) and renders every namespace by default; it exits non-zero
+      # on any Kustomization/HelmRelease reconcile failure.
       - name: Setup flate
         uses: home-operations/flate/action@0fc37fae10cf3c265294f6adebc6d6c100c74ea5 # v0.4.10
         with:
           cache: true
+          base: ""
 
-      # flate templates Helm by default (no --enable-helm) and renders every
-      # namespace by default (no --all-namespaces). `test all` exits non-zero
-      # on any Kustomization/HelmRelease reconcile failure.
       - name: Run flate test
         run: flate test all --path ./kubernetes/flux/cluster
 
@@ -63,32 +65,29 @@ jobs:
       fail-fast: false
     if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
     steps:
-      - name: Checkout Pull Request Branch
+      # Full history so flate's --base (main) can resolve the baseline commit;
+      # a shallow clone would leave main unreachable.
+      - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          path: pull
+          fetch-depth: 0
 
-      - name: Checkout Default Branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: "${{ github.event.repository.default_branch }}"
-          path: default
-
+      # The action exports FLATE_BASE=main (its default), so `flate diff`
+      # materializes the base tree itself and renders changed-only — no second
+      # checkout / --path-orig (which is mutually exclusive with --base).
       - name: Setup flate
         uses: home-operations/flate/action@0fc37fae10cf3c265294f6adebc6d6c100c74ea5 # v0.4.10
         with:
           cache: true
 
-      # --path = PR tree (new), --path-orig = default branch (old); each side
-      # renders changed-only against the other. -o diff emits a plain unified
-      # diff to stdout (flate has no --output-file), captured via redirect.
-      # --strip-attr replaces flux-local's comma-list --strip-attrs and is
-      # repeatable; supplying any value replaces flate's default strip set.
+      # -o diff emits a plain unified diff to stdout (flate has no
+      # --output-file), captured via redirect. --strip-attr replaces
+      # flux-local's comma-list --strip-attrs; it's repeatable and supplying
+      # any value replaces flate's default strip set.
       - name: Run flate diff
         run: |
           flate diff ${{ matrix.resources }} \
-            --path ./pull/kubernetes/flux/cluster \
-            --path-orig ./default/kubernetes/flux/cluster \
+            --path ./kubernetes/flux/cluster \
             --strip-attr helm.sh/chart \
             --strip-attr checksum/config \
             --strip-attr app.kubernetes.io/version \
