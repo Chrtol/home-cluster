@@ -78,6 +78,25 @@
       allowedVersions: '<0.26.0',
     },
     {
+      // The app image (ghcr.io/kanbn/kan) and its migration image
+      // (ghcr.io/kanbn/kan-migrate) are built from the same source repo and MUST
+      // move in lockstep — a version skew reintroduces schema drift (app newer than
+      // migrate = 500s on missing columns). Group them into a single PR so they can
+      // never bump independently.
+      description: 'Kan Group (app + migrate images in lockstep)',
+      groupName: 'Kan',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'ghcr.io/kanbn/kan',
+        'ghcr.io/kanbn/kan-migrate',
+      ],
+      group: {
+        commitMessageTopic: '{{{groupName}}} group',
+      },
+    },
+    {
       description: 'Cert-Manager Group',
       groupName: 'Cert-Manager',
       matchDatasources: [

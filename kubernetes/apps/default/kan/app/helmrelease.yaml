@@ -29,6 +29,26 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
 
+        initContainers:
+          # kan's runtime image does NOT migrate; upstream ships a separate
+          # kan-migrate image (apps/web/Dockerfile `migrate` target) that runs
+          # `npx drizzle-kit migrate`. Runs on every rollout — additive migrations
+          # are a no-op, so bumping kan auto-applies schema. MUST stay pinned to the
+          # SAME version as the app image (Renovate groups both — see .renovaterc).
+          # Reuses DATABASE_URL from kan-secret (sslmode=require&uselibpqcompat=true,
+          # same libpq-compat trick the app pool needs for CNPG's self-signed CA).
+          # Ordered after init-db (from the cnpg component) which creates the role/db.
+          migrate:
+            dependsOn: init-db
+            image:
+              repository: ghcr.io/kanbn/kan-migrate
+              # renovate: datasource=docker depName=ghcr.io/kanbn/kan-migrate
+              tag: 0.6.0@sha256:3296fd28e037a93dda478981494a72c6905ecd4f0d0739e79139172844acbc4b
+              pullPolicy: IfNotPresent
+            envFrom:
+              - secretRef:
+                  name: kan-secret
+
         containers:
           app:
             image:
