@@ -42,3 +42,4 @@ resources:
   - ./shelfmark/ks.yaml
   - ./readmeabook/ks.yaml
   - ./unpackerr/ks.yaml
+  - ./owncast/ks.yaml
