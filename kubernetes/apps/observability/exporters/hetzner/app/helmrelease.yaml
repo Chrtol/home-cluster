@@ -27,13 +27,23 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/library/alpine
-              tag: 3.22.1
+              repository: docker.io/alpine/curl
+              tag: 8.21.0
+            # This image ships curl but not jq. We can't apk-add jq (non-root +
+            # read-only rootfs), so we fetch jq's official static binary into
+            # /tmp (the one writable path) and put it on PATH before exec'ing
+            # the runner. $$ escapes shield the shell vars from Flux envsubst.
             command:
               - /bin/sh
               - -c
               - |
-                apk add --no-cache curl jq >/dev/null 2>&1
+                set -e
+                JQ_VERSION=jq-1.7.1
+                curl -sSfL --retry 3 \
+                  "https://github.com/jqlang/jq/releases/download/$${JQ_VERSION}/jq-linux-amd64" \
+                  -o /tmp/jq
+                chmod +x /tmp/jq
+                export PATH="/tmp:$${PATH}"
                 exec /scripts/run.sh
             env:
               INTERVAL_SECONDS: "300"
