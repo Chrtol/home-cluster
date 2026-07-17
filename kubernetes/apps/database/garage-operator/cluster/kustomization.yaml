@@ -9,3 +9,5 @@ resources:
   - ./buckets.yaml
   - ./importkey-externalsecrets.yaml
   - ./keys.yaml
+  # P5: public + internal S3 routes for browser-reachable cutover (e.g. Outline)
+  - ./httproute.yaml

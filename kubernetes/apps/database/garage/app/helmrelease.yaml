@@ -93,29 +93,12 @@ spec:
             port: 3902
           admin:
             port: 3903
-    route:
-      internal:
-        hostnames: ["s3-local.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: api
-      external:
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hostnames: ["s3.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: external
-            namespace: network
-            kind: Gateway
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: api
+    # S3 routes (s3.${SECRET_DOMAIN} + s3-local.${SECRET_DOMAIN}) were MOVED to the
+    # operator-managed cluster during the garage-operator migration -- they now live in
+    # garage-operator/cluster/httproute.yaml pointing at the garage-operated Service.
+    # This old cluster keeps serving its buckets over the in-cluster garage.database.svc
+    # endpoint only, until it's decommissioned (P7). To roll back, restore this route:
+    # block and remove the operated HTTPRoutes.
     persistence:
       data:
         type: nfs

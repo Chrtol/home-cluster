@@ -1,0 +1,46 @@
+---
+# S3 routes for the operator-managed cluster (garage-operated).
+#
+# These take over s3.${SECRET_DOMAIN} (external) and s3-local.${SECRET_DOMAIN}
+# (internal) from the OLD hand-managed garage HelmRelease (whose route: block is
+# removed in the same change). The public hostname + cert stay identical -- only the
+# backend Service moves from `garage` to `garage-operated`. This is the cutover for
+# browser-facing apps (e.g. Outline, which 302-redirects the browser straight to the
+# S3 endpoint and cannot use internal svc DNS). Pure-backend apps (tempo, CNPG, kan)
+# are separately repointed to garage-operated.database.svc:3900 to keep traffic
+# in-cluster. Reversible: move these hostnames back to the garage HR's route: block.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: garage-operated-external
+  namespace: database
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+spec:
+  parentRefs:
+    - name: external
+      namespace: network
+      kind: Gateway
+  hostnames:
+    - s3.${SECRET_DOMAIN}
+  rules:
+    - backendRefs:
+        - name: garage-operated
+          port: 3900
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: garage-operated-internal
+  namespace: database
+spec:
+  parentRefs:
+    - name: internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - s3-local.${SECRET_DOMAIN}
+  rules:
+    - backendRefs:
+        - name: garage-operated
+          port: 3900
