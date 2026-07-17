@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app garage-operator
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: garage-operator
+    namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: -1
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 1
+    image:
+      tag: v0.6.26
+    # Default Garage image for GarageClusters that omit spec.image. Pinned to the
+    # version our existing data was written with (v2.3.0 LMDB) for S3 compatibility.
+    defaultGarageImage: dxflrs/garage:v2.3.0
+    # Conversion + admission webhooks (cert-manager backed).
+    webhooks:
+      enabled: true
+    crds:
+      # Let Flux manage CRD lifecycle via the HelmRelease crds: CreateReplace above.
+      install: true
+    # Observability (this cluster runs Prometheus + Grafana).
+    metrics:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+    grafanaDashboard:
+      enabled: true
+    prometheusRules:
+      enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        memory: 256Mi

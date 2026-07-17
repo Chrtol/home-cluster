@@ -1,0 +1,24 @@
+---
+# Retain-policy NFS StorageClass for data that must survive an accidental PVC delete.
+# The chart-managed `nfs-k8s` SC uses reclaimPolicy: Delete, which would tell the CSI
+# driver to remove the NFS subdirectory (and its data) when a PVC is deleted -- unsafe
+# for stateful workloads like Garage's S3 data blocks.
+#
+# Same provisioner/server/share as nfs-k8s; only reclaimPolicy differs. A deleted PVC
+# leaves the NFS subdir in place (Released PV) so data can be recovered.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-k8s-retain
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: nas.${SECRET_DOMAIN}
+  share: /mnt/truenas/cf-nas
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+mountOptions:
+  - nfsvers=4.2
+  - nconnect=16
+  - hard
+  - noatime

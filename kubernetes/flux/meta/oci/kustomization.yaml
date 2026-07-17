@@ -24,3 +24,4 @@ resources:
   - ./grafana-operator.yaml
   - ./intel-gpu-resource-driver.yaml
   - ./konflate.yaml
+  - ./garage-operator.yaml
