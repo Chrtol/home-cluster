@@ -35,8 +35,13 @@ spec:
               DATASOURCE_S3_FORCE_PATH_STYLE: "true"
               # OIDC: allow first-login to auto-provision the account and send
               # users straight to Authentik instead of the local login form.
+              # Bypass the local login page entirely -> redirect straight to Authentik.
+              # NOTE: this env var is authoritative; the in-app "Bypass Local Login"
+              # toggle is locked/ignored because the value comes from the environment
+              # (Zipline's declarative-override behaviour). Only works with exactly one
+              # OAuth provider enabled -- we have one (OIDC/Authentik).
               FEATURES_OAUTH_REGISTRATION: "true"
-              OAUTH_BYPASS_LOCAL_LOGIN: "false"
+              OAUTH_BYPASS_LOCAL_LOGIN: "true"
               # Client id/secret remapped from the component-generated secret.
               OAUTH_OIDC_CLIENT_ID:
                 valueFrom:
