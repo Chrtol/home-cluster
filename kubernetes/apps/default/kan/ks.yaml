@@ -18,7 +18,7 @@ spec:
       namespace: database
     - name: authentik
       namespace: security
-    - name: garage
+    - name: garage-operated-cluster
       namespace: database
   path: "./kubernetes/apps/default/kan/app"
   postBuild:
