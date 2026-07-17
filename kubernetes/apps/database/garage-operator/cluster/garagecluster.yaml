@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/garage.rajsingh.info/garagecluster_v1beta2.json
 apiVersion: garage.rajsingh.info/v1beta2
 kind: GarageCluster
 metadata:
@@ -21,6 +20,12 @@ spec:
 
   storage:
     replicas: 1
+    # Run as the NAS `kubernetes` user (UID/GID 1000) that owns the s3/operated
+    # export, so Garage's writes to the NFS data volume land as the dataset owner.
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
     # Metadata (LMDB, mmap) on Ceph RBD block storage -- safe, fast. NEVER on NFS.
     metadata:
       storageClassName: csi-rbd-sc

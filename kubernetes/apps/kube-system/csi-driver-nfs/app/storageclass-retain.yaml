@@ -13,7 +13,9 @@ metadata:
 provisioner: nfs.csi.k8s.io
 parameters:
   server: nas.${SECRET_DOMAIN}
-  share: /mnt/truenas/cf-nas
+  # Dedicated NFS export (chowned 1000:1000) for CSI-provisioned volumes. Distinct
+  # from the old Garage's hand-made s3/data + s3/meta so CSI owns its own subdir tree.
+  share: /mnt/truenas/cf-nas/s3/operated
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
