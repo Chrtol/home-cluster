@@ -1,0 +1,124 @@
+---
+# GarageKey CRs for the operator-managed cluster (garage-operated).
+#
+# Four keys IMPORT the app's existing 1Password credentials (via importKey.secretRef
+# -> the garage-import-* secrets), so the recreated keys are byte-for-byte identical
+# to what the apps use today -- cutover (P5) is a pure endpoint repoint.
+#
+# The fifth key (zipline) is MINTED by the operator (no importKey): zipline had no
+# working S3 before, so there's nothing to adopt. Its generated creds land in the
+# zipline-s3 secret via secretTemplate; after it's Ready they get back-filled into
+# 1Password and this CR converges to the import pattern in a follow-up commit.
+#
+# bucketPermissions references buckets by bucketRef (the GarageBucket CR name in
+# this same namespace) so the whole graph is declarative and self-contained.
+
+# --- outline-key -> outline (RWO on old cluster) ---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: outline-key
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  importKey:
+    secretRef:
+      name: garage-import-outline
+  bucketPermissions:
+    - bucketRef:
+        name: outline
+      read: true
+      write: true
+      owner: true
+---
+# --- tempo -> tempo-traces (RWO on old cluster) ---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: tempo
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  importKey:
+    secretRef:
+      name: garage-import-tempo
+  bucketPermissions:
+    - bucketRef:
+        name: tempo-traces
+      read: true
+      write: true
+      owner: true
+---
+# --- kan-key -> kan-avatars + kan-attachments (one key, both buckets) ---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: kan-key
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  importKey:
+    secretRef:
+      name: garage-import-kan
+  bucketPermissions:
+    - bucketRef:
+        name: kan-avatars
+      read: true
+      write: true
+      owner: true
+    - bucketRef:
+        name: kan-attachments
+      read: true
+      write: true
+      owner: true
+---
+# --- postgres-backup -> postgres-wal (CNPG barman-cloud) ---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: postgres-backup
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  importKey:
+    secretRef:
+      name: garage-import-postgres
+  bucketPermissions:
+    - bucketRef:
+        name: postgres-wal
+      read: true
+      write: true
+      owner: true
+---
+# --- zipline -> zipline (MINTED, not imported; back-fill 1Password after Ready) ---
+# secretTemplate emits a zipline-s3 secret carrying access key + secret + endpoint +
+# bucket, shaped for the keys the HelmRelease's secretKeyRefs expect. Once Ready,
+# copy ACCESS_KEY_ID/SECRET_ACCESS_KEY into 1Password and converge to importKey.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: zipline
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  bucketPermissions:
+    - bucketRef:
+        name: zipline
+      read: true
+      write: true
+      owner: true
+  secretTemplate:
+    name: zipline-s3
+    includeEndpoint: true
+    includeRegion: true
+    includeBucketName: true
+    accessKeyIdKey: ACCESS_KEY_ID
+    secretAccessKeyKey: SECRET_ACCESS_KEY
+    endpointKey: ENDPOINT
+    regionKey: REGION
+    bucketNameKey: BUCKET

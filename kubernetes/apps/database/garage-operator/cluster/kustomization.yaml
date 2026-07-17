@@ -5,3 +5,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./garagecluster.yaml
+  # P3: declarative buckets + keys on garage-operated
+  - ./buckets.yaml
+  - ./importkey-externalsecrets.yaml
+  - ./keys.yaml

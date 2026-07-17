@@ -1,0 +1,74 @@
+---
+# GarageBucket CRs for the operator-managed cluster (garage-operated).
+#
+# Each bucket carries the SAME globalAlias as on the old hand-managed Garage, so
+# apps addressing buckets by name (e.g. "outline", "postgres-wal") keep working
+# unchanged after cutover -- only the S3 endpoint moves.
+#
+# Buckets are empty until P4 (rclone copy for outline+tempo; kan buckets are
+# already empty; postgres-wal is repointed not copied; zipline is brand new).
+# Creating the bucket here is safe and additive -- it touches nothing on the old
+# cluster and no app points at garage-operated yet.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: outline
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: outline
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: tempo-traces
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: tempo-traces
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: kan-avatars
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: kan-avatars
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: kan-attachments
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: kan-attachments
+---
+# Postgres WAL/backups. NOT copied from the old cluster -- CNPG is repointed here
+# and a fresh base backup is taken (P6). Old WAL ages out on the old bucket.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: postgres-wal
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: postgres-wal
+---
+# Brand-new bucket -- Zipline was the original trigger for this migration and had
+# no working S3 before. Created empty; wired up in P5 (last app to cut over).
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: zipline
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: zipline
