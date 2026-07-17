@@ -26,6 +26,13 @@ spec:
       runAsUser: 1000
       runAsGroup: 1000
       fsGroup: 1000
+    # K8s mounts secret files world-readable (0644); Garage refuses to start with a
+    # group/world-readable rpc-secret unless this is set. Safe in-cluster: the secret
+    # is namespace-isolated + RBAC-protected, and this only relaxes the check on the
+    # pod's own mount. This is the operator's documented way to handle it.
+    env:
+      - name: GARAGE_ALLOW_WORLD_READABLE_SECRETS
+        value: "true"
     # Metadata (LMDB, mmap) on Ceph RBD block storage -- safe, fast. NEVER on NFS.
     metadata:
       storageClassName: csi-rbd-sc
