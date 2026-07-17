@@ -20,6 +20,9 @@ spec:
           reloader.stakater.com/auto: "true"
 
         pod:
+          # token-server sidecar reads the projected SA token to auth against
+          # the k8s API (list CNPG Backups); app-template defaults this off
+          automountServiceAccountToken: true
           annotations:
             # TEMP: Disabled OTEL to debug Code node "Could not get parameter jsCode" error
             # instrumentation.opentelemetry.io/inject-nodejs: "observability/nodejs-instrumentation"
