@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/garage.rajsingh.info/garagecluster_v1beta2.json
+apiVersion: garage.rajsingh.info/v1beta2
+kind: GarageCluster
+metadata:
+  name: garage
+  namespace: database
+spec:
+  # Pinned to match the version our existing data was written with (v2.3.0 LMDB).
+  image: dxflrs/garage:v2.3.0
+  zone: homelab
+
+  # Single node, one copy per object. Durability comes from TrueNAS ZFS underneath;
+  # replicas across the same NAS would add storage cost without real fault tolerance.
+  replication:
+    factor: 1
+    consistencyMode: consistent
+
+  database:
+    engine: lmdb
+
+  storage:
+    replicas: 1
+    # Metadata (LMDB, mmap) on Ceph RBD block storage -- safe, fast. NEVER on NFS.
+    metadata:
+      storageClassName: csi-rbd-sc
+      size: 5Gi
+    # Object blocks on the NAS via the Retain NFS StorageClass. Whole-object,
+    # write-once/read-occasionally access -- fine on 7200rpm spindles.
+    data:
+      storageClassName: nfs-k8s-retain
+      size: 200Gi
+    # Never auto-delete the data/metadata PVCs (protect against accidental removal).
+    pvcRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+
+  network:
+    rpcSecretRef:
+      name: garage-operated-secret
+      key: rpc-secret
+
+  s3Api:
+    region: homelab
+    rootDomain: .s3.${SECRET_DOMAIN}
+
+  admin:
+    adminTokenSecretRef:
+      name: garage-operated-secret
+      key: admin-token
