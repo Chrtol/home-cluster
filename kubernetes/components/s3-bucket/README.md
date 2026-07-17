@@ -6,32 +6,29 @@ This component provides GitOps-friendly S3 bucket management for Garage, elimina
 
 Instead of manually SSH'ing into pods and running Garage CLI commands, this component:
 
-1. **Automatically creates S3 buckets** when you deploy an app
-2. **Generates access credentials** and stores them in Kubernetes secrets
-3. **Configures CORS policies** for browser uploads
-4. **Is fully declarative** - just include the component and set variables
+1. **Renders the Garage CLI config** (with the RPC secret from the 1Password
+   `garage` item) into the app's namespace via an ExternalSecret, so the setup
+   Job is self-contained and works from **any** namespace.
+2. **Automatically creates the S3 bucket + access key** when you deploy an app,
+   using the Garage CLI authenticated by that RPC secret.
+3. **Stores the credentials** in a `${APP}-s3-credentials` Kubernetes secret.
+4. **Is fully declarative** - just include the component and set variables.
 
-## Initial Setup (One Time Only)
+## Prerequisites
 
-Before using this component, you need to create an admin key in Garage:
+None beyond a running Garage and a 1Password `garage` item containing
+`GARAGE_RPC_SECRET` (already used by the Garage deployment itself). There is **no**
+manual `garage-admin` key to create — the component authenticates the CLI with the
+RPC secret it renders itself.
 
-```bash
-# 1. Get into the Garage pod
-kubectl exec -it -n database deployment/garage -- bash
+> Note: this component does **not** configure bucket CORS. Apps in this cluster
+> (Zipline, Outline, Tempo, …) upload to S3 **server-side**, so browser CORS is
+> unnecessary. If you ever add an app that uploads browser-direct-to-S3, set CORS
+> on that bucket separately.
 
-# 2. Create an admin key
-/garage -c /etc/garage.toml key create garage-admin
-# Note the Access Key and Secret Key from output
+## Building the Helper Image
 
-# 3. Grant admin permissions
-/garage -c /etc/garage.toml key allow --create-bucket garage-admin
-
-# 4. Exit the pod and create the secret
-kubectl create secret generic garage-admin \
-  --namespace=database \
-  --from-literal=ACCESS_KEY="<access-key>" \
-  --from-literal=SECRET_KEY="<secret-key>"
-```
+The component uses a custom image with the Garage CLI + kubectl:
 
 ## Building the Helper Image
 
@@ -63,14 +60,12 @@ spec:
       APP: myapp
       NAMESPACE: default
       S3_BUCKET: myapp-data
-      CORS_ORIGINS: '"https://myapp.example.com"'
 ```
 
 This will automatically:
 - Create the `myapp-data` bucket
 - Generate access credentials
 - Store them in `myapp-s3-credentials` secret
-- Configure CORS for browser uploads
 
 ## Benefits
 

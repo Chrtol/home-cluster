@@ -247,15 +247,17 @@ hostname.
 
 ## `s3-bucket`
 
-Declarative Garage bucket: a PostSync Job (idempotent) creates the bucket,
-keys, and optional CORS policy, and writes secret `${APP}-s3-credentials`
-(`ACCESS_KEY`, `SECRET_KEY`, `BUCKET`, `ENDPOINT`, `REGION`).
+Declarative Garage bucket: a Job (idempotent) creates the bucket + access key
+and writes secret `${APP}-s3-credentials` (`ACCESS_KEY`, `SECRET_KEY`, `BUCKET`,
+`ENDPOINT`, `REGION`). The component also renders `${APP}-garage-cli` (the Garage
+CLI config incl. the RPC secret) into the app namespace so the Job is
+self-contained and runs from ANY namespace — no cross-namespace ConfigMap mount,
+no manual `garage-admin` key.
 
-Required: `APP`, `NAMESPACE`, `S3_BUCKET`. Optional: `CORS_ORIGINS`
-(JSON-array string, e.g. `'"https://myapp.${SECRET_DOMAIN}"'`). Needs Garage
-running and a `garage-admin` secret in the database namespace. For multiple
-buckets, instantiate the component once per bucket via separate Kustomizations
-with distinct `APP` values.
+Required: `APP`, `NAMESPACE`, `S3_BUCKET`. Needs Garage running and a 1Password
+`garage` item with `GARAGE_RPC_SECRET`. No CORS is configured (apps here upload
+server-side). For multiple buckets, instantiate the component once per bucket via
+separate Kustomizations with distinct `APP` values.
 
 ## `repos/app-template`
 

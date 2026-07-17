@@ -7,7 +7,7 @@ metadata:
 data:
   setup.sh: |
     #!/bin/bash
-    set -e
+    set -euo pipefail
 
     echo "Setting up S3 bucket for ${APP}..."
 
@@ -25,18 +25,30 @@ data:
       echo "Bucket ${S3_BUCKET} already exists"
     fi
 
-    # Create key if it doesn't exist
+    # Key handling is gated on the k8s SECRET, not the Garage key. A Garage secret
+    # key can't be retrieved after creation, so if the k8s secret is missing we must
+    # mint a fresh key (and drop the stale one) to repopulate it. This makes the Job
+    # safely re-runnable even if the secret was deleted.
     KEY_NAME="${APP}-key"
-    if ! /garage -c /etc/garage.toml key list | grep -q "$KEY_NAME"; then
+    if kubectl get secret ${APP}-s3-credentials -n ${NAMESPACE} >/dev/null 2>&1; then
+      echo "Secret ${APP}-s3-credentials already exists -- nothing to do"
+    else
+      # Remove any orphaned key of the same name (secret is gone, so its secret key
+      # is unrecoverable and useless).
+      if /garage -c /etc/garage.toml key list | grep -q "$KEY_NAME"; then
+        echo "Deleting orphaned key $KEY_NAME (no matching secret)..."
+        OLD_ID=$(/garage -c /etc/garage.toml key list | awk -v n="$KEY_NAME" '$2==n {print $1}')
+        [ -n "$OLD_ID" ] && /garage -c /etc/garage.toml key delete --yes "$OLD_ID"
+      fi
+
       echo "Creating access key for ${APP}..."
       KEY_OUTPUT=$(/garage -c /etc/garage.toml key create "$KEY_NAME")
       ACCESS_KEY=$(echo "$KEY_OUTPUT" | grep "Key ID" | awk '{print $3}')
       SECRET_KEY=$(echo "$KEY_OUTPUT" | grep "Secret key" | awk '{print $3}')
 
-      # Grant permissions
+      # Grant the key full access to the bucket
       /garage -c /etc/garage.toml bucket allow --read --write --owner ${S3_BUCKET} --key "$ACCESS_KEY"
 
-      # Store in Kubernetes secret
       kubectl create secret generic ${APP}-s3-credentials \
         --namespace=${NAMESPACE} \
         --from-literal=ACCESS_KEY="$ACCESS_KEY" \
@@ -47,29 +59,6 @@ data:
         --dry-run=client -o yaml | kubectl apply -f -
 
       echo "Created secret ${APP}-s3-credentials"
-    else
-      echo "Key for ${APP} already exists"
-    fi
-
-    # Set CORS if provided
-    if [ -n "${CORS_ORIGINS}" ]; then
-      echo "Setting CORS policy..."
-      cat <<EOF | aws s3api put-bucket-cors \
-        --endpoint-url http://garage.database.svc.cluster.local:3900 \
-        --bucket ${S3_BUCKET} \
-        --cors-configuration file:///dev/stdin
-    {
-      "CORSRules": [
-        {
-          "AllowedHeaders": ["*"],
-          "AllowedMethods": ["GET", "HEAD", "POST", "PUT", "DELETE"],
-          "AllowedOrigins": [${CORS_ORIGINS}],
-          "ExposeHeaders": ["ETag", "x-amz-version-id"],
-          "MaxAgeSeconds": 3600
-        }
-      ]
-    }
-    EOF
     fi
 
     echo "S3 setup for ${APP} complete!"
