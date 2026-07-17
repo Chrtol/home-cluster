@@ -1,8 +1,13 @@
 ---
 apiVersion: garage.rajsingh.info/v1beta2
 kind: GarageCluster
+# NOT named "garage": the operator creates Services named after the cluster, and a
+# cluster named "garage" collides with the OLD hand-managed Garage's own "garage"
+# Service (breaking every app's S3 access + the old node's RPC). "garage-operated"
+# keeps the new cluster's Services (garage-operated, garage-operated-headless)
+# distinct during coexistence.
 metadata:
-  name: garage
+  name: garage-operated
   namespace: database
 spec:
   # Pinned to match the version our existing data was written with (v2.3.0 LMDB).
