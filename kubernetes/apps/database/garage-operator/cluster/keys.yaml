@@ -94,10 +94,12 @@ spec:
       write: true
       owner: true
 ---
-# --- zipline -> zipline (MINTED, not imported; back-fill 1Password after Ready) ---
-# secretTemplate emits a zipline-s3 secret carrying access key + secret + endpoint +
-# bucket, shaped for the keys the HelmRelease's secretKeyRefs expect. Once Ready,
-# copy ACCESS_KEY_ID/SECRET_ACCESS_KEY into 1Password and converge to importKey.
+# --- zipline -> zipline (now IMPORTED, same as the rest) ---
+# Originally minted (zipline had no prior S3); its generated creds were copied into
+# 1Password (ZIPLINE_S3_*) and it now imports them via garage-import-zipline. The
+# imported creds equal the minted ones, so this is a no-op on the operated cluster.
+# secretTemplate is RETAINED: it's how the operator writes the creds to the zipline-s3
+# secret the HelmRelease consumes -- importKey sets the creds, secretTemplate emits them.
 apiVersion: garage.rajsingh.info/v1beta1
 kind: GarageKey
 metadata:
@@ -106,6 +108,9 @@ metadata:
 spec:
   clusterRef:
     name: garage-operated
+  importKey:
+    secretRef:
+      name: garage-import-zipline
   bucketPermissions:
     - bucketRef:
         name: zipline
