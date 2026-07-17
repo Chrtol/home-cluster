@@ -89,7 +89,10 @@ spec:
         backend: s3
         s3:
           bucket: tempo-traces
-          endpoint: garage.database.svc.cluster.local:3900
+          # Cutover to the operator-managed cluster (garage-operated). Backend-only
+          # (no browser path), so the internal svc DNS keeps all trace writes in-cluster.
+          # Creds are identical (imported) -> revert = point back at garage.database.svc.
+          endpoint: garage-operated.database.svc.cluster.local:3900
           region: homelab
           insecure: true
           forcepathstyle: true
