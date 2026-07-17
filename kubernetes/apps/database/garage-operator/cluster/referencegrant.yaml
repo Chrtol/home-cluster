@@ -1,0 +1,21 @@
+---
+# Authorises apps in other namespaces to provision against the garage-operated cluster
+# via the s3-bucket component (kubernetes/components/s3-bucket). Each app's GarageBucket +
+# GarageKey live in the app's own namespace and reference this cluster in `database` by
+# clusterRef; without this grant the operator rejects those cross-namespace references.
+#
+# Add a namespace here when a new namespace first adopts the s3-bucket component.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageReferenceGrant
+metadata:
+  name: allow-app-namespaces
+  namespace: database
+spec:
+  from:
+    - kind: GarageBucket
+      namespace: default
+    - kind: GarageKey
+      namespace: default
+  to:
+    - kind: GarageCluster
+      name: garage-operated

@@ -11,3 +11,5 @@ resources:
   - ./keys.yaml
   # P5: public + internal S3 routes for browser-reachable cutover (e.g. Outline)
   - ./httproute.yaml
+  # P7: allow app namespaces to provision buckets/keys via the s3-bucket component
+  - ./referencegrant.yaml

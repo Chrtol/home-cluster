@@ -60,15 +60,7 @@ spec:
   clusterRef:
     name: garage-operated
   globalAlias: postgres-wal
----
-# Brand-new bucket -- Zipline was the original trigger for this migration and had
-# no working S3 before. Created empty; wired up in P5 (last app to cut over).
-apiVersion: garage.rajsingh.info/v1beta1
-kind: GarageBucket
-metadata:
-  name: zipline
-  namespace: database
-spec:
-  clusterRef:
-    name: garage-operated
-  globalAlias: zipline
+# NOTE: zipline's bucket/key are NOT here -- they're owned by the s3-bucket component
+# in zipline's own namespace (default), created via APP/S3_BUCKET substitutions. See
+# kubernetes/components/s3-bucket. Keeping it here too would collide on the "zipline"
+# global alias (one owner per alias).

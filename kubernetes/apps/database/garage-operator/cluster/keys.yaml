@@ -93,37 +93,6 @@ spec:
       read: true
       write: true
       owner: true
----
-# --- zipline -> zipline (now IMPORTED, same as the rest) ---
-# Originally minted (zipline had no prior S3); its generated creds were copied into
-# 1Password (ZIPLINE_S3_*) and it now imports them via garage-import-zipline. The
-# imported creds equal the minted ones, so this is a no-op on the operated cluster.
-# secretTemplate is RETAINED: it's how the operator writes the creds to the zipline-s3
-# secret the HelmRelease consumes -- importKey sets the creds, secretTemplate emits them.
-apiVersion: garage.rajsingh.info/v1beta1
-kind: GarageKey
-metadata:
-  name: zipline
-  namespace: database
-spec:
-  clusterRef:
-    name: garage-operated
-  importKey:
-    secretRef:
-      name: garage-import-zipline
-  bucketPermissions:
-    - bucketRef:
-        name: zipline
-      read: true
-      write: true
-      owner: true
-  secretTemplate:
-    name: zipline-s3
-    includeEndpoint: true
-    includeRegion: true
-    includeBucketName: true
-    accessKeyIdKey: ACCESS_KEY_ID
-    secretAccessKeyKey: SECRET_ACCESS_KEY
-    endpointKey: ENDPOINT
-    regionKey: REGION
-    bucketNameKey: BUCKET
+# NOTE: zipline's key is NOT here -- it's owned by the s3-bucket component in zipline's
+# own namespace (default), which mints a fresh key + writes zipline-s3-credentials. See
+# kubernetes/components/s3-bucket. (Also removed the garage-import-zipline ExternalSecret.)

@@ -1,0 +1,57 @@
+---
+# S3 bucket + credentials for an app, provisioned declaratively on the operator-managed
+# Garage cluster (garage-operated in the database namespace). Replaces the old Job/CLI/
+# helper-image version (which never worked -- phantom garage-kubectl image).
+#
+# Both CRs live in the APP's namespace (${NAMESPACE}) and reference the GarageCluster in
+# `database` via clusterRef. That cross-namespace reference is authorised by the
+# GarageReferenceGrant in database (see kubernetes/apps/database/garage-operator/cluster/
+# referencegrant.yaml), which must list ${NAMESPACE} as a permitted source.
+#
+# Inputs (postBuild.substitute):  APP, NAMESPACE, S3_BUCKET
+# Output: a `${APP}-s3-credentials` secret (keys ACCESS_KEY/SECRET_KEY/BUCKET/ENDPOINT/
+#         REGION) in ${NAMESPACE}, ready to secretKeyRef from the app's HelmRelease.
+#
+# The bucket, with a global alias = the requested name so apps address it by name.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: ${APP}
+  namespace: ${NAMESPACE}
+spec:
+  clusterRef:
+    name: garage-operated
+    namespace: database
+  globalAlias: ${S3_BUCKET}
+---
+# A per-app key the operator MINTS (fresh creds -- new apps have no prior key to import),
+# granted read/write/owner on the bucket above. secretTemplate emits the credentials
+# secret in this namespace with the exact keys the old component produced, so consuming
+# HelmReleases need no change: ACCESS_KEY / SECRET_KEY / BUCKET / ENDPOINT / REGION.
+# ENDPOINT is the INTERNAL operated service -- fine for server-side S3 (all apps on this
+# component upload/serve S3 server-side, never redirecting the browser to the bucket).
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: ${APP}
+  namespace: ${NAMESPACE}
+spec:
+  clusterRef:
+    name: garage-operated
+    namespace: database
+  bucketPermissions:
+    - bucketRef:
+        name: ${APP}
+      read: true
+      write: true
+      owner: true
+  secretTemplate:
+    name: ${APP}-s3-credentials
+    accessKeyIdKey: ACCESS_KEY
+    secretAccessKeyKey: SECRET_KEY
+    includeBucketName: true
+    bucketNameKey: BUCKET
+    includeEndpoint: true
+    endpointKey: ENDPOINT
+    includeRegion: true
+    regionKey: REGION

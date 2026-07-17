@@ -11,7 +11,9 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   # cnpg    -> init-db initContainer + db.home.arpa/postgres pod label (5432 access)
-  # s3-bucket -> creates the Garage bucket + ${APP}-s3-credentials secret
+  # s3-bucket -> GarageBucket + GarageKey on garage-operated (operator-managed);
+  #             emits ${APP}-s3-credentials in this namespace. Needs the reference
+  #             grant in database allowing default -> garage-operated.
   # oidc-application -> declaratively creates the Authentik OAuth2 provider/app
   # gatus/external   -> external uptime check
   components:
@@ -25,7 +27,9 @@ spec:
       namespace: database
     - name: authentik
       namespace: security
-    - name: garage
+    # the operator cluster (+ its reference grant) must exist before the s3-bucket
+    # component's GarageBucket/GarageKey in this namespace can reference it
+    - name: garage-operated-cluster
       namespace: database
   path: "./kubernetes/apps/default/zipline/app"
   postBuild:
