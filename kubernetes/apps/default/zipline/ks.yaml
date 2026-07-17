@@ -35,10 +35,10 @@ spec:
       # cnpg component
       DB_OP_ITEM: *app
       DB_PASS_FIELD: ZIPLINE_POSTGRES_PASS
-      # s3-bucket component (Garage on the NAS)
+      # s3-bucket component (Garage on the NAS). No CORS needed -- Zipline uploads
+      # to S3 server-side (PutObject from its backend), not browser-direct.
       NAMESPACE: *namespace
       S3_BUCKET: zipline
-      CORS_ORIGINS: '"https://zipline.${SECRET_DOMAIN}"'
       # oidc-application component (Authentik)
       SUBDOMAIN: zipline
       GROUP: bp-zipline-users
