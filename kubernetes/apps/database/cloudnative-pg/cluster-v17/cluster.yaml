@@ -108,8 +108,13 @@ spec:
         compression: bzip2
         maxParallel: 2
       destinationPath: s3://postgres-wal/
-      endpointURL: http://garage.database.svc.cluster.local:3900
-      serverName: &currentCluster postgres17-v1
+      # Cutover to the operator-managed cluster (garage-operated), internal svc DNS --
+      # backend-only, keeps WAL/backup traffic in-cluster. serverName bumped v1 -> v2 so
+      # a FRESH backup lineage starts on the new (empty) bucket; the old postgres17-v1
+      # base backups + WAL stay intact on the OLD cluster as a fallback recovery source
+      # until retired (P7), gated behind a verified fresh base backup on garage-operated.
+      endpointURL: http://garage-operated.database.svc.cluster.local:3900
+      serverName: &currentCluster postgres17-v2
       s3Credentials:
         accessKeyId:
           name: cloudnative-pg-secret
