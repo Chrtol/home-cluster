@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app zipline
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  # cnpg    -> init-db initContainer + db.home.arpa/postgres pod label (5432 access)
+  # s3-bucket -> creates the Garage bucket + ${APP}-s3-credentials secret
+  # oidc-application -> declaratively creates the Authentik OAuth2 provider/app
+  # gatus/external   -> external uptime check
+  components:
+    - ../../../../components/cnpg
+    - ../../../../components/s3-bucket
+    - ../../../../components/oidc-application
+    - ../../../../components/gatus/external
+  dependsOn:
+    # the actual Postgres cluster, not just the operator -- init-db needs it up
+    - name: cloudnative-pg-cluster-v17
+      namespace: database
+    - name: authentik
+      namespace: security
+    - name: garage
+      namespace: database
+  path: "./kubernetes/apps/default/zipline/app"
+  postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: zipline
+      # cnpg component
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: ZIPLINE_POSTGRES_PASS
+      # s3-bucket component (Garage on the NAS)
+      NAMESPACE: *namespace
+      S3_BUCKET: zipline
+      CORS_ORIGINS: '"https://zipline.${SECRET_DOMAIN}"'
+      # oidc-application component (Authentik)
+      SUBDOMAIN: zipline
+      GROUP: bp-zipline-users
+      DESCRIPTION: "Self-hosted ShareX/file upload server"
+      DISPLAY_NAME: Zipline
+      REDIRECT_PATH: /api/auth/oauth/oidc
+      # Generate the client-creds secret in this namespace so the pod can
+      # secretKeyRef it directly (default is the security namespace).
+      OIDC_SECRET_NAMESPACE: default
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 10m

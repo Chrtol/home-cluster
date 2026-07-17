@@ -1,0 +1,132 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app zipline
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+  values:
+    controllers:
+      zipline:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/diced/zipline
+              tag: 4.6.4@sha256:3e3a57520e0bdf614b74676c4fe0f14c430215b6f659133ce108edc54a167a8c
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              CORE_PORT: &port 3000
+              CORE_HOSTNAME: 0.0.0.0
+              # Generate absolute https links (behind the gateway) for shares.
+              CORE_RETURN_HTTPS_URLS: "true"
+              # Object storage: Garage S3 (on the NAS).
+              DATASOURCE_TYPE: s3
+              DATASOURCE_S3_FORCE_PATH_STYLE: "true"
+              # OIDC: allow first-login to auto-provision the account and send
+              # users straight to Authentik instead of the local login form.
+              FEATURES_OAUTH_REGISTRATION: "true"
+              OAUTH_BYPASS_LOCAL_LOGIN: "false"
+              # Client id/secret remapped from the component-generated secret.
+              OAUTH_OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-oidc-authentik-application
+                    key: clientID
+              OAUTH_OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-oidc-authentik-application
+                    key: clientSecret
+              # S3 creds/bucket/endpoint remapped from the s3-bucket secret.
+              DATASOURCE_S3_ACCESS_KEY_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-s3-credentials
+                    key: ACCESS_KEY
+              DATASOURCE_S3_SECRET_ACCESS_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-s3-credentials
+                    key: SECRET_KEY
+              DATASOURCE_S3_BUCKET:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-s3-credentials
+                    key: BUCKET
+              DATASOURCE_S3_ENDPOINT:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-s3-credentials
+                    key: ENDPOINT
+              DATASOURCE_S3_REGION:
+                valueFrom:
+                  secretKeyRef:
+                    name: zipline-s3-credentials
+                    key: REGION
+            # CORE_SECRET, DATABASE_URL, and the static OAUTH_OIDC_* URLs.
+            envFrom:
+              - secretRef:
+                  name: zipline-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["zipline.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      # Zipline buffers uploads to a temp dir before shipping to S3.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

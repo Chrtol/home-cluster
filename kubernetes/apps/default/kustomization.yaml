@@ -30,3 +30,4 @@ resources:
   - ./node-red/ks.yaml
   - ./postiz/ks.yaml
   - ./legal/ks.yaml
+  - ./zipline/ks.yaml
