@@ -9,6 +9,6 @@ resources:
   - ./cloudnative-pg/ks.yaml
   - ./pgadmin/ks.yaml
   - ./dragonfly/ks.yaml
-  - ./garage/ks.yaml
-  - ./garage-operator/ks.yaml
+  - ./garage/operator/ks.yaml
+  - ./garage/webui/ks.yaml
   - ./mariadb-operator/ks.yaml

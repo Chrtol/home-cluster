@@ -5,7 +5,7 @@
 #
 # Both CRs live in the APP's namespace (${NAMESPACE}) and reference the GarageCluster in
 # `database` via clusterRef. That cross-namespace reference is authorised by the
-# GarageReferenceGrant in database (see kubernetes/apps/database/garage-operator/cluster/
+# GarageReferenceGrant in database (see kubernetes/apps/database/garage/operator/cluster/
 # referencegrant.yaml), which must list ${NAMESPACE} as a permitted source.
 #
 # Inputs (postBuild.substitute):  APP, NAMESPACE, S3_BUCKET

@@ -1,0 +1,30 @@
+---
+# Minimal Garage config the garage-webui image mounts at /etc/garage/config.toml.
+# The UI actually drives everything over the admin API (API_BASE_URL + API_ADMIN_KEY);
+# this file only supplies the static cluster details it displays. Values mirror the
+# operator-managed garage-operated cluster (single node, region homelab, s3 root domain).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config.toml
+  namespace: database
+data:
+  config.toml: |
+    metadata_dir = "/mnt/meta"
+    data_dir = "/mnt/data"
+    replication_factor = 1
+    consistency_mode = "consistent"
+    rpc_bind_addr = "0.0.0.0:3901"
+    rpc_public_addr = "garage-operated.database.svc.cluster.local:3901"
+    # No rpc_secret here: the webui only talks to the admin API (token via env), it
+    # never joins the RPC mesh, so the real secret is deliberately not mounted.
+    rpc_secret = "0000000000000000000000000000000000000000000000000000000000000000"
+    [s3_api]
+    s3_region = "homelab"
+    api_bind_addr = "0.0.0.0:3900"
+    root_domain = ".s3.${SECRET_DOMAIN}"
+    [s3_web]
+    bind_addr = "0.0.0.0:3902"
+    root_domain = ".web.${SECRET_DOMAIN}"
+    [admin]
+    api_bind_addr = "0.0.0.0:3903"

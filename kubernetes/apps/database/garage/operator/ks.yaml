@@ -14,7 +14,7 @@ spec:
     # conversion/admission webhooks are cert-manager backed
     - name: cert-manager
       namespace: cert-manager
-  path: "./kubernetes/apps/database/garage-operator/app"
+  path: "./kubernetes/apps/database/garage/operator/app"
   prune: true
   sourceRef:
     kind: GitRepository
@@ -39,7 +39,7 @@ spec:
     # the operator + its CRDs/webhooks must be up before we apply a GarageCluster
     - name: garage-operator
       namespace: database
-  path: "./kubernetes/apps/database/garage-operator/cluster"
+  path: "./kubernetes/apps/database/garage/operator/cluster"
   prune: true
   sourceRef:
     kind: GitRepository
