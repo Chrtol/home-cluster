@@ -14,7 +14,11 @@
 #     CORS_SECRET_NAME + CORS_ACCESS_KEY_KEY + CORS_SECRET_KEY_KEY.
 #
 # Inputs (postBuild.substitute):
-#   REQUIRED: APP, NAMESPACE, CORS_ORIGIN, S3_BUCKET
+#   REQUIRED: APP, NAMESPACE, S3_BUCKET, CORS_SUBDOMAIN
+#             The origin is built as https://${CORS_SUBDOMAIN}.${SECRET_DOMAIN}. We pass
+#             the SUBDOMAIN (not the full origin) because Flux postBuild does NOT recurse:
+#             a nested ${SECRET_DOMAIN} inside a `substitute:` value is left literal. Here
+#             ${SECRET_DOMAIN} sits directly in the manifest, so cluster-secrets expands it.
 #   OPTIONAL: CORS_SECRET_NAME  (default ${APP}-s3-credentials)
 #             CORS_ACCESS_KEY_KEY (default ACCESS_KEY)
 #             CORS_SECRET_KEY_KEY (default SECRET_KEY)
@@ -62,21 +66,27 @@ spec:
             - name: ENDPOINT
               value: "${CORS_ENDPOINT:=http://garage-operated.database.svc.cluster.local:3900}"
             - name: CORS_ORIGIN
-              value: "${CORS_ORIGIN}"
+              # Built here so ${SECRET_DOMAIN} (a cluster-secrets substituteFrom var)
+              # expands directly -- avoids Flux's non-recursive nested-substitution gap.
+              value: "https://${CORS_SUBDOMAIN}.${SECRET_DOMAIN}"
           command:
             - /bin/sh
             - -c
+            # Build the CORS JSON from the CORS_ORIGIN env var at RUNTIME (shell expands
+            # $CORS_ORIGIN, not Flux). The heredoc references only shell env vars set on
+            # the container above, so there are no leftover ${...} tokens for the shell
+            # to choke on under `set -u`.
             - |
               set -eu
-              cat > /tmp/cors.json <<EOF
+              cat > /tmp/cors.json <<JSON
               {"CORSRules":[{
-                "AllowedOrigins":["${CORS_ORIGIN}"],
+                "AllowedOrigins":["$CORS_ORIGIN"],
                 "AllowedMethods":["GET","PUT","POST","DELETE","HEAD"],
                 "AllowedHeaders":["*"],
                 "ExposeHeaders":["ETag"],
                 "MaxAgeSeconds":3600
               }]}
-              EOF
+              JSON
               aws --endpoint-url "$ENDPOINT" s3api put-bucket-cors \
                 --bucket "$BUCKET" --cors-configuration file:///tmp/cors.json
               echo "CORS applied to $BUCKET for origin $CORS_ORIGIN"

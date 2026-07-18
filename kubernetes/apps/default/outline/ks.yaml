@@ -39,7 +39,7 @@ spec:
       # not the component-default ${APP}-s3-credentials.
       NAMESPACE: *namespace
       S3_BUCKET: outline
-      CORS_ORIGIN: https://docs.${SECRET_DOMAIN}
+      CORS_SUBDOMAIN: docs
       CORS_SECRET_NAME: outline-secret
       CORS_ACCESS_KEY_KEY: AWS_ACCESS_KEY_ID
       CORS_SECRET_KEY_KEY: AWS_SECRET_ACCESS_KEY
