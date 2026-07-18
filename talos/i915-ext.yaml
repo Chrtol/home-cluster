@@ -1,4 +1,6 @@
 customization:
     systemExtensions:
         officialExtensions:
-            - siderolabs/i915
+            - siderolabs/i915             # Intel iGPU driver (Plex HW transcode)
+            - siderolabs/intel-ucode      # Intel CPU microcode
+            - siderolabs/qemu-guest-agent # Proxmox guest agent (clean shutdown/monitoring)
