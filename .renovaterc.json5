@@ -22,6 +22,18 @@
     '**/*.sops.*',
     'apps/**',
   ],
+  // ghcr.io requires a bearer token even for public images when resolving manifest
+  // digests; anonymous lookups get rate-limited, producing "No docker auth found"
+  // + "Could not determine new digest" for ghcr.io images (affine-graphql, cnpg).
+  // Token: a classic GitHub PAT with ONLY `read:packages`, stored PLAIN-TEXT as a
+  // secret named GHCR_TOKEN in the Mend dashboard (developer.mend.io -> Credentials
+  // -> ADD SECRET). Mend no longer supports encrypted blobs in the config file.
+  hostRules: [
+    {
+      matchHost: 'ghcr.io',
+      token: '{{ secrets.GHCR_TOKEN }}',
+    },
+  ],
   flux: {
     managerFilePatterns: [
       '/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/',
