@@ -22,20 +22,18 @@
     '**/*.sops.*',
     'apps/**',
   ],
-  // ghcr.io requires a bearer token even for public images when resolving manifest
-  // digests; anonymous lookups get rate-limited, producing "No docker auth found"
-  // + "Could not determine new digest" for ghcr.io images (affine-graphql, cnpg).
-  // Token: a classic GitHub PAT with ONLY `read:packages`, stored PLAIN-TEXT as a
-  // secret named GHCR_TOKEN in the Mend dashboard (developer.mend.io -> Credentials
-  // -> ADD SECRET). Mend no longer supports encrypted blobs in the config file.
+  // ghcr.io needs auth to resolve manifest digests; Mend's built-in app token does
+  // NOT work for ghcr.io, so a classic GitHub PAT (scope: read:packages) is required.
+  // GHCR's docker-registry auth is Basic-auth-shaped: it wants username (GitHub
+  // handle) + password (the PAT), NOT a bare bearer `token` — a bare token gets a
+  // 401 and Renovate logs "could not determine new digest". PAT stored PLAIN-TEXT as
+  // secret GHCR_TOKEN in the Mend dashboard (developer.mend.io -> Credentials).
   hostRules: [
     {
-      // hostType 'docker' binds this rule to the Docker datasource so the token is
-      // actually applied to ghcr.io manifest/digest lookups. Without it Renovate
-      // logs "No docker auth found" and skips the credential entirely.
       hostType: 'docker',
       matchHost: 'ghcr.io',
-      token: '{{ secrets.GHCR_TOKEN }}',
+      username: 'chrtol',
+      password: '{{ secrets.GHCR_TOKEN }}',
     },
   ],
   flux: {
