@@ -31,6 +31,12 @@ spec:
       runAsUser: 1000
       runAsGroup: 1000
       fsGroup: 1000
+      # Without this, fsGroup defaults to Always → kubelet recursively chowns EVERY
+      # file in the data volume on every pod start. On the NFS data PVC (10k+ files)
+      # that's a slow I/O walk each restart (seen: "Setting volume ownership ...
+      # processed 10460 files"). OnRootMismatch chowns only when the volume ROOT's
+      # ownership is wrong, so after the first pass restarts skip the recursive walk.
+      fsGroupChangePolicy: OnRootMismatch
     # K8s mounts secret files world-readable (0644); Garage refuses to start with a
     # group/world-readable rpc-secret unless this is set. Safe in-cluster: the secret
     # is namespace-isolated + RBAC-protected, and this only relaxes the check on the
