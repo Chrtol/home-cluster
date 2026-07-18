@@ -23,6 +23,9 @@ nodes:
   - hostname: "lenovo1"
     ipAddress: "10.0.30.100"
     installDisk: "/dev/sda"
+    nodeLabels:
+      topology.kubernetes.io/region: home
+      topology.kubernetes.io/zone: home
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/95d432d6bb450a67e801a6ae77c96a67e38820b62ba4159ae7e997e1695207f7
@@ -44,6 +47,9 @@ nodes:
   - hostname: "lenovo2"
     ipAddress: "10.0.30.101"
     installDisk: "/dev/sda"
+    nodeLabels:
+      topology.kubernetes.io/region: home
+      topology.kubernetes.io/zone: home
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/95d432d6bb450a67e801a6ae77c96a67e38820b62ba4159ae7e997e1695207f7
@@ -65,6 +71,9 @@ nodes:
   - hostname: "dell1"
     ipAddress: "10.0.30.102"
     installDisk: "/dev/sda"
+    nodeLabels:
+      topology.kubernetes.io/region: home
+      topology.kubernetes.io/zone: home
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/95d432d6bb450a67e801a6ae77c96a67e38820b62ba4159ae7e997e1695207f7
