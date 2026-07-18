@@ -40,7 +40,8 @@ Conventions that apply to every component:
 | `oidc-application` | Authentik OIDC provider + groups | consume generated secret |
 | `proxy-application` | Authentik proxy provider | none |
 | `ext-auth` | HTTPRoute + Envoy ext-auth via Authentik | none (replaces app route) |
-| `s3-bucket` | Garage bucket + credentials | consume generated secret |
+| `s3-bucket` | Garage bucket + key (operator CRs) on garage-operated | consume `${APP}-s3-credentials` |
+| `s3-bucket/cors` | PutBucketCors Job (browser-upload apps) | opt-in add-on; set `CORS_SUBDOMAIN` |
 | `repos/app-template` | app-template OCIRepository | `chartRef` |
 | `common` | namespace + cluster secrets | used by namespace kustomizations |
 
@@ -247,17 +248,39 @@ hostname.
 
 ## `s3-bucket`
 
-Declarative Garage bucket: a Job (idempotent) creates the bucket + access key
-and writes secret `${APP}-s3-credentials` (`ACCESS_KEY`, `SECRET_KEY`, `BUCKET`,
-`ENDPOINT`, `REGION`). The component also renders `${APP}-garage-cli` (the Garage
-CLI config incl. the RPC secret) into the app namespace so the Job is
-self-contained and runs from ANY namespace — no cross-namespace ConfigMap mount,
-no manual `garage-admin` key.
+Declarative Garage bucket on the operator-managed cluster (`garage-operated` in
+`database`). Emits a `GarageBucket` + `GarageKey` (operator CRs) in the app's own
+namespace; the `GarageKey`'s `secretTemplate` writes `${APP}-s3-credentials`
+(`ACCESS_KEY`, `SECRET_KEY`, `BUCKET`, `ENDPOINT`, `REGION`) there. No Job, no CLI
+image, no RPC secret — the operator does everything. (This replaced the old
+Job/`garage-kubectl`-image version, which never worked.)
 
-Required: `APP`, `NAMESPACE`, `S3_BUCKET`. Needs Garage running and a 1Password
-`garage` item with `GARAGE_RPC_SECRET`. No CORS is configured (apps here upload
-server-side). For multiple buckets, instantiate the component once per bucket via
-separate Kustomizations with distinct `APP` values.
+Required: `APP`, `NAMESPACE`, `S3_BUCKET`. Prereqs:
+- The operator + `garage-operated` cluster must be up (`dependsOn: garage-operated-cluster`).
+- A `GarageReferenceGrant` in `database` must permit the app's namespace to reference
+  the cluster cross-namespace — see `garage/operator/cluster/referencegrant.yaml`
+  (add the namespace there when a new namespace first adopts this component).
+
+The key is MINTED (fresh creds) — for new apps with no prior key. The `ENDPOINT` is
+the INTERNAL operated service, so it's for **server-side** S3 (upload/serve from the
+app backend). Multiple buckets = instantiate once per bucket with distinct `APP`.
+
+### `s3-bucket/cors` (optional add-on)
+
+Apps whose **browser** uploads directly to S3 (presigned PUT, e.g. Outline) trigger a
+CORS preflight the bucket must allow. The `GarageBucket` CRD has no CORS field, so
+import `../../../../components/s3-bucket/cors` too: it runs a `PutBucketCors` Job
+(stock `aws-cli`, the app's own `owner`-scoped key — no admin token needed) that
+self-heals on reconcile.
+
+Extra required: `CORS_SUBDOMAIN` (origin is built as `https://${CORS_SUBDOMAIN}.${SECRET_DOMAIN}`
+— pass the SUBDOMAIN, not the full origin, because Flux `postBuild` does NOT expand a
+`${SECRET_DOMAIN}` nested inside a `substitute:` value).
+Optional overrides for non-component apps that keep creds in their own secret
+(e.g. Outline's `outline-secret` with `AWS_*` keys): `CORS_SECRET_NAME`,
+`CORS_ACCESS_KEY_KEY`, `CORS_SECRET_KEY_KEY`, `CORS_ENDPOINT`.
+Server-side-upload apps (tempo, zipline) and browser-GET-only apps (Kan — presigned
+GET is a CORS "simple request", no preflight) do NOT need this.
 
 ## `repos/app-template`
 

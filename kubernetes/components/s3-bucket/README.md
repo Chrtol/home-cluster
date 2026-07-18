@@ -1,60 +1,43 @@
 # S3 Bucket Component
 
-This component provides GitOps-friendly S3 bucket management for Garage, eliminating the need for manual CLI operations.
+Declarative S3 bucket + credentials for an app, provisioned on the operator-managed
+Garage cluster (`garage-operated` in the `database` namespace) via
+[rajsinghtech/garage-operator](https://github.com/rajsinghtech/garage-operator) CRs.
 
 ## How It Works
 
-Instead of manually SSH'ing into pods and running Garage CLI commands, this component:
+The component (`component.yaml`) emits two operator CRs in the **app's own namespace**:
 
-1. **Renders the Garage CLI config** (with the RPC secret from the 1Password
-   `garage` item) into the app's namespace via an ExternalSecret, so the setup
-   Job is self-contained and works from **any** namespace.
-2. **Automatically creates the S3 bucket + access key** when you deploy an app,
-   using the Garage CLI authenticated by that RPC secret.
-3. **Stores the credentials** in a `${APP}-s3-credentials` Kubernetes secret.
-4. **Is fully declarative** - just include the component and set variables.
+1. **`GarageBucket`** — the bucket, with `globalAlias: ${S3_BUCKET}`.
+2. **`GarageKey`** — a per-app access key (minted fresh), granted `read/write/owner`
+   on the bucket. Its `secretTemplate` writes **`${APP}-s3-credentials`** into the
+   app namespace with keys `ACCESS_KEY`, `SECRET_KEY`, `BUCKET`, `ENDPOINT`, `REGION` —
+   ready to `secretKeyRef` from the app's HelmRelease.
+
+No Job, no helper image, no RPC secret — the operator does everything. (This replaced
+an older Job/`garage-kubectl`-image version that never worked.)
 
 ## Prerequisites
 
-None beyond a running Garage and a 1Password `garage` item containing
-`GARAGE_RPC_SECRET` (already used by the Garage deployment itself). There is **no**
-manual `garage-admin` key to create — the component authenticates the CLI with the
-RPC secret it renders itself.
+- The operator + `garage-operated` cluster must be running. Depend on it:
+  `dependsOn: [{ name: garage-operated-cluster, namespace: database }]`.
+- A **`GarageReferenceGrant`** in `database` must permit the app's namespace to make a
+  cross-namespace reference to the cluster. See
+  `kubernetes/apps/database/garage/operator/cluster/referencegrant.yaml` — add the
+  namespace to its `from:` list when a new namespace first adopts this component.
+  (This grant is the operator's official mechanism for gating who may provision keys —
+  see garage-operator issue #93.)
 
-> Note: this component does **not** configure bucket CORS. Apps in this cluster
-> (Zipline, Outline, Tempo, …) upload to S3 **server-side**, so browser CORS is
-> unnecessary. If you ever add an app that uploads browser-direct-to-S3, set CORS
-> on that bucket separately.
-
-## Building the Helper Image
-
-The component uses a custom image with the Garage CLI + kubectl:
-
-## Building the Helper Image
-
-The component uses a custom image with Garage CLI, kubectl, and AWS CLI:
-
-```bash
-cd kubernetes/common/components/s3-bucket
-docker build -t ghcr.io/<your-github>/garage-kubectl:v1.3.0 .
-docker push ghcr.io/<your-github>/garage-kubectl:v1.3.0
-```
-
-## Usage Example
-
-After initial setup, creating S3 buckets is fully declarative:
+## Usage
 
 ```yaml
-# In your app's Kustomization
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: myapp
-  namespace: flux-system
+# In the app's Flux Kustomization (ks.yaml)
 spec:
-  path: ./kubernetes/apps/default/myapp/app
   components:
-    - ../../../../../common/components/s3-bucket
+    - ../../../../components/s3-bucket
+  dependsOn:
+    - name: garage-operated-cluster
+      namespace: database
   postBuild:
     substitute:
       APP: myapp
@@ -62,24 +45,39 @@ spec:
       S3_BUCKET: myapp-data
 ```
 
-This will automatically:
-- Create the `myapp-data` bucket
-- Generate access credentials
-- Store them in `myapp-s3-credentials` secret
+Produces the `myapp-data` bucket and a `myapp-s3-credentials` secret in `default`.
+The `ENDPOINT` is the **internal** operated service (`garage-operated.database.svc:3900`),
+so this is for **server-side** S3 access (the app backend uploads/serves objects).
 
-## Benefits
+For multiple buckets, instantiate the component once per bucket with distinct `APP`.
 
-- ✅ **GitOps-friendly**: Buckets defined in manifests
-- ✅ **Automated**: No manual CLI operations
-- ✅ **Secure**: Credentials stored in K8s secrets
-- ✅ **Idempotent**: Safe to run multiple times
-- ✅ **Uses your NAS storage**: Garage stores on your HDDs
+## Browser-direct uploads → `s3-bucket/cors`
 
-## Migration from Manual Buckets
+Apps whose **browser** uploads directly to S3 (presigned PUT) trigger a CORS preflight
+the bucket must allow. The `GarageBucket` CRD has no CORS field, so additionally import
+the **`s3-bucket/cors`** sub-component, which runs a `PutBucketCors` Job (stock
+`aws-cli`, using the app's own `owner`-scoped key — no admin token) that self-heals on
+reconcile:
 
-If you already have manually-created buckets, the component will:
-- Skip bucket creation (won't duplicate)
-- Skip key creation (won't duplicate)
-- Only create the Kubernetes secret if missing
+```yaml
+  components:
+    - ../../../../components/s3-bucket
+    - ../../../../components/s3-bucket/cors
+  postBuild:
+    substitute:
+      APP: myapp
+      NAMESPACE: default
+      S3_BUCKET: myapp-data
+      CORS_SUBDOMAIN: myapp   # origin = https://${CORS_SUBDOMAIN}.${SECRET_DOMAIN}
+```
 
-This makes migration seamless - just add the component and it will manage existing resources.
+Pass the **subdomain**, not the full origin: Flux `postBuild` does not expand a
+`${SECRET_DOMAIN}` nested inside a `substitute:` value, so the Job builds the origin
+from `${CORS_SUBDOMAIN}` + a direct `${SECRET_DOMAIN}` reference instead.
+
+Apps that keep S3 creds in their own secret (not `${APP}-s3-credentials`) can override
+`CORS_SECRET_NAME`, `CORS_ACCESS_KEY_KEY`, `CORS_SECRET_KEY_KEY`, `CORS_ENDPOINT`
+(e.g. Outline uses `outline-secret` with `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
+
+Server-side-upload apps (Tempo, Zipline) and browser-**GET**-only apps (Kan — a
+presigned GET is a CORS "simple request", no preflight) do **not** need the cors add-on.
