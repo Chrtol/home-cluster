@@ -3,6 +3,13 @@
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_PATH
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
 #                      OIDC_SECRET_NAMESPACE (defaults to security - set to app namespace for direct secret access)
+#                      OIDC_INTERNAL_SUBDOMAIN (defaults to SUBDOMAIN) - registers a
+#                        SECOND redirect URI at
+#                        https://${OIDC_INTERNAL_SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}.
+#                        Set it when the app is reachable on a host different from
+#                        SUBDOMAIN (e.g. files.* external vs filebrowser.* internal).
+#                        Default duplicates the primary URI -> Authentik dedupes it,
+#                        so single-host apps are unaffected.
 # REDIRECT_PATH: The callback path for OIDC (e.g., /accounts/oidc/authentik/login/callback/)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-oidc

@@ -204,7 +204,24 @@ Creates an Authentik OIDC provider + application via blueprint, a
 Required: `APP`, `SUBDOMAIN`, `GROUP` (Authentik UI category), `DESCRIPTION`,
 `REDIRECT_PATH`. Optional: `DISPLAY_NAME` (defaults `${APP}`), `ICON_URL`,
 `OIDC_SECRET_NAMESPACE` (defaults `security`; set to the app namespace for
-direct secret access).
+direct secret access), `OIDC_INTERNAL_SUBDOMAIN` (defaults `${SUBDOMAIN}`;
+registers a **second** redirect URI at
+`https://${OIDC_INTERNAL_SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}`).
+
+Set `OIDC_INTERNAL_SUBDOMAIN` when the app is reachable on a host that differs
+from `SUBDOMAIN` — e.g. exposed on both gateways where the internal route uses a
+different hostname (`files.*` external vs `filebrowser.*` internal) and the app
+derives its OIDC callback from the request origin (Filebrowser Quantum does), so
+the internal host must be a registered redirect URI or login fails with
+`redirect_uri` mismatch. Left at its default it duplicates the primary URI, which
+Authentik dedupes (`redirect_uris` is a strict set) — so single-host apps are
+unaffected.
+
+Do NOT try to add a `groups` claim or an inherited admin group via component
+variables: the wrenix chart's static `scopes`/`groups` lists can't take
+colon/apostrophe-laden envsubst defaults (it breaks the Flux postBuild render with
+`YAMLToJSON: did not find expected key`). Add those through a per-app blueprint
+patch instead — see the `blueprint-patch.yaml` grant_types pattern.
 
 Consume in the app:
 
