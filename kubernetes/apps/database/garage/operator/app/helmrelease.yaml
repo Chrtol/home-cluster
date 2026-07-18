@@ -48,6 +48,10 @@ spec:
     resources:
       requests:
         cpu: 25m
-        memory: 128Mi
+        # Idle baseline is ~145Mi (already over the old 128Mi request); reconcile
+        # bursts spike higher. Request reserves for the baseline.
+        memory: 192Mi
       limits:
-        memory: 256Mi
+        # v0.6.28 OOMKilled (exit 137) against the old 256Mi limit during a reconcile
+        # spike. 512Mi gives headroom over the ~145Mi idle + burst.
+        memory: 512Mi
