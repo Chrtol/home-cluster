@@ -150,6 +150,22 @@
       },
     },
     {
+      // The operator ships as an OCI chart AND a separate image, and the HelmRelease
+      // pins image.tag explicitly (must match the chart). Group both so they can never
+      // bump independently -- a chart-only bump would silently leave the old image.
+      description: 'Garage Operator Group (chart + image in lockstep)',
+      groupName: 'Garage Operator',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        '/rajsinghtech(/charts)?/garage-operator/',
+      ],
+      group: {
+        commitMessageTopic: '{{{groupName}}} group',
+      },
+    },
+    {
       description: 'Auto-merge GitHub Actions',
       matchManagers: [
         'github-actions',
