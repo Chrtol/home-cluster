@@ -34,7 +34,11 @@ spec:
                 local repo_path=$1
                 echo "Unlocking $repo_path..."
                 export RESTIC_REPOSITORY="/repository$repo_path"
-                restic unlock || echo "No lock found or unlock failed for $repo_path"
+                # --remove-all: plain `unlock` won't clear a <30min lock left by a
+                # now-dead mover pod (different host → restic can't verify it stale),
+                # which wedges the VolSync forget/prune loop. This job only runs when
+                # no backup is active, so force-removing all locks is safe.
+                restic unlock --remove-all || echo "No lock found or unlock failed for $repo_path"
               }
 
               # Unlock all repositories
