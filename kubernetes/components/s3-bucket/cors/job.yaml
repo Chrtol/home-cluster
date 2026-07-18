@@ -39,7 +39,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: put-cors
-          image: docker.io/amazon/aws-cli:2.15.0
+          image: docker.io/amazon/aws-cli:2.36.2
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
