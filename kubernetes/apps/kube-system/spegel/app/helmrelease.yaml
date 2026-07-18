@@ -33,3 +33,17 @@ spec:
   valuesFrom:
     - kind: ConfigMap
       name: spegel-values
+  # The chart hardcodes `service.kubernetes.io/topology-mode: auto` on the registry
+  # Service and Helm values can't override it. On this single-zone flat cluster
+  # (all nodes zone=home, uneven CPU) topology hints can't be computed, so `auto`
+  # spams "TopologyAwareHintsDisabled: Insufficient Node information". This post-render
+  # patch removes the annotation after Helm templates it; Spegel routes cluster-wide.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Service
+              name: spegel-registry
+            patch: |
+              - op: remove
+                path: /metadata/annotations/service.kubernetes.io~1topology-mode

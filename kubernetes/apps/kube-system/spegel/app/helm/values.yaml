@@ -4,12 +4,6 @@ grafanaDashboard:
 service:
   registry:
     hostPort: 29999
-    annotations:
-      # Disable topology-aware routing. Single-zone flat cluster (all nodes zone=home)
-      # with uneven CPU can't build proportional zone hints, so the chart's default
-      # `auto` spams "TopologyAwareHintsDisabled: Insufficient Node information".
-      # Overriding to "" removes the hint request; Spegel routes cluster-wide (correct here).
-      service.kubernetes.io/topology-mode: ""
 serviceMonitor:
   enabled: true
 spegel:
