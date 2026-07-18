@@ -14,6 +14,11 @@ spec:
         - ../../../../components/cnpg
         - ../../../../components/dragonfly
         - ../../../../components/gatus/external
+        # Outline uploads images browser-direct to S3 (presigned PUT) -> the bucket needs
+        # a CORS rule for the docs origin. Applied via PutBucketCors (no GarageBucket CRD
+        # field for it). Outline manages S3 in outline-secret (AWS_* keys), so override
+        # the cred secret/keys from the component defaults.
+        - ../../../../components/s3-bucket/cors
   dependsOn:
     - name: cloudnative-pg
       namespace: database
@@ -30,6 +35,14 @@ spec:
       GATUS_SUBDOMAIN: docs
       DB_OP_ITEM: *app
       DB_PASS_FIELD: OUTLINE_POSTGRES_PASS
+      # s3-bucket/cors component -- Outline's creds live in outline-secret (AWS_* keys),
+      # not the component-default ${APP}-s3-credentials.
+      NAMESPACE: *namespace
+      S3_BUCKET: outline
+      CORS_ORIGIN: https://docs.${SECRET_DOMAIN}
+      CORS_SECRET_NAME: outline-secret
+      CORS_ACCESS_KEY_KEY: AWS_ACCESS_KEY_ID
+      CORS_SECRET_KEY_KEY: AWS_SECRET_ACCESS_KEY
     substituteFrom:
     - name: cluster-secrets
       kind: Secret

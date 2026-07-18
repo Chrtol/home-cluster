@@ -1,0 +1,88 @@
+---
+# Optional add-on to the s3-bucket component: applies an S3 CORS policy to a bucket on
+# garage-operated. Only needed for apps whose BROWSER uploads directly to S3 via presigned
+# PUT (e.g. Outline, Kan) -- those trigger a CORS preflight the bucket must allow.
+# Server-side-upload apps (tempo, zipline) don't import this.
+#
+# The GarageBucket CRD has no CORS field (operator v0.6.26), so CORS is applied out-of-band
+# via the S3 PutBucketCors API. This Job re-runs on every change (Flux force-replaces it)
+# so it self-heals if the bucket is recreated.
+#
+# Works for both cred patterns via defaults:
+#   - Component-based apps (${APP}-s3-credentials / ACCESS_KEY / SECRET_KEY): set nothing.
+#   - Non-component apps (e.g. Outline's outline-secret / AWS_ACCESS_KEY_ID / ...): override
+#     CORS_SECRET_NAME + CORS_ACCESS_KEY_KEY + CORS_SECRET_KEY_KEY.
+#
+# Inputs (postBuild.substitute):
+#   REQUIRED: APP, NAMESPACE, CORS_ORIGIN, S3_BUCKET
+#   OPTIONAL: CORS_SECRET_NAME  (default ${APP}-s3-credentials)
+#             CORS_ACCESS_KEY_KEY (default ACCESS_KEY)
+#             CORS_SECRET_KEY_KEY (default SECRET_KEY)
+#             CORS_ENDPOINT      (default http://garage-operated.database.svc.cluster.local:3900)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${APP}-s3-cors
+  namespace: ${NAMESPACE}
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: put-cors
+          image: docker.io/amazon/aws-cli:2.15.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ${CORS_SECRET_NAME:=${APP}-s3-credentials}
+                  key: ${CORS_ACCESS_KEY_KEY:=ACCESS_KEY}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ${CORS_SECRET_NAME:=${APP}-s3-credentials}
+                  key: ${CORS_SECRET_KEY_KEY:=SECRET_KEY}
+            - name: AWS_DEFAULT_REGION
+              value: homelab
+            - name: BUCKET
+              value: "${S3_BUCKET}"
+            - name: ENDPOINT
+              value: "${CORS_ENDPOINT:=http://garage-operated.database.svc.cluster.local:3900}"
+            - name: CORS_ORIGIN
+              value: "${CORS_ORIGIN}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cat > /tmp/cors.json <<EOF
+              {"CORSRules":[{
+                "AllowedOrigins":["${CORS_ORIGIN}"],
+                "AllowedMethods":["GET","PUT","POST","DELETE","HEAD"],
+                "AllowedHeaders":["*"],
+                "ExposeHeaders":["ETag"],
+                "MaxAgeSeconds":3600
+              }]}
+              EOF
+              aws --endpoint-url "$ENDPOINT" s3api put-bucket-cors \
+                --bucket "$BUCKET" --cors-configuration file:///tmp/cors.json
+              echo "CORS applied to $BUCKET for origin $CORS_ORIGIN"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
