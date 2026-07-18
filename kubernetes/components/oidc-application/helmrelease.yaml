@@ -3,11 +3,23 @@
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_PATH
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
 #                      OIDC_SECRET_NAMESPACE (defaults to security - set to app namespace for direct secret access)
+#                      OIDC_GROUPS_SCOPE — set to the Authentik groups scope-mapping name
+#                        ("authentik default OAuth Mapping: OpenID 'groups'") to emit a
+#                        `groups` claim in the token, so an app's native adminGroup /
+#                        group-gating can match. Defaults to a duplicate of the openid
+#                        mapping, which is a no-op (property_mappings is a deduplicated M2M).
+#                      OIDC_ADMIN_GROUP_PARENT — set to a parent group name (e.g.
+#                        "authentik Admins") to create a bp-${APP}-admins group that
+#                        INHERITS that parent, giving the app a dedicated admin group whose
+#                        members are exactly the parent's members. Defaults off: the
+#                        "admin" group slug falls back to bp-${APP}-users (no new group).
+#                        Pairs with OIDC_GROUPS_SCOPE — the app points its adminGroup at
+#                        "bp-${APP}-admins".
 # REDIRECT_PATH: The callback path for OIDC (e.g., /accounts/oidc/authentik/login/callback/)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-oidc
 #   - Application: ${DISPLAY_NAME} (display name) / ${APP} (slug)
-#   - Group: bp-${APP}-users
+#   - Group: bp-${APP}-users  (+ optional bp-${APP}-admins, see OIDC_ADMIN_GROUP_PARENT)
 #   - Secret: ${APP}-oidc-authentik-application (in OIDC_SECRET_NAMESPACE)
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -51,6 +63,10 @@ spec:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            # Opt-in groups claim. Default duplicates the openid mapping above,
+            # which collapses to nothing (property_mappings is a deduplicated
+            # M2M). Set OIDC_GROUPS_SCOPE to the groups mapping name to enable.
+            - name: "${OIDC_GROUPS_SCOPE:=authentik default OAuth Mapping: OpenID 'openid'}"
       application:
         name: "${DISPLAY_NAME:=${APP}}"  # Uses DISPLAY_NAME if provided, otherwise APP
         slug: "${APP}"  # Keep slug simple for compatibility
@@ -67,3 +83,16 @@ spec:
         # Bind authentik Admins for admin access to all apps
         - slug: "authentik Admins"
           parent: ""
+        # Dedicated per-app admin group. Apps that want native admin promotion set
+        # OIDC_ADMIN_GROUP_PARENT: "authentik Admins" so this group INHERITS that
+        # parent (its effective members == the parent's members), then target their
+        # own adminGroup: "bp-${APP}-admins". Left parentless by default: the group
+        # exists but has no members, so it's inert for apps that don't opt in. Pair
+        # with OIDC_GROUPS_SCOPE so the group name actually reaches the token.
+        - slug: "bp-${APP}-admins"
+          # Empty default renders parent: "" which the chart reads as falsy ->
+          # parent: null, same as the groups above. (Safe here: this is a Flux
+          # postBuild substitution inside a literally-quoted scalar, not a
+          # kustomize patch -- the quotes are preserved, so it stays "" not YAML
+          # null. The COMPONENT_USAGE empty-default caveat is about kustomize.)
+          parent: "${OIDC_ADMIN_GROUP_PARENT:=}"

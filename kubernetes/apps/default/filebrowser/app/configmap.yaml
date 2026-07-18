@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.2/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebrowser-config
+data:
+  # Filebrowser Quantum config. Passed via `-c`. Secrets (OIDC client id/secret,
+  # JWT) are injected at runtime through FILEBROWSER_* env vars, which override
+  # anything set here -- so no credentials live in git.
+  config.yaml: |
+    server:
+      port: 80
+      baseURL: "/"
+      # bbolt database file -- lives on the Ceph RBD PVC (persistent state).
+      database: "/config/database.db"
+      # Thumbnail/preview cache. Quantum speed-tests this dir at startup and
+      # FATALS if it's slow, so it must be on fast block storage (Ceph RBD),
+      # never NFS.
+      cacheDir: "/config/cache"
+      cacheDirCleanup: true
+      logging:
+        - levels: "info|warning|error"
+      sources:
+        - path: "/srv"
+          name: "media"
+          config:
+            defaultEnabled: true
+    auth:
+      # OIDC-only: send users straight to Authentik, no local login form.
+      methods:
+        password:
+          enabled: false
+        oidc:
+          enabled: true
+          # createUser provisions a Filebrowser account on first Authentik login.
+          createUser: true
+          # clientId/clientSecret come from FILEBROWSER_OIDC_CLIENT_ID / _SECRET
+          # env (the oidc-application component's generated secret).
+          issuerUrl: "https://sso.${SECRET_DOMAIN}/application/o/filebrowser/"
+          # Request the groups claim. The oidc-application component emits it via
+          # OIDC_GROUPS_SCOPE (set in ks.yaml), so the token carries the user's
+          # Authentik group names in the `groups` claim.
+          scopes: "openid email profile groups"
+          groupsClaim: "groups"
+          # bp-filebrowser-admins inherits "authentik Admins" (via
+          # OIDC_ADMIN_GROUP_PARENT in ks.yaml), so every Authentik admin appears
+          # in this group in the token and is promoted to a Filebrowser admin.
+          adminGroup: "bp-filebrowser-admins"
+    userDefaults:
+      darkMode: true
+      permissions:
+        admin: false
+        modify: false
+        share: false
+        api: false
+        download: true
+        create: false
+        delete: false

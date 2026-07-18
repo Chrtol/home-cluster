@@ -31,3 +31,4 @@ resources:
   - ./postiz/ks.yaml
   - ./legal/ks.yaml
   - ./zipline/ks.yaml
+  - ./filebrowser/ks.yaml

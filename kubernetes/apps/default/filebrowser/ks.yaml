@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app filebrowser
+  namespace: &namespace default
+spec:
+  targetNamespace: *namespace
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  timeout: 5m
+  path: "./kubernetes/apps/default/filebrowser/app"
+  # ceph-rbd         -> RWO PVC for the bbolt DB + thumbnail cache (both must be on
+  #                     fast block storage; Quantum speed-tests cacheDir and fatals if slow)
+  # oidc-application -> Authentik OIDC provider/app/group; creds land in
+  #                     filebrowser-oidc-authentik-application, consumed via env override
+  # volsync          -> Restic backup of the config PVC (holds the only persistent state)
+  # gatus/external   -> external uptime check
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/oidc-application
+    - ../../../../components/volsync
+    - ../../../../components/gatus/external
+  dependsOn:
+    - name: authentik
+      namespace: security
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: false
+  postBuild:
+    substitute:
+      APP: *app
+      CEPH_RBD_CAPACITY: 2Gi
+      GATUS_SUBDOMAIN: files
+      # oidc-application component (Authentik). GROUP is the Authentik app UI
+      # category (not the access group -- that's the auto-created
+      # bp-filebrowser-users, always bound alongside "authentik Admins").
+      SUBDOMAIN: files
+      GROUP: "Media"
+      DISPLAY_NAME: Filebrowser
+      DESCRIPTION: "Web file browser for the media library"
+      # Filebrowser Quantum OIDC callback path
+      REDIRECT_PATH: /api/auth/oidc/callback
+      # Emit a `groups` claim and give Filebrowser a dedicated admin group that
+      # inherits "authentik Admins". Filebrowser's config points adminGroup at
+      # bp-filebrowser-admins, so Authentik admins become Filebrowser admins.
+      OIDC_GROUPS_SCOPE: "authentik default OAuth Mapping: OpenID 'groups'"
+      OIDC_ADMIN_GROUP_PARENT: "authentik Admins"
+      # Generate the client-creds secret in this namespace so the pod can
+      # secretKeyRef it directly (default is the security namespace).
+      OIDC_SECRET_NAMESPACE: default
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret

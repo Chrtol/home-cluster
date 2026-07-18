@@ -1,0 +1,116 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app filebrowser
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  values:
+    controllers:
+      filebrowser:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/gtsteffaniak/filebrowser
+              tag: 1.4.0-stable@sha256:2cd949cd06c058576773c5b8400c854478a64c4f364b1e2bea275819847f099b
+            # Point Quantum at the mounted config file.
+            args: ["-c", "/config.yaml"]
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # OIDC client creds from the oidc-application component secret.
+              # These FILEBROWSER_* env vars override the config.yaml values, so
+              # no secret ever lives in git.
+              FILEBROWSER_OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: filebrowser-oidc-authentik-application
+                    key: clientID
+              FILEBROWSER_OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: filebrowser-oidc-authentik-application
+                    key: clientSecret
+            envFrom:
+              # FILEBROWSER_JWT_TOKEN_SECRET
+              - secretRef:
+                  name: filebrowser-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: &port 80
+    route:
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["files.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      # bbolt DB + thumbnail cache on Ceph RBD (the ceph-rbd component's PVC).
+      config:
+        existingClaim: *app
+        globalMounts:
+          - path: /config
+      # The media library to browse -- TrueNAS over NFS (same share the media
+      # apps mount). Read-write so the browser can manage files.
+      media:
+        type: nfs
+        server: nas.${SECRET_DOMAIN}
+        path: /mnt/truenas/cf-nas/data
+        globalMounts:
+          - path: /srv
+            readOnly: false
+      # config.yaml rendered from the ConfigMap, mounted read-only.
+      config-file:
+        type: configMap
+        name: filebrowser-config
+        globalMounts:
+          - path: /config.yaml
+            subPath: config.yaml
+            readOnly: true
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
