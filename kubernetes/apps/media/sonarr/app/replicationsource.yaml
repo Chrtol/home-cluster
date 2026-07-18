@@ -12,6 +12,8 @@ spec:
     storageClassName: csi-rbd-sc
     volumeSnapshotClassName: csi-rbd-sc
     repository: sonarr-secret
+    # Bump to force `restic unlock` before backup, clearing a stale repo lock.
+    unlock: "1"
     retain:
       daily: 7
       weekly: 4

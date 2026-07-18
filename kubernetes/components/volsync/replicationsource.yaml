@@ -13,6 +13,9 @@ spec:
     volumeSnapshotClassName: "${VOLSYNC_STORAGECLASS:=csi-rbd-sc}"
     repository: ${APP}-volsync-secret
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:=1Gi}"
+    # Bump VOLSYNC_UNLOCK to make the mover run `restic unlock` before backing up,
+    # clearing a stale repo lock left by a mover that died mid-run.
+    unlock: "${VOLSYNC_UNLOCK:=1}"
     retain:
       daily: 7
       weekly: 4
