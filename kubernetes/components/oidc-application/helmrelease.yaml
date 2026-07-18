@@ -51,7 +51,18 @@ spec:
           clientType: "confidential"
           # clientID and clientSecret are auto-generated and stored in ${APP}-oidc-authentik-application secret
           redirectURL:
+          # Primary hostname (SUBDOMAIN). Also the launch URL.
           - "https://${SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}"
+          # Second redirect URI for apps reachable on a DIFFERENT host than
+          # SUBDOMAIN -- e.g. exposed on both gateways where the internal route
+          # uses a different hostname (files.* external vs filebrowser.* internal).
+          # Filebrowser derives its OIDC callback from the request origin, so
+          # without the internal host registered, internal logins fail with
+          # redirect_uri mismatch. Set OIDC_INTERNAL_SUBDOMAIN to that other host's
+          # subdomain to register it. Defaults to SUBDOMAIN, making this an exact
+          # duplicate of the line above -> Authentik dedupes it (redirect_uris is a
+          # set), so apps that don't set it are completely unaffected.
+          - "https://${OIDC_INTERNAL_SUBDOMAIN:=${SUBDOMAIN}}.${SECRET_DOMAIN}${REDIRECT_PATH}"
           tokenDuration: "minutes=5"
           signingKey: "namespace_security.secret_authentik-cert-tls.tls"
           scopes:

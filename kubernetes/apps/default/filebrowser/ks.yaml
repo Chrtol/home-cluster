@@ -47,6 +47,11 @@ spec:
       DESCRIPTION: "Web file browser for the media library"
       # Filebrowser Quantum OIDC callback path
       REDIRECT_PATH: /api/auth/oidc/callback
+      # Exposed on both gateways: external is files.* (SUBDOMAIN), internal route
+      # is filebrowser.* ({{ .Release.Name }}). Register the internal host too so
+      # OIDC login works from the internal URL (Filebrowser builds the callback
+      # from the request origin).
+      OIDC_INTERNAL_SUBDOMAIN: filebrowser
       # Generate the client-creds secret in this namespace so the pod can
       # secretKeyRef it directly (default is the security namespace).
       OIDC_SECRET_NAMESPACE: default
