@@ -30,6 +30,10 @@
   // -> ADD SECRET). Mend no longer supports encrypted blobs in the config file.
   hostRules: [
     {
+      // hostType 'docker' binds this rule to the Docker datasource so the token is
+      // actually applied to ghcr.io manifest/digest lookups. Without it Renovate
+      // logs "No docker auth found" and skips the credential entirely.
+      hostType: 'docker',
       matchHost: 'ghcr.io',
       token: '{{ secrets.GHCR_TOKEN }}',
     },
