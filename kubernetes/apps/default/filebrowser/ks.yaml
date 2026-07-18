@@ -47,11 +47,6 @@ spec:
       DESCRIPTION: "Web file browser for the media library"
       # Filebrowser Quantum OIDC callback path
       REDIRECT_PATH: /api/auth/oidc/callback
-      # Emit a `groups` claim and give Filebrowser a dedicated admin group that
-      # inherits "authentik Admins". Filebrowser's config points adminGroup at
-      # bp-filebrowser-admins, so Authentik admins become Filebrowser admins.
-      OIDC_GROUPS_SCOPE: "authentik default OAuth Mapping: OpenID 'groups'"
-      OIDC_ADMIN_GROUP_PARENT: "authentik Admins"
       # Generate the client-creds secret in this namespace so the pod can
       # secretKeyRef it directly (default is the security namespace).
       OIDC_SECRET_NAMESPACE: default

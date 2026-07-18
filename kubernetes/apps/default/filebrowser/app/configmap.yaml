@@ -38,15 +38,15 @@ data:
           # clientId/clientSecret come from FILEBROWSER_OIDC_CLIENT_ID / _SECRET
           # env (the oidc-application component's generated secret).
           issuerUrl: "https://sso.${SECRET_DOMAIN}/application/o/filebrowser/"
-          # Request the groups claim. The oidc-application component emits it via
-          # OIDC_GROUPS_SCOPE (set in ks.yaml), so the token carries the user's
-          # Authentik group names in the `groups` claim.
-          scopes: "openid email profile groups"
-          groupsClaim: "groups"
-          # bp-filebrowser-admins inherits "authentik Admins" (via
-          # OIDC_ADMIN_GROUP_PARENT in ks.yaml), so every Authentik admin appears
-          # in this group in the token and is promoted to a Filebrowser admin.
-          adminGroup: "bp-filebrowser-admins"
+          scopes: "openid email profile"
+          # NOTE: adminGroup matching requires the token to carry a `groups` claim,
+          # which the oidc-application component's provider does NOT emit (it only
+          # maps openid/email/profile). So admin-by-group is inert here -- the
+          # first OIDC user logs in as a normal user; promote them to admin once in
+          # Filebrowser's own settings. Left set to "authentik Admins" so that if a
+          # groups scope is ever added to the provider, Authentik admins promote
+          # automatically with no further change.
+          adminGroup: "authentik Admins"
     userDefaults:
       darkMode: true
       permissions:
