@@ -16,7 +16,7 @@ spec:
     cacheCapacity: 50Gi
     # Bump this value to force the mover to run `restic unlock` before backing up,
     # clearing a stale repo lock left by a mover that died mid-run (see restic-unlock).
-    unlock: "1"
+    unlock: "unlocked"
     retain:
       daily: 7
       weekly: 4

@@ -13,7 +13,7 @@ spec:
     volumeSnapshotClassName: csi-rbd-sc
     repository: radarr-secret
     # Bump to force `restic unlock` before backup, clearing a stale repo lock.
-    unlock: "1"
+    unlock: "unlocked"
     retain:
       daily: 7
       weekly: 4

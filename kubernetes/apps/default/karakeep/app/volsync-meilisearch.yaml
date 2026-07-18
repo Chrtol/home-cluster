@@ -12,7 +12,7 @@ spec:
     pruneIntervalDays: 7
     repository: karakeep-meilisearch-restic-secret
     # Bump to force `restic unlock` before backup, clearing a stale repo lock.
-    unlock: "1"
+    unlock: "unlocked"
     retain:
       daily: 7
       weekly: 4

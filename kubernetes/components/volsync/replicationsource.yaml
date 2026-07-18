@@ -15,7 +15,9 @@ spec:
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:=1Gi}"
     # Bump VOLSYNC_UNLOCK to make the mover run `restic unlock` before backing up,
     # clearing a stale repo lock left by a mover that died mid-run.
-    unlock: "${VOLSYNC_UNLOCK:=1}"
+    # Value MUST be a non-numeric string — the CRD requires string and envsubst
+    # of a bare number yields an int, which fails the typed-patch dry-run.
+    unlock: "${VOLSYNC_UNLOCK:=unlocked}"
     retain:
       daily: 7
       weekly: 4
