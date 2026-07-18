@@ -36,7 +36,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      CEPH_RBD_CAPACITY: 2Gi
+      CEPH_RBD_CAPACITY: 20Gi
       GATUS_SUBDOMAIN: files
       # oidc-application component (Authentik). GROUP is the Authentik app UI
       # category (not the access group -- that's the auto-created
