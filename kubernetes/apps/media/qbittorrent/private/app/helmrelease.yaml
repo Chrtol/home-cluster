@@ -184,6 +184,42 @@ spec:
                 memory: 146Mi
               limits:
                 memory: 256Mi
+          # Watchdog for the gluetun PF stuck-at-0 bug (upstream #3178/#3257,
+          # fixed only on master/latest). gluetun's healthcheck ignores port
+          # forwarding, so a dead NAT-PMP gateway leaves the forwarded port at 0
+          # indefinitely -> qBittorrent "firewalled" -> failed seeding -> H&R.
+          # On a SUSTAINED port==0 this cycles the tunnel (stop->start) via the
+          # control server, which reselects a server and re-requests NAT-PMP,
+          # WITHOUT restarting the pod (a container-only restart would strand
+          # qBittorrent on loopback — see upstream #3383).
+          port-watchdog:
+            image:
+              # docker.io/alpine/curl — same utility image used by the opnsense/
+              # hetzner exporters. Ships curl + BusyBox sh (no jq needed here).
+              repository: docker.io/alpine/curl
+              tag: 8.21.0@sha256:fd7f01bc6c6caec45a8fd5b871f0f51bf3c7cee0b185830ff25b8110f7e6e77d
+            command:
+              - /bin/sh
+              - /scripts/port-watchdog.sh
+            env:
+              GLUETUN_CONTROL_SERVER_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: qbittorrent-private-secret
+                    key: GLUETUN_CONTROL_SERVER_API_KEY
+            securityContext:
+              runAsUser: 568
+              runAsGroup: 568
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 32Mi
     defaultPodOptions:
       automountServiceAccountToken: false
       securityContext:
@@ -246,4 +282,13 @@ spec:
             coredns:
               - path: /etc/coredns/Corefile
                 subPath: Corefile
+                readOnly: true
+      port-watchdog:
+        type: configMap
+        name: qbittorrent-private-port-watchdog
+        advancedMounts:
+          qbittorrent-private:
+            port-watchdog:
+              - path: /scripts/port-watchdog.sh
+                subPath: port-watchdog.sh
                 readOnly: true
