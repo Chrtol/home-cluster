@@ -25,3 +25,4 @@ resources:
   - ./intel-gpu-resource-driver.yaml
   - ./konflate.yaml
   - ./garage-operator.yaml
+  - ./drm-exporter.yaml

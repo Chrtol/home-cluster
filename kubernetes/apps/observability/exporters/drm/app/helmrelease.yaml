@@ -1,0 +1,113 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app drm-exporter
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: *app
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    config:
+      # Intel engine utilization is averaged across this window, so it must stay
+      # at or below the scrape interval below or Prometheus resamples a value
+      # that is already an average of an average.
+      intervalSeconds: 5
+      port: 8081
+
+    # Every node is an Intel iGPU box today, but the DaemonSet is scoped to the
+    # NFD label rather than running everywhere: a future GPU-less node would
+    # otherwise get a pod that starts, finds no DRM device, and reports nothing
+    # while still counting as a healthy target.
+    nodeSelector:
+      intel.feature.node.kubernetes.io/gpu: "true"
+
+    # Nodes carry no taints today (all three are controller+worker), but node-exporter
+    # tolerates everything for the same reason: a DaemonSet that silently skips a
+    # freshly-tainted node leaves a blind spot rather than an alert.
+    tolerations:
+      - effect: NoSchedule
+        operator: Exists
+
+    hostAccess:
+      # MUST be set explicitly. The chart defaults this to "" and mounts nothing,
+      # in which case the exporter starts cleanly, discovers zero GPUs, and serves
+      # an empty /metrics -- healthy probes, no data.
+      devDri: /dev/dri
+      sys: /sys
+      # Deliberately empty. This would mount /dev/cpu for MSR-based package
+      # temperature, but Talos ships no `msr` kernel module
+      # (siderolabs/extensions#620), so the device nodes do not exist.
+      devCpu: ""
+
+    podSecurityContext:
+      runAsNonRoot: false
+      runAsUser: 0
+      runAsGroup: 0
+      seccompProfile:
+        type: RuntimeDefault
+
+    securityContext:
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+        # PERFMON alone is not sufficient: the i915 perf PMU is also gated by
+        # kernel.perf_event_paranoid, which Talos hardens to 3. That is lowered to 2
+        # in talos/patches/global/machine-sysctls.yaml -- without that sysctl the
+        # engine-utilization metrics are silently absent while every sysfs metric
+        # (frequency, memory, power, temperature) still works.
+        add: ["PERFMON"]
+        # SYS_RAWIO is intentionally NOT added. It exists only for /dev/cpu/*/msr,
+        # which Talos does not provide -- see hostAccess.devCpu above.
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+
+    service:
+      type: ClusterIP
+
+    monitoring:
+      serviceMonitor:
+        enabled: true
+        interval: 1m
+        scrapeTimeout: 30s
+        # No labeldrop of `pod` here, unlike the single-replica exporters in this
+        # directory. This is a DaemonSet: the chart's built-in relabeling maps each
+        # pod to a `node` label, and the bundled dashboard groups by it because the
+        # `device` PCI slot repeats identically across nodes.
+      dashboards:
+        enabled: true
+        grafanaOperator:
+          enabled: true
+          allowCrossNamespaceImport: true
+          folder: Infrastructure
+          resyncPeriod: 10m
+          matchLabels:
+            grafana.internal/instance: grafana
+
+    serviceAccount:
+      create: true
+      # The exporter never calls the Kubernetes API.
+      automount: false
+
+    daemonsetAnnotations:
+      reloader.stakater.com/auto: "true"
+
+    updateStrategy:
+      type: RollingUpdate

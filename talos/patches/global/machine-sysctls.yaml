@@ -4,3 +4,9 @@ machine:
     fs.inotify.max_user_instances: "8192"  # Watchdog
     net.core.rmem_max: "7500000" # Cloudflared | QUIC
     net.core.wmem_max: "7500000" # Cloudflared | QUIC
+    # drm-exporter | Talos defaults this to 3, which denies the i915 perf PMU even
+    # to a container holding CAP_PERFMON. Value 2 lets a CAP_PERFMON holder open
+    # per-CPU/uncore PMU events (GPU engine utilization) while still blocking raw
+    # tracepoints and kernel-address leaks. Without this the exporter runs and
+    # serves every sysfs metric, but engine utilization is silently absent.
+    kernel.perf_event_paranoid: "2"

@@ -1,0 +1,76 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: drm-exporter
+  labels:
+    app.kubernetes.io/instance: drm-exporter
+    app.kubernetes.io/name: drm-exporter
+spec:
+  groups:
+    - name: drm.exporter
+      rules:
+        - alert: DrmExporterAbsent
+          annotations:
+            description: >-
+              The DRM exporter has disappeared from Prometheus target discovery.
+              All GPU telemetry below is blind until it returns.
+            summary: DRM exporter is down.
+          expr: |
+            absent(up{job=~".*drm-exporter.*"} == 1)
+          for: 15m
+          labels:
+            severity: critical
+
+        # This is a DaemonSet scoped to nodes labelled as having an Intel GPU, so
+        # the number of healthy targets should equal the number of such nodes. A
+        # per-node failure does not fire DrmExporterAbsent (the other pods still
+        # answer), which would otherwise hide one dead node behind two live ones.
+        - alert: DrmExporterNodeMissing
+          annotations:
+            description: >-
+              Only {{ $value }} DRM exporter target(s) are up, fewer than the number
+              of GPU-labelled nodes. One node is reporting no GPU telemetry while the
+              others mask the gap from the absent() check.
+            summary: DRM exporter is missing on at least one GPU node.
+          expr: |
+            count(up{job=~".*drm-exporter.*"} == 1)
+              < count(kube_node_labels{label_intel_feature_node_kubernetes_io_gpu="true"})
+          for: 30m
+          labels:
+            severity: warning
+
+        # The exporter can run happily while finding zero GPUs -- probes pass and
+        # /metrics is served, just empty. That is the expected symptom if the
+        # /dev/dri hostPath mount is lost, so alert on the data rather than the pod.
+        - alert: DrmExporterNoGpusDiscovered
+          annotations:
+            description: >-
+              The DRM exporter on {{ $labels.node }} is up but reporting no GPUs.
+              Usually the /dev/dri mount or the i915 driver extension is missing;
+              the pod stays Ready regardless, so nothing else surfaces this.
+            summary: DRM exporter discovered no GPUs on {{ $labels.node }}.
+          expr: |
+            count by (node) (up{job=~".*drm-exporter.*"} == 1)
+              unless count by (node) (drm_info)
+          for: 30m
+          labels:
+            severity: warning
+
+    - name: drm.thermal
+      rules:
+        # These are small-form-factor and virtualised hosts doing Plex transcodes;
+        # sustained high junction temperature means throttling, which shows up to
+        # users as transcode stutter long before anything else complains.
+        - alert: DrmGpuHighTemperature
+          annotations:
+            description: >-
+              GPU {{ $labels.device }} on {{ $labels.node }} has been above 95C for
+              15m ({{ $value | humanize }}C). The GPU will clock down to protect
+              itself, which surfaces as stuttering or failing hardware transcodes.
+            summary: GPU on {{ $labels.node }} is running hot.
+          expr: |
+            max by (node, device) (drm_temperature_celsius) > 95
+          for: 15m
+          labels:
+            severity: warning
