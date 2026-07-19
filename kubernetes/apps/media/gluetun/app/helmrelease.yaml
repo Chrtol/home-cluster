@@ -34,32 +34,52 @@ spec:
             image:
               repository: ghcr.io/qdm12/gluetun
               tag: v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
+            # ProtonVPN's server API is auth-gated (v3.41.1
+            # internal/provider/protonvpn/updater/servers.go: authenticate()),
+            # so the updater needs Proton ACCOUNT credentials (not the OpenVPN
+            # +pmp ones). NOTE: the `update` SUBCOMMAND parses its own flags and
+            # does NOT read UPDATER_PROTONVPN_* env vars (internal/cli/update.go
+            # builds a fresh settings.Updater from -proton-email/-proton-password),
+            # so these must be passed as ARGS. $(VAR) expands from env below,
+            # keeping the actual secrets out of git.
             args:
               - update
               - -enduser
               - -providers
               - protonvpn
+              - -proton-email
+              - $(PROTON_EMAIL)
+              - -proton-password
+              - $(PROTON_PASSWORD)
             env:
               TZ: ${SECRET_TIMEZONE}
-            # UPDATER_PROTONVPN_EMAIL / _PASSWORD come from the secret below.
-            # ProtonVPN's server API is now auth-gated (v3.41.1
-            # internal/provider/protonvpn/updater/servers.go: authenticate()),
-            # so the updater fails without these — which is why this job sat
-            # suspended and inert. Refreshes /gluetun/servers.json (server IPs,
-            # WireGuard keys, P2P flags) so the Norway-pinned + PORT_FORWARD_ONLY
-            # qbittorrent-private pool stays populated with live servers.
-            envFrom:
-              - secretRef:
-                  name: gluetun-update-secret
+              PROTON_EMAIL:
+                valueFrom:
+                  secretKeyRef:
+                    name: gluetun-update-secret
+                    key: UPDATER_PROTONVPN_EMAIL
+              PROTON_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: gluetun-update-secret
+                    key: UPDATER_PROTONVPN_PASSWORD
+            # Runs as root to match the OTHER writer of /gluetun/servers.json:
+            # the qbittorrent gluetun sidecars run as uid 0 (they need NET_ADMIN),
+            # so they create the file 644 root:1000. A uid-1000 updater then gets
+            # "permission denied" overwriting it. Aligning both writers on root
+            # avoids the mismatch. Short-lived job, only writes this cache file.
             securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+              runAsNonRoot: false
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     persistence:
