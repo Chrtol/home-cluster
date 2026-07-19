@@ -26,7 +26,7 @@ spec:
         type: cronjob
         cronjob:
           schedule: "@daily"
-          suspend: true
+          suspend: false
           successfulJobsHistory: 1
           failedJobsHistory: 1
         containers:
@@ -41,7 +41,16 @@ spec:
               - protonvpn
             env:
               TZ: ${SECRET_TIMEZONE}
-              SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
+            # UPDATER_PROTONVPN_EMAIL / _PASSWORD come from the secret below.
+            # ProtonVPN's server API is now auth-gated (v3.41.1
+            # internal/provider/protonvpn/updater/servers.go: authenticate()),
+            # so the updater fails without these — which is why this job sat
+            # suspended and inert. Refreshes /gluetun/servers.json (server IPs,
+            # WireGuard keys, P2P flags) so the Norway-pinned + PORT_FORWARD_ONLY
+            # qbittorrent-private pool stays populated with live servers.
+            envFrom:
+              - secretRef:
+                  name: gluetun-update-secret
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
@@ -57,7 +66,12 @@ spec:
       gluetun-update:
         type: persistentVolumeClaim
         size: 100Mi
-        accessMode: ReadWriteOnce
-        storageClass: csi-rbd-sc
+        # RWX on CephFS: this servers.json cache has multiple readers
+        # (qbittorrent-public + qbittorrent-private gluetun sidecars) plus this
+        # writer (the update CronJob). RWO/RBD attaches to one node only, so any
+        # non-co-scheduled consumer would fail to mount. CephFS lets all mount
+        # on any node. Content is a regenerable cache, safe to recreate.
+        accessMode: ReadWriteMany
+        storageClass: csi-cephfs-sc
         globalMounts:
           - path: /gluetun

@@ -282,6 +282,17 @@ spec:
             gluetun:
               - path: *gluetunAuthPath
                 subPath: auth.toml
+      # Fresh ProtonVPN server list from the gluetun-update CronJob. gluetun
+      # auto-reads/merges /gluetun/servers.json when present, keeping the
+      # Norway-pinned + PORT_FORWARD_ONLY server pool populated with live
+      # endpoints (dead-server connection failures avoided).
+      gluetun-data:
+        existingClaim: gluetun-update
+        advancedMounts:
+          qbittorrent-private:
+            gluetun:
+              - path: /gluetun
+                readOnly: false
       coredns:
         type: configMap
         name: qbittorrent-private-coredns
