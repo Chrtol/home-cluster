@@ -1,0 +1,43 @@
+---
+# Self-signed bootstrap issuer for the Hubble internal PKI
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: hubble-selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+# Long-lived CA that signs the Hubble server/relay mTLS certs.
+# cert-manager auto-renews this well before expiry (renewBefore), which is
+# what prevents the 1-year silent-expiry stall that method=helm caused.
+# Lives in cert-manager ns because a `ca` ClusterIssuer resolves its
+# secretName against cert-manager's --cluster-resource-namespace (=cert-manager),
+# NOT the referencing workload's namespace.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hubble-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: hubble-ca.cilium.io
+  secretName: hubble-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  duration: 43800h # 1825d (5 years)
+  renewBefore: 2160h # 90d
+  issuerRef:
+    name: hubble-selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# CA-type ClusterIssuer that Cilium's certmanager method references to mint &
+# rotate hubble-server-certs / hubble-relay-client-certs.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: hubble-ca-issuer
+spec:
+  ca:
+    secretName: hubble-ca-secret

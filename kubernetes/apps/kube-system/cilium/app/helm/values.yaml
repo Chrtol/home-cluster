@@ -25,6 +25,17 @@ dashboards:
   enabled: true
 hubble:
   enabled: true
+  tls:
+    auto:
+      # cert-manager issues & auto-rotates the Hubble mTLS certs, avoiding the
+      # method=helm 1-year silent expiry that stalled the HelmRelease.
+      # CA/issuer defined in ../hubble-ca.yaml.
+      method: certmanager
+      certValidityDuration: 365
+      certManagerIssuerRef:
+        group: cert-manager.io
+        kind: ClusterIssuer
+        name: hubble-ca-issuer
   metrics:
     enabled:
       - dns:query
