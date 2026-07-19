@@ -26,6 +26,26 @@ spec:
           affinity:
             nodeAffinity:
               # Require dell1 (UHD 770 is faster than UHD 630)
+              #
+              # BEFORE RE-ENABLING THIS APP, READ THIS. Plex was moved onto dell1 on
+              # 2026-07-20 (while this app was disabled) and now holds its single
+              # gpu.intel.com/i915 slot. Re-enabling ollama as-is will NOT work and
+              # will NOT be obvious:
+              #   - this affinity is `required`, so ollama cannot fall back elsewhere
+              #   - dell1's one i915 slot is taken, making the node infeasible
+              #   - Plex is priorityClass media-high (300), ollama has none (0), so
+              #     the scheduler will never evict Plex to make room
+              # Net effect: the pod sits Pending indefinitely with no alert and no
+              # crash -- it simply never starts.
+              #
+              # Pick one when the time comes:
+              #   A) soften this to preferredDuringScheduling... so ollama lands on a
+              #      lenovo (HD 630) instead of hanging
+              #   B) drop Plex's dell1 preference in
+              #      kubernetes/apps/media/plex/app/helmrelease.yaml so it moves back
+              #   C) run ollama CPU-only by removing the gpu.intel.com/i915 limit
+              # Context: this was parked because no model small enough for this GPU
+              # (~5B ceiling) tagged well enough for paperless without heavy CPU use.
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
