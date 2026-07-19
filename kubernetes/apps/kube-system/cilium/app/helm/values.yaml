@@ -34,7 +34,7 @@ hubble:
       certValidityDuration: 365
       certManagerIssuerRef:
         group: cert-manager.io
-        kind: ClusterIssuer
+        kind: Issuer
         name: hubble-ca-issuer
   metrics:
     enabled:

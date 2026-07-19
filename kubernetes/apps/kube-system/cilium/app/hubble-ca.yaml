@@ -1,23 +1,26 @@
 ---
-# Self-signed bootstrap issuer for the Hubble internal PKI
+# Self-signed bootstrap issuer for the Hubble internal PKI.
+# NOTE: everything in this kustomization is forced into kube-system by the
+# parent Flux Kustomization's targetNamespace, so all refs below are namespaced
+# to kube-system. A namespaced `ca` Issuer (not a ClusterIssuer) is used so it
+# resolves hubble-ca-secret from its OWN namespace (kube-system) rather than
+# cert-manager's --cluster-resource-namespace.
 apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
+kind: Issuer
 metadata:
   name: hubble-selfsigned-issuer
+  namespace: kube-system
 spec:
   selfSigned: {}
 ---
 # Long-lived CA that signs the Hubble server/relay mTLS certs.
 # cert-manager auto-renews this well before expiry (renewBefore), which is
 # what prevents the 1-year silent-expiry stall that method=helm caused.
-# Lives in cert-manager ns because a `ca` ClusterIssuer resolves its
-# secretName against cert-manager's --cluster-resource-namespace (=cert-manager),
-# NOT the referencing workload's namespace.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: hubble-ca
-  namespace: cert-manager
+  namespace: kube-system
 spec:
   isCA: true
   commonName: hubble-ca.cilium.io
@@ -29,15 +32,17 @@ spec:
   renewBefore: 2160h # 90d
   issuerRef:
     name: hubble-selfsigned-issuer
-    kind: ClusterIssuer
+    kind: Issuer
     group: cert-manager.io
 ---
-# CA-type ClusterIssuer that Cilium's certmanager method references to mint &
-# rotate hubble-server-certs / hubble-relay-client-certs.
+# CA-type Issuer that Cilium's certmanager method references to mint & rotate
+# hubble-server-certs / hubble-relay-client-certs. Namespaced to kube-system so
+# secretName resolves in-namespace (see note above).
 apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
+kind: Issuer
 metadata:
   name: hubble-ca-issuer
+  namespace: kube-system
 spec:
   ca:
     secretName: hubble-ca-secret
