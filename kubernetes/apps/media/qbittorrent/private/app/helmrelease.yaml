@@ -63,9 +63,17 @@ spec:
               # Requires WIREGUARD_PRIVATE_KEY in qbittorrent-private-secret (Proton WG
               # config generated WITH NAT-PMP/port forwarding enabled).
               VPN_TYPE: wireguard
-              SERVER_COUNTRIES: Norway,Netherlands,Switzerland,Sweden,Denmark
+              # Norway-preferred with Nordic fallback. All three are P2P-capable
+              # (gluetun equates ProtonVPN P2P == port-forward-capable), low-latency,
+              # and this deliberately drops Netherlands (flagged unreliable for
+              # Proton NAT-PMP port forwarding).
+              SERVER_COUNTRIES: Norway,Sweden,Denmark
               VPN_PORT_FORWARDING: on
               VPN_PORT_FORWARDING_PROVIDER: protonvpn
+              # Only select servers that support port forwarding (P2P). If the pool
+              # ever empties, gluetun crashloops with "no server found" (loud) rather
+              # than silently connecting to a non-PF server -> firewalled qBittorrent.
+              PORT_FORWARD_ONLY: "on"
               FIREWALL_INPUT_PORTS: "80,8000,9999"
               FIREWALL_OUTBOUND_SUBNETS: 10.42.0.0/16,10.43.0.0/16 #cluster CIDR and service-cluster CIDR
               HEALTH_SERVER_ADDRESS: ":9999"
