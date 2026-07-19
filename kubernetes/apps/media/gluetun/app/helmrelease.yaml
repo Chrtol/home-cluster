@@ -26,7 +26,17 @@ spec:
         type: cronjob
         cronjob:
           schedule: "@daily"
-          suspend: false
+          # SUSPENDED: the Proton server-list updater cannot work on v3.41.1.
+          # gluetun omits the `Content-Type: application/json` header on the
+          # Proton auth request, so Proton rejects it with "code 2001 Invalid
+          # input" before credentials are even checked. Fixed upstream in commit
+          # 7e7e818 (2026-04-10) — but that is NOT in any tagged release (v3.41.1
+          # is the newest tag, 2026-02-11; master is 231 commits ahead). Only the
+          # `latest` image (sha256:ad6b604e...) carries the fix.
+          # The credential wiring below is correct and verified: the flags expand
+          # and reach Proton. Flip suspend back to false if/when gluetun is moved
+          # to a `latest` digest, and this should just start working.
+          suspend: true
           successfulJobsHistory: 1
           failedJobsHistory: 1
         containers:
