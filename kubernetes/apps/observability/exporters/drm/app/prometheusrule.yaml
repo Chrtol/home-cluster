@@ -61,6 +61,89 @@ spec:
           labels:
             severity: warning
 
+    - name: drm.gpu
+      rules:
+        # The failure that actually costs something. Plex silently falls back to
+        # software transcoding when it cannot open the render node -- a lost i915
+        # device plugin slot, a driver hiccup, a Plex Pass lapse. Nothing breaks:
+        # streams keep playing, the pod stays Ready, plex_active_transcode_sessions
+        # still counts sessions. It just pins the CPU and stutters on 4K.
+        # Neither exporter can see this alone -- Plex does not report which encoder
+        # it chose, and an idle GPU is only suspicious while Plex is busy. Joining
+        # the two is what makes it detectable.
+        # Thresholds are measured, not guessed: a 1080p VAAPI encode on dell1 drove
+        # render to 1.0 and video to 0.25, so 0.05 sits far above hardware-idle
+        # noise and far below any real transcode.
+        - alert: PlexTranscodingWithoutGpu
+          annotations:
+            # No {{ $labels.node }} here: `and on ()` joins on the empty label set, so
+            # the resulting series carries no labels at all and the template would
+            # render an empty string. The node is recoverable from the query below.
+            description: >-
+              Plex has been transcoding for 20m while the GPU on its node stayed idle
+              (peak engine utilization under 5%). Transcoding has almost certainly
+              fallen back to software: playback still works but burns CPU and stutters
+              on high-bitrate content. Find the node with:
+              kube_pod_info * on (namespace, pod) group_left ()
+              kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            summary: Plex is transcoding without GPU acceleration.
+          # plex-exporter scrapes the Plex API remotely, so its series carry NO node
+          # label -- joining it to drm metrics on (node) directly matches nothing and
+          # the alert can never fire. kube_pod_labels supplies the missing pod->node
+          # mapping, matched on label_app_kubernetes_io_name rather than a pod-name
+          # regex: the name carries a ReplicaSet hash that changes on every redeploy,
+          # and a "plex-.*" pattern also swallows plex-auto-languages, plex-off-deck
+          # and plex-exporter (the last of which runs on a different node entirely,
+          # which would join the wrong GPU).
+          expr: |
+            (
+              max(max_over_time(plex_active_transcode_sessions[20m])) > 0
+            )
+            and on ()
+            (
+              max by (node) (
+                max_over_time(drm_engine_utilization_ratio[20m])
+              ) * on (node) group_left ()
+              max by (node) (
+                kube_pod_info * on (namespace, pod) group_left ()
+                kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
+              )
+            ) < 0.05
+          for: 20m
+          labels:
+            severity: warning
+
+        # Sustained saturation of the render engine. On these iGPUs render -- not the
+        # dedicated video block -- is the bottleneck: the same test encode pushed
+        # render to 1.0 while video only reached 0.25, because format conversion runs
+        # there. At a sustained 95% additional transcodes queue rather than run, which
+        # users experience as buffering.
+        # Scoped to render deliberately: alerting on any engine would fire on the
+        # video block hitting 100% during a legitimate single stream.
+        - alert: DrmGpuSaturated
+          annotations:
+            description: >-
+              GPU render engine on {{ $labels.node }} has averaged over 95% for 1h
+              ({{ $value | humanizePercentage }}). Further transcodes will queue
+              behind the current ones and surface to users as buffering.
+            summary: GPU on {{ $labels.node }} is saturated.
+          expr: |
+            avg by (node) (avg_over_time(drm_engine_utilization_ratio{engine="render"}[1h])) > 0.95
+          for: 1h
+          labels:
+            severity: warning
+
+    # Deliberately NO memory alert. drm_memory_used_bytes reads 0 even at 100% render
+    # utilization: the only pool is "smem" (shared system memory, since an iGPU has no
+    # dedicated VRAM) and i915 does not report usage through it. A used/total ratio
+    # rule would sit at 0/28GB forever and read as healthy. Host memory pressure is
+    # already covered by node-exporter.
+    #
+    # Deliberately NO frequency alert. drm_frequency_hertz{kind="actual"} is sampled
+    # instantaneously and catches idle dips mid-load -- it read 100MHz while the render
+    # engine was pinned at 100% -- so any threshold on it produces noise. Engine
+    # utilization is the trustworthy saturation signal.
+    #
     # Deliberately NO thermal / fan / power alerts. These are integrated GPUs in
     # Proxmox VMs: drm_temperature_celsius, drm_fan_speed_rpm and drm_power_watts
     # are never published, because the iGPU exposes no hwmon node (/sys/class/hwmon
