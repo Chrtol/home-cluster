@@ -321,29 +321,10 @@
       matchStrings: [
         // Split an optional @sha256 digest out of the value so docker versioning can
         // parse the tag (a combined "tag@sha256:..." currentValue is silently skipped).
-        // The `(?!\\s*imageName:)` negative lookahead hands the CNPG `imageName:` shape
-        // to the dedicated manager below (this generic one greedily mis-captures the
-        // whole registry path there -> false "could not determine new digest").
-        'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n(?!\\s*imageName:).+(:\\s|=)(&\\S+\\s)?(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?',
+        'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+(:\\s|=)(&\\S+\\s)?(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?',
         'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n.+/(?<currentValue>(v|\\d)[^/]+)',
       ],
       datasourceTemplate: '{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}',
-    },
-    {
-      // CNPG pins the image inline as `imageName: <registry>/<path>:<tag>@sha256:<digest>`.
-      // The generic manager above greedily matches the `imageName: ` colon-space and
-      // captures the WHOLE ref (`ghcr.io/.../postgresql:17.4`) as currentValue, which
-      // isn't a real tag -> false "could not determine new digest". This dedicated
-      // manager anchors on `imageName:` and captures ONLY the tag + digest.
-      description: 'CloudNativePG imageName (tag + digest)',
-      customType: 'regex',
-      managerFilePatterns: [
-        '/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/',
-      ],
-      matchStrings: [
-        'depName=(?<depName>\\S+)\\s+imageName:\\s+\\S+:(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)',
-      ],
-      datasourceTemplate: 'docker',
     },
   ],
 }
