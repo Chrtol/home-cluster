@@ -66,11 +66,11 @@ spec:
       readOnlyRootFilesystem: true
       capabilities:
         drop: ["ALL"]
-        # PERFMON alone is not sufficient: the i915 perf PMU is also gated by
-        # kernel.perf_event_paranoid, which Talos hardens to 3. That is lowered to 2
-        # in talos/patches/global/machine-sysctls.yaml -- without that sysctl the
-        # engine-utilization metrics are silently absent while every sysfs metric
-        # (frequency, memory, power, temperature) still works.
+        # Required for drm_engine_utilization_ratio: the i915 engine-busyness
+        # counters come from the perf PMU, not sysfs. Verified working with Talos's
+        # default kernel.perf_event_paranoid=3 -- that sysctl gates CPU perf events,
+        # not this device-scoped uncore PMU, so it does NOT need lowering.
+        # Startup logs "engines PMU init: OK" when this capability is present.
         add: ["PERFMON"]
         # SYS_RAWIO is intentionally NOT added. It exists only for /dev/cpu/*/msr,
         # which Talos does not provide -- see hostAccess.devCpu above.

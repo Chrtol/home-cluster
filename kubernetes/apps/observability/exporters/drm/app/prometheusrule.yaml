@@ -22,20 +22,24 @@ spec:
           labels:
             severity: critical
 
-        # This is a DaemonSet scoped to nodes labelled as having an Intel GPU, so
-        # the number of healthy targets should equal the number of such nodes. A
-        # per-node failure does not fire DrmExporterAbsent (the other pods still
-        # answer), which would otherwise hide one dead node behind two live ones.
+        # A single-node failure does not fire DrmExporterAbsent, because the other
+        # pods still answer -- one dead node hides behind two live ones. Compared
+        # against the DaemonSet's own desired-pod count rather than a node-label
+        # query: that number already accounts for the nodeSelector, so it stays
+        # correct if GPU nodes are added or removed.
+        # NB: do NOT rewrite this against kube_node_labels -- kube-state-metrics is
+        # not configured to export node labels here, so that series does not exist
+        # and the rule would silently never fire.
         - alert: DrmExporterNodeMissing
           annotations:
             description: >-
-              Only {{ $value }} DRM exporter target(s) are up, fewer than the number
-              of GPU-labelled nodes. One node is reporting no GPU telemetry while the
-              others mask the gap from the absent() check.
+              Only {{ $value }} DRM exporter target(s) are up, fewer than the pods the
+              DaemonSet wants scheduled. At least one node is reporting no GPU
+              telemetry while the others mask the gap from the absent() check.
             summary: DRM exporter is missing on at least one GPU node.
           expr: |
             count(up{job=~".*drm-exporter.*"} == 1)
-              < count(kube_node_labels{label_intel_feature_node_kubernetes_io_gpu="true"})
+              < max(kube_daemonset_status_desired_number_scheduled{daemonset="drm-exporter"})
           for: 30m
           labels:
             severity: warning
@@ -57,20 +61,13 @@ spec:
           labels:
             severity: warning
 
-    - name: drm.thermal
-      rules:
-        # These are small-form-factor and virtualised hosts doing Plex transcodes;
-        # sustained high junction temperature means throttling, which shows up to
-        # users as transcode stutter long before anything else complains.
-        - alert: DrmGpuHighTemperature
-          annotations:
-            description: >-
-              GPU {{ $labels.device }} on {{ $labels.node }} has been above 95C for
-              15m ({{ $value | humanize }}C). The GPU will clock down to protect
-              itself, which surfaces as stuttering or failing hardware transcodes.
-            summary: GPU on {{ $labels.node }} is running hot.
-          expr: |
-            max by (node, device) (drm_temperature_celsius) > 95
-          for: 15m
-          labels:
-            severity: warning
+    # Deliberately NO thermal / fan / power alerts. These are integrated GPUs in
+    # Proxmox VMs: drm_temperature_celsius, drm_fan_speed_rpm and drm_power_watts
+    # are never published, because the iGPU exposes no hwmon node (/sys/class/hwmon
+    # is empty on every node) and the exporter logs "no rapl power reporting" at
+    # startup. The MSR fallback that would recover package temperature needs
+    # /dev/cpu, which Talos cannot provide (no msr kernel module).
+    # A rule on those metrics would never evaluate, so it would read as "GPU
+    # temperature is fine" when nothing is being measured at all. GPU thermals on
+    # these hosts are only visible from the Proxmox side, via the CPU package
+    # sensor that pve-exporter already scrapes.
