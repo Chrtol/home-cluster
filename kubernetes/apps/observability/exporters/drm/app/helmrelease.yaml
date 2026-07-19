@@ -40,10 +40,13 @@ spec:
         operator: Exists
 
     hostAccess:
-      # MUST be set explicitly. The chart defaults this to "" and mounts nothing,
-      # in which case the exporter starts cleanly, discovers zero GPUs, and serves
-      # an empty /metrics -- healthy probes, no data.
-      devDri: /dev/dri
+      # Deliberately empty -- do NOT set this to /dev/dri. A hostPath mount makes the
+      # device nodes visible but the kernel devices cgroup still denies open() to a
+      # non-privileged container, which fails as:
+      #   discovering DRM devices: Operation not permitted (os error 1)
+      # Access comes from the gpu.intel.com/monitoring resource below instead, which
+      # is what actually programs the cgroup allow-list.
+      devDri: ""
       sys: /sys
       # Deliberately empty. This would mount /dev/cpu for MSR-based package
       # temperature, but Talos ships no `msr` kernel module
@@ -76,8 +79,15 @@ spec:
       requests:
         cpu: 10m
         memory: 32Mi
+        # The Intel device plugin's dedicated monitoring resource: it grants the
+        # container access to EVERY GPU on the node and programs the devices cgroup
+        # so /dev/dri is actually openable. Unlike gpu.intel.com/i915 (which Plex,
+        # Immich and Ollama each claim a slot of) this one is monitoring-only and
+        # does not consume a transcode slot, so the exporter never competes with them.
+        gpu.intel.com/monitoring: 1
       limits:
         memory: 128Mi
+        gpu.intel.com/monitoring: 1
 
     service:
       type: ClusterIP
