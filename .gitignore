@@ -27,3 +27,4 @@ ai-activity/*
 apps/reptile-tracker/.planning/
 .planning
 tmp/*
+.env
