@@ -14,7 +14,7 @@ import os
 import asyncio
 from abc import ABC, abstractmethod
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Tuple, Optional
 import boto3
 from botocore.exceptions import ClientError
@@ -57,6 +57,25 @@ def _resolve_within(base: Path, path: str) -> Path:
         raise ValueError(f"Invalid storage path (escapes base directory): {path}") from None
 
     return base_resolved / safe_suffix
+
+
+def _mkdir_parent_within(base: Path, path: str) -> None:
+    """
+    Create the parent directory for a caller-supplied path inside base.
+
+    Deriving the directory as `_resolve_within(...).parent` would re-taint it:
+    the sanitized status does not carry through attribute access, so the parent
+    is validated here in its own right instead.
+
+    Args:
+        base: Base directory that the parent must stay inside
+        path: Relative path within storage whose parent should be created
+
+    Raises:
+        ValueError: If path is absolute or escapes base
+    """
+    parent = PurePosixPath(path).parent
+    _resolve_within(base, str(parent)).mkdir(parents=True, exist_ok=True)
 
 
 class StorageBackend(Enum):
@@ -151,8 +170,8 @@ class LocalStorage(PhotoStorageBackend):
 
     async def save_photo(self, path: str, data: bytes) -> str:
         """Save photo to local filesystem."""
+        _mkdir_parent_within(self.base_path, path)
         file_path = _resolve_within(self.base_path, path)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Run blocking I/O in executor
         loop = asyncio.get_event_loop()
@@ -340,8 +359,8 @@ class NFSStorage(PhotoStorageBackend):
 
     async def save_photo(self, path: str, data: bytes) -> str:
         """Save photo to NFS."""
+        _mkdir_parent_within(self.mount_path, path)
         file_path = _resolve_within(self.mount_path, path)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Run blocking I/O in executor
         loop = asyncio.get_event_loop()
