@@ -14,7 +14,7 @@ import os
 import asyncio
 from abc import ABC, abstractmethod
 from enum import Enum
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Tuple, Optional
 import boto3
 from botocore.exceptions import ClientError
@@ -74,8 +74,17 @@ def _mkdir_parent_within(base: Path, path: str) -> None:
     Raises:
         ValueError: If path is absolute or escapes base
     """
-    parent = PurePosixPath(path).parent
-    _resolve_within(base, str(parent)).mkdir(parents=True, exist_ok=True)
+    # Rebuild the directory from the validated components rather than passing
+    # anything derived from `path` into the mkdir call: _resolve_within has
+    # already proven each segment is interior, so joining them onto the
+    # realpath'd base yields a directory with no remaining tie to user input.
+    safe = _resolve_within(base, path)
+    base_resolved = Path(os.path.realpath(base))
+    directory = base_resolved
+    for segment in safe.relative_to(base_resolved).parts[:-1]:
+        directory = directory / segment
+
+    os.makedirs(directory, exist_ok=True)
 
 
 class StorageBackend(Enum):
