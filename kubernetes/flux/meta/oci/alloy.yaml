@@ -6,10 +6,10 @@ metadata:
   name: alloy
   namespace: flux-system
 spec:
-  interval: 10m
+  interval: 5m
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
     tag: 1.10.1
-  url: oci://ghcr.io/grafana/helm-charts/alloy
+  url: oci://ghcr.io/home-operations/charts-mirror/alloy
