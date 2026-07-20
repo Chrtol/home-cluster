@@ -46,13 +46,17 @@ def _resolve_within(base: Path, path: str) -> Path:
     if candidate.is_absolute() or candidate.drive or candidate.root:
         raise ValueError(f"Invalid storage path (must be relative): {path}")
 
-    base_resolved = base.resolve()
-    resolved = (base_resolved / candidate).resolve()
+    base_resolved = Path(os.path.realpath(base))
+    resolved = Path(os.path.realpath(os.path.join(base_resolved, candidate)))
 
-    if resolved != base_resolved and base_resolved not in resolved.parents:
-        raise ValueError(f"Invalid storage path (escapes base directory): {path}")
+    # relative_to() raises ValueError when resolved is outside base, so the
+    # returned path is rebuilt from the base rather than from tainted input.
+    try:
+        safe_suffix = resolved.relative_to(base_resolved)
+    except ValueError:
+        raise ValueError(f"Invalid storage path (escapes base directory): {path}") from None
 
-    return resolved
+    return base_resolved / safe_suffix
 
 
 class StorageBackend(Enum):
