@@ -43,7 +43,7 @@ spec:
           backend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20260720144548 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20260720163900 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             env:
               DATABASE_URL:
@@ -127,7 +127,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-20260720144538 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
+              tag: main-20260720163858 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
               pullPolicy: Always
             securityContext:
               runAsUser: 0
@@ -179,7 +179,7 @@ spec:
           worker:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-backend
-              tag: main-20260720144548 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
+              tag: main-20260720163900 # {"$imagepolicy": "default:reptile-tracker-backend:tag"}
               pullPolicy: Always
             command: ["opentelemetry-instrument", "python", "celery_worker.py"]
             env:
