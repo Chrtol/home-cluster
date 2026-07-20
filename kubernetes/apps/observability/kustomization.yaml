@@ -11,7 +11,7 @@ resources:
   - ./gatus/ks.yaml
   - ./gatus-public/ks.yaml
   - ./loki/ks.yaml
-  - ./promtail/ks.yaml
+  - ./alloy/ks.yaml
   - ./goldilocks/ks.yaml
   - ./exporters/ks.yaml
   - ./network-monitor/ks.yaml

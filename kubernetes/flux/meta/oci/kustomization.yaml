@@ -11,7 +11,7 @@ resources:
   - ./dragonfly-operator.yaml
   - ./volsync.yaml
   - ./loki.yaml
-  - ./promtail.yaml
+  - ./alloy.yaml
   - ./opnsense-exporter.yaml
   - ./tuppr.yaml
   - ./qui.yaml

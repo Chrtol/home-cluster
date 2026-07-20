@@ -3,7 +3,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
-  name: promtail
+  name: alloy
   namespace: flux-system
 spec:
   interval: 10m
@@ -11,5 +11,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 6.17.1
-  url: oci://ghcr.io/grafana/helm-charts/promtail
+    tag: 1.10.1
+  url: oci://ghcr.io/grafana/helm-charts/alloy
