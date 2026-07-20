@@ -23,6 +23,38 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _resolve_within(base: Path, path: str) -> Path:
+    """
+    Resolve a caller-supplied relative path against a base directory.
+
+    Guards against path traversal: `Path(base) / path` silently discards the
+    base when `path` is absolute, and `..` segments escape upward. Callers pass
+    paths built from request data (reptile/household ids, ZIP bundle entries),
+    so the containment check happens here rather than at each call site.
+
+    Args:
+        base: Base directory that the result must stay inside
+        path: Relative path within storage
+
+    Returns:
+        Absolute path guaranteed to be inside base
+
+    Raises:
+        ValueError: If path is absolute or escapes base
+    """
+    candidate = Path(path)
+    if candidate.is_absolute() or candidate.drive or candidate.root:
+        raise ValueError(f"Invalid storage path (must be relative): {path}")
+
+    base_resolved = base.resolve()
+    resolved = (base_resolved / candidate).resolve()
+
+    if resolved != base_resolved and base_resolved not in resolved.parents:
+        raise ValueError(f"Invalid storage path (escapes base directory): {path}")
+
+    return resolved
+
+
 class StorageBackend(Enum):
     """Supported storage backend types."""
     LOCAL = "local"      # Ceph PVC or any local filesystem
@@ -115,7 +147,7 @@ class LocalStorage(PhotoStorageBackend):
 
     async def save_photo(self, path: str, data: bytes) -> str:
         """Save photo to local filesystem."""
-        file_path = self.base_path / path
+        file_path = _resolve_within(self.base_path, path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Run blocking I/O in executor
@@ -127,7 +159,7 @@ class LocalStorage(PhotoStorageBackend):
 
     async def get_photo(self, path: str) -> bytes:
         """Retrieve photo from local filesystem."""
-        file_path = self.base_path / path
+        file_path = _resolve_within(self.base_path, path)
 
         if not file_path.exists():
             raise FileNotFoundError(f"Photo not found: {path}")
@@ -140,7 +172,7 @@ class LocalStorage(PhotoStorageBackend):
 
     async def delete_photo(self, path: str) -> bool:
         """Delete photo from local filesystem."""
-        file_path = self.base_path / path
+        file_path = _resolve_within(self.base_path, path)
 
         if not file_path.exists():
             return False
@@ -157,7 +189,7 @@ class LocalStorage(PhotoStorageBackend):
 
     async def exists(self, path: str) -> bool:
         """Check if photo exists in local filesystem."""
-        file_path = self.base_path / path
+        file_path = _resolve_within(self.base_path, path)
         # Run blocking I/O in executor
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, file_path.exists)
@@ -304,7 +336,7 @@ class NFSStorage(PhotoStorageBackend):
 
     async def save_photo(self, path: str, data: bytes) -> str:
         """Save photo to NFS."""
-        file_path = self.mount_path / path
+        file_path = _resolve_within(self.mount_path, path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Run blocking I/O in executor
@@ -316,7 +348,7 @@ class NFSStorage(PhotoStorageBackend):
 
     async def get_photo(self, path: str) -> bytes:
         """Retrieve photo from NFS."""
-        file_path = self.mount_path / path
+        file_path = _resolve_within(self.mount_path, path)
 
         if not file_path.exists():
             raise FileNotFoundError(f"Photo not found: {path}")
@@ -329,7 +361,7 @@ class NFSStorage(PhotoStorageBackend):
 
     async def delete_photo(self, path: str) -> bool:
         """Delete photo from NFS."""
-        file_path = self.mount_path / path
+        file_path = _resolve_within(self.mount_path, path)
 
         if not file_path.exists():
             return False
@@ -346,7 +378,7 @@ class NFSStorage(PhotoStorageBackend):
 
     async def exists(self, path: str) -> bool:
         """Check if photo exists in NFS."""
-        file_path = self.mount_path / path
+        file_path = _resolve_within(self.mount_path, path)
         # Run blocking I/O in executor
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, file_path.exists)
