@@ -95,9 +95,22 @@ spec:
           # and a "plex-.*" pattern also swallows plex-auto-languages, plex-off-deck
           # and plex-exporter (the last of which runs on a different node entirely,
           # which would join the wrong GPU).
+          # The plex_plays_active gate is what keeps this quiet overnight. Plex's
+          # nightly maintenance window (chapter thumbnails, media analysis, ~3-5am)
+          # decodes video, so plex_active_transcode_sessions goes to 1 -- but Plex runs
+          # those background jobs on CPU BY DESIGN, reserving hardware decode for live
+          # playback so maintenance cannot starve a real stream. An idle GPU there is
+          # correct behaviour, not a fallback. Without this gate the alert fired at
+          # 03:25-04:30 on 2026-07-20 with nobody watching, and would have every night.
+          # plex_plays_active only exists while something is genuinely being played, so
+          # requiring it restricts the alert to real playback.
           expr: |
             (
               max(max_over_time(plex_active_transcode_sessions[20m])) > 0
+            )
+            and on ()
+            (
+              max(max_over_time(plex_plays_active[20m])) > 0
             )
             and on ()
             (
