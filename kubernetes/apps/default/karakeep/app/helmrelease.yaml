@@ -55,7 +55,7 @@ spec:
                 cpu: 23m
                 memory: 549Mi
               limits:
-                memory: 768Mi
+                memory: 1Gi
 
       chrome:
         annotations:
