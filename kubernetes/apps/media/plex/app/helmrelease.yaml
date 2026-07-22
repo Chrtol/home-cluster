@@ -112,6 +112,12 @@ spec:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
           app.kubernetes.io/name: plex
           app.kubernetes.io/instance: plex
+          # gatus-sidecar: plex returns 401 to an unauthenticated GET (it's up,
+          # just requires a token), so 401 is the healthy signal.
+          gatus.home-operations.com/endpoint: |
+            group: external
+            conditions:
+              - "[STATUS] == 401"
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external

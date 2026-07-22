@@ -18,6 +18,10 @@ spec:
       EXT_AUTH_PORT: "8080"
       EXT_AUTH_GATEWAY: external
       EXT_AUTH_DNS_TARGET: external.${SECRET_DOMAIN}
+      # Externally routed + public DNS: HTTP-probe instead of the guarded DNS
+      # default. Returns a 302 auth redirect, so accept any non-error status.
+      EXT_AUTH_GATUS_GROUP: external
+      EXT_AUTH_GATUS_PROBE: 'path: "", conditions: ["[STATUS] < 400"]'
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

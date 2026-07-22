@@ -6,6 +6,11 @@
 #   EXT_AUTH_SERVICE (optional) - Backend service name, defaults to ${APP}
 #   EXT_AUTH_GATEWAY (optional) - Gateway name: "internal" or "external", defaults to internal
 #   EXT_AUTH_DNS_TARGET (optional) - For external apps, set to "external.${SECRET_DOMAIN}"
+#   EXT_AUTH_GATUS_GROUP (optional) - Gatus group, defaults to "guarded"
+#   EXT_AUTH_GATUS_PROBE (optional) - Gatus probe body (flow-YAML). Default is a DNS
+#       guarded probe (correct for internal-gateway apps the prober can't reach).
+#       For externally-routed ext-auth apps (public DNS, reachable), override with an
+#       HTTP check, e.g. `{path: "", conditions: ["[STATUS] < 400"]}`.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -14,11 +19,12 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "${EXT_AUTH_DNS_TARGET:=}"
     # gatus-sidecar: ext-auth apps sit behind Authentik forward-auth, and this
     # route's first path match is the /outpost.goauthentik.io callback — an HTTP
-    # probe would check the outpost, not the app, and false-green. Use a DNS
-    # (guarded) probe instead. group keeps them together on the status page.
+    # probe would check the outpost, not the app. Internal-gateway apps aren't
+    # reachable from the prober, so the default is a DNS (guarded) probe. Externally
+    # routed ext-auth apps resolve publicly and are reachable, so they override
+    # EXT_AUTH_GATUS_PROBE with an HTTP check (see the variable docs above).
     gatus.home-operations.com/endpoint: |
-      group: guarded
-      guarded: true
+      {group: ${EXT_AUTH_GATUS_GROUP:=guarded}, ${EXT_AUTH_GATUS_PROBE:=guarded: true}}
 spec:
   parentRefs:
     - name: ${EXT_AUTH_GATEWAY:=internal}

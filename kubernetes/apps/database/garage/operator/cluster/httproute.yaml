@@ -16,6 +16,12 @@ metadata:
   namespace: database
   annotations:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    # gatus-sidecar: an unauthenticated GET to the S3 endpoint returns 403
+    # (AccessDenied) — that means the endpoint is up and enforcing auth.
+    gatus.home-operations.com/endpoint: |
+      group: external
+      conditions:
+        - "[STATUS] == 403"
 spec:
   parentRefs:
     - name: external

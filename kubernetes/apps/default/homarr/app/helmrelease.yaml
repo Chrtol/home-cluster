@@ -14,9 +14,9 @@ spec:
     - kustomize:
         patches:
           # gatus-sidecar: the homarr-labs chart doesn't propagate httproute
-          # annotations, so stamp the guarded endpoint annotation onto the rendered
-          # HTTPRoute here. homarr is on the external gateway but was deliberately
-          # DNS-checked, so override the external-gateway HTTP default.
+          # annotations, so stamp the endpoint config onto the rendered HTTPRoute
+          # here. homarr is publicly reachable and returns 200, so a normal
+          # external HTTP probe is correct.
           - target:
               kind: HTTPRoute
               name: homarr
@@ -27,8 +27,7 @@ spec:
                 name: homarr
                 annotations:
                   gatus.home-operations.com/endpoint: |
-                    group: guarded
-                    guarded: true
+                    group: external
           - target:
               kind: Deployment
               name: homarr

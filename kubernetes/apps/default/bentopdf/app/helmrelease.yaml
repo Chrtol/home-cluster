@@ -47,11 +47,10 @@ spec:
       external:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          # gatus-sidecar: guarded (DNS probe) — external gateway defaults to an
-          # HTTP probe, but this app was deliberately DNS-checked. Override here.
+          # gatus-sidecar: publicly reachable, returns 200 — plain external HTTP
+          # probe (the external-gateway default).
           gatus.home-operations.com/endpoint: |
-            group: guarded
-            guarded: true
+            group: external
         hostnames: ["pdf.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external

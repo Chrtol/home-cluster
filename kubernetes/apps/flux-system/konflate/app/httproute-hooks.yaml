@@ -11,6 +11,10 @@ metadata:
   name: konflate-hooks
   annotations:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    # gatus-sidecar: opt out — this is the GitHub webhook receiver path on the same
+    # host as the authed konflate route (which is already probed). A bare GET here
+    # 302/404s; it's not a separate status target.
+    gatus.home-operations.com/enabled: "false"
 spec:
   parentRefs:
     - name: external

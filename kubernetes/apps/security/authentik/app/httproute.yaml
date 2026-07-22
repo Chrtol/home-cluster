@@ -6,6 +6,10 @@ metadata:
   namespace: security
   annotations:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    # gatus-sidecar: opt out — this is the Authentik outpost callback path, not a
+    # user-facing service (it 404s on a bare GET). sso.DOMAIN health is already
+    # covered by the authentik-server route.
+    gatus.home-operations.com/enabled: "false"
 spec:
   parentRefs:
     - name: external

@@ -164,6 +164,13 @@ spec:
       external:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          # gatus-sidecar: this is the webhook receiver (POST-only); a bare GET
+          # returns 404, which means it's up. Probe the bare host for 404.
+          gatus.home-operations.com/endpoint: |
+            group: external
+            path: ""
+            conditions:
+              - "[STATUS] == 404"
         hostnames: ["{{ .Release.Name }}-webhook.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external

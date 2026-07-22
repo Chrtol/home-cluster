@@ -302,6 +302,13 @@ spec:
       app:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          # gatus-sidecar: the route's first path match is /api (404 on GET), but
+          # the bare host serves the app (200). Probe the bare host.
+          gatus.home-operations.com/endpoint: |
+            group: external
+            path: ""
+            conditions:
+              - "[STATUS] == 200"
         hostnames: ["reptile-tracker.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external

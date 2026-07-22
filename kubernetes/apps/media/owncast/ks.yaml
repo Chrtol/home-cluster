@@ -29,6 +29,10 @@ spec:
       EXT_AUTH_SERVICE: owncast-app
       EXT_AUTH_GATEWAY: external
       EXT_AUTH_DNS_TARGET: external.${SECRET_DOMAIN}
+      # Externally routed + public DNS: HTTP-probe instead of the guarded DNS
+      # default. Returns a 302 auth redirect, so accept any non-error status.
+      EXT_AUTH_GATUS_GROUP: external
+      EXT_AUTH_GATUS_PROBE: 'path: "", conditions: ["[STATUS] < 400"]'
       # proxy-application: registers the Authentik Provider + Application + group
       GROUP: Media
       SUBDOMAIN: *app
