@@ -74,6 +74,11 @@ spec:
 
     route:
       app:
+        annotations:
+          # gatus-sidecar pilot: internal-only route → DNS/guarded probe instead
+          # of an HTTP probe the checker can't reach.
+          gatus.home-operations.com/endpoint: |
+            guarded: true
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal

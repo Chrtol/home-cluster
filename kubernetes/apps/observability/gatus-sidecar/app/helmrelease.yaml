@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gatus-sidecar
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: gatus-sidecar
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Roll the pod when the config ConfigMap changes.
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    gatus:
+      port: 80
+      env:
+        TZ: ${SECRET_TIMEZONE}
+    sidecar:
+      # Derive endpoints from HTTPRoutes attached to the internal/external
+      # gateways; every other kind stays off so the endpoint set mirrors the
+      # current route-driven model exactly.
+      gatewayNames:
+        - external
+        - internal
+      defaultInterval: 1m
+      logLevel: info
+      kinds:
+        httproute:
+          enable: true
+          auto: true
+        service:
+          enable: false
+          auto: false
+    config:
+      existingConfigMap: gatus-sidecar-configmap
+      items:
+        - key: config.yaml
+          path: config.yaml
+    # PILOT: in-memory storage so this runs side-by-side with the live `gatus`
+    # instance without contending for its ReadWriteOnce PVC.
+    persistence:
+      enabled: false
+    serviceAccount:
+      create: true
+    rbac:
+      create: true
+      type: ClusterRole
+    monitoring:
+      serviceMonitor:
+        enabled: true
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+    priorityClassName: control-plane-priority
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: internal
+          namespace: network
+          sectionName: https
+      hostnames:
+        - gatus-next.${SECRET_DOMAIN}

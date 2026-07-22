@@ -10,6 +10,7 @@ resources:
   - ./grafana/ks.yaml
   - ./gatus/ks.yaml
   - ./gatus-public/ks.yaml
+  - ./gatus-sidecar/ks.yaml
   - ./loki/ks.yaml
   - ./alloy/ks.yaml
   - ./goldilocks/ks.yaml
