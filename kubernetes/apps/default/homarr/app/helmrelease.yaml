@@ -13,6 +13,22 @@ spec:
   postRenderers:
     - kustomize:
         patches:
+          # gatus-sidecar: the homarr-labs chart doesn't propagate httproute
+          # annotations, so stamp the guarded endpoint annotation onto the rendered
+          # HTTPRoute here. homarr is on the external gateway but was deliberately
+          # DNS-checked, so override the external-gateway HTTP default.
+          - target:
+              kind: HTTPRoute
+              name: homarr
+            patch: |-
+              apiVersion: gateway.networking.k8s.io/v1
+              kind: HTTPRoute
+              metadata:
+                name: homarr
+                annotations:
+                  gatus.home-operations.com/endpoint: |
+                    group: guarded
+                    guarded: true
           - target:
               kind: Deployment
               name: homarr
@@ -111,12 +127,6 @@ spec:
 
     httproute:
       enabled: true
-      annotations:
-        # gatus-sidecar: guarded (DNS probe) — external gateway defaults to an HTTP
-        # probe, but homarr was deliberately DNS-checked. Override here.
-        gatus.home-operations.com/endpoint: |
-          group: guarded
-          guarded: true
       parentRefs:
           - name: external
             namespace: network

@@ -7,10 +7,13 @@ metadata:
 spec:
   groups:
     - name: gatus.rules
+      # Scoped to service="gatus" (the internal instance, which discovers ALL
+      # groups). gatus-public exports the same metric names, so without this
+      # filter every external endpoint would alert twice.
       rules:
         - alert: GatusEndpointDown
           expr: |
-            gatus_results_endpoint_success{group="external"} == 0
+            gatus_results_endpoint_success{service="gatus",group="external"} == 0
           for: 5m
           annotations:
             summary: >-
@@ -19,11 +22,15 @@ spec:
             severity: critical
 
         - alert: GatusEndpointExposed
+          # Guarded endpoints DNS-query an internal-only host against a public
+          # resolver with condition `len([BODY]) == 0`: success==1 means it did
+          # NOT resolve (healthy), success==0 means it resolved on public DNS —
+          # i.e. an internal host is leaking. Fire on success==0.
           expr: |
-            gatus_results_endpoint_success{group="guarded",name="internal-gatus-dns"} == 0
+            gatus_results_endpoint_success{service="gatus",group="guarded"} == 0
           for: 5m
           annotations:
             summary: >-
-              Internal domain {{ $labels.name }} is leaking to public DNS
+              Internal endpoint {{ $labels.name }} is resolving on public DNS
           labels:
             severity: critical

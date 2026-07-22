@@ -12,7 +12,6 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/ext-auth
-    # - ../../../../components/gatus/external
   postBuild:
     substitute:
       APP: *app
