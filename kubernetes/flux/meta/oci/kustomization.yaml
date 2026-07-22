@@ -29,3 +29,4 @@ resources:
   - ./gatus-sidecar.yaml
   - ./csi-driver-nfs.yaml
   - ./descheduler.yaml
+  - ./goldilocks.yaml

@@ -5,14 +5,10 @@ metadata:
   name: goldilocks
 spec:
   interval: 5m
-  chart:
-    spec:
-      chart: goldilocks
-      version: 10.4.1
-      sourceRef:
-        kind: HelmRepository
-        name: fairwinds-charts
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: goldilocks
+    namespace: flux-system
   values:
     vpa:
       enabled: true

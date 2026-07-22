@@ -13,7 +13,6 @@ resources:
   - ./bitnami-charts.yaml
   - ./authentik.yaml
   - ./hajimari.yaml
-  - ./fairwinds-charts.yaml
   - ./crowdsec.yaml
   - ./trivy-charts.yaml
   - ./lwolf-charts.yaml
