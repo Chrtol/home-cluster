@@ -119,16 +119,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
-      internal:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
     persistence:
       # Zipline buffers uploads to a temp dir before shipping to S3.
       tmp:

@@ -61,7 +61,7 @@ spec:
           hostnames: ["alertmanager.${SECRET_DOMAIN}"]
           parentRefs:
             - name: internal
-              namespace: kube-system
+              namespace: network
               sectionName: https
       alertmanagerSpec:
         priorityClassName: control-plane-priority
@@ -103,7 +103,7 @@ spec:
           hostnames: ["prometheus.${SECRET_DOMAIN}"]
           parentRefs:
             - name: internal
-              namespace: kube-system
+              namespace: network
               sectionName: https
       prometheusSpec:
         priorityClassName: control-plane-priority
