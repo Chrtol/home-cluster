@@ -7,13 +7,14 @@ metadata:
 spec:
   groups:
     - name: gatus.rules
-      # Scoped to service="gatus" (the internal instance, which discovers ALL
-      # groups). gatus-public exports the same metric names, so without this
-      # filter every external endpoint would alert twice.
+      # Scoped to service="gatus-gatus-sidecar" (the internal instance's Service
+      # name from the chart's fullname; it discovers ALL groups). gatus-public
+      # exports the same metric names, so without this filter every external
+      # endpoint would alert twice.
       rules:
         - alert: GatusEndpointDown
           expr: |
-            gatus_results_endpoint_success{service="gatus",group="external"} == 0
+            gatus_results_endpoint_success{service="gatus-gatus-sidecar",group="external"} == 0
           for: 5m
           annotations:
             summary: >-
@@ -27,7 +28,7 @@ spec:
           # NOT resolve (healthy), success==0 means it resolved on public DNS —
           # i.e. an internal host is leaking. Fire on success==0.
           expr: |
-            gatus_results_endpoint_success{service="gatus",group="guarded"} == 0
+            gatus_results_endpoint_success{service="gatus-gatus-sidecar",group="guarded"} == 0
           for: 5m
           annotations:
             summary: >-
