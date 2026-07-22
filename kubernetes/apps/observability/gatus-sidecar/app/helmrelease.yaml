@@ -57,7 +57,12 @@ spec:
       type: ClusterRole
     monitoring:
       serviceMonitor:
-        enabled: true
+        # DISABLED during the pilot/rollout: the old gatus + this instance export
+        # the same gatus_results_* metric names with no instance filter, so the
+        # GatusEndpoint* PrometheusRules (in observability/gatus) fire on BOTH and
+        # raise spurious alerts for in-flight endpoints. Re-enable at cutover when
+        # this instance replaces the old gatus and owns the rules.
+        enabled: false
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 1000
