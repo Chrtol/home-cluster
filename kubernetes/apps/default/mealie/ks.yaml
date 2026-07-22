@@ -14,7 +14,6 @@ spec:
   path: "./kubernetes/apps/default/mealie/app"
   components:
     - ../../../../components/cnpg
-    - ../../../../components/gatus/external
   prune: true
   sourceRef:
     kind: GitRepository

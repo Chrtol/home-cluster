@@ -6,8 +6,6 @@ metadata:
   name: &app bentopdf
   namespace: &ns default
 spec:
-  components:
-    - ../../../../components/gatus/guarded
   interval: 1h
   path: ./kubernetes/apps/default/bentopdf/app
   postBuild:

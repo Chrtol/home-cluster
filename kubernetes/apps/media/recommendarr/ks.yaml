@@ -17,7 +17,6 @@ spec:
     - name: volsync
       namespace: volsync-system
   components:
-    - ../../../../components/gatus/guarded
     - ../../../../components/ceph-rbd
     - ../../../../components/volsync
   path: ./kubernetes/apps/media/recommendarr/app

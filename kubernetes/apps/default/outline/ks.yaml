@@ -13,7 +13,6 @@ spec:
   components:
         - ../../../../components/cnpg
         - ../../../../components/dragonfly
-        - ../../../../components/gatus/external
         # Outline uploads images browser-direct to S3 (presigned PUT) -> the bucket needs
         # a CORS rule for the docs origin. Applied via PutBucketCors (no GarageBucket CRD
         # field for it). Outline manages S3 in outline-secret (AWS_* keys), so override

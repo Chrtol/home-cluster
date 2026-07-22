@@ -11,7 +11,6 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/cnpg
-    - ../../../../components/gatus/guarded
     - ../../../../components/ceph-rbd
     - ../../../../components/ext-auth
   dependsOn:

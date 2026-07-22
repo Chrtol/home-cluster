@@ -111,6 +111,12 @@ spec:
 
     httproute:
       enabled: true
+      annotations:
+        # gatus-sidecar: guarded (DNS probe) — external gateway defaults to an HTTP
+        # probe, but homarr was deliberately DNS-checked. Override here.
+        gatus.home-operations.com/endpoint: |
+          group: guarded
+          guarded: true
       parentRefs:
           - name: external
             namespace: network

@@ -15,7 +15,6 @@ spec:
   path: ./kubernetes/apps/media/radarr/app
   components:
     - ../../../../components/cnpg
-    - ../../../../components/gatus/guarded
     - ../../../../components/ext-auth
   prune: true
   sourceRef:

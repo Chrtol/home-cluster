@@ -17,7 +17,6 @@ spec:
   components:
     - ../../../../components/cnpg
     - ../../../../components/oidc-application
-    - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app

@@ -15,7 +15,6 @@ spec:
       namespace: external-secrets
   components:
     - ../../../../components/cnpg
-    - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app

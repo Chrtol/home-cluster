@@ -5,7 +5,6 @@ kind: Kustomization
 resources:
   - ./alertmanagerconfig.yaml
   - ./externalsecret.yaml
-  - ./gatus.yaml
   - ./helmrelease.yaml
   - ./nas-scrape-config.yaml
   - ./prometheus-remote-write-service.yaml

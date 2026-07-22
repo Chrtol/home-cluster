@@ -14,8 +14,6 @@ spec:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   path: kubernetes/apps/media/wizarr/app
-  components:
-    - ../../../../components/gatus/external
   prune: true
   sourceRef:
     kind: GitRepository

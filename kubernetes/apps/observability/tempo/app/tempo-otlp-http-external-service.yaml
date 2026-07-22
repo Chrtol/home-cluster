@@ -7,6 +7,11 @@ metadata:
   namespace: observability
   annotations:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    # gatus-sidecar: opt out — this is an OTLP trace-ingest endpoint, not a
+    # user-facing service; it returns non-200 to a bare GET so an HTTP probe would
+    # false-alarm. Tempo liveness is covered by the guarded DNS check in the
+    # central gatus config instead.
+    gatus.home-operations.com/enabled: "false"
 spec:
   parentRefs:
     - name: external

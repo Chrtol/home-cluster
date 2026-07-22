@@ -16,7 +16,6 @@ spec:
   path: ./kubernetes/apps/media/bazarr/app
   components:
     - ../../../../components/cnpg
-    - ../../../../components/gatus/guarded
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application
   postBuild:

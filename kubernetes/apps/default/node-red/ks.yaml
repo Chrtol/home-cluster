@@ -12,7 +12,6 @@ spec:
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
-    - ../../../../components/gatus/guarded
   path: ./kubernetes/apps/default/node-red/app
   prune: true
   sourceRef:

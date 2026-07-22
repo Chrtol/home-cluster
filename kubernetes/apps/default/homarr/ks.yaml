@@ -19,7 +19,6 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/default/homarr/app
   components:
-    - ../../../../components/gatus/guarded
     - ../../../../components/ceph-rbd
   postBuild:
     substitute:

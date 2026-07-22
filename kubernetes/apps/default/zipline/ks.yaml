@@ -20,7 +20,6 @@ spec:
     - ../../../../components/cnpg
     - ../../../../components/s3-bucket
     - ../../../../components/oidc-application
-    - ../../../../components/gatus/external
   dependsOn:
     # the actual Postgres cluster, not just the operator -- init-db needs it up
     - name: cloudnative-pg-cluster-v17

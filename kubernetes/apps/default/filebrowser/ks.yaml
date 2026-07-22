@@ -23,7 +23,6 @@ spec:
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
     - ../../../../components/volsync
-    - ../../../../components/gatus/external
   dependsOn:
     - name: authentik
       namespace: security

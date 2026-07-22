@@ -15,8 +15,6 @@ spec:
     - name: plex
   interval: 1h
   path: ./kubernetes/apps/media/tautulli/app
-  components:
-    - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app

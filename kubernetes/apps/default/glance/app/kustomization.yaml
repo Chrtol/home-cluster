@@ -6,7 +6,6 @@ resources:
   - ./externalsecret.yaml
   - ./svc.yaml
   - ./helmrelease.yaml
-  - ./gatus.yaml
 configMapGenerator:
   - name: glance-configmap
     files:

@@ -22,7 +22,6 @@ spec:
   components:
     - ../../../../components/cnpg
     - ../../../../components/dragonfly
-    - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
     - ../../../../components/volsync
   prune: true

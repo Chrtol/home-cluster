@@ -13,8 +13,6 @@ spec:
   interval: 30m
   timeout: 5m
   path: "./kubernetes/apps/default/it-tools/app"
-  components:
-    - ../../../../components/gatus/external
   prune: true
   sourceRef:
     kind: GitRepository

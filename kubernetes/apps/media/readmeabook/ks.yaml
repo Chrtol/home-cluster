@@ -13,7 +13,6 @@ spec:
     - ../../../../components/cnpg
     - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
-    - ../../../../components/gatus/guarded
     - ../../../../components/oidc-application
   dependsOn:
     - name: cloudnative-pg-cluster-v17

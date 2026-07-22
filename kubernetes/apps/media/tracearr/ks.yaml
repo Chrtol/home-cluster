@@ -19,7 +19,6 @@ spec:
   components:
     - ../../../../components/cnpg
     - ../../../../components/dragonfly
-    - ../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app

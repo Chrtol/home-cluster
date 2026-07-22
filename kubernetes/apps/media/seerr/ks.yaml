@@ -18,7 +18,6 @@ spec:
       namespace: database
   components:
     - ../../../../components/cnpg
-    - ../../../../components/gatus/external
   interval: 1h
   path: ./kubernetes/apps/media/seerr/app
   postBuild:

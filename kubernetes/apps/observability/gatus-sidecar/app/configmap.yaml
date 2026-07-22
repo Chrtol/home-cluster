@@ -30,6 +30,81 @@ data:
     endpoints:
       # flux-webhook is now auto-discovered from its HTTPRoute (annotated with the
       # 404 condition), so it's no longer declared here to avoid a duplicate.
+      #
+      # ── Routeless / special endpoints ─────────────────────────────────────────
+      # These can't be derived from an HTTPRoute (no route, or a deliberate
+      # service/TCP/DNS probe), so they're declared here. Migrated from the old
+      # per-app gatus.yaml ConfigMaps + guarded components. Alerts normalized to
+      # the n8n custom provider (was pushover on some).
+      - name: actual
+        group: internal
+        url: "http://actual.default.svc.cluster.local:5006"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: custom
+      - name: mosquitto
+        group: infrastructure
+        url: tcp://mosquitto.default.svc.cluster.local:1883
+        interval: 1m
+        ui:
+          hide-url: true
+          hide-hostname: true
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: custom
+      - name: alertmanager
+        group: internal
+        url: "http://kube-prometheus-stack-alertmanager.observability.svc.cluster.local:9093/-/healthy"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: custom
+      - name: cross-seed
+        group: guarded
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "cross-seed.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "len([BODY]) == 0"
+        alerts:
+          - type: custom
+      - name: tempo
+        group: guarded
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "tempo.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "len([BODY]) == 0"
+        alerts:
+          - type: custom
+      - name: glance
+        group: guarded
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "glance.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "len([BODY]) == 0"
+        alerts:
+          - type: custom
       - name: nas
         group: certificates
         url: https://nas.${SECRET_DOMAIN}

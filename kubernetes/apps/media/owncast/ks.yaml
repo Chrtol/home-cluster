@@ -15,7 +15,6 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/owncast/app
   components:
-    - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application

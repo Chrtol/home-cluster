@@ -14,8 +14,6 @@ spec:
       namespace: ceph-csi-rbd
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/public/app
-  components:
-    - ../../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app
@@ -47,8 +45,6 @@ spec:
       namespace: ceph-csi-rbd
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/private/app
-  components:
-    - ../../../../../components/gatus/guarded
   postBuild:
     substitute:
       APP: *app

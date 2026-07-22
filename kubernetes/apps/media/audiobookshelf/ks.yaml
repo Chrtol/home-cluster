@@ -30,7 +30,6 @@ spec:
       - name: cluster-secrets
         kind: Secret
   components:
-    - ../../../../components/gatus/external
     - ../../../../components/ceph-rbd
     - ../../../../components/volsync
   dependsOn:

@@ -50,7 +50,6 @@ spec:
     - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
-    - ../../../../components/gatus/external
   dependsOn:
     - name: postiz-temporal
       namespace: default
