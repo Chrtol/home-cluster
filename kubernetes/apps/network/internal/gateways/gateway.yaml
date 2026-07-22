@@ -6,6 +6,16 @@ metadata:
   namespace: network
   labels:
     dns-provider: internal
+  annotations:
+    # gatus-sidecar: routes on the internal gateway inherit this endpoint config
+    # (child route annotations win). Internal-only hosts aren't reachable from the
+    # sidecar pod, so default them to a DNS/guarded probe under the guarded group.
+    gatus.home-operations.com/endpoint: |
+      group: guarded
+      guarded: true
+      ui:
+        hide-hostname: true
+        hide-url: true
 spec:
   gatewayClassName: envoy
   infrastructure:

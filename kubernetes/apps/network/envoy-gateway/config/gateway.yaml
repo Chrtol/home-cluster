@@ -15,6 +15,10 @@ metadata:
     dns-provider: external
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
+    # gatus-sidecar: routes on the external gateway inherit this (child annotations
+    # win). Publicly reachable, so keep the default HTTP probe and just group them.
+    gatus.home-operations.com/endpoint: |
+      group: external
 spec:
   gatewayClassName: envoy
   infrastructure:

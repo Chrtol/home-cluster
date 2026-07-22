@@ -28,16 +28,8 @@ data:
         target: 1.1.1.1:53
         interval: 1m
     endpoints:
-      - name: flux-webhook
-        group: external
-        url: https://flux-webhook.${SECRET_DOMAIN}
-        interval: 1m
-        client:
-          dns-resolver: tcp://1.1.1.1:53
-        conditions:
-          - "[STATUS] == 404"
-        alerts:
-          - type: custom
+      # flux-webhook is now auto-discovered from its HTTPRoute (annotated with the
+      # 404 condition), so it's no longer declared here to avoid a duplicate.
       - name: nas
         group: certificates
         url: https://nas.${SECRET_DOMAIN}

@@ -65,11 +65,10 @@ spec:
             port: &port 1880
     route:
       internal:
-        annotations:
-          # gatus-sidecar pilot: internal-only route → DNS/guarded probe instead
-          # of an HTTP probe the checker can't reach.
-          gatus.home-operations.com/endpoint: |
-            guarded: true
+        # gatus-sidecar: no per-route annotation — this internal-gateway route
+        # inherits group:guarded + guarded:true from the internal Gateway. Left
+        # bare on purpose to validate Gateway-level inheritance (cf. tautulli,
+        # which keeps an explicit per-route override to validate that path).
         hostnames: ["nodered.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal

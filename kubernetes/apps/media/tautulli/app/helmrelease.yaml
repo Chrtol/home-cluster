@@ -75,8 +75,8 @@ spec:
     route:
       app:
         annotations:
-          # gatus-sidecar pilot: internal-only route → DNS/guarded probe instead
-          # of an HTTP probe the checker can't reach.
+          # gatus-sidecar: explicit per-route override (redundant with the internal
+          # Gateway's inherited guarded:true, kept to validate the per-route path).
           gatus.home-operations.com/endpoint: |
             guarded: true
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]

@@ -5,6 +5,14 @@ metadata:
   name: flux-webhook
   annotations:
     external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    # gatus-sidecar: the webhook receiver returns 404 to a bare GET (no payload),
+    # which is the healthy signal — override the default [STATUS]==200 and drop
+    # the auto-extracted /hook/ path so the probe hits the bare host.
+    gatus.home-operations.com/endpoint: |
+      group: external
+      path: ""
+      conditions:
+        - "[STATUS] == 404"
 spec:
   parentRefs:
     - name: external

@@ -12,6 +12,13 @@ metadata:
   name: ${APP}
   annotations:
     external-dns.alpha.kubernetes.io/target: "${EXT_AUTH_DNS_TARGET:=}"
+    # gatus-sidecar: ext-auth apps sit behind Authentik forward-auth, and this
+    # route's first path match is the /outpost.goauthentik.io callback — an HTTP
+    # probe would check the outpost, not the app, and false-green. Use a DNS
+    # (guarded) probe instead. group keeps them together on the status page.
+    gatus.home-operations.com/endpoint: |
+      group: guarded
+      guarded: true
 spec:
   parentRefs:
     - name: ${EXT_AUTH_GATEWAY:=internal}
