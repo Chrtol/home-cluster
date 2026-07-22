@@ -27,3 +27,5 @@ resources:
   - ./garage-operator.yaml
   - ./drm-exporter.yaml
   - ./gatus-sidecar.yaml
+  - ./csi-driver-nfs.yaml
+  - ./descheduler.yaml

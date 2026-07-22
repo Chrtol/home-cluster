@@ -6,7 +6,6 @@ resources:
   - ./bjw-s.yaml
   - ./node-feature-discovery.yaml
   - ./intel-charts.yaml
-  - ./csi-driver-nfs.yaml
   - ./ceph-csi.yaml
   - ./prometheus-community.yaml
   - ./grafana.yaml
@@ -14,7 +13,6 @@ resources:
   - ./bitnami-charts.yaml
   - ./authentik.yaml
   - ./hajimari.yaml
-  - ./descheduler.yaml
   - ./fairwinds-charts.yaml
   - ./crowdsec.yaml
   - ./trivy-charts.yaml
