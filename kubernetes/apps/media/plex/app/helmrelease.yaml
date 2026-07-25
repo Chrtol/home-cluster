@@ -31,7 +31,16 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               PLEX_ADVERTISE_URL: https://plex-local.${SECRET_DOMAIN},https://plex.${SECRET_DOMAIN},http://10.0.30.70:32400
+              # Auth-bypass list (allowedNetworks) — real trusted LAN subnets ONLY.
+              # Do NOT add the pod CIDR (10.42.0.0/16) here: external users reach Plex
+              # via the Envoy gateway (source IP 10.42.x.x), so adding it would let the
+              # whole internet skip authentication.
               PLEX_NO_AUTH_NETWORKS: 10.0.10.0/24, 10.0.20.0/24, 10.0.30.0/24
+              # NOTE: Plex's "LAN Networks" (LanNetworksBandwidth, in the /config PVC, set
+              # via UI — Settings > Network) must include the pod CIDR 10.42.0.0/16 so
+              # gateway-proxied streams are classified LAN and transcode at full quality
+              # instead of a low WAN default. This image has no env var for it; the value
+              # lives in the backed-up config PVC (re-add via UI if the PVC is ever lost).
             envFrom:
               - secretRef:
                   name: plex-secret
