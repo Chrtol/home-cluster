@@ -43,7 +43,7 @@ jobs:
       # --enable-helm) and renders every namespace by default; it exits non-zero
       # on any Kustomization/HelmRelease reconcile failure.
       - name: Setup flate
-        uses: home-operations/flate/action@0fc37fae10cf3c265294f6adebc6d6c100c74ea5 # v0.4.10
+        uses: home-operations/flate/action@bf3405a189626478b0aa6ec98dc4d6f7d419df17 # v0.4.12
         with:
           cache: true
           base: ""
@@ -76,7 +76,7 @@ jobs:
       # materializes the base tree itself and renders changed-only — no second
       # checkout / --path-orig (which is mutually exclusive with --base).
       - name: Setup flate
-        uses: home-operations/flate/action@0fc37fae10cf3c265294f6adebc6d6c100c74ea5 # v0.4.10
+        uses: home-operations/flate/action@bf3405a189626478b0aa6ec98dc4d6f7d419df17 # v0.4.12
         with:
           cache: true
 
