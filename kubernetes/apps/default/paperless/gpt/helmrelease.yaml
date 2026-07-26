@@ -27,12 +27,14 @@ spec:
               TZ: ${SECRET_TIMEZONE}
               PAPERLESS_BASE_URL: http://paperless.default.svc.cluster.local:8000
               PAPERLESS_PUBLIC_URL: https://paperless.${SECRET_DOMAIN}
-              LLM_PROVIDER: openai
-              LLM_MODEL: gpt-4o
+              # Native Google AI (Gemini) provider — better for vision OCR than
+              # routing through the OpenAI-compat shim. Uses GOOGLEAI_API_KEY.
+              LLM_PROVIDER: googleai
+              LLM_MODEL: gemini-2.5-flash
               LLM_LANGUAGE: English
               OCR_PROVIDER: llm
-              VISION_LLM_PROVIDER: openai
-              VISION_LLM_MODEL: gpt-4o
+              VISION_LLM_PROVIDER: googleai
+              VISION_LLM_MODEL: gemini-2.5-flash
               OCR_LIMIT_PAGES: 5
               OCR_PROCESS_MODE: image
               PDF_SKIP_EXISTING_OCR: false

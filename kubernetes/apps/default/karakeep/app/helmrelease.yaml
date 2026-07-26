@@ -39,6 +39,12 @@ spec:
               DISABLE_PASSWORD_AUTH: true
               MEILI_ADDR: http://karakeep-meilisearch.default.svc.cluster.local:7700
               NEXTAUTH_URL: https://karakeep.${SECRET_DOMAIN}
+              # AI tagging/titling via Google Gemini's OpenAI-compatible endpoint.
+              # Base URL MUST include the trailing /openai/ — Karakeep uses the
+              # OpenAI SDK, which appends /chat/completions; bare /v1beta 404s.
+              OPENAI_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+              INFERENCE_TEXT_MODEL: gemini-2.5-flash-lite
+              INFERENCE_IMAGE_MODEL: gemini-2.5-flash-lite
               DISABLE_NEW_RELEASE_CHECK: true
               COREPACK_INTEGRITY_KEYS: 0
               TZ: ${SECRET_TIMEZONE}

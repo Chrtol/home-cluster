@@ -22,9 +22,11 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               ACTIVATE_TAGGING: yes
-              AI_PROVIDER: ollama
-              OLLAMA_API_URL: http://ollama.ai.svc.cluster.local:11434
-              OLLAMA_MODEL: qwen2.5:3b
+              # Gemini via the OpenAI-compatible "custom" provider (Ollama removed).
+              # Base URL needs the trailing /openai/ for the OpenAI-compat shim.
+              AI_PROVIDER: custom
+              CUSTOM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+              CUSTOM_MODEL: gemini-2.5-flash-lite
               PAPERLESS_API_URL: http://paperless.default.svc.cluster.local:8000/api
               PROCESS_PREDEFINED_DOCUMENTS: yes
               USE_EXISTING_DATA: yes
@@ -42,9 +44,11 @@ spec:
             resources:
               requests:
                 cpu: 15m
-                memory: 2312Mi
+                # Trimmed after moving off local Ollama to the Gemini API — this
+                # container now only makes API calls, no local model in memory.
+                memory: 512Mi
               limits:
-                memory: 3080Mi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
