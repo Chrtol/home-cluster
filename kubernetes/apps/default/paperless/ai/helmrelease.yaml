@@ -44,11 +44,9 @@ spec:
             resources:
               requests:
                 cpu: 15m
-                # Trimmed after moving off local Ollama to the Gemini API — this
-                # container now only makes API calls, no local model in memory.
-                memory: 512Mi
+                memory: 2312Mi
               limits:
-                memory: 1Gi
+                memory: 3080Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
