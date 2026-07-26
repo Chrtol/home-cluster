@@ -26,7 +26,7 @@ spec:
               # Base URL needs the trailing /openai/ for the OpenAI-compat shim.
               AI_PROVIDER: custom
               CUSTOM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
-              CUSTOM_MODEL: gemini-2.5-flash-lite
+              CUSTOM_MODEL: gemini-3.5-flash-lite
               PAPERLESS_API_URL: http://paperless.default.svc.cluster.local:8000/api
               PROCESS_PREDEFINED_DOCUMENTS: yes
               USE_EXISTING_DATA: yes

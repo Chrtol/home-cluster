@@ -30,11 +30,11 @@ spec:
               # Native Google AI (Gemini) provider — better for vision OCR than
               # routing through the OpenAI-compat shim. Uses GOOGLEAI_API_KEY.
               LLM_PROVIDER: googleai
-              LLM_MODEL: gemini-2.5-flash
+              LLM_MODEL: gemini-3.6-flash
               LLM_LANGUAGE: English
               OCR_PROVIDER: llm
               VISION_LLM_PROVIDER: googleai
-              VISION_LLM_MODEL: gemini-2.5-flash
+              VISION_LLM_MODEL: gemini-3.6-flash
               OCR_LIMIT_PAGES: 5
               OCR_PROCESS_MODE: image
               PDF_SKIP_EXISTING_OCR: false
