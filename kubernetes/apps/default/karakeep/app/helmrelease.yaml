@@ -82,9 +82,9 @@ spec:
             resources:
               requests:
                 cpu: 15m
-                memory: 256M
+                memory: 1280M
               limits:
-                memory: 512M
+                memory: 2Gi
 
       meilisearch:
         annotations:
