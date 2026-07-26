@@ -42,6 +42,12 @@ spec:
               DISABLE_NEW_RELEASE_CHECK: true
               COREPACK_INTEGRITY_KEYS: 0
               TZ: ${SECRET_TIMEZONE}
+              # V8 sizes its heap against host RAM, not the cgroup limit, so it
+              # grows past the container limit before GC turns aggressive and the
+              # kernel OOM-kills it. Cap the heap below the limit so GC reclaims
+              # under pressure instead. ~1152Mi heap under a 1.5Gi limit leaves
+              # room for non-heap (buffers, native, screenshot/image blobs).
+              NODE_OPTIONS: --max-old-space-size=1152
             envFrom:
               - secretRef:
                   name: karakeep-secret
@@ -55,7 +61,7 @@ spec:
                 cpu: 23m
                 memory: 549Mi
               limits:
-                memory: 1Gi
+                memory: 1536Mi
 
       chrome:
         annotations:
