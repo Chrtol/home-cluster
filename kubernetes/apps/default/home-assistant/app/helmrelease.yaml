@@ -114,6 +114,18 @@ spec:
         hostPath: /dev/bus/usb
         globalMounts:
           - path: /dev/bus/usb
+      # ZBT-2 (Nabu Casa Connect) exposes /dev/ttyACM0 + a stable by-id symlink;
+      # raw /dev/bus/usb alone doesn't surface the tty the OTBR/serial integrations need.
+      serial-by-id:
+        type: hostPath
+        hostPath: /dev/serial
+        globalMounts:
+          - path: /dev/serial
+      ttyacm0:
+        type: hostPath
+        hostPath: /dev/ttyACM0
+        globalMounts:
+          - path: /dev/ttyACM0
       tmpfs:
         type: emptyDir
         advancedMounts:
