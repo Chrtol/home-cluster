@@ -86,8 +86,6 @@ spec:
             port: 5580
     persistence:
       data:
-        accessMode: ReadWriteOnce
-        size: 2Gi
-        storageClass: csi-rbd-sc
+        existingClaim: matter-server
         globalMounts:
           - path: /data
