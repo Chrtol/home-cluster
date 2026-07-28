@@ -24,16 +24,19 @@ spec:
           reloader.stakater.com/auto: "true"
         containers:
           app:
+            # HA 2026.7 migrated its Matter Server to matter.js (matterjs-server).
+            # The legacy python-matter-server (schema 9) is rejected as wrong-version.
+            # Rootless + readOnlyRootFS: proven on Talos by mcfio/talos-n150-cluster.
             image:
-              repository: ghcr.io/home-assistant-libs/python-matter-server
-              tag: 6.2.2
+              repository: ghcr.io/matter-js/matterjs-server
+              tag: 1.3.3@sha256:ac537ba44a2edaaf785b818f8b7ce75cdf736539401462046f0042670bee4063
             args:
-              - --storage-path
-              - /data
-              - --port
-              - "5580"
-              # No Bluetooth adapter on Talos -> commission Thread devices by
-              # pairing code, not BLE. (No --bluetooth-adapter flag on purpose.)
+              - --storage-path=/data
+              - --ota-provider-dir=/data/ota
+              - --production-mode
+              # No --primary-interface: hostNetwork test (our multus IoT path is dead).
+              # If commissioning needs the IoT-L2 presence, switch to multus + set
+              # --primary-interface=net1 and the accept_ra_rt_info sysctl (see docs).
             env:
               TZ: ${SECRET_TIMEZONE}
             probes:
@@ -55,37 +58,52 @@ spec:
                   initialDelaySeconds: 15
                   periodSeconds: 30
                   failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 5580
+                  failureThreshold: 30
+                  periodSeconds: 10
             securityContext:
-              # Matter needs raw sockets + IPv6 multicast for Thread/commissioning.
-              # hostNetwork below means this shares lenovo2's stack directly.
-              capabilities:
-                add: ["NET_ADMIN", "NET_RAW"]
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 25m
+                cpu: 10m
                 memory: 128Mi
               limits:
-                memory: 512Mi
+                memory: 1Gi
     defaultPodOptions:
       # Pin to lenovo2: co-located with OTBR + the ZBT-2 radio.
       nodeSelector:
         kubernetes.io/hostname: lenovo2
-      # hostNetwork: Matter mDNS/commissioning + OTBR REST need the node's real
-      # network stack. Bypasses the dead multus/ipvlan path entirely.
+      # hostNetwork TEST: our multus IoT path is dead (ipvlan-L3 over a down bond0).
+      # If Matter commissioning needs the device-VLAN L2 presence, the fallback is to
+      # fix multus and give this pod a static IoT IP like the reference deployments.
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       securityContext:
-        runAsNonRoot: false # matter SDK opens raw/ICMPv6 sockets
-        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
         controller: matter-server
         ports:
-          websocket:
+          http:
             port: 5580
     persistence:
       data:
         existingClaim: matter-server
         globalMounts:
           - path: /data
+      # readOnlyRootFilesystem -> writable scratch needed
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
