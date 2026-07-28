@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: matter-server
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      matter-server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-assistant-libs/python-matter-server
+              tag: 6.2.2
+            args:
+              - --storage-path
+              - /data
+              - --port
+              - "5580"
+              # No Bluetooth adapter on Talos -> commission Thread devices by
+              # pairing code, not BLE. (No --bluetooth-adapter flag on purpose.)
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 5580
+                  initialDelaySeconds: 15
+                  periodSeconds: 30
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 5580
+                  initialDelaySeconds: 15
+                  periodSeconds: 30
+                  failureThreshold: 3
+            securityContext:
+              # Matter needs raw sockets + IPv6 multicast for Thread/commissioning.
+              # hostNetwork below means this shares lenovo2's stack directly.
+              capabilities:
+                add: ["NET_ADMIN", "NET_RAW"]
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      # Pin to lenovo2: co-located with OTBR + the ZBT-2 radio.
+      nodeSelector:
+        kubernetes.io/hostname: lenovo2
+      # hostNetwork: Matter mDNS/commissioning + OTBR REST need the node's real
+      # network stack. Bypasses the dead multus/ipvlan path entirely.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        runAsNonRoot: false # matter SDK opens raw/ICMPv6 sockets
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: matter-server
+        ports:
+          websocket:
+            port: 5580
+    persistence:
+      data:
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        storageClass: csi-rbd-sc
+        globalMounts:
+          - path: /data
