@@ -4,3 +4,12 @@ machine:
     fs.inotify.max_user_instances: "8192"  # Watchdog
     net.core.rmem_max: "7500000" # Cloudflared | QUIC
     net.core.wmem_max: "7500000" # Cloudflared | QUIC
+    # Matter-over-Thread: OTBR (CT103) advertises a route to the Thread mesh's OMR
+    # /64 prefix as a Route Information Option in its Router Advertisements. The
+    # kernel default of 0 accepts RIOs only for ::/0, so every specific route offer
+    # was silently dropped and the node had NO route to the Thread mesh — a bulb
+    # would join Thread (visible in OTBR's router table) but matter-server could
+    # never reach its OMR address to complete operational discovery/CASE, so
+    # commissioning hung at "configuring" and matter-server logged nothing at all.
+    net.ipv6.conf.default.accept_ra_rt_info_max_plen: "64" # Thread OMR route via OTBR RA
+    net.ipv6.conf.ens18.accept_ra_rt_info_max_plen: "64"   # Thread OMR route via OTBR RA
