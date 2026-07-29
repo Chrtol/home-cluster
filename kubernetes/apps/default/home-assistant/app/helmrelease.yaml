@@ -55,14 +55,15 @@ spec:
       priorityClassName: external-facing
       nodeSelector:
         kubernetes.io/hostname: lenovo2
-      annotations:
-        k8s.v1.cni.cncf.io/networks: |
-          [{
-            "name": "multus-wlan",
-            "namespace": "network",
-            "ips": ["10.0.20.200/24"],
-            "mac": "3e:59:e4:f7:43:09"
-          }]
+      # hostNetwork is REQUIRED for mDNS/zeroconf discovery (Apple TV, Matter, etc.).
+      # On the pod network Cilium does not deliver L2 multicast (224.0.0.251 / ff02::fb),
+      # so HA bound no :5353 socket at all and discovered nothing — every integration
+      # here had to be added by hand. hostNetwork puts HA on the node's ens18, where the
+      # mDNS groups are joined. (The old multus-wlan annotation attempted the same thing
+      # via a NAD that is ipvlan-L3 over a down bond0 — dead, and ipvlan-L3 strips
+      # multicast regardless. Removed.)
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -114,18 +115,11 @@ spec:
         hostPath: /dev/bus/usb
         globalMounts:
           - path: /dev/bus/usb
-      # ZBT-2 (Nabu Casa Connect) exposes /dev/ttyACM0 + a stable by-id symlink;
-      # raw /dev/bus/usb alone doesn't surface the tty the OTBR/serial integrations need.
-      serial-by-id:
-        type: hostPath
-        hostPath: /dev/serial
-        globalMounts:
-          - path: /dev/serial
-      ttyacm0:
-        type: hostPath
-        hostPath: /dev/ttyACM0
-        globalMounts:
-          - path: /dev/ttyACM0
+      # NOTE: no ZBT-2 serial mounts here. The radio was flashed to OpenThread RCP and
+      # now lives on the Proxmox HOST, owned by otbr-agent in CT103 (serial is
+      # single-owner). /dev/ttyACM0 and /dev/serial do not exist inside this VM — the
+      # old hostPath mounts silently materialised as empty dirs. HA reaches Thread via
+      # the OTBR REST API and matter-server's WebSocket, never the radio directly.
       tmpfs:
         type: emptyDir
         advancedMounts:
