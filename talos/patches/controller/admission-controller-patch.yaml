@@ -1,2 +1,17 @@
-- op: remove
-  path: /cluster/apiServer/admissionControl
+# Drop Talos' default PodSecurity admission plugin.
+#
+# This was a JSON6902 `op: remove`, which Talos rejects now that the generated
+# config is multi-document ("JSON6902 patches are not supported for
+# multi-document machine configuration"). Strategic merge has no `remove`, so
+# deletion goes through talhelper's `$patch: delete` directive.
+#
+# The `$$` is not a typo: talhelper runs envsubst over patch files (that is how
+# `${talosVersion}` resolves), so a bare `$patch` fails with
+# "variable ${patch} not set". `$$` escapes to a literal `$`.
+#
+# Do NOT "simplify" this to `admissionControl: []` or `: null` — both are
+# silent no-ops that leave the default PodSecurity plugin in place.
+cluster:
+  apiServer:
+    admissionControl:
+      $$patch: delete

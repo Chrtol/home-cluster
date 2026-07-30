@@ -1,13 +1,13 @@
----
 # Allow tuppr controller to access Talos API from system-upgrade namespace
-- op: add
-  path: /machine/features/rbac
-  value: true
-- op: add
-  path: /machine/features/kubernetesTalosAPIAccess
-  value:
-    enabled: true
-    allowedRoles:
-      - os:admin
-    allowedKubernetesNamespaces:
-      - system-upgrade
+#
+# Converted from JSON6902 to strategic merge: Talos rejects JSON6902 patches
+# against the multi-document config it generates from v1.13 onwards.
+machine:
+  features:
+    rbac: true
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:admin
+      allowedKubernetesNamespaces:
+        - system-upgrade
