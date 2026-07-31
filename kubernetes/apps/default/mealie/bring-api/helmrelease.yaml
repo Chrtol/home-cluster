@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app mealie-bring-api
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      mealie-bring-api:
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/felixschndr/mealie-bring-api
+              tag: 1.3.0
+            env:
+              HTTP_PORT: &port 8742
+              # Mealie's backend is what calls this service (recipe actions are
+              # dispatched server-side via requests.post, not from the browser),
+              # so both hops stay inside the cluster -- no route, no gateway, no
+              # public exposure, and no ext-auth in the way.
+              MEALIE_BASE_URL: http://mealie.default.svc.cluster.local:9000
+              # Only needed if the Bring account has more than one Mealie
+              # shopping list to disambiguate; leave unset to use the default.
+              # MEALIE_SHOPPING_LIST_UUID: ""
+              LOG_LEVEL: INFO
+              TZ: ${SECRET_TIMEZONE}
+            envFrom:
+              - secretRef:
+                  name: mealie-bring-api-secret
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /status
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+
+    service:
+      app:
+        controller: *app
+        type: ClusterIP
+        ports:
+          http:
+            port: *port
