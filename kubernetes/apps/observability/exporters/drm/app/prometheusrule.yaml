@@ -125,6 +125,13 @@ spec:
           # All three together == "video work is on the CPU, not the GPU" == software.
           # CPU is label-joined (not pod=~"plex.*") so it excludes plex-auto-languages,
           # which also runs a container named "app" in this namespace.
+          # The CPU is checked on TWO windows so the page is always ACTIONABLE -- i.e. it
+          # only fires while the software transcode is LIVE, not on a stale average:
+          #  - rate[5m] > 1.5 is the sustained trend (paired with for:20m below).
+          #  - rate[2m] > 1.5 is "still burning CPU right now". A counter has no
+          #    instantaneous read, so this short window is the closest to current; it
+          #    closes the ~3min tail where the 5m average keeps coasting >1.5 after the
+          #    stream already ended (during which nothing is left to act on).
           expr: |
             (
               max(max_over_time(
@@ -149,7 +156,74 @@ spec:
                 kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
               ) > 1.5
             )
+            and on ()
+            (
+              sum(
+                rate(container_cpu_usage_seconds_total{namespace="media", container="app"}[2m])
+                * on (namespace, pod) group_left ()
+                kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
+              ) > 1.5
+            )
           for: 20m
+          labels:
+            severity: warning
+
+        # Per-scrape 0/1 gauge: is Plex transcoding VIDEO on the CPU right now? Shared
+        # signal for the trend alert below; mirrors PlexTranscodingWithoutGpu minus its
+        # 20m sustain. 1 only when a video-transcode session exists, the GPU saw no
+        # activity for 2m (short window survives bursty HLS transcode-ahead without the
+        # 20m smear that would distort a time-average), AND Plex burns >1.5 cores -- i.e.
+        # the encode is on the CPU, not the GPU. The vector(1)/vector(0) wrap turns the
+        # match into a continuous 0/1 so avg_over_time() reads it as a time-fraction.
+        - record: plex:software_video_transcode:active
+          expr: |
+            (
+              vector(1) and on ()
+              (
+                (
+                  count(plex_plays_active{stream_type="transcode", transcode_type=~"video|both"}) > 0
+                )
+                and on ()
+                (
+                  max by (node) (max_over_time(drm_engine_utilization_ratio[2m]))
+                  * on (node) group_left ()
+                  max by (node) (
+                    kube_pod_info * on (namespace, pod) group_left ()
+                    kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
+                  )
+                ) < 0.05
+                and on ()
+                (
+                  sum(
+                    rate(container_cpu_usage_seconds_total{namespace="media", container="app"}[5m])
+                    * on (namespace, pod) group_left ()
+                    kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
+                  ) > 1.5
+                )
+              )
+            ) or on () vector(0)
+
+        # The slow-burn companion to PlexTranscodingWithoutGpu. That alert catches ONE
+        # software transcode sustained live for 20m; this catches DEATH BY A THOUSAND
+        # CUTS -- many short CPU transcodes that each end before the 20m sustain trips but
+        # add up, the signature of an intermittently failing GPU path or the single i915
+        # slot saturating under concurrent load. avg_over_time of the 0/1 gauge above ==
+        # the fraction of the window spent software-transcoding; 0.08 ~= 29 min of any 6h.
+        # Baseline is ~0 (the GPU normally handles everything, measured 2026-08-02), so
+        # this cannot be validated to fire until a real regression occurs -- tune the
+        # threshold UP if legitimate rare-codec CPU transcodes ever make it chatter.
+        - alert: PlexSoftwareTranscodeExcessive
+          annotations:
+            description: >-
+              Plex spent over 8% of the last 6h transcoding video on the CPU instead of
+              the GPU ({{ $value | humanizePercentage }}). Each episode was short enough
+              to dodge PlexTranscodingWithoutGpu, but the accumulation points at an
+              intermittently failing GPU path or a saturated i915 slot. Review recent
+              transcode sessions (Tautulli) and dell1 GPU health.
+            summary: Plex has been CPU-transcoding video more than usual lately.
+          expr: |
+            avg_over_time(plex:software_video_transcode:active[6h]) > 0.08
+          for: 15m
           labels:
             severity: warning
 
