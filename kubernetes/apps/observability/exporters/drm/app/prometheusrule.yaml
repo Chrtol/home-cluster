@@ -66,8 +66,8 @@ spec:
         # The failure that actually costs something. Plex silently falls back to
         # software transcoding when it cannot open the render node -- a lost i915
         # device plugin slot, a driver hiccup, a Plex Pass lapse. Nothing breaks:
-        # streams keep playing, the pod stays Ready, plex_active_transcode_sessions
-        # still counts sessions. It just pins the CPU and stutters on 4K.
+        # streams keep playing, the pod stays Ready, plex_plays_active still shows the
+        # stream. It just pins the CPU and stutters on 4K.
         # Neither exporter can see this alone -- Plex does not report which encoder
         # it chose, and an idle GPU is only suspicious while Plex is busy. Joining
         # the two is what makes it detectable.
@@ -80,13 +80,14 @@ spec:
             # the resulting series carries no labels at all and the template would
             # render an empty string. The node is recoverable from the query below.
             description: >-
-              Plex has been transcoding for 20m while the GPU on its node stayed idle
-              (peak engine utilization under 5%). Transcoding has almost certainly
-              fallen back to software: playback still works but burns CPU and stutters
-              on high-bitrate content. Find the node with:
+              Plex has been transcoding video for 20m while the GPU on its node stayed
+              idle (peak engine utilization under 5%) AND the Plex container burned over
+              1.5 CPU cores -- the CPU is doing the encode the GPU should be doing, i.e.
+              a software fallback. Playback still works but stutters on high-bitrate
+              content. Find the node with:
               kube_pod_info * on (namespace, pod) group_left ()
               kube_pod_labels{label_app_kubernetes_io_name="plex"}
-            summary: Plex is transcoding without GPU acceleration.
+            summary: Plex is transcoding video without GPU acceleration.
           # plex-exporter scrapes the Plex API remotely, so its series carry NO node
           # label -- joining it to drm metrics on (node) directly matches nothing and
           # the alert can never fire. kube_pod_labels supplies the missing pod->node
@@ -95,22 +96,40 @@ spec:
           # and a "plex-.*" pattern also swallows plex-auto-languages, plex-off-deck
           # and plex-exporter (the last of which runs on a different node entirely,
           # which would join the wrong GPU).
-          # The plex_plays_active gate is what keeps this quiet overnight. Plex's
-          # nightly maintenance window (chapter thumbnails, media analysis, ~3-5am)
-          # decodes video, so plex_active_transcode_sessions goes to 1 -- but Plex runs
-          # those background jobs on CPU BY DESIGN, reserving hardware decode for live
-          # playback so maintenance cannot starve a real stream. An idle GPU there is
-          # correct behaviour, not a fallback. Without this gate the alert fired at
-          # 03:25-04:30 on 2026-07-20 with nobody watching, and would have every night.
-          # plex_plays_active only exists while something is genuinely being played, so
-          # requiring it restricts the alert to real playback.
+          # ONE gate on plex_plays_active filtered to VIDEO transcodes does three jobs:
+          #  1. transcode_type=~"video|both" excludes AUDIO-ONLY and subtitle-only
+          #     transcodes (e.g. EAC3->AAC, sidecar subs). Those legitimately use no GPU,
+          #     so the old plex_active_transcode_sessions gate -- which counts EVERY
+          #     transcode -- fired with a (correctly) idle GPU. Over 7d that was ~382 min
+          #     of false positives, including "nobody streaming" fires up to 20m after an
+          #     audio-only transcode ended (the max_over_time window keeps the gate hot).
+          #     transcode_type values observed: audio, video, both, none. Burn-in subs
+          #     force a real video transcode (type=both) that DOES use the GPU, so they
+          #     stay correctly quiet.
+          #  2. stream_type="transcode" excludes direct play (values: transcode,
+          #     directplay, unknown).
+          #  3. plex_plays_active only exists during genuine playback, so Plex's nightly
+          #     maintenance window (chapter thumbs, analysis, ~3-5am) -- which decodes on
+          #     CPU BY DESIGN and tripped the old alert at 03:25-04:30 on 2026-07-20 -- is
+          #     excluded for free. This single filtered gate supersedes the old
+          #     plex_active_transcode_sessions + plex_plays_active pair.
+          # GPU-idle ALONE is not enough: a LIGHT hardware transcode (a 720p/3Mbps remote
+          # stream barely taxes the UHD 770) and a PAUSED stream both leave the GPU idle,
+          # and HLS transcode-ahead is bursty so a 5s-avg sample scraped once/min often
+          # lands in an idle gap. Measured 2026-08-02: video-transcode+GPU-idle windows
+          # peaked at 0.63 CPU cores over 2d -- pure light-HW/paused, zero real fallbacks,
+          # yet the GPU-only rule fired 821 min. The CPU term is the discriminator: a real
+          # software 1080p/4K encode pins 2-4 cores, so >1.5 cleanly separates it from
+          # light-HW/paused (<0.7) while the GPU-idle term rejects a CPU spike from a
+          # library scan happening ALONGSIDE a healthy HW transcode (GPU busy => no fire).
+          # All three together == "video work is on the CPU, not the GPU" == software.
+          # CPU is label-joined (not pod=~"plex.*") so it excludes plex-auto-languages,
+          # which also runs a container named "app" in this namespace.
           expr: |
             (
-              max(max_over_time(plex_active_transcode_sessions[20m])) > 0
-            )
-            and on ()
-            (
-              max(max_over_time(plex_plays_active[20m])) > 0
+              max(max_over_time(
+                plex_plays_active{stream_type="transcode", transcode_type=~"video|both"}[20m]
+              )) > 0
             )
             and on ()
             (
@@ -122,6 +141,14 @@ spec:
                 kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
               )
             ) < 0.05
+            and on ()
+            (
+              sum(
+                rate(container_cpu_usage_seconds_total{namespace="media", container="app"}[5m])
+                * on (namespace, pod) group_left ()
+                kube_pod_labels{label_app_kubernetes_io_name="plex", namespace="media"}
+              ) > 1.5
+            )
           for: 20m
           labels:
             severity: warning
