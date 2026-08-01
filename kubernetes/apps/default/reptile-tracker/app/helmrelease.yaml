@@ -127,7 +127,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/chrtol/reptile-tracker-frontend
-              tag: main-20260725050951 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
+              tag: main-20260801182905 # {"$imagepolicy": "default:reptile-tracker-frontend:tag"}
               pullPolicy: Always
             securityContext:
               runAsUser: 0
