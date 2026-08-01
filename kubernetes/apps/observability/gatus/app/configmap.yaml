@@ -40,6 +40,32 @@ data:
           - "[CONNECTED] == true"
         alerts:
           - type: custom
+      # --- Off-cluster Matter/Thread stack (Proxmox host lenovo2 + CT103) ---
+      # Nothing here is Flux-managed, so nothing else in the cluster notices when it
+      # dies. The 2026-08-01 rack power cut took CT103 down and it did not autostart;
+      # the only symptom was "the lights stopped responding". pve_up{id="lxc/103"}
+      # covers "the container is running" — these cover "the service inside it works".
+      - name: matter-server
+        group: infrastructure
+        url: "http://10.0.30.11:5580/"
+        interval: 2m
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: custom
+      # Asserts the Thread network by name, not just that a port answers. OTBR can be
+      # listening while attached to no network or the wrong one — a liveness check
+      # would pass in both cases.
+      - name: otbr
+        group: infrastructure
+        url: "http://10.0.30.61:8081/node"
+        interval: 2m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].networkName == ha-thread-d38e"
+        alerts:
+          - type: custom
+
       - name: alertmanager
         group: internal
         url: "http://kube-prometheus-stack-alertmanager.observability.svc.cluster.local:9093/-/healthy"
