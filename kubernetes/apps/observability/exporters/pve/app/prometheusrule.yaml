@@ -23,15 +23,37 @@ spec:
         # could never fire. prometheus-pve-exporter reports storage under pve_disk_*
         # with id="storage/<node>/<name>". Verify any change against
         # `group by(__name__)({__name__=~"pve_.*"})` before trusting it.
-        - alert: ProxmoxNodeStorageFull
-          expr: pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes{id=~"storage/.*"} * 100 > 90
-          for: 10m
+        # Threshold is 95, not 90, deliberately. storage/lenovo1/local-lvm sits at a
+        # steady 90.24% because it holds a statically allocated VM disk on the smallest
+        # of the three pools — byte-identical over 7 days, i.e. geometry, not growth.
+        # At 90 this fires permanently and never resolves, which trains the channel to
+        # be ignored. 95 keeps a genuine backstop; ProxmoxStorageFillingUp below is the
+        # rule that actually detects risk.
+        - alert: ProxmoxStorageFull
+          expr: pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes{id=~"storage/.*"} * 100 > 95
+          for: 30m
           labels:
             severity: critical
             component: proxmox-storage
           annotations:
-            summary: "Proxmox storage critically full"
-            description: "Storage {{ $labels.id }} is {{ $value | printf \"%.1f\" }}% full"
+            summary: "Proxmox storage {{ $labels.id }} is {{ $value | printf \"%.1f\" }}% full"
+            description: "Storage {{ $labels.id }} is {{ $value | printf \"%.1f\" }}% full and has less headroom than any recovery action needs"
+
+        # A percentage threshold assumes the number moves. This one measures whether it
+        # is actually moving, so a fixed allocation at 90% stays quiet while a pool
+        # genuinely filling gets caught days ahead — including one at 40% growing fast,
+        # which no static threshold would notice until far too late.
+        - alert: ProxmoxStorageFillingUp
+          expr: |
+            predict_linear(pve_disk_usage_bytes{id=~"storage/.*"}[6h], 4 * 24 * 3600)
+              > pve_disk_size_bytes{id=~"storage/.*"}
+          for: 1h
+          labels:
+            severity: warning
+            component: proxmox-storage
+          annotations:
+            summary: "Proxmox storage {{ $labels.id }} is on track to fill within 4 days"
+            description: "Extrapolating the last 6h of growth, {{ $labels.id }} runs out of space in under 4 days"
 
         # Replaces ProxmoxVMUnexpectedlyStopped, which was dead twice over: it read
         # pve_vm_status (does not exist) AND was edge-triggered via increase(), so a
