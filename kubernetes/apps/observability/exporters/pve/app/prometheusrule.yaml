@@ -18,35 +18,55 @@ spec:
             summary: "Proxmox node is down"
             description: "Proxmox node {{ $labels.id }} has been down for more than 5 minutes"
 
+        # NOTE (2026-08-01): the previous expression used pve_storage_size_bytes /
+        # pve_storage_available_bytes, neither of which this exporter publishes, so it
+        # could never fire. prometheus-pve-exporter reports storage under pve_disk_*
+        # with id="storage/<node>/<name>". Verify any change against
+        # `group by(__name__)({__name__=~"pve_.*"})` before trusting it.
         - alert: ProxmoxNodeStorageFull
-          expr: (pve_storage_size_bytes - pve_storage_available_bytes) / pve_storage_size_bytes * 100 > 90
+          expr: pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes{id=~"storage/.*"} * 100 > 90
           for: 10m
           labels:
             severity: critical
             component: proxmox-storage
           annotations:
-            summary: "Proxmox node storage critically full"
-            description: "Storage {{ $labels.storage }} on {{ $labels.instance }} is {{ $value | humanizePercentage }} full"
+            summary: "Proxmox storage critically full"
+            description: "Storage {{ $labels.id }} is {{ $value | printf \"%.1f\" }}% full"
 
-        - alert: ProxmoxVMUnexpectedlyStopped
-          expr: increase(pve_vm_status{status="stopped"}[5m]) > 0
-          for: 0m
+        # Replaces ProxmoxVMUnexpectedlyStopped, which was dead twice over: it read
+        # pve_vm_status (does not exist) AND was edge-triggered via increase(), so a
+        # guest that failed to autostart after a power cut — a steady state, observed
+        # only once the exporter itself came back — produced no alert at all. That is
+        # exactly what happened to CT103 (OTBR) on 2026-08-01.
+        # pve_up is a steady-state gauge and covers both LXC and QEMU guests.
+        - alert: ProxmoxGuestDown
+          expr: pve_up{id=~"(lxc|qemu)/.*"} == 0
+          for: 5m
           labels:
-            severity: warning
-            component: proxmox-vm
+            severity: critical
+            component: proxmox-guest
           annotations:
-            summary: "Proxmox VM stopped unexpectedly"
-            description: "VM {{ $labels.name }} on {{ $labels.instance }} has stopped"
+            summary: "Proxmox guest is not running"
+            description: "Guest {{ $labels.id }} has not been running for 5 minutes"
 
-        - alert: ProxmoxHighIOWait
-          expr: pve_node_iowait_ratio > 0.5
+        # ProxmoxHighIOWait removed: it read pve_node_iowait_ratio, which this exporter
+        # does not publish, and there is no equivalent. The Proxmox host runs no
+        # node-exporter, so host I/O wait is genuinely unmonitored — reinstating this
+        # needs an exporter on the host, not a rewritten expression.
+
+        # Guards against the failure that hid all of the above: a rule whose metric
+        # disappears evaluates to empty forever and reports health=ok, state=inactive.
+        # These fire if the exporter stops publishing at all, which no other rule can
+        # detect — every one of them would simply go quiet.
+        - alert: ProxmoxExporterMetricsMissing
+          expr: absent(pve_up)
           for: 15m
           labels:
-            severity: warning
-            component: proxmox-performance
+            severity: critical
+            component: proxmox
           annotations:
-            summary: "Proxmox node high I/O wait"
-            description: "Node {{ $labels.instance }} has high I/O wait ({{ $value | humanizePercentage }}) indicating storage bottleneck"
+            summary: "pve-exporter is publishing no metrics"
+            description: "pve_up has disappeared — every Proxmox alert is now silently inert"
 
     - name: ceph-storage
       rules:
@@ -70,8 +90,10 @@ spec:
             summary: "Ceph OSD is down"
             description: "OSD {{ $labels.ceph_daemon }} is down on {{ $labels.instance }}"
 
+        # ceph_pg_active_clean does not exist; the mgr module exports ceph_pg_active and
+        # ceph_pg_clean separately. The old expression silently evaluated to empty.
         - alert: CephPGsNotActiveClean
-          expr: ceph_pg_total - ceph_pg_active_clean > 0
+          expr: ceph_pg_total - ceph_pg_clean > 0
           for: 10m
           labels:
             severity: warning
@@ -100,15 +122,10 @@ spec:
             summary: "Ceph pool utilization critical"
             description: "Pool {{ $labels.name }} is {{ $value | humanizePercentage }} full - immediate action required"
 
-        - alert: CephSlowOps
-          expr: ceph_osd_op_w_latency_sum / ceph_osd_op_w_latency_count > 1
-          for: 10m
-          labels:
-            severity: warning
-            component: ceph-performance
-          annotations:
-            summary: "Ceph slow operations detected"
-            description: "OSD {{ $labels.ceph_daemon }} average write latency is {{ $value }}s"
+        # CephSlowOps removed: `{__name__=~"ceph_osd_op_.*lat.*"}` returns NOTHING on this
+        # cluster — the mgr prometheus module is not exporting OSD latency counters at
+        # all, so there is no expression that would work. Enabling them upstream is the
+        # prerequisite, not a rewrite.
 
         - alert: CephClusterNearFull
           expr: (ceph_cluster_total_used_bytes / ceph_cluster_total_bytes) * 100 > 75
