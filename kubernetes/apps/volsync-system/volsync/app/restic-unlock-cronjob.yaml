@@ -1,72 +1,139 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restic-unlock-script
+  namespace: volsync-system
+data:
+  # NOTE: this script is rendered through Flux postBuild envsubst. Undefined names
+  # pass through untouched, which is why bare shell vars survive — but anything in
+  # this Kustomization's substitute map (e.g. APP) would be silently replaced, and
+  # ${braced} / $(...) forms are not worth betting on. Keep shell vars bare and
+  # uniquely named.
+  unlock.sh: |
+    set -e
+    echo "Starting restic unlock (args: '$RESTIC_UNLOCK_ARGS')..."
+
+    # Repositories are DISCOVERED from the NFS export, never hardcoded. A hardcoded
+    # list silently skips every app added after it was written: audiobookshelf sat
+    # locked ~12h on 2026-08-02 (its mover died mid-prune, so every retry re-uploaded
+    # the PVC and then failed at `forget`) purely because it was never appended here.
+    # A restic repo is any dir holding a `config` file, so unrelated dirs on the
+    # share are skipped rather than shouted about.
+    repo_list=""
+    for repo_path in /repository/*; do
+      if [ -f "$repo_path/config" ]; then
+        repo_list="$repo_list $repo_path"
+      fi
+    done
+
+    # An empty list means the mount is missing or wrong. Fail loudly rather than
+    # exiting 0 while protecting nothing.
+    if [ -z "$repo_list" ]; then
+      echo "ERROR: no restic repositories found under /repository" >&2
+      exit 1
+    fi
+
+    for repo_path in $repo_list; do
+      echo "Unlocking $repo_path..."
+      RESTIC_REPOSITORY="$repo_path" restic unlock $RESTIC_UNLOCK_ARGS \
+        || echo "WARNING: unlock failed for $repo_path"
+    done
+
+    echo "Unlock process completed."
+---
+# Hourly, stale-only sweep. restic's Stale() checks the lock timestamp FIRST and
+# treats anything older than 30 minutes as stale regardless of host, while a live
+# mover refreshes its lock every 5 minutes — so plain `unlock` can never touch a
+# running backup. This caps a wedged forget/prune loop at ~1h instead of ~24h,
+# which is the gap that let audiobookshelf fail all day: its lock was created at
+# 03:02, minutes AFTER the daily 02:30 sweep had already run.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restic-unlock-stale
+  namespace: volsync-system
+spec:
+  schedule: "15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: default
+          containers:
+            - name: unlock
+              image: docker.io/restic/restic:0.19.1
+              command: ["/bin/sh", "/scripts/unlock.sh"]
+              env:
+                - name: RESTIC_UNLOCK_ARGS
+                  value: ""
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-unlock-secret
+                      key: RESTIC_PASSWORD
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                - name: repository
+                  mountPath: /repository
+          volumes:
+            - name: script
+              configMap:
+                name: restic-unlock-script
+            - name: repository
+              nfs:
+                server: nas.${SECRET_DOMAIN}
+                path: /mnt/truenas/cf-nas/backup
+---
+# Daily force sweep, 30 minutes ahead of the 03:00 backups. --remove-all is the
+# only thing that clears a <30min lock left by a now-dead mover pod (different
+# host, so restic cannot verify it stale) — the one case the hourly sweep must
+# wait out. Safe only in this quiet window, when no backup is active.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: restic-unlock
   namespace: volsync-system
 spec:
-  schedule: "30 2 * * *"  # Run at 2:30 AM daily, before backups at 3 AM
+  schedule: "30 2 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
-      ttlSecondsAfterFinished: 86400  # Keep job for 24 hours
+      ttlSecondsAfterFinished: 86400
       template:
         spec:
           restartPolicy: OnFailure
           serviceAccountName: default
           containers:
-          - name: unlock
-            image: docker.io/restic/restic:0.19.1
-            command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              echo "Starting restic unlock for all repositories..."
-
-              # Use shared restic password for all repositories
-              export RESTIC_PASSWORD
-
-              # Function to unlock a repository
-              unlock_repo() {
-                local repo_path=$1
-                echo "Unlocking $repo_path..."
-                export RESTIC_REPOSITORY="/repository$repo_path"
-                # --remove-all: plain `unlock` won't clear a <30min lock left by a
-                # now-dead mover pod (different host → restic can't verify it stale),
-                # which wedges the VolSync forget/prune loop. This job only runs when
-                # no backup is active, so force-removing all locks is safe.
-                restic unlock --remove-all || echo "No lock found or unlock failed for $repo_path"
-              }
-
-              # Unlock all repositories
-              unlock_repo "/plex"
-              unlock_repo "/prowlarr"
-              unlock_repo "/sonarr"
-              unlock_repo "/radarr"
-              unlock_repo "/bazarr"
-              unlock_repo "/sabnzbd"
-              unlock_repo "/qbittorrent"
-              unlock_repo "/qbittorrent-private"
-              unlock_repo "/jellyseerr"
-              unlock_repo "/tautulli"
-              unlock_repo "/wizarr"
-              unlock_repo "/cleanuparr"
-
-              echo "Unlock process completed!"
-            env:
-            - name: RESTIC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: restic-unlock-secret
-                  key: RESTIC_PASSWORD
-            volumeMounts:
-            - name: repository
-              mountPath: /repository
+            - name: unlock
+              image: docker.io/restic/restic:0.19.1
+              command: ["/bin/sh", "/scripts/unlock.sh"]
+              env:
+                - name: RESTIC_UNLOCK_ARGS
+                  value: "--remove-all"
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-unlock-secret
+                      key: RESTIC_PASSWORD
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                - name: repository
+                  mountPath: /repository
           volumes:
-          - name: repository
-            nfs:
-              server: nas.${SECRET_DOMAIN}
-              path: /mnt/truenas/cf-nas/backup
+            - name: script
+              configMap:
+                name: restic-unlock-script
+            - name: repository
+              nfs:
+                server: nas.${SECRET_DOMAIN}
+                path: /mnt/truenas/cf-nas/backup
