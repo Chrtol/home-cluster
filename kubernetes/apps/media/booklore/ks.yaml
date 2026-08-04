@@ -14,14 +14,22 @@ spec:
       namespace: ceph-csi-rbd
     - name: mariadb-operator-instance
       namespace: database
+    - name: volsync
+      namespace: volsync-system
   interval: 1h
   path: ./kubernetes/apps/media/booklore/app
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
   postBuild:
     substitute:
       CEPH_RBD_CAPACITY: 1Gi
       APP: *app
+      # Deliberately NOT "booklore": this app is being renamed to grimmory (BookLore
+      # upstream is dead; we run the Grimmory fork). Seeding the restic repo under the
+      # post-rename name keeps backup history continuous across that rename, since
+      # restic repos cannot be renamed in place.
+      VOLSYNC_REPO_NAME: grimmory
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
