@@ -93,6 +93,35 @@ spec:
       read: true
       write: true
       owner: true
+---
+# --- mariadb-backup -> mariadb-backup (mariadb-operator Backup CR) ---
+# MINTED, not imported: MariaDB had no prior S3 credentials to adopt. The operator
+# writes the generated creds to mariadb-backup-s3-credentials in this namespace,
+# which the Backup CR reads via accessKeyIdSecretKeyRef/secretAccessKeySecretKeyRef.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: mariadb-backup
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  bucketPermissions:
+    - bucketRef:
+        name: mariadb-backup
+      read: true
+      write: true
+      owner: true
+  secretTemplate:
+    name: mariadb-backup-s3-credentials
+    accessKeyIdKey: ACCESS_KEY
+    secretAccessKeyKey: SECRET_KEY
+    includeBucketName: true
+    bucketNameKey: BUCKET
+    includeEndpoint: true
+    endpointKey: ENDPOINT
+    includeRegion: true
+    regionKey: REGION
 # NOTE: zipline's key is NOT here -- it's owned by the s3-bucket component in zipline's
 # own namespace (default), which mints a fresh key + writes zipline-s3-credentials. See
 # kubernetes/components/s3-bucket. (Also removed the garage-import-zipline ExternalSecret.)

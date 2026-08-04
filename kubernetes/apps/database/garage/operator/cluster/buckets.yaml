@@ -60,6 +60,19 @@ spec:
   clusterRef:
     name: garage-operated
   globalAlias: postgres-wal
+---
+# MariaDB logical dumps (mariadb-operator Backup CR, daily). Postgres has had
+# barman-cloud backups to postgres-wal for a long time; MariaDB had NOTHING until
+# 2026-08-04, despite holding booklore/grimmory's system of record.
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: mariadb-backup
+  namespace: database
+spec:
+  clusterRef:
+    name: garage-operated
+  globalAlias: mariadb-backup
 # NOTE: zipline's bucket/key are NOT here -- they're owned by the s3-bucket component
 # in zipline's own namespace (default), created via APP/S3_BUCKET substitutions. See
 # kubernetes/components/s3-bucket. Keeping it here too would collide on the "zipline"

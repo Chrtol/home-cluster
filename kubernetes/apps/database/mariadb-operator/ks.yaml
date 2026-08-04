@@ -52,3 +52,37 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# Backups live in their OWN Kustomization, deliberately not in `instance`:
+#   - `instance` runs wait: true. A scheduled Backup CR has no Ready condition until
+#     its first run, so folding it in risks stalling the Kustomization that owns the
+#     database itself on every reconcile.
+#   - it keeps the critical DB Kustomization from gaining a dependency on Garage.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mariadb-operator-backup
+  namespace: database
+spec:
+  targetNamespace: database
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: mariadb-operator-backup
+  dependsOn:
+    - name: mariadb-operator-instance
+    - name: garage-operated-cluster
+  path: ./kubernetes/apps/database/mariadb-operator/backup
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: false
+  interval: 30m
+  retryInterval: 2m
+  timeout: 5m
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret

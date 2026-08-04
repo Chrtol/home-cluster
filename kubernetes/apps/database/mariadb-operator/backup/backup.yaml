@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/k8s.mariadb.com/backup_v1alpha1.json
+# Daily logical dump of the whole MariaDB instance to Garage S3.
+#
+# This mirrors what CNPG already does for Postgres (barman-cloud -> postgres-wal on
+# garage-operated). Note the asymmetry that remains: CNPG archives WAL continuously
+# and can do point-in-time recovery, whereas this is a nightly `mariadb-dump` — the
+# worst-case data loss window here is 24h, not seconds.
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Backup
+metadata:
+  name: mariadb-operator
+spec:
+  mariaDbRef:
+    name: mariadb-operator
+
+  schedule:
+    cron: "0 2 * * *"
+  timeZone: "${SECRET_TIMEZONE}"
+
+  # Backup Job prunes dumps older than this from the bucket itself.
+  maxRetention: 720h  # 30d
+
+  compression: gzip
+
+  # Skip mysql.global_priv. Restoring it would overwrite the operator-managed users
+  # (booklore/grimmory et al.) and the root password with whatever they were at dump
+  # time, fighting the User/Grant CRs that own them declaratively.
+  ignoreGlobalPriv: true
+
+  storage:
+    s3:
+      bucket: mariadb-backup
+      # Internal service DNS — backup traffic stays in-cluster, same as CNPG's.
+      # No scheme here: plain host:port, with TLS selected via tls.enabled below.
+      endpoint: garage-operated.database.svc.cluster.local:3900
+      region: homelab
+      prefix: mariadb-operator
+      tls:
+        enabled: false
+      accessKeyIdSecretKeyRef:
+        name: mariadb-backup-s3-credentials
+        key: ACCESS_KEY
+      secretAccessKeySecretKeyRef:
+        name: mariadb-backup-s3-credentials
+        key: SECRET_KEY
+
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
