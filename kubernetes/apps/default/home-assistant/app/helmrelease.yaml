@@ -17,6 +17,14 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg
+  # component (see ks.yaml). The component keys its initContainer off
+  # ${DB_CONTROLLER:=${APP}}, which resolves to the "home-assistant" controller
+  # below. spec.values deep-merges over this, so the defaultPodOptions here keep
+  # their nodeSelector/hostNetwork/securityContext and only gain the label.
+  valuesFrom:
+    - kind: ConfigMap
+      name: home-assistant-cnpg-values
   values:
     controllers:
       home-assistant:

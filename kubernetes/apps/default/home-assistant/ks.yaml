@@ -11,17 +11,35 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/volsync
+    # cnpg -> init-db initContainer + db.home.arpa/postgres pod label. Backs the
+    # recorder (history/logbook), which had never been enabled at all: the
+    # configuration.yaml in the PVC was missing default_config: and the SQLite DB
+    # sat frozen at 2025-06-18. See ai-activity/matter-thread/ALPSTUGA-AIR-QUALITY-ALERTS.md
+    - ../../../../components/cnpg
   dependsOn:
     - name: mosquitto
       namespace: default
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    # The init-db initContainer blocks pod start until Postgres is reachable, so
+    # HA now genuinely cannot start without the cluster. Make that ordering
+    # explicit rather than leaving it to initContainer retries.
+    - name: cloudnative-pg-cluster-v17
+      namespace: database
   interval: 1h
   path: ./kubernetes/apps/default/home-assistant/app
   postBuild:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: hass
+      # Underscores, not the hyphenated ${APP} default. Hyphenated identifiers
+      # work (paperless-main, authelia-postgresuser exist) but must be
+      # double-quoted in every statement forever; reptile_tracker set the
+      # precedent for avoiding that.
+      DB_NAME: home_assistant
+      DB_USER: home_assistant
+      DB_OP_ITEM: *app
+      DB_PASS_FIELD: HASS_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
