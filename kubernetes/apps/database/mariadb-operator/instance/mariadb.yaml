@@ -13,6 +13,21 @@ spec:
 
   port: 3306
 
+  env:
+    # Run mariadb-upgrade automatically when the entrypoint detects the datadir was
+    # created by an older server. Without this the image DETECTS the need and skips
+    # it (docker-entrypoint.sh:595), leaving stale system tables while the server
+    # runs happily -- MariaDB does not refuse to start the way CNPG does on a major
+    # version mismatch. That is exactly what happened on the 11.4 -> 12.3 bump:
+    # mysql.proc kept 21 of 22 columns and every mariadb-dump aborted with error
+    # 1558, which went unnoticed for as long as there were no backups. Upgraded
+    # by hand 2026-08-04; this makes the next bump self-healing.
+    #
+    # MARIADB_DISABLE_UPGRADE_BACKUP is deliberately left unset, so the entrypoint
+    # dumps the system tables into the datadir before touching them.
+    - name: MARIADB_AUTO_UPGRADE
+      value: "1"
+
   storage:
     size: 8Gi
     storageClassName: csi-rbd-sc
