@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# A silently-failing backup is worse than no backup: it looks like coverage but
+# restores nothing. The first run of this CronJob failed outright (stale system
+# tables from an un-upgraded MariaDB) and produced no signal anywhere -- these
+# rules exist so that cannot repeat quietly.
+#
+# All three metrics were verified present with real values for cronjob
+# "mariadb-operator" in namespace "database" before these rules were written.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mariadb-backup
+spec:
+  groups:
+    - name: mariadb-backup.rules
+      rules:
+        # Edge signal: a Job the CronJob spawned ended in failure. Job objects
+        # survive via failedJobsHistoryLimit: 3, so this stays firing long enough
+        # to be seen. Jobs are named <cronjob>-<timestamp>.
+        - alert: MariaDBBackupJobFailed
+          expr: |
+            kube_job_status_failed{namespace="database", job_name=~"mariadb-operator-.*"} > 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: >-
+              MariaDB backup job {{ $labels.job_name }} failed
+
+        # Steady-state signal, and the one that actually matters. Catches the cases
+        # the edge signal misses entirely: the CronJob never fired, the Job objects
+        # were garbage-collected, or the schedule was suspended. Threshold is in
+        # SECONDS -- 129600 = 36h, i.e. one missed daily run plus headroom.
+        - alert: MariaDBBackupStale
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{namespace="database", cronjob="mariadb-operator"} > 129600
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: >-
+              MariaDB has not completed a backup in over 36h
+              ({{ $value | humanizeDuration }} ago)
+
+        # Meta-alert. Without this, deleting the CronJob (or KSM losing sight of it)
+        # makes MariaDBBackupStale evaluate against no series and go quiet forever --
+        # reporting healthy precisely when backups have stopped existing.
+        - alert: MariaDBBackupAbsent
+          expr: |
+            absent(kube_cronjob_status_last_successful_time{namespace="database", cronjob="mariadb-operator"})
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              MariaDB backup CronJob has disappeared from metrics entirely
