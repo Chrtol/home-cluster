@@ -55,6 +55,21 @@ spec:
         - name: severity
           value: warning
           matchType: =
+    # Companion to the upstream InfoInhibitor rule, which fires for a namespace
+    # whenever it has a severity=info alert and NO warning/critical alert. Using
+    # it as an inhibition source suppresses info alerts that stand alone, while
+    # still letting them through when a real failure in the same namespace
+    # corroborates them. Without this rule InfoInhibitor fires but inhibits
+    # nothing, and info-level noise (e.g. CPUThrottlingHigh) reaches n8n.
+    - equal: ["namespace"]
+      sourceMatch:
+        - name: alertname
+          value: InfoInhibitor
+          matchType: =
+      targetMatch:
+        - name: severity
+          value: info
+          matchType: =
   receivers:
     - name: "null"
     - name: heartbeat
