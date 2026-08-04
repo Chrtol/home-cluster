@@ -59,27 +59,53 @@ spec:
           labels:
             severity: warning
 
-    - name: sabnzbd.servers
+    # SabnzbdServerArticleFailures removed 2026-08-04. It fired permanently for ALL FOUR
+    # configured servers -- 7d of ALERTS history showed bonus/eunews/eweka/news all in
+    # `firing` -- for two independent reasons, neither fixable by tuning the threshold:
+    #
+    #   1. clamp_min(rate(...), 1) was written as "a floor on total articles", but rate()
+    #      yields articles PER SECOND. Flooring the denominator at 1/s (=3600/h) forces
+    #      the ratio toward 0 for any server below that throughput. bonus.frugalusenet.com
+    #      peaks at 16 articles per HOUR, so it could never clear 0.9. The `and rate > 0`
+    #      guard does not help: it passes on a single article per hour.
+    #   2. The counters are not a success ratio. SABnzbd's own server_stats API reports
+    #      news.eweka.nl at 38.7M articles_tried vs 2.2M articles_success (5.7%) on a
+    #      server that has pulled 27 TB without incident, while the barely-used
+    #      bonus/news.frugalusenet servers read 83%/96%. articles_success is only
+    #      incremented on some code paths, so the two series are not comparable.
+    #
+    # Provider-level article failure has no trustworthy metric on this exporter. The
+    # user-visible consequence -- failed repairs and failed imports -- is already caught
+    # downstream by the arrs and Cleanuparr. SabnzbdDownloadStalled below covers the
+    # blunt version of the same failure using series that do mean what they say.
+    - name: sabnzbd.throughput
       rules:
-        # Ratio of successful to total articles per Usenet server. A provider that starts
-        # failing articles produces incomplete/corrupt downloads that then fail to repair
-        # -- visible as failed imports downstream in the arrs, with no obvious cause.
-        # Guarded by a floor on total articles so an idle server can't trip it.
-        - alert: SabnzbdServerArticleFailures
+        # SAB says it is actively downloading, the queue is not empty and there are bytes
+        # left to fetch -- yet nothing is moving. That is the shape of every real download
+        # failure that matters here: provider outage or auth rejection, the gluetun
+        # WireGuard tunnel dropping, or the NAS incomplete-dir going read-only. Unlike the
+        # rule it replaces, every term is a plain gauge with no derived arithmetic.
+        #
+        # The remaining_bytes term keeps post-processing quiet: a long par2 repair or
+        # unrar leaves the queue non-empty at zero speed, but with nothing left to
+        # download. 100 KB/s is a floor, not a performance target -- this is a
+        # stuck-detector, not a speed alert.
+        - alert: SabnzbdDownloadStalled
           annotations:
             description: >-
-              Usenet server '{{ $labels.server }}' is failing over 10% of article
-              fetches (currently {{ $value | humanizePercentage }} success). Incomplete
-              articles cause failed par2 repairs and failed imports in the arrs, which
-              usually get misattributed to the indexer rather than the provider.
-            summary: SABnzbd server '{{ $labels.server }}' is failing articles.
+              SABnzbd has been in Downloading state for 30m with a non-empty queue and
+              bytes still outstanding, but under 100 KB/s of throughput. Check the
+              gluetun tunnel first -- Usenet traffic traverses it while the exporter's
+              API calls do not, so SabnzbdUnreachable stays quiet when only the tunnel
+              is down -- then the provider's connection status, then free space on the
+              incomplete dir.
+            summary: SABnzbd is downloading but nothing is moving.
           expr: |
-            (
-              rate(sabnzbd_server_articles_success[1h])
-                / clamp_min(rate(sabnzbd_server_articles_total[1h]), 1)
-            ) < 0.9
-            and rate(sabnzbd_server_articles_total[1h]) > 0
-          for: 1h
+            sabnzbd_status == 3
+            and sabnzbd_queue_length > 0
+            and sabnzbd_remaining_bytes > 0
+            and sabnzbd_speed_bps < 100000
+          for: 30m
           labels:
             severity: warning
 

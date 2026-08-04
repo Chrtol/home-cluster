@@ -90,67 +90,182 @@ spec:
             summary: "pve-exporter is publishing no metrics"
             description: "pve_up has disappeared — every Proxmox alert is now silently inert"
 
-    - name: ceph-storage
+    # Ceph health, split off from capacity so the two can be tuned independently.
+    #
+    # Replaces CephClusterUnhealthy (2026-08-04), which alerted on ceph_health_status
+    # != 0 — a single scalar summarising every health check at once. That is why it was
+    # unmutable: the cluster has sat at HEALTH_WARN continuously (312h firing out of the
+    # last 14d) for one accepted reason, and there was no way to accept it without
+    # blinding the alert to everything else.
+    #
+    # ceph_health_detail{name="<CHECK>"} is the per-check version of the same data — one
+    # series per named check, 1 while active. Alerting on that makes individual checks
+    # mutable and puts the actual check name in the notification instead of "health is
+    # not OK".
+    - name: ceph-health
       rules:
-        - alert: CephClusterUnhealthy
-          expr: ceph_health_status != 0
+        # THE MUTE LIST. Single source of truth — every ceph-health alert below is built
+        # on this series, so a check named here is silenced everywhere at once.
+        #
+        #   BLUESTORE_SLOW_OP_ALERT — a known-slow OSD that cannot be replaced right now
+        #     (accepted 2026-08-04). This is the sole reason the cluster reports WARN.
+        #     The culprit is osd.1 on lenovo1 — sda, Samsung SSD 850 PRO 256GB — which
+        #     peaked at 11387ms apply latency over the last 7d against 18-33ms for the
+        #     two Kingston NVMe OSDs on dell1/lenovo2. Delete this entry once it is
+        #     replaced.
+        #     Caveat worth knowing: the check carries no OSD label, so muting it also
+        #     hides slow ops on the other two OSDs. Escalation is still covered — SLOW_OPS,
+        #     OSD_SLOW_PING_TIME_* and DB_DEVICE_STALLED_READ_ALERT stay live, and
+        #     CephClusterError catches anything that reaches HEALTH_ERR. A per-OSD
+        #     latency alert on ceph_osd_apply_latency_ms (see below) would close the gap
+        #     properly by letting osd.1 be excluded by name.
+        #   OSD_DOWN — not muted, just already owned by CephOSDDown below, which names
+        #     the specific daemon. Listing it here prevents a duplicate notification.
+        - record: ceph:health_check:actionable
+          expr: |
+            max by (name, namespace, instance) (
+              ceph_health_detail{name!~"BLUESTORE_SLOW_OP_ALERT|OSD_DOWN"} == 1
+            )
+
+        # Checks that mean data is unavailable or redundancy is gone. Everything else
+        # falls through to the warning rule, so a new check added by a future Ceph
+        # release surfaces as a warning rather than disappearing.
+        - alert: CephHealthCheckCritical
+          expr: ceph:health_check:actionable{name=~"MON_DOWN|OSD_HOST_DOWN|PG_AVAILABILITY|FS_DEGRADED"}
+          for: 5m
+          labels:
+            severity: critical
+            component: ceph
+          annotations:
+            summary: "Ceph health check {{ $labels.name }} is active"
+            description: "Ceph raised {{ $labels.name }}. Run `ceph health detail` on a Proxmox node — data availability or redundancy is affected."
+
+        - alert: CephHealthCheckWarning
+          expr: ceph:health_check:actionable{name!~"MON_DOWN|OSD_HOST_DOWN|PG_AVAILABILITY|FS_DEGRADED"}
+          for: 15m
+          labels:
+            severity: warning
+            component: ceph
+          annotations:
+            summary: "Ceph health check {{ $labels.name }} is active"
+            description: "Ceph raised {{ $labels.name }}. Run `ceph health detail` on a Proxmox node for the specifics."
+
+        # Kept blunt and unmuted on purpose. HEALTH_ERR is never something this cluster
+        # sits at, and no muted check can produce it — BLUESTORE_SLOW_OP_ALERT is a
+        # HEALTH_WARN check. This is the backstop for a check name nothing above knows.
+        - alert: CephClusterError
+          expr: ceph_health_status == 2
           for: 2m
           labels:
             severity: critical
             component: ceph
           annotations:
-            summary: "Ceph cluster health is not OK"
-            description: "Ceph cluster health status is {{ $value }} (0=OK, 1=WARN, 2=ERR)"
+            summary: "Ceph cluster is in HEALTH_ERR"
+            description: "Ceph cluster health status is ERR, not merely WARN — this is never a steady state here"
 
+        # ceph_osd_up carries only ceph_daemon ("osd.1") — no host. The old annotation
+        # printed {{ $labels.instance }}, which is the ceph-mgr scrape target
+        # (10.0.30.10:9283) on EVERY OSD regardless of where it actually lives, so it
+        # always named the wrong machine. ceph_osd_metadata holds the real hostname and
+        # device_class; ceph_disk_occupation holds the physical disk identity, which is
+        # what you need to know which drive to pull.
         - alert: CephOSDDown
-          expr: ceph_osd_up == 0
+          expr: |
+            (ceph_osd_up == 0)
+              * on (ceph_daemon) group_left (hostname, device_class) ceph_osd_metadata
+              * on (ceph_daemon) group_left (device_ids) ceph_disk_occupation
           for: 5m
           labels:
             severity: critical
             component: ceph-osd
           annotations:
-            summary: "Ceph OSD is down"
-            description: "OSD {{ $labels.ceph_daemon }} is down on {{ $labels.instance }}"
+            summary: "Ceph OSD {{ $labels.ceph_daemon }} on {{ $labels.hostname }} is down"
+            description: "OSD {{ $labels.ceph_daemon }} ({{ $labels.device_class }}, {{ $labels.device_ids }}) on host {{ $labels.hostname }} has been down for 5m"
 
         # ceph_pg_active_clean does not exist; the mgr module exports ceph_pg_active and
         # ceph_pg_clean separately. The old expression silently evaluated to empty.
+        # ceph_pg_* is labelled by pool_id only, so join ceph_pool_metadata for the name.
         - alert: CephPGsNotActiveClean
-          expr: ceph_pg_total - ceph_pg_clean > 0
+          expr: |
+            (ceph_pg_total - ceph_pg_clean > 0)
+              * on (pool_id) group_left (name) ceph_pool_metadata
           for: 10m
           labels:
             severity: warning
             component: ceph-pgs
           annotations:
-            summary: "Ceph PGs are not active+clean"
-            description: "{{ $value }} placement groups are not in active+clean state"
+            summary: "Ceph PGs in pool {{ $labels.name }} are not active+clean"
+            description: "{{ $value }} placement groups in pool {{ $labels.name }} are not in active+clean state"
 
+        # Guards against the failure mode documented at the top of this file: a rule
+        # whose metric disappears evaluates empty forever and reports health=ok. The
+        # ceph rules scrape a different target (ceph-mgr-metrics on the Proxmox mgr)
+        # than the pve rules, so ProxmoxExporterMetricsMissing does not cover them.
+        - alert: CephMetricsMissing
+          expr: absent(ceph_health_detail)
+          for: 15m
+          labels:
+            severity: critical
+            component: ceph
+          annotations:
+            summary: "ceph-mgr is publishing no health metrics"
+            description: "ceph_health_detail has disappeared — every Ceph alert is now silently inert"
+
+        # CORRECTION (2026-08-04) to the note that used to stand here. It claimed the mgr
+        # module exports no OSD latency at all, concluded from `ceph_osd_op_.*lat.*`
+        # returning nothing. That regex was simply wrong: the metrics exist under
+        # different names — ceph_osd_apply_latency_ms and ceph_osd_commit_latency_ms,
+        # both per-OSD and both joinable to a host via ceph_osd_metadata. They are what
+        # identified osd.1/lenovo1 as the slow disk above.
+        #
+        # No alert is written on them yet: osd.1 idles at ~19ms against ~5ms for the
+        # NVMe OSDs, so a fleet-wide threshold would just re-fire the thing that was
+        # muted. The useful shape is per-OSD with osd.1 excluded by name, e.g.
+        #   avg_over_time(ceph_osd_apply_latency_ms{ceph_daemon!="osd.1"}[30m]) > 100
+        # Worth adding once there is a baseline for what "normal" looks like here.
+
+    - name: ceph-capacity
+      rules:
+        # NOTE (2026-08-04): ceph_pool_percent_used is a FRACTION (0-1), not a percent,
+        # despite the name — it is passed through verbatim from `ceph df`'s
+        # stats.percent_used. The previous `> 50` / `> 80` thresholds could therefore
+        # never be reached and both rules were dead. Largest pool (vm-disks) currently
+        # reads 0.213, i.e. 21.3%. Do not "fix" this by multiplying by 100; keep the
+        # fraction so humanizePercentage renders correctly.
+        # The metric is also labelled by pool_id only, so `{{ $labels.name }}` rendered
+        # empty — ceph_pool_metadata carries the name and is joined in below.
+        # Warning threshold raised from the declared 50% to 75% while making these live:
+        # capacity only goes up, so a warning pitched too low fires once and then never
+        # resolves — the same trap documented on ProxmoxStorageFull above. Critical stays
+        # at the originally intended 80%.
         - alert: CephPoolHighUtilization
-          expr: ceph_pool_percent_used > 50
+          expr: |
+            (ceph_pool_percent_used > 0.75)
+              * on (pool_id) group_left (name) ceph_pool_metadata
           for: 10m
           labels:
             severity: warning
             component: ceph-pool
           annotations:
-            summary: "Ceph pool utilization high"
+            summary: "Ceph pool {{ $labels.name }} utilization high"
             description: "Pool {{ $labels.name }} is {{ $value | humanizePercentage }} full"
 
         - alert: CephPoolCriticalUtilization
-          expr: ceph_pool_percent_used > 80
+          expr: |
+            (ceph_pool_percent_used > 0.80)
+              * on (pool_id) group_left (name) ceph_pool_metadata
           for: 5m
           labels:
             severity: critical
             component: ceph-pool
           annotations:
-            summary: "Ceph pool utilization critical"
+            summary: "Ceph pool {{ $labels.name }} utilization critical"
             description: "Pool {{ $labels.name }} is {{ $value | humanizePercentage }} full - immediate action required"
 
-        # CephSlowOps removed: `{__name__=~"ceph_osd_op_.*lat.*"}` returns NOTHING on this
-        # cluster — the mgr prometheus module is not exporting OSD latency counters at
-        # all, so there is no expression that would work. Enabling them upstream is the
-        # prerequisite, not a rewrite.
-
+        # Same unit fix as above: humanizePercentage expects a fraction, so these no
+        # longer multiply by 100 first (which rendered 16.8% full as "1683%").
         - alert: CephClusterNearFull
-          expr: (ceph_cluster_total_used_bytes / ceph_cluster_total_bytes) * 100 > 75
+          expr: ceph_cluster_total_used_bytes / ceph_cluster_total_bytes > 0.75
           for: 5m
           labels:
             severity: warning
@@ -160,7 +275,7 @@ spec:
             description: "Ceph cluster is {{ $value | humanizePercentage }} full. Consider adding more storage or cleaning up data."
 
         - alert: CephClusterCriticallyFull
-          expr: (ceph_cluster_total_used_bytes / ceph_cluster_total_bytes) * 100 > 85
+          expr: ceph_cluster_total_used_bytes / ceph_cluster_total_bytes > 0.85
           for: 5m
           labels:
             severity: critical
