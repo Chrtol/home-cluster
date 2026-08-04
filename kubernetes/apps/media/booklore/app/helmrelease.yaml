@@ -34,15 +34,21 @@ spec:
           reloader.stakater.com/auto: "true"
         containers:
           *app :
+            # Grimmory is the community fork of BookLore; upstream BookLore was
+            # deleted at v2.3.1 and Grimmory v3.0.0 continues from that commit.
+            # The DB, volumes and port are unchanged — only the env var names
+            # were renamed (USER_ID/GROUP_ID, API_DOCS_ENABLED).
             image:
-              repository: ghcr.io/booklore-app/booklore
-              tag: v2.3.1
+              repository: ghcr.io/grimmory-tools/grimmory
+              tag: v3.2.4
 
             env:
               TZ: "${SECRET_TIMEZONE}"
-              PUID: "1000"
-              PGID: "1000"
-              DATABASE_URL: "jdbc:mariadb://mariadb-operator.database.svc.cluster.local:3306/booklore"
+              USER_ID: "1000"
+              GROUP_ID: "1000"
+              # Query params match Grimmory's built-in default URL, which our
+              # explicit DATABASE_URL would otherwise override away.
+              DATABASE_URL: "jdbc:mariadb://mariadb-operator.database.svc.cluster.local:3306/booklore?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true"
               DATABASE_USERNAME:
                 valueFrom:
                   secretKeyRef:
@@ -53,7 +59,7 @@ spec:
                   secretKeyRef:
                     name: booklore-secret
                     key: DATABASE_PASSWORD
-              SWAGGER_ENABLED: "false"
+              API_DOCS_ENABLED: "false"
 
             probes:
               liveness: &probes
