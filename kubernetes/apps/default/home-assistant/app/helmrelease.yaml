@@ -30,6 +30,87 @@ spec:
       home-assistant:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          # Install the hass-oidc-auth custom component from a pinned GitHub release.
+          # Upstream ships this through HACS, which is an imperative, unversioned
+          # click-install into the PVC (the pre-existing /config/custom_components/hacs
+          # is exactly that, dating from 2025-06 and recorded nowhere in Git). Doing it
+          # here makes the version a reviewable line that Renovate can bump.
+          #
+          # This step is deliberately NON-FATAL. HA is the most availability-critical
+          # app in the cluster and already cannot start without Postgres; it must not
+          # also become unable to start when github.com is unreachable. Any download or
+          # validation failure logs a warning, keeps whatever is already installed and
+          # exits 0 -- worst case HA comes up without SSO and the password login still
+          # works.
+          01-install-oidc-component:
+            # Same image ref as the app container on purpose: it already carries curl,
+            # unzip and the right uid, it is already on the node, and pinning both to
+            # one ref means Renovate can never leave the two skewed.
+            image:
+              repository: ghcr.io/home-operations/home-assistant
+              tag: 2026.7.4@sha256:fc3c0b5f7c2ff61a81b3c84dfcc405d3ff28bfc73caf68fb5c31818515f3554e
+            env:
+              # renovate: datasource=github-releases depName=christiaangoossens/hass-oidc-auth
+              OIDC_COMPONENT_VERSION: v1.1.1
+            # $$ escapes shield the shell vars from Flux envsubst -- this manifest
+            # genuinely needs ${SECRET_DOMAIN}/${SECRET_TIMEZONE} substituted, so the
+            # kustomize.toolkit.fluxcd.io/substitute: disabled annotation is not an
+            # option here. An unescaped ${dest} would be replaced with the empty string
+            # and the script would silently rm -rf the wrong path.
+            command: ["/bin/bash", "-c"]
+            args:
+              - |
+                set -uo pipefail
+                dest=/config/custom_components/auth_oidc
+                stage=/config/custom_components/.auth_oidc.stage
+
+                if [ "$(cat "$${dest}/.version" 2>/dev/null)" = "$${OIDC_COMPONENT_VERSION}" ]; then
+                  echo "auth_oidc $${OIDC_COMPONENT_VERSION} already installed"
+                  exit 0
+                fi
+
+                # The release zip ONLY. A source checkout/tarball ships no compiled
+                # static/style.css, and upstream's FAQ calls out that the login screens
+                # then render completely unstyled.
+                url="https://github.com/christiaangoossens/hass-oidc-auth/releases/download/$${OIDC_COMPONENT_VERSION}/hass-oidc-auth.zip"
+                rm -rf "$${stage}" "$${stage}.zip"
+                mkdir -p "$${stage}"
+
+                if ! curl -fsSL --retry 3 --retry-delay 2 -o "$${stage}.zip" "$${url}"; then
+                  echo "WARN: could not download $${url} -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                # The zip is FLAT: manifest.json sits at the archive root, so it unpacks
+                # straight into the component directory with no wrapper to strip. Both
+                # probes below double as a "did I get a real release" check.
+                if ! unzip -q "$${stage}.zip" -d "$${stage}" \
+                   || [ ! -f "$${stage}/manifest.json" ] \
+                   || [ ! -f "$${stage}/static/style.css" ]; then
+                  echo "WARN: $${url} is not a usable release zip -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                # Stamp inside the staging dir so the swap is atomic: there is no state
+                # in which the files are new but the version marker still reads old.
+                echo "$${OIDC_COMPONENT_VERSION}" > "$${stage}/.version"
+                rm -rf "$${dest}"
+                mv "$${stage}" "$${dest}"
+                rm -f "$${stage}.zip"
+                echo "installed auth_oidc $${OIDC_COMPONENT_VERSION}"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
         containers:
           app:
             image:
