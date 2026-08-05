@@ -2,6 +2,9 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_PATH
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
+#                      OIDC_SIGNING_KEY (defaults to authentik-cert-tls, RSA/RS256).
+#                        Set to authentik-cert-ec for apps that only accept ES256 --
+#                        the key type IS the algorithm, there is no alg field.
 #                      OIDC_SECRET_NAMESPACE (defaults to security - set to app namespace for direct secret access)
 #                      OIDC_INTERNAL_SUBDOMAIN (defaults to SUBDOMAIN) - registers a
 #                        SECOND redirect URI at
@@ -76,9 +79,14 @@ spec:
           # nothing, the chart's !Find resolved to None, and Authentik silently fell back
           # to HS256 -- unnoticed until hass-oidc-auth, which checks the algorithm.
           #
-          # This name comes from the /certs/authentik-cert-tls mount added to the
-          # authentik HelmRelease; discovery names the key pair after that directory.
-          signingKey: "authentik-cert-tls"
+          # These names come from the /certs/* mounts on the authentik HelmRelease;
+          # discovery names each key pair after its directory.
+          #
+          # A provider has one signing key and no algorithm field -- authentik derives
+          # the alg from the key type. Default authentik-cert-tls is RSA -> RS256; set
+          # OIDC_SIGNING_KEY to authentik-cert-ec (P-256) for apps that only accept
+          # ES256. Both are cert-manager Certificates, so both auto-renew.
+          signingKey: "${OIDC_SIGNING_KEY:=authentik-cert-tls}"
           scopes:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"

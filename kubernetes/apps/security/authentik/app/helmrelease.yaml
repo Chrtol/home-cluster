@@ -55,12 +55,20 @@ spec:
         - name: authentik-cert
           mountPath: /certs/authentik-cert-tls
           readOnly: true
+        # EC sibling -> ES256, for apps that reject RSA. Same rule: the directory name
+        # becomes the key pair name that OIDC_SIGNING_KEY selects.
+        - name: authentik-cert-ec
+          mountPath: /certs/authentik-cert-ec
+          readOnly: true
       volumes:
         - name: sidecar-blueprints
           emptyDir: {}
         - name: authentik-cert
           secret:
             secretName: authentik-cert-tls
+        - name: authentik-cert-ec
+          secret:
+            secretName: authentik-cert-ec-tls
     redis:
       enabled: false
     authentik:

@@ -37,7 +37,8 @@ spec:
   ca:
     secretName: authentik-ca
 ---
-# The actual certificate for OIDC signing
+# The actual certificate for OIDC signing (RSA -> RS256). Mounted into authentik at
+# /certs/authentik-cert-tls, imported by certificate_discovery as "authentik-cert-tls".
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -61,5 +62,39 @@ spec:
     organizations:
       - cert-manager
   commonName: authentik.local
+  issuerRef:
+    name: authentik-ca-issuer
+---
+# EC counterpart for apps that reject RSA and require ES256.
+#
+# A provider has exactly ONE signing key and no algorithm field -- authentik derives
+# the alg purely from the key type (JWTAlgorithms.from_private_key: RSA -> RS256,
+# SECP256R1 -> ES256, P-384 -> ES384, P-521 -> ES512). So supporting both families
+# genuinely needs two key pairs; apps opt in with OIDC_SIGNING_KEY: authentik-cert-ec.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-cert-ec
+  namespace: security
+spec:
+  secretName: authentik-cert-ec-tls
+  secretTemplate:
+    labels:
+      goauthentik_cert: "1"
+  privateKey:
+    algorithm: ECDSA
+    # P-256. Must stay 256 to yield ES256 -- 384/521 silently become ES384/ES512,
+    # which an app pinned to ES256 will reject just as it rejects RS256.
+    size: 256
+    encoding: PKCS8
+  duration: 8640h # 360d
+  renewBefore: 1440h # 60d
+  isCA: false
+  usages:
+    - signing
+  subject:
+    organizations:
+      - cert-manager
+  commonName: authentik-ec.local
   issuerRef:
     name: authentik-ca-issuer
