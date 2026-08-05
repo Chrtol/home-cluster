@@ -40,7 +40,7 @@ spec:
             # were renamed (USER_ID/GROUP_ID, API_DOCS_ENABLED).
             image:
               repository: ghcr.io/grimmory-tools/grimmory
-              tag: v3.2.4
+              tag: v3.2.4@sha256:dfa7afdfcf25d649fd664497a62385dd00cd9678c37546e182c172e41c8e80cb
 
             env:
               TZ: "${SECRET_TIMEZONE}"
@@ -60,6 +60,12 @@ spec:
                     name: booklore-secret
                     key: DATABASE_PASSWORD
               API_DOCS_ENABLED: "false"
+              # /books and /bookdrop are TrueNAS NFS. NFS/SMB cannot guarantee atomic
+              # rename, so a move that fails mid-flight can leave the file and the DB
+              # disagreeing. NETWORK removes the UI's file mover ("Organize File") and
+              # the delete/move/rename actions that depend on it; reading, metadata
+              # write-back, bookdrop ingest and sync are unaffected.
+              DISK_TYPE: "NETWORK"
 
             probes:
               liveness: &probes
