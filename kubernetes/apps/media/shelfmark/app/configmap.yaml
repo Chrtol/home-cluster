@@ -9,7 +9,6 @@ data:
       "AUTH_METHOD": "proxy",
       "PROXY_AUTH_USER_HEADER": "X-authentik-username",
       "PROXY_AUTH_LOGOUT_URL": "https://sso.${SECRET_DOMAIN}/outpost.goauthentik.io/sign_out",
-      "PROXY_AUTH_RESTRICT_SETTINGS_TO_ADMIN": true,
       "PROXY_AUTH_ADMIN_GROUP_HEADER": "X-authentik-groups",
       "PROXY_AUTH_ADMIN_GROUP_NAME": "${PROXY_ADMIN_GROUP}"
     }

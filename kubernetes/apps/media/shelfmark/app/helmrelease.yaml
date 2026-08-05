@@ -13,6 +13,8 @@ spec:
   values:
     controllers:
       shelfmark:
+        annotations:
+          reloader.stakater.com/auto: "true"
         pod:
           securityContext:
             fsGroup: 1000
@@ -38,7 +40,15 @@ spec:
               - -b
               - 0.0.0.0:8084
               - shelfmark.main:app
+            envFrom:
+              - secretRef:
+                  name: shelfmark-secret
             probes:
+              # custom: true discards the chart defaults, so timeoutSeconds falls back
+              # to 1s. With a single gevent worker a slow upstream (expired Hardcover
+              # token, 20s+ timeouts) stalls /api/health past that: 77 liveness kills
+              # in 3 days. Do not raise --workers to fix it — a second worker would
+              # start a second download orchestrator.
               liveness: &probe
                 enabled: true
                 custom: true
@@ -46,6 +56,9 @@ spec:
                   httpGet:
                     path: /api/health
                     port: &port 8084
+                  timeoutSeconds: 10
+                  periodSeconds: 30
+                  failureThreshold: 5
               readiness: *probe
             resources:
               requests:
@@ -100,6 +113,9 @@ spec:
             subPath: tmp
           - path: /var/log
             subPath: var-log
+          # gunicorn 26 puts its control-server socket under $HOME
+          - path: /home/shelfmark/.gunicorn
+            subPath: gunicorn
 
     route:
       internal:
