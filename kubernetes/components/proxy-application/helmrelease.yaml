@@ -50,13 +50,11 @@ spec:
         icon: "${ICON_URL:-}"
         description: "${DESCRIPTION}"
         policyEngineMode: "any"
-      groups:
-        # Create app-specific group for access control (blueprint-managed)
-        - slug: "bp-${APP}-users"
-          parent: ""
-        # Bind existing admin group for proxy auth (set PROXY_ADMIN_GROUP to use)
-        - slug: "${PROXY_ADMIN_GROUP:-}"
-          parent: ""
-        # Bind authentik Admins for admin access to all apps
-        - slug: "authentik Admins"
-          parent: ""
+      # Empty ON PURPOSE -- see blueprint-patch.yaml. The chart renders each binding
+      # with `identifiers: {pk: <$group.bindID>}` and there is no way to supply a
+      # stable bindID from here, so the identifier came out empty: it matched nothing,
+      # every reconcile appended another binding (shelfmark reached 14) and later
+      # entries displaced earlier ones, so owncast/konflate never got bp-${APP}-users
+      # bound at all. An empty list (not null) is what suppresses them -- with a
+      # non-slice value the template falls back to a default "app: <slug>" group.
+      groups: []

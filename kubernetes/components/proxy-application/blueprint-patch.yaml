@@ -1,0 +1,55 @@
+---
+# Access groups and their application bindings, taken over from the chart (see the
+# groups: [] note in helmrelease.yaml). The importer ANDs non-pk identifiers together
+# -- __query_from_identifier does `sub_query &= Q(**{k: v})` -- so {target, group} is a
+# genuine composite key and these entries are idempotent, unlike the chart's empty-pk
+# ones. Mirrors kubernetes/components/oidc-application/blueprint-patch.yaml.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${APP}-proxy-groups-blueprint
+  namespace: security
+  labels:
+    # Legacy underscore form -- the label the authentik blueprint sidecar selects on,
+    # NOT the goauthentik.io/blueprint form in the upstream docs.
+    goauthentik_blueprint: "1"
+stringData:
+  blueprint.yaml: |
+    version: 1
+    metadata:
+      name: ${APP}-proxy-groups
+    entries:
+      - model: authentik_core.group
+        id: app-users
+        identifiers:
+          name: "bp-${APP}-users"
+        state: present
+        attrs:
+          name: "bp-${APP}-users"
+          parent: null
+      - model: authentik_policies.PolicyBinding
+        identifiers:
+          target: !Find [authentik_core.Application, [slug, "${APP}"]]
+          group: !KeyOf app-users
+        state: present
+        attrs:
+          order: 10
+      - model: authentik_policies.PolicyBinding
+        identifiers:
+          target: !Find [authentik_core.Application, [slug, "${APP}"]]
+          group: !Find [authentik_core.group, [name, "authentik Admins"]]
+        state: present
+        attrs:
+          order: 10
+      # Optional extra group. !Condition coerces its args to bool, so an unset
+      # PROXY_ADMIN_GROUP is simply falsy and the entry is skipped -- without this the
+      # !Find below would resolve to None and fail the whole blueprint.
+      - model: authentik_policies.PolicyBinding
+        conditions:
+          - !Condition [AND, "${PROXY_ADMIN_GROUP:-}"]
+        identifiers:
+          target: !Find [authentik_core.Application, [slug, "${APP}"]]
+          group: !Find [authentik_core.group, [name, "${PROXY_ADMIN_GROUP:-}"]]
+        state: present
+        attrs:
+          order: 10
