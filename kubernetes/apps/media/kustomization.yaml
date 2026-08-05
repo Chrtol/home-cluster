@@ -22,8 +22,8 @@ resources:
   - ./immich/ks.yaml
   - ./audiobookshelf/ks.yaml
   # Disabled: Readarr is discontinued/archived upstream; superseded by
-  # shelfmark + readmeabook. Removing it (and its rreading-glasses metadata
-  # proxy below) eliminates the dominant WAL churn on the slow Ceph OSD.
+  # shelfmark. Removing it (and its rreading-glasses metadata proxy below)
+  # eliminates the dominant WAL churn on the slow Ceph OSD.
   # - ./readarr/ks.yaml
   # - ./readarr-books/ks.yaml
   - ./sabnzbd/ks.yaml
@@ -40,6 +40,10 @@ resources:
   - ./qui/ks.yaml
   - ./tracearr/ks.yaml
   - ./shelfmark/ks.yaml
-  - ./readmeabook/ks.yaml
+  # Decommissioned 2026-08-05: no hardlink support, so its torrents could only be
+  # protected from qui's "Delete Unlinked Orphans" rule by living inside /data/media,
+  # which put raw torrent dirs in the library. shelfmark hardlinks instead.
+  # Manifests kept in ./readmeabook/; DB dump in ai-activity/readmeabook-decommission/.
+  # - ./readmeabook/ks.yaml
   - ./unpackerr/ks.yaml
   - ./owncast/ks.yaml
