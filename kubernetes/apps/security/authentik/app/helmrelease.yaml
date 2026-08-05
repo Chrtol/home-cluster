@@ -38,9 +38,29 @@ spec:
       volumeMounts:
         - name: sidecar-blueprints
           mountPath: /blueprints/sidecar
+        # Signing key for OIDC id_tokens, imported by authentik's certificate_discovery
+        # task (it scans /certs). With a kubernetes.io/tls secret it takes the key pair
+        # NAME FROM THE DIRECTORY -- so this path defines the name "authentik-cert-tls"
+        # that components/oidc-application looks up.
+        #
+        # The point is renewal: authentik's own "Self-signed Certificate" is created
+        # once and NEVER regenerated (crypto/apps.py returns early if the name exists),
+        # which is why it sat expired for months. This one is a cert-manager Certificate
+        # (authentik-cert, private authentik-ca issuer), so cert-manager renews the
+        # secret and discovery updates the key pair in place.
+        #
+        # Deliberately NOT the Let's Encrypt wildcard: signing keys and TLS transport
+        # keys are separate security domains, LE's ~60-day rotation churns the kid for
+        # no benefit, and nothing validates a signing cert's chain anyway.
+        - name: authentik-cert
+          mountPath: /certs/authentik-cert-tls
+          readOnly: true
       volumes:
         - name: sidecar-blueprints
           emptyDir: {}
+        - name: authentik-cert
+          secret:
+            secretName: authentik-cert-tls
     redis:
       enabled: false
     authentik:

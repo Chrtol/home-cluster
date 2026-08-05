@@ -71,7 +71,14 @@ spec:
           # set), so apps that don't set it are completely unaffected.
           - "https://${OIDC_INTERNAL_SUBDOMAIN:=${SUBDOMAIN}}.${SECRET_DOMAIN}${REDIRECT_PATH}"
           tokenDuration: "minutes=5"
-          signingKey: "namespace_security.secret_authentik-cert-tls.tls"
+          # NAME of a CertificateKeyPair inside Authentik, not a k8s secret reference.
+          # The old value ("namespace_security.secret_authentik-cert-tls.tls") matched
+          # nothing, the chart's !Find resolved to None, and Authentik silently fell back
+          # to HS256 -- unnoticed until hass-oidc-auth, which checks the algorithm.
+          #
+          # This name comes from the /certs/authentik-cert-tls mount added to the
+          # authentik HelmRelease; discovery names the key pair after that directory.
+          signingKey: "authentik-cert-tls"
           scopes:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
