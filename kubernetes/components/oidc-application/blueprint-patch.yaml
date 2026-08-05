@@ -39,3 +39,30 @@ stringData:
           grant_types:
             - authorization_code
             - refresh_token
+
+      # Access groups + their application bindings, moved off the chart (see the
+      # groups: [] note in helmrelease.yaml). The importer ANDs non-pk identifiers
+      # together -- __query_from_identifier does `sub_query &= Q(**{k: v})` -- so
+      # {target, group} is a genuine composite key and these entries are idempotent.
+      - model: authentik_core.group
+        id: app-users
+        identifiers:
+          name: "bp-${APP}-users"
+        state: present
+        attrs:
+          name: "bp-${APP}-users"
+          parent: null
+      - model: authentik_policies.PolicyBinding
+        identifiers:
+          target: !Find [authentik_core.Application, [slug, "${APP}"]]
+          group: !KeyOf app-users
+        state: present
+        attrs:
+          order: 10
+      - model: authentik_policies.PolicyBinding
+        identifiers:
+          target: !Find [authentik_core.Application, [slug, "${APP}"]]
+          group: !Find [authentik_core.group, [name, "authentik Admins"]]
+        state: present
+        attrs:
+          order: 10

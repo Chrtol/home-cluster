@@ -85,10 +85,12 @@ spec:
         icon: "${ICON_URL:-}"
         description: "${DESCRIPTION}"
         policyEngineMode: "any"
-      groups:
-        # Create app-specific group for access control (blueprint-managed)
-        - slug: "bp-${APP}-users"
-          parent: ""
-        # Bind authentik Admins for admin access to all apps
-        - slug: "authentik Admins"
-          parent: ""
+      # Empty ON PURPOSE -- groups and their application bindings are created by
+      # blueprint-patch.yaml instead. The chart renders each binding with
+      # `identifiers: {pk: <$group.bindID>}` and there is no way to feed it a stable
+      # bindID from here, so the identifier came out empty: it matched nothing, every
+      # reconcile appended another binding (119 redundant estate-wide), and the second
+      # entry displaced the first so bp-${APP}-users was never actually bound.
+      # An empty list (not null) is what suppresses them -- the template falls back to
+      # a default "app: <slug>" group when groups is not a slice.
+      groups: []
