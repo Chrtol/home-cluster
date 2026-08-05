@@ -28,5 +28,9 @@ data:
         # a separate `groups` scope would be unmapped on this provider.
         include_groups_scope: false
         force_https: true
-        # automatic_user_linking left off (default): SSO logins create NEW HA users.
-        # Enabling it adopts an existing HA account by matching username.
+        # Links an SSO login to the EXISTING HA user with the same username, instead of
+        # creating a second one. Safe here because the Authentik username (chrtol) and
+        # the HA username (chrtol) already match. The tradeoff: anyone able to set that
+        # username in Authentik would inherit that HA account -- acceptable while user
+        # creation is controlled, but it is why upstream defaults this off.
+        automatic_user_linking: true
