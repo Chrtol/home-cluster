@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app booklore
+  name: &app grimmory
 spec:
   interval: 1h
   chartRef:
@@ -48,16 +48,16 @@ spec:
               GROUP_ID: "1000"
               # Query params match Grimmory's built-in default URL, which our
               # explicit DATABASE_URL would otherwise override away.
-              DATABASE_URL: "jdbc:mariadb://mariadb-operator.database.svc.cluster.local:3306/booklore?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true"
+              DATABASE_URL: "jdbc:mariadb://mariadb-operator.database.svc.cluster.local:3306/grimmory?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true"
               DATABASE_USERNAME:
                 valueFrom:
                   secretKeyRef:
-                    name: booklore-secret
+                    name: grimmory-secret
                     key: DATABASE_USERNAME
               DATABASE_PASSWORD:
                 valueFrom:
                   secretKeyRef:
-                    name: booklore-secret
+                    name: grimmory-secret
                     key: DATABASE_PASSWORD
               API_DOCS_ENABLED: "false"
               # /books and /bookdrop are TrueNAS NFS. NFS/SMB cannot guarantee atomic
@@ -120,6 +120,9 @@ spec:
 
       bookdrop:
         type: nfs
+        # Path deliberately still says "booklore" — it is a directory on the NAS, and
+        # shelfmark mounts the same one (see media/shelfmark). Renaming it would drag
+        # an unrelated app into this rename for no benefit. Not an oversight.
         server: nas.${SECRET_DOMAIN}
         path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
         globalMounts:

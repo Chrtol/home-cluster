@@ -3,10 +3,14 @@
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Database
 metadata:
-  name: booklore
+  name: grimmory
 spec:
   mariaDbRef:
     name: mariadb-operator
+  # The operator default is Delete, which DROPS the database when this CR is pruned.
+  # A rename or an accidental prune should never destroy data — the old booklore
+  # database survived exactly this rename because it was armed the same way.
+  cleanupPolicy: Skip
   characterSet: utf8mb4
   collate: utf8mb4_unicode_ci
   requeueInterval: 30s

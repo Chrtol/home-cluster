@@ -3,15 +3,15 @@
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Grant
 metadata:
-  name: booklore
+  name: grimmory
 spec:
   mariaDbRef:
     name: mariadb-operator
   privileges:
     - ALL PRIVILEGES
-  database: booklore
+  database: grimmory
   table: "*"
-  username: booklore
+  username: grimmory
   host: "%"
   requeueInterval: 30s
   retryInterval: 5s

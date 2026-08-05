@@ -34,7 +34,7 @@ resources:
   # Ceph OSD. Re-enable alongside Readarr when needed.
   # - ./rreading-glasses/ks.yaml
   - ./audiobookrequest/ks.yaml
-  - ./booklore/ks.yaml
+  - ./grimmory/ks.yaml
   - ./recommendarr/ks.yaml
   - ./mydia/ks.yaml
   - ./qui/ks.yaml

@@ -3,13 +3,18 @@
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: User
 metadata:
-  name: booklore
+  # metadata.name IS the MySQL username (spec.name would override it), so renaming
+  # this CR mints a fresh `grimmory` user rather than migrating the old one — no
+  # RENAME USER, no ownership transfer. The VALUE of GRIMMORY_DB_USER in 1Password
+  # must match this exactly or the app authenticates as a user that no longer exists.
+  name: grimmory
 spec:
   mariaDbRef:
     name: mariadb-operator
+  cleanupPolicy: Skip
   passwordSecretKeyRef:
     name: mariadb-operator-secret
-    key: booklore-password
+    key: grimmory-password
   host: "%"
   requeueInterval: 30s
   retryInterval: 5s
