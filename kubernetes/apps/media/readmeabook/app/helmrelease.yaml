@@ -79,19 +79,14 @@ spec:
                 subPath: config
               - path: /app/cache
                 subPath: cache
-      nfs-nas-torrents:
+      # Identity mount: every download client reports absolute /data/... paths, so
+      # mounting the share at the same path lets remotePathMapping stay OFF and adding
+      # a client (sabnzbd -> /data/usenet/complete) needs no new mount. readmeabook
+      # locates each client's subtree via its own customPath, joined onto download_dir.
+      nfs-nas-data:
         type: nfs
         server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/torrents
+        path: /mnt/truenas/cf-nas/data
         globalMounts:
-          - path: /downloads
-            subPath: audiobooks
-            readOnly: false
-      nfs-nas-media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
-        globalMounts:
-          - path: /media
-            subPath: audiobooks
+          - path: /data
             readOnly: false

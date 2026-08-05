@@ -66,3 +66,20 @@ stringData:
         state: present
         attrs:
           order: 10
+
+      # Optional shared access group (e.g. media-users), on top of bp-${APP}-users.
+      # The application is created with policyEngineMode: any, so bindings OR together
+      # -- membership in EITHER group grants access, which is what a hand-written
+      # "user in {APP}-users or media-users" policy used to express.
+      # Same !Condition guard as proxy-application's PROXY_ADMIN_GROUP: the arg is
+      # coerced to bool, so an unset OIDC_ACCESS_GROUP skips the entry entirely
+      # rather than letting !Find resolve to None and fail the whole blueprint.
+      - model: authentik_policies.PolicyBinding
+        conditions:
+          - !Condition [AND, "${OIDC_ACCESS_GROUP:-}"]
+        identifiers:
+          target: !Find [authentik_core.Application, [slug, "${APP}"]]
+          group: !Find [authentik_core.group, [name, "${OIDC_ACCESS_GROUP:-}"]]
+        state: present
+        attrs:
+          order: 10

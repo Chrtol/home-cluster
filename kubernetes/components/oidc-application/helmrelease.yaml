@@ -2,6 +2,10 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_PATH
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
+#                      OIDC_ACCESS_GROUP - an existing group bound for access in
+#                        ADDITION to bp-${APP}-users (e.g. media-users). The app uses
+#                        policyEngineMode: any, so the bindings OR together. Unset =
+#                        no extra binding (see the !Condition guard in blueprint-patch).
 #                      OIDC_SIGNING_KEY (defaults to authentik-cert-tls, RSA/RS256).
 #                        Set to authentik-cert-ec for apps that only accept ES256 --
 #                        the key type IS the algorithm, there is no alg field.
