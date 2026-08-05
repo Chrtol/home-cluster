@@ -31,18 +31,14 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
-          # Install the hass-oidc-auth custom component from a pinned GitHub release.
-          # Upstream ships this through HACS, which is an imperative, unversioned
-          # click-install into the PVC (the pre-existing /config/custom_components/hacs
-          # is exactly that, dating from 2025-06 and recorded nowhere in Git). Doing it
-          # here makes the version a reviewable line that Renovate can bump.
+          # auth_oidc is pinned here rather than click-installed via HACS because it
+          # gates login. HACS keeps its existing Lovelace cards and themes
+          # (/config/www/community, /config/themes) -- a deliberate split: git for the
+          # auth path, HACS for cosmetics.
           #
-          # This step is deliberately NON-FATAL. HA is the most availability-critical
-          # app in the cluster and already cannot start without Postgres; it must not
-          # also become unable to start when github.com is unreachable. Any download or
-          # validation failure logs a warning, keeps whatever is already installed and
-          # exits 0 -- worst case HA comes up without SSO and the password login still
-          # works.
+          # NON-FATAL by design. HA already cannot start without Postgres and must not
+          # also depend on github.com being reachable; any failure here keeps whatever
+          # is installed and exits 0.
           01-install-oidc-component:
             # Same image ref as the app container on purpose: it already carries curl,
             # unzip and the right uid, it is already on the node, and pinning both to
@@ -126,6 +122,21 @@ spec:
               # HASS_HTTP_TRUSTED_PROXY_4: 10.0.30.0/24
               HOME_ASSISTANT_EXTERNAL_URL: https://hass.${SECRET_DOMAIN}
               HOME_ASSISTANT_UNIT_SYSTEM: metric
+              # Consumed by !env_var in the oidc.yaml package (see configmap.yaml).
+              # Named keys rather than envFrom: the Authentik secret also carries
+              # issuerURL/redirectURL/tokenDuration/bindPolicyID that HA has no use
+              # for. secretKeyRef is read once at pod start, so the controller's
+              # reloader annotation is what makes a rotation actually take effect.
+              HASS_OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: home-assistant-oidc-authentik-application
+                    key: clientID
+              HASS_OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: home-assistant-oidc-authentik-application
+                    key: clientSecret
             envFrom:
               - secretRef:
                   name: home-assistant-secret
@@ -199,6 +210,17 @@ spec:
         existingClaim: home-assistant-cache
         globalMounts:
           - path: /config/.venv
+      # Git-managed HA config fragments, nested inside the /config PVC mount.
+      # advancedMounts (app only) rather than globalMounts so the install
+      # initContainer isn't handed a mount it has no use for.
+      packages:
+        type: configMap
+        name: home-assistant-packages
+        advancedMounts:
+          home-assistant:
+            app:
+              - path: /config/packages
+                readOnly: true
       usb-devices:
         type: hostPath
         hostPath: /dev/bus/usb

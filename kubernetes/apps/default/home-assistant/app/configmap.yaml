@@ -1,0 +1,32 @@
+---
+# Mounted read-only at /config/packages. Needs ONE bootstrap line added by hand to the
+# PVC's configuration.yaml:
+#   homeassistant:
+#     packages: !include_dir_named packages
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-packages
+data:
+  oidc.yaml: |
+    # YAML rather than the UI config flow because features.default_redirect is
+    # YAML-only. The two are mutually exclusive -- with this block present the UI flow
+    # aborts with "yaml_configured".
+    auth_oidc:
+      client_id: !env_var HASS_OIDC_CLIENT_ID
+      client_secret: !env_var HASS_OIDC_CLIENT_SECRET
+      discovery_url: https://sso.${SECRET_DOMAIN}/application/o/home-assistant/.well-known/openid-configuration
+      display_name: Authentik
+      roles:
+        # Authentik group DISPLAY name. The integration's default ("admins") does not
+        # exist here. Who may log in at all is decided by the application's policy
+        # bindings in Authentik, not by this file.
+        admin: authentik Admins
+      features:
+        default_redirect: true
+        # Authentik's default `profile` mapping already returns the groups claim, so
+        # a separate `groups` scope would be unmapped on this provider.
+        include_groups_scope: false
+        force_https: true
+        # automatic_user_linking left off (default): SSO logins create NEW HA users.
+        # Enabling it adopts an existing HA account by matching username.
