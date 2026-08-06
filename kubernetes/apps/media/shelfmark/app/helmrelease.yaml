@@ -49,6 +49,8 @@ spec:
               # Display name of the Authentik group, not a slug. Members get admin;
               # everyone else (media-users) is a normal, settings-restricted user.
               OIDC_ADMIN_GROUP: media-admins
+              HIDE_LOCAL_AUTH: true
+              OIDC_AUTO_REDIRECT: true
               OIDC_CLIENT_ID:
                 valueFrom:
                   secretKeyRef:
@@ -92,6 +94,38 @@ spec:
               capabilities:
                 drop:
                   - ALL
+
+    route:
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["bookrequest.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+
+
     persistence:
       config:
         existingClaim: *app
@@ -126,21 +160,3 @@ spec:
           # gunicorn 26 puts its control-server socket under $HOME
           - path: /home/shelfmark/.gunicorn
             subPath: gunicorn
-
-    route:
-      internal:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
-
-    service:
-      app:
-        ports:
-          http:
-            port: *port
