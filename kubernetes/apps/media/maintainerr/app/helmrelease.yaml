@@ -1,0 +1,109 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app maintainerr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 30m
+  values:
+    controllers:
+      maintainerr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              # Docker Hub, not GHCR: ghcr.io/jorenn92/maintainerr stopped
+              # publishing at 2.19.0 and every v3 release goes to Docker Hub only.
+              repository: docker.io/jorenn92/maintainerr
+              tag: 3.21.1@sha256:811a580fdf479e8582d3c97047b1aa8930fc5523f63143498020864ad6a7cd80
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # Poster overlays render through sharp + node-canvas. Keep the V8
+              # heap under the container limit so Node GCs instead of being
+              # OOM-killed with no chance to reclaim.
+              NODE_OPTIONS: --max-old-space-size=768
+            probes:
+              # Purpose-built endpoints, so no TCP fallback is needed. /live
+              # deliberately never touches SQLite -- a DB blip must not restart
+              # the pod -- while /ready runs `SELECT 1` and 503s if it fails.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health/live
+                    port: &port 6246
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health/ready
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              # Not an anchor of readiness: the two differ in what they need.
+              # Startup buys slack for the first boot, which restages the UI
+              # bundle into /opt/data and runs the TypeORM migrations before the
+              # server listens; readiness has to react quickly afterwards.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health/ready
+                    port: *port
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 1Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+
+    # No route here on purpose: the ext-auth component owns the HTTPRoute for
+    # this hostname, and a second route for the same host would collide.
+
+    persistence:
+      config:
+        existingClaim: *app
+        globalMounts:
+          - path: /opt/data
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+            subPath: tmp

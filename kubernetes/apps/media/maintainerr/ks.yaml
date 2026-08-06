@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app maintainerr
+  namespace: &namespace media
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: volsync
+      namespace: volsync-system
+  interval: 1h
+  path: ./kubernetes/apps/media/maintainerr/app
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
+    # Maintainerr ships no authentication of any kind (there is no auth module in
+    # the source, and no env var configures one), so access control has to happen
+    # in front of it: ext-auth owns the HTTPRoute + Authentik forward-auth
+    # SecurityPolicy, and proxy-application registers the Authentik provider.
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
+  postBuild:
+    substitute:
+      APP: *app
+      CEPH_RBD_CAPACITY: 5Gi
+      EXT_AUTH_PORT: "6246"
+      # proxy-application: default bindings only (bp-maintainerr-users +
+      # authentik Admins). No PROXY_ADMIN_GROUP -- Maintainerr's job is deleting
+      # media, so it stays with the other admin tools rather than media-users.
+      GROUP: Media
+      SUBDOMAIN: *app
+      DESCRIPTION: Rules-based Plex library cleanup
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false
