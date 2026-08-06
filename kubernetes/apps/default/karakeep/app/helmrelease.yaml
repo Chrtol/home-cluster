@@ -107,11 +107,11 @@ spec:
             image:
               repository: docker.io/getmeili/meilisearch
               tag: v1.52.0
-            args:
-              - /bin/meilisearch
-              - --experimental-dumpless-upgrade
             env:
               MEILI_NO_ANALYTICS: true
+              # v1.52.0 renamed --experimental-dumpless-upgrade to --upgrade-db;
+              # without it the engine refuses to open a DB from an older version.
+              MEILI_UPGRADE_DB: true
               MEILI_MASTER_KEY:
                 valueFrom:
                   secretKeyRef:
