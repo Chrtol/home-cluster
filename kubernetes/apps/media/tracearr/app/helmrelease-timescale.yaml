@@ -93,7 +93,14 @@ spec:
                 custom: true
                 spec:
                   exec:
-                    command: ["pg_isready", "-q", "-d", "tracearr"]
+                    # Via sh -c so $POSTGRES_USER expands. Without -U, pg_isready
+                    # connects as the container's OS user ("postgres"), which does not
+                    # exist as a role -- it still exits 0 (a FATAL proves the server is
+                    # up), so the probe passes while logging a FATAL every few seconds.
+                    command:
+                      - sh
+                      - -c
+                      - exec pg_isready -q -U "$POSTGRES_USER" -d "$POSTGRES_DB"
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 6
@@ -103,7 +110,14 @@ spec:
                 custom: true
                 spec:
                   exec:
-                    command: ["pg_isready", "-q", "-d", "tracearr"]
+                    # Via sh -c so $POSTGRES_USER expands. Without -U, pg_isready
+                    # connects as the container's OS user ("postgres"), which does not
+                    # exist as a role -- it still exits 0 (a FATAL proves the server is
+                    # up), so the probe passes while logging a FATAL every few seconds.
+                    command:
+                      - sh
+                      - -c
+                      - exec pg_isready -q -U "$POSTGRES_USER" -d "$POSTGRES_DB"
                   periodSeconds: 5
                   timeoutSeconds: 5
                   # 5 min: the first boot runs initdb before accepting connections.
