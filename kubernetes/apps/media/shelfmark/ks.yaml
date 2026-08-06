@@ -11,19 +11,27 @@ spec:
       app.kubernetes.io/name: shelfmark
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/proxy-application
-    - ../../../../components/ext-auth
+    # Native OIDC, not ext-auth: shelfmark resolves AUTH_METHOD and every OIDC_*
+    # setting from env before its PVC json, so the whole flow is declarative and
+    # the "create a local admin first" UI wizard is bypassed entirely.
+    - ../../../../components/oidc-application
   interval: 1h
   path: "./kubernetes/apps/media/shelfmark/app"
   postBuild:
     substitute:
       APP: *app
-      EXT_AUTH_PORT: "8084"
       GROUP: Media
       SUBDOMAIN: *app
       DESCRIPTION: Book and audiobook downloader
       CEPH_RBD_CAPACITY: 5Gi
-      PROXY_ADMIN_GROUP: media-admins
+      REDIRECT_PATH: /api/auth/oidc/callback
+      # Secret lands in this namespace so the HelmRelease can secretKeyRef it directly
+      OIDC_SECRET_NAMESPACE: *namespace
+      # Shared access group, bound in ADDITION to bp-shelfmark-users. The application
+      # is created with policyEngineMode: any, so the bindings OR together. These users
+      # are NOT in media-admins, so shelfmark treats them as non-admins and
+      # RESTRICT_SETTINGS_TO_ADMIN keeps settings out of reach.
+      OIDC_ACCESS_GROUP: media-users
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

@@ -40,6 +40,25 @@ spec:
               - -b
               - 0.0.0.0:8084
               - shelfmark.main:app
+            env:
+              # env wins over /config/plugins/*.json, so auth is fully declarative and
+              # the settings UI never has to be touched (it would demand a local admin
+              # before letting you enable OIDC).
+              AUTH_METHOD: oidc
+              OIDC_DISCOVERY_URL: https://sso.${SECRET_DOMAIN}/application/o/${APP}/.well-known/openid-configuration
+              # Display name of the Authentik group, not a slug. Members get admin;
+              # everyone else (media-users) is a normal, settings-restricted user.
+              OIDC_ADMIN_GROUP: media-admins
+              OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: shelfmark-oidc-authentik-application
+                    key: clientID
+              OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: shelfmark-oidc-authentik-application
+                    key: clientSecret
             envFrom:
               - secretRef:
                   name: shelfmark-secret
@@ -75,16 +94,6 @@ spec:
     persistence:
       config:
         existingClaim: *app
-
-      proxy-auth-config:
-        type: configMap
-        name: shelfmark-proxy-auth
-        advancedMounts:
-          shelfmark:
-            shelfmark:
-              - path: /config/plugins/security.json
-                subPath: security.json
-                readOnly: true
 
       nfs-nas-bookdrop:
         type: nfs
