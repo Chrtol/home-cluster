@@ -107,6 +107,77 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 256Mi
+          # ha_health_check serves /healthz, which is what lets kubelet probe the
+          # event loop and the recorder rather than just "did the process exit".
+          # Git-managed for the same reason as auth_oidc: a probe target that HACS
+          # could silently uninstall would take the pod down with it.
+          02-install-health-check-component:
+            image:
+              repository: ghcr.io/home-operations/home-assistant
+              tag: 2026.8.0@sha256:99c0293b3ad103151a9d8b860232fd1c6db425eadb9eb4905c0ecbef65b27363
+            env:
+              # renovate: datasource=github-releases depName=Tobix99/ha-health-check
+              HEALTH_CHECK_COMPONENT_VERSION: v1.2.0
+            command: ["/bin/bash", "-c"]
+            args:
+              - |
+                set -uo pipefail
+                dest=/config/custom_components/ha_health_check
+                stage=/config/custom_components/.ha_health_check.stage
+
+                if [ "$(cat "$${dest}/.version" 2>/dev/null)" = "$${HEALTH_CHECK_COMPONENT_VERSION}" ]; then
+                  echo "ha_health_check $${HEALTH_CHECK_COMPONENT_VERSION} already installed"
+                  exit 0
+                fi
+
+                # Source archive, not a release asset: this project publishes releases
+                # with ZERO assets (hacs.json sets no zip_release, so HACS also installs
+                # from the tree). There is no .zip to download like auth_oidc has.
+                url="https://github.com/Tobix99/ha-health-check/archive/refs/tags/$${HEALTH_CHECK_COMPONENT_VERSION}.zip"
+                rm -rf "$${stage}" "$${stage}.zip"
+                mkdir -p "$${stage}"
+
+                if ! curl -fsSL --retry 3 --retry-delay 2 -o "$${stage}.zip" "$${url}"; then
+                  echo "WARN: could not download $${url} -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                if ! unzip -q "$${stage}.zip" -d "$${stage}"; then
+                  echo "WARN: $${url} is not a usable archive -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                # GitHub nests the tree under ha-health-check-<tag minus the leading v>/.
+                # Globbed rather than reconstructed from the tag, so a tag that stops
+                # matching that convention fails the manifest.json probe below instead of
+                # installing something half-empty.
+                src=$(echo "$${stage}"/*/custom_components/ha_health_check)
+                if [ ! -f "$${src}/manifest.json" ]; then
+                  echo "WARN: no ha_health_check component in $${url} -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                # Stamped inside the staging tree, so the mv is the only visible
+                # transition: there is no window where the files are new but .version
+                # still reads old. Both paths are on the /config PVC, so it is a rename.
+                echo "$${HEALTH_CHECK_COMPONENT_VERSION}" > "$${src}/.version"
+                rm -rf "$${dest}"
+                mv "$${src}" "$${dest}"
+                rm -rf "$${stage}" "$${stage}.zip"
+                echo "installed ha_health_check $${HEALTH_CHECK_COMPONENT_VERSION}"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
         containers:
           app:
             image:
