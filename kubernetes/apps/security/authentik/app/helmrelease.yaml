@@ -187,7 +187,7 @@ spec:
         create: true
       extraContainers:
         - name: sidecar-blueprints
-          image: "ghcr.io/home-operations/k8s-sidecar:2.8.1@sha256:4412aa14803b57733cbe791b9f15bccaf44dcd4bb654de6f64b838d4f7c1058f"
+          image: "ghcr.io/home-operations/k8s-sidecar:2.10.1@sha256:9d9338eba4dbf0ae8151e772ef96d3806d56115acf5521d615e31694e046fe47"
           imagePullPolicy: IfNotPresent
           env:
             - name: FOLDER
