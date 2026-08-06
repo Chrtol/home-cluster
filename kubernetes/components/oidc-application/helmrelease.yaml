@@ -9,6 +9,11 @@
 #                      OIDC_SIGNING_KEY (defaults to authentik-cert-tls, RSA/RS256).
 #                        Set to authentik-cert-ec for apps that only accept ES256 --
 #                        the key type IS the algorithm, there is no alg field.
+#                      OIDC_EXTRA_SCOPE (defaults to openid, i.e. a no-op duplicate).
+#                        Set to offline_access for clients that must refresh their own
+#                        token instead of re-authenticating in a browser (ha-mcp). Only
+#                        accepts the stock "authentik default OAuth Mapping: OpenID
+#                        '<x>'" scope words - see the note on the scopes list below.
 #                      OIDC_SECRET_NAMESPACE (defaults to security - set to app namespace for direct secret access)
 #                      OIDC_INTERNAL_SUBDOMAIN (defaults to SUBDOMAIN) - registers a
 #                        SECOND redirect URI at
@@ -95,6 +100,31 @@ spec:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            # Opt-in fourth scope, set OIDC_EXTRA_SCOPE=offline_access to make
+            # Authentik issue a REFRESH token. Needed by clients that cannot silently
+            # re-authenticate: with access_token_validity hardcoded to minutes=5 below,
+            # ha-mcp died every 5 minutes with "requires re-authorization (token
+            # expired)". grant_types already carries refresh_token (blueprint-patch),
+            # so the grant was enabled but the scope that triggers ISSUING the token
+            # was missing. Browser apps never need it -- they re-auth invisibly against
+            # the Authentik session cookie -- which is why this is not on by default.
+            #
+            # The variable is INSIDE the string on purpose. Flux envsubst defaults
+            # cannot carry the colon and apostrophes in the mapping's display name, so
+            # only the bare scope word is substituted. Consequence: this only reaches
+            # mappings named "authentik default OAuth Mapping: OpenID '<x>'" -- the
+            # four stock OIDC ones. A custom mapping still needs a blueprint patch.
+            #
+            # The default duplicates 'openid' above rather than being empty: an empty
+            # name makes the chart's !Find resolve to None. property_mappings is an M2M
+            # set, so the duplicate collapses and non-opted-in apps are unaffected --
+            # the same trick OIDC_INTERNAL_SUBDOMAIN uses for redirect URIs.
+            #
+            # NOT a per-app blueprint patch: the chart's blueprint sets
+            # property_mappings itself, so a second blueprint writing that same field
+            # would fight it every reconcile with no guaranteed ordering, flipping the
+            # scope in and out.
+            - name: "authentik default OAuth Mapping: OpenID '${OIDC_EXTRA_SCOPE:=openid}'"
       application:
         name: "${DISPLAY_NAME:=${APP}}"  # Uses DISPLAY_NAME if provided, otherwise APP
         slug: "${APP}"  # Keep slug simple for compatibility

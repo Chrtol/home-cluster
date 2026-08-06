@@ -92,6 +92,11 @@ spec:
       REDIRECT_PATH: "/auth/callback"
       # No OIDC_INTERNAL_SUBDOMAIN: a second hostname would advertise an issuer
       # that does not match MCP_BASE_URL, so this app is single-host on purpose.
+      #
+      # MCP clients hold a long-lived connection and cannot bounce through a browser
+      # to re-authenticate, so they need a refresh token. Without this the session
+      # dies after access_token_validity (minutes=5) with "requires re-authorization".
+      OIDC_EXTRA_SCOPE: offline_access
       OIDC_SECRET_NAMESPACE: default
     substituteFrom:
       - name: cluster-secrets
