@@ -205,7 +205,7 @@ spec:
               # docker.io/alpine/curl — same utility image used by the opnsense/
               # hetzner exporters. Ships curl + BusyBox sh (no jq needed here).
               repository: docker.io/alpine/curl
-              tag: 8.21.0@sha256:fd7f01bc6c6caec45a8fd5b871f0f51bf3c7cee0b185830ff25b8110f7e6e77d
+              tag: 8.21.0@sha256:7e0084208deb6b1dd71bba78e4d5ada7e29054b7782214d037fa78739faf3fe9
             command:
               - /bin/sh
               - /scripts/port-watchdog.sh
