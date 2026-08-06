@@ -15,13 +15,36 @@ spec:
       maintainerr:
         annotations:
           reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
+        initContainers:
+          # start.sh resolves the UI's /__PATH_PREFIX__ placeholder with an in-place
+          # sed over /opt/app/apps/server/dist/ui, which readOnlyRootFilesystem blocks.
+          # Stage it into an emptyDir instead. Droppable once a release ships the
+          # $DATA_DIR/ui staging already on main -- check start.sh at the tag.
+          stage-ui:
+            image: &image
               # Docker Hub, not GHCR: ghcr.io/jorenn92/maintainerr stopped
               # publishing at 2.19.0 and every v3 release goes to Docker Hub only.
               repository: docker.io/jorenn92/maintainerr
               tag: 3.21.1@sha256:811a580fdf479e8582d3c97047b1aa8930fc5523f63143498020864ad6a7cd80
+            command:
+              - sh
+              - -c
+              - cp -R /opt/app/apps/server/dist/ui/. /stage-ui/
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+        containers:
+          app:
+            image: *image
             env:
               TZ: ${SECRET_TIMEZONE}
               # Poster overlays render through sharp + node-canvas. Keep the V8
@@ -104,6 +127,17 @@ spec:
           - path: /opt/data
       tmpfs:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
-            subPath: tmp
+        advancedMounts:
+          maintainerr:
+            app:
+              - path: /tmp
+                subPath: tmp
+      ui:
+        type: emptyDir
+        sizeLimit: 128Mi
+        advancedMounts:
+          maintainerr:
+            stage-ui:
+              - path: /stage-ui
+            app:
+              - path: /opt/app/apps/server/dist/ui
