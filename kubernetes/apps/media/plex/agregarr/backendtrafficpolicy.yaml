@@ -1,0 +1,21 @@
+---
+# The dashboard stats endpoints fan out one serial Tautulli call per Plex
+# collection. Measured at 106 collections: ~140-160ms each, 14.5-16.7s total,
+# straddling Envoy's 15s default requestTimeout -- so the same request either
+# lands or 504s depending on Tautulli's latency that second.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: agregarr-dashboard-policy
+  namespace: media
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: agregarr
+  timeout:
+    tcp:
+      connectTimeout: 10s
+    http:
+      connectionIdleTimeout: 180s
+      requestTimeout: 120s
