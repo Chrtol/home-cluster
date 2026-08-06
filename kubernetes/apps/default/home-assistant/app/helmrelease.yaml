@@ -185,12 +185,17 @@ spec:
               tag: 2026.8.0@sha256:99c0293b3ad103151a9d8b860232fd1c6db425eadb9eb4905c0ecbef65b27363
             env:
               TZ: ${SECRET_TIMEZONE}
-              HASS_HTTP_TRUSTED_PROXY_1: 10.42.0.0/16
-              HASS_HTTP_TRUSTED_PROXY_2: 10.43.0.0/16
-              HASS_HTTP_TRUSTED_PROXY_3: 10.0.0.0/8
-              # HASS_HTTP_TRUSTED_PROXY_2: 10.0.10.0/24
-              # HASS_HTTP_TRUSTED_PROXY_3: 10.0.20.0/24
-              # HASS_HTTP_TRUSTED_PROXY_4: 10.0.30.0/24
+              # NO HASS_HTTP_TRUSTED_PROXY_* here any more, and adding them back
+              # would do nothing. HA 2026.8 migrated the http config out of YAML
+              # into /config/.storage/http on the PVC ("yaml_migration_done": true)
+              # and now IGNORES any http: block -- a repair warned about exactly
+              # that, and YAML support disappears entirely in 2027.2.0. The block
+              # was removed from configuration.yaml on 2026-08-06.
+              #
+              # trusted_proxies (10.42.0.0/16, 10.43.0.0/16, 10.0.0.0/8) and
+              # use_x_forwarded_for now live ONLY in that store, editable at
+              # Settings -> System -> Network. They are NOT in git: losing the PVC
+              # loses them, and HA rejects proxied requests without them.
               HOME_ASSISTANT_EXTERNAL_URL: https://hass.${SECRET_DOMAIN}
               HOME_ASSISTANT_UNIT_SYSTEM: metric
               # Consumed by !env_var in the oidc.yaml package (see configmap.yaml).
