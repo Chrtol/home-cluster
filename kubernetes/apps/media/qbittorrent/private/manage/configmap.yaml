@@ -38,7 +38,7 @@ data:
       # Conservative for private trackers (H&R protection). Unregistered torrents
       # are H&R-exempt (tracker already deleted them), so the per-run cap was only
       # a first-run safety governor — raised to 25 after verifying safe operation
-      # so the backlog (mostly seedpool.org) drains in a run or two instead of days.
+      # so the backlog (concentrated on a single tracker) drains in a run or two.
       rem_unregistered_filter_completed: False
       rem_unregistered_grace_minutes: 60   # skip newly-added torrents flagged unregistered
       rem_unregistered_max_torrents: 25    # cap removals per tracker per run
@@ -64,6 +64,7 @@ data:
       music: "/data/torrents/music"
       readmeabook: "/data/media/audiobooks"
       cleanuparr-unlinked: "/data/torrents/cleanuparr-unlinked"
+      seedbuild: "/data/torrents/seedbuild"
 
     tracker:
       # Fallback tag for any tracker not explicitly mapped.
