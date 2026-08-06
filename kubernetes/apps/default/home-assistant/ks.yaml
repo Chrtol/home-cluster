@@ -11,24 +11,13 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/volsync
-    # cnpg -> init-db initContainer + db.home.arpa/postgres pod label. Backs the
-    # recorder (history/logbook), which had never been enabled at all: the
-    # configuration.yaml in the PVC was missing default_config: and the SQLite DB
-    # sat frozen at 2025-06-18. See ai-activity/matter-thread/ALPSTUGA-AIR-QUALITY-ALERTS.md
     - ../../../../components/cnpg
-    # oidc -> Authentik application/provider for hass-oidc-auth. Deliberately NOT in
-    # dependsOn: HA never reads the generated client secret at boot (the settings are
-    # entered once through HA's config flow and live in .storage), so a slow or broken
-    # Authentik blueprint must not be able to hold Home Assistant down.
     - ../../../../components/oidc-application
   dependsOn:
     - name: mosquitto
       namespace: default
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    # The init-db initContainer blocks pod start until Postgres is reachable, so
-    # HA now genuinely cannot start without the cluster. Make that ordering
-    # explicit rather than leaving it to initContainer retries.
     - name: cloudnative-pg-cluster-v17
       namespace: database
   interval: 1h
@@ -37,10 +26,6 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: hass
-      # Underscores, not the hyphenated ${APP} default. Hyphenated identifiers
-      # work (paperless-main, authelia-postgresuser exist) but must be
-      # double-quoted in every statement forever; reptile_tracker set the
-      # precedent for avoiding that.
       DB_NAME: home_assistant
       DB_USER: home_assistant
       DB_OP_ITEM: *app
@@ -48,18 +33,65 @@ spec:
       # OIDC component variables
       GROUP: "Default"
       SUBDOMAIN: hass
-      # HA answers on TWO hostnames: hass.${SECRET_DOMAIN} (external gateway) and
-      # home-assistant.${SECRET_DOMAIN} (internal, from {{ .Release.Name }}).
-      # hass-oidc-auth derives the callback from the request origin, so both must be
-      # registered or an internal login dies with redirect_uri mismatch. Authentik's
-      # STRICT matching compares the full URI, but this callback carries no query
-      # string, so there is no Mealie-style /login?direct=1 trap here.
       OIDC_INTERNAL_SUBDOMAIN: home-assistant
       DISPLAY_NAME: "Home Assistant"
       DESCRIPTION: "Home automation"
       REDIRECT_PATH: "/auth/oidc/callback"
-      # Land the generated client credentials next to the app so they can be read
-      # back when filling in HA's config flow. Nothing in the pod consumes them.
+      OIDC_SECRET_NAMESPACE: default
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app home-assistant-mcp
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  components:
+    - ../../../../components/volsync
+    - ../../../../components/ceph-rbd
+    # ha-mcp runs the ha-mcp-oidc entrypoint, so the generated clientID/Secret
+    # are a hard start dependency (secretKeyRef, not an in-app config flow like
+    # Home Assistant's own). Unlike the HA Kustomization above, this one really
+    # cannot come up without Authentik.
+    - ../../../../components/oidc-application
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: authentik
+      namespace: security
+    - name: home-assistant
+      namespace: default
+  interval: 1h
+  path: ./kubernetes/apps/default/home-assistant/mcp
+  postBuild:
+    substitute:
+      APP: *app
+      CEPH_RBD_CAPACITY: 1Gi
+      # OIDC component variables. SUBDOMAIN must match MCP_BASE_URL in the
+      # HelmRelease: it builds both the launch URL and the redirect URI, and
+      # FastMCP compares the callback against the origin it advertised.
+      GROUP: "Default"
+      SUBDOMAIN: hass-mcp
+      DISPLAY_NAME: "Home Assistant MCP"
+      DESCRIPTION: "Home automation via MCP"
+      REDIRECT_PATH: "/auth/callback"
+      # No OIDC_INTERNAL_SUBDOMAIN: a second hostname would advertise an issuer
+      # that does not match MCP_BASE_URL, so this app is single-host on purpose.
       OIDC_SECRET_NAMESPACE: default
     substituteFrom:
       - name: cluster-secrets
