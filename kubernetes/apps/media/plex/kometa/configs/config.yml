@@ -29,12 +29,13 @@ libraries:
   #     quality_profile: HD - Anime
   #     series_type: anime
 
+  # Overlays moved to Agregarr; only one tool may composite Plex posters.
+  # The custom/*Overlays*.yml files are kept but no longer referenced.
   Movies:
     run_order:
       - collections
       - metadata
       - operations
-      - overlays
     collection_files:
       # - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
@@ -42,14 +43,6 @@ libraries:
       - repo: Movies - Trakt (Unplayed) by Magic815.yml
       - default: basic
       - default: imdb
-    overlay_files:
-      - remove_overlays: false
-      - repo: Movies - Overlays - Charts.yml
-      - repo: Movies - Overlays - Oscars.yml
-      - repo: Movies - Overlays - Ratings.yml
-      - repo: Movies - Overlays - Stand-up.yml
-      - repo: Movies - Overlays - Streaming Services.yml
-      - repo: Movies - Overlays - Studios.yml
     operations:
       mass_genre_update: imdb
       mass_content_rating_update: omdb
@@ -62,19 +55,10 @@ libraries:
       - collections
       - metadata
       - operations
-      - overlays
     collection_files:
       - repo: TV Shows.yml
       - pmm: basic
       - pmm: imdb
-    overlay_files:
-      - remove_overlays: false
-      - repo: TV Shows - Overlays - Charts.yml
-      - repo: TV Shows - Overlays - Networks.yml
-      - repo: TV Shows - Overlays - Ratings.yml
-      - repo: TV Shows - Overlays - Statuses.yml
-      - repo: TV Shows - Overlays - Streaming Services.yml
-      - repo: TV Shows - Overlays - Studios.yml
     operations:
       mass_genre_update: tmdb
       mass_content_rating_update: omdb
