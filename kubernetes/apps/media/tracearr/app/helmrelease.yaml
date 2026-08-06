@@ -17,10 +17,12 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  # init-db initContainer + db.home.arpa/* pod labels come from the cnpg/dragonfly components
+  # db.home.arpa/dragonfly pod label comes from the dragonfly component.
+  # No cnpg component: tracearr 2.x requires TimescaleDB (continuous aggregates +
+  # compression, both TSL-only), which the shared postgres17 cluster cannot provide
+  # without a self-built image and cluster-wide shared_preload_libraries. It runs its
+  # own single-instance timescaledb-ha below instead. See ai-activity/tracearr-timescaledb/.
   valuesFrom:
-    - kind: ConfigMap
-      name: ${APP}-cnpg-values
     - kind: ConfigMap
       name: ${APP}-dragonfly-values
   values:

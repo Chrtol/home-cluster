@@ -1,0 +1,159 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# tracearr's private database. Deliberately NOT on the shared postgres17 cluster:
+# tracearr 2.x hard-requires TimescaleDB (continuous aggregates, compression and
+# retention policies -- all TSL-licensed, so the CNPG timescaledb-oss extension image
+# cannot serve them either). Putting it on postgres17 would mean a self-built operand
+# image plus cluster-wide shared_preload_libraries + max_locks_per_transaction=4096,
+# which at that cluster's max_connections=600 costs ~600MB of shared memory for all
+# 36 databases. See ai-activity/tracearr-timescaledb/.
+#
+# A SEPARATE HelmRelease, not a second controller inside the tracearr release:
+# app-template only omits the identifier suffix from a Service name when the release
+# defines exactly one, so adding a second service there would silently rename the
+# live "tracearr" Service to "tracearr-app".
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tracearr-timescale
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      timescale:
+        # Recreate, not RollingUpdate: the RWO Ceph volume cannot attach to an old and
+        # a new pod at once, so a rolling update would deadlock on the volume.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: docker.io/timescale/timescaledb-ha
+              # renovate: datasource=docker depName=docker.io/timescale/timescaledb-ha
+              tag: pg18.1-ts2.25.0@sha256:9dcbd18e5cb966398ae19f3882fd5fb2e19b3cb98be54d290ab9f69c75bf0a8b
+            args:
+              - postgres
+              # Enables the TSL half of TimescaleDB. Without it the extension loads but
+              # continuous aggregates and compression are refused -- exactly the failure
+              # mode of the Apache-2-only builds.
+              - -c
+              - timescaledb.license=timescale
+              - -c
+              - timescaledb.telemetry_level=off
+              # A hypertable query takes one lock per chunk it touches, so the default 64
+              # is far too low. Cost is max_locks_per_transaction * max_connections * ~256B
+              # of shared memory -- ~100MB here, and affordable only because this instance
+              # serves one app at max_connections=100.
+              - -c
+              - max_locks_per_transaction=4096
+              - -c
+              - max_connections=100
+              - -c
+              - timescaledb.max_tuples_decompressed_per_dml_transaction=100000
+              - -c
+              - shared_buffers=256MB
+              - -c
+              - effective_cache_size=768MB
+              - -c
+              - maintenance_work_mem=128MB
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # A SUBDIRECTORY of the mount, never the mount root: initdb refuses a
+              # directory that already contains lost+found.
+              PGDATA: /home/postgres/pgdata/data
+              POSTGRES_DB: tracearr
+              POSTGRES_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: tracearr-db-secret
+                    key: POSTGRES_USER
+              # Read by initdb only, and only on an empty volume. Rotating it in
+              # 1Password will NOT change the password of an already-initialised
+              # cluster -- that needs an ALTER ROLE. Hence no Reloader annotation.
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: tracearr-db-secret
+                    key: POSTGRES_PASSWORD
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["pg_isready", "-q", "-d", "tracearr"]
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 6
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["pg_isready", "-q", "-d", "tracearr"]
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  # 5 min: the first boot runs initdb before accepting connections.
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              # NOT readOnlyRootFilesystem: postgres writes its unix socket under
+              # /var/run/postgresql and spills temp files to /tmp.
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                # Covers shared_buffers (256MB) + the ~100MB lock table + the 256Mi
+                # /dev/shm emptyDir, which counts against the pod's memory limit.
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        # timescaledb-ha runs postgres as uid/gid 1000, not the usual 26/999.
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+    service:
+      # Single service in this release, so it renders as the bare release name:
+      # tracearr-timescale.media.svc.cluster.local -- the host in DATABASE_URL.
+      app:
+        controller: timescale
+        ports:
+          postgres:
+            port: 5432
+    persistence:
+      # Claim comes from the ceph-rbd component (CEPH_RBD_CLAIM_NAME) and is the PVC
+      # the volsync component snapshots.
+      data:
+        existingClaim: tracearr-timescale
+        advancedMounts:
+          timescale:
+            app:
+            - path: /home/postgres/pgdata
+      # Postgres puts parallel-worker shared memory in /dev/shm; the 64Mi Kubernetes
+      # default surfaces as "could not resize shared memory segment".
+      dshm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 256Mi
+        advancedMounts:
+          timescale:
+            app:
+            - path: /dev/shm

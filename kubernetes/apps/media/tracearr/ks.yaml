@@ -10,20 +10,26 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cloudnative-pg-cluster-v17
-      namespace: database
     - name: dragonfly-cluster
       namespace: database
   interval: 1h
   path: ./kubernetes/apps/media/tracearr/app
+  # ceph-rbd  -> RWO PVC for the app's own timescaledb-ha instance. tracearr 2.x needs
+  #              TimescaleDB (TSL continuous aggregates + compression), which the shared
+  #              postgres17 cluster cannot serve, so this app is deliberately the one
+  #              exception to the cnpg component. See ai-activity/tracearr-timescaledb/.
+  # volsync   -> restic backup of that PVC, on its own retention independent of the
+  #              CNPG cluster's 7d barman policy.
   components:
-    - ../../../../components/cnpg
+    - ../../../../components/ceph-rbd
     - ../../../../components/dragonfly
+    - ../../../../components/volsync
   postBuild:
     substitute:
       APP: *app
-      DB_OP_ITEM: *app
-      DB_PASS_FIELD: TRACEARR_POSTGRES_PASSWORD
+      CEPH_RBD_CLAIM_NAME: tracearr-timescale
+      CEPH_RBD_CAPACITY: 20Gi
+      VOLSYNC_PVC: tracearr-timescale
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
