@@ -104,6 +104,16 @@ spec:
               - identifier: app
                 port: *port
       internal:
+        annotations:
+          # gatus-sidecar: without this the internal Gateway's inherited
+          # `guarded: true` turns this route into a public-DNS leak canary, so the
+          # internal hostname gets no uptime check at all. Overriding it with an
+          # HTTP probe means both routes are actually monitored. Grimmory redirects
+          # / to its login page, hence < 400 rather than == 200.
+          gatus.home-operations.com/endpoint: |
+            group: internal
+            conditions:
+              - "[STATUS] < 400"
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal

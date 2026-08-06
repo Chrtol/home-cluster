@@ -21,7 +21,12 @@ spec:
     substitute:
       APP: *app
       GROUP: Media
-      SUBDOMAIN: *app
+      # External hostname (bookrequest.*) is the primary redirect URI and the
+      # Authentik launch URL; the internal route is shelfmark.* below. Shelfmark
+      # builds its callback from the request origin, so BOTH hosts must be
+      # registered or a login from the other one fails with redirect_uri mismatch.
+      SUBDOMAIN: bookrequest
+      OIDC_INTERNAL_SUBDOMAIN: *app
       DESCRIPTION: Book and audiobook downloader
       CEPH_RBD_CAPACITY: 5Gi
       REDIRECT_PATH: /api/auth/oidc/callback
