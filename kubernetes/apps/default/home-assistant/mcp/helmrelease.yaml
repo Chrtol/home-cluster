@@ -10,6 +10,13 @@ spec:
     name: app-template
     namespace: flux-system
   interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     controllers:
       home-assistant-mcp:
@@ -142,6 +149,19 @@ spec:
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: *configDir
+          # $HOME must be writable, and HA_MCP_CONFIG_DIR does NOT cover it: that
+          # env var only redirects ha-mcp's OWN data dir. FastMCP's OAuth proxy
+          # keeps dynamically-registered clients under a platformdirs path
+          # ($HOME/.local/share/...) and mkdirs it during OIDCProxy.__init__, which
+          # is fatal under readOnlyRootFilesystem -- the pod crashlooped on
+          # "OSError: [Errno 30] Read-only file system: '/home/mcpuser/.local'".
+          #
+          # Mounted here rather than fixed with HOME= or XDG_DATA_HOME= so it covers
+          # every $HOME-relative path, whichever library reaches for one. On the PVC
+          # rather than an emptyDir so DCR client registrations survive a restart.
+          # Shadows the image's empty /home/mcpuser/.ha-mcp, which is unused anyway.
+          - path: /home/mcpuser
+            subPath: home
       # readOnlyRootFilesystem leaves Python and uvicorn with nowhere to write
       # temp files. HA_MCP_CONFIG_DIR keeps ha-mcp's own data on the PVC, so this
       # only has to cover the runtime's scratch writes.

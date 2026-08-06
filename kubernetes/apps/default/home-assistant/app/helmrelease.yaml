@@ -211,6 +211,47 @@ spec:
             envFrom:
               - secretRef:
                   name: home-assistant-secret
+            # /healthz comes from the ha_health_check custom component installed by
+            # the 02-install-* initContainer above. It 404s until the integration is
+            # added through HA's UI once (config-flow only -- there is no YAML/package
+            # equivalent), so these probes are only safe after that has been done.
+            #
+            # Every field is spelled out because custom: true discards the chart's
+            # probe defaults wholesale -- inheriting timeoutSeconds: 1 is what killed
+            # shelfmark 77 times in three days.
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: { path: /healthz, port: 8123 }
+                  # 5 x 30s of sustained unhealth on top of the component's own 60s
+                  # staleness threshold, so ~3.5 min before a restart. Deliberately
+                  # slack: a restart takes Zigbee, Matter and the BLE radio down with
+                  # it, so a Postgres blip must never be able to trigger one.
+                  periodSeconds: 30
+                  # The handler reads the keepalive sensor back out of the recorder,
+                  # so this is a Postgres round-trip, not a static response.
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: { path: /healthz, port: 8123 }
+                  periodSeconds: 10
+                  # ~5 min to bind :8123. init-db blocks on Postgres first and the
+                  # .venv lives on its own PVC. The component answers 200 as soon as
+                  # the HTTP server is up (hass.state != running short-circuits to
+                  # healthy), so this hands off to liveness without waiting for every
+                  # integration to load.
+                  failureThreshold: 30
+              # Off on purpose. HA is a single replica behind two HTTPRoutes: a failing
+              # readiness probe would empty the Service endpoints and 503 the UI --
+              # removing the only way to diagnose a half-broken HA -- while buying
+              # nothing, because there is no second replica to shift traffic to.
+              readiness:
+                enabled: false
             securityContext:
               privileged: true
               capabilities:
