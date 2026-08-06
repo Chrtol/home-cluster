@@ -70,7 +70,15 @@ spec:
               # token, 20s+ timeouts) stalls /api/health past that: 77 liveness kills
               # in 3 days. Do not raise --workers to fix it — a second worker would
               # start a second download orchestrator.
-              liveness: &probe
+              #
+              # Deliberately NOT one shared anchor: liveness must be slow to kill,
+              # readiness must be quick to admit, and initialDelaySeconds belongs only
+              # on liveness. Readiness has no kill power -- failing it at startup just
+              # means "not ready yet", which is true -- so delaying it only extends the
+              # outage: strategy is Recreate on an RWO ceph-rbd claim with replicas: 1,
+              # so there are ZERO backends (Envoy 503) until the pod is marked Ready.
+              # Measured: gunicorn listening at ~1s, app booted ~6s, Ready at +31s.
+              liveness:
                 enabled: true
                 custom: true
                 spec:
@@ -80,8 +88,21 @@ spec:
                   timeoutSeconds: 10
                   periodSeconds: 30
                   failureThreshold: 5
-                  initialDelaySeconds: 15
-              readiness: *probe
+                  # ~6s boot; this margin is what stops a slow start being killed
+                  initialDelaySeconds: 10
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: *port
+                  timeoutSeconds: 10
+                  periodSeconds: 5
+                  # 6 x 5s = 30s of grace before the only endpoint is withdrawn. With a
+                  # single replica there is nowhere else to route, so pulling the pod
+                  # during a slow-upstream stall turns a slow request into a hard 503.
+                  failureThreshold: 6
             resources:
               requests:
                 cpu: 10m
