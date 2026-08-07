@@ -185,6 +185,16 @@ spec:
               limits:
                 memory: 256Mi
     defaultPodOptions:
+      # Bulk NFS writer -- keep off Plex's node. See the qbittorrent-private
+      # helmrelease for the full reasoning (single-TCP-connection NFS mounts put
+      # Plex's reads behind bulk writes).
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: plex
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

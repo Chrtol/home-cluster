@@ -229,6 +229,20 @@ spec:
               limits:
                 memory: 32Mi
     defaultPodOptions:
+      # Keep this bulk NFS writer off Plex's node. One NFS mount multiplexes all I/O
+      # for a client<->server pair over a SINGLE TCP connection, so 69 MB/s of torrent
+      # writes put Plex's reads at the back of the queue -- 2026-08-07 seeks stalled
+      # 30s+ while the NAS itself sat at 26% disk busy and load 1.55. Anti-affinity
+      # rather than a nodeSelector so the rule tracks Plex if its GPU affinity moves it.
+      # IgnoredDuringExecution: nothing evicts if Plex later lands here (e.g. dell1
+      # down); they separate again on the next restart.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: plex
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
