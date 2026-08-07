@@ -1,0 +1,104 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app yata
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 30m
+  values:
+    controllers:
+      yata:
+        containers:
+          app:
+            image:
+              # Upstream publishes no versioned container tag -- GHCR carries
+              # only `main`, `dev` and per-commit SHAs, while the GitHub
+              # releases ship binaries. Pinned by digest so a rebuild of `main`
+              # can't roll in silently; Renovate bumps the digest.
+              repository: ghcr.io/yata-dash/yata-dash
+              tag: main@sha256:366affde883ce17efa7a698dfd2c80ab56122d182d368bb7935461edd4f2db87
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # hostGuard rejects any Host it wasn't told about (DNS-rebinding
+              # defence) with a 403 page, not a redirect. Bare IPs always pass,
+              # so the probes below stay green while the browser gets refused --
+              # the pod looks perfectly healthy either way.
+              YATA_ALLOWED_HOSTS: yata.${SECRET_DOMAIN}
+            probes:
+              # /api/version is registered outside the requireAuth group and
+              # reads no SQLite, so neither a missing login nor a DB stall can
+              # restart the pod.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: &port 8420
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: *port
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              # Everything mutable lands on the PVC: config.json, yata.db and
+              # its -wal/-shm sidecars, the .config-*.json rename target, and
+              # yata.log (which defaults to dirname($YATA_DATA)).
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 512Mi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+
+    # No route here on purpose: the ext-auth component owns the HTTPRoute for
+    # this hostname, and a second route for the same host would collide.
+
+    persistence:
+      config:
+        existingClaim: *app
+        globalMounts:
+          - path: /data

@@ -1,0 +1,53 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app yata
+  namespace: &namespace media
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: volsync
+      namespace: volsync-system
+  interval: 1h
+  path: ./kubernetes/apps/media/yata/app
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
+    # Yata's own login is opt-in (Settings -> General -> Account) and OFF on a
+    # fresh install, so the instance would serve every tracker API key and
+    # session cookie it holds to anyone who reached the port until that manual
+    # step. ext-auth owns the HTTPRoute + Authentik forward-auth SecurityPolicy
+    # so the hostname is guarded from the first request; proxy-application
+    # registers the Authentik provider.
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
+  postBuild:
+    substitute:
+      APP: *app
+      # Two SQLite files' worth of stats history for a handful of trackers.
+      CEPH_RBD_CAPACITY: 2Gi
+      EXT_AUTH_PORT: "8420"
+      # proxy-application: default bindings only (bp-yata-users + authentik
+      # Admins). No PROXY_ADMIN_GROUP -- config.json holds tracker credentials
+      # in plain text, so this is single-user, not a media-users app.
+      GROUP: Media
+      SUBDOMAIN: *app
+      DESCRIPTION: Private tracker stats dashboard
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

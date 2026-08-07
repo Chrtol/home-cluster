@@ -48,3 +48,4 @@ resources:
   # - ./readmeabook/ks.yaml
   - ./unpackerr/ks.yaml
   - ./owncast/ks.yaml
+  - ./yata/ks.yaml
