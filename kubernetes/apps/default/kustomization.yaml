@@ -32,3 +32,4 @@ resources:
   - ./legal/ks.yaml
   - ./zipline/ks.yaml
   - ./filebrowser/ks.yaml
+  - ./thelounge/ks.yaml
