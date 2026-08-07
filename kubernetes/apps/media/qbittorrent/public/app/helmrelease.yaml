@@ -188,6 +188,9 @@ spec:
       # Bulk NFS writer -- keep off Plex's node. See the qbittorrent-private
       # helmrelease for the full reasoning (single-TCP-connection NFS mounts put
       # Plex's reads behind bulk writes).
+      # preferred (never required) against qbittorrent-private keeps this off the
+      # heavy sprint writer's node when possible, degrading to co-location rather
+      # than Pending during an outage (see the private helmrelease's separation note).
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -195,6 +198,13 @@ spec:
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: plex
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: qbittorrent-private
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

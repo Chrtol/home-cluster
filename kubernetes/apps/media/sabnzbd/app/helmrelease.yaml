@@ -163,6 +163,10 @@ spec:
       # helmrelease for the full reasoning (single-TCP-connection NFS mounts put
       # Plex's reads behind bulk writes). Moving only qBittorrent would leave Plex
       # contending with this instead.
+      # preferred (never required) against qbittorrent-private keeps this off the
+      # heavy sprint writer's node when possible -- lenovo1 sat at 70% CPU hosting
+      # both -- but degrades to co-location rather than Pending during an outage
+      # (3 nodes, 4 separation-wanting writers make a required chain unsatisfiable).
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -170,6 +174,13 @@ spec:
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: plex
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: qbittorrent-private
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
