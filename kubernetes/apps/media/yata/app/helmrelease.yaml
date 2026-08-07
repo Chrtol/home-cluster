@@ -13,15 +13,43 @@ spec:
   values:
     controllers:
       yata:
-        containers:
-          app:
-            image:
+        initContainers:
+          # Tracker definitions are plain JSON read from $YATA_DEFS, which the
+          # image bakes at /app/defs -- unwritable under readOnlyRootFilesystem,
+          # and there is no upload endpoint (/api/defs is read-only). Overlay a
+          # PVC subPath so a definition can be added for a tracker upstream does
+          # not ship, then activated with POST /api/defs/reload, no restart.
+          #
+          # `cp -R src/.` overwrites same-named files and leaves the rest alone:
+          # upstream's copies win on every image bump, hand-written ones survive.
+          # A def upstream DELETES will linger here until removed by hand.
+          seed-defs:
+            image: &image
               # Upstream publishes no versioned container tag -- GHCR carries
               # only `main`, `dev` and per-commit SHAs, while the GitHub
               # releases ship binaries. Pinned by digest so a rebuild of `main`
               # can't roll in silently; Renovate bumps the digest.
               repository: ghcr.io/yata-dash/yata-dash
               tag: main@sha256:366affde883ce17efa7a698dfd2c80ab56122d182d368bb7935461edd4f2db87
+            command:
+              - sh
+              - -c
+              - cp -R /app/defs/. /defs/
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+        containers:
+          app:
+            image: *image
             env:
               TZ: ${SECRET_TIMEZONE}
               # hostGuard rejects any Host it wasn't told about (DNS-rebinding
@@ -100,5 +128,14 @@ spec:
     persistence:
       config:
         existingClaim: *app
-        globalMounts:
-          - path: /data
+        advancedMounts:
+          yata:
+            seed-defs:
+              - path: /defs
+                subPath: defs
+            app:
+              # No subPath: config.json and yata.db already live at the volume
+              # root, so anchoring /data anywhere else orphans them.
+              - path: /data
+              - path: /app/defs
+                subPath: defs
