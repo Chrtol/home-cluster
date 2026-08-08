@@ -45,7 +45,7 @@ spec:
             # one ref means Renovate can never leave the two skewed.
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.8.0@sha256:99c0293b3ad103151a9d8b860232fd1c6db425eadb9eb4905c0ecbef65b27363
+              tag: 2026.8.1@sha256:e1f54eb0306d7ded8b3cdee70c21178413cd175aa3e526452af0e086a39ecc51
             env:
               # renovate: datasource=github-releases depName=christiaangoossens/hass-oidc-auth
               OIDC_COMPONENT_VERSION: v1.1.1
@@ -114,7 +114,7 @@ spec:
           02-install-health-check-component:
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.8.0@sha256:99c0293b3ad103151a9d8b860232fd1c6db425eadb9eb4905c0ecbef65b27363
+              tag: 2026.8.1@sha256:e1f54eb0306d7ded8b3cdee70c21178413cd175aa3e526452af0e086a39ecc51
             env:
               # renovate: datasource=github-releases depName=Tobix99/ha-health-check
               HEALTH_CHECK_COMPONENT_VERSION: v1.2.0
@@ -182,7 +182,7 @@ spec:
           app:
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.8.0@sha256:99c0293b3ad103151a9d8b860232fd1c6db425eadb9eb4905c0ecbef65b27363
+              tag: 2026.8.1@sha256:e1f54eb0306d7ded8b3cdee70c21178413cd175aa3e526452af0e086a39ecc51
             env:
               TZ: ${SECRET_TIMEZONE}
               # NO HASS_HTTP_TRUSTED_PROXY_* here any more, and adding them back
