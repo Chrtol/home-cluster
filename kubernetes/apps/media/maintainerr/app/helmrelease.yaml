@@ -25,7 +25,7 @@ spec:
               # Docker Hub, not GHCR: ghcr.io/jorenn92/maintainerr stopped
               # publishing at 2.19.0 and every v3 release goes to Docker Hub only.
               repository: docker.io/jorenn92/maintainerr
-              tag: 3.21.1@sha256:811a580fdf479e8582d3c97047b1aa8930fc5523f63143498020864ad6a7cd80
+              tag: 3.22.0@sha256:19692312e2dfd49dfb6de53bf82c320d62d04c8174b8db2413c953c85b48a876
             command:
               - sh
               - -c
