@@ -273,19 +273,19 @@ spec:
     persistence:
       config:
         existingClaim: qbittorrent-private
+      # nconnect=16 via the shared nas-data claim (Part B). subPath maps the old
+      # /data/torrents + /data/media paths onto the /data export root.
       media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/torrents
+        existingClaim: nas-data
         globalMounts:
           - path: /data/torrents
+            subPath: torrents
             readOnly: false
       media-library:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
+        existingClaim: nas-data
         globalMounts:
           - path: /data/media
+            subPath: media
             readOnly: false
       tmp:
         type: emptyDir
