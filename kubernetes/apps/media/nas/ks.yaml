@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app nas
+  namespace: &namespace media
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  # Static RWX PV/PVC pairs onto the TrueNAS exports, carrying nconnect=16 so bulk
+  # writes and latency-sensitive reads stop sharing one TCP connection. One pair per
+  # dataset: ZFS child datasets aren't traversable over a parent NFS mount, so each
+  # export is mounted at its own path. See ai-activity/nfs-nconnect/PLAN.md (Part B).
+  dependsOn:
+    - name: csi-driver-nfs
+      namespace: kube-system
+  interval: 1h
+  path: ./kubernetes/apps/media/nas/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

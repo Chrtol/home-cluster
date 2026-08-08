@@ -1,0 +1,95 @@
+# One PV/PVC pair per NAS dataset the default namespace mounts. See the media
+# namespace's nas.yaml for the nconnect-per-node reasoning.
+---
+# Shared media dataset (filebrowser browses it)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-data-default
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-data-default
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-data
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-data-default
+  resources:
+    requests:
+      storage: 1Ti
+---
+# paperless documents (separate dataset under applications/)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-paperless-default
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-paperless-default
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/applications/paperless
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-paperless
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-paperless-default
+  resources:
+    requests:
+      storage: 1Ti
+---
+# postiz assets (separate dataset under applications/)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-postiz-default
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-postiz-default
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/applications/postiz
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-postiz
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-postiz-default
+  resources:
+    requests:
+      storage: 1Ti

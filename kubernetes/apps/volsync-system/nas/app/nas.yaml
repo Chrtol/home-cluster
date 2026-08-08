@@ -1,0 +1,32 @@
+# restic backup repository dataset. See the media namespace's nas.yaml for the
+# nconnect-per-node reasoning.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-backup-volsync
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-backup-volsync
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/backup
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-backup
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-backup-volsync
+  resources:
+    requests:
+      storage: 1Ti

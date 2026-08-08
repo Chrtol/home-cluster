@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app nas
+  namespace: &namespace volsync-system
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  # nconnect=16 PV/PVC for the restic backup repo. The heavy writers are VolSync's
+  # mover pods, which get /backup injected by the MutatingAdmissionPolicy -- phase 2
+  # rewires that MAP (+ the unlock cronjobs) to this claim. See
+  # ai-activity/nfs-nconnect/PLAN.md (Part B).
+  dependsOn:
+    - name: csi-driver-nfs
+      namespace: kube-system
+  interval: 1h
+  path: ./kubernetes/apps/volsync-system/nas/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

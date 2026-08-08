@@ -6,6 +6,7 @@ namespace: media
 components:
   - ../../components/common
 resources:
+  - ./nas/ks.yaml
   - ./plex/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./prowlarr/ks.yaml

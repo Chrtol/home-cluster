@@ -1,0 +1,98 @@
+# One PV/PVC pair per NAS dataset the media namespace mounts. nconnect is negotiated
+# per client<->server-IP pair, so every mount to the NAS must carry nconnect=16 or an
+# unmigrated (nconnect=1) mount landing first on a node would cap the whole node.
+# volumeHandle must be unique per PV; capacity is ignored for NFS but must be non-empty.
+---
+# The big shared media dataset -- one dataset (torrent<->library hardlinks prove it),
+# so media, torrents and media/books are all reachable via subPath.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-data-media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-data-media
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-data
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-data-media
+  resources:
+    requests:
+      storage: 1Ti
+---
+# immich library (separate dataset under applications/)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-immich-media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-immich-media
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/applications/immich
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-immich
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-immich-media
+  resources:
+    requests:
+      storage: 1Ti
+---
+# booklore bookdrop (separate dataset) -- shared by grimmory + shelfmark
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-bookdrop-media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-bookdrop-media
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/applications/booklore/bookdrop
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-bookdrop
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-bookdrop-media
+  resources:
+    requests:
+      storage: 1Ti
