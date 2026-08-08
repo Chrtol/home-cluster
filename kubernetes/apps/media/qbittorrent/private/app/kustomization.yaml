@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./pvc.yaml
   - ./externalsecret.yaml
+  - ./dyn-ip-secret.sops.yaml
   - ./helmrelease.yaml
   - ./replicationsource.yaml
 configMapGenerator:

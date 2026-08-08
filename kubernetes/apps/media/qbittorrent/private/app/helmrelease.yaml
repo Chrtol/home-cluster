@@ -229,6 +229,44 @@ spec:
                 memory: 16Mi
               limits:
                 memory: 32Mi
+          # Dynamic-IP reporter. Shares this pod's VPN netns, so its curl egresses
+          # from the SAME ProtonVPN IP as the torrents — the upstream session is
+          # IP/ASN-locked, so the update MUST originate here (a node-level CronJob
+          # would 403 IP-mismatch). Reads the live egress IP from gluetun's control
+          # server and only reports on change, capped at once/hour (endpoint rate
+          # limit). Seeds from DYN_IP_SESSION; persists the rotating session cookie
+          # + last-reported IP to the config PVC. Script is SOPS-encrypted
+          # (dyn-ip-secret.sops.yaml).
+          dyn-ip:
+            image:
+              repository: docker.io/alpine/curl
+              tag: 8.21.0@sha256:7e0084208deb6b1dd71bba78e4d5ada7e29054b7782214d037fa78739faf3fe9
+            command:
+              - /bin/sh
+              - /scripts/dyn-ip.sh
+            env:
+              DYN_IP_SESSION:
+                valueFrom:
+                  secretKeyRef:
+                    name: qbittorrent-private-secret
+                    key: DYN_IP_SESSION
+              GLUETUN_CONTROL_SERVER_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: qbittorrent-private-secret
+                    key: GLUETUN_CONTROL_SERVER_API_KEY
+            securityContext:
+              # 1000/fsGroup 1000 (pod default) so it can write the cookie+state
+              # subPath on the config PVC.
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 32Mi
     defaultPodOptions:
       # Keep this bulk NFS writer off Plex's node. One NFS mount multiplexes all I/O
       # for a client<->server pair over a SINGLE TCP connection, so 69 MB/s of torrent
@@ -326,3 +364,25 @@ spec:
               - path: /scripts/port-watchdog.sh
                 subPath: port-watchdog.sh
                 readOnly: true
+      # SOPS-encrypted (dyn-ip-secret.sops.yaml) rather than a configMap so the
+      # external endpoint isn't in cleartext git. Edit via `sops` + re-encrypt;
+      # reloader rolls the pod on change.
+      dyn-ip:
+        type: secret
+        name: qbittorrent-private-dyn-ip
+        advancedMounts:
+          qbittorrent-private:
+            dyn-ip:
+              - path: /scripts/dyn-ip.sh
+                subPath: dyn-ip.sh
+                readOnly: true
+      # Durable home for the rotating session cookie + last-reported-IP state, on
+      # the (VolSync-backed) config PVC. subPath 'dyn-ip' keeps it clear of qBit's
+      # own /config tree. Only the dyn-ip container mounts it.
+      dyn-ip-state:
+        existingClaim: qbittorrent-private
+        advancedMounts:
+          qbittorrent-private:
+            dyn-ip:
+              - path: /state
+                subPath: dyn-ip
