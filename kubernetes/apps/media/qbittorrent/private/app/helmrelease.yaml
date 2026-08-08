@@ -157,11 +157,12 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
             resources:
+              # No CPU limit -- recheck bursts to several cores; throttling stretches them.
               requests:
-                cpu: 100m
+                cpu: 600m
                 memory: 4Gi
               limits:
-                memory: 8Gi
+                memory: 6Gi
           port-forward:
             image:
               repository: ghcr.io/bjw-s-labs/gluetun-qb-port-sync

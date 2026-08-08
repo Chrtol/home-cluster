@@ -149,11 +149,12 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
             resources:
+              # Light public instance -- no CPU limit, sized from Goldilocks/VPA.
               requests:
-                cpu: 100m
-                memory: 4Gi
+                cpu: 50m
+                memory: 256Mi
               limits:
-                memory: 8Gi
+                memory: 512Mi
           port-forward:
             image:
               repository: ghcr.io/bjw-s-labs/gluetun-qb-port-sync
