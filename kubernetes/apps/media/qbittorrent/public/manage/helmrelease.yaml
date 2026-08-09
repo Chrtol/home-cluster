@@ -94,8 +94,6 @@ spec:
         globalMounts:
           - path: /config
       data:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /data

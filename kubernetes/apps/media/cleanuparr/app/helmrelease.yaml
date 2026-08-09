@@ -96,9 +96,7 @@ spec:
       # Required for the "Unlinked Downloads" cleaner: Cleanuparr must see the
       # same /data mount qBittorrent uses so it can stat files and count hardlinks.
       data:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         advancedMounts:
           cleanuparr:
             app:

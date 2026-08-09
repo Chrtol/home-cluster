@@ -77,9 +77,7 @@ spec:
             subPath: config.js
             readOnly: true
       media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /data
             readOnly: false

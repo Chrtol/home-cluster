@@ -102,3 +102,36 @@ spec:
   resources:
     requests:
       storage: 1Ti
+---
+# restic backup repository -- volsync mover Jobs run in this namespace and get the
+# repository volume injected by the volsync-mover-nfs MutatingAdmissionPolicy, which
+# references this PVC so the mover mounts at nconnect=16 like every other NAS mount.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-backup-media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-backup-media
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/backup
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-backup
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-backup-media
+  resources:
+    requests:
+      storage: 1Ti

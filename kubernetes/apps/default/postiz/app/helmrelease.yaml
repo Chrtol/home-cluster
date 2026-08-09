@@ -157,9 +157,7 @@ spec:
       # Postiz still serves these via the backend /uploads -> /api/uploads rewrite,
       # so the public HTTPS URL is unchanged (needed for TikTok/YouTube pull-from-URL).
       uploads:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/postiz
+        existingClaim: nas-postiz
         advancedMounts:
           postiz:
             app:

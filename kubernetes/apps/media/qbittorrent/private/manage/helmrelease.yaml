@@ -97,8 +97,6 @@ spec:
           - path: /config
       # Media share — required for rem_orphaned / hardlink checks.
       data:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /data

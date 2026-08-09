@@ -101,9 +101,7 @@ spec:
               - path: /usr/src/paperless/media
                 subPath: media
       nas:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/paperless
+        existingClaim: nas-paperless
         globalMounts:
           - path: /data/nas
             readOnly: false

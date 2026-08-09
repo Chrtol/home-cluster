@@ -97,9 +97,8 @@ spec:
               op: "add", path: "/spec/template/spec/volumes/-",
               value: Object.spec.template.spec.volumes{
                 name: "repository",
-                nfs: Object.spec.template.spec.volumes.nfs{
-                  server: "nas.${SECRET_DOMAIN}",
-                  path: "/mnt/truenas/cf-nas/backup"
+                persistentVolumeClaim: Object.spec.template.spec.volumes.persistentVolumeClaim{
+                  claimName: "nas-backup"
                 }
               }
             }

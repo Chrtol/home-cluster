@@ -162,9 +162,7 @@ spec:
         existingClaim: *app
 
       nfs-nas-bookdrop:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
+        existingClaim: nas-bookdrop
         advancedMounts:
           shelfmark:
             shelfmark:
@@ -173,9 +171,7 @@ spec:
                 readOnly: false
 
       nfs-nas-data:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /data
             readOnly: false

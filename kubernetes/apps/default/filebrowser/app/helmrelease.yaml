@@ -96,9 +96,7 @@ spec:
       # The media library to browse -- TrueNAS over NFS (same share the media
       # apps mount). Read-write so the browser can manage files.
       media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /srv
             readOnly: false

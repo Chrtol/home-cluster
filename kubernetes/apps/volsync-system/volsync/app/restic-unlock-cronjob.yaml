@@ -87,9 +87,8 @@ spec:
               configMap:
                 name: restic-unlock-script
             - name: repository
-              nfs:
-                server: nas.${SECRET_DOMAIN}
-                path: /mnt/truenas/cf-nas/backup
+              persistentVolumeClaim:
+                claimName: nas-backup
 ---
 # Daily force sweep, 30 minutes ahead of the 03:00 backups. --remove-all is the
 # only thing that clears a <30min lock left by a now-dead mover pod (different
@@ -134,6 +133,5 @@ spec:
               configMap:
                 name: restic-unlock-script
             - name: repository
-              nfs:
-                server: nas.${SECRET_DOMAIN}
-                path: /mnt/truenas/cf-nas/backup
+              persistentVolumeClaim:
+                claimName: nas-backup

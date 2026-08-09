@@ -91,8 +91,6 @@ spec:
       # Without this, media-hardlinked files (e.g. readmeabook -> /data/media/audiobooks)
       # are flagged as orphans and the scan reports "path inaccessible".
       media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /data

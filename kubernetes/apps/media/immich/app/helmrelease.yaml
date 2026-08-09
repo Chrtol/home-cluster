@@ -201,9 +201,7 @@ spec:
               - path: /config/matplotlib
 
       library:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/immich
+        existingClaim: nas-immich
         globalMounts:
           - path: *mediaLocation
 

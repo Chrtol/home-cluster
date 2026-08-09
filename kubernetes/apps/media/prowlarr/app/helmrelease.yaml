@@ -96,11 +96,10 @@ spec:
         existingClaim: prowlarr
         # type: emptyDir
       media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media
+        existingClaim: nas-data
         globalMounts:
           - path: /media
+            subPath: media
             readOnly: false
       tmp:
         type: emptyDir

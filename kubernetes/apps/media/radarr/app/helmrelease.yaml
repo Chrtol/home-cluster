@@ -100,9 +100,7 @@ spec:
         globalMounts:
           - path: /config/logs
       media:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path:  /mnt/truenas/cf-nas/data
+        existingClaim: nas-data
         globalMounts:
           - path: /data
             readOnly: false

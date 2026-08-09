@@ -131,20 +131,17 @@ spec:
           - path: /app/data
 
       books:
-        type: nfs
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/data/media/books
+        existingClaim: nas-data
         globalMounts:
           - path: /books
+            subPath: media/books
             readOnly: false
 
       bookdrop:
-        type: nfs
-        # Path deliberately still says "booklore" — it is a directory on the NAS, and
-        # shelfmark mounts the same one (see media/shelfmark). Renaming it would drag
-        # an unrelated app into this rename for no benefit. Not an oversight.
-        server: nas.${SECRET_DOMAIN}
-        path: /mnt/truenas/cf-nas/applications/booklore/bookdrop
+        # PV nas-bookdrop points at applications/booklore/bookdrop — shelfmark mounts the
+        # same dataset (see media/shelfmark). Renaming it would drag an unrelated app into
+        # this rename for no benefit. Not an oversight.
+        existingClaim: nas-bookdrop
         globalMounts:
           - path: /bookdrop
             readOnly: false
