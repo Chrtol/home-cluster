@@ -1,6 +1,13 @@
-# One PV/PVC pair per NAS dataset the media namespace mounts. nconnect is negotiated
-# per client<->server-IP pair, so every mount to the NAS must carry nconnect=16 or an
-# unmigrated (nconnect=1) mount landing first on a node would cap the whole node.
+# One PV/PVC pair per NAS dataset the media namespace mounts. ZFS child datasets are
+# not traversable over a parent NFS mount, so each export mounts at its own path.
+#
+# nosharecache: nconnect is normally negotiated per client<->server-IP pair, so the
+# FIRST mount to the NAS on a node fixes the connection count and later mounts silently
+# inherit it -- an un-migrated (nconnect=1) mount landing first would cap the whole node
+# at 1 (confirmed live 2026-08-09: qb-private's mount stuck at 1). nosharecache forces
+# each mount its own NFS client + transport, so nconnect=16 engages per-mount regardless
+# of co-located mounts. Cost: more TCP connections + no page-cache sharing between mounts
+# of the same export on one node (harmless here -- distinct apps, distinct working sets).
 # volumeHandle must be unique per PV; capacity is ignored for NFS but must be non-empty.
 ---
 # The big shared media dataset -- one dataset (torrent<->library hardlinks prove it),
@@ -15,7 +22,7 @@ spec:
   accessModes: ["ReadWriteMany"]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "nosharecache", "hard", "noatime"]
   csi:
     driver: nfs.csi.k8s.io
     volumeHandle: nas-data-media
@@ -46,7 +53,7 @@ spec:
   accessModes: ["ReadWriteMany"]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "nosharecache", "hard", "noatime"]
   csi:
     driver: nfs.csi.k8s.io
     volumeHandle: nas-immich-media
@@ -77,7 +84,7 @@ spec:
   accessModes: ["ReadWriteMany"]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "nosharecache", "hard", "noatime"]
   csi:
     driver: nfs.csi.k8s.io
     volumeHandle: nas-bookdrop-media
