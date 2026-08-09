@@ -14,6 +14,7 @@ resources:
   - ./alloy/ks.yaml
   - ./goldilocks/ks.yaml
   - ./exporters/ks.yaml
+  - ./node-health/ks.yaml
   - ./network-monitor/ks.yaml
   - ./grafana-operator/ks.yaml
   - ./tempo/ks.yaml
