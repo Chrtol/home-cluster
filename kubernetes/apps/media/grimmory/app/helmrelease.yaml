@@ -79,6 +79,20 @@ spec:
                   timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
+              # JVM cold boot (Flyway validate 142 migrations + Hibernate on 64 repos)
+              # takes ~55s to open 6060 — longer than liveness would tolerate. The startup
+              # probe gates liveness/readiness until boot completes so restarts (e.g. the
+              # Talos reboots) don't crashloop it. 30 x 10s = 300s runway.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 30
 
     defaultPodOptions:
       priorityClassName: external-facing
