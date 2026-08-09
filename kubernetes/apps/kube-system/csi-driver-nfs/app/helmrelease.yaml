@@ -35,3 +35,20 @@ spec:
         - noatime
       reclaimPolicy: Delete
       volumeBindingMode: Immediate
+  postRenderers:
+    # The chart hardcodes CSIDriver fsGroupPolicy: File. With File, a pod that sets fsGroup
+    # makes kubelet recursively chown the ENTIRE NFS export on first mount (terabytes for the
+    # media tree). NFS ownership is server-side and the in-tree nfs plugin never applied
+    # fsGroup, so None makes CSI mounts behave identically to the in-tree mounts they replace
+    # (nfs-nconnect migration). Only affects nfs.csi volumes (garage + nas-*), never ceph-rbd
+    # config PVCs. fsGroupPolicy is immutable on a live CSIDriver, so the object must be
+    # deleted once for Flux to recreate it with None. See ai-activity/nfs-nconnect/PLAN.md.
+    - kustomize:
+        patches:
+          - target:
+              kind: CSIDriver
+              name: nfs.csi.k8s.io
+            patch: |
+              - op: replace
+                path: /spec/fsGroupPolicy
+                value: None

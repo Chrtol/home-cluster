@@ -12,7 +12,7 @@ spec:
   accessModes: ["ReadWriteMany"]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  mountOptions: ["nfsvers=4.2", "nconnect=16", "nosharecache", "hard", "noatime"]
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
   csi:
     driver: nfs.csi.k8s.io
     volumeHandle: nas-data-default
@@ -43,7 +43,7 @@ spec:
   accessModes: ["ReadWriteMany"]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  mountOptions: ["nfsvers=4.2", "nconnect=16", "nosharecache", "hard", "noatime"]
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
   csi:
     driver: nfs.csi.k8s.io
     volumeHandle: nas-paperless-default
@@ -74,7 +74,7 @@ spec:
   accessModes: ["ReadWriteMany"]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  mountOptions: ["nfsvers=4.2", "nconnect=16", "nosharecache", "hard", "noatime"]
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
   csi:
     driver: nfs.csi.k8s.io
     volumeHandle: nas-postiz-default
