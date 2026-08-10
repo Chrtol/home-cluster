@@ -1,16 +1,19 @@
-# node-exporter + process-exporter for the TrueNAS box, deployed as a TrueNAS
-# "Custom App" (Apps -> Discover Apps -> Custom App -> Install via YAML).
+# node-exporter + process-exporter + smartctl-exporter for the TrueNAS box, deployed
+# as a TrueNAS "Custom App" (Apps -> Discover Apps -> Custom App -> Install via YAML).
 #
-# Scraped by kube-prometheus-stack via the ScrapeConfigs in
-# kubernetes/apps/observability/kube-prometheus-stack/app/nas-scrape-config.yaml
-# Alerted on by kubernetes/apps/observability/exporters/nas/app/prometheusrule.yaml
+# Scraped by kube-prometheus-stack:
+#   node / process -> kubernetes/apps/observability/kube-prometheus-stack/app/nas-scrape-config.yaml
+#                     alerts: kubernetes/apps/observability/exporters/nas/app/prometheusrule.yaml
+#   smartctl       -> kubernetes/apps/observability/exporters/smartctl/app/ (node="nas")
 #
 # WHY host pid/mounts: a container's /proc shows the CONTAINER's processes and
 # memory, not the host's. Without pid: host and the /proc bind-mount these would
 # happily export metrics about themselves and tell us nothing about the NAS.
 services:
   node-exporter:
-    image: quay.io/prometheus/node-exporter:v1.12.1
+    # Pinned to the version actually running on the box (captured from the live app
+    # 2026-08-10). Bump only together with a redeploy via setup-exporters.sh.
+    image: quay.io/prometheus/node-exporter:v1.9.1
     container_name: node-exporter
     restart: unless-stopped
     network_mode: host
@@ -71,3 +74,20 @@ services:
       # match would miss the very process that leaks. See process-exporter.yml.
       - /mnt/truenas/ix-apps-config/process-exporter:/config:ro
     # Listens on 9256.
+
+  smartctl-exporter:
+    image: quay.io/prometheuscommunity/smartctl-exporter:v0.13.0
+    container_name: smartctl-exporter
+    restart: unless-stopped
+    network_mode: host
+    # privileged + root: the exporter shells out to smartctl against raw /dev devices
+    # (all 4 SATA HDDs + both NVMe), which needs full device access. Unlike the Proxmox
+    # hosts (systemd unit + host binary), the NAS runs it as a container in this app.
+    privileged: true
+    user: "0:0"
+    command:
+      - --web.listen-address=:9633
+      # Background-polls smartctl at this interval and serves cached values. Disk
+      # power management is OFF on this box, so polling never wakes a standby drive.
+      - --smartctl.interval=120s
+    # Listens on 9633.
