@@ -1579,6 +1579,10 @@
               {
                 "id": "custom.align",
                 "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 90
               }
             ]
           },
@@ -1595,6 +1599,10 @@
               {
                 "id": "custom.align",
                 "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 95
               }
             ]
           },
