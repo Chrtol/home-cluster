@@ -259,12 +259,9 @@ spec:
           gnetId: 19105
           revision: 7
           datasource: Prometheus
-        smartctl-exporter:
-          # renovate: depName="SMARTctl Exporter Dashboard"
-          gnetId: 22604
-          revision: 2
-          datasource:
-            - { name: DS_PROMETHEUS, value: Prometheus }
+        # smartctl-exporter dashboard is provisioned via the sidecar as a configMap in the
+        # Infrastructure folder - see exporters/smartctl/dashboard/ (gnetId 22604 vendored
+        # there so it lands beside the NAS dashboard rather than in the default folder).
         # volsync:
         #   # renovate: depName="VolSync Dashboard"
         #   gnetId: 21356
