@@ -118,7 +118,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "avg(smartctl_device_temperature{node=~\"$node\", device=~\"$disk\"} * on(instance, device) group_left(interface,serial_number,model_name) smartctl_device{interface=~\"$type\",serial_number=~\"$serial_number\",model_name=~\"$device_model\"}) by (instance,device,model_name)",
+          "expr": "avg(smartctl_device_temperature{node=~\"$node\", device=~\"$disk\"} * on(instance, device) group_left(interface,serial_number,model_name) smartctl_device{interface=~\"$type\",serial_number=~\"$serial_number\",model_name=~\"$device_model\"}) by (node,device,model_name)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -811,7 +811,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "instance"
+              "options": "node"
             },
             "properties": [
               {
@@ -959,6 +959,21 @@
           "options": {
             "reducers": []
           }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "renameByName": {},
+            "indexByName": {
+              "node": 0,
+              "device": 1,
+              "model_name": 2,
+              "Time": 3,
+              "Value #B": 4,
+              "Value #A": 5
+            }
+          }
         }
       ],
       "type": "table"
@@ -1065,7 +1080,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "instance"
+              "options": "node"
             },
             "properties": [
               {
@@ -1101,7 +1116,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "instance"
+              "options": "node"
             },
             "properties": [
               {
@@ -1255,6 +1270,20 @@
                 "serial_number",
                 "Total Written"
               ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "renameByName": {},
+            "indexByName": {
+              "node": 0,
+              "device": 1,
+              "model_name": 2,
+              "serial_number": 3,
+              "Total Written": 4
             }
           }
         }
