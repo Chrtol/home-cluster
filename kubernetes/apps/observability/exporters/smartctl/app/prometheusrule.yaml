@@ -1,0 +1,133 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: smartctl-alerts
+  namespace: observability
+spec:
+  groups:
+    # Rules follow ai-activity/proxmox-scrape/prometheus-smartctl-scrape.md. Thresholds
+    # verified against the live exporters on deploy day (2026-08-10):
+    #   lenovo1 nvme0 percentage_used=66   lenovo1 sda attr177 value=1 (thresh 0)
+    #   lenovo2 nvme0 percentage_used=57   dell1 nvme0=33   dell1 nvme1=29
+    #   available_spare=100 (thresh 10), media_errors=0, exit_status=0 everywhere.
+    - name: smartctl
+      interval: 1m
+      rules:
+        # Overall SMART self-assessment. 1 = PASSED, 0 = FAILED. Covers NVMe and ATA.
+        # This is the LAGGING signal: it flips only once a pre-fail attribute reaches its
+        # vendor threshold. lenovo1:sda already reads attr177 value=1 vs thresh=0 while
+        # smart_status is still 1 - which is exactly why SataWearHigh below exists.
+        - alert: DiskSmartFailed
+          expr: smartctl_device_smart_status{job="smartctl"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            component: smartctl
+          annotations:
+            summary: "SMART overall health FAILED on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} reports SMART status FAILED. The drive firmware predicts imminent failure - replace it."
+
+        # NVMe wear: percentage of rated write endurance consumed, counts UP toward 100.
+        # NVMe ONLY - ATA SSDs do not expose this metric (see SataWearHigh). Fleet max is
+        # 66 today, so this does not fire yet.
+        - alert: NvmeWearHigh
+          expr: smartctl_device_percentage_used{job="smartctl"} >= 80
+          for: 1h
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "NVMe wear high on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} has used {{ $value }}% of rated write endurance. Plan a replacement."
+
+        # ATA/SATA wear: Samsung reports endurance via attribute 177 (Wear_Leveling_Count),
+        # a NORMALISED value counting DOWN from 100 toward the vendor threshold (0) - the
+        # inverse of NVMe percentage_used, so no single expression covers both.
+        #
+        # EXPECTED TO FIRE ON DEPLOY: lenovo1:sda (Samsung 850 PRO 256GB) reads value=1.
+        # It is the one disk in the cluster actually failing, and it backs Ceph osd.1 -
+        # the sole reason the cluster sits at HEALTH_WARN (see
+        # exporters/pve/app/prometheusrule.yaml). It stays firing until the disk is
+        # replaced; that is correct, not a misconfiguration.
+        #
+        # attribute_id 177 is Samsung-specific. This fleet has exactly one SATA SSD; a
+        # future non-Samsung ATA drive uses a different id (e.g. 173, 233) - re-check with
+        # `smartctl -A` and add its own rule when one appears.
+        - alert: SataWearHigh
+          expr: smartctl_device_attribute{job="smartctl", attribute_id="177", attribute_value_type="value"} <= 10
+          for: 1h
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "SATA SSD wear indicator at {{ $value }}/100 on {{ $labels.node }} {{ $labels.device }}"
+            description: "Wear_Leveling_Count normalised value is {{ $value }} (100 = new, vendor fails at 0) on {{ $labels.device }}, {{ $labels.node }}. Replace the disk."
+
+        # NVMe spare blocks. available_spare and available_spare_threshold are both percent
+        # (0-100); comparing the two series is self-documenting and survives a drive that
+        # reports a threshold other than the usual 10. Fires when the NVMe crosses its own
+        # critical-warning point. Fleet reads 100 vs 10 today.
+        - alert: NvmeSpareLow
+          expr: smartctl_device_available_spare{job="smartctl"} < smartctl_device_available_spare_threshold{job="smartctl"}
+          for: 15m
+          labels:
+            severity: critical
+            component: smartctl
+          annotations:
+            summary: "NVMe spare area low on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} has dropped below its spare-block failure threshold. Replace now."
+
+        # New uncorrectable media errors (data unrecoverable even with ECC/retries). The
+        # counter is cumulative, so a nonzero total from years ago would fire forever -
+        # alert on the RATE, which resolves once errors stop appearing. Currently 0.
+        - alert: DiskMediaErrors
+          expr: increase(smartctl_device_media_errors{job="smartctl"}[24h]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: smartctl
+          annotations:
+            summary: "New media errors on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} logged {{ $value | printf \"%.0f\" }} new uncorrectable media error(s) in 24h."
+
+        # smartctl's own exit status is a bitmask; nonzero means the exporter is up but
+        # could not cleanly read a device (open failed, SMART command failed, etc.). 0
+        # across the fleet now, so this is quiet until something regresses.
+        - alert: SmartctlReadFailed
+          expr: smartctl_device_smartctl_exit_status{job="smartctl"} != 0
+          for: 15m
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "smartctl could not cleanly read {{ $labels.node }} {{ $labels.device }}"
+            description: "smartctl exit status is {{ $value }} (bitmask) for {{ $labels.device }} on {{ $labels.node }}. The exporter is up but the device read is degraded."
+
+        # Per-host reachability: one host's exporter down while others still report, so
+        # SMART for that machine goes dark. ProxmoxNodeDown covers the node being down
+        # entirely; this covers the exporter/port alone.
+        - alert: SmartctlExporterDown
+          expr: up{job="smartctl"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "smartctl-exporter down on {{ $labels.node }}"
+            description: "Prometheus cannot scrape smartctl-exporter on {{ $labels.node }} (:9633). SMART monitoring for that host is blind."
+
+        # Repo-wide guard (as on pve/ceph/nas rules): a rule whose metric vanishes
+        # evaluates empty forever and reports health=ok. If ALL exporters stop publishing,
+        # every rule above goes silently inert - this is the only one that notices.
+        # Distinct from SmartctlExporterDown, which needs `up` and one surviving target.
+        - alert: SmartctlMetricsMissing
+          expr: absent(smartctl_device_smart_status{job="smartctl"})
+          for: 15m
+          labels:
+            severity: critical
+            component: smartctl
+          annotations:
+            summary: "smartctl-exporter is publishing no metrics"
+            description: "smartctl_device_smart_status has disappeared from all three Proxmox hosts - every SMART alert is now inert."

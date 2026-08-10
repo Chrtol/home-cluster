@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: smartctl-exporter
+  namespace: observability
+  labels:
+    prometheus: kube-prometheus-stack
+spec:
+  # smartctl-exporter is a per-NODE agent (systemd unit on each PVE host, :9633), NOT a
+  # cluster service - so each host is scraped individually. Do NOT point this at the
+  # Proxmox VIP (10.0.30.9): it answers HTTP 200 but returns only the disks of whichever
+  # node holds the VIP, and device="nvme0" would map to a different physical disk after a
+  # failover, splicing two disks' histories together. See
+  # ai-activity/proxmox-scrape/prometheus-smartctl-scrape.md.
+  #
+  # instance is left as the default target address (stable per host), and a friendly
+  # `node` label is added for alert/dashboard readability - matching the doc, and the
+  # hostnames the Ceph OSD metadata already uses. job=smartctl matches the alert
+  # expressions in ./prometheusrule.yaml.
+  staticConfigs:
+    - labels:
+        job: smartctl
+        node: lenovo1
+      targets: ["10.0.30.10:9633"]
+    - labels:
+        job: smartctl
+        node: lenovo2
+      targets: ["10.0.30.11:9633"]
+    - labels:
+        job: smartctl
+        node: dell1
+      targets: ["10.0.30.12:9633"]
+  metricsPath: /metrics
+  scheme: http
+  # Exporter polls smartctl every 120s and serves cached values, so a 60s scrape just
+  # re-reads the cache; timeout is generous for a cold read.
+  scrapeInterval: 60s
+  scrapeTimeout: 30s
