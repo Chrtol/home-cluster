@@ -459,9 +459,9 @@
           "percent"
         ],
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
           "showLegend": true,
+          "displayMode": "list",
+          "placement": "right",
           "values": [
             "value"
           ]
@@ -506,7 +506,7 @@
         }
       ],
       "type": "piechart",
-      "title": "Disk Interfaces"
+      "title": "Number of Disk Interfaces"
     },
     {
       "datasource": {
@@ -1019,66 +1019,6 @@
                 "value": "Node"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Node"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 80
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Device"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 107
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Last Checked"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 142
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Power On Time"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 162
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Power Cycles"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 117
-              }
-            ]
           }
         ]
       },
@@ -1276,42 +1216,6 @@
                 "value": "Node"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Device"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 115
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "node"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 77
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total Written"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 123
-              }
-            ]
           }
         ]
       },
@@ -1364,7 +1268,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max((smartctl_device_attribute{node=~\"$node\", device=~\"$disk\", attribute_name=\"Total_LBAs_Written\", attribute_value_type=\"raw\"} * on (instance,device) smartctl_device_block_size{node=~\"$node\", device=~\"$disk\",blocks_type=\"physical\"}) * on(instance, device) group_left(interface,serial_number,model_family,model_name) smartctl_device{interface=~\"$type\",serial_number=~\"$serial_number\",model_name=~\"$device_model\"}) by (device, node)\n",
+          "expr": "max((smartctl_device_attribute{node=~\"$node\", device=~\"$disk\", attribute_name=\"Total_LBAs_Written\", attribute_value_type=\"raw\"} * on (instance,device,node) smartctl_device_block_size{node=~\"$node\", device=~\"$disk\",blocks_type=\"physical\"}) * on(instance, device) group_left(interface,serial_number,model_family,model_name) smartctl_device{interface=~\"$type\",serial_number=~\"$serial_number\",model_name=~\"$device_model\"}) by (device, node)\n",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1511,7 +1415,7 @@
           "refId": "A"
         }
       ],
-      "title": "Wear Level on SATA Devices",
+      "title": "SATA SSD Wear Level",
       "type": "gauge"
     },
     {
