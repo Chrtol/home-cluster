@@ -57,11 +57,18 @@ spec:
           # __name__ still exists) to stamp a unique `queue` label onto each series -- so it is
           # applied to the raw selector, and min_over_time is taken over a subquery [1h:1m].
           # Grouping `by (queue)` then keeps each queue distinct and collision-free.
+          #
+          # integrity_check is EXCLUDED: unlike the per-asset queues (thumbnails/ML/faces) that
+          # are many small jobs dipping to 0 between batches, it is a single monolithic job that
+          # holds active=1 for its entire run. On a large library that run exceeds `for: 30m`, so
+          # a normal scan always trips this "never drains" heuristic (false positive). It is also
+          # a read-only verification job, so a genuine stall there causes none of the silent
+          # thumbnail/ML data gaps this alert exists to catch.
           expr: |
             min by (queue) (
               min_over_time(
                 label_replace(
-                  {__name__=~"immich_queues_.+_active"},
+                  {__name__=~"immich_queues_.+_active", __name__!="immich_queues_integrity_check_active"},
                   "queue", "$1", "__name__", "immich_queues_(.+)_active"
                 )[1h:1m]
               )
