@@ -112,10 +112,6 @@
               {
                 "id": "displayName",
                 "value": "Node"
-              },
-              {
-                "id": "custom.width",
-                "value": 90
               }
             ]
           },
@@ -128,10 +124,6 @@
               {
                 "id": "displayName",
                 "value": "Device"
-              },
-              {
-                "id": "custom.width",
-                "value": 110
               }
             ]
           },
@@ -144,10 +136,6 @@
               {
                 "id": "displayName",
                 "value": "Device Model"
-              },
-              {
-                "id": "custom.width",
-                "value": 300
               }
             ]
           },
@@ -160,10 +148,6 @@
               {
                 "id": "displayName",
                 "value": "Serial"
-              },
-              {
-                "id": "custom.width",
-                "value": 200
               }
             ]
           },
@@ -176,10 +160,6 @@
               {
                 "id": "displayName",
                 "value": "Interface"
-              },
-              {
-                "id": "custom.width",
-                "value": 110
               },
               {
                 "id": "mappings",
@@ -214,10 +194,6 @@
               {
                 "id": "displayName",
                 "value": "Firmware"
-              },
-              {
-                "id": "custom.width",
-                "value": 130
               }
             ]
           }
@@ -1379,7 +1355,7 @@
       "gridPos": {
         "x": 0,
         "y": 25,
-        "w": 12,
+        "w": 5,
         "h": 11
       },
       "id": 8,
@@ -1454,9 +1430,9 @@
         "overrides": []
       },
       "gridPos": {
-        "x": 12,
+        "x": 5,
         "y": 25,
-        "w": 12,
+        "w": 11,
         "h": 11
       },
       "id": 14,
@@ -1494,6 +1470,259 @@
       ],
       "title": "Wear Level on NVMe Devices",
       "type": "gauge"
+    },
+    {
+      "id": 18,
+      "type": "table",
+      "title": "HDD Sector Health",
+      "description": "Reallocated / pending / offline-uncorrectable raw sector counts for the SATA HDDs. Green = 0 (healthy), red = any nonzero. The SATA SSD is excluded (its endurance is on the wear gauge); NVMe has no such attributes.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 25,
+        "w": 8,
+        "h": 11
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A",
+          "legendFormat": "__auto",
+          "expr": "max(smartctl_device_attribute{job=\"smartctl\", node=~\"$node\", device=~\"$disk\", attribute_id=\"5\", attribute_value_type=\"raw\"} and on(node, device) smartctl_device_attribute{job=\"smartctl\", attribute_id=\"197\", attribute_value_type=\"raw\"}) by (node, device)"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "B",
+          "legendFormat": "__auto",
+          "expr": "max(smartctl_device_attribute{job=\"smartctl\", node=~\"$node\", device=~\"$disk\", attribute_id=\"197\", attribute_value_type=\"raw\"}) by (node, device)"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "C",
+          "legendFormat": "__auto",
+          "expr": "max(smartctl_device_attribute{job=\"smartctl\", node=~\"$node\", device=~\"$disk\", attribute_id=\"198\", attribute_value_type=\"raw\"}) by (node, device)"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {},
+            "indexByName": {
+              "node": 0,
+              "device": 1,
+              "Value #A": 2,
+              "Value #B": 3,
+              "Value #C": 4
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "node"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Node"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "device"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Device"
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Reallocated"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "green"
+                    },
+                    {
+                      "value": 1,
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Pending"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "green"
+                    },
+                    {
+                      "value": 1,
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Offline Uncorr."
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "green"
+                    },
+                    {
+                      "value": 1,
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "refresh": "1m",
