@@ -65,6 +65,27 @@ spec:
             summary: "SATA SSD wear indicator at {{ $value }}/100 on {{ $labels.node }} {{ $labels.device }}"
             description: "Wear_Leveling_Count normalised value is {{ $value }} (100 = new, vendor fails at 0) on {{ $labels.device }}, {{ $labels.node }}. Replace the disk."
 
+        # HDD sector health (the NAS Seagate/HGST drives). Spinning disks fail via bad
+        # sectors, not wear-levelling, so none of the SSD rules above cover them: attr 5
+        # Reallocated_Sector_Ct, 197 Current_Pending_Sector, 198 Offline_Uncorrectable and
+        # 187 Reported_Uncorrect all count reallocations/unreadable sectors, and the RAW
+        # value IS the count. All four read 0 across every NAS HDD today; ANY nonzero is a
+        # real failure signal (a single pending sector often precedes death), so raw > 0.
+        #
+        # One regex rule, not per-id, so it stays one line AND tolerates drives that omit
+        # an attribute: the HGST HUH721212 (sdd) does not expose 187, and this simply never
+        # matches it rather than erroring. NVMe carries no attribute_id 5/197/198, so there
+        # are no false matches there. smart_status still trips DiskSmartFailed on collapse.
+        - alert: HddSectorErrors
+          expr: smartctl_device_attribute{job="smartctl", attribute_id=~"5|187|197|198", attribute_value_type="raw"} > 0
+          for: 15m
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "{{ $labels.attribute_name }} = {{ $value }} on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} reports {{ $value }} for {{ $labels.attribute_name }} (was 0). Reallocated/pending/uncorrectable sectors predict HDD failure - run `smartctl -a` and plan a replacement."
+
         # NVMe spare blocks. available_spare and available_spare_threshold are both percent
         # (0-100); comparing the two series is self-documenting and survives a drive that
         # reports a threshold other than the usual 10. Fires when the NVMe crosses its own

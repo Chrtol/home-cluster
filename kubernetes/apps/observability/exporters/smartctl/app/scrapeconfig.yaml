@@ -32,6 +32,13 @@ spec:
         job: smartctl
         node: dell1
       targets: ["10.0.30.12:9633"]
+    # TrueNAS box: not a Proxmox host, but the same per-node smartctl-exporter (a
+    # container in its Custom App). Scraped by hostname like nas-node-exporter, since
+    # it has a resolvable name; needs SECRET_DOMAIN substitution (see ks.yaml postBuild).
+    - labels:
+        job: smartctl
+        node: nas
+      targets: ["nas.${SECRET_DOMAIN}:9633"]
   metricsPath: /metrics
   scheme: http
   # Exporter polls smartctl every 120s and serves cached values, so a 60s scrape just
