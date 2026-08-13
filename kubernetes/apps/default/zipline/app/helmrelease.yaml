@@ -30,6 +30,25 @@ spec:
               CORE_HOSTNAME: 0.0.0.0
               # Generate absolute https links (behind the gateway) for shares.
               CORE_RETURN_HTTPS_URLS: "true"
+              # Upload spool (every upload lands here before the S3 PUT, plus
+              # chunk reassembly and ffmpeg thumbnail scratch). Zipline's default
+              # is ./uploads/.tmp -> /zipline/uploads/.tmp, which readOnlyRootFilesystem
+              # makes uncreatable, so this MUST point at the emptyDir below.
+              CORE_TEMP_DIRECTORY: /tmp/zipline
+              # Stamped onto every upload that doesn't send x-zipline-deletes-at;
+              # pick "Never" in the upload options to keep one indefinitely.
+              # Applied at upload time only -- pre-existing files never expire.
+              # Sweep runs on tasks.deleteInterval (30m default), so deletion is lazy.
+              # The companion "Max Expiration" has no env var in v4.x -- UI only.
+              FILES_DEFAULT_EXPIRATION: 30d
+              # Zipline marks env-sourced settings as "tampered" and disables the
+              # matching Server Settings inputs, so these six are now git-only.
+              PWA_ENABLED: "true"
+              PWA_TITLE: Zipline
+              PWA_SHORT_NAME: Zipline
+              PWA_DESCRIPTION: Zipline
+              PWA_THEME_COLOR: "#000000"
+              PWA_BACKGROUND_COLOR: "#000000"
               # Object storage: Garage S3 (on the NAS).
               DATASOURCE_TYPE: s3
               DATASOURCE_S3_FORCE_PATH_STYLE: "true"
@@ -121,7 +140,21 @@ spec:
                 port: *port
     persistence:
       # Zipline buffers uploads to a temp dir before shipping to S3.
+      # Nothing here is authoritative -- chunked-upload state lives in process
+      # memory, so a restart loses the session either way. Wiping on restart is
+      # a feature: v4.6.5 has no orphan sweep, so stranded chunks would otherwise
+      # accumulate until someone hits Server Actions -> Clear Temporary Files.
+      # Capped because this is the node's ephemeral disk, shared with everything else.
       tmp:
         type: emptyDir
+        sizeLimit: 4Gi
         globalMounts:
           - path: /tmp
+      # favicon.js resolves PUBLIC_DIR as $PWD/public and reads the icons ONCE at
+      # startup, so this has to be mounted before the process boots, not injected later.
+      public:
+        type: configMap
+        name: zipline-public
+        globalMounts:
+          - path: /zipline/public
+            readOnly: true
