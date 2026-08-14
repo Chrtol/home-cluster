@@ -76,10 +76,10 @@ spec:
               capabilities: { drop: ["ALL"] }
             resources: # Based on goldilocks
               requests:
-                cpu: 500m
-                memory: 411M
+                cpu: 93m
+                memory: 477M
               limits:
-                memory: 1Gi
+                memory: 600M
     defaultPodOptions:
       priorityClassName: external-facing
       securityContext:

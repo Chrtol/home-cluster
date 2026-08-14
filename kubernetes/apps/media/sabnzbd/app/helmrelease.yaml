@@ -155,10 +155,10 @@ spec:
             resources:
               # No CPU limit; request padded above VPA's idle reading for unpack bursts.
               requests:
-                cpu: 500m
-                memory: 1Gi
+                cpu: 126m
+                memory: 2Gi
               limits:
-                memory: 4Gi
+                memory: 6141M
     defaultPodOptions:
       # Bulk NFS writer -- keep off Plex's node. See the qbittorrent-private
       # helmrelease for the full reasoning (single-TCP-connection NFS mounts put
