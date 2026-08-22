@@ -45,7 +45,9 @@ spec:
       # frigate.db (recording/tracked-object metadata) + model_cache. Recordings
       # themselves never touch this volume -- they go to the NAS.
       CEPH_RBD_CAPACITY: 15Gi
-      EXT_AUTH_PORT: "5000"
+      # 8971, not 5000: Frigate ignores identity headers on 5000 and treats every
+      # request as an anonymous admin. See the `proxy` block in config.yml.
+      EXT_AUTH_PORT: "8971"
       # proxy-application: default bindings only (bp-frigate-users + authentik
       # Admins). No PROXY_ADMIN_GROUP -- the UI exposes live interior cameras.
       GROUP: "Default"

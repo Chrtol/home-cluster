@@ -22,11 +22,38 @@ database:
   path: /config/frigate.db
 
 auth:
-  # Authentik forward-auth (components/ext-auth) is the gate. Frigate only enforces its
-  # own user store on port 8971; port 5000 -- the one the HTTPRoute targets -- is
-  # unauthenticated no matter what this is set to, so leaving it on would add a second
-  # identity system that guards nothing we route to.
+  # Authentik forward-auth (components/ext-auth) is the gate; Frigate's own user store
+  # would be a second identity system with no correspondence to Authentik users.
   enabled: false
+
+tls:
+  # Frigate self-signs a cert for 8971 by default. The HTTPRoute targets 8971 (see
+  # `proxy` below) and Envoy would then need a BackendTLSPolicy trusting a self-signed
+  # cert for an in-cluster hop. Plain HTTP in-cluster instead.
+  enabled: false
+
+proxy:
+  # Identity from Authentik's forward-auth headers.
+  #
+  # This ONLY works because the HTTPRoute targets port 8971. On port 5000 Frigate
+  # documents that headers are ignored, every request is anonymous, and remote-role is
+  # overridden to admin -- which is why the UI showed an anonymous admin. 5000 stays on
+  # the Service for Home Assistant, which wants exactly that unauthenticated access.
+  #
+  # No proxy_trusted_headers.conf override needed: Frigate's nginx already allowlists
+  # the x-authentik-* headers, and the ext-auth SecurityPolicy already forwards them.
+  separator: "|"  # Authentik joins groups with a pipe, not the default comma
+  header_map:
+    user: x-authentik-username
+    role: x-authentik-groups
+    role_map:
+      # Authentik group DISPLAY names. Admin match wins over viewer when a user is in
+      # both, so there is no accidental downgrade.
+      admin:
+        - "authentik Admins"
+  # Anyone Authentik lets through who is not an admin gets read-only. Without this they
+  # would land with no role at all.
+  default_role: viewer
 
 detect:
   # Object detection OFF, deliberately.

@@ -148,8 +148,16 @@ spec:
       app:
         controller: frigate
         ports:
+          # Unauthenticated. In-cluster only -- Home Assistant's integration talks to
+          # this, and Frigate deliberately grants it admin without asking who it is.
+          # The HTTPRoute does NOT target this port.
           http:
             port: *port
+          # Authenticated port, plain HTTP because tls.enabled is false. This is what
+          # ext-auth routes to: it is the only port on which Frigate honours the
+          # x-authentik-* identity headers and enforces roles.
+          auth:
+            port: 8971
           # go2rtc's RTSP restream. Home Assistant and anything else that wants a feed
           # dials rtsp://frigate.default.svc.cluster.local:8554/<camera> so the cameras
           # only ever see go2rtc's single connection per stream.
