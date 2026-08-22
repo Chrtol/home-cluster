@@ -3,8 +3,11 @@
 # editor and the Settings > Motion Tuner CANNOT save -- every change goes through git.
 # The tuner still previews live; copy the values it lands on back into this file.
 #
-# Pinning `version` keeps Frigate from attempting a schema migration it would then have
-# to abort with "Config file is read-only, unable to migrate config file."
+# Frigate logs `ERROR: Config file is read-only, unable to migrate config file.` on every
+# start and it is HARMLESS -- migrate_frigate_config() checks os.access(W_OK) and returns
+# before it ever looks at the version below, so the pin cannot suppress it. The pin still
+# earns its place: it is what makes the migration a no-op if this file is ever made
+# writable (e.g. someone switches it to a PVC copy).
 version: "0.17-0"
 
 mqtt:

@@ -77,7 +77,21 @@ spec:
               # rootless support (blakeblackshear/frigate#3108 is still open), so this
               # is the one app in the repo that legitimately runs as root.
               readOnlyRootFilesystem: false
-              capabilities: { drop: ["ALL"] }
+              capabilities:
+                drop: ["ALL"]
+                # Running as uid 0 is NOT the same as having root's powers -- those
+                # come from capabilities, and dropping ALL leaves a root process that
+                # cannot chown or setuid. s6's log-prepare chowns /dev/shm/logs/* and
+                # dies with "Operation not permitted", which cascades to frigate,
+                # go2rtc and nginx and leaves :5000 refusing connections.
+                #   CHOWN                  log-prepare chowns the log dirs
+                #   SETUID / SETGID        s6-setuidgid drops the log services and the
+                #                          nginx workers to a lower user
+                #   FOWNER                 log-prepare also chmods those dirs
+                #   DAC_OVERRIDE           root's bypass of permission bits -- needed
+                #                          to write /media, owned 1000:1000 on the NAS
+                # This is Docker's default set minus the net/admin ones.
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
             resources:
               requests:
                 cpu: 300m
