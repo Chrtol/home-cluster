@@ -48,7 +48,7 @@ spec:
               tag: 2026.8.1@sha256:e1f54eb0306d7ded8b3cdee70c21178413cd175aa3e526452af0e086a39ecc51
             env:
               # renovate: datasource=github-releases depName=christiaangoossens/hass-oidc-auth
-              OIDC_COMPONENT_VERSION: v1.1.1
+              OIDC_COMPONENT_VERSION: v1.2.1
             # $$ escapes shield the shell vars from Flux envsubst -- this manifest
             # genuinely needs ${SECRET_DOMAIN}/${SECRET_TIMEZONE} substituted, so the
             # kustomize.toolkit.fluxcd.io/substitute: disabled annotation is not an
