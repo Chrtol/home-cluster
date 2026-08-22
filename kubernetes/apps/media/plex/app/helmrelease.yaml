@@ -75,21 +75,38 @@ spec:
                 memory: 17Gi
     defaultPodOptions:
       priorityClassName: media-high
-      # Prefer dell1 for hardware transcoding: its Alder Lake UHD 770 runs at 1.5GHz
-      # against the lenovos' Kaby Lake HD 630 at 1.15GHz, and it is the only node whose
-      # single gpu.intel.com/i915 slot is not already claimed (Plex holds lenovo1's,
-      # Immich holds lenovo2's).
+      # Marks Plex as a GPU consumer. Every workload that claims gpu.intel.com/i915
+      # carries this label; the podAntiAffinity below keys off it, so a new GPU app
+      # only has to set the label to be accounted for.
+      labels:
+        gpu.home.arpa/consumer: "true"
+      # Target dell1's Alder Lake UHD 770 over the lenovos' Kaby Lake HD 630 (AV1
+      # decode, HEVC 10-bit, many more simultaneous transcodes).
+      #
       # Matched on the GPU device-id label rather than kubernetes.io/hostname so the
       # rule tracks the capability -- move that card to another node and Plex follows.
-      # PREFERRED, not required: a hard nodeSelector would leave Plex Pending and the
-      # server offline whenever dell1 is down or being upgraded. Falling back to a
-      # slower GPU beats not streaming at all.
-      # Caveat worth knowing: the fallback only lands if the other node has a FREE
-      # gpu.intel.com/i915 slot. Each node advertises exactly one, so a node whose slot
-      # is already claimed is infeasible outright -- affinity weight cannot override a
-      # resource shortage. Today that is fine (this move frees lenovo1's slot, leaving
-      # it as the fallback), but adding a third GPU workload would consume it and leave
-      # Plex with nowhere to go if dell1 is down.
+      #
+      # The nodeAffinity below is PREFERRED and on its own it does NOT work: verified
+      # 2026-08-22 that Plex still landed on lenovo2 with dell1's slot free, because
+      # weight 100 (scored x2) loses to NodeResourcesFit/LeastAllocated + ImageLocality
+      # -- lenovo2 is the least-allocated node in the cluster and already had the image
+      # cached. A preference can lose, and here it loses every time.
+      #
+      # What actually pins Plex to dell1 is the REQUIRED podAntiAffinity: immich-server
+      # and frigate are barred from dell1 (nodeAffinity DoesNotExist on the same label)
+      # and soft-spread across the two lenovos, so both lenovos hold a GPU consumer and
+      # are infeasible for Plex. dell1 is what is left.
+      #
+      # Fallback is preserved WITHOUT a hard pin: if dell1 is down Plex goes Pending,
+      # then preemption fires because media-high (300) outranks external-facing (200).
+      # The scheduler evicts immich-server off a lenovo, Plex takes it, and immich
+      # reschedules alongside frigate on the other lenovo -- their mutual anti-affinity
+      # is preferred, not required, exactly so they can double up under pressure. That
+      # co-location is why intel-device-plugin runs sharedDevNum: 2.
+      #
+      # Ordering gotcha: this is only deterministic once BOTH lenovos hold a GPU
+      # consumer. Until frigate is deployed one lenovo is free and Plex may sit there.
+      # Deploy frigate first, restart Plex last.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -99,6 +116,20 @@ spec:
                   - key: gpu.intel.com/device-id.0300-4680.present
                     operator: In
                     values: ["true"]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                  - key: gpu.home.arpa/consumer
+                    operator: In
+                    values: ["true"]
+                  # Exclude Plex itself so a second Plex pod could never block its own
+                  # scheduling. Moot today (strategy is Recreate, one pod at a time) but
+                  # it would deadlock a RollingUpdate.
+                  - key: app.kubernetes.io/name
+                    operator: NotIn
+                    values: ["plex"]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
