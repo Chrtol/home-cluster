@@ -133,7 +133,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "plex_session_poll_reachable{server=~\"$server\"}",
+          "expr": "plex_session_poll_reachable{server=~\"$server\"} or on() vector(0)",
           "legendFormat": "{{ server }}"
         }
       ]
