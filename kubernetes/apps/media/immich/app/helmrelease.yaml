@@ -43,6 +43,36 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           enableServiceLinks: false
+          # Scoped to the server controller, not defaultPodOptions: machine-learning
+          # claims no gpu.intel.com/i915, so labelling it a GPU consumer would make
+          # Plex's required anti-affinity block a node for no reason.
+          labels:
+            gpu.home.arpa/consumer: "true"
+          affinity:
+            nodeAffinity:
+              # Keep immich off dell1's Alder Lake UHD 770 and leave it to Plex, which
+              # scales with concurrent transcodes. DoesNotExist rather than a hostname
+              # so the rule follows the card. See the Plex helmrelease for the full
+              # placement scheme -- this half is load-bearing for it.
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: gpu.intel.com/device-id.0300-4680.present
+                        operator: DoesNotExist
+            podAntiAffinity:
+              # PREFERRED on purpose: immich and frigate spread across the two lenovos
+              # normally, but must be able to double up on one when dell1 is down and
+              # preempted Plex needs the other. Making this required would deadlock
+              # that fallback.
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    topologyKey: kubernetes.io/hostname
+                    labelSelector:
+                      matchExpressions:
+                        - key: gpu.home.arpa/consumer
+                          operator: In
+                          values: ["true"]
         initContainers:
           # image + core INIT_POSTGRES_* come from the cnpg component; the second
           # secretRef layers immich's extras on top (USER_FLAGS -s, SUPER_USER)
