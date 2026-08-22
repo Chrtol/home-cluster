@@ -26,3 +26,13 @@ spec:
     timeout: 10m
   values:
     name: intel-gpu-plugin
+    # Advertise 2 gpu.intel.com/i915 slots per node instead of the chart default
+    # of 1. This is pure oversubscription -- it does NOT partition or isolate the
+    # GPU, it only lets two containers claim the same physical device and contend
+    # for the media engine. Fine for bursty media work (Plex transcode, Immich
+    # thumbnailing, Frigate detect), not for anything latency-critical.
+    #
+    # Needed because one slot per node left no room for a third GPU workload:
+    # Plex's fallback affinity is only satisfiable if some node has a FREE slot,
+    # so adding Frigate to a 3-slot cluster would have left Plex nowhere to go.
+    sharedDevNum: 2
