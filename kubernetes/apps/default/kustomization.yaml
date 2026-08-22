@@ -34,3 +34,4 @@ resources:
   - ./zipline/ks.yaml
   - ./filebrowser/ks.yaml
   - ./thelounge/ks.yaml
+  - ./frigate/ks.yaml

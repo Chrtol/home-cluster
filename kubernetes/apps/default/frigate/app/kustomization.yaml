@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+configMapGenerator:
+  - name: frigate-config
+    files:
+      - ./resources/config.yml
+generatorOptions:
+  # Stable name so the HelmRelease can reference it; Reloader handles the restart on
+  # content change instead of a name-suffix roll.
+  disableNameSuffixHash: true

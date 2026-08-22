@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app frigate
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: volsync
+      namespace: volsync-system
+    # Frigate publishes camera/detection state over MQTT; without it the Home
+    # Assistant integration has nothing to bind entities to.
+    - name: mosquitto
+      namespace: default
+    # nas owns the nas-frigate PV/PVC the recordings mount uses.
+    - name: nas
+      namespace: default
+    # Advertises gpu.intel.com/i915 and the device-id node labels the affinity
+    # rules below key off. Without it the pod is unschedulable, not degraded.
+    - name: intel-device-plugin
+      namespace: kube-system
+  interval: 1h
+  path: ./kubernetes/apps/default/frigate/app
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
+    # Frigate's own auth is disabled (see config.yml) because the HTTPRoute only
+    # ever targets port 5000, which Frigate never authenticates on any setting.
+    # ext-auth owns the route + Authentik forward-auth SecurityPolicy;
+    # proxy-application registers the provider so no manual UI step is needed.
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
+  postBuild:
+    substitute:
+      APP: *app
+      # frigate.db (recording/tracked-object metadata) + model_cache. Recordings
+      # themselves never touch this volume -- they go to the NAS.
+      CEPH_RBD_CAPACITY: 15Gi
+      EXT_AUTH_PORT: "5000"
+      # proxy-application: default bindings only (bp-frigate-users + authentik
+      # Admins). No PROXY_ADMIN_GROUP -- the UI exposes live interior cameras.
+      GROUP: "Default"
+      SUBDOMAIN: *app
+      DESCRIPTION: Frigate NVR
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

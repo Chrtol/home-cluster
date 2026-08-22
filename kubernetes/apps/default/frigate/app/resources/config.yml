@@ -1,0 +1,141 @@
+---
+# Frigate 0.17. Rendered into a ConfigMap and mounted read-only, so the in-app config
+# editor and the Settings > Motion Tuner CANNOT save -- every change goes through git.
+# The tuner still previews live; copy the values it lands on back into this file.
+#
+# Pinning `version` keeps Frigate from attempting a schema migration it would then have
+# to abort with "Config file is read-only, unable to migrate config file."
+version: "0.17-0"
+
+mqtt:
+  enabled: true
+  host: mosquitto.default.svc.cluster.local
+  port: 1883
+  client_id: frigate
+  topic_prefix: frigate
+
+database:
+  # Ceph RBD, not the NFS /media mount: sqlite over NFS throws "database is locked".
+  path: /config/frigate.db
+
+auth:
+  # Authentik forward-auth (components/ext-auth) is the gate. Frigate only enforces its
+  # own user store on port 8971; port 5000 -- the one the HTTPRoute targets -- is
+  # unauthenticated no matter what this is set to, so leaving it on would add a second
+  # identity system that guards nothing we route to.
+  enabled: false
+
+detect:
+  # Object detection OFF, deliberately.
+  #
+  # Both cameras point at reptile terrariums and the COCO model Frigate ships has no
+  # reptile class, so inference would burn a GPU slot to find nothing. Motion detection
+  # is a SEPARATE always-on stage -- frigate/video.py calls motion_detector.detect() on
+  # every frame before it consults this flag -- so motion-triggered recording below is
+  # unaffected. There is deliberately no `detectors:` block either; Frigate falls back
+  # to one CPU detector that stays idle because nothing is ever queued to it.
+  #
+  # To turn detection on later, add the GPU detector and flip this:
+  #   detectors:
+  #     ov:
+  #       type: openvino
+  #       device: GPU
+  # The pod already holds the i915 slot, so no manifest change is needed.
+  enabled: false
+  # Motion detection samples the detect stream at this rate.
+  fps: 5
+
+snapshots:
+  # Snapshots are cut from tracked objects, which do not exist with detect disabled.
+  enabled: false
+
+birdseye:
+  # A 2-camera mosaic that only populates from tracked objects. Nothing to show.
+  enabled: false
+
+record:
+  enabled: true
+  continuous:
+    # Everything, for 24 hours.
+    #
+    # Cheap, because recording is a straight `-c copy` of the camera's own stream: at
+    # roughly 3 Mbps for Ziggy's 2K and 1.5 Mbps for Spyro's 1080p that is ~50 GB
+    # combined at steady state, and it never grows past that.
+    #
+    # Worth the 50 GB because motion detection only answers "what moved". It cannot
+    # answer "why is the basking spot cold at 04:00" or "did she eat" -- a heat lamp
+    # that fails silently and an animal that holds still both produce zero motion
+    # events. Continuous is the only recording that captures a non-event.
+    #
+    # The two buckets compose rather than override: Frigate keeps each segment for the
+    # LARGER of the matching retentions, so a segment with motion lives 30 days and a
+    # segment without lives 1.
+    days: 1
+  motion:
+    # Every 10s segment containing motion, kept 30 days.
+    #
+    # This is a far larger bucket than the object-alert retention originally sketched
+    # (~30-60 GB): with detection off, motion fires on the terrarium heat lamp cycling
+    # and on IR-cut day/night switches, not just on the animal. Budget ~1.8 GB per hour
+    # of motion per camera at stream1 bitrate. Put a ZFS quota on the dataset rather
+    # than trusting that estimate -- Frigate's own guard only kicks in with under an
+    # hour of space left, and it then deletes oldest-first regardless of retention.
+    days: 30
+  # record.alerts / record.detections are omitted on purpose: both key off tracked
+  # objects and would be dead config here.
+
+ffmpeg:
+  # HD 630 is Kaby Lake = gen7, where qsv is unsupported -> vaapi. Only the detect
+  # substream is ever decoded; recording is a straight `-c copy` of the main stream.
+  hwaccel_args: preset-vaapi
+
+go2rtc:
+  # One go2rtc connection per camera stream. Frigate, the Frigate UI and Home Assistant
+  # all consume these instead of dialling the cameras directly. That is the actual fix
+  # for the green-flashing terrarium feeds: the artefacts were decode starvation from
+  # lost P-frames while the cameras were saturated by concurrent RTSP sessions.
+  #
+  # {FRIGATE_*} placeholders are expanded by create_config.py from env vars with that
+  # prefix, so the Tapo camera-account credentials never appear in git.
+  streams:
+    ziggy:
+      - rtsp://{FRIGATE_ZIGGY_USER}:{FRIGATE_ZIGGY_PASSWORD}@10.0.20.99:554/stream1
+    ziggy_sub:
+      - rtsp://{FRIGATE_ZIGGY_USER}:{FRIGATE_ZIGGY_PASSWORD}@10.0.20.99:554/stream2
+    spyro:
+      - rtsp://{FRIGATE_SPYRO_USER}:{FRIGATE_SPYRO_PASSWORD}@10.0.20.96:554/stream1
+    spyro_sub:
+      - rtsp://{FRIGATE_SPYRO_USER}:{FRIGATE_SPYRO_PASSWORD}@10.0.20.96:554/stream2
+
+cameras:
+  # Ziggy -- Tapo C110, no PTZ. stream1 is 2K (2304x1296), stream2 is 640x360.
+  ziggy:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ziggy_sub
+          input_args: preset-rtsp-restream
+          roles: [detect]
+        - path: rtsp://127.0.0.1:8554/ziggy
+          input_args: preset-rtsp-restream
+          roles: [record]
+
+  # Spyro -- Tapo C200, PTZ, ceiling-mounted upside down. stream1 is 1080p.
+  spyro:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/spyro_sub
+          input_args: preset-rtsp-restream
+          roles: [detect]
+        - path: rtsp://127.0.0.1:8554/spyro
+          input_args: preset-rtsp-restream
+          roles: [record]
+    onvif:
+      # Tapo exposes ONVIF on 2020, not 80. A failed ONVIF handshake is logged and
+      # skipped, it does not stop the camera -- which makes this a second, independent
+      # PTZ path: python-kasa in Home Assistant currently fails with
+      # INTERNAL_UNKNOWN_ERROR(-100000). If Frigate can pan and HA cannot, the fault is
+      # python-kasa; if neither can, it is the camera.
+      host: 10.0.20.96
+      port: 2020
+      user: "{FRIGATE_SPYRO_USER}"
+      password: "{FRIGATE_SPYRO_PASSWORD}"

@@ -126,3 +126,40 @@ spec:
   resources:
     requests:
       storage: 1Ti
+---
+# frigate recordings (separate dataset under applications/). These MUST live off the
+# nodes: continuous recording writes to node-local disk are what put dell1 into
+# D-state I/O blocking and took the control plane down with it.
+#
+# NFS share setting this dataset needs and the others do not: Mapall User/Group set to
+# uid/gid 1000. Frigate runs as root inside the container (upstream has no rootless
+# support), so without Mapall the server squashes it to nobody and every write fails.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-frigate-default
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-frigate-default
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/applications/frigate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-frigate
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-frigate-default
+  resources:
+    requests:
+      storage: 1Ti

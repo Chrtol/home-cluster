@@ -1,0 +1,178 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: frigate
+  namespace: default
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      frigate:
+        # RWO Ceph RBD config volume plus a single i915 slot: a RollingUpdate would
+        # deadlock waiting on itself for both.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/blakeblackshear/frigate
+              tag: 0.17.2@sha256:d4351369984d4a9e2a49ac59736f6490856a7ea11f7790040746d21496967010
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # Explicit rather than relying on libva probing the card. gen6-gen7
+              # (Kaby Lake HD 630) is an iHD part; i965 is only for gen5 and older.
+              LIBVA_DRIVER_NAME: iHD
+            envFrom:
+              - secretRef:
+                  name: frigate-secret
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: &port 5000
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  # Frigate's API thread shares a process with the recording
+                  # maintainer; a 1s timeout flaps during segment moves to the NAS.
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                # custom, because the chart's default startup probe is a tcpSocket and
+                # nginx binds 5000 within a second of s6 starting -- long before the
+                # Frigate API answers. That would end startup early and hand a
+                # still-booting pod to the 50s liveness budget, killing it in a loop.
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: *port
+                  # ffmpeg has to connect to both cameras and go2rtc has to publish
+                  # before /api/version answers. 5 minutes of headroom.
+                  failureThreshold: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              # Frigate's entrypoint is s6-overlay, which writes to /run and /var/run
+              # during init, and nginx needs its own temp dirs. Upstream has no
+              # rootless support (blakeblackshear/frigate#3108 is still open), so this
+              # is the one app in the repo that legitimately runs as root.
+              readOnlyRootFilesystem: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 300m
+                memory: 1Gi
+              limits:
+                # Claimed for VAAPI decode of the two detect substreams. The load is
+                # modest with object detection off, but the claim is also load-bearing
+                # for cluster-wide GPU placement -- see the comment block below and the
+                # long rationale in kubernetes/apps/media/plex/app/helmrelease.yaml.
+                gpu.intel.com/i915: 1
+                # Headroom over the 1Gi tmpfs recording cache below, which counts
+                # against this cgroup.
+                memory: 4Gi
+    defaultPodOptions:
+      # MUST stay <= 200. At media-high (300) this would tie Plex and Plex's
+      # preemption fallback would never fire when dell1 is unavailable.
+      priorityClassName: external-facing
+      labels:
+        gpu.home.arpa/consumer: "true"
+      affinity:
+        nodeAffinity:
+          # Bar Frigate from dell1's Alder Lake UHD 770 and leave it to Plex. Matched
+          # on the GPU device-id label rather than a hostname so the rule follows the
+          # card if it moves. This is the second half of the placement scheme: with
+          # both immich-server and frigate pinned off dell1 and spread across the two
+          # lenovos, both lenovos hold a GPU consumer and are infeasible for Plex's
+          # required anti-affinity, leaving dell1 as the only node Plex can take.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu.intel.com/device-id.0300-4680.present
+                    operator: DoesNotExist
+        podAntiAffinity:
+          # PREFERRED, not required: frigate and immich spread across the two lenovos
+          # normally, but must be able to double up on one when dell1 is down and a
+          # preempted Plex needs the other. Making this required would deadlock that
+          # fallback. Co-location is why intel-device-plugin runs sharedDevNum: 2.
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: gpu.home.arpa/consumer
+                      operator: In
+                      values: ["true"]
+      # No runAsUser/runAsNonRoot: see the container securityContext above. fsGroup is
+      # omitted too -- it would trigger a recursive chown across every recording file
+      # on the NFS mount, and root does not need it.
+    service:
+      app:
+        controller: frigate
+        ports:
+          http:
+            port: *port
+          # go2rtc's RTSP restream. Home Assistant and anything else that wants a feed
+          # dials rtsp://frigate.default.svc.cluster.local:8554/<camera> so the cameras
+          # only ever see go2rtc's single connection per stream.
+          rtsp:
+            port: 8554
+    persistence:
+      config:
+        existingClaim: frigate
+        globalMounts:
+          - path: /config
+      # Mounted over the PVC at a deeper path, so it wins. Read-only: the in-app config
+      # editor and Motion Tuner cannot save, by design -- this file lives in git.
+      config-file:
+        type: configMap
+        name: frigate-config
+        globalMounts:
+          - path: /config/config.yml
+            subPath: config.yml
+            readOnly: true
+      # Recordings go to the NAS, never to node-local disk. Continuous writes on dell1
+      # previously blocked etcd in D-state and took the control plane down; a lenovo's
+      # disk is healthier but the failure mode is the same in kind.
+      media:
+        existingClaim: nas-frigate
+        globalMounts:
+          - path: /media/frigate
+      # Frigate's frame buffers plus the generated go2rtc.yaml. Two 640x360 detect
+      # streams need ~12 MB; the rest is slack.
+      dev-shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 512Mi
+        globalMounts:
+          - path: /dev/shm
+      # 10s recording segments buffer here before being moved to /media. On disk this
+      # would be exactly the node-local write pattern the NAS mount exists to avoid, so
+      # it is tmpfs -- sized to absorb a NAS stall without blowing the memory limit.
+      cache:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 1Gi
+        globalMounts:
+          - path: /tmp/cache
