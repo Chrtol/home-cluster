@@ -23,7 +23,10 @@ spec:
       namespace: default
     # Advertises gpu.intel.com/i915 and the device-id node labels the affinity
     # rules below key off. Without it the pod is unschedulable, not degraded.
-    - name: intel-device-plugin
+    # Name is the Kustomization's, not the directory's -- intel-device-plugin/
+    # holds two, and this is the one that publishes the resource. It pulls in
+    # intel-device-plugins-operator via its own dependsOn.
+    - name: intel-device-plugins-gpu
       namespace: kube-system
   interval: 1h
   path: ./kubernetes/apps/default/frigate/app
