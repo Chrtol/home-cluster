@@ -88,9 +88,12 @@ record:
   continuous:
     # Everything, for 24 hours.
     #
-    # Cheap, because recording is a straight `-c copy` of the camera's own stream: at
-    # roughly 3 Mbps for Ziggy's 2K and 1.5 Mbps for Spyro's 1080p that is ~50 GB
-    # combined at steady state, and it never grows past that.
+    # Cheap, because recording is a straight `-c copy` of the camera's own stream.
+    # MEASURED on the running deployment rather than estimated: 216 MB of segments
+    # across both cameras over 970s = ~19 GB/day combined (ziggy ~6.5, spyro ~13).
+    # That is well under the ~50 GB first guessed from nominal bitrates -- these are
+    # static indoor scenes and the encoders barely spend bits. It never grows past
+    # that figure.
     #
     # Worth the 50 GB because motion detection only answers "what moved". It cannot
     # answer "why is the basking spot cold at 04:00" or "did she eat" -- a heat lamp
