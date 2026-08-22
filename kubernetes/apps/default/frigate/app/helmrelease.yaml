@@ -118,6 +118,9 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               podAffinityTerm:
+                # Cluster-wide: immich and plex live in media, and without this the
+                # spread would only consider GPU consumers in default -- i.e. nothing.
+                namespaceSelector: {}
                 topologyKey: kubernetes.io/hostname
                 labelSelector:
                   matchExpressions:

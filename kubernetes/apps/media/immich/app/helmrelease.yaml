@@ -68,6 +68,9 @@ spec:
                 - weight: 100
                   podAffinityTerm:
                     topologyKey: kubernetes.io/hostname
+                    # Cluster-wide: frigate lives in default, and without this the
+                    # spread would only consider GPU consumers in media.
+                    namespaceSelector: {}
                     labelSelector:
                       matchExpressions:
                         - key: gpu.home.arpa/consumer

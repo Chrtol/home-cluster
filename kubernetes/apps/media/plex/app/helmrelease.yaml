@@ -119,6 +119,13 @@ spec:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - topologyKey: kubernetes.io/hostname
+              # Cluster-wide, NOT media-only. A podAffinityTerm with no namespaces and
+              # no namespaceSelector defaults to the namespace of the pod holding it,
+              # so without this the rule only ever saw immich (also in media) and
+              # frigate in default was invisible to it -- verified 2026-08-22, frigate
+              # scheduled straight onto lenovo2 alongside Plex. An EMPTY selector means
+              # all namespaces; a null one means this pod's own.
+              namespaceSelector: {}
               labelSelector:
                 matchExpressions:
                   - key: gpu.home.arpa/consumer
