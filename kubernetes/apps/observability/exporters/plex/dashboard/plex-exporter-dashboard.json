@@ -69,7 +69,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "plex_server_info",
+          "expr": "plex_server_info{server=~\"$server\"}",
           "legendFormat": "{{ server }} v{{ version }}"
         }
       ]
@@ -133,7 +133,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "plex_session_poll_reachable",
+          "expr": "plex_session_poll_reachable{server=~\"$server\"}",
           "legendFormat": "{{ server }}"
         }
       ]
@@ -190,7 +190,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(plex_play_seconds_total) or vector(0)",
+          "expr": "count(plex_play_seconds_total{server=~\"$server\"}) or vector(0)",
           "legendFormat": ""
         }
       ]
@@ -243,7 +243,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "plex_active_transcode_sessions",
+          "expr": "plex_active_transcode_sessions{server=~\"$server\"}",
           "legendFormat": "{{ server }}"
         }
       ]
@@ -288,7 +288,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(plex_library_items)",
+          "expr": "sum(plex_library_items{server=~\"$server\"})",
           "legendFormat": ""
         }
       ]
@@ -334,7 +334,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(plex_library_storage_bytes)",
+          "expr": "sum(plex_library_storage_bytes{server=~\"$server\"})",
           "legendFormat": ""
         }
       ]
@@ -380,7 +380,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(plex_library_duration_milliseconds)",
+          "expr": "sum(plex_library_duration_milliseconds{server=~\"$server\"})",
           "legendFormat": ""
         }
       ]
@@ -444,7 +444,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(plex_server_info{plex_pass=\"true\"}) or on() vector(0)",
+          "expr": "count(plex_server_info{server=~\"$server\",plex_pass=\"true\"}) or on() vector(0)",
           "legendFormat": ""
         }
       ]
@@ -668,7 +668,7 @@
       "type": "table",
       "targets": [
         {
-          "expr": "plex_play_seconds_total",
+          "expr": "plex_play_seconds_total{server=~\"$server\"}",
           "legendFormat": "",
           "format": "table",
           "instant": true,
@@ -767,7 +767,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(plex_session_bandwidth_kbps) by (server)",
+          "expr": "sum(plex_session_bandwidth_kbps{server=~\"$server\"}) by (server)",
           "legendFormat": "{{ server }}"
         }
       ]
@@ -808,7 +808,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(plex_session_bitrate_kbps) by (server)",
+          "expr": "sum(plex_session_bitrate_kbps{server=~\"$server\"}) by (server)",
           "legendFormat": "{{ server }}"
         }
       ]
@@ -911,21 +911,21 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (library) (plex_library_items)",
+          "expr": "sum by (library) (plex_library_items{server=~\"$server\"})",
           "legendFormat": "",
           "format": "table",
           "instant": true,
           "refId": "A"
         },
         {
-          "expr": "sum by (library) (plex_library_storage_bytes)",
+          "expr": "sum by (library) (plex_library_storage_bytes{server=~\"$server\"})",
           "legendFormat": "",
           "format": "table",
           "instant": true,
           "refId": "B"
         },
         {
-          "expr": "sum by (library) (plex_library_duration_milliseconds)",
+          "expr": "sum by (library) (plex_library_duration_milliseconds{server=~\"$server\"})",
           "legendFormat": "",
           "format": "table",
           "instant": true,
@@ -1012,7 +1012,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "delta(plex_library_items[$__range])",
+          "expr": "delta(plex_library_items{server=~\"$server\"}[$__range])",
           "legendFormat": "{{library}}",
           "refId": "A"
         }
@@ -1068,7 +1068,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "plex_host_cpu_utilization_ratio",
+          "expr": "plex_host_cpu_utilization_ratio{server=~\"$server\"}",
           "legendFormat": "{{ server }}"
         }
       ]
@@ -1111,7 +1111,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "plex_host_memory_utilization_ratio",
+          "expr": "plex_host_memory_utilization_ratio{server=~\"$server\"}",
           "legendFormat": "{{ server }}"
         }
       ]
@@ -1123,7 +1123,25 @@
     "prometheus"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(plex_server_info, server)",
+        "includeAll": true,
+        "label": "Server",
+        "multi": true,
+        "name": "server",
+        "query": {
+          "query": "label_values(plex_server_info, server)"
+        },
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
   },
   "refresh": "30s",
   "time": {
@@ -1134,5 +1152,5 @@
   "timezone": "",
   "title": "Plex Media Server",
   "uid": "plex-exporter",
-  "version": 5
+  "version": 6
 }
