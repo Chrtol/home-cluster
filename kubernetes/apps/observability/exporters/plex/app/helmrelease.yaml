@@ -31,8 +31,8 @@ spec:
               tag: v3.0.9@sha256:8f4d32d1daf868f7ebf702f54cc05770af62c197ed248f86cd4411438ef54c3b
             env:
               TZ: ${SECRET_TIMEZONE}
-              PLEX_SERVER: http://plex.media.svc.cluster.local:32400
-              LISTEN_ADDRESS: :9594
+              PLEX_URL: http://plex.media.svc.cluster.local:32400
+              LISTEN_ADDR: :9594
             envFrom:
               - secretRef:
                   name: plex-exporter-secret
