@@ -6,6 +6,9 @@ metadata:
   name: minecraft
 spec:
   interval: 1h
+  # Longer than the startup probe budget above; the default 5m expired while BDS
+  # was still coming up and Helm uninstall-remediated the release in a loop.
+  timeout: 15m
   chartRef:
     kind: OCIRepository
     name: app-template
@@ -68,8 +71,12 @@ spec:
               # overwrite) the in-game `/allowlist add` edits made by an operator.
               # allowlist.json is runtime state on the PVC; volsync is its only copy.
               ALLOW_LIST: "true"
-              # Nothing else on this LAN should discover the server by broadcast.
-              ENABLE_LAN_VISIBILITY: "false"
+              # Deliberately NOT setting ENABLE_LAN_VISIBILITY=false. It sounds like
+              # a harmless tidy-up, but it stops the server answering unconnected
+              # RakNet pings -- which is how mc-monitor health-checks it AND how every
+              # Bedrock client probes a server before connecting. With it off the
+              # probe returns `empty response from bedrock server` while the server
+              # logs a perfectly healthy `Server started`.
               UID: "1000"
               GID: "1000"
             probes:
@@ -110,7 +117,10 @@ spec:
                   initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 10
-                  failureThreshold: 60
+                  # 5m, kept below both the Deployment progressDeadline (10m) and the
+                  # HelmRelease timeout (15m). If this budget outlasts either, a slow
+                  # start is rolled back mid-boot and reinstalls forever.
+                  failureThreshold: 30
             securityContext:
               <<: *appUser
               allowPrivilegeEscalation: false
