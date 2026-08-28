@@ -38,10 +38,12 @@ spec:
             command:
               - /bin/sh
               - -c
-              # 0664, not cp's default 0644: the broadcast container runs as the
-              # image's own `app` user, which only reaches this file through the
-              # fsGroup supplementary group, and it rewrites config.yml on startup.
-              - cp -n /seed/config.yml /broadcast/config.yml; chmod 0664 /broadcast/config.yml || true
+              # cp -f, not -n: the tool rewrites config.yml at runtime, so seeding
+              # only-if-absent lets its version win permanently and git silently
+              # stops applying. Auth tokens live in cache/ and survive this.
+              # 0664 because the broadcast container runs as the image's own `app`
+              # user and reaches this file via the fsGroup supplementary group.
+              - cp -f /seed/config.yml /broadcast/config.yml; chmod 0664 /broadcast/config.yml || true
             securityContext: &appUser
               runAsNonRoot: true
               runAsUser: 1000

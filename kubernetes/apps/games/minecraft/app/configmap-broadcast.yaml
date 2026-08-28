@@ -1,14 +1,20 @@
 ---
-# Seed config for MCXboxBroadcast (standalone). Copied into the PVC only if absent
-# (`cp -n` in the init container) because the tool rewrites this file itself --
-# it stamps a configVersion and persists Xbox auth state alongside it. To change a
-# value here you must also delete /opt/app/config/config.yml from the PVC so the
-# init container reseeds it. Same runtime-mutable-config trade-off as yata.
+# Config for MCXboxBroadcast (standalone).
 #
-# Key detail: on the Standalone platform `session.remoteAddress`/`remotePort` are
-# excluded from the schema -- `sessionInfo.ip`/`.port` ARE the advertised target.
-# That address is what the console dials, so it MUST be the public VPS address,
-# not the in-cluster LB IP.
+# KEYS ARE KEBAB-CASE. The Java config interface declares camelCase methods
+# (sessionInfo(), hostName()), but Configurate maps those to kebab-case YAML keys.
+# Writing camelCase produces a file the tool parses without error and then IGNORES
+# ENTIRELY -- it silently falls back to defaults, whose `ip` is test.geysermc.org.
+# The symptom is joining the public GeyserMC demo server instead of your own, with
+# nothing wrong in any log. Match this file's casing exactly.
+#
+# `config-version` must be present and current or the loader treats the file as
+# needing migration.
+#
+# The init container copies this over the PVC copy on EVERY start (cp -f), so git
+# stays authoritative. The tool rewrites the file at runtime; without the forced
+# copy its rewrite wins and git silently stops mattering. Auth tokens live in
+# cache/ and are untouched by this.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,39 +22,40 @@ metadata:
 data:
   config.yml: |
     session:
-      updateInterval: 30
-      # Disabled deliberately: in Standalone the queried host is the same field we
-      # advertise (the public VPS IP), so a query would have to hairpin from inside
-      # the cluster, out to the VPS and back through the tunnel. Failing that quietly
-      # degrades the session. Static values below are used instead -- the cost is
-      # that the player count shown in the Friends tab is not live.
-      queryServer: false
-      webQueryFallback: false
-      configFallback: true
-      sessionInfo:
-        hostName: "Minecraft"
-        worldName: "world"
+      update-interval: 30
+      # Off deliberately: in Standalone the queried host is the same field we
+      # advertise (the public VPS address), so querying would have to hairpin out
+      # of the cluster and back through the tunnel. Static values below are used
+      # instead; the cost is that the Friends-tab player count is not live.
+      query-server: false
+      web-query-fallback: false
+      config-fallback: true
+      session-info:
+        host-name: "Minecraft"
+        world-name: "world"
         players: 0
-        maxPlayers: 4
+        max-players: 10
+        # What the console actually dials -- MUST be the public VPS address, not
+        # the in-cluster LB IP.
         ip: "${VPS_PUBLIC_IP}"
         port: 19132
-      icePortRange:
+      ice-port-range:
         min: 0
         max: 0
-    friendSync:
-      updateInterval: 60
-      autoFollow: true
-      autoUnfollow: true
-      initialInvite: true
+    friend-sync:
+      update-interval: 60
+      auto-follow: true
+      auto-unfollow: true
+      initial-invite: true
       expiry:
-        # Upstream defaults this to true/15d, which silently unfriends anyone who
-        # hasn't joined in 15 days -- i.e. a fortnight off and she loses her way in
-        # with no error anywhere. Off.
+        # Upstream defaults this to true/15d, silently unfriending anyone who
+        # hasn't joined in a fortnight -- they just lose access with no error.
         enabled: false
         days: 15
         check: 1800
     notifications:
       enabled: false
-      webhookUrl: ""
-    debugMode: false
-    suppressSessionUpdateMessage: false
+      webhook-url: ''
+    debug-mode: false
+    suppress-session-update-message: false
+    config-version: 2
