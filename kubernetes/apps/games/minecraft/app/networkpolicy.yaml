@@ -1,0 +1,83 @@
+---
+# Blast-radius containment for the one workload in this cluster that runs a closed
+# third-party binary directly exposed to the public internet. BDS has no plugin
+# sandbox, no RCON auth, and the UDP path reaches it with no CrowdSec or rate limit
+# in front (Traefik UDP routers take no middlewares), so the pod is the only place
+# left to draw a boundary.
+#
+# SCOPED TO THE GAME PODS, not the whole namespace, on purpose: a namespace-wide
+# default-deny would also catch the VolSync mover pods, whose egress to the restic
+# repository is RFC1918 -- exactly what the egress rule below blocks. That would
+# break backups silently, since a mover failure doesn't surface as a pod crash.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minecraft-default-deny
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: minecraft
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minecraft-allow-bedrock
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: minecraft
+  policyTypes:
+    - Ingress
+  ingress:
+    # Players arrive from outside the cluster, SNAT'd to a node address by the time
+    # they reach the pod, so there is no useful source to match on -- and no PROXY
+    # protocol on this path to recover the real one. Access control is the in-game
+    # allowlist, not this rule. Liveness/readiness are exec probes, so they need no
+    # ingress permission of their own.
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: UDP
+          port: 19132
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minecraft-allow-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: minecraft
+  policyTypes:
+    - Egress
+  egress:
+    # Cluster DNS only -- nothing else in-cluster is reachable.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Public internet, but NOT any private range. BDS downloads the server binary
+    # from Mojang at every start, and the broadcaster holds a live Xbox Live session
+    # plus WebRTC/ICE negotiation on arbitrary UDP ports, so this can't be narrowed
+    # to 443 without breaking joins.
+    #
+    # The 10.0.0.0/8 exception is the point of the whole policy: it covers the LAN,
+    # the pod CIDR, the service CIDR (kube-dns 10.43.0.10 is re-allowed above), and
+    # both API server addresses. A compromised game server cannot reach Postgres,
+    # Authentik, the NAS, the Kubernetes API, or anything else on 10.0.30.0/24.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16

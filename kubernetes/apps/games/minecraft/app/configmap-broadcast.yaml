@@ -1,0 +1,54 @@
+---
+# Seed config for MCXboxBroadcast (standalone). Copied into the PVC only if absent
+# (`cp -n` in the init container) because the tool rewrites this file itself --
+# it stamps a configVersion and persists Xbox auth state alongside it. To change a
+# value here you must also delete /opt/app/config/config.yml from the PVC so the
+# init container reseeds it. Same runtime-mutable-config trade-off as yata.
+#
+# Key detail: on the Standalone platform `session.remoteAddress`/`remotePort` are
+# excluded from the schema -- `sessionInfo.ip`/`.port` ARE the advertised target.
+# That address is what the console dials, so it MUST be the public VPS address,
+# not the in-cluster LB IP.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minecraft-broadcast-config
+data:
+  config.yml: |
+    session:
+      updateInterval: 30
+      # Disabled deliberately: in Standalone the queried host is the same field we
+      # advertise (the public VPS IP), so a query would have to hairpin from inside
+      # the cluster, out to the VPS and back through the tunnel. Failing that quietly
+      # degrades the session. Static values below are used instead -- the cost is
+      # that the player count shown in the Friends tab is not live.
+      queryServer: false
+      webQueryFallback: false
+      configFallback: true
+      sessionInfo:
+        hostName: "Minecraft"
+        worldName: "world"
+        players: 0
+        maxPlayers: 4
+        ip: "${VPS_PUBLIC_IP}"
+        port: 19132
+      icePortRange:
+        min: 0
+        max: 0
+    friendSync:
+      updateInterval: 60
+      autoFollow: true
+      autoUnfollow: true
+      initialInvite: true
+      expiry:
+        # Upstream defaults this to true/15d, which silently unfriends anyone who
+        # hasn't joined in 15 days -- i.e. a fortnight off and she loses her way in
+        # with no error anywhere. Off.
+        enabled: false
+        days: 15
+        check: 1800
+    notifications:
+      enabled: false
+      webhookUrl: ""
+    debugMode: false
+    suppressSessionUpdateMessage: false

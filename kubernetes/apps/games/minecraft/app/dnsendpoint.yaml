@@ -1,0 +1,24 @@
+---
+# Public A record for the Bedrock endpoint. There is no HTTPRoute here (raw UDP),
+# so the crd source is the only way external-dns can learn about this name.
+#
+# Only the Cloudflare instance picks this up -- the AdGuard instance's sources are
+# ingress + gateway-httproute, with no crd -- so this stays a single-answer name and
+# does not introduce split-horizon DNS. Internally the server is reached by its LB
+# IP directly.
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: minecraft
+  annotations:
+    # MUST stay grey-cloud. Cloudflare's proxy only handles HTTP(S); an orange-cloud
+    # record would answer with Cloudflare edge IPs that speak no RakNet, and the
+    # console would simply fail to connect with nothing in any log to explain it.
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+spec:
+  endpoints:
+    - dnsName: "mc.${SECRET_DOMAIN}"
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "${VPS_PUBLIC_IP}"

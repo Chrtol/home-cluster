@@ -1,0 +1,184 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minecraft
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      minecraft:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Seeds the broadcaster config ONLY if absent (`cp -n`). MCXboxBroadcast
+          # rewrites config.yml itself (stamping a configVersion) and keeps its Xbox
+          # token cache in the same directory, so git can't be authoritative here --
+          # to apply a change from the ConfigMap, delete the file from the PVC first.
+          # Reuses the bedrock image purely so there's no third image to track.
+          seed-broadcast-config:
+            image: &bdsImage
+              repository: docker.io/itzg/minecraft-bedrock-server
+              tag: 2026.8.2@sha256:6bb1cb8ee0c1fdf96dbd9dfe77bed4e20c8e3946112bed4f9be609e8f14efe9a
+            command:
+              - /bin/sh
+              - -c
+              - cp -n /seed/config.yml /broadcast/config.yml || true
+        containers:
+          app:
+            image: *bdsImage
+            env:
+              EULA: "TRUE"
+              TZ: ${SECRET_TIMEZONE}
+              # The BDS binary is downloaded at container start, not baked into the
+              # image -- so the running Minecraft version can change without a git
+              # commit. LATEST is deliberate: consoles auto-update and there are no
+              # plugins to break, so pinning mostly buys an outage when she updates.
+              VERSION: LATEST
+              SERVER_NAME: Minecraft
+              SERVER_PORT: "19132"
+              LEVEL_NAME: world
+              GAMEMODE: survival
+              DIFFICULTY: normal
+              ALLOW_CHEATS: "false"
+              MAX_PLAYERS: "4"
+              VIEW_DISTANCE: "16"
+              ONLINE_MODE: "true"
+              # Enforce the allowlist, but do NOT set ALLOW_LIST_USERS. That variable
+              # GENERATES allowlist.json, which would fight (and on restart silently
+              # overwrite) the in-game `/allowlist add` edits made by an operator.
+              # allowlist.json is runtime state on the PVC; volsync is its only copy.
+              ALLOW_LIST: "true"
+              # Nothing else on this LAN should discover the server by broadcast.
+              ENABLE_LAN_VISIBILITY: "false"
+              UID: "1000"
+              GID: "1000"
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /usr/local/bin/mc-monitor
+                      - status-bedrock
+                      - --host
+                      - 127.0.0.1
+                      - --port
+                      - "19132"
+                  # custom:true drops the chart defaults entirely, including the 1s
+                  # timeout -- every field has to be spelled out or the probe flaps.
+                  initialDelaySeconds: 0
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /usr/local/bin/mc-monitor
+                      - status-bedrock
+                      - --host
+                      - 127.0.0.1
+                      - --port
+                      - "19132"
+                  # First boot downloads the whole BDS zip from Mojang before the
+                  # server ever listens; a short startup budget would liveness-kill
+                  # it into a permanent crashloop. 10m.
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 200m
+                memory: 1Gi
+              limits:
+                memory: 3Gi
+          broadcast:
+            image:
+              repository: ghcr.io/mcxboxbroadcast/standalone
+              tag: latest@sha256:11b74fc32de317f3650e981f42c10e5f06691fc284aaa26b6a32dad4be043d83
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      # Give BDS room to flush the world on SIGTERM. With volsync-only backups the
+      # clean shutdown save is what keeps a snapshot from catching a torn world.
+      terminationGracePeriodSeconds: 60
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  # Keep off lenovo1: its kernel WireGuard softirq load from seeding
+                  # already saturates that node, and this is latency-sensitive UDP.
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: ["lenovo1"]
+      securityContext:
+        # NOT runAsNonRoot. The image entrypoint is entrypoint-demoter, which starts
+        # as root and drops to UID/GID itself; forcing non-root breaks that handoff.
+        # fsGroup makes /data group-writable for the demoted 1000 process.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: minecraft
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: 10.0.30.67
+        # externalTrafficPolicy is deliberately unset (defaults to Cluster). With
+        # Local, Cilium's L2 announcement leader drops traffic whenever it isn't
+        # also the pod's node -- the failure Owncast RTMP hit.
+        ports:
+          bedrock:
+            port: 19132
+            protocol: UDP
+    persistence:
+      data:
+        existingClaim: minecraft
+        advancedMounts:
+          minecraft:
+            app:
+              - path: /data
+            broadcast:
+              - path: /opt/app/config
+                subPath: mcxboxbroadcast
+            seed-broadcast-config:
+              - path: /broadcast
+                subPath: mcxboxbroadcast
+      broadcast-seed:
+        type: configMap
+        name: minecraft-broadcast-config
+        advancedMounts:
+          minecraft:
+            seed-broadcast-config:
+              - path: /seed

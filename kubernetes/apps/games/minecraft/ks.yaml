@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app minecraft
+  namespace: &namespace games
+spec:
+  targetNamespace: *namespace
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  timeout: 5m
+  path: "./kubernetes/apps/games/minecraft/app"
+  # ceph-rbd -> RWO PVC holding the world AND the runtime-mutable allowlist.json /
+  #             permissions.json, plus the broadcaster's Xbox token cache. All of it
+  #             is state that is deliberately NOT in git (see helmrelease notes).
+  # volsync  -> Restic backup of that PVC; the world is the only thing worth keeping.
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/volsync
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: false
+  postBuild:
+    substitute:
+      APP: *app
+      CEPH_RBD_CAPACITY: 10Gi
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
