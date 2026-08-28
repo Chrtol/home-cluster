@@ -144,9 +144,14 @@ spec:
                     operator: NotIn
                     values: ["lenovo1"]
       securityContext:
-        # NOT runAsNonRoot. The image entrypoint is entrypoint-demoter, which starts
-        # as root and drops to UID/GID itself; forcing non-root breaks that handoff.
-        # fsGroup makes /data group-writable for the demoted 1000 process.
+        # Run as 1000 from the start. The image entrypoint is entrypoint-demoter,
+        # which demotes root -> UID/GID -- but demoting needs CAP_SETUID/CAP_SETGID,
+        # which `drop: ["ALL"]` removes, and it dies with
+        # `fork/exec /opt/bedrock-entry.sh: operation not permitted`.
+        # Starting as non-root makes the demoter a no-op instead of re-adding caps.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     service:
@@ -163,6 +168,15 @@ spec:
             port: 19132
             protocol: UDP
     persistence:
+      # sqlite-jdbc (broadcaster player-history DB) unpacks its native .so into
+      # java.io.tmpdir at startup; with readOnlyRootFilesystem that fails as
+      # `NativeLibraryNotFoundException` rather than anything mentioning /tmp.
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          minecraft:
+            broadcast:
+              - path: /tmp
       data:
         existingClaim: minecraft
         advancedMounts:
