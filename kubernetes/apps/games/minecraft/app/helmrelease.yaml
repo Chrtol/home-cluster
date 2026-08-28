@@ -63,7 +63,10 @@ spec:
               GAMEMODE: survival
               DIFFICULTY: normal
               ALLOW_CHEATS: "false"
-              MAX_PLAYERS: "4"
+              # Not sized to the current household -- the allowlist is what actually
+              # controls access, so this only caps CONCURRENT players. Sized for a
+              # friend group; view-distance is the lever to drop first if it lags.
+              MAX_PLAYERS: "10"
               VIEW_DISTANCE: "16"
               ONLINE_MODE: "true"
               # Enforce the allowlist, but do NOT set ALLOW_LIST_USERS. That variable
@@ -130,11 +133,15 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
             resources:
+              # Sized for MAX_PLAYERS=10 at view-distance 16. BDS holds loaded chunks
+              # per player, so memory scales with concurrent players, not world size.
+              # No CPU limit on purpose: throttling a game server's tick loop shows up
+              # as rubber-banding, and the main tick is largely single-threaded.
               requests:
-                cpu: 200m
-                memory: 1Gi
+                cpu: 500m
+                memory: 1500Mi
               limits:
-                memory: 3Gi
+                memory: 6Gi
           broadcast:
             image:
               repository: ghcr.io/mcxboxbroadcast/standalone
