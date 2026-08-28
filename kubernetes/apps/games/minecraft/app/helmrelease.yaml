@@ -71,12 +71,16 @@ spec:
               # overwrite) the in-game `/allowlist add` edits made by an operator.
               # allowlist.json is runtime state on the PVC; volsync is its only copy.
               ALLOW_LIST: "true"
-              # Deliberately NOT setting ENABLE_LAN_VISIBILITY=false. It sounds like
-              # a harmless tidy-up, but it stops the server answering unconnected
-              # RakNet pings -- which is how mc-monitor health-checks it AND how every
-              # Bedrock client probes a server before connecting. With it off the
-              # probe returns `empty response from bedrock server` while the server
-              # logs a perfectly healthy `Server started`.
+              # MUST be explicitly true, not merely omitted. Despite the name, this
+              # gates whether the server answers unconnected RakNet pings at all --
+              # how mc-monitor health-checks it AND how every Bedrock client probes a
+              # server before connecting. With it false the probe gets `empty response
+              # from bedrock server` while the server logs a healthy `Server started`
+              # and holds a correct 0.0.0.0:19132 UDP socket.
+              # Omitting it does NOT restore the default: server.properties lives on
+              # the PVC and the image only ever writes env values into it, so a
+              # deleted variable leaves the old value in place forever.
+              ENABLE_LAN_VISIBILITY: "true"
               UID: "1000"
               GID: "1000"
             probes:
