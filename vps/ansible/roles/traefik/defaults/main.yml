@@ -44,3 +44,11 @@ traefik_metrics_password_hash: ""  # VPS_METRICS_PASSWORD_HASH (htpasswd hash) f
 traefik_deadman_enabled: false
 traefik_deadman_host: "deadman.{{ traefik_domain }}"
 traefik_deadman_listen_port: 9720  # must match deadman_listen_port (8080 = CrowdSec LAPI)
+# Minecraft Bedrock (raw UDP passthrough to the cluster LoadBalancer IP).
+# Enabled implicitly by VPS_MINECRAFT_LB_IP being set in 1Password -- there is no
+# separate toggle, so an empty value cleanly disables the entrypoint and its UFW rule.
+# NOTE: Traefik UDP routers accept NO middlewares, so CrowdSec, rate limiting and the
+# security headers do not apply to this entrypoint. The in-game allowlist is the only
+# access control on this path.
+traefik_minecraft_ip: ""
+traefik_minecraft_port: 19132

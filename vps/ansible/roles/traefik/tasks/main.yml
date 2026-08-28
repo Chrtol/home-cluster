@@ -57,6 +57,18 @@
         - 443
       ignore_errors: true
 
+# The UFW rule lives here rather than in the `firewall` role on purpose: that role
+# is only in site.yml, while the push-triggered workflow runs reverse-proxy.yml.
+# Put it there and Traefik binds the port while UFW silently drops every packet --
+# indistinguishable from a broken tunnel, three hops from where you would look.
+- name: Allow Minecraft Bedrock UDP through UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ traefik_minecraft_port | default(19132) }}"
+    proto: udp
+    comment: "Minecraft Bedrock"
+  when: traefik_minecraft_ip | default('', true) | trim | length > 0
+
 - name: Create Traefik directories
   ansible.builtin.file:
     path: "{{ item }}"

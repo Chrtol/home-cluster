@@ -178,6 +178,24 @@ http:
         responseHeaderTimeout: 600s  # 10 minutes for large file uploads (Immich videos, etc.)
         idleConnTimeout: 90s
 
+{% if traefik_minecraft_ip | default('', true) | trim %}
+# Minecraft Bedrock -- raw L4 forward across the WireGuard tunnel to the cluster
+# LoadBalancer IP. UDP routers take no rule (nothing to match on) and no
+# middlewares, so this is an unfiltered passthrough by design.
+udp:
+  routers:
+    minecraft:
+      entryPoints:
+        - minecraft
+      service: minecraft
+
+  services:
+    minecraft:
+      loadBalancer:
+        servers:
+          - address: "{{ traefik_minecraft_ip }}:{{ traefik_minecraft_port | default(19132) }}"
+{% endif %}
+
 # TLS Configuration
 tls:
   certificates:

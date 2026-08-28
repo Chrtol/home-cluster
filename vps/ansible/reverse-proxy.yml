@@ -31,6 +31,9 @@
     crowdsec_lapi_host: "{{ lookup('env', 'CROWDSEC_LAPI_HOST') | default('127.0.0.1:8080') }}"
     crowdsec_log_level: "{{ lookup('env', 'CROWDSEC_LOG_LEVEL') | default('INFO') }}"
 
+    # Minecraft Bedrock UDP passthrough. Presence of the IP is the toggle.
+    minecraft_lb_ip: "{{ lookup('env', 'VPS_MINECRAFT_LB_IP') | default('', true) }}"
+
     # Feature toggles
     enable_echo_test: "{{ lookup('env', 'PROXY_ENABLE_ECHO_TEST') | default('true') | bool }}"
     enable_metrics: "{{ lookup('env', 'PROXY_ENABLE_METRICS') | default('true') | bool }}"
@@ -58,6 +61,7 @@
     kubernetes_external_ingress_ip: "{{ proxy_external_ingress_ip }}"
     traefik_enable_echo_test: "{{ enable_echo_test }}"
     traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
+    traefik_minecraft_ip: "{{ minecraft_lb_ip }}"
     traefik_enable_metrics: "{{ enable_metrics }}"
     traefik_metrics_user: "{{ lookup('env', 'VPS_METRICS_USER') }}"
     traefik_metrics_password_hash: "{{ lookup('env', 'VPS_METRICS_PASSWORD_HASH') }}"

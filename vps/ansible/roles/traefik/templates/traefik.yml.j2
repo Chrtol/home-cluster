@@ -24,6 +24,13 @@ entryPoints:
   metrics:
     address: ":8082"
 
+{% if traefik_minecraft_ip | default('', true) | trim %}
+  # Bedrock/RakNet. There is no SNI or hostname routing for UDP -- this listener
+  # owns the port outright and the DNS name is cosmetic.
+  minecraft:
+    address: ":{{ traefik_minecraft_port | default(19132) }}/udp"
+{% endif %}
+
 # Providers
 providers:
   file:

@@ -73,6 +73,11 @@ jobs:
           CROWDSEC_LAPI_HOST: "op://Lab/vps-proxy/VPS_CROWDSEC_LAPI_HOST"
           CROWDSEC_LOG_LEVEL: "op://Lab/vps-proxy/VPS_CROWDSEC_LOG_LEVEL"
 
+          # Minecraft Bedrock UDP passthrough (cluster LoadBalancer IP).
+          # Must exist in 1Password -- load-secrets-action fails the whole job on any
+          # unresolved op:// reference, taking every VPS deploy with it.
+          VPS_MINECRAFT_LB_IP: "op://Lab/vps-proxy/VPS_MINECRAFT_LB_IP"
+
           # Feature Toggles
           PROXY_ENABLE_ECHO_TEST: "op://Lab/vps-proxy/VPS_ENABLE_ECHO_TEST"
           PROXY_ENABLE_METRICS: "op://Lab/vps-proxy/VPS_ENABLE_METRICS"
