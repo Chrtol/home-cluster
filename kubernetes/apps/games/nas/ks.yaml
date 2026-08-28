@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app nas
+  namespace: &namespace games
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  # nas-backup claim that VolSync's MutatingAdmissionPolicy injects into every mover
+  # pod in this namespace as /backup. Must exist before any ReplicationSource runs.
+  dependsOn:
+    - name: csi-driver-nfs
+      namespace: kube-system
+  interval: 1h
+  path: ./kubernetes/apps/games/nas/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

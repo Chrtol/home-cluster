@@ -35,7 +35,14 @@ spec:
             command:
               - /bin/sh
               - -c
-              - cp -n /seed/config.yml /broadcast/config.yml || true
+              # 0664, not cp's default 0644: the broadcast container runs as the
+              # image's own `app` user, which only reaches this file through the
+              # fsGroup supplementary group, and it rewrites config.yml on startup.
+              - cp -n /seed/config.yml /broadcast/config.yml; chmod 0664 /broadcast/config.yml || true
+            securityContext: &appUser
+              runAsNonRoot: true
+              runAsUser: 1000
+              runAsGroup: 1000
         containers:
           app:
             image: *bdsImage
@@ -105,6 +112,7 @@ spec:
                   timeoutSeconds: 10
                   failureThreshold: 60
             securityContext:
+              <<: *appUser
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
             resources:
@@ -144,14 +152,16 @@ spec:
                     operator: NotIn
                     values: ["lenovo1"]
       securityContext:
-        # Run as 1000 from the start. The image entrypoint is entrypoint-demoter,
-        # which demotes root -> UID/GID -- but demoting needs CAP_SETUID/CAP_SETGID,
-        # which `drop: ["ALL"]` removes, and it dies with
-        # `fork/exec /opt/bedrock-entry.sh: operation not permitted`.
-        # Starting as non-root makes the demoter a no-op instead of re-adding caps.
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        # Only fsGroup here -- the user is set PER CONTAINER on purpose.
+        # BDS must run as 1000: its entrypoint-demoter demotes root -> UID/GID, which
+        # needs CAP_SETUID/CAP_SETGID that `drop: ["ALL"]` removes, so it dies with
+        # `fork/exec /opt/bedrock-entry.sh: operation not permitted`. Starting as
+        # non-root makes the demoter a no-op.
+        # The broadcaster must NOT: its image runs as its own `app` user and /opt/app
+        # is not traversable by uid 1000, giving `Unable to access jarfile`. It reaches
+        # the PVC through the fsGroup supplementary group instead. And it can't take a
+        # bare runAsNonRoot either -- the image declares a NAMED user, which the kubelet
+        # refuses to verify as non-root.
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     service:

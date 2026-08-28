@@ -1,0 +1,36 @@
+# restic backup repository dataset for the games namespace. Static NFS PVs are
+# bound 1:1 to a claim, so every namespace using the volsync component needs its
+# own PV/PVC pair -- the component itself does NOT create this, and without it the
+# mover pod sits Pending on `persistentvolumeclaim "nas-backup" not found` with the
+# ReplicationSource still reporting no error of its own.
+# See the media namespace's nas.yaml for the nconnect-per-node reasoning.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-backup-games
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-backup-games
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/backup
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-backup
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-backup-games
+  resources:
+    requests:
+      storage: 1Ti

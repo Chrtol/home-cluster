@@ -23,6 +23,10 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    # volsync's mover mounts the namespace's nas-backup claim; without this the
+    # first backup silently sits Pending forever.
+    - name: nas
+      namespace: games
   prune: true
   sourceRef:
     kind: GitRepository
