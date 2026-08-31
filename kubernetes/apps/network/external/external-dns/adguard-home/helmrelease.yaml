@@ -58,14 +58,9 @@ spec:
     triggerLoopOnEvent: true
     policy: sync
     registry: noop
-    sources: ["crd", "ingress", "gateway-httproute"]
+    sources: ["ingress", "gateway-httproute"]
     extraArgs:
       - --webhook-provider-url=http://localhost:8888
-      # crd source: lets internal-only records (L4 services with no HTTPRoute,
-      # e.g. mosquitto) be declared as DNSEndpoints instead of Service annotations,
-      # which this instance does not watch.
-      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      - --crd-source-kind=DNSEndpoint
       - --ingress-class=internal
       - --gateway-label-filter=dns-provider=internal
       # dns-provider routes a DNSEndpoint to one instance: annotate it "internal"
