@@ -9,6 +9,7 @@ kind: DNSEndpoint
 metadata:
   name: deadman
   annotations:
+    dns-provider: external # Cloudflare only -- served by Traefik on the VPS
     # Grey cloud (DNS-only, unproxied) — keeps the heartbeat path as direct and
     # cluster-independent as possible for a monitoring backstop.
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"

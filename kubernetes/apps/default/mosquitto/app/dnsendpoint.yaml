@@ -1,0 +1,18 @@
+---
+# Internal DNS record for the MQTT broker.
+# MQTT is not HTTP, so there is no HTTPRoute to derive this from, and the
+# external-dns instances watch only ingress/gateway-httproute/crd -- never
+# Services -- so a hostname annotation on the LoadBalancer would be inert.
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: mosquitto
+  annotations:
+    dns-provider: internal # AdGuard only -- this target is a LAN address
+spec:
+  endpoints:
+    - dnsName: "mosquitto.${SECRET_DOMAIN}"
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "10.0.30.42" # matches lbipam.cilium.io/ips on the mosquitto Service

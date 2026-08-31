@@ -58,12 +58,20 @@ spec:
     triggerLoopOnEvent: true
     policy: sync
     registry: noop
-    sources: ["ingress", "gateway-httproute"]
+    sources: ["crd", "ingress", "gateway-httproute"]
     extraArgs:
       - --webhook-provider-url=http://localhost:8888
+      # crd source: lets internal-only records (L4 services with no HTTPRoute,
+      # e.g. mosquitto) be declared as DNSEndpoints instead of Service annotations,
+      # which this instance does not watch.
+      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+      - --crd-source-kind=DNSEndpoint
       - --ingress-class=internal
       - --gateway-label-filter=dns-provider=internal
-      - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
+      # dns-provider routes a DNSEndpoint to one instance: annotate it "internal"
+      # for AdGuard only, "external" for Cloudflare only. Absent = both, so every
+      # existing ingress/httproute is unaffected (a missing key satisfies notin).
+      - --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true),dns-provider notin (external)
     podAnnotations:
       secret.reloader.stakater.com/reload: *secret
     logLevel: debug

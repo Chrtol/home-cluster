@@ -11,6 +11,7 @@ kind: DNSEndpoint
 metadata:
   name: minecraft
   annotations:
+    dns-provider: external # Cloudflare only -- served by Traefik on the VPS
     # MUST stay grey-cloud. Cloudflare's proxy only handles HTTP(S); an orange-cloud
     # record would answer with Cloudflare edge IPs that speak no RakNet, and the
     # console would simply fail to connect with nothing in any log to explain it.
