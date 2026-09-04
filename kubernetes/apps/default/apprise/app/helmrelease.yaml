@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/caronc/apprise
-              tag: v1.5.1@sha256:1871ed736799f6320d5061b72a60507f62c8747026e830175dc4b9f8adbf78dd
+              tag: v1.5.4@sha256:c5ea17408c10fd84c8fdb05a421114a1a677b16343c274bf9b1a55701b530829
             env:
               TZ: ${SECRET_TIMEZONE}
               APPRISE_DEFAULT_THEME: dark
