@@ -100,6 +100,12 @@ spec:
                 # the next run would checksum against.
                 target="$$backup_dir/config-$(date -u +%Y-%m-%dT%H%M%SZ).xml"
                 mv "$$incoming" "$$target"
+                # 0600 keeps the cleartext config out of casual reach, but it is not
+                # the security boundary -- NFSv4 with sys auth trusts whatever uid the
+                # client asserts, so the export's allowed-hosts list is what actually
+                # protects this. It does mean an SMB session that maps to a uid other
+                # than 1000 cannot read these files; restore via the TrueNAS shell or
+                # web file browser (root ignores the mode) if that bites.
                 chmod 0600 "$$target"
                 echo "wrote $$target ($$size bytes)"
 

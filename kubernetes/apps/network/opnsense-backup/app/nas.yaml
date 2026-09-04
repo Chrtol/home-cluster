@@ -1,9 +1,14 @@
-# Dedicated dataset, deliberately NOT the shared cf-nas/backup one. config.xml is
-# stored as plaintext XML (that is the point -- it restores with no tooling), and it
-# carries WireGuard private keys, certificate private keys and hashed user passwords.
-# The shared backup dataset is mounted by every namespace that runs a volsync mover,
-# so putting cleartext firewall secrets there would expose them to a much wider set
-# of pods than needs them. Keep this dataset's NFS share list narrow.
+# Its own folder under applications/, deliberately NOT the shared cf-nas/backup one.
+# config.xml is stored as plaintext XML (that is the point -- it restores with no
+# tooling), and it carries WireGuard private keys, certificate private keys and
+# hashed user passwords. cf-nas/backup is mounted by every namespace that runs a
+# volsync mover, so cleartext firewall secrets there would be readable by a much
+# wider set of pods than needs them.
+#
+# The separation is at the NFS-export layer, not the ZFS one: everything here lives
+# in the single cf-nas dataset, so this folder inherits its snapshot and replication
+# policy and cannot carry its own. What it does get is a separate NFS share entry,
+# so keep that share's allowed-hosts list narrower than the others.
 #
 # See the media namespace's nas.yaml for the nconnect-per-node reasoning.
 ---
