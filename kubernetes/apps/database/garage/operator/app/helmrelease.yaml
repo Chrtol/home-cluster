@@ -26,7 +26,7 @@ spec:
       # alongside the chart (the OCIRepository tag in flux/meta/oci). Renovate tracks
       # it here so the two stay in lockstep.
       # renovate: datasource=docker depName=ghcr.io/rajsinghtech/garage-operator
-      tag: v0.6.29
+      tag: v0.7.8
     # Default Garage image for GarageClusters that omit spec.image. Pinned to the
     # version our existing data was written with (v2.3.0 LMDB) for S3 compatibility.
     defaultGarageImage: dxflrs/garage:v2.3.0
