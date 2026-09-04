@@ -63,12 +63,16 @@ spec:
                 exclude:
                   - "remote"
               args:
+                # Measured against pod REQUESTS, not live usage. After the 2026-09 RAM
+                # downsize dell1 sits at 80% memory requests, so memory:70 disqualified
+                # it as a target -- both lenovos registered as over-utilized sources with
+                # nowhere to send pods, and the plugin was a no-op every cycle.
                 thresholds:
                   cpu: 50
-                  memory: 70
+                  memory: 82
                 targetThresholds:
                   cpu: 70
-                  memory: 85
+                  memory: 88
           plugins:
             balance:
               enabled:

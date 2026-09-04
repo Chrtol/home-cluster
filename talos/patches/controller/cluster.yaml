@@ -21,3 +21,19 @@ cluster:
   scheduler:
     extraArgs:
       bind-address: 0.0.0.0
+    config:
+      apiVersion: kubescheduler.config.k8s.io/v1
+      kind: KubeSchedulerConfiguration
+      profiles:
+        - schedulerName: default-scheduler
+          plugins:
+            score:
+              # Listing a default plugin here overrides its weight rather than
+              # replacing the default set. NodeAffinity defaults to 2, which a large
+              # cached image can outscore via ImageLocality (weight 1) -- that is why
+              # Plex's weight-100 preferred GPU affinity kept losing to lenovo2 even
+              # with dell1 free on memory, CPU and i915. Raising it lets preferred
+              # affinities win at schedule time without becoming required.
+              enabled:
+                - name: NodeAffinity
+                  weight: 5
