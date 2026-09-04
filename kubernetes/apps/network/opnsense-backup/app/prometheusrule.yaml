@@ -34,9 +34,11 @@ spec:
               OPNsense config backup job {{ $labels.job_name }} failed
             description: >-
               Check the job log. The most likely cause is the backup API key losing
-              the "System: Configuration Backup" privilege (the endpoint answers 403,
-              not 404, when the privilege is missing), followed by the NAS export
-              being unreachable or read-only for uid 1000.
+              the "Diagnostics: Configuration History" privilege -- that is the ACL
+              matching api/core/backup/*, NOT the similarly-named "System:
+              Configuration: Backups", which only covers the legacy diag_backup.php
+              page. A missing privilege answers 403, not 404. Next most likely is the
+              NAS export being unreachable or read-only for uid 1000.
 
         # Steady-state signal, and the one that actually matters. Catches everything
         # the edge signal cannot see: the CronJob never fired, the Job objects were
