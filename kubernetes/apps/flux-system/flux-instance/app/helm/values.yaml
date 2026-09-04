@@ -1,5 +1,11 @@
 ---
 instance:
+  # flux-operator is the sole SSA field manager of the flux-system Namespace, so
+  # the goldilocks label from components/common is stripped on every reconcile.
+  # Setting it here is the only way it survives (gives flux-system VPA coverage).
+  commonMetadata:
+    labels:
+      goldilocks.fairwinds.com/enabled: "true"
   distribution:
     # renovate: datasource=github-releases depName=controlplaneio-fluxcd/distribution
     version: 2.9.3

@@ -32,5 +32,10 @@ spec:
     resources:
       requests:
         cpu: 50m
-      limits:
         memory: 1Gi
+      # The chart derives GOMEMLIMIT from this limit (90%), so it is the GC
+      # ceiling, not just the OOM ceiling. konflate retains a rendered diff per
+      # open PR (101 of them) plus the merged shelf, on a 138-HelmRelease repo:
+      # the chart default of 1Gi thrashed GC (renders 7s -> 96s) then OOMKilled.
+      limits:
+        memory: 3Gi
