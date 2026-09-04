@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# Modelled on database/mariadb-operator/backup/prometheusrule.yaml, for the same
+# reason: a silently-failing backup is worse than no backup, because it looks like
+# coverage and restores nothing. OPNsense makes that worse than usual -- you only
+# find out the backup was broken at the exact moment the network is down.
+#
+# The selectors use cronjob=~"opnsense-backup.*" rather than an exact match because
+# app-template names the object <release>-<controller>, collapsing to <release> when
+# the two are equal. The regex covers both spellings, and the absent() rule below is
+# what catches it if neither ever matches.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: opnsense-backup
+  labels:
+    prometheus: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    - name: opnsense-backup.rules
+      rules:
+        # Edge signal: a Job the CronJob spawned ended in failure. Job objects
+        # survive via failedJobsHistory: 3, so this stays firing long enough to see.
+        - alert: OPNsenseConfigBackupJobFailed
+          expr: |
+            kube_job_status_failed{namespace="network", job_name=~"opnsense-backup.*"} > 0
+          for: 15m
+          labels:
+            severity: critical
+            category: backup
+          annotations:
+            summary: >-
+              OPNsense config backup job {{ $labels.job_name }} failed
+            description: >-
+              Check the job log. The most likely cause is the backup API key losing
+              the "System: Configuration Backup" privilege (the endpoint answers 403,
+              not 404, when the privilege is missing), followed by the NAS export
+              being unreachable or read-only for uid 1000.
+
+        # Steady-state signal, and the one that actually matters. Catches everything
+        # the edge signal cannot see: the CronJob never fired, the Job objects were
+        # garbage-collected, or the schedule was suspended. Seconds -- 129600 = 36h,
+        # one missed daily run plus headroom.
+        - alert: OPNsenseConfigBackupStale
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{namespace="network", cronjob=~"opnsense-backup.*"} > 129600
+          for: 1h
+          labels:
+            severity: critical
+            category: backup
+          annotations:
+            summary: >-
+              OPNsense config has not been backed up in over 36h
+              ({{ $value | humanizeDuration }} ago)
+
+        # Meta-alert. Without it, deleting or renaming the CronJob makes the staleness
+        # rule evaluate against an empty series set and go quiet forever -- reporting
+        # healthy at precisely the moment backups stopped existing. This is also the
+        # rule that fires if the cronjob=~ selector above never matches anything.
+        - alert: OPNsenseConfigBackupAbsent
+          expr: |
+            absent(kube_cronjob_status_last_successful_time{namespace="network", cronjob=~"opnsense-backup.*"})
+          for: 1h
+          labels:
+            severity: warning
+            category: backup
+          annotations:
+            summary: >-
+              OPNsense config backup CronJob has disappeared from metrics entirely
+            description: >-
+              Either the CronJob was removed, it has never completed a successful run
+              (the metric is unset until the first success), or the selector no longer
+              matches the object name.

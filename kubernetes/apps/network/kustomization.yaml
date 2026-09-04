@@ -10,3 +10,4 @@ resources:
   - ./external/ks.yaml
   - ./internal/ks.yaml
   - ./envoy-gateway/ks.yaml
+  - ./opnsense-backup/ks.yaml

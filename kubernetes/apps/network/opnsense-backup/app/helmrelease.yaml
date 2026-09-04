@@ -1,0 +1,140 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app opnsense-backup
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      opnsense-backup:
+        type: cronjob
+        annotations:
+          reloader.stakater.com/auto: "true"
+        cronjob:
+          schedule: "0 3 * * *"
+          timeZone: ${SECRET_TIMEZONE}
+          concurrencyPolicy: Forbid
+          # Kept at 3 so a failed Job object survives long enough for
+          # OPNsenseConfigBackupJobFailed to see it and for you to read its log.
+          failedJobsHistory: 3
+          successfulJobsHistory: 1
+          backoffLimit: 2
+        containers:
+          app:
+            image:
+              repository: docker.io/alpine/curl
+              tag: 8.21.0@sha256:7e0084208deb6b1dd71bba78e4d5ada7e29054b7782214d037fa78739faf3fe9
+            command:
+              - /bin/sh
+              - -c
+            args:
+              # Flux runs envsubst over this file before it reaches the cluster and
+              # substitutes both ${VAR} and $VAR forms. Undefined names are passed
+              # through unchanged, but a shell variable that ever collides with a
+              # cluster-secrets key would be silently blanked -- so every shell
+              # variable below is escaped as $$name. Command ($(...)) and arithmetic
+              # ($((...))) substitutions are NOT variable patterns and stay bare.
+              - |
+                set -eu
+
+                backup_dir=/backup
+                keep=30
+                incoming="$$backup_dir/.incoming.xml"
+                trap 'rm -f "$$incoming"' EXIT
+
+                # --insecure matches the exporter and the firmware-check job: the
+                # firewall serves its own cert on the LAN address.
+                curl --fail --silent --show-error --location --insecure \
+                  --max-time 120 --retry 3 --retry-delay 10 \
+                  --request POST \
+                  --header "Content-Type: application/json" \
+                  --user "$$OPNSENSE_API_KEY:$$OPNSENSE_API_SECRET" \
+                  --data "{}" \
+                  --output "$$incoming" \
+                  "https://opnsense.${SECRET_DOMAIN}/api/core/backup/download/this"
+
+                # HTTP status alone does not prove we got a config -- some OPNsense
+                # error paths answer 200 with a JSON body. Validate the payload, or
+                # the job "succeeds" while storing a 36-byte error as this month's
+                # only backup. This is the same failure class as a backup that looks
+                # like coverage and restores nothing.
+                if ! head -c 512 "$$incoming" | grep -q "<opnsense>"; then
+                  echo "FATAL: response has no <opnsense> root element. First bytes:" >&2
+                  head -c 512 "$$incoming" >&2
+                  exit 1
+                fi
+
+                size=$(wc -c < "$$incoming")
+                if [ "$$size" -lt 10000 ]; then
+                  echo "FATAL: config is only $$size bytes, expected well over 10k" >&2
+                  exit 1
+                fi
+
+                # Only keep a copy when the config actually changed, so the directory
+                # reads as a change history instead of 30 identical files. config.xml
+                # carries a <revision> block that OPNsense rewrites on every config
+                # change, so the checksum moves exactly when the configuration does.
+                new_sum=$(sha256sum < "$$incoming" | cut -d' ' -f1)
+                latest=$(find "$$backup_dir" -maxdepth 1 -name 'config-*.xml' | sort | tail -n1)
+                if [ -n "$$latest" ] && [ "$$new_sum" = "$(sha256sum < "$$latest" | cut -d' ' -f1)" ]; then
+                  echo "config unchanged since $(basename "$$latest") -- verified $$size bytes, nothing written"
+                  exit 0
+                fi
+
+                # UTC in the name so lexical sort is chronological, which is what the
+                # prune below depends on. mv is atomic within the same filesystem, so
+                # a mover killed mid-write never leaves a truncated config-*.xml that
+                # the next run would checksum against.
+                target="$$backup_dir/config-$(date -u +%Y-%m-%dT%H%M%SZ).xml"
+                mv "$$incoming" "$$target"
+                chmod 0600 "$$target"
+                echo "wrote $$target ($$size bytes)"
+
+                find "$$backup_dir" -maxdepth 1 -name 'config-*.xml' | sort -r | tail -n +$((keep + 1)) | while read -r old; do
+                  echo "pruning $$old"
+                  rm -f "$$old"
+                done
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            envFrom:
+              - secretRef:
+                  name: opnsense-backup-secret
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        # The directory holds at most 30 small files, but OnRootMismatch is the house
+        # default on NFS-backed claims and costs nothing here.
+        fsGroupChangePolicy: OnRootMismatch
+    persistence:
+      backup:
+        existingClaim: nas-opnsense-backup
+        globalMounts:
+          - path: /backup
