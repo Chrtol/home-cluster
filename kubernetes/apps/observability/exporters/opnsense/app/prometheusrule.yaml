@@ -9,217 +9,176 @@ metadata:
     role: alert-rules
 spec:
   groups:
-    - name: opnsense-network
+    # Every expression below was verified against the live series set of
+    # ghcr.io/athennamind/opnsense-exporter 0.0.16 on 2026-09-04. The previous
+    # revision of this file referenced 15 metric names the exporter never
+    # emitted (opnsense_gateway_* singular, opnsense_system_*, opnsense_pf_*,
+    # opnsense_dhcp_*, opnsense_interface_* singular), so 14 of its 25 rules
+    # could never fire while reporting health=ok. The canary group below is
+    # what makes that failure mode loud instead of silent.
+    - name: opnsense-exporter-health
       interval: 1m
       rules:
-        # Interface Link Down (No Carrier)
-        - alert: OPNsenseInterfaceLinkDown
+        - alert: OPNsenseExporterMetricsMissing
           expr: |
-            opnsense_interface_status == 0
-          for: 1m
-          labels:
-            severity: critical
-            category: network
-          annotations:
-            summary: "Interface {{ $labels.interface }} has no carrier (link down)"
-            description: >
-              Interface {{ $labels.interface }} on {{ $labels.instance }}
-              has lost physical link (no carrier). Check cable, switch port, or connected device.
-              This will cause all traffic on this interface to fail.
-
-        # Firewall State Table Saturation
-        - alert: OPNsenseStateTableNearFull
-          expr: |
-            (opnsense_pf_state_count / opnsense_pf_state_limit) * 100 > 80
-          for: 5m
+            absent(opnsense_gateways_status)
+            or absent(opnsense_services_status)
+            or absent(opnsense_interfaces_input_errors_total)
+            or absent(opnsense_wireguard_peer_status)
+            or absent(opnsense_protocol_tcp_connection_count_by_state)
+          for: 15m
           labels:
             severity: warning
-            category: network
+            category: monitoring
           annotations:
-            summary: "OPNsense state table is {{ $value | humanizePercentage }} full"
+            summary: "OPNsense exporter is emitting no metrics for at least one rule family"
             description: >
-              The firewall state table on {{ $labels.instance }} is {{ $value | humanizePercentage }} full.
-              This may cause connection issues for Plex and other services.
+              A metric family every other OPNsense alert depends on has disappeared.
+              Either the exporter is down / lost an API permission, or an exporter
+              upgrade renamed the series. Until this resolves, treat all other
+              OPNsense alerts as OFF -- a rule whose metric does not exist stays
+              health=ok forever and never fires.
 
-        - alert: OPNsenseStateTableFull
-          expr: |
-            (opnsense_pf_state_count / opnsense_pf_state_limit) * 100 > 95
-          for: 2m
-          labels:
-            severity: critical
-            category: network
-          annotations:
-            summary: "OPNsense state table is {{ $value | humanizePercentage }} full"
-            description: >
-              The firewall state table on {{ $labels.instance }} is critically full at {{ $value | humanizePercentage }}.
-              New connections will be dropped, affecting Plex streaming and other services.
-
-        # Interface Errors
-        - alert: OPNsenseHighInterfaceErrors
-          expr: |
-            rate(opnsense_interface_errors_total[5m]) > 10
-          for: 10m
-          labels:
-            severity: warning
-            category: network
-          annotations:
-            summary: "High error rate on {{ $labels.interface }}"
-            description: >
-              Interface {{ $labels.interface }} on {{ $labels.instance }} is experiencing {{ $value | humanize }} errors/sec.
-              This may cause packet loss affecting Plex streaming quality.
-
-        # Packet Loss
-        - alert: OPNsenseHighPacketLoss
-          expr: |
-            rate(opnsense_interface_discards_total[5m]) > 5
-          for: 10m
-          labels:
-            severity: warning
-            category: network
-          annotations:
-            summary: "High packet loss on {{ $labels.interface }}"
-            description: >
-              Interface {{ $labels.interface }} is dropping {{ $value | humanize }} packets/sec.
-              This will cause stuttering and buffering in Plex streams.
-
-        # Gateway Issues
+    - name: opnsense-gateways
+      interval: 1m
+      rules:
         - alert: OPNsenseGatewayDown
           expr: |
-            opnsense_gateway_status == 0
+            opnsense_gateways_status{address!~".*:.*"} == 0
           for: 2m
           labels:
             severity: critical
             category: network
           annotations:
-            summary: "Gateway {{ $labels.gateway }} is down"
+            summary: "IPv4 gateway {{ $labels.name }} is down"
             description: >
-              Gateway {{ $labels.gateway }} on {{ $labels.instance }} is not responding.
-              This will affect external Plex access.
+              Gateway {{ $labels.name }} (monitoring {{ $labels.address }}) is not
+              responding. Internet connectivity, external Plex access and the VPS
+              WireGuard tunnel are all affected.
+
+        # Address family is selected on the `address` label (IPv6 literals
+        # contain a colon) -- `protocol` exists ONLY on opnsense_gateways_info,
+        # never on _status or _loss_percentage. Split from the IPv4 rule on
+        # purpose: a dead IPv6 upstream degrades Tailscale (unreachable IPv6
+        # endpoints get advertised and black-hole, forcing DERP fallback)
+        # without touching IPv4 service.
+        - alert: OPNsenseGatewayDownIPv6
+          expr: |
+            opnsense_gateways_status{address=~".*:.*"} == 0
+          for: 30m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "IPv6 gateway {{ $labels.name }} is down"
+            description: >
+              Gateway {{ $labels.name }} (monitoring {{ $labels.address }}) is not
+              responding. If OPNsense still holds a global IPv6 address while this
+              is down, check the WAN interface for a stale ISP prefix -- hosts will
+              advertise IPv6 endpoints that black-hole, which degrades Tailscale.
 
         - alert: OPNsenseGatewayHighLatency
           expr: |
-            opnsense_gateway_delay_seconds > 0.1
+            opnsense_gateways_rtt_milliseconds > 100
           for: 10m
           labels:
             severity: warning
             category: network
           annotations:
-            summary: "High latency on gateway {{ $labels.gateway }}"
+            summary: "High latency on gateway {{ $labels.name }} ({{ $value | humanize }}ms)"
             description: >
-              Gateway {{ $labels.gateway }} has {{ $value | humanizeDuration }} latency.
-              This may cause slow Plex response times and buffering.
+              Gateway {{ $labels.name }} RTT is {{ $value | humanize }}ms
+              (baseline is under 45ms). Expect slow Plex responses and buffering.
 
         - alert: OPNsenseGatewayPacketLoss
           expr: |
-            opnsense_gateway_loss_percent > 5
+            opnsense_gateways_loss_percentage{address!~".*:.*"} > 5
           for: 5m
           labels:
             severity: warning
             category: network
           annotations:
-            summary: "Packet loss on gateway {{ $labels.gateway }}"
+            summary: "Packet loss on gateway {{ $labels.name }} ({{ $value }}%)"
             description: >
-              Gateway {{ $labels.gateway }} is experiencing {{ $value }}% packet loss.
-              Plex users will experience buffering and connection drops.
+              Gateway {{ $labels.name }} is losing {{ $value }}% of probes.
+              Plex users will see buffering and dropped connections.
+
+    - name: opnsense-interfaces
+      interval: 1m
+      rules:
+        # The exporter publishes no link-state, link-speed or discard counters,
+        # so the old InterfaceLinkDown / InterfaceSaturated / HighPacketLoss
+        # rules have no backing series and were removed rather than reworked.
+        # Error counters are the only interface health signal available.
+        - alert: OPNsenseHighInterfaceErrors
+          expr: |
+            rate(opnsense_interfaces_input_errors_total[5m]) > 1
+            or rate(opnsense_interfaces_output_errors_total[5m]) > 1
+          for: 10m
+          labels:
+            severity: warning
+            category: network
+          annotations:
+            summary: "Errors on {{ $labels.interface }} ({{ $value | humanize }}/s)"
+            description: >
+              Interface {{ $labels.interface }} ({{ $labels.device }}) is logging
+              {{ $value | humanize }} errors/sec. Baseline is 0 on every interface,
+              so any sustained rate here is a cable, SFP or driver fault.
 
     - name: opnsense-firewall
       interval: 1m
       rules:
-        # Firewall Blocking Plex Traffic
-        - alert: OPNsenseBlockingPlexTraffic
-          expr: |
-            increase(opnsense_pf_blocked_total{destination="10.0.30.70"}[5m]) > 10
-          for: 5m
-          labels:
-            severity: warning
-            category: firewall
-            service: plex
-          annotations:
-            summary: "Firewall blocking traffic to Plex ({{ $value }} blocks in 5min)"
-            description: >
-              OPNsense has blocked {{ $value }} packets destined for Plex (10.0.30.70) in the last 5 minutes.
-              Check firewall rules if users report connection issues.
-
-        # High Block Rate (General)
+        # opnsense_firewall_in_ipv4_block_packets carries only an `interface`
+        # label -- there is no source or destination dimension, so the old
+        # per-destination Plex rule was unimplementable and is gone.
+        # Verified monotonic (resets over 6h = 0), so rate() is valid.
         - alert: OPNsenseHighBlockRate
           expr: |
-            rate(opnsense_pf_blocked_total[5m]) > 100
+            rate(opnsense_firewall_in_ipv4_block_packets{interface!~"all|enc.*"}[5m]) > 50
           for: 10m
           labels:
             severity: info
             category: firewall
           annotations:
-            summary: "High firewall block rate ({{ $value | humanize }} blocks/sec)"
+            summary: "High block rate on {{ $labels.interface }} ({{ $value | humanize }}/s)"
             description: >
-              OPNsense is blocking {{ $value | humanize }} packets/sec from {{ $labels.source }}.
-              This may indicate a DDoS attempt or misconfigured rules.
+              OPNsense is blocking {{ $value | humanize }} inbound IPv4 packets/sec
+              on {{ $labels.interface }}. May indicate a scan, a DDoS, or a rule
+              that started rejecting legitimate traffic.
 
-    - name: opnsense-performance
+    - name: opnsense-services
       interval: 1m
       rules:
-        # High CPU Usage
-        - alert: OPNsenseHighCPU
+        - alert: OPNsenseCriticalServiceDown
           expr: |
-            avg(opnsense_system_cpu_usage_percent) > 80
-          for: 15m
+            opnsense_services_status{name=~"pf|unbound|wireguard|dhcpd|webgui|configd|suricata|AdGuardHome|frr"} == 0
+          for: 2m
           labels:
-            severity: warning
-            category: performance
+            severity: critical
+            category: services
           annotations:
-            summary: "OPNsense CPU usage is high ({{ $value | humanizePercentage }})"
+            summary: "Critical service {{ $labels.name }} is down"
             description: >
-              OPNsense CPU usage is at {{ $value | humanizePercentage }}.
-              This may cause packet processing delays affecting Plex streaming.
+              OPNsense service {{ $labels.name }} has stopped. frr is included
+              here because Cilium BGP peers with it -- losing frr withdraws every
+              LoadBalancer /32 from the router's FIB.
 
-        # High Memory Usage
-        - alert: OPNsenseHighMemory
+        - alert: OPNsenseServiceStopped
           expr: |
-            (opnsense_system_memory_used_bytes / opnsense_system_memory_total_bytes) * 100 > 90
-          for: 15m
+            opnsense_services_status{name=~"ntpd|openssh|syslog-ng|tailscale|crowdsec|radvd|lldpd|acme"} == 0
+          for: 5m
           labels:
             severity: warning
-            category: performance
+            category: services
           annotations:
-            summary: "OPNsense memory usage is high ({{ $value | humanizePercentage }})"
+            summary: "Service {{ $labels.name }} has stopped"
             description: >
-              OPNsense memory usage is at {{ $value | humanizePercentage }}.
-              This may cause performance degradation.
-
-        # Interface Bandwidth Saturation
-        - alert: OPNsenseInterfaceSaturated
-          expr: |
-            (rate(opnsense_interface_bytes_total[5m]) * 8) / opnsense_interface_speed_bits > 0.9
-          for: 10m
-          labels:
-            severity: warning
-            category: performance
-          annotations:
-            summary: "Interface {{ $labels.interface }} is {{ $value | humanizePercentage }} saturated"
-            description: >
-              Network interface {{ $labels.interface }} is {{ $value | humanizePercentage }} saturated.
-              This will cause buffering and slow Plex streams.
-
-    - name: opnsense-dhcp
-      interval: 5m
-      rules:
-        # DHCP Pool Exhaustion
-        - alert: OPNsenseDHCPPoolLow
-          expr: |
-            (opnsense_dhcp_leases_active / opnsense_dhcp_pool_size) * 100 > 80
-          for: 30m
-          labels:
-            severity: warning
-            category: dhcp
-          annotations:
-            summary: "DHCP pool {{ $labels.pool }} is {{ $value | humanizePercentage }} full"
-            description: >
-              DHCP pool {{ $labels.pool }} is {{ $value | humanizePercentage }} full.
-              New devices may fail to get IP addresses.
+              OPNsense service {{ $labels.name }} is not running.
+              Confirm this is intentional or restart it.
 
     - name: opnsense-wireguard
       interval: 1m
       rules:
-        # WireGuard Interface Down
         - alert: OPNsenseWireGuardInterfaceDown
           expr: |
             opnsense_wireguard_interfaces_status == 0
@@ -230,10 +189,22 @@ spec:
           annotations:
             summary: "WireGuard interface {{ $labels.device }} is down"
             description: >
-              WireGuard interface {{ $labels.device }} on {{ $labels.instance }} is not running.
-              VPN connectivity to the VPS is affected.
+              WireGuard interface {{ $labels.device }} is not running.
+              The VPS tunnel carrying all external ingress is affected.
 
-        # WireGuard Peer Stale Handshake
+        - alert: OPNsenseWireGuardPeerDown
+          expr: |
+            opnsense_wireguard_peer_status == 0
+          for: 5m
+          labels:
+            severity: critical
+            category: wireguard
+          annotations:
+            summary: "WireGuard peer {{ $labels.peer_name }} is down"
+            description: >
+              Peer {{ $labels.peer_name }} on {{ $labels.device }} is not
+              established. External access via the VPS is down.
+
         - alert: OPNsenseWireGuardPeerStale
           expr: |
             (time() - opnsense_wireguard_peer_last_handshake_seconds) > 300
@@ -244,10 +215,10 @@ spec:
           annotations:
             summary: "WireGuard peer {{ $labels.peer_name }} handshake stale"
             description: >
-              WireGuard peer {{ $labels.peer_name }} on {{ $labels.device }} hasn't had a handshake
-              in {{ $value | humanizeDuration }}. The tunnel may be disconnected.
+              Peer {{ $labels.peer_name }} on {{ $labels.device }} has not
+              completed a handshake in {{ $value | humanizeDuration }}
+              (healthy is under 180s). The tunnel may be dropping.
 
-        # WireGuard No Traffic
         - alert: OPNsenseWireGuardNoTraffic
           expr: |
             rate(opnsense_wireguard_peer_received_bytes_total[10m]) == 0
@@ -259,13 +230,12 @@ spec:
           annotations:
             summary: "WireGuard peer {{ $labels.peer_name }} has no traffic"
             description: >
-              No traffic on WireGuard peer {{ $labels.peer_name }} for 15 minutes.
-              This may indicate routing issues or the remote endpoint is down.
+              No traffic on peer {{ $labels.peer_name }} for 15 minutes.
+              Routing issue, or the remote endpoint is gone.
 
     - name: opnsense-firmware
       interval: 5m
       rules:
-        # Firmware Updates Available
         - alert: OPNsenseFirmwareUpdatesAvailable
           expr: |
             opnsense_firmware_upgrade_packages > 0
@@ -276,11 +246,9 @@ spec:
           annotations:
             summary: "OPNsense has {{ $value }} package updates available"
             description: >
-              OPNsense has {{ $value }} packages that can be upgraded.
-              Consider applying updates during your next maintenance window.
-              Last check: {{ $labels.last_check }}
+              {{ $value }} packages can be upgraded. Apply during the next
+              maintenance window.
 
-        # System Needs Reboot
         - alert: OPNsenseNeedsReboot
           expr: |
             opnsense_firmware_needs_reboot{needs_reboot="1"} == 1
@@ -291,11 +259,9 @@ spec:
           annotations:
             summary: "OPNsense needs to be rebooted"
             description: >
-              OPNsense has pending changes that require a reboot to take effect.
-              This is typically due to kernel or core system updates.
-              Schedule a maintenance window to reboot the firewall.
+              OPNsense has pending changes requiring a reboot, typically a kernel
+              or core update. Schedule a maintenance window.
 
-        # Firmware Check Failing
         - alert: OPNsenseFirmwareCheckFailing
           expr: |
             rate(opnsense_exporter_endpoint_errors_total{endpoint="api/core/firmware/status"}[1h]) > 0
@@ -306,46 +272,13 @@ spec:
           annotations:
             summary: "OPNsense firmware status check is failing"
             description: >
-              The firmware status endpoint has been failing for the past 2 hours.
-              This may indicate API permission issues or connectivity problems.
-              Check the opnsense-exporter logs and verify API credentials have
-              the "System: Firmware" permission enabled.
-
-    - name: opnsense-services
-      interval: 1m
-      rules:
-        # Critical Service Down
-        - alert: OPNsenseCriticalServiceDown
-          expr: |
-            opnsense_services_status{name=~"pf|unbound|wireguard|dhcpd|webgui|configd|suricata|AdGuardHome"} == 0
-          for: 2m
-          labels:
-            severity: critical
-            category: services
-          annotations:
-            summary: "Critical service {{ $labels.name }} is down"
-            description: >
-              OPNsense service {{ $labels.name }} has stopped running.
-              This may affect network connectivity or security.
-
-        # Service Stopped (non-critical)
-        - alert: OPNsenseServiceStopped
-          expr: |
-            opnsense_services_status{name=~"ntpd|openssh|syslog-ng|frr|tailscale"} == 0
-          for: 5m
-          labels:
-            severity: warning
-            category: services
-          annotations:
-            summary: "Service {{ $labels.name }} has stopped"
-            description: >
-              OPNsense service {{ $labels.name }} is not running.
-              Check if this is intentional or if the service crashed.
+              The firmware status endpoint has failed for 2 hours. Check the
+              opnsense-exporter logs and confirm the API key still carries the
+              "System: Firmware" permission (see PERMISSIONS.md).
 
     - name: opnsense-tcp
       interval: 1m
       rules:
-        # High TIME_WAIT connections (connection exhaustion)
         - alert: OPNsenseHighTimeWaitConnections
           expr: |
             opnsense_protocol_tcp_connection_count_by_state{state="TIME_WAIT"} > 1000
@@ -356,10 +289,9 @@ spec:
           annotations:
             summary: "High TIME_WAIT connections ({{ $value }})"
             description: >
-              OPNsense has {{ $value }} connections in TIME_WAIT state.
-              This may indicate connection exhaustion or a service not properly closing connections.
+              {{ $value }} connections in TIME_WAIT. May indicate connection
+              exhaustion or a service not closing connections cleanly.
 
-        # High CLOSE_WAIT connections (application not closing)
         - alert: OPNsenseHighCloseWaitConnections
           expr: |
             opnsense_protocol_tcp_connection_count_by_state{state="CLOSE_WAIT"} > 100
@@ -370,10 +302,9 @@ spec:
           annotations:
             summary: "High CLOSE_WAIT connections ({{ $value }})"
             description: >
-              OPNsense has {{ $value }} connections in CLOSE_WAIT state.
-              This indicates applications are not properly closing connections.
+              {{ $value }} connections in CLOSE_WAIT -- applications are not
+              closing their sockets.
 
-        # Potential SYN flood (many half-open connections)
         - alert: OPNsensePotentialSynFlood
           expr: |
             opnsense_protocol_tcp_connection_count_by_state{state="SYN_RCVD"} > 50
@@ -382,7 +313,7 @@ spec:
             severity: critical
             category: tcp
           annotations:
-            summary: "Potential SYN flood detected ({{ $value }} half-open connections)"
+            summary: "Potential SYN flood ({{ $value }} half-open connections)"
             description: >
-              OPNsense has {{ $value }} connections in SYN_RCVD state.
-              This may indicate a SYN flood attack or severe network congestion.
+              {{ $value }} connections in SYN_RCVD. May indicate a SYN flood or
+              severe congestion.
