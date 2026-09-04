@@ -163,9 +163,13 @@ spec:
               here because Cilium BGP peers with it -- losing frr withdraws every
               LoadBalancer /32 from the router's FIB.
 
+        # crowdsec is deliberately absent: it was decommissioned on OPNsense and
+        # now runs in-cluster (kubernetes/apps/security/crowdsec), exporting
+        # blocklists back to the firewall. The exporter still reports it as a
+        # stopped service, so listing it here is a permanent false positive.
         - alert: OPNsenseServiceStopped
           expr: |
-            opnsense_services_status{name=~"ntpd|openssh|syslog-ng|tailscale|crowdsec|radvd|lldpd|acme"} == 0
+            opnsense_services_status{name=~"ntpd|openssh|syslog-ng|tailscale|radvd|lldpd|acme"} == 0
           for: 5m
           labels:
             severity: warning
