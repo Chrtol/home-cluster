@@ -106,7 +106,7 @@ spec:
           app:
             image:
               repository: docker.io/getmeili/meilisearch
-              tag: v1.52.0
+              tag: v1.53.1
             env:
               MEILI_NO_ANALYTICS: true
               # v1.52.0 renamed --experimental-dumpless-upgrade to --upgrade-db;
