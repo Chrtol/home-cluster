@@ -8,17 +8,19 @@ metadata:
 spec:
   groups:
     # Rules follow ai-activity/proxmox-scrape/prometheus-smartctl-scrape.md. Thresholds
-    # verified against the live exporters on deploy day (2026-08-10):
-    #   lenovo1 nvme0 percentage_used=66   lenovo1 sda attr177 value=1 (thresh 0)
-    #   lenovo2 nvme0 percentage_used=57   dell1 nvme0=33   dell1 nvme1=29
-    #   available_spare=100 (thresh 10), media_errors=0, exit_status=0 everywhere.
+    # re-verified against the live exporters on 2026-09-06, after lenovo1:sda was swapped
+    # from a dying Samsung 850 PRO to an HP MK0240GFDKQ (see SataWearHigh):
+    #   lenovo1 nvme0 percentage_used=74   lenovo1 sda attr173 value=97 (thresh 5)
+    #   lenovo2 nvme0=61   dell1 nvme0=36   dell1 nvme1=30   nas nvme0=41   nas nvme1=19
+    #   available_spare=100 (thresh 10), media_errors=0, exit_status=0 except lenovo1:sda.
     - name: smartctl
       interval: 1m
       rules:
         # Overall SMART self-assessment. 1 = PASSED, 0 = FAILED. Covers NVMe and ATA.
         # This is the LAGGING signal: it flips only once a pre-fail attribute reaches its
-        # vendor threshold. lenovo1:sda already reads attr177 value=1 vs thresh=0 while
-        # smart_status is still 1 - which is exactly why SataWearHigh below exists.
+        # vendor threshold. The Samsung 850 PRO this cluster retired in Sep 2026 read
+        # attr177 value=1 vs thresh=0 for months while smart_status still said 1 - which
+        # is exactly why SataWearHigh below exists.
         - alert: DiskSmartFailed
           expr: smartctl_device_smart_status{job="smartctl"} == 0
           for: 5m
@@ -42,28 +44,41 @@ spec:
             summary: "NVMe wear high on {{ $labels.node }} {{ $labels.device }}"
             description: "{{ $labels.device }} on {{ $labels.node }} has used {{ $value }}% of rated write endurance. Plan a replacement."
 
-        # ATA/SATA wear: Samsung reports endurance via attribute 177 (Wear_Leveling_Count),
-        # a NORMALISED value counting DOWN from 100 toward the vendor threshold (0) - the
-        # inverse of NVMe percentage_used, so no single expression covers both.
+        # ATA/SATA wear: reported as a NORMALISED value counting DOWN from 100 toward the
+        # vendor threshold - the inverse of NVMe percentage_used, so no single expression
+        # covers both. The attribute id is vendor-specific, hence the regex:
+        #   177 Wear_Leveling_Count  - Samsung (the retired 850 PRO)
+        #   173 (Unknown_Attribute)  - lenovo1:sda, HP MK0240GFDKQ, value=97 thresh=5
+        # 10 is deliberately well above both vendors' own thresholds (0 and 5): the whole
+        # point is to warn BEFORE smart_status flips.
         #
-        # EXPECTED TO FIRE ON DEPLOY: lenovo1:sda (Samsung 850 PRO 256GB) reads value=1.
-        # It is the one disk in the cluster actually failing, and it backs Ceph osd.1 -
-        # the sole reason the cluster sits at HEALTH_WARN (see
-        # exporters/pve/app/prometheusrule.yaml). It stays firing until the disk is
-        # replaced; that is correct, not a misconfiguration.
-        #
-        # attribute_id 177 is Samsung-specific. This fleet has exactly one SATA SSD; a
-        # future non-Samsung ATA drive uses a different id (e.g. 173, 233) - re-check with
-        # `smartctl -A` and add its own rule when one appears.
+        # Both ids are matched fleet-wide rather than pinned per-node, but verify a new id
+        # is really a wear counter before adding it - some vendors reuse 173 for unrelated
+        # counters. Checked 2026-09-06: lenovo1:sda is the only drive publishing either id
+        # (the four NAS spinners publish neither), so there are no false matches today.
         - alert: SataWearHigh
-          expr: smartctl_device_attribute{job="smartctl", attribute_id="177", attribute_value_type="value"} <= 10
+          expr: smartctl_device_attribute{job="smartctl", attribute_id=~"173|177", attribute_value_type="value"} <= 10
           for: 1h
           labels:
             severity: warning
             component: smartctl
           annotations:
             summary: "SATA SSD wear indicator at {{ $value }}/100 on {{ $labels.node }} {{ $labels.device }}"
-            description: "Wear_Leveling_Count normalised value is {{ $value }} (100 = new, vendor fails at 0) on {{ $labels.device }}, {{ $labels.node }}. Replace the disk."
+            description: "Wear attribute {{ $labels.attribute_id }} normalised value is {{ $value }} (100 = new) on {{ $labels.device }}, {{ $labels.node }}. Replace the disk."
+
+        # Guard for the rule above. Swapping lenovo1:sda in Sep 2026 moved the wear counter
+        # from attr 177 to attr 173 and left SataWearHigh matching nothing - evaluating
+        # empty forever while still reporting health=ok. A drive using a THIRD id would do
+        # it again silently, so this notices instead of the next disk dying unannounced.
+        - alert: SataWearMetricMissing
+          expr: absent(smartctl_device_attribute{job="smartctl", attribute_id=~"173|177", attribute_value_type="value"})
+          for: 30m
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "No SATA SSD wear attribute is being published"
+            description: "SataWearHigh matches neither attr 173 nor 177 anywhere in the fleet, so SATA SSD wear is unmonitored. A replaced disk probably reports wear under a different attribute id - run `smartctl -A` on it and add the id to both expressions."
 
         # HDD sector health (the NAS Seagate/HGST drives). Spinning disks fail via bad
         # sectors, not wear-levelling, so none of the SSD rules above cover them: attr 5
@@ -114,10 +129,24 @@ spec:
             description: "{{ $labels.device }} on {{ $labels.node }} logged {{ $value | printf \"%.0f\" }} new uncorrectable media error(s) in 24h."
 
         # smartctl's own exit status is a bitmask; nonzero means the exporter is up but
-        # could not cleanly read a device (open failed, SMART command failed, etc.). 0
-        # across the fleet now, so this is quiet until something regresses.
+        # could not cleanly read a device (open failed, SMART command failed, etc.).
+        #
+        # lenovo1:sda (HP MK0240GFDKQ) permanently reads exactly 4 = bit 2 alone, "a SMART
+        # command failed". Its firmware answers "SMART Error Log not supported" and "SMART
+        # Self-test Log not supported"; the exporter always passes --tolerance=verypermissive,
+        # which continues past the refusal but still sets the bit. Verified by bisecting the
+        # exporter's own argv: `smartctl -l error` alone exits 0, and adding only
+        # --tolerance=verypermissive makes the identical command exit 4. Health is unaffected
+        # (smart_status PASSED, attr 5/196 raw 0, 0 reported uncorrectables).
+        #
+        # `unless` matches on the full label set, so ONLY the value 4 on that one device is
+        # exempt - any additional bit (8 DISK FAILING, 16 prefail below threshold, 64 error
+        # log entries) changes the value and still alerts. Drop this clause when the disk
+        # is replaced; SmartctlReadFailed is otherwise 0 fleet-wide.
         - alert: SmartctlReadFailed
-          expr: smartctl_device_smartctl_exit_status{job="smartctl"} != 0
+          expr: |
+            smartctl_device_smartctl_exit_status{job="smartctl"} != 0
+              unless smartctl_device_smartctl_exit_status{job="smartctl", node="lenovo1", device="sda"} == 4
           for: 15m
           labels:
             severity: warning
