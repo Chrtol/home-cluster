@@ -181,7 +181,10 @@ spec:
         # ABOVE the target, so each replica the HPA added brought its own polling
         # and utilisation never fell: pinned at max continuously since the
         # 2026.5.2 upgrade. The target must stay above the idle floor to converge.
-        maxReplicas: 2
+        # Steady state is 2 (73% util against the 85% target). Max 3 leaves real
+        # burst room AND stops KubeHpaMaxedOut, which fires on current==max without
+        # checking whether the HPA actually wants to scale.
+        maxReplicas: 3
         targetCPUUtilizationPercentage: 85
         behavior:
           scaleUp:
