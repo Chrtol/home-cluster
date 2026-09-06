@@ -8,5 +8,6 @@ resources:
   - ./helmrelease.yaml
   - ./nas-scrape-config.yaml
   - ./prometheus-remote-write-service.yaml
+  - ./prometheusrule.yaml
   - ./scrapeconfig.yaml
   - ./vps-scrape-config.yaml

@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cluster-capacity.rules
+spec:
+  groups:
+    - name: cluster-capacity.rules
+      rules:
+        # Replaces the built-in KubeMemoryOvercommit, disabled in the HelmRelease.
+        # Threshold sits above the steady state (82.6% as of 2026-09-06) so this
+        # warns while there is still room to act, rather than at the point pods
+        # already go Pending.
+        - alert: KubeMemoryRequestsNearCapacity
+          annotations:
+            summary: Pod memory requests are approaching total cluster capacity.
+            description: >-
+              Memory requests are at {{ $value | humanizePercentage }} of total
+              allocatable memory. Past 100% new pods cannot be scheduled.
+          expr: |
+            sum(namespace_memory:kube_pod_container_resource_requests:sum{})
+              /
+            sum(kube_node_status_allocatable{job="kube-state-metrics",resource="memory"})
+              > 0.90
+          for: 30m
+          labels:
+            severity: warning

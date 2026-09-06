@@ -50,6 +50,12 @@ spec:
         forceConflicts: true
     cleanPrometheusOperatorObjectNames: true
     defaultRules:
+      disabled:
+        # Asserts requests must still fit with the LARGEST node removed -- an N-1
+        # survival SLO we deliberately don't buy on 3 Proxmox VMs, so it fired
+        # permanently. Replaced by KubeMemoryRequestsNearCapacity in
+        # ./prometheusrule.yaml, which alerts on approaching *unschedulable*.
+        KubeMemoryOvercommit: true
       rules:
         kubeApiserverAvailability: false
         kubeApiserverBurnrate: false
