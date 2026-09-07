@@ -13,7 +13,7 @@ services:
   node-exporter:
     # Pinned to the version actually running on the box (captured from the live app
     # 2026-08-10). Bump only together with a redeploy via setup-exporters.sh.
-    image: quay.io/prometheus/node-exporter:v1.9.1
+    image: quay.io/prometheus/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     network_mode: host
