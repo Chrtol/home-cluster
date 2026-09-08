@@ -76,7 +76,7 @@ services:
     # Listens on 9256.
 
   smartctl-exporter:
-    image: quay.io/prometheuscommunity/smartctl-exporter:v0.13.0
+    image: quay.io/prometheuscommunity/smartctl-exporter:v0.14.0
     container_name: smartctl-exporter
     restart: unless-stopped
     network_mode: host
