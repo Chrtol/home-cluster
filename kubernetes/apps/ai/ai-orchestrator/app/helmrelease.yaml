@@ -41,7 +41,7 @@ spec:
             # git-write credential reachable from this namespace.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260909170247@sha256:0fe6e2c8638c40a5ce272a8d2f51eeab2070f224c587b79ed48bdfd318d6df12
+              tag: main-20260909184715@sha256:a908e2ab32dd0e039de04ad404f66f7d5cfe688d6e38a5f53ef0acff43d6132a
             env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
@@ -58,7 +58,7 @@ spec:
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
               # Keep it in step with the tag above.
-              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260909170247@sha256:0fe6e2c8638c40a5ce272a8d2f51eeab2070f224c587b79ed48bdfd318d6df12
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260909184715@sha256:a908e2ab32dd0e039de04ad404f66f7d5cfe688d6e38a5f53ef0acff43d6132a
               RECONCILE_INTERVAL_SECONDS: "300"
             envFrom: &envFrom
               - secretRef:
