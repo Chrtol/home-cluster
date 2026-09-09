@@ -59,6 +59,13 @@ _WRITE = dict(
 )
 
 POLL_INTERVAL = timedelta(seconds=15)
+# How often a queued task re-sends its ticket to the dispatcher. `enqueue` is
+# deduplicated on (task_id, handoff_hash), so re-sending is free -- and it is
+# what makes a *dropped* ticket recoverable. A single fire-and-forget signal is
+# not enough: the dispatcher can legitimately reject one (a stale `active` from
+# a run that died still matched this task), after which the task would wait for
+# a grant that was never going to come.
+ENQUEUE_REFRESH = timedelta(minutes=5)
 
 
 @dataclass
@@ -298,15 +305,25 @@ class TaskWorkflow:
                 enqueued_at=workflow.now().isoformat(timespec="seconds"),
             )
             dispatcher = workflow.get_external_workflow_handle(_dispatcher_id())
-            await dispatcher.signal("enqueue", ticket)
 
             # Keep folding in board events while queued. The wait for a desktop
             # shift can be hours, and it is the window in which a design is most
             # likely to change — so the loop that waits for a slot must also be
             # the loop that notices the approval being revoked.
-            await self._wait_draining(
-                lambda: self._slot is not None or self._revoked or self._stop_requested
-            )
+            #
+            # It re-sends the ticket on every pass rather than trusting one
+            # signal, so a ticket the dispatcher dropped is recovered instead of
+            # deadlocking this task against an empty queue.
+            def _settled() -> bool:
+                return self._slot is not None or self._revoked or self._stop_requested
+
+            while not _settled():
+                await dispatcher.signal("enqueue", ticket)
+                with suppress(asyncio.TimeoutError):
+                    await workflow.wait_condition(
+                        lambda: _settled() or bool(self._pending), timeout=ENQUEUE_REFRESH
+                    )
+                await self._drain()
 
             grant = self._slot
             self._slot = None

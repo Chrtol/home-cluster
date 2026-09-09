@@ -22,12 +22,15 @@ from orchestrator.contracts import (
     EventKind,
     JobState,
     ShiftLease,
+    SlotRelease,
     Stage,
+    TaskTicket,
 )
 from orchestrator.workflows.dispatcher import DesktopDispatcherWorkflow, DispatcherState
-from orchestrator.workflows.task import TaskState, TaskWorkflow
+from orchestrator.workflows.task import ENQUEUE_REFRESH, TaskState, TaskWorkflow
 
 from conftest import TASK_QUEUE, sample_handoff
+from sink_workflow import SinkWorkflow
 
 CARD = "card-1"
 DISPATCHER_ID = "desktop-dispatcher-test"
@@ -415,3 +418,72 @@ class TestInfrastructureFailure:
 
 async def _slot_free(handle: WorkflowHandle) -> bool:
     return (await handle.query("status"))["active"] == ""
+
+
+class TestDroppedTicket:
+    async def test_a_rejected_enqueue_is_recovered_not_deadlocked(self, worker, world, env):
+        """Regression for a real deadlock.
+
+        The dispatcher rejected a ticket ("task already holds the slot") because
+        a stale `active` from a run that had died still matched this task. The
+        enqueue was fire-and-forget, so the task waited on a grant that was never
+        coming while the dispatcher's queue sat empty, and nothing recovered it:
+        the reconciler's repeat events are correctly deduplicated.
+
+        Reproducing it needs the stale holder to be *real*, so the phantom ticket
+        below points at a sink workflow that exists. A grant aimed at a workflow
+        that does not exist is dropped and clears `active`, which is precisely
+        the state this bug is not about.
+        """
+        handoff_hash = sample_handoff(CARD).content_hash()
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        await worker.start_workflow(
+            SinkWorkflow.run, id="sink-phantom", task_queue=TASK_QUEUE
+        )
+
+        # A holder for this task that the real task workflow knows nothing about.
+        await dispatcher.signal(
+            "enqueue",
+            TaskTicket(
+                task_id=CARD,
+                board_id="board-1",
+                handoff_hash=handoff_hash,
+                repository="chrtol/home-cluster",
+                workflow_id="sink-phantom",
+                enqueued_at="2026-09-09T18:00:00",
+            ),
+        )
+        await open_shift(dispatcher)
+        assert await wait_for(lambda: _dispatch_active(dispatcher, CARD)), "phantom never held it"
+
+        # The real task now asks for a slot. Its enqueue is rejected, because the
+        # dispatcher thinks this task already holds one.
+        task = await start_task(worker)
+        await task.signal("board_event", approval_event())
+        assert await wait_for(lambda: _approved(task))
+        assert world.created_jobs == [], "must not dispatch while the phantom holds the slot"
+
+        # Free the phantom, as an operator would. From here the task must recover
+        # on its own -- no further board events, no human action.
+        await dispatcher.signal(
+            "release",
+            SlotRelease(
+                task_id=CARD,
+                handoff_hash=handoff_hash,
+                attempt_number=1,
+                fenced=True,
+                outcome="manual",
+            ),
+        )
+
+        # Advance past ENQUEUE_REFRESH so the task re-offers its ticket. Time
+        # skipping is not automatic while the test polls with queries, so the
+        # clock has to be moved on purpose.
+        await env.sleep(ENQUEUE_REFRESH.total_seconds() + 30)
+
+        assert await wait_for(lambda: _has_job(world), timeout=30), "task never recovered its slot"
+
+
+async def _dispatch_active(handle: WorkflowHandle, task_id: str) -> bool:
+    return (await handle.query("status"))["active"] == task_id
