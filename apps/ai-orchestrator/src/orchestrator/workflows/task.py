@@ -149,6 +149,10 @@ class TaskWorkflow:
             "stage": self._state.stage,
             "approved": self._state.approval is not None,
             "approved_hash": self._state.approval.handoff_hash if self._state.approval else "",
+            # Exposed because it is the only field that distinguishes a webhook
+            # approval (kan user id) from a reconciler sweep (activity-feed
+            # email). Diagnosing §7c live required reading logs for want of this.
+            "approved_actor": self._state.approval.actor.id if self._state.approval else "",
             "attempt": self._state.attempt_number,
             "active_job": self._state.active_job,
             "events_handled": self._state.events_handled,
@@ -273,6 +277,37 @@ class TaskWorkflow:
                 f"Cannot dispatch: {snapshot.handoff_error}",
             )
             await self._move(Stage.BLOCKED)
+            return
+
+        held = self._state.approval
+        if held is not None and held.handoff_hash == snapshot.handoff_hash:
+            # A reconciler sweep, or a redelivery, of a card already approved on
+            # exactly this handoff. Re-recording would overwrite `actor`: the
+            # sweep's activity-feed email would replace the webhook's verified kan
+            # user id, degrading the audit trail on a five-minute timer.
+            workflow.logger.info("approval already held for hash=%s", snapshot.handoff_hash)
+            return
+
+        if held is not None:
+            # The handoff moved underneath a held approval. The `changed_fields`
+            # guard cannot see this: the reconciler synthesizes `["listId"]` for
+            # every card it finds in Ready, so only comparing content catches an
+            # edit whose `card.updated` webhook was lost -- and kan never retries.
+            # Without this the sweep launders an unapproved revision into an
+            # approval. See PHASE_2_Board_Lifecycle.md §7c.
+            workflow.logger.info(
+                "approval revoked: handoff changed under a held approval %s -> %s",
+                held.handoff_hash,
+                snapshot.handoff_hash,
+            )
+            self._state.approval = None
+            self._revoked = True
+            await self._comment(
+                f"revoked-{event.event_key}",
+                "Approval revoked: the handoff changed after it was approved. "
+                "Re-approve from Design review.",
+            )
+            await self._move(Stage.DESIGN_REVIEW)
             return
 
         self._state.approval = Approval(

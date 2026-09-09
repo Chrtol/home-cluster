@@ -54,6 +54,29 @@ def approval_event(card_id: str = CARD, key: str = "evt-approve") -> BoardEvent:
     )
 
 
+def sweep_event(card_id: str = CARD, key: str = "evt-sweep") -> BoardEvent:
+    """What the reconciler synthesizes for a card it finds sitting in Ready.
+
+    Deliberately shaped like `activities/reconcile.py`: `changed_fields` is
+    `["listId"]` even though nothing moved, there is no `moved_from_list_id`,
+    and the actor is recovered from the activity feed by email rather than
+    carrying kan's session user id.
+    """
+    return BoardEvent(
+        event_key=key,
+        kind=EventKind.MOVED,
+        timestamp="",
+        board_id="board-1",
+        board_name="Example Project",
+        card_id=card_id,
+        title="a task",
+        list_id="ready-list",
+        stage=Stage.READY,
+        actor=BoardActor(id="human@example.com", name="Christian", source="activity"),
+        changed_fields=["listId"],
+    )
+
+
 async def start_dispatcher(client) -> WorkflowHandle:
     return await client.start_workflow(
         DesktopDispatcherWorkflow.run,
@@ -219,6 +242,66 @@ class TestStaleApproval:
 
         assert await wait_for(lambda: _not_approved(task))
         assert await wait_for(lambda: _moved_to(world, Stage.DESIGN_REVIEW))
+        assert world.created_jobs == []
+
+    async def test_a_sweep_cannot_re_approve_an_edited_handoff(self, worker, world):
+        """PHASE_2 §7c: a sweep must not launder an unseen edit into an approval.
+
+        kan never retries a webhook, so a `card.updated` lost to a rolling
+        restart is lost permanently and the task never learns the design
+        changed. The reconciler is the only thing that then sees the new text —
+        and because it synthesizes `changed_fields=["listId"]`, the description
+        guard never fires on its events. Comparing content is the only thing
+        standing between a lost webhook and an agent running against a revision
+        nobody approved.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        await start_dispatcher(worker)
+        task = await start_task(worker)
+
+        await task.signal("board_event", approval_event())
+        assert await wait_for(lambda: _approved(task))
+
+        # The edit lands; its webhook is lost, so no event reaches the task.
+        world.set_handoff(CARD, sample_handoff(CARD, design_revision="design-2"))
+
+        await task.signal("board_event", sweep_event())
+
+        assert await wait_for(
+            lambda: _not_approved(task)
+        ), "the sweep re-approved a handoff the human never saw"
+        assert await wait_for(lambda: _moved_to(world, Stage.DESIGN_REVIEW))
+        assert world.created_jobs == []
+
+    async def test_a_sweep_leaves_a_matching_approval_untouched(self, worker, world):
+        """An unchanged card must keep its original approval record.
+
+        The sweep runs every five minutes against every card in Ready. Before
+        the §7c fix it re-recorded the approval each time, replacing the
+        webhook's verified kan user id with the activity feed's email — so the
+        audit trail decayed on a timer even when nothing was wrong.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        await start_dispatcher(worker)
+        task = await start_task(worker)
+
+        await task.signal("board_event", approval_event())
+        assert await wait_for(lambda: _approved(task))
+        before = await task.query("status")
+
+        await task.signal("board_event", sweep_event())
+        await asyncio.sleep(1.0)
+
+        after = await task.query("status")
+        assert after["approved"], "an unchanged card lost its approval to a sweep"
+        assert after["approved_hash"] == before["approved_hash"]
+        # The load-bearing assertion. Hash and approved-ness look identical
+        # whether or not the record was overwritten; the actor is the only
+        # field that moves, so without this the test passes against the bug.
+        assert after["approved_actor"] == before["approved_actor"] == "human-1", (
+            "the sweep overwrote the webhook's verified actor with its own"
+        )
+        assert not any(s is Stage.DESIGN_REVIEW for _, s in world.moves)
         assert world.created_jobs == []
 
     async def test_unparsable_handoff_blocks_instead_of_dispatching(self, worker, world):
