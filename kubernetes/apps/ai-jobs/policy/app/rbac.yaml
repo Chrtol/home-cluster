@@ -1,6 +1,16 @@
 ---
+# These live in the ai-jobs Kustomization, NOT beside the app in kubernetes/apps/ai.
+# That Kustomization sets `targetNamespace: ai`, which OVERRIDES the namespace on
+# every object it applies -- so a Role written here with `namespace: ai-jobs` was
+# silently created in `ai` instead, and the worker got a 403 creating workspaces.
+# `namespace:` is therefore omitted below: the owning Kustomization's
+# targetNamespace decides it, and repeating it would only invite the same
+# confusion. The RoleBinding *subject* keeps its explicit `namespace: ai` -- that
+# is a cross-namespace reference and kustomize leaves it alone.
+#
 # The ServiceAccount itself is created by the app-template chart (named for the
 # release); declaring it here as well would give two owners for one object.
+#
 # Plan §11: the trusted application worker gets namespace-scoped Job/pod/PVC
 # permissions and nothing more. Deliberately absent: secrets (a coding Job must
 # never be handed a board token or a Git credential through a mounted secret),
@@ -12,7 +22,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: ai-orchestrator-jobs
-  namespace: ai-jobs
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
@@ -32,7 +41,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: ai-orchestrator-jobs
-  namespace: ai-jobs
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
