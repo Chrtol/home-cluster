@@ -6,6 +6,7 @@ import asyncio
 import logging
 
 from temporalio.client import Client
+from temporalio.common import WorkflowIDConflictPolicy
 from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.service import RPCError
 from temporalio.worker import Worker
@@ -62,9 +63,15 @@ async def build_context(settings: Settings, client: Client) -> activity_context.
 async def ensure_singletons(settings: Settings, client: Client) -> None:
     """Start the dispatcher and the reconciler if they are not already running.
 
-    Both are singletons keyed by workflow ID, so a second worker replica racing
-    here loses harmlessly: Temporal rejects the duplicate start and the existing
-    run keeps its state.
+    Both are singletons keyed by workflow ID. `USE_EXISTING` makes a start
+    against a running one return that run instead of raising, which is what
+    makes this safe to call on every worker boot and on every replica.
+
+    Catching the error instead would be a trap: Temporal raises
+    `WorkflowAlreadyStartedError`, which is NOT an `RPCError`, so an
+    `except RPCError` here silently made the worker unable to restart at all --
+    it started cleanly the first time and then crash-looped on every boot
+    afterwards, once the singletons existed.
     """
     for coro, name in (
         (
@@ -73,6 +80,7 @@ async def ensure_singletons(settings: Settings, client: Client) -> None:
                 DispatcherState(desktop_id=settings.desktop_id),
                 id=settings.dispatcher_workflow_id,
                 task_queue=settings.task_queue,
+                id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
             ),
             settings.dispatcher_workflow_id,
         ),
@@ -82,16 +90,18 @@ async def ensure_singletons(settings: Settings, client: Client) -> None:
                 settings.reconcile_interval_seconds,
                 id="board-reconciler",
                 task_queue=settings.task_queue,
+                id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
             ),
             "board-reconciler",
         ),
     ):
         try:
             await coro
-            log.info("started singleton %s", name)
+            log.info("singleton %s running", name)
         except RPCError as exc:
-            # ALREADY_EXISTS is the expected steady state after first boot.
-            log.info("singleton %s already running (%s)", name, exc.status.name)
+            # A genuinely unreachable server, not a duplicate start.
+            log.error("could not ensure singleton %s: %s", name, exc.status.name)
+            raise
 
 
 async def main() -> None:
