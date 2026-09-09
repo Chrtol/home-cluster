@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: ai
 components:
   - ../../components/common
-resources: []
+resources:
+  - ./temporal/ks.yaml
   # Temporarily disabled — ollama erroring out (2026-06-17)
   # - ./ollama/ks.yaml

@@ -1,0 +1,226 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: temporal
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: temporal
+      # The 1.x chart line (Apr 2026) replaced the 0.7x line. It drops the bundled
+      # Cassandra/Elasticsearch/Prometheus subcharts entirely and adds the
+      # schema.useHelmHooks escape hatch below, so it is the only line worth
+      # running under Flux.
+      version: 1.6.0
+      sourceRef:
+        kind: HelmRepository
+        name: temporal
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # --- Schema management ------------------------------------------------
+    schema:
+      # The chart's own comment: "Set to false if using Flux, Rancher or
+      # Terraform." With hooks on, Helm deletes and recreates the schema Job on
+      # every reconcile. With hooks off the Job name carries the chart version
+      # and release revision, so a successful migration Job is never recreated
+      # and an upgrade always gets a fresh, non-conflicting Job name.
+      useHelmHooks: false
+      ttlSecondsAfterFinished: 86400
+      resources:
+        requests:
+          cpu: 25m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      containerSecurityContext: &hardening
+        allowPrivilegeEscalation: false
+        capabilities: { drop: ["ALL"] }
+        seccompProfile: { type: RuntimeDefault }
+      securityContext: &podSecurity
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+    # Compatibility shims for Temporal 1.29 images. Server/admin-tools here are
+    # 1.31.2, so both shims are dead weight (elasticsearchTool additionally
+    # mounts a ConfigMap into the schema Job for a tool we never invoke).
+    shims:
+      dockerize: false
+      elasticsearchTool: false
+
+    server:
+      replicaCount: 1
+      # The store password reaches every server pod as env from a secretKeyRef,
+      # which Kubernetes resolves once at pod start. Without Reloader a rotated
+      # 1Password value would leave the pods authenticating with the old one
+      # until something else happened to restart them.
+      deploymentAnnotations:
+        reloader.stakater.com/auto: "true"
+      securityContext: *podSecurity
+      config:
+        logLevel: "info"
+        persistence:
+          defaultStore: default
+          visibilityStore: visibility
+          # IRREVERSIBLE after the first deployment -- it partitions the history
+          # store and cannot be changed without wiping it. The chart default is
+          # 512, sized for real production throughput; this cluster runs one
+          # coding attempt at a time, and every shard costs idle CPU in the
+          # single history pod. 128 leaves generous headroom for anything this
+          # homelab will ever queue.
+          numHistoryShards: 128
+          datastores:
+            default:
+              sql:
+                pluginName: postgres12
+                databaseName: ai_temporal
+                connectAddr: "postgres17-rw.database.svc.cluster.local:5432"
+                connectProtocol: "tcp"
+                user: ai_temporal
+                # Rendered by the temporal-store ExternalSecret. Both stores share
+                # one role and therefore one Secret.
+                existingSecret: temporal-store-secret
+                secretKey: password
+                # postgres-init (see admintools.additionalInitContainers) owns
+                # database creation; temporal-sql-tool owns the schema inside them.
+                createDatabase: false
+                manageSchema: true
+                # postgres17 allows 600 connections cluster-wide and ~100 are
+                # already in use. Four server services x two stores x this cap is
+                # the worst case, so keep it small -- 8 is far above what a
+                # one-attempt-at-a-time workload will ever open.
+                maxConns: 8
+                maxIdleConns: 4
+                maxConnLifetime: "1h"
+                tls:
+                  enabled: true
+                  # CNPG serves a self-signed cert from its internal CA, so the
+                  # hostname cannot verify. Same posture as postiz-temporal.
+                  enableHostVerification: false
+            visibility:
+              sql:
+                pluginName: postgres12
+                databaseName: ai_temporal_visibility
+                connectAddr: "postgres17-rw.database.svc.cluster.local:5432"
+                connectProtocol: "tcp"
+                user: ai_temporal
+                existingSecret: temporal-store-secret
+                secretKey: password
+                createDatabase: false
+                manageSchema: true
+                maxConns: 8
+                maxIdleConns: 4
+                maxConnLifetime: "1h"
+                tls:
+                  enabled: true
+                  enableHostVerification: false
+        namespaces:
+          # Idempotent: the Job runs `namespace describe || namespace create`.
+          create: true
+          namespace:
+            # Retention of closed workflow histories. A policy choice for the
+            # trial, not a Temporal default -- revisit once real attempt volume
+            # and the database growth it causes are measured.
+            - name: ai-coding
+              retention: 7d
+
+      # Resource requests below are PROVISIONAL trial values, not measurements.
+      # Goldilocks is already enabled on this namespace (components/common labels
+      # it); replace these from observed idle and overnight-shift usage per the
+      # measurement plan. CPU limits are deliberately absent everywhere.
+      frontend:
+        resources: &small
+          requests:
+            cpu: 25m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        containerSecurityContext: *hardening
+        metrics:
+          serviceMonitor:
+            enabled: true
+      history:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        containerSecurityContext: *hardening
+        metrics:
+          serviceMonitor:
+            enabled: true
+      matching:
+        resources: *small
+        containerSecurityContext: *hardening
+        metrics:
+          serviceMonitor:
+            enabled: true
+      worker:
+        resources: *small
+        containerSecurityContext: *hardening
+        metrics:
+          serviceMonitor:
+            enabled: true
+
+    admintools:
+      enabled: true
+      # This list is injected into BOTH the admintools Deployment and, as the
+      # first initContainers, the schema Job -- which is the only hook the chart
+      # offers for creating the databases before temporal-sql-tool runs against
+      # them. postgres-init is idempotent, so the extra run on admintools pod
+      # start is harmless (it also gates the CLI pod on Postgres being reachable).
+      additionalInitContainers:
+        - name: init-db
+          image: >-
+            ghcr.io/home-operations/postgres-init:18.4.0@sha256:ebd9d30add17acdf935d73eb004758c7dfd9388aaa605fda70ad74378ab92aec
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: temporal-initdb-secret
+          securityContext: *hardening
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      resources:
+        requests:
+          cpu: 5m
+          memory: 32Mi
+        limits:
+          memory: 128Mi
+      containerSecurityContext: *hardening
+      securityContext: *podSecurity
+
+    web:
+      enabled: true
+      replicaCount: 1
+      deploymentAnnotations:
+        reloader.stakater.com/auto: "true"
+      additionalEnv:
+        - name: TEMPORAL_DEFAULT_NAMESPACE
+          value: ai-coding
+        # The UI otherwise phones home to check for releases.
+        - name: TEMPORAL_NOTIFY_ON_NEW_VERSION
+          value: "false"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      containerSecurityContext: *hardening
+      securityContext: *podSecurity

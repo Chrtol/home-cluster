@@ -1,0 +1,54 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app temporal
+  namespace: &namespace ai
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  # NOT the cnpg component: that ships an app-template values fragment, and the
+  # upstream Temporal chart is not app-template. The equivalent postgres-init
+  # initContainer is wired directly into the HelmRelease instead, fed by this
+  # app's own ExternalSecret.
+  #
+  # proxy-application -> Authentik proxy provider + application for the UI
+  # ext-auth          -> HTTPRoute on the internal gateway, forward-auth guarded
+  #
+  # The Temporal Web UI can terminate and reset workflows with no auth of its
+  # own, so it does not go on an unguarded route.
+  components:
+    - ../../../../components/proxy-application
+    - ../../../../components/ext-auth
+  dependsOn:
+    # the Postgres cluster itself, not just the operator -- init-db and the
+    # schema Job both need it reachable
+    - name: cloudnative-pg-cluster-v17
+      namespace: database
+    - name: authentik
+      namespace: security
+  path: "./kubernetes/apps/ai/temporal/app"
+  postBuild:
+    substitute:
+      APP: *app
+      # ext-auth component
+      EXT_AUTH_PORT: "8080"
+      EXT_AUTH_SERVICE: temporal-web
+      # proxy-application component (Authentik)
+      SUBDOMAIN: *app
+      GROUP: Infrastructure
+      DISPLAY_NAME: Temporal
+      DESCRIPTION: "Durable workflow orchestration for AI coding tasks"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 15m

@@ -19,3 +19,4 @@ resources:
   - ./fossorial.yaml
   - ./opentelemetry.yaml
   - ./mariadb-operator.yaml
+  - ./temporal.yaml
