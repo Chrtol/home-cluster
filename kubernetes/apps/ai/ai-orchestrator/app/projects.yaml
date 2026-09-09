@@ -1,0 +1,24 @@
+# Trusted project configuration. One kan board per project.
+#
+# This file is a privilege boundary, not a convenience: a handoff can name a
+# repository or an acceptance check, but only what is listed here is allowed to
+# be acted on. Board text can select a check by ID; it can never supply the
+# command that runs (plan §11).
+#
+# `checks` values are argv lists, never shell strings — the loader rejects a
+# string outright, so a check ID cannot smuggle a pipeline or a `;`.
+#
+# Boards are named, not addressed by publicId: kan puts the board name in every
+# card webhook, so the event path resolves a project with no lookup, and this
+# file stays readable and portable instead of carrying opaque per-instance ids.
+# A renamed board breaks its binding on purpose, and a duplicate name refuses
+# rather than guessing.
+projects:
+  - board: AI Test
+    repository: chrtol/home-cluster
+    default_branch: main
+    # Phase 2 runs the dummy worker from the orchestrator's own image. Phase 4
+    # replaces this with a per-project image carrying OpenCode and the toolchain.
+    image: ""
+    checks:
+      unit: ["python", "-m", "pytest", "-q"]

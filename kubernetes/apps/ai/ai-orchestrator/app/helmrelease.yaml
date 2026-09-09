@@ -20,25 +20,50 @@ spec:
       retries: 3
   values:
     controllers:
+      # Two processes from one image (plan §7): the Temporal worker runs the
+      # workflows, the API terminates kan's webhook. They are separate
+      # controllers so the webhook stays answerable while the worker restarts.
       ai-orchestrator:
         annotations:
           reloader.stakater.com/auto: "true"
+        serviceAccount:
+          identifier: default
+        pod:
+          # app-template defaults this to false. The worker is the only process
+          # that talks to the API server — it creates and observes the coding
+          # Jobs — so it is the only one that gets a token. Without this it
+          # fails at startup on `load_incluster_config`.
+          automountServiceAccountToken: true
         containers:
           app:
             # Built from apps/ai-orchestrator by .github/workflows/ai-orchestrator.yaml.
             # Pinned by hand: no ImageUpdateAutomation, which would need a
             # git-write credential reachable from this namespace.
-            image:
+            image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260909144948@sha256:d8f285bb1ebe1333dc29692a5ccca4367ffee57b3a5c1210a88b7151d9556bd4
-            env:
+              tag: main-20260909170247@sha256:0fe6e2c8638c40a5ce272a8d2f51eeab2070f224c587b79ed48bdfd318d6df12
+            env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
               PYTHONDONTWRITEBYTECODE: "1"
               TEMPORAL_ADDRESS: temporal-frontend.ai.svc.cluster.local:7233
               TEMPORAL_NAMESPACE: ai-coding
               TEMPORAL_TASK_QUEUE: ai-coding
-            securityContext:
+              PROJECTS_PATH: /config/projects.yaml
+              JOBS_NAMESPACE: ai-jobs
+              WORKSPACE_STORAGE_CLASS: csi-rbd-sc
+              WORKSPACE_SIZE: 5Gi
+              DESKTOP_ID: primary
+              # Phase 2's coding Job is the dummy worker, which ships in this
+              # same image. Spelled out rather than aliased to `&image`: that
+              # anchor is a repository/tag map, and this needs one string.
+              # Keep it in step with the tag above.
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260909170247@sha256:0fe6e2c8638c40a5ce272a8d2f51eeab2070f224c587b79ed48bdfd318d6df12
+              RECONCILE_INTERVAL_SECONDS: "300"
+            envFrom: &envFrom
+              - secretRef:
+                  name: ai-orchestrator-secret
+            securityContext: &securityContext
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
@@ -48,6 +73,79 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 256Mi
+      api:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        serviceAccount:
+          identifier: default
+        # No `automountServiceAccountToken` override: this is the pod reachable
+        # from off-cluster, and it deliberately holds no Kubernetes credential.
+        # It runs no Activities — it verifies a signature and signals Temporal.
+        containers:
+          app:
+            image: *image
+            command: ["python", "-m", "uvicorn", "orchestrator.api:app"]
+            args: ["--host", "0.0.0.0", "--port", "8080"]
+            env: *env
+            envFrom: *envFrom
+            securityContext: *securityContext
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: { path: /healthz, port: 8080 }
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+              readiness: *probe
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+    serviceAccount:
+      # The chart creates this and names it after the release, so both
+      # controllers run as ServiceAccount/ai-orchestrator. rbac.yaml binds that
+      # name into ai-jobs rather than declaring its own account, which would
+      # collide with this one.
+      default: {}
+    service:
+      app:
+        controller: api
+        ports:
+          http:
+            port: 8080
+    route:
+      # Internal only, and only the webhook path. kan reaches this by DNS name
+      # over HTTPS, which its own SSRF guard requires — it rejects a literal
+      # RFC1918 address but resolves a hostname that points at one.
+      #
+      # No forward auth: kan cannot present an Authentik session, and
+      # `sendWebhookToUrl` sets exactly three headers, none of them
+      # Authorization. The route's authentication is the HMAC signature the API
+      # verifies over the raw body.
+      internal:
+        hostnames: ["ai-orchestrator.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: Exact
+                  value: /webhooks/board
+            backendRefs:
+              - identifier: app
+                port: 8080
+    persistence:
+      config:
+        type: configMap
+        name: ai-orchestrator-projects
+        globalMounts:
+          - path: /config
+            readOnly: true
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true

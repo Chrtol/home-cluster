@@ -1,0 +1,37 @@
+---
+# Plan §11: the coding Job may reach DNS, inference, scoped artifact endpoints
+# and approved dependencies — and nothing else.
+#
+# Phase 2's attempt is the dummy worker, which needs no network at all, so the
+# starting position is default-deny with DNS. That is deliberately tighter than
+# the eventual policy: it means the first thing Phase 3 does when it adds the
+# Windows Ollama endpoint is *prove* this policy is enforced, rather than
+# discovering later that it never was.
+#
+# Cilium enforces standard NetworkPolicy, so no CiliumNetworkPolicy is needed
+# for egress this simple.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  # Every pod in the namespace. Only the orchestrator creates pods here.
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+  # No ingress rules: nothing may connect *to* an attempt. The orchestrator
+  # observes Jobs through the API server, never by reaching into the pod.
+  egress:
+    - # DNS only. Without this the pod cannot resolve anything, which breaks
+      # even the failure paths in confusing ways.
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

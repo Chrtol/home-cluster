@@ -1,0 +1,43 @@
+---
+# The ServiceAccount itself is created by the app-template chart (named for the
+# release); declaring it here as well would give two owners for one object.
+# Plan §11: the trusted application worker gets namespace-scoped Job/pod/PVC
+# permissions and nothing more. Deliberately absent: secrets (a coding Job must
+# never be handed a board token or a Git credential through a mounted secret),
+# any verb in the `ai` namespace itself, and anything cluster-scoped.
+#
+# The coding Job that these create runs with `automountServiceAccountToken:
+# false`, so none of this is reachable from inside an attempt.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-orchestrator-jobs
+  namespace: ai-jobs
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - # Fencing reads pod logs to collect attempt evidence before a Job is removed.
+    apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-orchestrator-jobs
+  namespace: ai-jobs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ai-orchestrator-jobs
+subjects:
+  - kind: ServiceAccount
+    name: ai-orchestrator
+    namespace: ai
