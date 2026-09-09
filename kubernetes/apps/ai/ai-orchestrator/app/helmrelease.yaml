@@ -68,11 +68,15 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
             resources:
+              # Measured 2026-09-09: both controllers idle at ~103Mi, flat over
+              # every pod generation, so the 64Mi request was below steady state
+              # -- a Burstable pod over its memory request is evicted first under
+              # node pressure. CPU p95 is 9m on both.
               requests:
-                cpu: 10m
-                memory: 64Mi
+                cpu: 15m
+                memory: 160Mi
               limits:
-                memory: 256Mi
+                memory: 512Mi
       api:
         annotations:
           reloader.stakater.com/auto: "true"
@@ -99,11 +103,15 @@ spec:
                   periodSeconds: 30
               readiness: *probe
             resources:
+              # Measured 2026-09-09: both controllers idle at ~103Mi, flat over
+              # every pod generation, so the 64Mi request was below steady state
+              # -- a Burstable pod over its memory request is evicted first under
+              # node pressure. CPU p95 is 9m on both.
               requests:
-                cpu: 10m
-                memory: 64Mi
+                cpu: 15m
+                memory: 160Mi
               limits:
-                memory: 256Mi
+                memory: 512Mi
     serviceAccount:
       # The chart creates this and names it after the release, so both
       # controllers run as ServiceAccount/ai-orchestrator. rbac.yaml binds that
