@@ -53,6 +53,47 @@ spec:
   timeout: 10m
   wait: true
 ---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app garage-operated-volsync
+  namespace: &namespace database
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  # Backs up Garage's LMDB metadata PVC (Ceph RBD). The data blocks live on the NAS
+  # and are already covered by the NAS->Hetzner rsync, but the metadata is the index
+  # that maps those content-addressed blocks back to objects -- without it the blocks
+  # are unrecoverable, and being on Ceph it is in NO other backup. Kept as its own
+  # Kustomization rather than folded into garage-operated-cluster because that one is
+  # wait: true and a ReplicationSource does not report Ready until its first run.
+  dependsOn:
+    - name: garage-operated-cluster
+      namespace: database
+    - name: nas
+      namespace: database
+  interval: 1h
+  path: ./kubernetes/apps/database/garage/operator/backup
+  postBuild:
+    substitute:
+      APP: garage-operated
+      # Operator-generated StatefulSet volumeClaimTemplate name, not the app name.
+      VOLSYNC_PVC: metadata-garage-operated-storage-0-0
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false
+---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization

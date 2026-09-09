@@ -1,0 +1,36 @@
+# restic backup repository for the database namespace. The volsync-mover-nfs
+# MutatingAdmissionPolicy injects a "repository" volume into every mover Job and
+# hardcodes the claim name "nas-backup" -- resolved in the MOVER's own namespace,
+# so each namespace running volsync needs its own pair. Without it the mover Pod
+# sits Pending with no useful event. volumeHandle must be unique per PV; capacity
+# is ignored for NFS but must be non-empty.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-backup-database
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-backup-database
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/backup
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-backup
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-backup-database
+  resources:
+    requests:
+      storage: 1Ti

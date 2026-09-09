@@ -6,6 +6,7 @@ namespace: database
 components:
   - ../../components/common
 resources:
+  - ./nas/ks.yaml
   - ./cloudnative-pg/ks.yaml
   - ./pgadmin/ks.yaml
   - ./dragonfly/ks.yaml

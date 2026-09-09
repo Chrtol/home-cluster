@@ -110,6 +110,27 @@ spec:
               Box {{ $labels.box }} is {{ $value | humanizePercentage }} full.
               New backups will start failing. Free space or upgrade the plan.
 
+        # Snapshots share blocks with the live filesystem, so they normally cost
+        # almost nothing. They only grow when data is DELETED: the snapshot becomes
+        # the sole reference to those blocks and keeps pinning the quota until it
+        # rotates out. So a spike here means "a big deletion happened and the space
+        # has not come back yet" -- expected right after a cleanup, a problem if it
+        # persists. NOTE: humanizePercentage expects a 0-1 ratio, so this expr is
+        # deliberately NOT multiplied by 100 like the usage alerts above.
+        - alert: HetznerStorageBoxSnapshotsPinningSpace
+          expr: hetzner_storagebox_snapshots_bytes / hetzner_storagebox_quota_bytes > 0.15
+          for: 6h
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box snapshots are pinning deleted data
+            description: >-
+              Snapshots on box {{ $labels.box }} hold {{ $value | humanizePercentage }}
+              of total capacity, meaning that much deleted data has not been reclaimed.
+              Expected briefly after a large cleanup. If it persists, delete the
+              snapshots in the Hetzner Console or wait for the rotation to age them out.
+
         # ── Box state ────────────────────────────────────────────────────────
 
         # status is exposed as a label on a constant 1. Matching status!="active"
