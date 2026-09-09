@@ -27,7 +27,7 @@ spec:
             category: vps
           annotations:
             summary: VPS CPU usage is high
-            description: VPS CPU usage is {{ $value | humanizePercentage }}. This may affect service performance.
+            description: VPS CPU usage is {{ $value | humanize }}%. This may affect service performance.
 
         - alert: VPSHighMemory
           expr: (1 - (node_memory_MemAvailable_bytes{job="vps-node-exporter"} / node_memory_MemTotal_bytes{job="vps-node-exporter"})) * 100 > 85
@@ -37,7 +37,7 @@ spec:
             category: vps
           annotations:
             summary: VPS memory usage is high
-            description: VPS memory usage is {{ $value | humanizePercentage }}.
+            description: VPS memory usage is {{ $value | humanize }}%.
 
         - alert: VPSDiskSpaceLow
           expr: (1 - (node_filesystem_avail_bytes{job="vps-node-exporter",mountpoint="/"} / node_filesystem_size_bytes{job="vps-node-exporter",mountpoint="/"})) * 100 > 85
@@ -47,7 +47,7 @@ spec:
             category: vps
           annotations:
             summary: VPS disk space is low
-            description: VPS disk usage is {{ $value | humanizePercentage }} on root filesystem.
+            description: VPS disk usage is {{ $value | humanize }}% on root filesystem.
 
         - alert: VPSHighNetworkTraffic
           expr: rate(node_network_transmit_bytes_total{job="vps-node-exporter",device!~"lo|veth.*|docker.*|virbr.*|wg.*"}[5m]) > 100000000

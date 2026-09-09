@@ -90,7 +90,7 @@ spec:
             category: nas
           annotations:
             summary: NAS boot pool is filling up
-            description: NAS root filesystem is {{ $value | humanizePercentage }} full.
+            description: NAS root filesystem is {{ $value | humanize }}% full.
 
         # Data pool thresholds are set in absolute free space, not percent, because
         # what matters is "can I still fit the next season of something".

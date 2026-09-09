@@ -10,7 +10,7 @@ spec:
       rules:
         - alert: LokiRequestErrors
           annotations:
-            message: "{{ $labels.job }} {{ $labels.route }} is experiencing {{ $value | humanizePercentage }} errors."
+            message: "{{ $labels.job }} {{ $labels.route }} is experiencing {{ $value | humanize }}% errors."
           expr: |
             100 * sum(rate(loki_request_duration_seconds_count{status_code=~"5.."}[1m])) by (namespace, job, route)
               /

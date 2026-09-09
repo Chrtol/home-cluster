@@ -95,7 +95,7 @@ spec:
           annotations:
             summary: Hetzner Storage Box is filling up
             description: >-
-              Box {{ $labels.box }} is {{ $value | humanizePercentage }} full.
+              Box {{ $labels.box }} is {{ $value | humanize }}% full.
               Plan capacity or prune old data.
 
         - alert: HetznerStorageBoxSpaceCritical
@@ -107,7 +107,7 @@ spec:
           annotations:
             summary: Hetzner Storage Box is nearly full
             description: >-
-              Box {{ $labels.box }} is {{ $value | humanizePercentage }} full.
+              Box {{ $labels.box }} is {{ $value | humanize }}% full.
               New backups will start failing. Free space or upgrade the plan.
 
         # Snapshots share blocks with the live filesystem, so they normally cost
