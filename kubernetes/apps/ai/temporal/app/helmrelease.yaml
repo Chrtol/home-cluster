@@ -22,6 +22,31 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  postRenderers:
+    - kustomize:
+        patches:
+          # admintools' liveness probe is hardcoded in the chart template (no
+          # values knob): `ls /` every 5s, in a container whose only process is
+          # `sleep infinity`. Each exec costs ~52ms of CPU charged to the
+          # container cgroup, so the probe alone accounted for 10m sustained --
+          # twice the container's own request, and more than the Web UI draws.
+          # It cannot detect any real failure either: if the sleep dies, PID 1
+          # exits and the container restarts regardless. Stretched to 60s.
+          - target:
+              kind: Deployment
+              name: temporal-admintools
+            patch: |-
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: temporal-admintools
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: admin-tools
+                        livenessProbe:
+                          periodSeconds: 60
   valuesFrom:
     # databaseName and user come from 1Password via temporal-store-secret.
     # Anything set under spec.values would override these, so they are absent there.
@@ -119,23 +144,27 @@ spec:
               retention: 7d
 
       frontend:
+        # Sized from 5h of idle metrics, 2026-09-09. Peak working set across the
+        # three services on this anchor was 69Mi (matching); CPU p95 17m.
         resources: &small
           requests:
             cpu: 25m
-            memory: 128Mi
+            memory: 96Mi
           limits:
-            memory: 512Mi
+            memory: 384Mi
         containerSecurityContext: *hardening
         metrics:
           serviceMonitor:
             enabled: true
       history:
+        # The only service whose draw scales with workflow volume, so it keeps
+        # the widest margin: idle is 22m / 104Mi against 128 shards.
         resources:
           requests:
-            cpu: 50m
-            memory: 256Mi
+            cpu: 35m
+            memory: 160Mi
           limits:
-            memory: 1Gi
+            memory: 512Mi
         containerSecurityContext: *hardening
         metrics:
           serviceMonitor:
@@ -191,11 +220,12 @@ spec:
           value: ai-coding
         - name: TEMPORAL_NOTIFY_ON_NEW_VERSION
           value: "false"
+      # Idle draw is 0m / 10Mi -- the UI does nothing until someone opens it.
       resources:
         requests:
-          cpu: 10m
-          memory: 64Mi
+          cpu: 5m
+          memory: 32Mi
         limits:
-          memory: 256Mi
+          memory: 128Mi
       containerSecurityContext: *hardening
       securityContext: *podSecurity
