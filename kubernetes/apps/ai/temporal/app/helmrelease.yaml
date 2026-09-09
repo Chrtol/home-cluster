@@ -22,6 +22,25 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  valuesFrom:
+    # databaseName and user come from 1Password via temporal-store-secret.
+    # Anything set under spec.values would override these, so they are absent there.
+    - kind: Secret
+      name: temporal-store-secret
+      valuesKey: databaseName
+      targetPath: server.config.persistence.datastores.default.sql.databaseName
+    - kind: Secret
+      name: temporal-store-secret
+      valuesKey: user
+      targetPath: server.config.persistence.datastores.default.sql.user
+    - kind: Secret
+      name: temporal-store-secret
+      valuesKey: visibilityDatabaseName
+      targetPath: server.config.persistence.datastores.visibility.sql.databaseName
+    - kind: Secret
+      name: temporal-store-secret
+      valuesKey: user
+      targetPath: server.config.persistence.datastores.visibility.sql.user
   values:
     schema:
       # Must be false under Flux, per the chart: hooks re-run the migration
@@ -66,10 +85,8 @@ spec:
               sql:
                 # Plugin generation (PG 12+), not a server version. Server is 17.
                 pluginName: postgres12
-                databaseName: ${TEMPORAL_DB_NAME}
                 connectAddr: "postgres17-rw.database.svc.cluster.local:5432"
                 connectProtocol: "tcp"
-                user: ${TEMPORAL_DB_USER}
                 existingSecret: temporal-store-secret
                 secretKey: password
                 createDatabase: false
@@ -83,10 +100,8 @@ spec:
             visibility:
               sql:
                 pluginName: postgres12
-                databaseName: ${TEMPORAL_DB_VISIBILITY_NAME}
                 connectAddr: "postgres17-rw.database.svc.cluster.local:5432"
                 connectProtocol: "tcp"
-                user: ${TEMPORAL_DB_USER}
                 existingSecret: temporal-store-secret
                 secretKey: password
                 createDatabase: false
