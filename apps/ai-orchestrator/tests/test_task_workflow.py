@@ -304,6 +304,62 @@ class TestStaleApproval:
         assert not any(s is Stage.DESIGN_REVIEW for _, s in world.moves)
         assert world.created_jobs == []
 
+    async def test_moving_a_card_out_of_the_lane_does_not_wedge_the_workflow(self, worker, world):
+        """A human dragging an approved card out of Ready must not hot-loop it.
+
+        `_stop_requested` is set by the move-out-of-lane branch and consumed by
+        an in-flight attempt. With nothing running nothing consumes it, and the
+        main loop's wait condition ors it in — so the condition returns
+        immediately forever and the loop spins without yielding. Temporal's
+        deadlock detector then fails the workflow task on a loop, leaving the
+        workflow unqueryable and unrecoverable.
+
+        Observed in production 2026-09-09 21:15 on card 4zomih22b1w3.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        await start_dispatcher(worker)
+        task = await start_task(worker)
+
+        await task.signal("board_event", approval_event())
+        assert await wait_for(lambda: _approved(task))
+
+        await task.signal(
+            "board_event",
+            BoardEvent(
+                event_key="evt-drag-out",
+                kind=EventKind.MOVED,
+                timestamp="2026-09-09T21:15:00.000Z",
+                board_id="board-1",
+                board_name="Example Project",
+                card_id=CARD,
+                title="a task",
+                list_id="design-review-list",
+                stage=Stage.DESIGN_REVIEW,
+                actor=BoardActor(id="human-1", name="Christian"),
+                changed_fields=["listId"],
+                moved_from_list_id="ready-list",
+            ),
+        )
+
+        # Everything after the drag is bounded as one unit. A wedged workflow
+        # does not *fail* a query, it makes every query block -- including the
+        # ones inside `wait_for`, whose own timeout therefore never gets to
+        # fire. Without an outer bound a regression hangs the suite instead of
+        # failing it, which is how this would reach CI unnoticed.
+        async def observe() -> dict:
+            assert await wait_for(lambda: _not_approved(task))
+            # The deadlock detector trips at 2s; give it room to have tripped.
+            await asyncio.sleep(4.0)
+            return await task.query("status")
+
+        try:
+            status = await asyncio.wait_for(observe(), timeout=40.0)
+        except asyncio.TimeoutError:  # pragma: no cover - only on regression
+            pytest.fail("workflow wedged: queries stopped answering, main loop is spinning")
+
+        assert status["stage"] == Stage.DESIGN_REVIEW.value
+        assert world.created_jobs == []
+
     async def test_unparsable_handoff_blocks_instead_of_dispatching(self, worker, world):
         world.handoff_errors[CARD] = "handoff missing required fields: base_commit"
         await start_dispatcher(worker)

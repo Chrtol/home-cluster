@@ -174,6 +174,17 @@ class TaskWorkflow:
 
             await self._drain()
 
+            # `_stop_requested` exists for an in-flight attempt to observe, and
+            # is cleared when that attempt reports INTERRUPTED. With nothing
+            # running there is no attempt to consume it -- and because the wait
+            # condition above ors it in, leaving it set makes that condition
+            # return immediately forever. The loop then spins without yielding,
+            # trips Temporal's 2s deadlock detector, and wedges the workflow so
+            # hard it cannot even be queried. Reached by the most ordinary
+            # operator action there is: dragging a card out of Ready.
+            if self._stop_requested and not self._busy:
+                self._stop_requested = False
+
             if self._state.approval is not None and not self._busy:
                 await self._attempt()
 
