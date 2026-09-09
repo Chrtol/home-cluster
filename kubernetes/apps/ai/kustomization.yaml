@@ -7,5 +7,6 @@ components:
   - ../../components/common
 resources:
   - ./temporal/ks.yaml
+  - ./ai-orchestrator/ks.yaml
   # Temporarily disabled — ollama erroring out (2026-06-17)
   # - ./ollama/ks.yaml
