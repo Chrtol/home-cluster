@@ -50,8 +50,17 @@ spec:
         # snapshot_count is always at the cap (10) in steady state, so we alert
         # on the AGE of the newest snapshot, not the count. 93600s = 26h gives
         # a 2h grace over the ~daily 05:1x schedule to absorb jitter.
+        #
+        # The count guard is NOT redundant: when the snapshot list is empty the
+        # exporter's `\($t[-1] // 0)` fallback publishes a timestamp of 0, so
+        # time()-0 is ~57 years and this rule trips instantly for entirely the
+        # wrong reason (seen live 2026-09-09 after deleting all snapshots to
+        # reclaim space). "No snapshots exist" is a different state from "the
+        # newest one is old" -- HetznerStorageBoxNoSnapshots below covers it.
         - alert: HetznerStorageBoxSnapshotStale
-          expr: time() - hetzner_storagebox_latest_snapshot_timestamp_seconds > 93600
+          expr: >-
+            (time() - hetzner_storagebox_latest_snapshot_timestamp_seconds > 93600)
+            and on(box) (hetzner_storagebox_snapshot_count > 0)
           for: 30m
           labels:
             severity: warning
@@ -63,6 +72,22 @@ spec:
               The daily snapshot rotation has stopped — offsite backups are no
               longer being captured. Check the TrueNAS replication task and the
               Hetzner snapshot plan.
+
+        # The honest version of "rotation stopped": zero snapshots for a full day.
+        # Briefly expected after a manual cleanup, which is why `for` is long --
+        # the next automatic snapshot should land well inside the window.
+        - alert: HetznerStorageBoxNoSnapshots
+          expr: hetzner_storagebox_snapshot_count == 0
+          for: 26h
+          labels:
+            severity: warning
+            category: hetzner
+          annotations:
+            summary: Hetzner Storage Box has no snapshots at all
+            description: >-
+              Box {{ $labels.box }} has had zero snapshots for over 26 hours. If
+              this did not follow a deliberate cleanup, the snapshot plan has
+              likely been deleted -- check the Hetzner Console.
 
         # A sudden large DROP in backed-up data. On a backup MIRROR this is a
         # red flag: if the TrueNAS source was wiped, the next sync propagates
