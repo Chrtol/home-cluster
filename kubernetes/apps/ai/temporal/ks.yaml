@@ -3,6 +3,30 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: &app temporal-vars
+  namespace: &namespace ai
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  dependsOn:
+    - name: onepassword-store
+      namespace: external-secrets
+  path: "./kubernetes/apps/ai/temporal/vars"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: &app temporal
   namespace: &namespace ai
 spec:
@@ -24,6 +48,10 @@ spec:
     - ../../../../components/proxy-application
     - ../../../../components/ext-auth
   dependsOn:
+    # temporal-vars supplies the substitution secret below; without wait:true on
+    # it the build here would fail until external-secrets caught up.
+    - name: temporal-vars
+      namespace: ai
     # the Postgres cluster itself, not just the operator -- init-db and the
     # schema Job both need it reachable
     - name: cloudnative-pg-cluster-v17
@@ -44,6 +72,8 @@ spec:
       DESCRIPTION: "Durable workflow orchestration for AI coding tasks"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: temporal-vars
         kind: Secret
   prune: true
   sourceRef:
