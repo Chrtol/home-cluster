@@ -44,6 +44,9 @@ class FakeWorld:
     workspaces: list[str] = field(default_factory=list)
     # Set False to simulate a node partition: the job cannot be proven stopped.
     fenceable: bool = True
+    # Set True to make ensure_workspace fail every time, as a missing RBAC Role
+    # does -- an infrastructure fault, not a task fault.
+    workspace_broken: bool = False
 
     def set_handoff(self, card_id: str, handoff: Handoff) -> None:
         self.handoffs[card_id] = handoff
@@ -89,6 +92,8 @@ def build_activities(world: FakeWorld):
 
     @activity.defn(name="ensure_workspace")
     async def ensure_workspace(attempt: AttemptRef) -> str:
+        if world.workspace_broken:
+            raise RuntimeError("persistentvolumeclaims is forbidden (simulated 403)")
         world.workspaces.append(attempt.workspace_name)
         return attempt.workspace_name
 

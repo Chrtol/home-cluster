@@ -363,3 +363,55 @@ class TestStartSignalDelivery:
 
         assert len(world.created_jobs) == 1, world.created_jobs
         assert (await task.query("status"))["events_handled"] == 1
+
+
+class TestInfrastructureFailure:
+    async def test_a_failing_activity_neither_kills_the_task_nor_strands_the_slot(
+        self, worker, world
+    ):
+        """Regression for a real incident.
+
+        A Role created in the wrong namespace made `ensure_workspace` return 403
+        until its retries were exhausted. The ActivityError propagated out of the
+        run method, the TaskWorkflow died, and because a dead workflow can never
+        send `release`, the dispatcher held the only desktop slot for a holder
+        that no longer existed.
+
+        The task must survive, keep its approval, and hand the slot back.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        world.workspace_broken = True
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        # The slot must come back, and no Job may have been created.
+        assert await wait_for(lambda: _slot_free(dispatcher), timeout=60), "slot was stranded"
+        assert world.created_jobs == []
+
+        status = await task.query("status")
+        assert status["approved"] is True, "approval must survive an infrastructure fault"
+        # `last_outcome` stays empty on purpose: no attempt outcome was reached,
+        # so recording one would misreport infrastructure as a task result.
+        assert status["last_outcome"] == ""
+
+    async def test_it_retries_on_the_next_shift_once_infrastructure_recovers(
+        self, worker, world
+    ):
+        """Keeping the approval is only useful if the retry actually happens."""
+        world.set_handoff(CARD, sample_handoff(CARD))
+        world.workspace_broken = True
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+        assert await wait_for(lambda: _slot_free(dispatcher), timeout=60)
+
+        # Infrastructure is fixed; the task should get a Job without re-approval.
+        world.workspace_broken = False
+        assert await wait_for(lambda: _has_job(world), timeout=60), "did not retry after recovery"
+
+
+async def _slot_free(handle: WorkflowHandle) -> bool:
+    return (await handle.query("status"))["active"] == ""

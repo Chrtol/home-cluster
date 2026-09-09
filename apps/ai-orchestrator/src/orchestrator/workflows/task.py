@@ -328,7 +328,29 @@ class TaskWorkflow:
                 await self._release(approval, grant, fenced=True, outcome="stale")
                 return
 
-            result = await self._execute(approval, grant)
+            try:
+                result = await self._execute(approval, grant)
+            except Exception as exc:  # noqa: BLE001
+                # An Activity that exhausted its retries is an *infrastructure*
+                # failure, not a task failure. Letting it propagate would fail
+                # this workflow, and a failed workflow can never send `release`
+                # -- so the desktop slot would be held by a dead holder forever.
+                # Observed for real: a misplaced RBAC Role made ensure_workspace
+                # 403 eight times and stranded the slot.
+                #
+                # Approval is deliberately kept, so the task retries on the next
+                # shift rather than needing a human to re-approve infrastructure.
+                workflow.logger.warning("attempt aborted, infrastructure error: %s", exc)
+                await self._release(
+                    approval, grant, fenced=await self._can_fence(), outcome="infrastructure"
+                )
+                await self._comment(
+                    f"infra-{grant.attempt_number}-{approval.handoff_hash}",
+                    f"Attempt {grant.attempt_number} could not start: {exc}. "
+                    f"The approval still stands; it will retry on the next shift.",
+                )
+                return
+
             self._state.last_outcome = result.outcome.value
 
             # Fence before releasing. `confirm_terminated` returns False while a
@@ -348,6 +370,23 @@ class TaskWorkflow:
         finally:
             self._busy = False
             self._state.active_job = ""
+
+    async def _can_fence(self) -> bool:
+        """Is it safe to hand the slot back after an aborted attempt?
+
+        If no Job was ever created there is nothing that could still be writing,
+        so the slot is safe to release. Once a Job exists the question has to be
+        asked properly, and a failure to ask is answered `False` -- holding the
+        slot is the safe direction.
+        """
+        if not self._state.active_job:
+            return True
+        try:
+            return await workflow.execute_activity(
+                k8s_acts.confirm_terminated, self._state.active_job, **_SHORT
+            )
+        except Exception:  # noqa: BLE001
+            return False
 
     async def _is_stale(self, approval: Approval) -> bool:
         """Re-read the card and compare against what was approved.
