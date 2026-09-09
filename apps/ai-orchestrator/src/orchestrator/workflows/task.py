@@ -1,0 +1,528 @@
+"""TaskWorkflow — one kan card's lifecycle through the plan §4 columns.
+
+Deterministic by construction: no clocks except `workflow.now()`, no I/O, no
+randomness. Every external effect is an Activity.
+
+Three invariants carry the Phase 2 gate:
+
+1. **Duplicate events change nothing.** `board_event` drops any event whose key
+   it has already seen, before touching state. The key set survives
+   Continue-As-New, so the guarantee is not reset by a history roll.
+2. **A stale approval cannot dispatch.** Approval records the handoff hash it
+   was granted against. The hash is read again *after* the execution slot is
+   granted, so an edit that lands while the task sits in the queue is caught at
+   the last possible moment rather than at approval time.
+3. **The slot is released only after fencing.** The release signal carries
+   `fenced`, and the workflow will not set it True until an Activity has
+   confirmed no pod of the attempt can still be writing.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections import deque
+from contextlib import suppress
+from dataclasses import dataclass, field
+from datetime import timedelta
+
+from temporalio import workflow
+from temporalio.common import RetryPolicy
+
+with workflow.unsafe.imports_passed_through():
+    from ..activities import board as board_acts
+    from ..activities import kubernetes as k8s_acts
+    from ..contracts import (
+        Approval,
+        AttemptOutcome,
+        AttemptRef,
+        AttemptResult,
+        BoardEvent,
+        CardSnapshot,
+        EventKind,
+        SlotGrant,
+        SlotRelease,
+        Stage,
+        TaskTicket,
+    )
+
+# How many event keys to remember. Bounded so a long-lived card cannot grow its
+# history without limit; far larger than any plausible burst or redelivery window.
+SEEN_LIMIT = 256
+
+_SHORT = dict(
+    start_to_close_timeout=timedelta(seconds=30),
+    retry_policy=RetryPolicy(maximum_attempts=5, maximum_interval=timedelta(seconds=10)),
+)
+_WRITE = dict(
+    start_to_close_timeout=timedelta(seconds=60),
+    retry_policy=RetryPolicy(maximum_attempts=8, maximum_interval=timedelta(seconds=30)),
+)
+
+POLL_INTERVAL = timedelta(seconds=15)
+
+
+@dataclass
+class TaskState:
+    """Everything carried across Continue-As-New.
+
+    Anything not listed here is lost when the history rolls, so the dedup keys
+    and the approval both live in this struct rather than in loose attributes.
+    """
+
+    card_id: str
+    board_id: str = ""
+    board_name: str = ""
+    seen: list[str] = field(default_factory=list)
+    stage: str = Stage.UNKNOWN.value
+    approval: Approval | None = None
+    attempt_number: int = 0
+    active_job: str = ""
+    published: list[str] = field(default_factory=list)
+    events_handled: int = 0
+    last_outcome: str = ""
+
+
+@workflow.defn
+class TaskWorkflow:
+    @workflow.init
+    def __init__(self, state: TaskState) -> None:
+        """Adopt the run argument before any signal handler runs.
+
+        The webhook starts this workflow with `start_signal="board_event"`, so
+        the very first event is delivered *before* the run method executes. If
+        `run` assigned `self._state` itself, that first event's dedup key would
+        be written to a state object that is then thrown away — and a
+        redelivery of the card's first event would be treated as new.
+        """
+        self._state = state
+        self._pending: deque[BoardEvent] = deque()
+        self._slot: SlotGrant | None = None
+        self._revoked = False
+        self._stop_requested = False
+        self._busy = False
+
+    # ------------------------------------------------------------------ signals
+
+    @workflow.signal
+    def board_event(self, event: BoardEvent) -> None:
+        """Accept a normalized board event, exactly once.
+
+        The dedup check happens here, before any state changes, so a duplicate
+        delivery is indistinguishable from no delivery at all. kan never retries
+        on its own, but the reconciliation sweep re-reads the board and can
+        legitimately re-raise an event the webhook already delivered.
+        """
+        if event.event_key in self._state.seen:
+            workflow.logger.info("duplicate event %s ignored", event.event_key)
+            return
+
+        self._state.seen.append(event.event_key)
+        if len(self._state.seen) > SEEN_LIMIT:
+            del self._state.seen[:-SEEN_LIMIT]
+
+        self._pending.append(event)
+
+    @workflow.signal
+    def slot_granted(self, grant: SlotGrant) -> None:
+        self._slot = grant
+
+    @workflow.signal
+    def stop(self, reason: str = "operator") -> None:
+        """Stop the current attempt without abandoning the card."""
+        self._stop_requested = True
+        workflow.logger.info("stop requested: %s", reason)
+
+    # ------------------------------------------------------------------ queries
+
+    @workflow.query
+    def status(self) -> dict[str, object]:
+        return {
+            "card_id": self._state.card_id,
+            "board": self._state.board_name,
+            "stage": self._state.stage,
+            "approved": self._state.approval is not None,
+            "approved_hash": self._state.approval.handoff_hash if self._state.approval else "",
+            "attempt": self._state.attempt_number,
+            "active_job": self._state.active_job,
+            "events_handled": self._state.events_handled,
+            "last_outcome": self._state.last_outcome,
+            "queued_events": len(self._pending),
+        }
+
+    # --------------------------------------------------------------------- run
+
+    @workflow.run
+    async def run(self, state: TaskState) -> TaskState:
+        # `state` is already installed by `__init__`; see the note there.
+        while True:
+            await workflow.wait_condition(
+                lambda: bool(self._pending)
+                or (self._state.approval is not None and not self._busy)
+                or self._stop_requested
+            )
+
+            await self._drain()
+
+            if self._state.approval is not None and not self._busy:
+                await self._attempt()
+
+            # Roll the history only when nothing is in flight, so no attempt is
+            # orphaned mid-observation. Pending events are drained first, above,
+            # and the dedup set is carried, so nothing is replayed twice.
+            limit = workflow.info().get_current_history_length()
+            if self._state.events_handled >= 200 or limit > 8000:
+                if not self._pending and not self._busy:
+                    workflow.continue_as_new(self._state)
+
+    # ---------------------------------------------------------------- internals
+
+    async def _drain(self) -> None:
+        """Apply every queued board event.
+
+        Called from the main loop and from inside an attempt, because an event
+        that revokes approval is only useful if it can be applied while the task
+        is busy waiting.
+        """
+        while self._pending:
+            await self._apply(self._pending.popleft())
+
+    async def _wait_draining(self, ready) -> None:
+        """Block until `ready()`, applying board events that arrive meanwhile."""
+        while not ready():
+            await workflow.wait_condition(lambda: ready() or bool(self._pending))
+            await self._drain()
+
+    async def _apply(self, event: BoardEvent) -> None:
+        """Fold one board event into task state."""
+        self._state.events_handled += 1
+        self._state.card_id = event.card_id
+        self._state.board_id = event.board_id or self._state.board_id
+        self._state.board_name = event.board_name or self._state.board_name
+        previous = self._state.stage
+        self._state.stage = event.stage.value
+
+        if event.kind is EventKind.DELETED:
+            self._stop_requested = True
+            self._revoked = True
+            self._state.approval = None
+            return
+
+        # A description edit is a material change to the approved contract
+        # (plan §4), so it revokes approval wherever the card currently sits.
+        if "description" in event.changed_fields and self._state.approval is not None:
+            workflow.logger.info("approval revoked: description changed")
+            self._state.approval = None
+            self._revoked = True
+            await self._comment(
+                f"revoked-{event.event_key}",
+                "Approval revoked: the handoff changed after it was approved. "
+                "Re-approve from Design review.",
+            )
+            await self._move(Stage.DESIGN_REVIEW)
+            return
+
+        if event.kind is EventKind.MOVED:
+            await self._on_moved(event, previous)
+
+    async def _on_moved(self, event: BoardEvent, previous: str) -> None:
+        if event.stage is Stage.READY:
+            await self._record_approval(event)
+            return
+
+        # Moving the card out of the execution lane cancels the attempt. The
+        # orchestrator itself only ever writes Running / Review / Blocked /
+        # Design review, and never writes Ready for local — which is why an
+        # arrival in Ready is always a human act and this state machine cannot
+        # drive itself in a loop.
+        if previous in (Stage.READY.value, Stage.RUNNING.value) and event.stage not in (
+            Stage.READY,
+            Stage.RUNNING,
+        ):
+            if self._state.approval is not None or self._busy:
+                workflow.logger.info("attempt cancelled: card moved to %s", event.stage.value)
+            self._state.approval = None
+            self._revoked = True
+            self._stop_requested = True
+
+    async def _record_approval(self, event: BoardEvent) -> None:
+        """Turn a move into 'Ready for local' into a bound approval.
+
+        The actor comes from `event.actor`, which kan populates from its own
+        session. Plan §8 forbids taking it from card text, and nothing on the
+        card can influence it.
+        """
+        if event.actor is None:
+            await self._comment(
+                f"noactor-{event.event_key}",
+                "Ignored: the move carried no board identity, so no approval actor "
+                "could be recorded.",
+            )
+            return
+
+        snapshot = await self._fetch()
+        if snapshot.handoff is None:
+            await self._comment(
+                f"badhandoff-{event.event_key}",
+                f"Cannot dispatch: {snapshot.handoff_error}",
+            )
+            await self._move(Stage.BLOCKED)
+            return
+
+        self._state.approval = Approval(
+            actor=event.actor,
+            handoff_hash=snapshot.handoff_hash,
+            design_revision=snapshot.handoff.design_revision,
+            base_commit=snapshot.handoff.base_commit,
+            repository=snapshot.handoff.repository,
+            recorded_at=workflow.now().isoformat(timespec="seconds"),
+            event_key=event.event_key,
+        )
+        self._revoked = False
+        self._stop_requested = False
+        workflow.logger.info(
+            "approval recorded actor=%s hash=%s", event.actor.id, snapshot.handoff_hash
+        )
+
+    async def _attempt(self) -> None:
+        """Queue for a slot, verify approval is still current, then run."""
+        approval = self._state.approval
+        assert approval is not None
+        self._busy = True
+        try:
+            ticket = TaskTicket(
+                task_id=self._state.card_id,
+                board_id=self._state.board_id,
+                handoff_hash=approval.handoff_hash,
+                repository=approval.repository,
+                workflow_id=workflow.info().workflow_id,
+                enqueued_at=workflow.now().isoformat(timespec="seconds"),
+            )
+            dispatcher = workflow.get_external_workflow_handle(_dispatcher_id())
+            await dispatcher.signal("enqueue", ticket)
+
+            # Keep folding in board events while queued. The wait for a desktop
+            # shift can be hours, and it is the window in which a design is most
+            # likely to change — so the loop that waits for a slot must also be
+            # the loop that notices the approval being revoked.
+            await self._wait_draining(
+                lambda: self._slot is not None or self._revoked or self._stop_requested
+            )
+
+            grant = self._slot
+            self._slot = None
+            if grant is None:
+                # Cancelled before a slot arrived. The ticket is still queued on
+                # the dispatcher, and if it is granted later nobody would ever
+                # release it, so the queue entry has to be withdrawn.
+                await dispatcher.signal("withdraw", ticket)
+                return
+
+            if self._revoked or self._stop_requested:
+                # The grant and the revocation raced. Hand the slot straight
+                # back rather than running work whose approval is gone; nothing
+                # started, so there is nothing to fence.
+                await self._release(approval, grant, fenced=True, outcome="revoked")
+                return
+
+            if await self._is_stale(approval):
+                await self._release(approval, grant, fenced=True, outcome="stale")
+                return
+
+            result = await self._execute(approval, grant)
+            self._state.last_outcome = result.outcome.value
+
+            # Fence before releasing. `confirm_terminated` returns False while a
+            # pod is Unknown, so a partitioned node holds the slot rather than
+            # letting a second writer at the workspace.
+            fenced = await workflow.execute_activity(
+                k8s_acts.confirm_terminated, result.job_name, **_SHORT
+            )
+            while not fenced:
+                await workflow.sleep(POLL_INTERVAL)
+                fenced = await workflow.execute_activity(
+                    k8s_acts.confirm_terminated, result.job_name, **_SHORT
+                )
+
+            await self._release(approval, grant, fenced=True, outcome=result.outcome.value)
+            await self._finish(result)
+        finally:
+            self._busy = False
+            self._state.active_job = ""
+
+    async def _is_stale(self, approval: Approval) -> bool:
+        """Re-read the card and compare against what was approved.
+
+        This runs after the slot is granted, not before it is requested: the
+        wait for a desktop shift can be hours, and the whole point is to catch
+        an edit made during that wait.
+        """
+        snapshot = await self._fetch()
+        if snapshot.handoff is not None and snapshot.handoff_hash == approval.handoff_hash:
+            return False
+
+        detail = snapshot.handoff_error or (
+            f"handoff is now {snapshot.handoff_hash!r}, approved {approval.handoff_hash!r}"
+        )
+        workflow.logger.info("stale approval, not dispatching: %s", detail)
+        self._state.approval = None
+        await self._comment(
+            f"stale-{approval.event_key}",
+            f"Not dispatched: the approved handoff changed before an execution slot "
+            f"was available ({detail}). Re-approve from Design review.",
+        )
+        await self._move(Stage.DESIGN_REVIEW)
+        return True
+
+    async def _execute(self, approval: Approval, grant: SlotGrant) -> AttemptResult:
+        attempt = AttemptRef(
+            task_id=self._state.card_id,
+            board_id=self._state.board_id,
+            handoff_hash=approval.handoff_hash,
+            attempt_number=grant.attempt_number,
+        )
+        self._state.attempt_number = grant.attempt_number
+
+        await workflow.execute_activity(k8s_acts.ensure_workspace, attempt, **_WRITE)
+        await self._move(Stage.RUNNING)
+
+        request = k8s_acts.EnsureJobRequest(
+            attempt=attempt,
+            image=_job_image(),
+            base_commit=approval.base_commit,
+            repository=approval.repository,
+        )
+        # Idempotent by name: a worker that dies between creating the Job and
+        # recording it recreates the same name on replay and adopts it.
+        job_name = await workflow.execute_activity(k8s_acts.ensure_job, request, **_WRITE)
+        self._state.active_job = job_name
+
+        while True:
+            state = await workflow.execute_activity(k8s_acts.observe_job, job_name, **_SHORT)
+
+            if self._revoked or self._stop_requested:
+                await workflow.execute_activity(k8s_acts.stop_job, job_name, **_WRITE)
+                return AttemptResult(
+                    outcome=AttemptOutcome.INTERRUPTED, job_name=job_name, reason="cancelled"
+                )
+            if state.succeeded:
+                return AttemptResult(
+                    outcome=AttemptOutcome.SUCCEEDED, job_name=job_name, exit_code=0
+                )
+            if state.failed:
+                return AttemptResult(
+                    outcome=AttemptOutcome.FAILED,
+                    job_name=job_name,
+                    reason="job reported failure",
+                    exit_code=state.exit_code,
+                )
+            if not state.exists:
+                return AttemptResult(
+                    outcome=AttemptOutcome.INTERRUPTED,
+                    job_name=job_name,
+                    reason="job disappeared",
+                )
+
+            # Poll, but wake immediately if a signal arrives. Plan §7: workflow
+            # polling must pause between observations, never spin.
+            #
+            # `wait_condition` with a timeout *raises* on expiry rather than
+            # returning False, and here expiry is the normal case — it just
+            # means "no signal, go observe again" — so the timeout is suppressed
+            # rather than allowed to propagate and fail the workflow.
+            with suppress(asyncio.TimeoutError):
+                await workflow.wait_condition(
+                    lambda: self._revoked or self._stop_requested or bool(self._pending),
+                    timeout=POLL_INTERVAL,
+                )
+            # A design change arriving mid-attempt must be able to stop it
+            # (plan §12), so events are applied here too, not only in `run`.
+            await self._drain()
+
+    async def _release(
+        self, approval: Approval, grant: SlotGrant, *, fenced: bool, outcome: str
+    ) -> None:
+        release = SlotRelease(
+            task_id=self._state.card_id,
+            handoff_hash=approval.handoff_hash,
+            attempt_number=grant.attempt_number,
+            fenced=fenced,
+            outcome=outcome,
+        )
+        dispatcher = workflow.get_external_workflow_handle(_dispatcher_id())
+        await dispatcher.signal("release", release)
+
+    async def _finish(self, result: AttemptResult) -> None:
+        if result.outcome is AttemptOutcome.SUCCEEDED:
+            await self._comment(
+                f"done-{result.job_name}",
+                f"Attempt {result.job_name} completed. Evidence is on the workspace volume; "
+                f"review the diff and test output before accepting.",
+            )
+            await self._move(Stage.REVIEW)
+            self._state.approval = None
+            return
+
+        if result.outcome is AttemptOutcome.INTERRUPTED:
+            # Plan §4: interrupted work stays queued with a checkpoint, it is
+            # not an error. Approval is kept so it resumes on the next shift.
+            await self._comment(
+                f"interrupted-{result.job_name}",
+                f"Attempt {result.job_name} was interrupted ({result.reason}). "
+                f"The workspace is preserved; it will resume on the next shift.",
+            )
+            self._stop_requested = False
+            self._revoked = False
+            return
+
+        await self._comment(
+            f"failed-{result.job_name}",
+            f"Attempt {result.job_name} failed ({result.reason}, exit={result.exit_code}).",
+        )
+        await self._move(Stage.BLOCKED)
+        self._state.approval = None
+
+    # ------------------------------------------------------------ small helpers
+
+    async def _fetch(self) -> CardSnapshot:
+        return await workflow.execute_activity(board_acts.fetch_card, self._state.card_id, **_SHORT)
+
+    async def _move(self, stage: Stage) -> None:
+        await workflow.execute_activity(
+            board_acts.move_card,
+            board_acts.MoveRequest(
+                card_id=self._state.card_id, board_id=self._state.board_id, stage=stage
+            ),
+            **_WRITE,
+        )
+        self._state.stage = stage.value
+
+    async def _comment(self, marker: str, text: str) -> None:
+        """Post once per marker.
+
+        The marker set is workflow state, so a replay does not re-post; the
+        Activity independently scans the card, so a *retry* of the Activity
+        after a successful write does not either.
+        """
+        if marker in self._state.published:
+            return
+        self._state.published.append(marker)
+        await workflow.execute_activity(
+            board_acts.publish_comment,
+            board_acts.CommentRequest(card_id=self._state.card_id, marker=marker, text=text),
+            **_WRITE,
+        )
+
+
+def _dispatcher_id() -> str:
+    """Resolved from a workflow memo so the ID is fixed at start time.
+
+    Reading the environment here would be non-deterministic: a replay on a pod
+    with a different `DESKTOP_ID` would address a different dispatcher than the
+    original run did.
+    """
+    memo = workflow.memo_value("dispatcher_id", "desktop-dispatcher-primary")
+    return str(memo)
+
+
+def _job_image() -> str:
+    return str(workflow.memo_value("job_image", ""))

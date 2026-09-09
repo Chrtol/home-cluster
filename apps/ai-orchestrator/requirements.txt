@@ -1,1 +1,7 @@
 temporalio==1.32.0
+fastapi==0.121.2
+uvicorn[standard]==0.41.0
+httpx==0.28.1
+pydantic==2.12.4
+PyYAML==6.0.3
+kubernetes-asyncio==36.1.0

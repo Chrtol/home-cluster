@@ -6,6 +6,7 @@ import asyncio
 import sys
 
 from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
 
 from .settings import Settings
 from .workflows import SmokeWorkflow
@@ -16,7 +17,11 @@ async def main() -> None:
     seconds = int(sys.argv[2]) if len(sys.argv) > 2 else 60
 
     settings = Settings.from_env()
-    client = await Client.connect(settings.address, namespace=settings.namespace)
+    client = await Client.connect(
+        settings.address,
+        namespace=settings.namespace,
+        data_converter=pydantic_data_converter,
+    )
     handle = await client.start_workflow(
         SmokeWorkflow.run, seconds, id=wf_id, task_queue=settings.task_queue
     )
