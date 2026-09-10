@@ -18,7 +18,7 @@ spec:
     # the existing CRDs are already experimental-channel and the target is v1.5+ — so
     # it is left installed (do NOT exclude it: the upstream kustomization.yaml
     # references the file, and removing it breaks `kustomize build`).
-    tag: v1.6.1
+    tag: v1.6.2
   ignore: |
     # exclude
     /*
