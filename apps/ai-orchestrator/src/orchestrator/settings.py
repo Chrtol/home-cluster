@@ -8,7 +8,32 @@ from dataclasses import dataclass
 
 def _int(name: str, default: int) -> int:
     raw = os.environ.get(name)
-    return int(raw) if raw else default
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError as exc:
+        # Name the variable. A bare "invalid literal for int()" from a config
+        # read at import time gives whoever is reading the CrashLoop no way to
+        # tell which of a dozen env vars is malformed.
+        raise ValueError(f"{name}={raw!r} is not an integer") from exc
+
+
+def _interval(name: str, default: int) -> int:
+    """An interval in seconds, which must be positive.
+
+    `0` is the *disabled* value for `JOB_FAIL_AT_STEP` a few fields away, so an
+    operator reaching for the same symmetry here would get the opposite of off:
+    `workflow.sleep(0)` between sweeps, which hammers kan continuously and rolls
+    the reconciler's history over and over. Refuse rather than guess, and say
+    so, because the mistake is a reasonable one to make.
+    """
+    seconds = _int(name, default)
+    if seconds <= 0:
+        raise ValueError(
+            f"{name}={seconds} must be a positive number of seconds; 0 does not mean 'disabled'"
+        )
+    return seconds
 
 
 @dataclass(frozen=True)
@@ -53,6 +78,18 @@ class Settings:
     desktop_id: str
     # Continue-As-New thresholds. Plan §7 requires bounded histories; these are
     # signal counts, not time, because an idle dispatcher writes no history.
+    #
+    # INERT as of 2026-09-10, and the comment above described an intent rather
+    # than the code. Both workflows hardcode their own thresholds --
+    # `task.py` uses `events_handled >= 200 or history > 8000`, `dispatcher.py`
+    # uses `signals_handled >= 500 or history > 8000` -- and neither reads these
+    # fields. Setting them in the HelmRelease therefore does nothing at all.
+    #
+    # Wiring them up is not a drive-by: the threshold decides *when* a workflow
+    # issues ContinueAsNew, so changing where that number comes from changes
+    # which commands a replayed history expects and needs its own
+    # `workflow.patched()` gate (PHASE_2 §7d/§7e). Pinned by
+    # test_startup.test_the_history_limit_settings_reach_no_consumer.
     dispatcher_history_limit: int
     task_history_limit: int
 
@@ -75,7 +112,7 @@ class Settings:
             job_image=os.environ.get("JOB_IMAGE", ""),
             job_fail_at_step=_int("JOB_FAIL_AT_STEP", 0),
             job_fail_task_id=os.environ.get("JOB_FAIL_TASK_ID", ""),
-            reconcile_interval_seconds=_int("RECONCILE_INTERVAL_SECONDS", 300),
+            reconcile_interval_seconds=_interval("RECONCILE_INTERVAL_SECONDS", 300),
             desktop_id=os.environ.get("DESKTOP_ID", "primary"),
             dispatcher_history_limit=_int("DISPATCHER_HISTORY_LIMIT", 500),
             task_history_limit=_int("TASK_HISTORY_LIMIT", 200),
