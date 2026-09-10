@@ -19,7 +19,10 @@ spec:
   imageRepositoryRef:
     name: ai-orchestrator
   # JOB_IMAGE's setter writes a digest; without this there is none to write.
+  # `Always` requires an interval of its own: it re-resolves the digest of the
+  # current tag on this schedule, independently of the repository scan.
   digestReflectionPolicy: Always
+  interval: 10m
   policy:
     numerical:
       order: asc
