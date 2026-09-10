@@ -45,6 +45,31 @@ either keep the command sequence compatible — add new branches behind
 knowingly: drain the board first (no card in Ready, Running or queued on the
 dispatcher), then regenerate and say so in the commit message.
 
+## Generated vs captured
+
+Most files here are rebuilt by `scripts/generate_histories.py`, so they encode
+what the code *does*, not what the cluster has *seen*. A generated fixture
+cannot catch a divergence between those two, because both sides come from the
+same source.
+
+`task-live-blocked-h7v89xpcvsqd.json` is the first captured clean fixture:
+the plan §13 "deliberately fails when requested" path, run against real kan on
+2026-09-10 with `JOB_FAIL_AT_STEP=3` armed for that one card. 116 events,
+covering approval → grant → workspace → Job → `exit_code: 17` → fence →
+`failed-` comment → Blocked. There is a generated `task-failed-to-blocked.json`
+for the same scenario; they are kept side by side deliberately, because the
+generated one is the specification and this one is the observation.
+
+It was captured while the workflow was still **running**, which is the fixture
+worth having — `TaskWorkflow` lives for the life of the card (§2.1), so reaching
+Blocked does not close it, and a workflow that is still running is one a bad
+deploy can still wedge.
+
+It carries board and card ids, the card title and handoff, and the approving
+kan user's display name and id with `source: "webhook"` — that actor *is* the
+evidence, so removing it would remove the point. No email (unlike the file
+below), no credentials, no hostnames.
+
 ## `nondeterministic/`
 
 Captured from the cluster, not generated, which is what makes it worth keeping:
