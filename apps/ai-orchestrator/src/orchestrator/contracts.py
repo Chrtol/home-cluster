@@ -241,9 +241,20 @@ class AttemptRef:
 
 
 class AttemptOutcome(str, Enum):
+    """How one attempt ended, from the orchestrator's point of view.
+
+    `INTERRUPTED` and `ABANDONED` are deliberately distinct even though both
+    mean "no verdict". Interrupted is a stop the orchestrator *asked for*, so
+    the approval survives and the work resumes on the next shift. Abandoned is
+    an attempt whose outcome nobody ever read -- the approval is consumed and a
+    human has to look, because resuming would re-run work that may already have
+    failed. See PHASE_2_Board_Lifecycle.md §6.7.
+    """
+
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     INTERRUPTED = "interrupted"
+    ABANDONED = "abandoned"
     TIMED_OUT = "timed_out"
 
 

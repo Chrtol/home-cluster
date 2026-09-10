@@ -67,6 +67,14 @@ POLL_INTERVAL = timedelta(seconds=15)
 # a grant that was never going to come.
 ENQUEUE_REFRESH = timedelta(minutes=5)
 
+# Patch gate for the §6.7 fix. A history recorded before this shipped has no
+# marker for it, so `workflow.patched` answers False on replay and that run
+# keeps the behaviour it was written with -- which is the only way to change a
+# branch a live workflow may already have taken without wedging it (§7d, §7e).
+# Safe to retire with `workflow.deprecate_patch` once no TaskWorkflow started
+# before the deploy is still running.
+PATCH_VANISHED_JOB = "vanished-job-is-not-resumable"
+
 
 @dataclass
 class TaskState:
@@ -87,6 +95,11 @@ class TaskState:
     published: list[str] = field(default_factory=list)
     events_handled: int = 0
     last_outcome: str = ""
+    # Did any observation of the current attempt's Job see it present? It
+    # separates "deleted while running" from "finished, then collected before
+    # anyone read the verdict", which is the difference the human reading the
+    # card needs. Reset per attempt, not per workflow.
+    job_seen_alive: bool = False
 
 
 @workflow.defn
@@ -497,9 +510,12 @@ class TaskWorkflow:
         # recording it recreates the same name on replay and adopts it.
         job_name = await workflow.execute_activity(k8s_acts.ensure_job, request, **_WRITE)
         self._state.active_job = job_name
+        self._state.job_seen_alive = False
 
         while True:
             state = await workflow.execute_activity(k8s_acts.observe_job, job_name, **_SHORT)
+            if state.exists:
+                self._state.job_seen_alive = True
 
             if self._revoked or self._stop_requested:
                 await workflow.execute_activity(k8s_acts.stop_job, job_name, **_WRITE)
@@ -518,6 +534,28 @@ class TaskWorkflow:
                     exit_code=state.exit_code,
                 )
             if not state.exists:
+                # The Job is gone and no terminal state was ever read from it.
+                # That is *not* an interruption: `kube-cleanup-operator` runs
+                # cluster-wide with `--delete-failed-after=60m`, so an attempt
+                # that failed during an orchestrator outage longer than the
+                # window is collected before anyone observes the failure, and
+                # looks from here exactly like a Job that vanished mid-flight.
+                #
+                # Treating it as INTERRUPTED keeps the approval and silently
+                # re-runs the attempt, so a failure is never reported and the
+                # card never reaches Blocked. The outcome is genuinely unknown
+                # and unknowable after collection, so it goes to a human rather
+                # than being guessed. PHASE_2_Board_Lifecycle.md §6.7.
+                if workflow.patched(PATCH_VANISHED_JOB):
+                    return AttemptResult(
+                        outcome=AttemptOutcome.ABANDONED,
+                        job_name=job_name,
+                        reason=(
+                            "the Job was last seen running and then disappeared"
+                            if self._state.job_seen_alive
+                            else "the Job disappeared before any observation saw it"
+                        ),
+                    )
                 return AttemptResult(
                     outcome=AttemptOutcome.INTERRUPTED,
                     job_name=job_name,
@@ -574,6 +612,24 @@ class TaskWorkflow:
             )
             self._stop_requested = False
             self._revoked = False
+            return
+
+        if result.outcome is AttemptOutcome.ABANDONED:
+            # Same destination as a failure, different words: nobody knows
+            # whether this attempt failed, and saying "failed" would assert
+            # something that was never observed.
+            await self._comment(
+                f"abandoned-{result.job_name}",
+                f"Attempt {result.job_name} ended with no recorded outcome "
+                f"({result.reason}). Failed Jobs are collected an hour after they "
+                f"fail, so an attempt that ended while the orchestrator was down "
+                f"leaves nothing left to read. The approval has been consumed "
+                f"deliberately: re-running work whose result nobody saw is not "
+                f"safe to do silently. Check the workspace volume for evidence, "
+                f"then re-approve from Design review to try again.",
+            )
+            await self._move(Stage.BLOCKED)
+            self._state.approval = None
             return
 
         await self._comment(

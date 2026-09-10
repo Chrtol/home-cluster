@@ -17,6 +17,7 @@ import pytest
 from temporalio.client import WorkflowHandle
 
 from orchestrator.contracts import (
+    AttemptRef,
     BoardActor,
     BoardEvent,
     EventKind,
@@ -27,7 +28,12 @@ from orchestrator.contracts import (
     TaskTicket,
 )
 from orchestrator.workflows.dispatcher import DesktopDispatcherWorkflow, DispatcherState
-from orchestrator.workflows.task import ENQUEUE_REFRESH, TaskState, TaskWorkflow
+from orchestrator.workflows.task import (
+    ENQUEUE_REFRESH,
+    POLL_INTERVAL,
+    TaskState,
+    TaskWorkflow,
+)
 
 from conftest import TASK_QUEUE, sample_handoff
 from sink_workflow import SinkWorkflow
@@ -424,6 +430,88 @@ class TestAttemptLifecycle:
 
         assert await wait_for(lambda: _moved_to(world, Stage.BLOCKED), timeout=40)
 
+    async def test_a_collected_job_blocks_the_card_rather_than_retrying(self, worker, world):
+        """PHASE_2 §6.7: a failed Job collected before anyone read it.
+
+        `kube-cleanup-operator` deletes failed Jobs 60 minutes after they fail,
+        cluster-wide. If the orchestrator is down longer than that -- §9
+        documents a `RetriesExceeded` HelmRelease stall, which is terminal until
+        cleared by hand -- the worker comes back to an empty namespace. The
+        attempt failed; nothing is left to say so.
+
+        Modelled by seeding the Job's observed state as already gone *before*
+        the workflow creates it, which is what that worker sees on its first
+        observation. The old behaviour read this as INTERRUPTED, kept the
+        approval and silently re-ran the attempt, so the card never reached
+        Blocked and nothing recorded that anything had failed.
+        """
+        handoff = sample_handoff(CARD)
+        world.set_handoff(CARD, handoff)
+        gone = AttemptRef(
+            task_id=CARD,
+            board_id="board-1",
+            handoff_hash=handoff.content_hash(),
+            attempt_number=1,
+        ).job_name
+        # `ensure_job` uses `setdefault`, so seeding first survives creation.
+        world.job_states[gone] = JobState(name=gone, exists=False, terminated=True)
+
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+
+        # §6.6: is the condition already true before anything is signalled? An
+        # empty `moves` list makes this one honest, and asserting it costs less
+        # than discovering later that the test proved nothing.
+        assert not await _moved_to(world, Stage.BLOCKED)
+
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _moved_to(world, Stage.BLOCKED), timeout=40)
+
+        status = await task.query("status")
+        # The approval must be *consumed*. Keeping it is precisely what let the
+        # attempt re-run with nobody told that the previous one had failed.
+        assert status["approved"] is False
+        assert status["last_outcome"] == "abandoned"
+
+        markers = [marker for marker, _ in world.comments]
+        assert f"abandoned-{gone}" in markers
+        assert f"interrupted-{gone}" not in markers
+        # One attempt only: a silent retry would have minted `-a2`.
+        assert world.created_jobs == [gone]
+
+    async def test_a_job_deleted_mid_flight_says_it_was_seen_running(self, worker, world, env):
+        """The other half of the ambiguity, and why the card distinguishes them.
+
+        Here the Job is observed alive and then removed -- someone deleting a
+        runaway attempt by hand, rather than cleanup collecting a finished one.
+        Same destination, because the outcome is equally unknown either way, but
+        the card has to say which or the human cannot tell whether work ran.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        job = world.created_jobs[0]
+        # `ensure_job` seeds it exists=True/active=1, so the first observation
+        # sees it running; dropping the key makes the fake activity fall through
+        # to its "no such Job" default.
+        del world.job_states[job]
+        # The observe loop is parked in `wait_condition(timeout=POLL_INTERVAL)`
+        # and only re-reads the Job when that expires. Skipping the interval
+        # rather than sleeping through it keeps the test off a 15-second wall
+        # clock, and off a race with whichever side wins first (§6.6).
+        await env.sleep(POLL_INTERVAL * 2)
+
+        assert await wait_for(lambda: _moved_to(world, Stage.BLOCKED), timeout=40)
+
+        text = next(text for marker, text in world.comments if marker == f"abandoned-{job}")
+        assert "last seen running" in text
+
     async def test_job_name_is_derived_from_identity_not_the_run(self, worker, world):
         """Deterministic naming is what makes adoption possible at all."""
         handoff = sample_handoff(CARD)
@@ -434,8 +522,6 @@ class TestAttemptLifecycle:
         await task.signal("board_event", approval_event())
 
         assert await wait_for(lambda: _has_job(world))
-        from orchestrator.contracts import AttemptRef
-
         expected = AttemptRef(
             task_id=CARD,
             board_id="board-1",
